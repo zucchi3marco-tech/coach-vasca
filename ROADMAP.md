@@ -25,6 +25,7 @@ App di coaching Nuoto + Pallanuoto — Flutter · Supabase · Cursor · Claude C
 - Repository GitHub **privato**, non pubblico
 - Strategia di conflitto per la sync offline: **last-write-wins su campo `updated_at`** + log delle modifiche
 - Strategia branch: `main` sempre funzionante + un branch per ogni feature
+- ⚠️ **TEMPORANEO**: "Confirm email" disattivato su Supabase Auth (nessun dominio ancora disponibile per un SMTP proprio, il servizio email di default di Supabase ha un rate limit troppo basso per far testare l'app a più persone). Chiunque può registrarsi con un'email non sua, nessuna verifica di possesso. Da **riattivare** insieme a un provider SMTP con dominio verificato (es. Resend) prima di un uso più ampio o pubblico.
 
 ## Fuori scope per la V1
 Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli store.
@@ -49,7 +50,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 ## FASE 2 — MVP Nuoto usabile (~2-4 settimane)
 - [x] Auth coach (Supabase email) — Riverpod + client Supabase (`lib/core/supabase/`), login/logout/reset password/registrazione self-service (`lib/features/auth/`)
 - [x] CRUD Atleti — bootstrap club (`lib/features/club/`, funzione RPC `create_club` per il bug RLS su INSERT...RETURNING), lista/crea/modifica/archivia atleti (`lib/features/atleti/`)
-- [ ] Inserimento BVS o T30
+- [x] Inserimento BVS o T30 — storico test per atleta, passo medio calcolato dal DB (`lib/features/test/`)
 - [ ] Motore tabelle passi (A1…D) per atleta/corsia
 - [ ] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note)
 - [ ] Presenze sessione

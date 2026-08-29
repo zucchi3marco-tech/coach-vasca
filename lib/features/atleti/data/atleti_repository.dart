@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/utils/date_format.dart';
 import '../domain/atleta.dart';
 
 class AtletiRepository {
@@ -40,7 +41,7 @@ class AtletiRepository {
           'club_id': clubId,
           'nome': nome,
           'cognome': cognome,
-          'data_nascita': _formatDate(dataNascita),
+          'data_nascita': formatDateOnly(dataNascita),
           'sesso': ?sesso,
           'sport': sport,
           if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
@@ -50,7 +51,7 @@ class AtletiRepository {
             'telefono_genitore': telefonoGenitore,
           'consenso_privacy_firmato': consensoPrivacyFirmato,
           if (consensoPrivacyFirmato)
-            'consenso_privacy_data': _formatDate(DateTime.now()),
+            'consenso_privacy_data': formatDateOnly(DateTime.now()),
           if (note != null && note.isNotEmpty) 'note': note,
         })
         .select()
@@ -77,7 +78,7 @@ class AtletiRepository {
         .update({
           'nome': nome,
           'cognome': cognome,
-          'data_nascita': _formatDate(dataNascita),
+          'data_nascita': formatDateOnly(dataNascita),
           'sesso': sesso,
           'sport': sport,
           'gruppo': gruppo,
@@ -85,7 +86,7 @@ class AtletiRepository {
           'telefono_genitore': telefonoGenitore,
           'consenso_privacy_firmato': consensoPrivacyFirmato,
           'consenso_privacy_data': consensoPrivacyFirmato
-              ? _formatDate(consensoPrivacyData ?? DateTime.now())
+              ? formatDateOnly(consensoPrivacyData ?? DateTime.now())
               : null,
           'note': note,
         })
@@ -102,11 +103,6 @@ class AtletiRepository {
   Future<void> deleteAtleta(String id) {
     return _client.from('atleti').delete().eq('id', id);
   }
-}
-
-String _formatDate(DateTime date) {
-  String two(int n) => n.toString().padLeft(2, '0');
-  return '${date.year.toString().padLeft(4, '0')}-${two(date.month)}-${two(date.day)}';
 }
 
 final atletiRepositoryProvider = Provider<AtletiRepository>((ref) {

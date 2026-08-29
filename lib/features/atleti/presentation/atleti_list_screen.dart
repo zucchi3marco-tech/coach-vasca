@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
@@ -29,6 +30,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           data: (atleti) => _AtletiList(
             atleti: atleti,
             onTap: (atleta) => _apriForm(context, atleta: atleta),
+            onTapTest: (atleta) => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TestListScreen(atleta: atleta),
+              ),
+            ),
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => ListView(
@@ -71,10 +77,15 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
 }
 
 class _AtletiList extends StatelessWidget {
-  const _AtletiList({required this.atleti, required this.onTap});
+  const _AtletiList({
+    required this.atleti,
+    required this.onTap,
+    required this.onTapTest,
+  });
 
   final List<Atleta> atleti;
   final ValueChanged<Atleta> onTap;
+  final ValueChanged<Atleta> onTapTest;
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +124,11 @@ class _AtletiList extends StatelessWidget {
                 atleta.gruppo!,
               if (!atleta.attivo) 'inattivo',
             ].join(' · '),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.speed_outlined),
+            tooltip: 'Test',
+            onPressed: () => onTapTest(atleta),
           ),
           onTap: () => onTap(atleta),
         );
