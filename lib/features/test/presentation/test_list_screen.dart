@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/pace_format.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../tabelle_passi/application/tabelle_passi_providers.dart';
+import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../application/test_providers.dart';
 import '../data/test_repository.dart';
 import '../domain/test_ingresso.dart';
@@ -34,21 +36,10 @@ class TestListScreen extends ConsumerWidget {
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final t = test[index];
-                  return ListTile(
-                    title: Text(
-                      '${t.tipo} — ${formatPaceSeconds(t.passoMedio100S)}/100m',
-                    ),
-                    subtitle: Text(
-                      '${t.dataTest.day.toString().padLeft(2, '0')}/'
-                      '${t.dataTest.month.toString().padLeft(2, '0')}/'
-                      '${t.dataTest.year} · '
-                      '${t.distanzaTotaleM} m in ${formatPaceSeconds(t.tempoTotaleS)}',
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Elimina',
-                      onPressed: () => _confermaEliminazione(context, ref, t),
-                    ),
+                  return _TestTile(
+                    test: t,
+                    atleta: atleta,
+                    onDelete: () => _confermaEliminazione(context, ref, t),
                   );
                 },
               ),
@@ -105,5 +96,49 @@ class TestListScreen extends ConsumerWidget {
       await ref.read(testRepositoryProvider).deleteTest(test.id);
       ref.invalidate(testListProvider(atleta.id));
     }
+  }
+}
+
+class _TestTile extends ConsumerWidget {
+  const _TestTile({
+    required this.test,
+    required this.atleta,
+    required this.onDelete,
+  });
+
+  final TestIngresso test;
+  final Atleta atleta;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tabellaGenerata =
+        ref.watch(tabellePassiProvider(test.id)).value?.isNotEmpty ?? false;
+
+    return ListTile(
+      title: Text(
+        '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
+      ),
+      subtitle: Text(
+        '${test.dataTest.day.toString().padLeft(2, '0')}/'
+        '${test.dataTest.month.toString().padLeft(2, '0')}/'
+        '${test.dataTest.year} · '
+        '${test.distanzaTotaleM} m in ${formatPaceSeconds(test.tempoTotaleS)}'
+        '${tabellaGenerata ? ' · tabella passi generata' : ''}',
+      ),
+      leading: tabellaGenerata
+          ? const Icon(Icons.table_chart, color: Colors.green)
+          : const Icon(Icons.table_chart_outlined),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Elimina',
+        onPressed: onDelete,
+      ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TabellePassiScreen(test: test, atleta: atleta),
+        ),
+      ),
+    );
   }
 }
