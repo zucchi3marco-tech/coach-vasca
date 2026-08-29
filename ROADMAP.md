@@ -37,7 +37,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Account GitHub (repo privato) creato
 - [x] Claude Code installato
 - [x] Account Supabase (region EU) creato — progetto "Coach-vasca"
-- [ ] Primo `flutter create` da fare dentro questa cartella
+- [x] Primo `flutter create` fatto dentro questa cartella — progetto `coach_vasca` (Android/iOS/Web/Linux/macOS/Windows)
 
 ## FASE 1 — Fondazione prodotto (~1 settimana)
 - [x] Schema DB V1: Club, Atleti, Test_BVS_T30, Tabelle_Passi, Stagione/Macro/Meso/Micro, Allenamenti, Serie, Presenze — migrazioni SQL in `supabase/migrations/`, applicate al progetto reale e verificate (12 tabelle, RLS attiva, 4 policy ciascuna), vedi `supabase/README.md`
