@@ -45,7 +45,9 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
           );
       ref.invalidate(currentClubProvider);
     } catch (_) {
-      setState(() => _errorMessage = 'Impossibile creare il club. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Impossibile creare il club. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

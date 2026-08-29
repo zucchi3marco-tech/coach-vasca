@@ -84,7 +84,9 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
-      setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

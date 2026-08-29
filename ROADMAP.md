@@ -62,7 +62,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 **Criterio di fine fase:** un coach usa l'app in vasca per una sessione reale, senza AI.
 
 ## FASE 3 — Offline-first (~1-2 settimane)
-- [ ] Drift come DB locale (al posto di SQLite puro)
+- [x] Drift come DB locale (al posto di SQLite puro) — `lib/core/db/`, schema locale per tutte le 7 entità operative, UUID generati lato client per atleti/test/allenamenti/serie, lettura sempre da cache locale (`StreamProvider` reattivi) con refresh remoto in background best-effort; scrittura offline vera e coda di sync sono il prossimo punto
 - [ ] Scrittura sempre in locale in impianto
 - [ ] Regola di conflitto documentata (last-write-wins su updated_at)
 - [ ] Sync verso Supabase a rete disponibile

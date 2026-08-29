@@ -48,6 +48,7 @@ class TestListScreen extends ConsumerWidget {
             Center(child: Text('Errore nel caricamento test: $error')),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-test',
         onPressed: () => _apriForm(context, ref),
         tooltip: 'Nuovo test',
         child: const Icon(Icons.add),
@@ -56,12 +57,9 @@ class TestListScreen extends ConsumerWidget {
   }
 
   Future<void> _apriForm(BuildContext context, WidgetRef ref) async {
-    final saved = await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)),
     );
-    if (saved == true) {
-      ref.invalidate(testListProvider(atleta.id));
-    }
   }
 
   Future<void> _confermaEliminazione(
@@ -94,7 +92,6 @@ class TestListScreen extends ConsumerWidget {
 
     if (conferma == true) {
       await ref.read(testRepositoryProvider).deleteTest(test.id);
-      ref.invalidate(testListProvider(atleta.id));
     }
   }
 }

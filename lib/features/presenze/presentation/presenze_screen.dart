@@ -51,16 +51,13 @@ class PresenzeScreen extends ConsumerWidget {
                   return _RigaPresenza(
                     atleta: atleta,
                     statoAttuale: statoPerAtleta[atleta.id],
-                    onSelect: (nuovoStato) async {
-                      await ref
-                          .read(presenzeRepositoryProvider)
-                          .segnaPresenza(
-                            allenamentoId: allenamento.id,
-                            atletaId: atleta.id,
-                            stato: nuovoStato,
-                          );
-                      ref.invalidate(presenzeListProvider(allenamento.id));
-                    },
+                    onSelect: (nuovoStato) => ref
+                        .read(presenzeRepositoryProvider)
+                        .segnaPresenza(
+                          allenamentoId: allenamento.id,
+                          atletaId: atleta.id,
+                          stato: nuovoStato,
+                        ),
                   );
                 },
               );

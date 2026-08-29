@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
+import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
 
@@ -25,7 +26,8 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(atletiListProvider(filter)),
+        onRefresh: () =>
+            ref.read(atletiRepositoryProvider).refreshFromRemote(widget.clubId),
         child: atletiAsync.when(
           data: (atleti) => _AtletiList(
             atleti: atleti,
@@ -56,6 +58,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
         ),
       ],
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-atleti',
         onPressed: () => _apriForm(context),
         tooltip: 'Nuovo atleta',
         child: const Icon(Icons.add),
@@ -64,15 +67,12 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   }
 
   Future<void> _apriForm(BuildContext context, {Atleta? atleta}) async {
-    final saved = await Navigator.of(context).push<bool>(
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) =>
             AtletaFormScreen(clubId: widget.clubId, atleta: atleta),
       ),
     );
-    if (saved == true) {
-      ref.invalidate(atletiListProvider);
-    }
   }
 }
 

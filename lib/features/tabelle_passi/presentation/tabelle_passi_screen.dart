@@ -78,13 +78,14 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
       await ref
           .read(tabellePassiRepositoryProvider)
           .upsertPerTest(testId: widget.test.id, righe: righe);
-      ref.invalidate(tabellePassiProvider(widget.test.id));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tabella passi salvata')),
       );
     } catch (_) {
-      setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

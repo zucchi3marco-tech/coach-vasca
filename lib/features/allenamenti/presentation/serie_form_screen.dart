@@ -172,7 +172,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
-      setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -224,6 +226,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _blocco,
                   decoration: const InputDecoration(labelText: 'Blocco'),
                   items: const [
@@ -292,6 +295,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _stile,
                   decoration: const InputDecoration(labelText: 'Stile'),
                   items: const [
@@ -309,6 +313,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _esecuzione,
                   decoration: const InputDecoration(labelText: 'Esecuzione'),
                   items: const [
@@ -332,6 +337,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
+                  isExpanded: true,
                   initialValue: _zona,
                   decoration: const InputDecoration(
                     labelText: 'Zona (opzionale)',

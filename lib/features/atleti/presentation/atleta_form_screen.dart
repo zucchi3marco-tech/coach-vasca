@@ -124,7 +124,9 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
-      setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -217,6 +219,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _sesso,
                   decoration: const InputDecoration(
                     labelText: 'Sesso (opzionale)',
@@ -229,6 +232,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _sport,
                   decoration: const InputDecoration(labelText: 'Sport'),
                   items: const [

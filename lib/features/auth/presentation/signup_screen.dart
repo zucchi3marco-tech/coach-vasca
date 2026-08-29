@@ -66,9 +66,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       );
       Navigator.of(context).pop();
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Errore di connessione. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Errore di connessione. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

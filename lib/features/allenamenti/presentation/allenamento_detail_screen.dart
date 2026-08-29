@@ -119,21 +119,15 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                             '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
                           ),
                           subtitle: Text(_sottotitoloSerie(s)),
-                          onTap: () async {
-                            final saved = await Navigator.of(context)
-                                .push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => SerieFormScreen(
-                                      allenamentoId: allenamento.id,
-                                      ordineSuccessivo: serie.length + 1,
-                                      serie: s,
-                                    ),
-                                  ),
-                                );
-                            if (saved == true) {
-                              ref.invalidate(serieListProvider(allenamento.id));
-                            }
-                          },
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SerieFormScreen(
+                                allenamentoId: allenamento.id,
+                                ordineSuccessivo: serie.length + 1,
+                                serie: s,
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -145,10 +139,11 @@ class AllenamentoDetailScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
+        heroTag: 'fab-serie',
+        onPressed: () {
           final serieAttuale =
               ref.read(serieListProvider(allenamento.id)).value ?? [];
-          final saved = await Navigator.of(context).push<bool>(
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SerieFormScreen(
                 allenamentoId: allenamento.id,
@@ -156,9 +151,6 @@ class AllenamentoDetailScreen extends ConsumerWidget {
               ),
             ),
           );
-          if (saved == true) {
-            ref.invalidate(serieListProvider(allenamento.id));
-          }
         },
         tooltip: 'Nuova serie',
         child: const Icon(Icons.add),

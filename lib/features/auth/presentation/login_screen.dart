@@ -41,9 +41,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Errore di connessione. Riprova.');
+      if (mounted) {
+        setState(() => _errorMessage = 'Errore di connessione. Riprova.');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -65,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBar(content: Text('Email di reset inviata a $email')),
       );
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
     }
   }
 
