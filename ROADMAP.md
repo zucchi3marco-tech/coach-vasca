@@ -44,7 +44,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] RLS attiva su ogni tabella Supabase da subito (isolamento per club/coach) — multi-coach per club con ruoli owner/coach/assistente
 - [x] `.env` con chiavi Supabase, escluso da Git — `.env.example` come template versionato, `.env` reale creato e verificato ignorato
 - [x] Bozza informativa privacy + consenso genitori (atleti minorenni) — `docs/privacy/`, da far rivedere da un consulente prima dell'uso reale
-- [ ] Wireframe 6 schermate: login, lista atleti, test→passi, calendario stagione, scheda bordo vasca, placeholder "Genera con AI"
+- [x] Wireframe 6 schermate: login, lista atleti, test→passi, calendario stagione, scheda bordo vasca, placeholder "Genera con AI" — vedi `docs/wireframes/README.md`
 
 ## FASE 2 — MVP Nuoto usabile (~2-4 settimane)
 - [ ] Auth coach (Supabase email)
