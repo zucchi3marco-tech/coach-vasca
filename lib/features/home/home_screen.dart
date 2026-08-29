@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../atleti/presentation/atleti_list_screen.dart';
 import '../auth/data/auth_repository.dart';
+import '../club/application/current_club_provider.dart';
+import '../club/presentation/club_setup_screen.dart';
 
-/// Placeholder post-login: le sezioni reali (atleti, test, calendario,
-/// scheda bordo vasca) arrivano con i prossimi punti della FASE 2.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authRepositoryProvider).currentUser;
+    final clubAsync = ref.watch(currentClubProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SwimCoach FIN'),
+        title: Text(clubAsync.value?.nome ?? 'SwimCoach FIN'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -23,10 +24,12 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Text(
-          user?.email == null ? 'Bentornato' : 'Bentornato, ${user!.email}',
-        ),
+      body: clubAsync.when(
+        data: (club) => club == null
+            ? const ClubSetupScreen()
+            : AtletiListScreen(clubId: club.id),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Errore: $error')),
       ),
     );
   }

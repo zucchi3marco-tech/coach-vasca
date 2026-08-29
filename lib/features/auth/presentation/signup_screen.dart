@@ -3,19 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
-import 'signup_screen.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confermaPasswordController = TextEditingController();
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confermaPasswordController.dispose();
     super.dispose();
   }
 
@@ -36,10 +37,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await ref.read(authRepositoryProvider).signInWithPassword(
+      final response = await ref
+          .read(authRepositoryProvider)
+          .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+
+      if (!mounted) return;
+
+      if (response.session != null) {
+        // Sessione gia' attiva (conferma email disattivata sul progetto):
+        // authStateChangesProvider fara' navigare automaticamente alla home.
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // Conferma email richiesta: nessuna sessione finche' non si clicca
+      // il link ricevuto via email.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ti abbiamo inviato un\'email di conferma a '
+            '${_emailController.text.trim()}. Confermala e poi accedi.',
+          ),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+      Navigator.of(context).pop();
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (_) {
@@ -49,29 +74,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _resetPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      setState(() {
-        _errorMessage = 'Inserisci la tua email per reimpostare la password.';
-      });
-      return;
-    }
-
-    try {
-      await ref.read(authRepositoryProvider).sendPasswordReset(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Email di reset inviata a $email')),
-      );
-    } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Crea account coach')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -84,18 +90,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'SwimCoach FIN',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Accedi al tuo club',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -112,11 +106,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      autofillHints: const [AutofillHints.password],
+                      autofillHints: const [AutofillHints.newPassword],
                       decoration: const InputDecoration(labelText: 'Password'),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Inserisci la tua password';
+                          return 'Inserisci una password';
+                        }
+                        if (value.length < 6) {
+                          return 'Almeno 6 caratteri';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _confermaPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Conferma password',
+                      ),
+                      validator: (value) {
+                        if (value != _passwordController.text) {
+                          return 'Le password non coincidono';
                         }
                         return null;
                       },
@@ -140,22 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Accedi'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _isSubmitting ? null : _resetPassword,
-                      child: const Text('Password dimenticata?'),
-                    ),
-                    TextButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const SignUpScreen(),
-                              ),
-                            ),
-                      child: const Text('Non hai un account? Registrati'),
+                          : const Text('Crea account'),
                     ),
                   ],
                 ),

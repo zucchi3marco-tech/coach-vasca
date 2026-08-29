@@ -47,8 +47,8 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Wireframe 6 schermate: login, lista atleti, test→passi, calendario stagione, scheda bordo vasca, placeholder "Genera con AI" — vedi `docs/wireframes/README.md`
 
 ## FASE 2 — MVP Nuoto usabile (~2-4 settimane)
-- [x] Auth coach (Supabase email) — Riverpod + client Supabase (`lib/core/supabase/`), login/logout/reset password (`lib/features/auth/`)
-- [ ] CRUD Atleti
+- [x] Auth coach (Supabase email) — Riverpod + client Supabase (`lib/core/supabase/`), login/logout/reset password/registrazione self-service (`lib/features/auth/`)
+- [x] CRUD Atleti — bootstrap club (`lib/features/club/`, funzione RPC `create_club` per il bug RLS su INSERT...RETURNING), lista/crea/modifica/archivia atleti (`lib/features/atleti/`)
 - [ ] Inserimento BVS o T30
 - [ ] Motore tabelle passi (A1…D) per atleta/corsia
 - [ ] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note)

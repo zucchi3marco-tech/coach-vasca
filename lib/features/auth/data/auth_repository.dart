@@ -17,6 +17,16 @@ class AuthRepository {
     return _client.auth.signInWithPassword(email: email, password: password);
   }
 
+  /// Se la conferma email e' richiesta dal progetto Supabase, la sessione
+  /// restituita e' null finche' l'utente non clicca il link ricevuto via
+  /// email: la UI deve gestire entrambi i casi.
+  Future<AuthResponse> signUp({
+    required String email,
+    required String password,
+  }) {
+    return _client.auth.signUp(email: email, password: password);
+  }
+
   Future<void> signOut() => _client.auth.signOut();
 
   Future<void> sendPasswordReset(String email) {
