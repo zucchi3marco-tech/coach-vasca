@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/pace_format.dart';
+import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
@@ -42,6 +43,15 @@ class AllenamentoDetailScreen extends ConsumerWidget {
               : 'Allenamento',
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.how_to_reg_outlined),
+            tooltip: 'Presenze',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PresenzeScreen(allenamento: allenamento),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Modifica',
