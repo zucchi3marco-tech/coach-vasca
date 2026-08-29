@@ -54,7 +54,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Motore tabelle passi (A1…D) per atleta — percentuali di partenza generiche modificabili dal coach prima di ogni generazione (`lib/features/tabelle_passi/`), indicatore "generata" nella lista test
 - [x] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note) — `lib/features/allenamenti/`, con stile (libero/dorso/rana/delfino/misti), esecuzione (nuoto/gambe/braccia/pull/tecnica) e ripartenza distinta dal recupero, per poter in futuro costruire un report per atleta su volumi e presenze
 - [x] Presenze sessione — `lib/features/presenze/`, presente/assente/giustificato per atleta e allenamento, salvataggio immediato al tocco (nessun filtro per gruppo: campo testo libero, troppo fragile per un confronto esatto)
-- [ ] UI pool-first, alto contrasto, bottoni grandi, landscape tablet
+- [x] UI pool-first, alto contrasto, bottoni grandi, landscape tablet — "vista bordo vasca" (`scheda_bordo_vasca_screen.dart`) sola lettura, sfondo nero/testo grande, orientamento forzato landscape, accesso rapido a "Segna presenze"
 - [ ] Checklist di test manuale prima di chiudere la fase
 - [ ] Test su Chrome + telefono Android reale
 - [ ] Commit frequenti su branch feature, merge su main solo quando funziona

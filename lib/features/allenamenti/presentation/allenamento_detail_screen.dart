@@ -7,6 +7,7 @@ import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import 'allenamento_form_screen.dart';
+import 'scheda_bordo_vasca_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
 
@@ -43,6 +44,15 @@ class AllenamentoDetailScreen extends ConsumerWidget {
               : 'Allenamento',
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.pool),
+            tooltip: 'Vista bordo vasca',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SchedaBordoVascaScreen(allenamento: allenamento),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.how_to_reg_outlined),
             tooltip: 'Presenze',
