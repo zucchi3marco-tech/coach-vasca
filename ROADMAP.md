@@ -52,7 +52,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] CRUD Atleti — bootstrap club (`lib/features/club/`, funzione RPC `create_club` per il bug RLS su INSERT...RETURNING), lista/crea/modifica/archivia atleti (`lib/features/atleti/`)
 - [x] Inserimento BVS o T30 — storico test per atleta, passo medio calcolato dal DB (`lib/features/test/`)
 - [x] Motore tabelle passi (A1…D) per atleta — percentuali di partenza generiche modificabili dal coach prima di ogni generazione (`lib/features/tabelle_passi/`), indicatore "generata" nella lista test
-- [ ] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note)
+- [x] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note) — `lib/features/allenamenti/`, con stile (libero/dorso/rana/delfino/misti), esecuzione (nuoto/gambe/braccia/pull/tecnica) e ripartenza distinta dal recupero, per poter in futuro costruire un report per atleta su volumi e presenze
 - [ ] Presenze sessione
 - [ ] UI pool-first, alto contrasto, bottoni grandi, landscape tablet
 - [ ] Checklist di test manuale prima di chiudere la fase
