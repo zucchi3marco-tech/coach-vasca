@@ -42,7 +42,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 ## FASE 1 — Fondazione prodotto (~1 settimana)
 - [x] Schema DB V1: Club, Atleti, Test_BVS_T30, Tabelle_Passi, Stagione/Macro/Meso/Micro, Allenamenti, Serie, Presenze — migrazioni SQL in `supabase/migrations/`, applicate al progetto reale e verificate (12 tabelle, RLS attiva, 4 policy ciascuna), vedi `supabase/README.md`
 - [x] RLS attiva su ogni tabella Supabase da subito (isolamento per club/coach) — multi-coach per club con ruoli owner/coach/assistente
-- [ ] `.env` con chiavi Supabase, escluso da Git
+- [x] `.env` con chiavi Supabase, escluso da Git — `.env.example` come template versionato, `.env` reale creato e verificato ignorato
 - [ ] Bozza informativa privacy + consenso genitori (atleti minorenni)
 - [ ] Wireframe 6 schermate: login, lista atleti, test→passi, calendario stagione, scheda bordo vasca, placeholder "Genera con AI"
 
