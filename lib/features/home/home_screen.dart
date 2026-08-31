@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/sync/sync_engine.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
 import '../auth/data/auth_repository.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Text(club?.nome ?? 'SwimCoach FIN'),
         actions: [
+          const _SyncStatusIndicator(),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',
@@ -65,6 +67,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+/// Icona nell'AppBar: nascosta quando tutto e' sincronizzato, mostra il
+/// numero di modifiche in coda quando manca la connessione (o il server
+/// non ha ancora confermato). Un tocco ritenta subito la sincronizzazione.
+class _SyncStatusIndicator extends ConsumerWidget {
+  const _SyncStatusIndicator();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inCoda = ref.watch(pendingOperationsCountProvider).value ?? 0;
+
+    if (inCoda == 0) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 4),
+        child: Tooltip(
+          message: 'Tutto sincronizzato',
+          child: Icon(Icons.cloud_done_outlined),
+        ),
+      );
+    }
+
+    return IconButton(
+      icon: Badge(
+        label: Text('$inCoda'),
+        child: const Icon(Icons.cloud_upload_outlined),
+      ),
+      tooltip:
+          '$inCoda modifiche in coda, in attesa di rete. Tocca per riprovare.',
+      onPressed: () => ref.read(syncEngineProvider).processQueue(),
     );
   }
 }

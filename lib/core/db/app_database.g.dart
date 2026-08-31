@@ -3867,6 +3867,417 @@ class PresenzeTableCompanion extends UpdateCompanion<PresenzeTableData> {
   }
 }
 
+class $PendingOperationsTableTable extends PendingOperationsTable
+    with TableInfo<$PendingOperationsTableTable, PendingOperationsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingOperationsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tabellaMeta = const VerificationMeta(
+    'tabella',
+  );
+  @override
+  late final GeneratedColumn<String> tabella = GeneratedColumn<String>(
+    'tabella',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _operazioneMeta = const VerificationMeta(
+    'operazione',
+  );
+  @override
+  late final GeneratedColumn<String> operazione = GeneratedColumn<String>(
+    'operazione',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rigaIdMeta = const VerificationMeta('rigaId');
+  @override
+  late final GeneratedColumn<String> rigaId = GeneratedColumn<String>(
+    'riga_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creatoIlMeta = const VerificationMeta(
+    'creatoIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> creatoIl = GeneratedColumn<DateTime>(
+    'creato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tabella,
+    operazione,
+    rigaId,
+    payloadJson,
+    creatoIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_operations_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingOperationsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('tabella')) {
+      context.handle(
+        _tabellaMeta,
+        tabella.isAcceptableOrUnknown(data['tabella']!, _tabellaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tabellaMeta);
+    }
+    if (data.containsKey('operazione')) {
+      context.handle(
+        _operazioneMeta,
+        operazione.isAcceptableOrUnknown(data['operazione']!, _operazioneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_operazioneMeta);
+    }
+    if (data.containsKey('riga_id')) {
+      context.handle(
+        _rigaIdMeta,
+        rigaId.isAcceptableOrUnknown(data['riga_id']!, _rigaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rigaIdMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('creato_il')) {
+      context.handle(
+        _creatoIlMeta,
+        creatoIl.isAcceptableOrUnknown(data['creato_il']!, _creatoIlMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingOperationsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingOperationsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tabella: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tabella'],
+      )!,
+      operazione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operazione'],
+      )!,
+      rigaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}riga_id'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      ),
+      creatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creato_il'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingOperationsTableTable createAlias(String alias) {
+    return $PendingOperationsTableTable(attachedDatabase, alias);
+  }
+}
+
+class PendingOperationsTableData extends DataClass
+    implements Insertable<PendingOperationsTableData> {
+  final int id;
+  final String tabella;
+  final String operazione;
+  final String rigaId;
+  final String? payloadJson;
+  final DateTime creatoIl;
+  const PendingOperationsTableData({
+    required this.id,
+    required this.tabella,
+    required this.operazione,
+    required this.rigaId,
+    this.payloadJson,
+    required this.creatoIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['tabella'] = Variable<String>(tabella);
+    map['operazione'] = Variable<String>(operazione);
+    map['riga_id'] = Variable<String>(rigaId);
+    if (!nullToAbsent || payloadJson != null) {
+      map['payload_json'] = Variable<String>(payloadJson);
+    }
+    map['creato_il'] = Variable<DateTime>(creatoIl);
+    return map;
+  }
+
+  PendingOperationsTableCompanion toCompanion(bool nullToAbsent) {
+    return PendingOperationsTableCompanion(
+      id: Value(id),
+      tabella: Value(tabella),
+      operazione: Value(operazione),
+      rigaId: Value(rigaId),
+      payloadJson: payloadJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadJson),
+      creatoIl: Value(creatoIl),
+    );
+  }
+
+  factory PendingOperationsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingOperationsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      tabella: serializer.fromJson<String>(json['tabella']),
+      operazione: serializer.fromJson<String>(json['operazione']),
+      rigaId: serializer.fromJson<String>(json['rigaId']),
+      payloadJson: serializer.fromJson<String?>(json['payloadJson']),
+      creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'tabella': serializer.toJson<String>(tabella),
+      'operazione': serializer.toJson<String>(operazione),
+      'rigaId': serializer.toJson<String>(rigaId),
+      'payloadJson': serializer.toJson<String?>(payloadJson),
+      'creatoIl': serializer.toJson<DateTime>(creatoIl),
+    };
+  }
+
+  PendingOperationsTableData copyWith({
+    int? id,
+    String? tabella,
+    String? operazione,
+    String? rigaId,
+    Value<String?> payloadJson = const Value.absent(),
+    DateTime? creatoIl,
+  }) => PendingOperationsTableData(
+    id: id ?? this.id,
+    tabella: tabella ?? this.tabella,
+    operazione: operazione ?? this.operazione,
+    rigaId: rigaId ?? this.rigaId,
+    payloadJson: payloadJson.present ? payloadJson.value : this.payloadJson,
+    creatoIl: creatoIl ?? this.creatoIl,
+  );
+  PendingOperationsTableData copyWithCompanion(
+    PendingOperationsTableCompanion data,
+  ) {
+    return PendingOperationsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      tabella: data.tabella.present ? data.tabella.value : this.tabella,
+      operazione: data.operazione.present
+          ? data.operazione.value
+          : this.operazione,
+      rigaId: data.rigaId.present ? data.rigaId.value : this.rigaId,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperationsTableData(')
+          ..write('id: $id, ')
+          ..write('tabella: $tabella, ')
+          ..write('operazione: $operazione, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('creatoIl: $creatoIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, tabella, operazione, rigaId, payloadJson, creatoIl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingOperationsTableData &&
+          other.id == this.id &&
+          other.tabella == this.tabella &&
+          other.operazione == this.operazione &&
+          other.rigaId == this.rigaId &&
+          other.payloadJson == this.payloadJson &&
+          other.creatoIl == this.creatoIl);
+}
+
+class PendingOperationsTableCompanion
+    extends UpdateCompanion<PendingOperationsTableData> {
+  final Value<int> id;
+  final Value<String> tabella;
+  final Value<String> operazione;
+  final Value<String> rigaId;
+  final Value<String?> payloadJson;
+  final Value<DateTime> creatoIl;
+  const PendingOperationsTableCompanion({
+    this.id = const Value.absent(),
+    this.tabella = const Value.absent(),
+    this.operazione = const Value.absent(),
+    this.rigaId = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.creatoIl = const Value.absent(),
+  });
+  PendingOperationsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String tabella,
+    required String operazione,
+    required String rigaId,
+    this.payloadJson = const Value.absent(),
+    this.creatoIl = const Value.absent(),
+  }) : tabella = Value(tabella),
+       operazione = Value(operazione),
+       rigaId = Value(rigaId);
+  static Insertable<PendingOperationsTableData> custom({
+    Expression<int>? id,
+    Expression<String>? tabella,
+    Expression<String>? operazione,
+    Expression<String>? rigaId,
+    Expression<String>? payloadJson,
+    Expression<DateTime>? creatoIl,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tabella != null) 'tabella': tabella,
+      if (operazione != null) 'operazione': operazione,
+      if (rigaId != null) 'riga_id': rigaId,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (creatoIl != null) 'creato_il': creatoIl,
+    });
+  }
+
+  PendingOperationsTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? tabella,
+    Value<String>? operazione,
+    Value<String>? rigaId,
+    Value<String?>? payloadJson,
+    Value<DateTime>? creatoIl,
+  }) {
+    return PendingOperationsTableCompanion(
+      id: id ?? this.id,
+      tabella: tabella ?? this.tabella,
+      operazione: operazione ?? this.operazione,
+      rigaId: rigaId ?? this.rigaId,
+      payloadJson: payloadJson ?? this.payloadJson,
+      creatoIl: creatoIl ?? this.creatoIl,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (tabella.present) {
+      map['tabella'] = Variable<String>(tabella.value);
+    }
+    if (operazione.present) {
+      map['operazione'] = Variable<String>(operazione.value);
+    }
+    if (rigaId.present) {
+      map['riga_id'] = Variable<String>(rigaId.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (creatoIl.present) {
+      map['creato_il'] = Variable<DateTime>(creatoIl.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperationsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('tabella: $tabella, ')
+          ..write('operazione: $operazione, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('creatoIl: $creatoIl')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3881,6 +4292,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SerieTableTable serieTable = $SerieTableTable(this);
   late final $PresenzeTableTable presenzeTable = $PresenzeTableTable(this);
+  late final $PendingOperationsTableTable pendingOperationsTable =
+      $PendingOperationsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3893,6 +4306,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     allenamentiTable,
     serieTable,
     presenzeTable,
+    pendingOperationsTable,
   ];
 }
 
@@ -5858,6 +6272,242 @@ typedef $$PresenzeTableTableProcessedTableManager =
       PresenzeTableData,
       PrefetchHooks Function()
     >;
+typedef $$PendingOperationsTableTableCreateCompanionBuilder =
+    PendingOperationsTableCompanion Function({
+      Value<int> id,
+      required String tabella,
+      required String operazione,
+      required String rigaId,
+      Value<String?> payloadJson,
+      Value<DateTime> creatoIl,
+    });
+typedef $$PendingOperationsTableTableUpdateCompanionBuilder =
+    PendingOperationsTableCompanion Function({
+      Value<int> id,
+      Value<String> tabella,
+      Value<String> operazione,
+      Value<String> rigaId,
+      Value<String?> payloadJson,
+      Value<DateTime> creatoIl,
+    });
+
+class $$PendingOperationsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTableTable> {
+  $$PendingOperationsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tabella => $composableBuilder(
+    column: $table.tabella,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operazione => $composableBuilder(
+    column: $table.operazione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingOperationsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTableTable> {
+  $$PendingOperationsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tabella => $composableBuilder(
+    column: $table.tabella,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operazione => $composableBuilder(
+    column: $table.operazione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingOperationsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTableTable> {
+  $$PendingOperationsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tabella =>
+      $composableBuilder(column: $table.tabella, builder: (column) => column);
+
+  GeneratedColumn<String> get operazione => $composableBuilder(
+    column: $table.operazione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rigaId =>
+      $composableBuilder(column: $table.rigaId, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get creatoIl =>
+      $composableBuilder(column: $table.creatoIl, builder: (column) => column);
+}
+
+class $$PendingOperationsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingOperationsTableTable,
+          PendingOperationsTableData,
+          $$PendingOperationsTableTableFilterComposer,
+          $$PendingOperationsTableTableOrderingComposer,
+          $$PendingOperationsTableTableAnnotationComposer,
+          $$PendingOperationsTableTableCreateCompanionBuilder,
+          $$PendingOperationsTableTableUpdateCompanionBuilder,
+          (
+            PendingOperationsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingOperationsTableTable,
+              PendingOperationsTableData
+            >,
+          ),
+          PendingOperationsTableData,
+          PrefetchHooks Function()
+        > {
+  $$PendingOperationsTableTableTableManager(
+    _$AppDatabase db,
+    $PendingOperationsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingOperationsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PendingOperationsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PendingOperationsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> tabella = const Value.absent(),
+                Value<String> operazione = const Value.absent(),
+                Value<String> rigaId = const Value.absent(),
+                Value<String?> payloadJson = const Value.absent(),
+                Value<DateTime> creatoIl = const Value.absent(),
+              }) => PendingOperationsTableCompanion(
+                id: id,
+                tabella: tabella,
+                operazione: operazione,
+                rigaId: rigaId,
+                payloadJson: payloadJson,
+                creatoIl: creatoIl,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String tabella,
+                required String operazione,
+                required String rigaId,
+                Value<String?> payloadJson = const Value.absent(),
+                Value<DateTime> creatoIl = const Value.absent(),
+              }) => PendingOperationsTableCompanion.insert(
+                id: id,
+                tabella: tabella,
+                operazione: operazione,
+                rigaId: rigaId,
+                payloadJson: payloadJson,
+                creatoIl: creatoIl,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingOperationsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingOperationsTableTable,
+      PendingOperationsTableData,
+      $$PendingOperationsTableTableFilterComposer,
+      $$PendingOperationsTableTableOrderingComposer,
+      $$PendingOperationsTableTableAnnotationComposer,
+      $$PendingOperationsTableTableCreateCompanionBuilder,
+      $$PendingOperationsTableTableUpdateCompanionBuilder,
+      (
+        PendingOperationsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $PendingOperationsTableTable,
+          PendingOperationsTableData
+        >,
+      ),
+      PendingOperationsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5876,4 +6526,9 @@ class $AppDatabaseManager {
       $$SerieTableTableTableManager(_db, _db.serieTable);
   $$PresenzeTableTableTableManager get presenzeTable =>
       $$PresenzeTableTableTableManager(_db, _db.presenzeTable);
+  $$PendingOperationsTableTableTableManager get pendingOperationsTable =>
+      $$PendingOperationsTableTableTableManager(
+        _db,
+        _db.pendingOperationsTable,
+      );
 }

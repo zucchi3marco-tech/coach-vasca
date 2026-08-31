@@ -110,3 +110,18 @@ class PresenzeTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// Coda delle scritture non ancora sincronizzate con Supabase: una riga per
+/// ogni insert/update/delete fallito per un problema di rete (non per un
+/// errore reale del server, quello resta visibile subito in UI). Un motore
+/// di sync la svuota quando la connessione torna disponibile, nell'ordine
+/// in cui le operazioni sono state accodate.
+class PendingOperationsTable extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get tabella => text()();
+  TextColumn get operazione => text()(); // insert | update | delete
+  TextColumn get rigaId => text()();
+  TextColumn get payloadJson => text().nullable()();
+  DateTimeColumn get creatoIl =>
+      dateTime().withDefault(currentDateAndTime)();
+}

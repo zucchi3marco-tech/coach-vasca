@@ -6,16 +6,20 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+import '../../../core/sync/pending_operations.dart';
+import '../../../core/sync/sync_engine.dart';
 import '../../../core/utils/date_format.dart';
 import '../domain/atleta.dart';
 
 const _uuid = Uuid();
 
 class AtletiRepository {
-  AtletiRepository(this._client, this._db);
+  AtletiRepository(this._client, this._db, this._syncEngine);
 
   final SupabaseClient _client;
   final AppDatabase _db;
+  final SyncEngine _syncEngine;
 
   Atleta _fromRow(AtletiTableData row) {
     return Atleta(
@@ -96,6 +100,14 @@ class AtletiRepository {
         .insertOnConflictUpdate(_companionFromMap(row));
   }
 
+  Future<Atleta> _rileggiLocale(String id) async {
+    return _fromRow(
+      await (_db.select(
+        _db.atletiTable,
+      )..where((t) => t.id.equals(id))).getSingle(),
+    );
+  }
+
   Future<Atleta> createAtleta({
     required String clubId,
     required String nome,
@@ -110,32 +122,44 @@ class AtletiRepository {
     String? note,
   }) async {
     final id = _uuid.v4();
-    final row = await _client
-        .from('atleti')
-        .insert({
-          'id': id,
-          'club_id': clubId,
-          'nome': nome,
-          'cognome': cognome,
-          'data_nascita': formatDateOnly(dataNascita),
-          'sesso': ?sesso,
-          'sport': sport,
-          if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
-          if (emailGenitore != null && emailGenitore.isNotEmpty)
-            'email_genitore': emailGenitore,
-          if (telefonoGenitore != null && telefonoGenitore.isNotEmpty)
-            'telefono_genitore': telefonoGenitore,
-          'consenso_privacy_firmato': consensoPrivacyFirmato,
-          if (consensoPrivacyFirmato)
-            'consenso_privacy_data': formatDateOnly(DateTime.now()),
-          if (note != null && note.isNotEmpty) 'note': note,
-        })
-        .select()
-        .single();
-    await _salvaLocale(row);
-    return _fromRow(await (_db.select(
-      _db.atletiTable,
-    )..where((t) => t.id.equals(id))).getSingle());
+    final payload = {
+      'id': id,
+      'club_id': clubId,
+      'nome': nome,
+      'cognome': cognome,
+      'data_nascita': formatDateOnly(dataNascita),
+      'sesso': ?sesso,
+      'sport': sport,
+      if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
+      if (emailGenitore != null && emailGenitore.isNotEmpty)
+        'email_genitore': emailGenitore,
+      if (telefonoGenitore != null && telefonoGenitore.isNotEmpty)
+        'telefono_genitore': telefonoGenitore,
+      'consenso_privacy_firmato': consensoPrivacyFirmato,
+      if (consensoPrivacyFirmato)
+        'consenso_privacy_data': formatDateOnly(DateTime.now()),
+      if (note != null && note.isNotEmpty) 'note': note,
+    };
+    try {
+      final row = await _client
+          .from('atleti')
+          .insert(payload)
+          .select()
+          .single();
+      await _salvaLocale(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await _salvaLocale(payload);
+      await enqueueOperation(
+        _db,
+        tabella: 'atleti',
+        operazione: 'insert',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
   }
 
   Future<Atleta> updateAtleta({
@@ -152,41 +176,96 @@ class AtletiRepository {
     DateTime? consensoPrivacyData,
     String? note,
   }) async {
-    final row = await _client
-        .from('atleti')
-        .update({
-          'nome': nome,
-          'cognome': cognome,
-          'data_nascita': formatDateOnly(dataNascita),
-          'sesso': sesso,
-          'sport': sport,
-          'gruppo': gruppo,
-          'email_genitore': emailGenitore,
-          'telefono_genitore': telefonoGenitore,
-          'consenso_privacy_firmato': consensoPrivacyFirmato,
-          'consenso_privacy_data': consensoPrivacyFirmato
-              ? formatDateOnly(consensoPrivacyData ?? DateTime.now())
-              : null,
-          'note': note,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    await _salvaLocale(row);
-    return _fromRow(await (_db.select(
-      _db.atletiTable,
-    )..where((t) => t.id.equals(id))).getSingle());
+    final payload = {
+      'nome': nome,
+      'cognome': cognome,
+      'data_nascita': formatDateOnly(dataNascita),
+      'sesso': sesso,
+      'sport': sport,
+      'gruppo': gruppo,
+      'email_genitore': emailGenitore,
+      'telefono_genitore': telefonoGenitore,
+      'consenso_privacy_firmato': consensoPrivacyFirmato,
+      'consenso_privacy_data': consensoPrivacyFirmato
+          ? formatDateOnly(consensoPrivacyData ?? DateTime.now())
+          : null,
+      'note': note,
+    };
+    try {
+      final row = await _client
+          .from('atleti')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _salvaLocale(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(
+        _db.atletiTable,
+      )..where((t) => t.id.equals(id))).write(
+        AtletiTableCompanion(
+          nome: Value(nome),
+          cognome: Value(cognome),
+          dataNascita: Value(dataNascita),
+          sesso: Value(sesso),
+          sport: Value(sport),
+          gruppo: Value(gruppo),
+          emailGenitore: Value(emailGenitore),
+          telefonoGenitore: Value(telefonoGenitore),
+          consensoPrivacyFirmato: Value(consensoPrivacyFirmato),
+          consensoPrivacyData: Value(
+            consensoPrivacyFirmato
+                ? (consensoPrivacyData ?? DateTime.now())
+                : null,
+          ),
+          note: Value(note),
+        ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'atleti',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
   }
 
   Future<void> setAttivo({required String id, required bool attivo}) async {
-    await _client.from('atleti').update({'attivo': attivo}).eq('id', id);
+    try {
+      await _client.from('atleti').update({'attivo': attivo}).eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'atleti',
+        operazione: 'update',
+        rigaId: id,
+        payload: {'attivo': attivo},
+      );
+      _syncEngine.processQueue();
+    }
     await (_db.update(_db.atletiTable)..where((t) => t.id.equals(id))).write(
       AtletiTableCompanion(attivo: Value(attivo)),
     );
   }
 
   Future<void> deleteAtleta(String id) async {
-    await _client.from('atleti').delete().eq('id', id);
+    try {
+      await _client.from('atleti').delete().eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'atleti',
+        operazione: 'delete',
+        rigaId: id,
+      );
+      _syncEngine.processQueue();
+    }
     await (_db.delete(_db.atletiTable)..where((t) => t.id.equals(id))).go();
   }
 }
@@ -195,5 +274,6 @@ final atletiRepositoryProvider = Provider<AtletiRepository>((ref) {
   return AtletiRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),
+    ref.watch(syncEngineProvider),
   );
 });

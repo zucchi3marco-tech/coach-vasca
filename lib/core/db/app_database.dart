@@ -14,13 +14,26 @@ part 'app_database.g.dart';
     AllenamentiTable,
     SerieTable,
     PresenzeTable,
+    PendingOperationsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // v1 -> v2: aggiunta la coda di sincronizzazione, tabelle esistenti
+      // invariate.
+      if (from < 2) {
+        await m.createTable(pendingOperationsTable);
+      }
+    },
+  );
 
   static QueryExecutor _openConnection() {
     return driftDatabase(

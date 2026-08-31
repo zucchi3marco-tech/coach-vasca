@@ -1,11 +1,17 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+import '../../../core/sync/pending_operations.dart';
+import '../../../core/sync/sync_engine.dart';
 import '../domain/tabella_passo.dart';
+
+const _uuid = Uuid();
 
 class RigaTabellaPasso {
   const RigaTabellaPasso({
@@ -20,10 +26,11 @@ class RigaTabellaPasso {
 }
 
 class TabellePassiRepository {
-  TabellePassiRepository(this._client, this._db);
+  TabellePassiRepository(this._client, this._db, this._syncEngine);
 
   final SupabaseClient _client;
   final AppDatabase _db;
+  final SyncEngine _syncEngine;
 
   TabellaPasso _fromRow(TabellePassiTableData row) {
     return TabellaPasso(
@@ -34,6 +41,19 @@ class TabellePassiRepository {
       zona: row.zona,
       passo100S: row.passo100S,
       percentualeRiferimento: row.percentualeRiferimento,
+    );
+  }
+
+  TabellaPasso _fromMap(Map<String, dynamic> map) {
+    return TabellaPasso(
+      id: map['id'] as String,
+      testId: map['test_id'] as String,
+      atletaId: map['atleta_id'] as String,
+      clubId: map['club_id'] as String,
+      zona: map['zona'] as String,
+      passo100S: (map['passo_100_s'] as num).toDouble(),
+      percentualeRiferimento: (map['percentuale_riferimento'] as num?)
+          ?.toDouble(),
     );
   }
 
@@ -63,65 +83,91 @@ class TabellePassiRepository {
         .from('tabelle_passi')
         .select()
         .eq('test_id', testId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.tabellePassiTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    // Sostituzione totale (non insertOrReplace per id): una riga generata
+    // offline ha un id locale provvisorio diverso da quello che assegna il
+    // server, altrimenti resterebbe duplicata dopo il sync.
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.tabellePassiTable,
+      )..where((t) => t.testId.equals(testId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.tabellePassiTable, _companionFromMap(row));
+        }
+      });
     });
   }
 
-  /// club_id e atleta_id sono ricalcolati dal trigger `imposta_da_test()` a
-  /// partire da test_id: non serve (ne' si deve) passarli qui. Niente id
-  /// generato lato client: la generazione/rigenerazione della tabella
-  /// richiede comunque una connessione (upsert su test_id+zona), quindi
-  /// l'id lo assegna il DB come sempre (nuovo per una riga nuova, invariato
-  /// per una riga esistente che viene aggiornata).
+  /// club_id e atleta_id sono normalmente ricalcolati dal trigger
+  /// `imposta_da_test()` a partire da test_id. Offline usiamo quelli gia'
+  /// in cache locale per quel test; per l'id riusiamo quello di una riga
+  /// gia' esistente per la stessa zona (se c'e'), altrimenti ne generiamo
+  /// uno provvisorio.
   Future<List<TabellaPasso>> upsertPerTest({
     required String testId,
     required List<RigaTabellaPasso> righe,
   }) async {
-    final rows = await _client
-        .from('tabelle_passi')
-        .upsert(
-          [
-            for (final riga in righe)
-              {
-                'test_id': testId,
-                'zona': riga.zona,
-                'passo_100_s': riga.passo100S,
-                'percentuale_riferimento': riga.percentualeRiferimento,
-              },
-          ],
-          onConflict: 'test_id,zona',
-        )
-        .select();
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.tabellePassiTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
+    final payload = [
+      for (final riga in righe)
+        {
+          'test_id': testId,
+          'zona': riga.zona,
+          'passo_100_s': riga.passo100S,
+          'percentuale_riferimento': riga.percentualeRiferimento,
+        },
+    ];
+    try {
+      final rows = await _client
+          .from('tabelle_passi')
+          .upsert(payload, onConflict: 'test_id,zona')
+          .select();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(
+            _db.tabellePassiTable,
+            _companionFromMap(row),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final test = await (_db.select(
+        _db.testIngressoTable,
+      )..where((t) => t.id.equals(testId))).getSingle();
+      final righeComplete = <Map<String, dynamic>>[];
+      for (final riga in payload) {
+        final esistente = await (_db.select(_db.tabellePassiTable)..where(
+              (t) => t.testId.equals(testId) & t.zona.equals(riga['zona'] as String),
+            ))
+            .getSingleOrNull();
+        righeComplete.add({
+          ...riga,
+          'id': esistente?.id ?? _uuid.v4(),
+          'atleta_id': test.atletaId,
+          'club_id': test.clubId,
+        });
       }
-    });
-    return rows.map(_fromRow2).toList();
-  }
-
-  TabellaPasso _fromRow2(Map<String, dynamic> map) {
-    return TabellaPasso(
-      id: map['id'] as String,
-      testId: map['test_id'] as String,
-      atletaId: map['atleta_id'] as String,
-      clubId: map['club_id'] as String,
-      zona: map['zona'] as String,
-      passo100S: (map['passo_100_s'] as num).toDouble(),
-      percentualeRiferimento: (map['percentuale_riferimento'] as num?)
-          ?.toDouble(),
-    );
+      await _db.batch((batch) {
+        for (final row in righeComplete) {
+          batch.insert(
+            _db.tabellePassiTable,
+            _companionFromMap(row),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+      await enqueueOperation(
+        _db,
+        tabella: 'tabelle_passi',
+        operazione: 'upsert',
+        rigaId: testId,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+      return righeComplete.map(_fromMap).toList();
+    }
   }
 }
 
@@ -131,5 +177,6 @@ final tabellePassiRepositoryProvider = Provider<TabellePassiRepository>((
   return TabellePassiRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),
+    ref.watch(syncEngineProvider),
   );
 });

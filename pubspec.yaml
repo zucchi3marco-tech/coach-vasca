@@ -40,6 +40,8 @@ dependencies:
   drift: ^2.34.3
   drift_flutter: ^0.3.1
   uuid: ^4.6.0
+  http: ^1.6.0
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:

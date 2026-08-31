@@ -6,16 +6,20 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+import '../../../core/sync/pending_operations.dart';
+import '../../../core/sync/sync_engine.dart';
 import '../../../core/utils/date_format.dart';
 import '../domain/allenamento.dart';
 
 const _uuid = Uuid();
 
 class AllenamentiRepository {
-  AllenamentiRepository(this._client, this._db);
+  AllenamentiRepository(this._client, this._db, this._syncEngine);
 
   final SupabaseClient _client;
   final AppDatabase _db;
+  final SyncEngine _syncEngine;
 
   Allenamento _fromRow(AllenamentiTableData row) {
     return Allenamento(
@@ -64,6 +68,14 @@ class AllenamentiRepository {
     });
   }
 
+  Future<Allenamento> _rileggiLocale(String id) async {
+    return _fromRow(
+      await (_db.select(
+        _db.allenamentiTable,
+      )..where((t) => t.id.equals(id))).getSingle(),
+    );
+  }
+
   Future<Allenamento> createAllenamento({
     required String clubId,
     required DateTime data,
@@ -72,34 +84,38 @@ class AllenamentiRepository {
     String? note,
   }) async {
     final id = _uuid.v4();
-    final row = await _client
-        .from('allenamenti')
-        .insert({
-          'id': id,
-          'club_id': clubId,
-          'data': formatDateOnly(data),
-          if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
-          if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
-          if (note != null && note.isNotEmpty) 'note': note,
-        })
-        .select()
-        .single();
-    await _db
-        .into(_db.allenamentiTable)
-        .insertOnConflictUpdate(_companionFromMap(row));
-    return _fromMap(row);
-  }
-
-  Allenamento _fromMap(Map<String, dynamic> map) {
-    return Allenamento(
-      id: map['id'] as String,
-      clubId: map['club_id'] as String,
-      microcicloId: map['microciclo_id'] as String?,
-      data: DateTime.parse(map['data'] as String),
-      titolo: map['titolo'] as String?,
-      gruppo: map['gruppo'] as String?,
-      note: map['note'] as String?,
-    );
+    final payload = {
+      'id': id,
+      'club_id': clubId,
+      'data': formatDateOnly(data),
+      if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
+      if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
+      if (note != null && note.isNotEmpty) 'note': note,
+    };
+    try {
+      final row = await _client
+          .from('allenamenti')
+          .insert(payload)
+          .select()
+          .single();
+      await _db
+          .into(_db.allenamentiTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await _db
+          .into(_db.allenamentiTable)
+          .insertOnConflictUpdate(_companionFromMap(payload));
+      await enqueueOperation(
+        _db,
+        tabella: 'allenamenti',
+        operazione: 'insert',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
   }
 
   Future<Allenamento> updateAllenamento({
@@ -109,25 +125,59 @@ class AllenamentiRepository {
     String? gruppo,
     String? note,
   }) async {
-    final row = await _client
-        .from('allenamenti')
-        .update({
-          'data': formatDateOnly(data),
-          'titolo': titolo,
-          'gruppo': gruppo,
-          'note': note,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    await _db
-        .into(_db.allenamentiTable)
-        .insertOnConflictUpdate(_companionFromMap(row));
-    return _fromMap(row);
+    final payload = {
+      'data': formatDateOnly(data),
+      'titolo': titolo,
+      'gruppo': gruppo,
+      'note': note,
+    };
+    try {
+      final row = await _client
+          .from('allenamenti')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db
+          .into(_db.allenamentiTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(
+        _db.allenamentiTable,
+      )..where((t) => t.id.equals(id))).write(
+        AllenamentiTableCompanion(
+          data: Value(data),
+          titolo: Value(titolo),
+          gruppo: Value(gruppo),
+          note: Value(note),
+        ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'allenamenti',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
   }
 
   Future<void> deleteAllenamento(String id) async {
-    await _client.from('allenamenti').delete().eq('id', id);
+    try {
+      await _client.from('allenamenti').delete().eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'allenamenti',
+        operazione: 'delete',
+        rigaId: id,
+      );
+      _syncEngine.processQueue();
+    }
     await (_db.delete(
       _db.allenamentiTable,
     )..where((t) => t.id.equals(id))).go();
@@ -138,5 +188,6 @@ final allenamentiRepositoryProvider = Provider<AllenamentiRepository>((ref) {
   return AllenamentiRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),
+    ref.watch(syncEngineProvider),
   );
 });

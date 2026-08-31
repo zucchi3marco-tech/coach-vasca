@@ -6,15 +6,19 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+import '../../../core/sync/pending_operations.dart';
+import '../../../core/sync/sync_engine.dart';
 import '../domain/serie.dart';
 
 const _uuid = Uuid();
 
 class SerieRepository {
-  SerieRepository(this._client, this._db);
+  SerieRepository(this._client, this._db, this._syncEngine);
 
   final SupabaseClient _client;
   final AppDatabase _db;
+  final SyncEngine _syncEngine;
 
   Serie _fromRow(SerieTableData row) {
     return Serie(
@@ -115,28 +119,47 @@ class SerieRepository {
     String? note,
   }) async {
     final id = _uuid.v4();
-    final row = await _client
-        .from('serie')
-        .insert({
-          'id': id,
-          'allenamento_id': allenamentoId,
-          'ordine': ordine,
-          'blocco': blocco,
-          'ripetute': ripetute,
-          'distanza_m': distanzaM,
-          'stile': stile,
-          'esecuzione': esecuzione,
-          'zona': zona,
-          'passo_obiettivo_s': passoObiettivoS,
-          'recupero_s': recuperoS,
-          'ripartenza_s': ripartenzaS,
-          'attrezzatura': attrezzatura,
-          'note': note,
-        })
-        .select()
-        .single();
-    await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
-    return _fromMap(row);
+    final payload = {
+      'id': id,
+      'allenamento_id': allenamentoId,
+      'ordine': ordine,
+      'blocco': blocco,
+      'ripetute': ripetute,
+      'distanza_m': distanzaM,
+      'stile': stile,
+      'esecuzione': esecuzione,
+      'zona': zona,
+      'passo_obiettivo_s': passoObiettivoS,
+      'recupero_s': recuperoS,
+      'ripartenza_s': ripartenzaS,
+      'attrezzatura': attrezzatura,
+      'note': note,
+    };
+    try {
+      final row = await _client.from('serie').insert(payload).select().single();
+      await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
+      return _fromMap(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      // club_id e' normalmente ricalcolato dal trigger a partire
+      // dall'allenamento: offline usiamo quello gia' in cache locale.
+      final allenamento = await (_db.select(
+        _db.allenamentiTable,
+      )..where((t) => t.id.equals(allenamentoId))).getSingle();
+      final payloadConClub = {...payload, 'club_id': allenamento.clubId};
+      await _db
+          .into(_db.serieTable)
+          .insertOnConflictUpdate(_companionFromMap(payloadConClub));
+      await enqueueOperation(
+        _db,
+        tabella: 'serie',
+        operazione: 'insert',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+      return _fromMap(payloadConClub);
+    }
   }
 
   Future<Serie> updateSerie({
@@ -154,31 +177,75 @@ class SerieRepository {
     String? attrezzatura,
     String? note,
   }) async {
-    final row = await _client
-        .from('serie')
-        .update({
-          'ordine': ordine,
-          'blocco': blocco,
-          'ripetute': ripetute,
-          'distanza_m': distanzaM,
-          'stile': stile,
-          'esecuzione': esecuzione,
-          'zona': zona,
-          'passo_obiettivo_s': passoObiettivoS,
-          'recupero_s': recuperoS,
-          'ripartenza_s': ripartenzaS,
-          'attrezzatura': attrezzatura,
-          'note': note,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
-    return _fromMap(row);
+    final payload = {
+      'ordine': ordine,
+      'blocco': blocco,
+      'ripetute': ripetute,
+      'distanza_m': distanzaM,
+      'stile': stile,
+      'esecuzione': esecuzione,
+      'zona': zona,
+      'passo_obiettivo_s': passoObiettivoS,
+      'recupero_s': recuperoS,
+      'ripartenza_s': ripartenzaS,
+      'attrezzatura': attrezzatura,
+      'note': note,
+    };
+    try {
+      final row = await _client
+          .from('serie')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
+      return _fromMap(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(_db.serieTable)..where((t) => t.id.equals(id))).write(
+        SerieTableCompanion(
+          ordine: Value(ordine),
+          blocco: Value(blocco),
+          ripetute: Value(ripetute),
+          distanzaM: Value(distanzaM),
+          stile: Value(stile),
+          esecuzione: Value(esecuzione),
+          zona: Value(zona),
+          passoObiettivoS: Value(passoObiettivoS),
+          recuperoS: Value(recuperoS),
+          ripartenzaS: Value(ripartenzaS),
+          attrezzatura: Value(attrezzatura),
+          note: Value(note),
+        ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'serie',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+      final aggiornata = await (_db.select(
+        _db.serieTable,
+      )..where((t) => t.id.equals(id))).getSingle();
+      return _fromRow(aggiornata);
+    }
   }
 
   Future<void> deleteSerie(String id) async {
-    await _client.from('serie').delete().eq('id', id);
+    try {
+      await _client.from('serie').delete().eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'serie',
+        operazione: 'delete',
+        rigaId: id,
+      );
+      _syncEngine.processQueue();
+    }
     await (_db.delete(_db.serieTable)..where((t) => t.id.equals(id))).go();
   }
 }
@@ -187,5 +254,6 @@ final serieRepositoryProvider = Provider<SerieRepository>((ref) {
   return SerieRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),
+    ref.watch(syncEngineProvider),
   );
 });

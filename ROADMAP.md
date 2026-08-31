@@ -62,12 +62,12 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 **Criterio di fine fase:** un coach usa l'app in vasca per una sessione reale, senza AI.
 
 ## FASE 3 — Offline-first (~1-2 settimane)
-- [x] Drift come DB locale (al posto di SQLite puro) — `lib/core/db/`, schema locale per tutte le 7 entità operative, UUID generati lato client per atleti/test/allenamenti/serie, lettura sempre da cache locale (`StreamProvider` reattivi) con refresh remoto in background best-effort; scrittura offline vera e coda di sync sono il prossimo punto
-- [ ] Scrittura sempre in locale in impianto
-- [ ] Regola di conflitto documentata (last-write-wins su updated_at)
-- [ ] Sync verso Supabase a rete disponibile
-- [ ] Indicatore "sincronizzato / in coda"
-- [ ] Test in modalità aereo
+- [x] Drift come DB locale (al posto di SQLite puro) — `lib/core/db/`, schema locale per tutte le 7 entità operative, UUID generati lato client per atleti/test/allenamenti/serie, lettura sempre da cache locale (`StreamProvider` reattivi) con refresh remoto in background best-effort
+- [x] Scrittura resiliente in impianto — ogni creazione/modifica prova subito verso Supabase (come sempre); se la rete manca, invece di un errore va in coda locale (`lib/core/sync/`) e riparte da sola alla riconnessione. Scelto invece del local-first puro per non dover replicare in Dart la logica di derivazione club_id oggi nei trigger DB
+- [x] Regola di conflitto documentata (last-write-wins su updated_at) — nessun confronto di timestamp lato client: le operazioni in coda vengono rigiocate in ordine verso il server, l'ultima che arriva vince (vedi doc in `sync_engine.dart`)
+- [x] Sync verso Supabase a rete disponibile — motore di sync (`lib/core/sync/sync_engine.dart`) attivato da `connectivity_plus` al ritorno della connessione e all'avvio dell'app
+- [x] Indicatore "sincronizzato / in coda" — icona nell'AppBar (`HomeScreen`), tocco per ritentare subito
+- [x] Test in modalità aereo — verificato su Chrome (DevTools → Network → Offline): creazione/modifica funziona offline, va in coda, si sincronizza da sola al ritorno della rete
 
 ## FASE 4 — Programmazione di stagione (~2-3 settimane)
 - [ ] Creare Stagione (date, obiettivo, gruppo)
