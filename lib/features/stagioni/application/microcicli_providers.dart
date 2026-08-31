@@ -7,7 +7,9 @@ import '../domain/microciclo.dart';
 final microcicliListProvider = StreamProvider.family<List<Microciclo>, String>(
   (ref, mesocicloId) {
     final repository = ref.watch(microcicliRepositoryProvider);
-    refreshInBackground(() => repository.refreshFromRemote(mesocicloId));
-    return repository.watchPerMesociclo(mesocicloId);
+    return streamConRefreshIniziale(
+      refresh: () => repository.refreshFromRemote(mesocicloId),
+      watch: () => repository.watchPerMesociclo(mesocicloId),
+    );
   },
 );

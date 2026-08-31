@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/db/refresh_guard.dart';
 import '../data/club_repository.dart';
 import '../domain/club.dart';
 
@@ -9,11 +8,19 @@ import '../domain/club.dart';
 /// l'utente non e' ancora membro di nessun club, torna null e la UI
 /// mostra il flusso di creazione del primo club.
 ///
-/// Legge sempre dalla cache locale (funziona offline); il refresh dal
-/// server parte in background e aggiorna la cache quando c'e' rete.
+/// Aspetta un primo tentativo di refresh dal server prima di leggere la
+/// cache locale: altrimenti, su una cache locale ancora vuota (primo
+/// avvio), risulterebbe erroneamente "nessun club" anche quando il club
+/// esiste gia' su Supabase — e per un FutureProvider (non reattivo come
+/// uno StreamProvider) l'errore resterebbe finche' qualcosa non lo
+/// invalida esplicitamente.
 final currentClubProvider = FutureProvider<Club?>((ref) async {
   final repository = ref.watch(clubRepositoryProvider);
-  refreshInBackground(repository.refreshFromRemote);
+  try {
+    await repository.refreshFromRemote();
+  } catch (_) {
+    // offline al primo avvio: si procede con quel che c'e' in locale.
+  }
   final clubs = await repository.fetchMyClubsLocal();
   return clubs.isEmpty ? null : clubs.first;
 });

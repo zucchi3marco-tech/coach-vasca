@@ -59,19 +59,23 @@ class AllenamentiRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Sostituzione totale per questo club (non insertOrReplace): un
+  /// allenamento eliminato fuori dall'app resterebbe altrimenti in cache
+  /// a tempo indeterminato.
   Future<void> refreshFromRemote(String clubId) async {
     final rows = await _client
         .from('allenamenti')
         .select()
         .eq('club_id', clubId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.allenamentiTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.allenamentiTable,
+      )..where((t) => t.clubId.equals(clubId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.allenamentiTable, _companionFromMap(row));
+        }
+      });
     });
   }
 

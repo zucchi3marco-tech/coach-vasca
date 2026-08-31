@@ -73,7 +73,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Creare Stagione (date, obiettivo, gruppo) — `lib/features/stagioni/`, validazione data fine ≥ data inizio lato client, nuove tabelle Drift per l'intera gerarchia (stagioni/macro/meso/micro) anche se per ora solo stagioni ha una UI
 - [x] Suddivisione macro/meso/micro (anche solo settimane, in V1) — gerarchia di dettaglio Stagione → Macrocicli → Mesocicli → Microcicli, stesso pattern CRUD resiliente delle altre feature
 - [x] Assegnare allenamenti alle date — dettaglio microciclo (`microciclo_detail_screen.dart`) mostra/crea gli allenamenti della settimana, collegati tramite `microciclo_id`; il form generico allenamento preserva il collegamento esistente invece di sganciarlo
-- [ ] Vista settimanale e mensile
+- [x] Vista settimanale e mensile — selettore Elenco/Settimana/Mese nella scheda Allenamenti (calendario a griglia con puntino sui giorni con allenamento), tocco su un giorno apre la scheda del giorno (`giorno_allenamenti_screen.dart`)
 - [ ] Duplica settimana / sposta scheda
 
 **Criterio di fine fase:** il coach vede il piano della settimana e apre la scheda del giorno.

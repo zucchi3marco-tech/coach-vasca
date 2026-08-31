@@ -7,7 +7,9 @@ import '../domain/tabella_passo.dart';
 final tabellePassiProvider = StreamProvider.family<List<TabellaPasso>, String>(
   (ref, testId) {
     final repository = ref.watch(tabellePassiRepositoryProvider);
-    refreshInBackground(() => repository.refreshFromRemote(testId));
-    return repository.watchPerTest(testId);
+    return streamConRefreshIniziale(
+      refresh: () => repository.refreshFromRemote(testId),
+      watch: () => repository.watchPerTest(testId),
+    );
   },
 );

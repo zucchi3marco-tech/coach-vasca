@@ -11,6 +11,8 @@ final allenamentiPerMicrocicloProvider = StreamProvider.family<
   AllenamentiPerMicrocicloFilter
 >((ref, filter) {
   final repository = ref.watch(allenamentiRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(filter.clubId));
-  return repository.watchPerMicrociclo(filter.microcicloId);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(filter.clubId),
+    watch: () => repository.watchPerMicrociclo(filter.microcicloId),
+  );
 });

@@ -26,23 +26,30 @@ class ClubRepository {
 
   /// Aggiorna la cache locale con i club remoti di cui l'utente e' membro
   /// (la RLS su `club` filtra automaticamente in base a `club_membri`).
+  /// Sostituzione totale (non insertOrReplace): se un club viene
+  /// eliminato direttamente su Supabase (fuori dall'app, es. da SQL
+  /// Editor), la sola insertOrReplace non lo toglierebbe mai dalla cache
+  /// locale, che continuerebbe a proporlo come "fantasma" a tempo
+  /// indeterminato.
   Future<void> refreshFromRemote() async {
     final rows = await _client
         .from('club')
         .select('id, nome, citta')
         .order('nome');
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.clubTable,
-          ClubTableCompanion.insert(
-            id: row['id'] as String,
-            nome: row['nome'] as String,
-            citta: Value(row['citta'] as String?),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await _db.delete(_db.clubTable).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(
+            _db.clubTable,
+            ClubTableCompanion.insert(
+              id: row['id'] as String,
+              nome: row['nome'] as String,
+              citta: Value(row['citta'] as String?),
+            ),
+          );
+        }
+      });
     });
   }
 

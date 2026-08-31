@@ -87,19 +87,23 @@ class SerieRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Sostituzione totale per questo allenamento (non insertOrReplace): una
+  /// serie eliminata fuori dall'app resterebbe altrimenti in cache a
+  /// tempo indeterminato.
   Future<void> refreshFromRemote(String allenamentoId) async {
     final rows = await _client
         .from('serie')
         .select()
         .eq('allenamento_id', allenamentoId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.serieTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.serieTable,
+      )..where((t) => t.allenamentoId.equals(allenamentoId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.serieTable, _companionFromMap(row));
+        }
+      });
     });
   }
 

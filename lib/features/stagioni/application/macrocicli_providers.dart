@@ -7,7 +7,9 @@ import '../domain/macrociclo.dart';
 final macrocicliListProvider = StreamProvider.family<List<Macrociclo>, String>(
   (ref, stagioneId) {
     final repository = ref.watch(macrocicliRepositoryProvider);
-    refreshInBackground(() => repository.refreshFromRemote(stagioneId));
-    return repository.watchPerStagione(stagioneId);
+    return streamConRefreshIniziale(
+      refresh: () => repository.refreshFromRemote(stagioneId),
+      watch: () => repository.watchPerStagione(stagioneId),
+    );
   },
 );

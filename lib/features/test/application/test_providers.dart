@@ -9,6 +9,8 @@ final testListProvider = StreamProvider.family<List<TestIngresso>, String>((
   atletaId,
 ) {
   final repository = ref.watch(testRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(atletaId));
-  return repository.watchPerAtleta(atletaId);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(atletaId),
+    watch: () => repository.watchPerAtleta(atletaId),
+  );
 });

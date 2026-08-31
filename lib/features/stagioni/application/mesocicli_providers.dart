@@ -9,6 +9,8 @@ final mesocicliListProvider = StreamProvider.family<List<Mesociclo>, String>((
   macrocicloId,
 ) {
   final repository = ref.watch(mesocicliRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(macrocicloId));
-  return repository.watchPerMacrociclo(macrocicloId);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(macrocicloId),
+    watch: () => repository.watchPerMacrociclo(macrocicloId),
+  );
 });

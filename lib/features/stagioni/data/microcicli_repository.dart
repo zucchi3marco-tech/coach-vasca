@@ -56,19 +56,23 @@ class MicrocicliRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Sostituzione totale per questo mesociclo (non insertOrReplace): un
+  /// microciclo eliminato fuori dall'app resterebbe altrimenti in cache a
+  /// tempo indeterminato.
   Future<void> refreshFromRemote(String mesocicloId) async {
     final rows = await _client
         .from('microcicli')
         .select()
         .eq('mesociclo_id', mesocicloId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.microcicliTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.microcicliTable,
+      )..where((t) => t.mesocicloId.equals(mesocicloId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.microcicliTable, _companionFromMap(row));
+        }
+      });
     });
   }
 

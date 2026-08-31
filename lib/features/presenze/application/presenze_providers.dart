@@ -9,6 +9,8 @@ final presenzeListProvider = StreamProvider.family<List<Presenza>, String>((
   allenamentoId,
 ) {
   final repository = ref.watch(presenzeRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(allenamentoId));
-  return repository.watchPerAllenamento(allenamentoId);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(allenamentoId),
+    watch: () => repository.watchPerAllenamento(allenamentoId),
+  );
 });

@@ -9,6 +9,8 @@ final stagioniListProvider = StreamProvider.family<List<Stagione>, String>((
   clubId,
 ) {
   final repository = ref.watch(stagioniRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(clubId));
-  return repository.watchPerClub(clubId);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(clubId),
+    watch: () => repository.watchPerClub(clubId),
+  );
 });

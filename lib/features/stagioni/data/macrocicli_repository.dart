@@ -54,19 +54,23 @@ class MacrocicliRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Sostituzione totale per questa stagione (non insertOrReplace): un
+  /// macrociclo eliminato fuori dall'app resterebbe altrimenti in cache a
+  /// tempo indeterminato.
   Future<void> refreshFromRemote(String stagioneId) async {
     final rows = await _client
         .from('macrocicli')
         .select()
         .eq('stagione_id', stagioneId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.macrocicliTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.macrocicliTable,
+      )..where((t) => t.stagioneId.equals(stagioneId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.macrocicliTable, _companionFromMap(row));
+        }
+      });
     });
   }
 

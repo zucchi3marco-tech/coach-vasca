@@ -56,19 +56,23 @@ class TestRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Sostituzione totale per questo atleta (non insertOrReplace): un test
+  /// eliminato fuori dall'app resterebbe altrimenti in cache a tempo
+  /// indeterminato.
   Future<void> refreshFromRemote(String atletaId) async {
     final rows = await _client
         .from('test_ingresso')
         .select()
         .eq('atleta_id', atletaId);
-    await _db.batch((batch) {
-      for (final row in rows) {
-        batch.insert(
-          _db.testIngressoTable,
-          _companionFromMap(row),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.testIngressoTable,
+      )..where((t) => t.atletaId.equals(atletaId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.testIngressoTable, _companionFromMap(row));
+        }
+      });
     });
   }
 

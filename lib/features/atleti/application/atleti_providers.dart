@@ -6,17 +6,19 @@ import '../domain/atleta.dart';
 
 typedef AtletiFilter = ({String clubId, bool includeInactive});
 
-/// Legge dalla cache locale in tempo reale (Drift): la UI si aggiorna da
-/// sola quando arrivano dati piu' recenti dal refresh in background, senza
-/// bisogno di invalidare manualmente il provider dopo ogni modifica.
+/// Legge dalla cache locale in tempo reale (Drift): aspetta un primo
+/// refresh dal server, poi la UI si aggiorna da sola ad ogni modifica
+/// successiva, senza bisogno di invalidare manualmente il provider.
 final atletiListProvider = StreamProvider.family<List<Atleta>, AtletiFilter>((
   ref,
   filter,
 ) {
   final repository = ref.watch(atletiRepositoryProvider);
-  refreshInBackground(() => repository.refreshFromRemote(filter.clubId));
-  return repository.watchAtleti(
-    clubId: filter.clubId,
-    includeInactive: filter.includeInactive,
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemote(filter.clubId),
+    watch: () => repository.watchAtleti(
+      clubId: filter.clubId,
+      includeInactive: filter.includeInactive,
+    ),
   );
 });
