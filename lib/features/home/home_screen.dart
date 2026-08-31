@@ -7,6 +7,7 @@ import '../atleti/presentation/atleti_list_screen.dart';
 import '../auth/data/auth_repository.dart';
 import '../club/application/current_club_provider.dart';
 import '../club/presentation/club_setup_screen.dart';
+import '../stagioni/presentation/stagioni_list_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   AtletiListScreen(clubId: club.id),
                   AllenamentiListScreen(clubId: club.id),
+                  StagioniListScreen(clubId: club.id),
                 ],
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -64,6 +66,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: Icon(Icons.calendar_month_outlined),
                   selectedIcon: Icon(Icons.calendar_month),
                   label: 'Allenamenti',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.event_note_outlined),
+                  selectedIcon: Icon(Icons.event_note),
+                  label: 'Stagioni',
                 ),
               ],
             ),

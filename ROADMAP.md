@@ -70,7 +70,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Test in modalità aereo — verificato su Chrome (DevTools → Network → Offline): creazione/modifica funziona offline, va in coda, si sincronizza da sola al ritorno della rete
 
 ## FASE 4 — Programmazione di stagione (~2-3 settimane)
-- [ ] Creare Stagione (date, obiettivo, gruppo)
+- [x] Creare Stagione (date, obiettivo, gruppo) — `lib/features/stagioni/`, validazione data fine ≥ data inizio lato client, nuove tabelle Drift per l'intera gerarchia (stagioni/macro/meso/micro) anche se per ora solo stagioni ha una UI
 - [ ] Suddivisione macro/meso/micro (anche solo settimane, in V1)
 - [ ] Assegnare allenamenti alle date
 - [ ] Vista settimanale e mensile

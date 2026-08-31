@@ -11,6 +11,10 @@ part 'app_database.g.dart';
     AtletiTable,
     TestIngressoTable,
     TabellePassiTable,
+    StagioniTable,
+    MacrocicliTable,
+    MesocicliTable,
+    MicrocicliTable,
     AllenamentiTable,
     SerieTable,
     PresenzeTable,
@@ -21,16 +25,22 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      // v1 -> v2: aggiunta la coda di sincronizzazione, tabelle esistenti
-      // invariate.
+      // v1 -> v2: aggiunta la coda di sincronizzazione.
       if (from < 2) {
         await m.createTable(pendingOperationsTable);
+      }
+      // v2 -> v3: aggiunta la gerarchia di stagione (Fase 4).
+      if (from < 3) {
+        await m.createTable(stagioniTable);
+        await m.createTable(macrocicliTable);
+        await m.createTable(mesocicliTable);
+        await m.createTable(microcicliTable);
       }
     },
   );

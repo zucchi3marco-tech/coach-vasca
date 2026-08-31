@@ -2141,6 +2141,2049 @@ class TabellePassiTableCompanion
   }
 }
 
+class $StagioniTableTable extends StagioniTable
+    with TableInfo<$StagioniTableTable, StagioniTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StagioniTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataInizioMeta = const VerificationMeta(
+    'dataInizio',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataInizio = GeneratedColumn<DateTime>(
+    'data_inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataFineMeta = const VerificationMeta(
+    'dataFine',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataFine = GeneratedColumn<DateTime>(
+    'data_fine',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _obiettivoMeta = const VerificationMeta(
+    'obiettivo',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivo = GeneratedColumn<String>(
+    'obiettivo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _gruppoMeta = const VerificationMeta('gruppo');
+  @override
+  late final GeneratedColumn<String> gruppo = GeneratedColumn<String>(
+    'gruppo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    nome,
+    dataInizio,
+    dataFine,
+    obiettivo,
+    gruppo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'stagioni_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StagioniTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('data_inizio')) {
+      context.handle(
+        _dataInizioMeta,
+        dataInizio.isAcceptableOrUnknown(data['data_inizio']!, _dataInizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataInizioMeta);
+    }
+    if (data.containsKey('data_fine')) {
+      context.handle(
+        _dataFineMeta,
+        dataFine.isAcceptableOrUnknown(data['data_fine']!, _dataFineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataFineMeta);
+    }
+    if (data.containsKey('obiettivo')) {
+      context.handle(
+        _obiettivoMeta,
+        obiettivo.isAcceptableOrUnknown(data['obiettivo']!, _obiettivoMeta),
+      );
+    }
+    if (data.containsKey('gruppo')) {
+      context.handle(
+        _gruppoMeta,
+        gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StagioniTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StagioniTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      dataInizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_inizio'],
+      )!,
+      dataFine: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_fine'],
+      )!,
+      obiettivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo'],
+      ),
+      gruppo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo'],
+      ),
+    );
+  }
+
+  @override
+  $StagioniTableTable createAlias(String alias) {
+    return $StagioniTableTable(attachedDatabase, alias);
+  }
+}
+
+class StagioniTableData extends DataClass
+    implements Insertable<StagioniTableData> {
+  final String id;
+  final String clubId;
+  final String nome;
+  final DateTime dataInizio;
+  final DateTime dataFine;
+  final String? obiettivo;
+  final String? gruppo;
+  const StagioniTableData({
+    required this.id,
+    required this.clubId,
+    required this.nome,
+    required this.dataInizio,
+    required this.dataFine,
+    this.obiettivo,
+    this.gruppo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    map['data_inizio'] = Variable<DateTime>(dataInizio);
+    map['data_fine'] = Variable<DateTime>(dataFine);
+    if (!nullToAbsent || obiettivo != null) {
+      map['obiettivo'] = Variable<String>(obiettivo);
+    }
+    if (!nullToAbsent || gruppo != null) {
+      map['gruppo'] = Variable<String>(gruppo);
+    }
+    return map;
+  }
+
+  StagioniTableCompanion toCompanion(bool nullToAbsent) {
+    return StagioniTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      dataInizio: Value(dataInizio),
+      dataFine: Value(dataFine),
+      obiettivo: obiettivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obiettivo),
+      gruppo: gruppo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppo),
+    );
+  }
+
+  factory StagioniTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StagioniTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      dataInizio: serializer.fromJson<DateTime>(json['dataInizio']),
+      dataFine: serializer.fromJson<DateTime>(json['dataFine']),
+      obiettivo: serializer.fromJson<String?>(json['obiettivo']),
+      gruppo: serializer.fromJson<String?>(json['gruppo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'dataInizio': serializer.toJson<DateTime>(dataInizio),
+      'dataFine': serializer.toJson<DateTime>(dataFine),
+      'obiettivo': serializer.toJson<String?>(obiettivo),
+      'gruppo': serializer.toJson<String?>(gruppo),
+    };
+  }
+
+  StagioniTableData copyWith({
+    String? id,
+    String? clubId,
+    String? nome,
+    DateTime? dataInizio,
+    DateTime? dataFine,
+    Value<String?> obiettivo = const Value.absent(),
+    Value<String?> gruppo = const Value.absent(),
+  }) => StagioniTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    dataInizio: dataInizio ?? this.dataInizio,
+    dataFine: dataFine ?? this.dataFine,
+    obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
+    gruppo: gruppo.present ? gruppo.value : this.gruppo,
+  );
+  StagioniTableData copyWithCompanion(StagioniTableCompanion data) {
+    return StagioniTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      dataInizio: data.dataInizio.present
+          ? data.dataInizio.value
+          : this.dataInizio,
+      dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
+      obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
+      gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StagioniTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('gruppo: $gruppo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, clubId, nome, dataInizio, dataFine, obiettivo, gruppo);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StagioniTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.dataInizio == this.dataInizio &&
+          other.dataFine == this.dataFine &&
+          other.obiettivo == this.obiettivo &&
+          other.gruppo == this.gruppo);
+}
+
+class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<DateTime> dataInizio;
+  final Value<DateTime> dataFine;
+  final Value<String?> obiettivo;
+  final Value<String?> gruppo;
+  final Value<int> rowid;
+  const StagioniTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.dataInizio = const Value.absent(),
+    this.dataFine = const Value.absent(),
+    this.obiettivo = const Value.absent(),
+    this.gruppo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StagioniTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String nome,
+    required DateTime dataInizio,
+    required DateTime dataFine,
+    this.obiettivo = const Value.absent(),
+    this.gruppo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       nome = Value(nome),
+       dataInizio = Value(dataInizio),
+       dataFine = Value(dataFine);
+  static Insertable<StagioniTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<DateTime>? dataInizio,
+    Expression<DateTime>? dataFine,
+    Expression<String>? obiettivo,
+    Expression<String>? gruppo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (dataInizio != null) 'data_inizio': dataInizio,
+      if (dataFine != null) 'data_fine': dataFine,
+      if (obiettivo != null) 'obiettivo': obiettivo,
+      if (gruppo != null) 'gruppo': gruppo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StagioniTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<DateTime>? dataInizio,
+    Value<DateTime>? dataFine,
+    Value<String?>? obiettivo,
+    Value<String?>? gruppo,
+    Value<int>? rowid,
+  }) {
+    return StagioniTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      dataInizio: dataInizio ?? this.dataInizio,
+      dataFine: dataFine ?? this.dataFine,
+      obiettivo: obiettivo ?? this.obiettivo,
+      gruppo: gruppo ?? this.gruppo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (dataInizio.present) {
+      map['data_inizio'] = Variable<DateTime>(dataInizio.value);
+    }
+    if (dataFine.present) {
+      map['data_fine'] = Variable<DateTime>(dataFine.value);
+    }
+    if (obiettivo.present) {
+      map['obiettivo'] = Variable<String>(obiettivo.value);
+    }
+    if (gruppo.present) {
+      map['gruppo'] = Variable<String>(gruppo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StagioniTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('gruppo: $gruppo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MacrocicliTableTable extends MacrocicliTable
+    with TableInfo<$MacrocicliTableTable, MacrocicliTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MacrocicliTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stagioneIdMeta = const VerificationMeta(
+    'stagioneId',
+  );
+  @override
+  late final GeneratedColumn<String> stagioneId = GeneratedColumn<String>(
+    'stagione_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _dataInizioMeta = const VerificationMeta(
+    'dataInizio',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataInizio = GeneratedColumn<DateTime>(
+    'data_inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataFineMeta = const VerificationMeta(
+    'dataFine',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataFine = GeneratedColumn<DateTime>(
+    'data_fine',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _obiettivoMeta = const VerificationMeta(
+    'obiettivo',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivo = GeneratedColumn<String>(
+    'obiettivo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    stagioneId,
+    clubId,
+    nome,
+    ordine,
+    dataInizio,
+    dataFine,
+    obiettivo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'macrocicli_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MacrocicliTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('stagione_id')) {
+      context.handle(
+        _stagioneIdMeta,
+        stagioneId.isAcceptableOrUnknown(data['stagione_id']!, _stagioneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stagioneIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    if (data.containsKey('data_inizio')) {
+      context.handle(
+        _dataInizioMeta,
+        dataInizio.isAcceptableOrUnknown(data['data_inizio']!, _dataInizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataInizioMeta);
+    }
+    if (data.containsKey('data_fine')) {
+      context.handle(
+        _dataFineMeta,
+        dataFine.isAcceptableOrUnknown(data['data_fine']!, _dataFineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataFineMeta);
+    }
+    if (data.containsKey('obiettivo')) {
+      context.handle(
+        _obiettivoMeta,
+        obiettivo.isAcceptableOrUnknown(data['obiettivo']!, _obiettivoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MacrocicliTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MacrocicliTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      stagioneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stagione_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+      dataInizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_inizio'],
+      )!,
+      dataFine: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_fine'],
+      )!,
+      obiettivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo'],
+      ),
+    );
+  }
+
+  @override
+  $MacrocicliTableTable createAlias(String alias) {
+    return $MacrocicliTableTable(attachedDatabase, alias);
+  }
+}
+
+class MacrocicliTableData extends DataClass
+    implements Insertable<MacrocicliTableData> {
+  final String id;
+  final String stagioneId;
+  final String clubId;
+  final String nome;
+  final int ordine;
+  final DateTime dataInizio;
+  final DateTime dataFine;
+  final String? obiettivo;
+  const MacrocicliTableData({
+    required this.id,
+    required this.stagioneId,
+    required this.clubId,
+    required this.nome,
+    required this.ordine,
+    required this.dataInizio,
+    required this.dataFine,
+    this.obiettivo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['stagione_id'] = Variable<String>(stagioneId);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    map['ordine'] = Variable<int>(ordine);
+    map['data_inizio'] = Variable<DateTime>(dataInizio);
+    map['data_fine'] = Variable<DateTime>(dataFine);
+    if (!nullToAbsent || obiettivo != null) {
+      map['obiettivo'] = Variable<String>(obiettivo);
+    }
+    return map;
+  }
+
+  MacrocicliTableCompanion toCompanion(bool nullToAbsent) {
+    return MacrocicliTableCompanion(
+      id: Value(id),
+      stagioneId: Value(stagioneId),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      ordine: Value(ordine),
+      dataInizio: Value(dataInizio),
+      dataFine: Value(dataFine),
+      obiettivo: obiettivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obiettivo),
+    );
+  }
+
+  factory MacrocicliTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MacrocicliTableData(
+      id: serializer.fromJson<String>(json['id']),
+      stagioneId: serializer.fromJson<String>(json['stagioneId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+      dataInizio: serializer.fromJson<DateTime>(json['dataInizio']),
+      dataFine: serializer.fromJson<DateTime>(json['dataFine']),
+      obiettivo: serializer.fromJson<String?>(json['obiettivo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'stagioneId': serializer.toJson<String>(stagioneId),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'ordine': serializer.toJson<int>(ordine),
+      'dataInizio': serializer.toJson<DateTime>(dataInizio),
+      'dataFine': serializer.toJson<DateTime>(dataFine),
+      'obiettivo': serializer.toJson<String?>(obiettivo),
+    };
+  }
+
+  MacrocicliTableData copyWith({
+    String? id,
+    String? stagioneId,
+    String? clubId,
+    String? nome,
+    int? ordine,
+    DateTime? dataInizio,
+    DateTime? dataFine,
+    Value<String?> obiettivo = const Value.absent(),
+  }) => MacrocicliTableData(
+    id: id ?? this.id,
+    stagioneId: stagioneId ?? this.stagioneId,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    ordine: ordine ?? this.ordine,
+    dataInizio: dataInizio ?? this.dataInizio,
+    dataFine: dataFine ?? this.dataFine,
+    obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
+  );
+  MacrocicliTableData copyWithCompanion(MacrocicliTableCompanion data) {
+    return MacrocicliTableData(
+      id: data.id.present ? data.id.value : this.id,
+      stagioneId: data.stagioneId.present
+          ? data.stagioneId.value
+          : this.stagioneId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      dataInizio: data.dataInizio.present
+          ? data.dataInizio.value
+          : this.dataInizio,
+      dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
+      obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MacrocicliTableData(')
+          ..write('id: $id, ')
+          ..write('stagioneId: $stagioneId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    stagioneId,
+    clubId,
+    nome,
+    ordine,
+    dataInizio,
+    dataFine,
+    obiettivo,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MacrocicliTableData &&
+          other.id == this.id &&
+          other.stagioneId == this.stagioneId &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.ordine == this.ordine &&
+          other.dataInizio == this.dataInizio &&
+          other.dataFine == this.dataFine &&
+          other.obiettivo == this.obiettivo);
+}
+
+class MacrocicliTableCompanion extends UpdateCompanion<MacrocicliTableData> {
+  final Value<String> id;
+  final Value<String> stagioneId;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<int> ordine;
+  final Value<DateTime> dataInizio;
+  final Value<DateTime> dataFine;
+  final Value<String?> obiettivo;
+  final Value<int> rowid;
+  const MacrocicliTableCompanion({
+    this.id = const Value.absent(),
+    this.stagioneId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.dataInizio = const Value.absent(),
+    this.dataFine = const Value.absent(),
+    this.obiettivo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MacrocicliTableCompanion.insert({
+    required String id,
+    required String stagioneId,
+    required String clubId,
+    required String nome,
+    this.ordine = const Value.absent(),
+    required DateTime dataInizio,
+    required DateTime dataFine,
+    this.obiettivo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       stagioneId = Value(stagioneId),
+       clubId = Value(clubId),
+       nome = Value(nome),
+       dataInizio = Value(dataInizio),
+       dataFine = Value(dataFine);
+  static Insertable<MacrocicliTableData> custom({
+    Expression<String>? id,
+    Expression<String>? stagioneId,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<int>? ordine,
+    Expression<DateTime>? dataInizio,
+    Expression<DateTime>? dataFine,
+    Expression<String>? obiettivo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (stagioneId != null) 'stagione_id': stagioneId,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (ordine != null) 'ordine': ordine,
+      if (dataInizio != null) 'data_inizio': dataInizio,
+      if (dataFine != null) 'data_fine': dataFine,
+      if (obiettivo != null) 'obiettivo': obiettivo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MacrocicliTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? stagioneId,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<int>? ordine,
+    Value<DateTime>? dataInizio,
+    Value<DateTime>? dataFine,
+    Value<String?>? obiettivo,
+    Value<int>? rowid,
+  }) {
+    return MacrocicliTableCompanion(
+      id: id ?? this.id,
+      stagioneId: stagioneId ?? this.stagioneId,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      ordine: ordine ?? this.ordine,
+      dataInizio: dataInizio ?? this.dataInizio,
+      dataFine: dataFine ?? this.dataFine,
+      obiettivo: obiettivo ?? this.obiettivo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (stagioneId.present) {
+      map['stagione_id'] = Variable<String>(stagioneId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (dataInizio.present) {
+      map['data_inizio'] = Variable<DateTime>(dataInizio.value);
+    }
+    if (dataFine.present) {
+      map['data_fine'] = Variable<DateTime>(dataFine.value);
+    }
+    if (obiettivo.present) {
+      map['obiettivo'] = Variable<String>(obiettivo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MacrocicliTableCompanion(')
+          ..write('id: $id, ')
+          ..write('stagioneId: $stagioneId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MesocicliTableTable extends MesocicliTable
+    with TableInfo<$MesocicliTableTable, MesocicliTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MesocicliTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _macrocicloIdMeta = const VerificationMeta(
+    'macrocicloId',
+  );
+  @override
+  late final GeneratedColumn<String> macrocicloId = GeneratedColumn<String>(
+    'macrociclo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _dataInizioMeta = const VerificationMeta(
+    'dataInizio',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataInizio = GeneratedColumn<DateTime>(
+    'data_inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataFineMeta = const VerificationMeta(
+    'dataFine',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataFine = GeneratedColumn<DateTime>(
+    'data_fine',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _obiettivoMeta = const VerificationMeta(
+    'obiettivo',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivo = GeneratedColumn<String>(
+    'obiettivo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    macrocicloId,
+    clubId,
+    nome,
+    ordine,
+    dataInizio,
+    dataFine,
+    obiettivo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mesocicli_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MesocicliTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('macrociclo_id')) {
+      context.handle(
+        _macrocicloIdMeta,
+        macrocicloId.isAcceptableOrUnknown(
+          data['macrociclo_id']!,
+          _macrocicloIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_macrocicloIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    if (data.containsKey('data_inizio')) {
+      context.handle(
+        _dataInizioMeta,
+        dataInizio.isAcceptableOrUnknown(data['data_inizio']!, _dataInizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataInizioMeta);
+    }
+    if (data.containsKey('data_fine')) {
+      context.handle(
+        _dataFineMeta,
+        dataFine.isAcceptableOrUnknown(data['data_fine']!, _dataFineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataFineMeta);
+    }
+    if (data.containsKey('obiettivo')) {
+      context.handle(
+        _obiettivoMeta,
+        obiettivo.isAcceptableOrUnknown(data['obiettivo']!, _obiettivoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MesocicliTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MesocicliTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      macrocicloId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}macrociclo_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+      dataInizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_inizio'],
+      )!,
+      dataFine: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_fine'],
+      )!,
+      obiettivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo'],
+      ),
+    );
+  }
+
+  @override
+  $MesocicliTableTable createAlias(String alias) {
+    return $MesocicliTableTable(attachedDatabase, alias);
+  }
+}
+
+class MesocicliTableData extends DataClass
+    implements Insertable<MesocicliTableData> {
+  final String id;
+  final String macrocicloId;
+  final String clubId;
+  final String nome;
+  final int ordine;
+  final DateTime dataInizio;
+  final DateTime dataFine;
+  final String? obiettivo;
+  const MesocicliTableData({
+    required this.id,
+    required this.macrocicloId,
+    required this.clubId,
+    required this.nome,
+    required this.ordine,
+    required this.dataInizio,
+    required this.dataFine,
+    this.obiettivo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['macrociclo_id'] = Variable<String>(macrocicloId);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    map['ordine'] = Variable<int>(ordine);
+    map['data_inizio'] = Variable<DateTime>(dataInizio);
+    map['data_fine'] = Variable<DateTime>(dataFine);
+    if (!nullToAbsent || obiettivo != null) {
+      map['obiettivo'] = Variable<String>(obiettivo);
+    }
+    return map;
+  }
+
+  MesocicliTableCompanion toCompanion(bool nullToAbsent) {
+    return MesocicliTableCompanion(
+      id: Value(id),
+      macrocicloId: Value(macrocicloId),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      ordine: Value(ordine),
+      dataInizio: Value(dataInizio),
+      dataFine: Value(dataFine),
+      obiettivo: obiettivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obiettivo),
+    );
+  }
+
+  factory MesocicliTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MesocicliTableData(
+      id: serializer.fromJson<String>(json['id']),
+      macrocicloId: serializer.fromJson<String>(json['macrocicloId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+      dataInizio: serializer.fromJson<DateTime>(json['dataInizio']),
+      dataFine: serializer.fromJson<DateTime>(json['dataFine']),
+      obiettivo: serializer.fromJson<String?>(json['obiettivo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'macrocicloId': serializer.toJson<String>(macrocicloId),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'ordine': serializer.toJson<int>(ordine),
+      'dataInizio': serializer.toJson<DateTime>(dataInizio),
+      'dataFine': serializer.toJson<DateTime>(dataFine),
+      'obiettivo': serializer.toJson<String?>(obiettivo),
+    };
+  }
+
+  MesocicliTableData copyWith({
+    String? id,
+    String? macrocicloId,
+    String? clubId,
+    String? nome,
+    int? ordine,
+    DateTime? dataInizio,
+    DateTime? dataFine,
+    Value<String?> obiettivo = const Value.absent(),
+  }) => MesocicliTableData(
+    id: id ?? this.id,
+    macrocicloId: macrocicloId ?? this.macrocicloId,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    ordine: ordine ?? this.ordine,
+    dataInizio: dataInizio ?? this.dataInizio,
+    dataFine: dataFine ?? this.dataFine,
+    obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
+  );
+  MesocicliTableData copyWithCompanion(MesocicliTableCompanion data) {
+    return MesocicliTableData(
+      id: data.id.present ? data.id.value : this.id,
+      macrocicloId: data.macrocicloId.present
+          ? data.macrocicloId.value
+          : this.macrocicloId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      dataInizio: data.dataInizio.present
+          ? data.dataInizio.value
+          : this.dataInizio,
+      dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
+      obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MesocicliTableData(')
+          ..write('id: $id, ')
+          ..write('macrocicloId: $macrocicloId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    macrocicloId,
+    clubId,
+    nome,
+    ordine,
+    dataInizio,
+    dataFine,
+    obiettivo,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MesocicliTableData &&
+          other.id == this.id &&
+          other.macrocicloId == this.macrocicloId &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.ordine == this.ordine &&
+          other.dataInizio == this.dataInizio &&
+          other.dataFine == this.dataFine &&
+          other.obiettivo == this.obiettivo);
+}
+
+class MesocicliTableCompanion extends UpdateCompanion<MesocicliTableData> {
+  final Value<String> id;
+  final Value<String> macrocicloId;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<int> ordine;
+  final Value<DateTime> dataInizio;
+  final Value<DateTime> dataFine;
+  final Value<String?> obiettivo;
+  final Value<int> rowid;
+  const MesocicliTableCompanion({
+    this.id = const Value.absent(),
+    this.macrocicloId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.dataInizio = const Value.absent(),
+    this.dataFine = const Value.absent(),
+    this.obiettivo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MesocicliTableCompanion.insert({
+    required String id,
+    required String macrocicloId,
+    required String clubId,
+    required String nome,
+    this.ordine = const Value.absent(),
+    required DateTime dataInizio,
+    required DateTime dataFine,
+    this.obiettivo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       macrocicloId = Value(macrocicloId),
+       clubId = Value(clubId),
+       nome = Value(nome),
+       dataInizio = Value(dataInizio),
+       dataFine = Value(dataFine);
+  static Insertable<MesocicliTableData> custom({
+    Expression<String>? id,
+    Expression<String>? macrocicloId,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<int>? ordine,
+    Expression<DateTime>? dataInizio,
+    Expression<DateTime>? dataFine,
+    Expression<String>? obiettivo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (macrocicloId != null) 'macrociclo_id': macrocicloId,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (ordine != null) 'ordine': ordine,
+      if (dataInizio != null) 'data_inizio': dataInizio,
+      if (dataFine != null) 'data_fine': dataFine,
+      if (obiettivo != null) 'obiettivo': obiettivo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MesocicliTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? macrocicloId,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<int>? ordine,
+    Value<DateTime>? dataInizio,
+    Value<DateTime>? dataFine,
+    Value<String?>? obiettivo,
+    Value<int>? rowid,
+  }) {
+    return MesocicliTableCompanion(
+      id: id ?? this.id,
+      macrocicloId: macrocicloId ?? this.macrocicloId,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      ordine: ordine ?? this.ordine,
+      dataInizio: dataInizio ?? this.dataInizio,
+      dataFine: dataFine ?? this.dataFine,
+      obiettivo: obiettivo ?? this.obiettivo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (macrocicloId.present) {
+      map['macrociclo_id'] = Variable<String>(macrocicloId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (dataInizio.present) {
+      map['data_inizio'] = Variable<DateTime>(dataInizio.value);
+    }
+    if (dataFine.present) {
+      map['data_fine'] = Variable<DateTime>(dataFine.value);
+    }
+    if (obiettivo.present) {
+      map['obiettivo'] = Variable<String>(obiettivo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MesocicliTableCompanion(')
+          ..write('id: $id, ')
+          ..write('macrocicloId: $macrocicloId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MicrocicliTableTable extends MicrocicliTable
+    with TableInfo<$MicrocicliTableTable, MicrocicliTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MicrocicliTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mesocicloIdMeta = const VerificationMeta(
+    'mesocicloId',
+  );
+  @override
+  late final GeneratedColumn<String> mesocicloId = GeneratedColumn<String>(
+    'mesociclo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _numeroSettimanaMeta = const VerificationMeta(
+    'numeroSettimana',
+  );
+  @override
+  late final GeneratedColumn<int> numeroSettimana = GeneratedColumn<int>(
+    'numero_settimana',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _dataInizioMeta = const VerificationMeta(
+    'dataInizio',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataInizio = GeneratedColumn<DateTime>(
+    'data_inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataFineMeta = const VerificationMeta(
+    'dataFine',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataFine = GeneratedColumn<DateTime>(
+    'data_fine',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    mesocicloId,
+    clubId,
+    nome,
+    numeroSettimana,
+    ordine,
+    dataInizio,
+    dataFine,
+    tipo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'microcicli_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MicrocicliTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('mesociclo_id')) {
+      context.handle(
+        _mesocicloIdMeta,
+        mesocicloId.isAcceptableOrUnknown(
+          data['mesociclo_id']!,
+          _mesocicloIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_mesocicloIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    }
+    if (data.containsKey('numero_settimana')) {
+      context.handle(
+        _numeroSettimanaMeta,
+        numeroSettimana.isAcceptableOrUnknown(
+          data['numero_settimana']!,
+          _numeroSettimanaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    if (data.containsKey('data_inizio')) {
+      context.handle(
+        _dataInizioMeta,
+        dataInizio.isAcceptableOrUnknown(data['data_inizio']!, _dataInizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataInizioMeta);
+    }
+    if (data.containsKey('data_fine')) {
+      context.handle(
+        _dataFineMeta,
+        dataFine.isAcceptableOrUnknown(data['data_fine']!, _dataFineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataFineMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MicrocicliTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MicrocicliTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      mesocicloId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mesociclo_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      ),
+      numeroSettimana: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}numero_settimana'],
+      ),
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+      dataInizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_inizio'],
+      )!,
+      dataFine: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_fine'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      ),
+    );
+  }
+
+  @override
+  $MicrocicliTableTable createAlias(String alias) {
+    return $MicrocicliTableTable(attachedDatabase, alias);
+  }
+}
+
+class MicrocicliTableData extends DataClass
+    implements Insertable<MicrocicliTableData> {
+  final String id;
+  final String mesocicloId;
+  final String clubId;
+  final String? nome;
+  final int? numeroSettimana;
+  final int ordine;
+  final DateTime dataInizio;
+  final DateTime dataFine;
+  final String? tipo;
+  const MicrocicliTableData({
+    required this.id,
+    required this.mesocicloId,
+    required this.clubId,
+    this.nome,
+    this.numeroSettimana,
+    required this.ordine,
+    required this.dataInizio,
+    required this.dataFine,
+    this.tipo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['mesociclo_id'] = Variable<String>(mesocicloId);
+    map['club_id'] = Variable<String>(clubId);
+    if (!nullToAbsent || nome != null) {
+      map['nome'] = Variable<String>(nome);
+    }
+    if (!nullToAbsent || numeroSettimana != null) {
+      map['numero_settimana'] = Variable<int>(numeroSettimana);
+    }
+    map['ordine'] = Variable<int>(ordine);
+    map['data_inizio'] = Variable<DateTime>(dataInizio);
+    map['data_fine'] = Variable<DateTime>(dataFine);
+    if (!nullToAbsent || tipo != null) {
+      map['tipo'] = Variable<String>(tipo);
+    }
+    return map;
+  }
+
+  MicrocicliTableCompanion toCompanion(bool nullToAbsent) {
+    return MicrocicliTableCompanion(
+      id: Value(id),
+      mesocicloId: Value(mesocicloId),
+      clubId: Value(clubId),
+      nome: nome == null && nullToAbsent ? const Value.absent() : Value(nome),
+      numeroSettimana: numeroSettimana == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numeroSettimana),
+      ordine: Value(ordine),
+      dataInizio: Value(dataInizio),
+      dataFine: Value(dataFine),
+      tipo: tipo == null && nullToAbsent ? const Value.absent() : Value(tipo),
+    );
+  }
+
+  factory MicrocicliTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MicrocicliTableData(
+      id: serializer.fromJson<String>(json['id']),
+      mesocicloId: serializer.fromJson<String>(json['mesocicloId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String?>(json['nome']),
+      numeroSettimana: serializer.fromJson<int?>(json['numeroSettimana']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+      dataInizio: serializer.fromJson<DateTime>(json['dataInizio']),
+      dataFine: serializer.fromJson<DateTime>(json['dataFine']),
+      tipo: serializer.fromJson<String?>(json['tipo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'mesocicloId': serializer.toJson<String>(mesocicloId),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String?>(nome),
+      'numeroSettimana': serializer.toJson<int?>(numeroSettimana),
+      'ordine': serializer.toJson<int>(ordine),
+      'dataInizio': serializer.toJson<DateTime>(dataInizio),
+      'dataFine': serializer.toJson<DateTime>(dataFine),
+      'tipo': serializer.toJson<String?>(tipo),
+    };
+  }
+
+  MicrocicliTableData copyWith({
+    String? id,
+    String? mesocicloId,
+    String? clubId,
+    Value<String?> nome = const Value.absent(),
+    Value<int?> numeroSettimana = const Value.absent(),
+    int? ordine,
+    DateTime? dataInizio,
+    DateTime? dataFine,
+    Value<String?> tipo = const Value.absent(),
+  }) => MicrocicliTableData(
+    id: id ?? this.id,
+    mesocicloId: mesocicloId ?? this.mesocicloId,
+    clubId: clubId ?? this.clubId,
+    nome: nome.present ? nome.value : this.nome,
+    numeroSettimana: numeroSettimana.present
+        ? numeroSettimana.value
+        : this.numeroSettimana,
+    ordine: ordine ?? this.ordine,
+    dataInizio: dataInizio ?? this.dataInizio,
+    dataFine: dataFine ?? this.dataFine,
+    tipo: tipo.present ? tipo.value : this.tipo,
+  );
+  MicrocicliTableData copyWithCompanion(MicrocicliTableCompanion data) {
+    return MicrocicliTableData(
+      id: data.id.present ? data.id.value : this.id,
+      mesocicloId: data.mesocicloId.present
+          ? data.mesocicloId.value
+          : this.mesocicloId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      numeroSettimana: data.numeroSettimana.present
+          ? data.numeroSettimana.value
+          : this.numeroSettimana,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      dataInizio: data.dataInizio.present
+          ? data.dataInizio.value
+          : this.dataInizio,
+      dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MicrocicliTableData(')
+          ..write('id: $id, ')
+          ..write('mesocicloId: $mesocicloId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('numeroSettimana: $numeroSettimana, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('tipo: $tipo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    mesocicloId,
+    clubId,
+    nome,
+    numeroSettimana,
+    ordine,
+    dataInizio,
+    dataFine,
+    tipo,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MicrocicliTableData &&
+          other.id == this.id &&
+          other.mesocicloId == this.mesocicloId &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.numeroSettimana == this.numeroSettimana &&
+          other.ordine == this.ordine &&
+          other.dataInizio == this.dataInizio &&
+          other.dataFine == this.dataFine &&
+          other.tipo == this.tipo);
+}
+
+class MicrocicliTableCompanion extends UpdateCompanion<MicrocicliTableData> {
+  final Value<String> id;
+  final Value<String> mesocicloId;
+  final Value<String> clubId;
+  final Value<String?> nome;
+  final Value<int?> numeroSettimana;
+  final Value<int> ordine;
+  final Value<DateTime> dataInizio;
+  final Value<DateTime> dataFine;
+  final Value<String?> tipo;
+  final Value<int> rowid;
+  const MicrocicliTableCompanion({
+    this.id = const Value.absent(),
+    this.mesocicloId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.numeroSettimana = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.dataInizio = const Value.absent(),
+    this.dataFine = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MicrocicliTableCompanion.insert({
+    required String id,
+    required String mesocicloId,
+    required String clubId,
+    this.nome = const Value.absent(),
+    this.numeroSettimana = const Value.absent(),
+    this.ordine = const Value.absent(),
+    required DateTime dataInizio,
+    required DateTime dataFine,
+    this.tipo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       mesocicloId = Value(mesocicloId),
+       clubId = Value(clubId),
+       dataInizio = Value(dataInizio),
+       dataFine = Value(dataFine);
+  static Insertable<MicrocicliTableData> custom({
+    Expression<String>? id,
+    Expression<String>? mesocicloId,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<int>? numeroSettimana,
+    Expression<int>? ordine,
+    Expression<DateTime>? dataInizio,
+    Expression<DateTime>? dataFine,
+    Expression<String>? tipo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (mesocicloId != null) 'mesociclo_id': mesocicloId,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (numeroSettimana != null) 'numero_settimana': numeroSettimana,
+      if (ordine != null) 'ordine': ordine,
+      if (dataInizio != null) 'data_inizio': dataInizio,
+      if (dataFine != null) 'data_fine': dataFine,
+      if (tipo != null) 'tipo': tipo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MicrocicliTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? mesocicloId,
+    Value<String>? clubId,
+    Value<String?>? nome,
+    Value<int?>? numeroSettimana,
+    Value<int>? ordine,
+    Value<DateTime>? dataInizio,
+    Value<DateTime>? dataFine,
+    Value<String?>? tipo,
+    Value<int>? rowid,
+  }) {
+    return MicrocicliTableCompanion(
+      id: id ?? this.id,
+      mesocicloId: mesocicloId ?? this.mesocicloId,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      numeroSettimana: numeroSettimana ?? this.numeroSettimana,
+      ordine: ordine ?? this.ordine,
+      dataInizio: dataInizio ?? this.dataInizio,
+      dataFine: dataFine ?? this.dataFine,
+      tipo: tipo ?? this.tipo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (mesocicloId.present) {
+      map['mesociclo_id'] = Variable<String>(mesocicloId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (numeroSettimana.present) {
+      map['numero_settimana'] = Variable<int>(numeroSettimana.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (dataInizio.present) {
+      map['data_inizio'] = Variable<DateTime>(dataInizio.value);
+    }
+    if (dataFine.present) {
+      map['data_fine'] = Variable<DateTime>(dataFine.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MicrocicliTableCompanion(')
+          ..write('id: $id, ')
+          ..write('mesocicloId: $mesocicloId, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('numeroSettimana: $numeroSettimana, ')
+          ..write('ordine: $ordine, ')
+          ..write('dataInizio: $dataInizio, ')
+          ..write('dataFine: $dataFine, ')
+          ..write('tipo: $tipo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AllenamentiTableTable extends AllenamentiTable
     with TableInfo<$AllenamentiTableTable, AllenamentiTableData> {
   @override
@@ -4287,6 +6330,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $TestIngressoTableTable(this);
   late final $TabellePassiTableTable tabellePassiTable =
       $TabellePassiTableTable(this);
+  late final $StagioniTableTable stagioniTable = $StagioniTableTable(this);
+  late final $MacrocicliTableTable macrocicliTable = $MacrocicliTableTable(
+    this,
+  );
+  late final $MesocicliTableTable mesocicliTable = $MesocicliTableTable(this);
+  late final $MicrocicliTableTable microcicliTable = $MicrocicliTableTable(
+    this,
+  );
   late final $AllenamentiTableTable allenamentiTable = $AllenamentiTableTable(
     this,
   );
@@ -4303,6 +6354,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     atletiTable,
     testIngressoTable,
     tabellePassiTable,
+    stagioniTable,
+    macrocicliTable,
+    mesocicliTable,
+    microcicliTable,
     allenamentiTable,
     serieTable,
     presenzeTable,
@@ -5397,6 +7452,1080 @@ typedef $$TabellePassiTableTableProcessedTableManager =
         >,
       ),
       TabellePassiTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$StagioniTableTableCreateCompanionBuilder =
+    StagioniTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String nome,
+      required DateTime dataInizio,
+      required DateTime dataFine,
+      Value<String?> obiettivo,
+      Value<String?> gruppo,
+      Value<int> rowid,
+    });
+typedef $$StagioniTableTableUpdateCompanionBuilder =
+    StagioniTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<DateTime> dataInizio,
+      Value<DateTime> dataFine,
+      Value<String?> obiettivo,
+      Value<String?> gruppo,
+      Value<int> rowid,
+    });
+
+class $$StagioniTableTableFilterComposer
+    extends Composer<_$AppDatabase, $StagioniTableTable> {
+  $$StagioniTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppo => $composableBuilder(
+    column: $table.gruppo,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StagioniTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $StagioniTableTable> {
+  $$StagioniTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gruppo => $composableBuilder(
+    column: $table.gruppo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StagioniTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StagioniTableTable> {
+  $$StagioniTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataFine =>
+      $composableBuilder(column: $table.dataFine, builder: (column) => column);
+
+  GeneratedColumn<String> get obiettivo =>
+      $composableBuilder(column: $table.obiettivo, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppo =>
+      $composableBuilder(column: $table.gruppo, builder: (column) => column);
+}
+
+class $$StagioniTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StagioniTableTable,
+          StagioniTableData,
+          $$StagioniTableTableFilterComposer,
+          $$StagioniTableTableOrderingComposer,
+          $$StagioniTableTableAnnotationComposer,
+          $$StagioniTableTableCreateCompanionBuilder,
+          $$StagioniTableTableUpdateCompanionBuilder,
+          (
+            StagioniTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $StagioniTableTable,
+              StagioniTableData
+            >,
+          ),
+          StagioniTableData,
+          PrefetchHooks Function()
+        > {
+  $$StagioniTableTableTableManager(_$AppDatabase db, $StagioniTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StagioniTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StagioniTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StagioniTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<DateTime> dataInizio = const Value.absent(),
+                Value<DateTime> dataFine = const Value.absent(),
+                Value<String?> obiettivo = const Value.absent(),
+                Value<String?> gruppo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StagioniTableCompanion(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                gruppo: gruppo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String nome,
+                required DateTime dataInizio,
+                required DateTime dataFine,
+                Value<String?> obiettivo = const Value.absent(),
+                Value<String?> gruppo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StagioniTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                gruppo: gruppo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StagioniTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StagioniTableTable,
+      StagioniTableData,
+      $$StagioniTableTableFilterComposer,
+      $$StagioniTableTableOrderingComposer,
+      $$StagioniTableTableAnnotationComposer,
+      $$StagioniTableTableCreateCompanionBuilder,
+      $$StagioniTableTableUpdateCompanionBuilder,
+      (
+        StagioniTableData,
+        BaseReferences<_$AppDatabase, $StagioniTableTable, StagioniTableData>,
+      ),
+      StagioniTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$MacrocicliTableTableCreateCompanionBuilder =
+    MacrocicliTableCompanion Function({
+      required String id,
+      required String stagioneId,
+      required String clubId,
+      required String nome,
+      Value<int> ordine,
+      required DateTime dataInizio,
+      required DateTime dataFine,
+      Value<String?> obiettivo,
+      Value<int> rowid,
+    });
+typedef $$MacrocicliTableTableUpdateCompanionBuilder =
+    MacrocicliTableCompanion Function({
+      Value<String> id,
+      Value<String> stagioneId,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<int> ordine,
+      Value<DateTime> dataInizio,
+      Value<DateTime> dataFine,
+      Value<String?> obiettivo,
+      Value<int> rowid,
+    });
+
+class $$MacrocicliTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MacrocicliTableTable> {
+  $$MacrocicliTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stagioneId => $composableBuilder(
+    column: $table.stagioneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MacrocicliTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MacrocicliTableTable> {
+  $$MacrocicliTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stagioneId => $composableBuilder(
+    column: $table.stagioneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MacrocicliTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MacrocicliTableTable> {
+  $$MacrocicliTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get stagioneId => $composableBuilder(
+    column: $table.stagioneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataFine =>
+      $composableBuilder(column: $table.dataFine, builder: (column) => column);
+
+  GeneratedColumn<String> get obiettivo =>
+      $composableBuilder(column: $table.obiettivo, builder: (column) => column);
+}
+
+class $$MacrocicliTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MacrocicliTableTable,
+          MacrocicliTableData,
+          $$MacrocicliTableTableFilterComposer,
+          $$MacrocicliTableTableOrderingComposer,
+          $$MacrocicliTableTableAnnotationComposer,
+          $$MacrocicliTableTableCreateCompanionBuilder,
+          $$MacrocicliTableTableUpdateCompanionBuilder,
+          (
+            MacrocicliTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $MacrocicliTableTable,
+              MacrocicliTableData
+            >,
+          ),
+          MacrocicliTableData,
+          PrefetchHooks Function()
+        > {
+  $$MacrocicliTableTableTableManager(
+    _$AppDatabase db,
+    $MacrocicliTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MacrocicliTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MacrocicliTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MacrocicliTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> stagioneId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<DateTime> dataInizio = const Value.absent(),
+                Value<DateTime> dataFine = const Value.absent(),
+                Value<String?> obiettivo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MacrocicliTableCompanion(
+                id: id,
+                stagioneId: stagioneId,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String stagioneId,
+                required String clubId,
+                required String nome,
+                Value<int> ordine = const Value.absent(),
+                required DateTime dataInizio,
+                required DateTime dataFine,
+                Value<String?> obiettivo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MacrocicliTableCompanion.insert(
+                id: id,
+                stagioneId: stagioneId,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MacrocicliTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MacrocicliTableTable,
+      MacrocicliTableData,
+      $$MacrocicliTableTableFilterComposer,
+      $$MacrocicliTableTableOrderingComposer,
+      $$MacrocicliTableTableAnnotationComposer,
+      $$MacrocicliTableTableCreateCompanionBuilder,
+      $$MacrocicliTableTableUpdateCompanionBuilder,
+      (
+        MacrocicliTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $MacrocicliTableTable,
+          MacrocicliTableData
+        >,
+      ),
+      MacrocicliTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$MesocicliTableTableCreateCompanionBuilder =
+    MesocicliTableCompanion Function({
+      required String id,
+      required String macrocicloId,
+      required String clubId,
+      required String nome,
+      Value<int> ordine,
+      required DateTime dataInizio,
+      required DateTime dataFine,
+      Value<String?> obiettivo,
+      Value<int> rowid,
+    });
+typedef $$MesocicliTableTableUpdateCompanionBuilder =
+    MesocicliTableCompanion Function({
+      Value<String> id,
+      Value<String> macrocicloId,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<int> ordine,
+      Value<DateTime> dataInizio,
+      Value<DateTime> dataFine,
+      Value<String?> obiettivo,
+      Value<int> rowid,
+    });
+
+class $$MesocicliTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MesocicliTableTable> {
+  $$MesocicliTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get macrocicloId => $composableBuilder(
+    column: $table.macrocicloId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MesocicliTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MesocicliTableTable> {
+  $$MesocicliTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get macrocicloId => $composableBuilder(
+    column: $table.macrocicloId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MesocicliTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MesocicliTableTable> {
+  $$MesocicliTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get macrocicloId => $composableBuilder(
+    column: $table.macrocicloId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataFine =>
+      $composableBuilder(column: $table.dataFine, builder: (column) => column);
+
+  GeneratedColumn<String> get obiettivo =>
+      $composableBuilder(column: $table.obiettivo, builder: (column) => column);
+}
+
+class $$MesocicliTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MesocicliTableTable,
+          MesocicliTableData,
+          $$MesocicliTableTableFilterComposer,
+          $$MesocicliTableTableOrderingComposer,
+          $$MesocicliTableTableAnnotationComposer,
+          $$MesocicliTableTableCreateCompanionBuilder,
+          $$MesocicliTableTableUpdateCompanionBuilder,
+          (
+            MesocicliTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $MesocicliTableTable,
+              MesocicliTableData
+            >,
+          ),
+          MesocicliTableData,
+          PrefetchHooks Function()
+        > {
+  $$MesocicliTableTableTableManager(
+    _$AppDatabase db,
+    $MesocicliTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MesocicliTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MesocicliTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MesocicliTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> macrocicloId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<DateTime> dataInizio = const Value.absent(),
+                Value<DateTime> dataFine = const Value.absent(),
+                Value<String?> obiettivo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MesocicliTableCompanion(
+                id: id,
+                macrocicloId: macrocicloId,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String macrocicloId,
+                required String clubId,
+                required String nome,
+                Value<int> ordine = const Value.absent(),
+                required DateTime dataInizio,
+                required DateTime dataFine,
+                Value<String?> obiettivo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MesocicliTableCompanion.insert(
+                id: id,
+                macrocicloId: macrocicloId,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                obiettivo: obiettivo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MesocicliTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MesocicliTableTable,
+      MesocicliTableData,
+      $$MesocicliTableTableFilterComposer,
+      $$MesocicliTableTableOrderingComposer,
+      $$MesocicliTableTableAnnotationComposer,
+      $$MesocicliTableTableCreateCompanionBuilder,
+      $$MesocicliTableTableUpdateCompanionBuilder,
+      (
+        MesocicliTableData,
+        BaseReferences<_$AppDatabase, $MesocicliTableTable, MesocicliTableData>,
+      ),
+      MesocicliTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$MicrocicliTableTableCreateCompanionBuilder =
+    MicrocicliTableCompanion Function({
+      required String id,
+      required String mesocicloId,
+      required String clubId,
+      Value<String?> nome,
+      Value<int?> numeroSettimana,
+      Value<int> ordine,
+      required DateTime dataInizio,
+      required DateTime dataFine,
+      Value<String?> tipo,
+      Value<int> rowid,
+    });
+typedef $$MicrocicliTableTableUpdateCompanionBuilder =
+    MicrocicliTableCompanion Function({
+      Value<String> id,
+      Value<String> mesocicloId,
+      Value<String> clubId,
+      Value<String?> nome,
+      Value<int?> numeroSettimana,
+      Value<int> ordine,
+      Value<DateTime> dataInizio,
+      Value<DateTime> dataFine,
+      Value<String?> tipo,
+      Value<int> rowid,
+    });
+
+class $$MicrocicliTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MicrocicliTableTable> {
+  $$MicrocicliTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mesocicloId => $composableBuilder(
+    column: $table.mesocicloId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get numeroSettimana => $composableBuilder(
+    column: $table.numeroSettimana,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MicrocicliTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MicrocicliTableTable> {
+  $$MicrocicliTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mesocicloId => $composableBuilder(
+    column: $table.mesocicloId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get numeroSettimana => $composableBuilder(
+    column: $table.numeroSettimana,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataFine => $composableBuilder(
+    column: $table.dataFine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MicrocicliTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MicrocicliTableTable> {
+  $$MicrocicliTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get mesocicloId => $composableBuilder(
+    column: $table.mesocicloId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get numeroSettimana => $composableBuilder(
+    column: $table.numeroSettimana,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataInizio => $composableBuilder(
+    column: $table.dataInizio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataFine =>
+      $composableBuilder(column: $table.dataFine, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+}
+
+class $$MicrocicliTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MicrocicliTableTable,
+          MicrocicliTableData,
+          $$MicrocicliTableTableFilterComposer,
+          $$MicrocicliTableTableOrderingComposer,
+          $$MicrocicliTableTableAnnotationComposer,
+          $$MicrocicliTableTableCreateCompanionBuilder,
+          $$MicrocicliTableTableUpdateCompanionBuilder,
+          (
+            MicrocicliTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $MicrocicliTableTable,
+              MicrocicliTableData
+            >,
+          ),
+          MicrocicliTableData,
+          PrefetchHooks Function()
+        > {
+  $$MicrocicliTableTableTableManager(
+    _$AppDatabase db,
+    $MicrocicliTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MicrocicliTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MicrocicliTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MicrocicliTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> mesocicloId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String?> nome = const Value.absent(),
+                Value<int?> numeroSettimana = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<DateTime> dataInizio = const Value.absent(),
+                Value<DateTime> dataFine = const Value.absent(),
+                Value<String?> tipo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MicrocicliTableCompanion(
+                id: id,
+                mesocicloId: mesocicloId,
+                clubId: clubId,
+                nome: nome,
+                numeroSettimana: numeroSettimana,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                tipo: tipo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String mesocicloId,
+                required String clubId,
+                Value<String?> nome = const Value.absent(),
+                Value<int?> numeroSettimana = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                required DateTime dataInizio,
+                required DateTime dataFine,
+                Value<String?> tipo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MicrocicliTableCompanion.insert(
+                id: id,
+                mesocicloId: mesocicloId,
+                clubId: clubId,
+                nome: nome,
+                numeroSettimana: numeroSettimana,
+                ordine: ordine,
+                dataInizio: dataInizio,
+                dataFine: dataFine,
+                tipo: tipo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MicrocicliTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MicrocicliTableTable,
+      MicrocicliTableData,
+      $$MicrocicliTableTableFilterComposer,
+      $$MicrocicliTableTableOrderingComposer,
+      $$MicrocicliTableTableAnnotationComposer,
+      $$MicrocicliTableTableCreateCompanionBuilder,
+      $$MicrocicliTableTableUpdateCompanionBuilder,
+      (
+        MicrocicliTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $MicrocicliTableTable,
+          MicrocicliTableData
+        >,
+      ),
+      MicrocicliTableData,
       PrefetchHooks Function()
     >;
 typedef $$AllenamentiTableTableCreateCompanionBuilder =
@@ -6520,6 +9649,14 @@ class $AppDatabaseManager {
       $$TestIngressoTableTableTableManager(_db, _db.testIngressoTable);
   $$TabellePassiTableTableTableManager get tabellePassiTable =>
       $$TabellePassiTableTableTableManager(_db, _db.tabellePassiTable);
+  $$StagioniTableTableTableManager get stagioniTable =>
+      $$StagioniTableTableTableManager(_db, _db.stagioniTable);
+  $$MacrocicliTableTableTableManager get macrocicliTable =>
+      $$MacrocicliTableTableTableManager(_db, _db.macrocicliTable);
+  $$MesocicliTableTableTableManager get mesocicliTable =>
+      $$MesocicliTableTableTableManager(_db, _db.mesocicliTable);
+  $$MicrocicliTableTableTableManager get microcicliTable =>
+      $$MicrocicliTableTableTableManager(_db, _db.microcicliTable);
   $$AllenamentiTableTableTableManager get allenamentiTable =>
       $$AllenamentiTableTableTableManager(_db, _db.allenamentiTable);
   $$SerieTableTableTableManager get serieTable =>

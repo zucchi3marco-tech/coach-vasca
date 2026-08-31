@@ -65,6 +65,62 @@ class TabellePassiTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class StagioniTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  DateTimeColumn get dataInizio => dateTime()();
+  DateTimeColumn get dataFine => dateTime()();
+  TextColumn get obiettivo => text().nullable()();
+  TextColumn get gruppo => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class MacrocicliTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get stagioneId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  IntColumn get ordine => integer().withDefault(const Constant(1))();
+  DateTimeColumn get dataInizio => dateTime()();
+  DateTimeColumn get dataFine => dateTime()();
+  TextColumn get obiettivo => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class MesocicliTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get macrocicloId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  IntColumn get ordine => integer().withDefault(const Constant(1))();
+  DateTimeColumn get dataInizio => dateTime()();
+  DateTimeColumn get dataFine => dateTime()();
+  TextColumn get obiettivo => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class MicrocicliTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get mesocicloId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text().nullable()();
+  IntColumn get numeroSettimana => integer().nullable()();
+  IntColumn get ordine => integer().withDefault(const Constant(1))();
+  DateTimeColumn get dataInizio => dateTime()();
+  DateTimeColumn get dataFine => dateTime()();
+  TextColumn get tipo => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class AllenamentiTable extends Table {
   TextColumn get id => text()();
   TextColumn get clubId => text()();
