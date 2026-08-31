@@ -5,10 +5,26 @@ import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 
 class AllenamentoFormScreen extends ConsumerStatefulWidget {
-  const AllenamentoFormScreen({required this.clubId, this.allenamento, super.key});
+  const AllenamentoFormScreen({
+    required this.clubId,
+    this.allenamento,
+    this.microcicloId,
+    this.dataPredefinita,
+    super.key,
+  });
 
   final String clubId;
   final Allenamento? allenamento;
+
+  /// Preassegna il microciclo quando l'allenamento viene creato dal
+  /// dettaglio di un microciclo. In modifica invece si usa sempre
+  /// `allenamento.microcicloId`, cosi' un salvataggio dal form generico
+  /// non "sgancia" un collegamento gia' fatto.
+  final String? microcicloId;
+
+  /// Data iniziale suggerita in creazione (es. l'inizio della settimana
+  /// quando si crea da un microciclo), invece di "oggi".
+  final DateTime? dataPredefinita;
 
   @override
   ConsumerState<AllenamentoFormScreen> createState() =>
@@ -34,7 +50,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     _titoloController = TextEditingController(text: a?.titolo ?? '');
     _gruppoController = TextEditingController(text: a?.gruppo ?? '');
     _noteController = TextEditingController(text: a?.note ?? '');
-    _data = a?.data ?? DateTime.now();
+    _data = a?.data ?? widget.dataPredefinita ?? DateTime.now();
   }
 
   @override
@@ -69,6 +85,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
         await repository.updateAllenamento(
           id: widget.allenamento!.id,
           data: _data,
+          microcicloId: widget.allenamento!.microcicloId,
           titolo: _titoloController.text.trim(),
           gruppo: _gruppoController.text.trim(),
           note: _noteController.text.trim(),
@@ -77,6 +94,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
         await repository.createAllenamento(
           clubId: widget.clubId,
           data: _data,
+          microcicloId: widget.microcicloId,
           titolo: _titoloController.text.trim(),
           gruppo: _gruppoController.text.trim(),
           note: _noteController.text.trim(),
@@ -106,6 +124,13 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (!_isEditing && widget.microcicloId != null) ...[
+                  Text(
+                    'Verrà collegato al microciclo selezionato.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Data'),

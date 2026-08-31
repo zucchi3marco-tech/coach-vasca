@@ -52,6 +52,13 @@ class AllenamentiRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  Stream<List<Allenamento>> watchPerMicrociclo(String microcicloId) {
+    final query = _db.select(_db.allenamentiTable)
+      ..where((t) => t.microcicloId.equals(microcicloId))
+      ..orderBy([(t) => OrderingTerm.asc(t.data)]);
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
   Future<void> refreshFromRemote(String clubId) async {
     final rows = await _client
         .from('allenamenti')
@@ -79,6 +86,7 @@ class AllenamentiRepository {
   Future<Allenamento> createAllenamento({
     required String clubId,
     required DateTime data,
+    String? microcicloId,
     String? titolo,
     String? gruppo,
     String? note,
@@ -88,6 +96,7 @@ class AllenamentiRepository {
       'id': id,
       'club_id': clubId,
       'data': formatDateOnly(data),
+      'microciclo_id': ?microcicloId,
       if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
       if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
       if (note != null && note.isNotEmpty) 'note': note,
@@ -121,12 +130,14 @@ class AllenamentiRepository {
   Future<Allenamento> updateAllenamento({
     required String id,
     required DateTime data,
+    String? microcicloId,
     String? titolo,
     String? gruppo,
     String? note,
   }) async {
     final payload = {
       'data': formatDateOnly(data),
+      'microciclo_id': microcicloId,
       'titolo': titolo,
       'gruppo': gruppo,
       'note': note,
@@ -148,6 +159,7 @@ class AllenamentiRepository {
       )..where((t) => t.id.equals(id))).write(
         AllenamentiTableCompanion(
           data: Value(data),
+          microcicloId: Value(microcicloId),
           titolo: Value(titolo),
           gruppo: Value(gruppo),
           note: Value(note),

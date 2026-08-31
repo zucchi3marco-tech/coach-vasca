@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/microcicli_providers.dart';
 import '../domain/mesociclo.dart';
 import 'mesociclo_form_screen.dart';
+import 'microciclo_detail_screen.dart';
 import 'microciclo_form_screen.dart';
 
 class MesocicloDetailScreen extends ConsumerWidget {
@@ -85,13 +86,11 @@ class MesocicloDetailScreen extends ConsumerWidget {
                             '${_formattaData(m.dataInizio)} — ${_formattaData(m.dataFine)}'
                             '${m.tipo != null && m.tipo!.isNotEmpty ? ' · ${m.tipo}' : ''}',
                           ),
+                          trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => MicrocicloFormScreen(
-                                mesocicloId: mesociclo.id,
-                                ordineSuccessivo: microcicli.length + 1,
-                                microciclo: m,
-                              ),
+                              builder: (_) =>
+                                  MicrocicloDetailScreen(microciclo: m),
                             ),
                           ),
                         );
