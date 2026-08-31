@@ -71,7 +71,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 
 ## FASE 4 — Programmazione di stagione (~2-3 settimane)
 - [x] Creare Stagione (date, obiettivo, gruppo) — `lib/features/stagioni/`, validazione data fine ≥ data inizio lato client, nuove tabelle Drift per l'intera gerarchia (stagioni/macro/meso/micro) anche se per ora solo stagioni ha una UI
-- [ ] Suddivisione macro/meso/micro (anche solo settimane, in V1)
+- [x] Suddivisione macro/meso/micro (anche solo settimane, in V1) — gerarchia di dettaglio Stagione → Macrocicli → Mesocicli → Microcicli, stesso pattern CRUD resiliente delle altre feature
 - [ ] Assegnare allenamenti alle date
 - [ ] Vista settimanale e mensile
 - [ ] Duplica settimana / sposta scheda

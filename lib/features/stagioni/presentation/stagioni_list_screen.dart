@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/stagioni_providers.dart';
 import '../data/stagioni_repository.dart';
+import 'stagione_detail_screen.dart';
 import 'stagione_form_screen.dart';
 
 class StagioniListScreen extends ConsumerWidget {
@@ -51,10 +52,7 @@ class StagioniListScreen extends ConsumerWidget {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => StagioneFormScreen(
-                            clubId: clubId,
-                            stagione: s,
-                          ),
+                          builder: (_) => StagioneDetailScreen(stagione: s),
                         ),
                       ),
                     );
