@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazione_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
+import '../domain/scheda_generata.dart';
 
 const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
@@ -163,22 +165,13 @@ class _GeneraAllenamentoFormScreenState
 
     setState(() => _generazioneInCorso = true);
     try {
-      final testo = await ref
+      final scheda = await ref
           .read(generazioneAiRepositoryProvider)
           .generaAllenamento(parametri);
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Scheda generata'),
-          content: SingleChildScrollView(child: Text(testo)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Chiudi'),
-            ),
-          ],
-        ),
+        builder: (context) => _DialogSchedaGenerata(scheda: scheda),
       );
     } catch (e) {
       if (!mounted) return;
@@ -188,5 +181,70 @@ class _GeneraAllenamentoFormScreenState
     } finally {
       if (mounted) setState(() => _generazioneInCorso = false);
     }
+  }
+}
+
+class _DialogSchedaGenerata extends StatelessWidget {
+  const _DialogSchedaGenerata({required this.scheda});
+
+  final SchedaGenerata scheda;
+
+  String _sottotitoloSerie(SerieGenerata s) {
+    final parti = <String>[labelBlocco(s.blocco)];
+    if (s.zona != null) parti.add('zona ${s.zona}');
+    if (s.recuperoS != null) parti.add("rec ${s.recuperoS}''");
+    if (s.attrezzatura != null && s.attrezzatura!.isNotEmpty) {
+      parti.add(s.attrezzatura!);
+    }
+    return parti.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(scheda.titolo),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Volume totale: ${scheda.volumeTotaleM} m',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (scheda.note != null && scheda.note!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(scheda.note!),
+              ],
+              const SizedBox(height: 12),
+              for (final s in scheda.serie)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
+                        '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(_sottotitoloSerie(s)),
+                      if (s.note != null && s.note!.isNotEmpty) Text(s.note!),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Chiudi'),
+        ),
+      ],
+    );
   }
 }
