@@ -80,7 +80,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 
 ## FASE 5 — Modulo AI "Genera allenamento" (~2-3 settimane)
 Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al codice di terzi.
-- [ ] Form input: gruppo/livello, volume, focus, regimi ammessi, vincoli
+- [x] Form input: gruppo/livello, volume, focus, regimi ammessi, vincoli — `lib/features/ai_genera/`, raggiungibile dal nuovo FAB "Genera con AI" nella tab Allenamenti; per ora raccoglie e valida i parametri (`ParametriGenerazione`), la chiamata API è il prossimo punto
 - [ ] Chiamata API con limite di spesa mensile impostato sul provider
 - [ ] Output sempre in JSON strutturato e validato (metri, tempi, regimi noti)
 - [ ] Anteprima scheda generata + conferma manuale del coach prima del salvataggio

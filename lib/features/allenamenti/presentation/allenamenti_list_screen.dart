@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
@@ -70,11 +71,23 @@ class _AllenamentiListScreenState
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-allenamenti',
-        onPressed: _apriForm,
-        tooltip: 'Nuovo allenamento',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'fab-genera-ai',
+            onPressed: _apriGeneraAI,
+            tooltip: 'Genera con AI',
+            child: const Icon(Icons.auto_awesome),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'fab-allenamenti',
+            onPressed: _apriForm,
+            tooltip: 'Nuovo allenamento',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -139,6 +152,14 @@ class _AllenamentiListScreenState
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => AllenamentoFormScreen(clubId: widget.clubId),
+      ),
+    );
+  }
+
+  Future<void> _apriGeneraAI() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GeneraAllenamentoFormScreen(clubId: widget.clubId),
       ),
     );
   }
