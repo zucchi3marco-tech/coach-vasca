@@ -21,6 +21,14 @@ class SchedaGenerata {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'titolo': titolo,
+      'note': note,
+      'serie': serie.map((s) => s.toMap()).toList(),
+    };
+  }
 }
 
 class SerieGenerata {
@@ -63,5 +71,20 @@ class SerieGenerata {
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'ordine': ordine,
+      'blocco': blocco,
+      'ripetute': ripetute,
+      'distanzaM': distanzaM,
+      'stile': stile,
+      'esecuzione': esecuzione,
+      'zona': zona,
+      'recuperoS': recuperoS,
+      'attrezzatura': attrezzatura,
+      'note': note,
+    };
   }
 }

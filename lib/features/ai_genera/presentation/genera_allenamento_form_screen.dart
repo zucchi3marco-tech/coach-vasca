@@ -9,8 +9,10 @@ import '../../allenamenti/presentation/serie_labels.dart';
 import '../../stagioni/application/microcicli_providers.dart';
 import '../../stagioni/domain/microciclo.dart';
 import '../data/generazione_ai_repository.dart';
+import '../data/generazioni_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
+import 'storico_generazioni_screen.dart';
 
 const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
@@ -61,7 +63,20 @@ class _GeneraAllenamentoFormScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Genera con AI')),
+      appBar: AppBar(
+        title: const Text('Genera con AI'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Storico generazioni',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StoricoGenerazioniScreen(clubId: widget.clubId),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -184,6 +199,21 @@ class _GeneraAllenamentoFormScreenState
       final scheda = await ref
           .read(generazioneAiRepositoryProvider)
           .generaAllenamento(parametri);
+
+      // Lo storico e' un di piu' per rivedere/migliorare i prompt: un suo
+      // fallimento non deve mai bloccare una generazione riuscita.
+      String? generazioneId;
+      try {
+        generazioneId = await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: parametri,
+              esito: 'successo',
+              scheda: scheda.toMap(),
+            );
+      } catch (_) {}
+
       if (!mounted) return;
       final allenamentoSalvato = await showDialog<Allenamento>(
         context: context,
@@ -193,6 +223,7 @@ class _GeneraAllenamentoFormScreenState
           gruppo: parametri.gruppo,
           microcicloIniziale: widget.microcicloId,
           dataIniziale: widget.dataPredefinita,
+          generazioneId: generazioneId,
         ),
       );
       if (allenamentoSalvato != null && mounted) {
@@ -204,6 +235,16 @@ class _GeneraAllenamentoFormScreenState
         );
       }
     } catch (e) {
+      try {
+        await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: parametri,
+              esito: 'errore',
+              messaggioErrore: e.toString(),
+            );
+      } catch (_) {}
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Errore nella generazione: $e')),
@@ -221,6 +262,7 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
     required this.gruppo,
     this.microcicloIniziale,
     this.dataIniziale,
+    this.generazioneId,
   });
 
   final SchedaGenerata scheda;
@@ -228,6 +270,11 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
   final String gruppo;
   final String? microcicloIniziale;
   final DateTime? dataIniziale;
+
+  /// Id della voce di storico creata per questa generazione (nullo se la
+  /// registrazione dello storico stessa era fallita): se presente, dopo il
+  /// salvataggio ci si collega l'allenamento creato.
+  final String? generazioneId;
 
   @override
   ConsumerState<_DialogSchedaGenerata> createState() =>
@@ -397,6 +444,16 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
           attrezzatura: s.attrezzatura,
           note: s.note,
         );
+      }
+      if (widget.generazioneId != null) {
+        try {
+          await ref
+              .read(generazioniAiRepositoryProvider)
+              .collegaAllenamento(
+                generazioneId: widget.generazioneId!,
+                allenamentoId: allenamento.id,
+              );
+        } catch (_) {}
       }
       if (!mounted) return;
       Navigator.of(context).pop(allenamento);

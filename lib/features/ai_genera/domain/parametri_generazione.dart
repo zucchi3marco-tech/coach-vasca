@@ -16,4 +16,15 @@ class ParametriGenerazione {
   final String focus;
   final List<String> regimiAmmessi;
   final String? vincoli;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'gruppo': gruppo,
+      'livello': livello,
+      'volumeMetri': volumeMetri,
+      'focus': focus,
+      'regimiAmmessi': regimiAmmessi,
+      'vincoli': vincoli,
+    };
+  }
 }

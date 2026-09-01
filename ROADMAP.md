@@ -85,7 +85,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Output sempre in JSON strutturato e validato (metri, tempi, regimi noti) — Gemini chiamato con `responseSchema` fisso (`SchedaGenerata`/`SerieGenerata`), la Edge Function rivalida comunque ogni campo lato server contro i valori noti (blocco/stile/esecuzione/zona, numeri positivi) prima di rispondere, rifiutando con errore esplicito se il JSON non è conforme; il dialog "Genera" ora mostra la scheda formattata invece del testo grezzo
 - [x] Anteprima scheda generata + conferma manuale del coach prima del salvataggio — il dialog "Scheda generata" ora ha data modificabile e pulsanti Annulla/Salva: nulla viene scritto su Supabase/Drift finché il coach non conferma; "Salva" crea l'allenamento e le sue serie tramite i repository esistenti e apre il dettaglio appena creato
 - [x] "Aggiungi al calendario" → collega alla stagione — il dialog "Scheda generata" ha un menu per scegliere la settimana (microciclo) a cui collegare l'allenamento; il dettaglio di un microciclo ha anche un FAB "Genera con AI" che pre-compila settimana e data
-- [ ] Storico prompt/output per migliorare i prompt nel tempo
+- [x] Storico prompt/output per migliorare i prompt nel tempo — tabella `generazioni_ai` (migrazione `20260901000100_generazioni_ai.sql`), registrata da `generazioni_ai_repository.dart` ad ogni generazione (successo/errore, parametri, scheda, e se poi salvata come allenamento); consultabile dalla nuova schermata "Storico generazioni AI" (icona nell'AppBar di "Genera con AI")
 - [ ] (Opzionale, dopo) dettatura vocale → stesso parser JSON
 
 **Criterio di fine fase:** generi una scheda, la correggi, la metti in una data della stagione.
