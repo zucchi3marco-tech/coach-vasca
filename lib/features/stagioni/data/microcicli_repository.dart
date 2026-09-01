@@ -76,6 +76,33 @@ class MicrocicliRepository {
     });
   }
 
+  /// Elenco piatto di tutti i microcicli del club (di qualunque stagione),
+  /// per il selettore "sposta scheda". Letto sempre da remoto: e' un'azione
+  /// rara e deliberata, meglio avere dati freschi che una cache locale che
+  /// potrebbe non essere mai stata popolata per stagioni non ancora aperte.
+  Future<List<Microciclo>> fetchTuttiPerClub(String clubId) async {
+    final rows = await _client
+        .from('microcicli')
+        .select()
+        .eq('club_id', clubId)
+        .order('data_inizio', ascending: false);
+    return rows.map(_fromMap).toList();
+  }
+
+  Microciclo _fromMap(Map<String, dynamic> map) {
+    return Microciclo(
+      id: map['id'] as String,
+      mesocicloId: map['mesociclo_id'] as String,
+      clubId: map['club_id'] as String,
+      nome: map['nome'] as String?,
+      numeroSettimana: map['numero_settimana'] as int?,
+      ordine: map['ordine'] as int,
+      dataInizio: DateTime.parse(map['data_inizio'] as String),
+      dataFine: DateTime.parse(map['data_fine'] as String),
+      tipo: map['tipo'] as String?,
+    );
+  }
+
   Future<Microciclo> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(

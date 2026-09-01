@@ -79,6 +79,26 @@ class AllenamentiRepository {
     });
   }
 
+  /// Letto da remoto quando possibile (dati sempre freschi per la
+  /// duplicazione settimana), con fallback sulla cache locale se offline.
+  Future<List<Allenamento>> fetchPerMicrociclo(String microcicloId) async {
+    try {
+      final rows = await _client
+          .from('allenamenti')
+          .select()
+          .eq('microciclo_id', microcicloId)
+          .order('data');
+      return rows.map(Allenamento.fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final rows = await (_db.select(_db.allenamentiTable)
+            ..where((t) => t.microcicloId.equals(microcicloId))
+            ..orderBy([(t) => OrderingTerm.asc(t.data)]))
+          .get();
+      return rows.map(_fromRow).toList();
+    }
+  }
+
   Future<Allenamento> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -179,6 +199,31 @@ class AllenamentiRepository {
       _syncEngine.processQueue();
     }
     return _rileggiLocale(id);
+  }
+
+  /// Sposta la scheda su un altro microciclo (o la scollega, se
+  /// `microcicloId` e' null), senza toccare gli altri campi.
+  Future<void> setMicrociclo({
+    required String id,
+    required String? microcicloId,
+  }) async {
+    final payload = {'microciclo_id': microcicloId};
+    try {
+      await _client.from('allenamenti').update(payload).eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'allenamenti',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    await (_db.update(_db.allenamentiTable)..where((t) => t.id.equals(id))).write(
+      AllenamentiTableCompanion(microcicloId: Value(microcicloId)),
+    );
   }
 
   Future<void> deleteAllenamento(String id) async {

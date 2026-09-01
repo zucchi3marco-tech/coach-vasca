@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
+import '../data/duplicazione_settimana_service.dart';
 import '../domain/microciclo.dart';
 import 'microciclo_form_screen.dart';
 
@@ -27,6 +28,47 @@ class MicrocicloDetailScreen extends ConsumerWidget {
     return 'Microciclo';
   }
 
+  Future<void> _duplicaSettimana(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Duplica settimana'),
+        content: const Text(
+          'Verrà creata una nuova settimana subito dopo questa, con tutti '
+          'gli allenamenti e le serie copiati. Continuare?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Duplica'),
+          ),
+        ],
+      ),
+    );
+    if (conferma != true) return;
+
+    try {
+      final nuovoMicrociclo = await ref
+          .read(duplicazioneSettimanaServiceProvider)
+          .duplica(microciclo);
+      if (!context.mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => MicrocicloDetailScreen(microciclo: nuovoMicrociclo),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Errore nella duplicazione: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = (
@@ -39,6 +81,11 @@ class MicrocicloDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(_titolo),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.content_copy_outlined),
+            tooltip: 'Duplica settimana',
+            onPressed: () => _duplicaSettimana(context, ref),
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Modifica',

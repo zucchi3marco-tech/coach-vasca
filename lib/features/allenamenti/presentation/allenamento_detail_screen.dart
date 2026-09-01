@@ -10,6 +10,7 @@ import 'allenamento_form_screen.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
+import 'sposta_allenamento_screen.dart';
 
 class AllenamentoDetailScreen extends ConsumerWidget {
   const AllenamentoDetailScreen({required this.allenamento, super.key});
@@ -59,6 +60,15 @@ class AllenamentoDetailScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => PresenzeScreen(allenamento: allenamento),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.drive_file_move_outline),
+            tooltip: 'Sposta',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SpostaAllenamentoScreen(allenamento: allenamento),
               ),
             ),
           ),

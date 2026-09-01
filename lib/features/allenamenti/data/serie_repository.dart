@@ -107,6 +107,26 @@ class SerieRepository {
     });
   }
 
+  /// Letto da remoto quando possibile (dati sempre freschi per la
+  /// duplicazione settimana), con fallback sulla cache locale se offline.
+  Future<List<Serie>> fetchPerAllenamento(String allenamentoId) async {
+    try {
+      final rows = await _client
+          .from('serie')
+          .select()
+          .eq('allenamento_id', allenamentoId)
+          .order('ordine');
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final rows = await (_db.select(_db.serieTable)
+            ..where((t) => t.allenamentoId.equals(allenamentoId))
+            ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
+          .get();
+      return rows.map(_fromRow).toList();
+    }
+  }
+
   Future<Serie> createSerie({
     required String allenamentoId,
     required int ordine,

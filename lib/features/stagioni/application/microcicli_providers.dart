@@ -13,3 +13,12 @@ final microcicliListProvider = StreamProvider.family<List<Microciclo>, String>(
     );
   },
 );
+
+/// Elenco piatto di tutti i microcicli del club, per il selettore
+/// "sposta scheda". Non reattivo (FutureProvider): e' una lista aperta on
+/// demand per un'azione occasionale, non serve seguirla in tempo reale.
+final microcicliDelClubProvider = FutureProvider.family<List<Microciclo>, String>(
+  (ref, clubId) {
+    return ref.watch(microcicliRepositoryProvider).fetchTuttiPerClub(clubId);
+  },
+);

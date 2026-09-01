@@ -74,7 +74,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Suddivisione macro/meso/micro (anche solo settimane, in V1) — gerarchia di dettaglio Stagione → Macrocicli → Mesocicli → Microcicli, stesso pattern CRUD resiliente delle altre feature
 - [x] Assegnare allenamenti alle date — dettaglio microciclo (`microciclo_detail_screen.dart`) mostra/crea gli allenamenti della settimana, collegati tramite `microciclo_id`; il form generico allenamento preserva il collegamento esistente invece di sganciarlo
 - [x] Vista settimanale e mensile — selettore Elenco/Settimana/Mese nella scheda Allenamenti (calendario a griglia con puntino sui giorni con allenamento), tocco su un giorno apre la scheda del giorno (`giorno_allenamenti_screen.dart`)
-- [ ] Duplica settimana / sposta scheda
+- [x] Duplica settimana / sposta scheda — "sposta" collega una scheda a un altro microciclo (o la scollega) da `sposta_allenamento_screen.dart`; "duplica" (`duplicazione_settimana_service.dart`) crea la settimana successiva con stessa durata e copia allenamenti + serie, passando dagli stessi repository resilienti online/coda-offline. Fase 4 chiusa.
 
 **Criterio di fine fase:** il coach vede il piano della settimana e apre la scheda del giorno.
 
