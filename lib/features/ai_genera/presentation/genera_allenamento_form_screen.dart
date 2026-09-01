@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../allenamenti/data/allenamenti_repository.dart';
+import '../../allenamenti/data/serie_repository.dart';
+import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazione_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
@@ -169,10 +173,22 @@ class _GeneraAllenamentoFormScreenState
           .read(generazioneAiRepositoryProvider)
           .generaAllenamento(parametri);
       if (!mounted) return;
-      await showDialog<void>(
+      final allenamentoSalvato = await showDialog<Allenamento>(
         context: context,
-        builder: (context) => _DialogSchedaGenerata(scheda: scheda),
+        builder: (context) => _DialogSchedaGenerata(
+          scheda: scheda,
+          clubId: widget.clubId,
+          gruppo: parametri.gruppo,
+        ),
       );
+      if (allenamentoSalvato != null && mounted) {
+        await Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) =>
+                AllenamentoDetailScreen(allenamento: allenamentoSalvato),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,10 +200,30 @@ class _GeneraAllenamentoFormScreenState
   }
 }
 
-class _DialogSchedaGenerata extends StatelessWidget {
-  const _DialogSchedaGenerata({required this.scheda});
+class _DialogSchedaGenerata extends ConsumerStatefulWidget {
+  const _DialogSchedaGenerata({
+    required this.scheda,
+    required this.clubId,
+    required this.gruppo,
+  });
 
   final SchedaGenerata scheda;
+  final String clubId;
+  final String gruppo;
+
+  @override
+  ConsumerState<_DialogSchedaGenerata> createState() =>
+      _DialogSchedaGeneratedState();
+}
+
+class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
+  DateTime _data = DateTime.now();
+  bool _salvataggioInCorso = false;
+
+  String _formattaData(DateTime data) =>
+      '${data.day.toString().padLeft(2, '0')}/'
+      '${data.month.toString().padLeft(2, '0')}/'
+      '${data.year}';
 
   String _sottotitoloSerie(SerieGenerata s) {
     final parti = <String>[labelBlocco(s.blocco)];
@@ -201,6 +237,7 @@ class _DialogSchedaGenerata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheda = widget.scheda;
     return AlertDialog(
       title: Text(scheda.titolo),
       content: SizedBox(
@@ -219,6 +256,14 @@ class _DialogSchedaGenerata extends StatelessWidget {
                 Text(scheda.note!),
               ],
               const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Data'),
+                subtitle: Text(_formattaData(_data)),
+                trailing: const Icon(Icons.calendar_today_outlined),
+                onTap: _salvataggioInCorso ? null : _scegliData,
+              ),
+              const Divider(height: 24),
               for (final s in scheda.serie)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -241,10 +286,72 @@ class _DialogSchedaGenerata extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Chiudi'),
+          onPressed: _salvataggioInCorso
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _salvataggioInCorso ? null : _salva,
+          child: _salvataggioInCorso
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Salva'),
         ),
       ],
     );
+  }
+
+  Future<void> _scegliData() async {
+    final scelta = await showDatePicker(
+      context: context,
+      initialDate: _data,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (scelta != null) setState(() => _data = scelta);
+  }
+
+  Future<void> _salva() async {
+    setState(() => _salvataggioInCorso = true);
+    try {
+      final scheda = widget.scheda;
+      final allenamento = await ref
+          .read(allenamentiRepositoryProvider)
+          .createAllenamento(
+            clubId: widget.clubId,
+            data: _data,
+            titolo: scheda.titolo,
+            gruppo: widget.gruppo,
+            note: scheda.note,
+          );
+      final serieRepository = ref.read(serieRepositoryProvider);
+      for (final s in scheda.serie) {
+        await serieRepository.createSerie(
+          allenamentoId: allenamento.id,
+          ordine: s.ordine,
+          blocco: s.blocco,
+          ripetute: s.ripetute,
+          distanzaM: s.distanzaM,
+          stile: s.stile,
+          esecuzione: s.esecuzione,
+          zona: s.zona,
+          recuperoS: s.recuperoS,
+          attrezzatura: s.attrezzatura,
+          note: s.note,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop(allenamento);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Errore nel salvataggio: $e')),
+      );
+      setState(() => _salvataggioInCorso = false);
+    }
   }
 }
