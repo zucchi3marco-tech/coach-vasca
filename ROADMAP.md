@@ -84,7 +84,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Chiamata API con limite di spesa mensile impostato sul provider — Edge Function Supabase `supabase/functions/genera-allenamento/` (Gemini, chiave server-side via secret `GEMINI_API_KEY`), chiamata da `generazione_ai_repository.dart`; provider isolato dietro la function così è sostituibile senza toccare l'app. Budget/alert mensile impostato lato Google AI Studio (fuori dal codice)
 - [x] Output sempre in JSON strutturato e validato (metri, tempi, regimi noti) — Gemini chiamato con `responseSchema` fisso (`SchedaGenerata`/`SerieGenerata`), la Edge Function rivalida comunque ogni campo lato server contro i valori noti (blocco/stile/esecuzione/zona, numeri positivi) prima di rispondere, rifiutando con errore esplicito se il JSON non è conforme; il dialog "Genera" ora mostra la scheda formattata invece del testo grezzo
 - [x] Anteprima scheda generata + conferma manuale del coach prima del salvataggio — il dialog "Scheda generata" ora ha data modificabile e pulsanti Annulla/Salva: nulla viene scritto su Supabase/Drift finché il coach non conferma; "Salva" crea l'allenamento e le sue serie tramite i repository esistenti e apre il dettaglio appena creato
-- [ ] "Aggiungi al calendario" → collega alla stagione
+- [x] "Aggiungi al calendario" → collega alla stagione — il dialog "Scheda generata" ha un menu per scegliere la settimana (microciclo) a cui collegare l'allenamento; il dettaglio di un microciclo ha anche un FAB "Genera con AI" che pre-compila settimana e data
 - [ ] Storico prompt/output per migliorare i prompt nel tempo
 - [ ] (Opzionale, dopo) dettatura vocale → stesso parser JSON
 

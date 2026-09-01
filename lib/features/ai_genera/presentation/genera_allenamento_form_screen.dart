@@ -6,6 +6,8 @@ import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
+import '../../stagioni/application/microcicli_providers.dart';
+import '../../stagioni/domain/microciclo.dart';
 import '../data/generazione_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
@@ -17,9 +19,19 @@ const _regimi = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
 String _capitalizza(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
-  const GeneraAllenamentoFormScreen({required this.clubId, super.key});
+  const GeneraAllenamentoFormScreen({
+    required this.clubId,
+    this.microcicloId,
+    this.dataPredefinita,
+    super.key,
+  });
 
   final String clubId;
+
+  /// Se valorizzato (es. aperto dal dettaglio di una settimana), la scheda
+  /// generata viene proposta già collegata a quel microciclo.
+  final String? microcicloId;
+  final DateTime? dataPredefinita;
 
   @override
   ConsumerState<GeneraAllenamentoFormScreen> createState() =>
@@ -179,6 +191,8 @@ class _GeneraAllenamentoFormScreenState
           scheda: scheda,
           clubId: widget.clubId,
           gruppo: parametri.gruppo,
+          microcicloIniziale: widget.microcicloId,
+          dataIniziale: widget.dataPredefinita,
         ),
       );
       if (allenamentoSalvato != null && mounted) {
@@ -205,11 +219,15 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
     required this.scheda,
     required this.clubId,
     required this.gruppo,
+    this.microcicloIniziale,
+    this.dataIniziale,
   });
 
   final SchedaGenerata scheda;
   final String clubId;
   final String gruppo;
+  final String? microcicloIniziale;
+  final DateTime? dataIniziale;
 
   @override
   ConsumerState<_DialogSchedaGenerata> createState() =>
@@ -217,7 +235,8 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
 }
 
 class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
-  DateTime _data = DateTime.now();
+  late DateTime _data = widget.dataIniziale ?? DateTime.now();
+  late String? _microcicloId = widget.microcicloIniziale;
   bool _salvataggioInCorso = false;
 
   String _formattaData(DateTime data) =>
@@ -235,9 +254,16 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
     return parti.join(' · ');
   }
 
+  String _etichettaMicrociclo(Microciclo m) {
+    if (m.nome != null && m.nome!.isNotEmpty) return m.nome!;
+    if (m.numeroSettimana != null) return 'Settimana ${m.numeroSettimana}';
+    return 'Microciclo';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheda = widget.scheda;
+    final microcicliAsync = ref.watch(microcicliDelClubProvider(widget.clubId));
     return AlertDialog(
       title: Text(scheda.titolo),
       content: SizedBox(
@@ -262,6 +288,33 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
                 subtitle: Text(_formattaData(_data)),
                 trailing: const Icon(Icons.calendar_today_outlined),
                 onTap: _salvataggioInCorso ? null : _scegliData,
+              ),
+              const SizedBox(height: 8),
+              microcicliAsync.when(
+                data: (microcicli) => DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  initialValue: _microcicloId,
+                  decoration: const InputDecoration(
+                    labelText: 'Settimana (opzionale)',
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Nessun microciclo'),
+                    ),
+                    for (final m in microcicli)
+                      DropdownMenuItem(
+                        value: m.id,
+                        child: Text(_etichettaMicrociclo(m)),
+                      ),
+                  ],
+                  onChanged: _salvataggioInCorso
+                      ? null
+                      : (value) => setState(() => _microcicloId = value),
+                ),
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) =>
+                    Text('Errore nel caricamento settimane: $error'),
               ),
               const Divider(height: 24),
               for (final s in scheda.serie)
@@ -324,6 +377,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
           .createAllenamento(
             clubId: widget.clubId,
             data: _data,
+            microcicloId: _microcicloId,
             titolo: scheda.titolo,
             gruppo: widget.gruppo,
             note: scheda.note,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
@@ -153,19 +154,39 @@ class MicrocicloDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-allenamenti-microciclo',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => AllenamentoFormScreen(
-              clubId: microciclo.clubId,
-              microcicloId: microciclo.id,
-              dataPredefinita: microciclo.dataInizio,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'fab-genera-ai-microciclo',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => GeneraAllenamentoFormScreen(
+                  clubId: microciclo.clubId,
+                  microcicloId: microciclo.id,
+                  dataPredefinita: microciclo.dataInizio,
+                ),
+              ),
             ),
+            tooltip: 'Genera con AI',
+            child: const Icon(Icons.auto_awesome),
           ),
-        ),
-        tooltip: 'Nuovo allenamento',
-        child: const Icon(Icons.add),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'fab-allenamenti-microciclo',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AllenamentoFormScreen(
+                  clubId: microciclo.clubId,
+                  microcicloId: microciclo.id,
+                  dataPredefinita: microciclo.dataInizio,
+                ),
+              ),
+            ),
+            tooltip: 'Nuovo allenamento',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
