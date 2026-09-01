@@ -1,0 +1,48 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/supabase/supabase_providers.dart';
+import '../domain/parametri_generazione.dart';
+
+/// Chiama la Edge Function `genera-allenamento`, che tiene la chiave del
+/// provider AI lato server e la inoltra a Gemini. Così il provider si può
+/// cambiare in futuro riscrivendo solo la Edge Function, senza toccare
+/// l'app.
+class GenerazioneAiRepository {
+  GenerazioneAiRepository(this._client);
+
+  final SupabaseClient _client;
+
+  Future<String> generaAllenamento(ParametriGenerazione parametri) async {
+    try {
+      final risposta = await _client.functions.invoke(
+        'genera-allenamento',
+        body: {
+          'gruppo': parametri.gruppo,
+          'livello': parametri.livello,
+          'volumeMetri': parametri.volumeMetri,
+          'focus': parametri.focus,
+          'regimiAmmessi': parametri.regimiAmmessi,
+          'vincoli': parametri.vincoli,
+        },
+      );
+      final dati = risposta.data;
+      if (dati is Map && dati['testo'] is String) {
+        return dati['testo'] as String;
+      }
+      throw Exception('Risposta inattesa dalla generazione AI');
+    } on FunctionException catch (e) {
+      final dettagli = e.details;
+      if (dettagli is Map && dettagli['error'] is String) {
+        throw Exception(dettagli['error'] as String);
+      }
+      rethrow;
+    }
+  }
+}
+
+final generazioneAiRepositoryProvider = Provider<GenerazioneAiRepository>((
+  ref,
+) {
+  return GenerazioneAiRepository(ref.watch(supabaseClientProvider));
+});

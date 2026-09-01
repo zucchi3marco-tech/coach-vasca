@@ -81,7 +81,7 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 ## FASE 5 — Modulo AI "Genera allenamento" (~2-3 settimane)
 Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al codice di terzi.
 - [x] Form input: gruppo/livello, volume, focus, regimi ammessi, vincoli — `lib/features/ai_genera/`, raggiungibile dal nuovo FAB "Genera con AI" nella tab Allenamenti; per ora raccoglie e valida i parametri (`ParametriGenerazione`), la chiamata API è il prossimo punto
-- [ ] Chiamata API con limite di spesa mensile impostato sul provider
+- [x] Chiamata API con limite di spesa mensile impostato sul provider — Edge Function Supabase `supabase/functions/genera-allenamento/` (Gemini, chiave server-side via secret `GEMINI_API_KEY`), chiamata da `generazione_ai_repository.dart`; provider isolato dietro la function così è sostituibile senza toccare l'app. Budget/alert mensile impostato lato Google AI Studio (fuori dal codice)
 - [ ] Output sempre in JSON strutturato e validato (metri, tempi, regimi noti)
 - [ ] Anteprima scheda generata + conferma manuale del coach prima del salvataggio
 - [ ] "Aggiungi al calendario" → collega alla stagione

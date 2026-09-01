@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/generazione_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
 
 const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
@@ -8,18 +10,18 @@ const _regimi = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
 
 String _capitalizza(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-class GeneraAllenamentoFormScreen extends StatefulWidget {
+class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({required this.clubId, super.key});
 
   final String clubId;
 
   @override
-  State<GeneraAllenamentoFormScreen> createState() =>
+  ConsumerState<GeneraAllenamentoFormScreen> createState() =>
       _GeneraAllenamentoFormScreenState();
 }
 
 class _GeneraAllenamentoFormScreenState
-    extends State<GeneraAllenamentoFormScreen> {
+    extends ConsumerState<GeneraAllenamentoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _gruppoController = TextEditingController();
   final _volumeController = TextEditingController();
@@ -28,6 +30,7 @@ class _GeneraAllenamentoFormScreenState
   String _livello = _livelli.first;
   String _focusSelezionato = _focus.first;
   final Set<String> _regimiSelezionati = {};
+  bool _generazioneInCorso = false;
 
   @override
   void dispose() {
@@ -123,8 +126,14 @@ class _GeneraAllenamentoFormScreenState
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _conferma,
-              child: const Text('Genera'),
+              onPressed: _generazioneInCorso ? null : _conferma,
+              child: _generazioneInCorso
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Genera'),
             ),
           ],
         ),
@@ -132,7 +141,7 @@ class _GeneraAllenamentoFormScreenState
     );
   }
 
-  void _conferma() {
+  Future<void> _conferma() async {
     if (!_formKey.currentState!.validate()) return;
     if (_regimiSelezionati.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -151,6 +160,33 @@ class _GeneraAllenamentoFormScreenState
           ? null
           : _vincoliController.text.trim(),
     );
-    Navigator.of(context).pop(parametri);
+
+    setState(() => _generazioneInCorso = true);
+    try {
+      final testo = await ref
+          .read(generazioneAiRepositoryProvider)
+          .generaAllenamento(parametri);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Scheda generata'),
+          content: SingleChildScrollView(child: Text(testo)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Chiudi'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Errore nella generazione: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _generazioneInCorso = false);
+    }
   }
 }
