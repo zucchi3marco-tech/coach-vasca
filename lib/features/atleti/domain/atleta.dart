@@ -14,6 +14,7 @@ class Atleta {
     this.consensoPrivacyData,
     this.note,
     required this.attivo,
+    this.numeroTesseraFin,
   });
 
   final String id;
@@ -30,6 +31,7 @@ class Atleta {
   final DateTime? consensoPrivacyData;
   final String? note;
   final bool attivo;
+  final String? numeroTesseraFin;
 
   String get nomeCompleto => '$nome $cognome';
 
@@ -51,6 +53,7 @@ class Atleta {
           : DateTime.parse(map['consenso_privacy_data'] as String),
       note: map['note'] as String?,
       attivo: map['attivo'] as bool,
+      numeroTesseraFin: map['numero_tessera_fin'] as String?,
     );
   }
 }

@@ -37,6 +37,7 @@ class AtletiRepository {
       consensoPrivacyData: row.consensoPrivacyData,
       note: row.note,
       attivo: row.attivo,
+      numeroTesseraFin: row.numeroTesseraFin,
     );
   }
 
@@ -95,6 +96,7 @@ class AtletiRepository {
       ),
       note: Value(map['note'] as String?),
       attivo: Value(map['attivo'] as bool? ?? true),
+      numeroTesseraFin: Value(map['numero_tessera_fin'] as String?),
     );
   }
 
@@ -124,6 +126,7 @@ class AtletiRepository {
     String? telefonoGenitore,
     bool consensoPrivacyFirmato = false,
     String? note,
+    String? numeroTesseraFin,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -143,6 +146,8 @@ class AtletiRepository {
       if (consensoPrivacyFirmato)
         'consenso_privacy_data': formatDateOnly(DateTime.now()),
       if (note != null && note.isNotEmpty) 'note': note,
+      if (numeroTesseraFin != null && numeroTesseraFin.isNotEmpty)
+        'numero_tessera_fin': numeroTesseraFin,
     };
     try {
       final row = await _client
@@ -179,6 +184,7 @@ class AtletiRepository {
     required bool consensoPrivacyFirmato,
     DateTime? consensoPrivacyData,
     String? note,
+    String? numeroTesseraFin,
   }) async {
     final payload = {
       'nome': nome,
@@ -194,6 +200,7 @@ class AtletiRepository {
           ? formatDateOnly(consensoPrivacyData ?? DateTime.now())
           : null,
       'note': note,
+      'numero_tessera_fin': numeroTesseraFin,
     };
     try {
       final row = await _client
@@ -224,6 +231,7 @@ class AtletiRepository {
                 : null,
           ),
           note: Value(note),
+          numeroTesseraFin: Value(numeroTesseraFin),
         ),
       );
       await enqueueOperation(

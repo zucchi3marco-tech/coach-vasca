@@ -32,6 +32,7 @@ class AtletiTable extends Table {
   DateTimeColumn get consensoPrivacyData => dateTime().nullable()();
   TextColumn get note => text().nullable()();
   BoolColumn get attivo => boolean().withDefault(const Constant(true))();
+  TextColumn get numeroTesseraFin => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -162,6 +163,40 @@ class PresenzeTable extends Table {
   TextColumn get clubId => text()();
   TextColumn get stato => text()();
   TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PartiteTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  DateTimeColumn get data => dateTime()();
+  TextColumn get ora => text().nullable()();
+  TextColumn get luogo => text().nullable()();
+  TextColumn get campionato => text().nullable()();
+  TextColumn get coloreCalottina => text().nullable()();
+  TextColumn get squadraCasa => text()();
+  TextColumn get squadraTrasferta => text()();
+  IntColumn get numeroMaxConvocati =>
+      integer().withDefault(const Constant(15))();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class DistintaGiocatoriTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get partitaId => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  IntColumn get numeroCalottina => integer()();
+  BoolColumn get capitano => boolean().withDefault(const Constant(false))();
+  BoolColumn get viceCapitano =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get portiere => boolean().withDefault(const Constant(false))();
+  BoolColumn get fuoriquota => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

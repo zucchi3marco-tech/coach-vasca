@@ -23,6 +23,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   late final TextEditingController _emailGenitoreController;
   late final TextEditingController _telefonoGenitoreController;
   late final TextEditingController _noteController;
+  late final TextEditingController _numeroTesseraFinController;
 
   DateTime? _dataNascita;
   String? _sesso;
@@ -48,6 +49,9 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       text: atleta?.telefonoGenitore ?? '',
     );
     _noteController = TextEditingController(text: atleta?.note ?? '');
+    _numeroTesseraFinController = TextEditingController(
+      text: atleta?.numeroTesseraFin ?? '',
+    );
     _dataNascita = atleta?.dataNascita;
     _sesso = atleta?.sesso;
     _sport = atleta?.sport ?? 'nuoto';
@@ -62,6 +66,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _emailGenitoreController.dispose();
     _telefonoGenitoreController.dispose();
     _noteController.dispose();
+    _numeroTesseraFinController.dispose();
     super.dispose();
   }
 
@@ -107,6 +112,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           consensoPrivacyFirmato: _consensoPrivacy,
           consensoPrivacyData: widget.atleta!.consensoPrivacyData,
           note: _noteController.text.trim(),
+          numeroTesseraFin: _numeroTesseraFinController.text.trim(),
         );
       } else {
         await repository.createAtleta(
@@ -121,6 +127,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           telefonoGenitore: _telefonoGenitoreController.text.trim(),
           consensoPrivacyFirmato: _consensoPrivacy,
           note: _noteController.text.trim(),
+          numeroTesseraFin: _numeroTesseraFinController.text.trim(),
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -246,6 +253,15 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                   onChanged: (value) =>
                       setState(() => _sport = value ?? 'nuoto'),
                 ),
+                if (_sport == 'pallanuoto') ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _numeroTesseraFinController,
+                    decoration: const InputDecoration(
+                      labelText: 'N. tessera FIN (opzionale)',
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _gruppoController,

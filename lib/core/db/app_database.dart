@@ -19,13 +19,15 @@ part 'app_database.g.dart';
     SerieTable,
     PresenzeTable,
     PendingOperationsTable,
+    PartiteTable,
+    DistintaGiocatoriTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,6 +43,12 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(macrocicliTable);
         await m.createTable(mesocicliTable);
         await m.createTable(microcicliTable);
+      }
+      // v3 -> v4: pallanuoto V2, partite e distinta (Fase 7).
+      if (from < 4) {
+        await m.addColumn(atletiTable, atletiTable.numeroTesseraFin);
+        await m.createTable(partiteTable);
+        await m.createTable(distintaGiocatoriTable);
       }
     },
   );
