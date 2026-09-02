@@ -94,7 +94,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [ ] 2-3 sessioni vere in piscina
 - [x] Export PDF/CSV scheda o settimana — `lib/features/export/` (pacchetti `pdf`/`printing`), icona "Esporta" nel dettaglio allenamento e "Esporta settimana" nel dettaglio microciclo; PDF apre la stampa/salvataggio nativa del browser/OS, CSV apre una schermata di testo da copiare (nessun download nativo cross-platform senza altre dipendenze)
 - [x] Messaggi di errore chiari — `lib/core/utils/error_messages.dart` (`messaggioErrore`) traduce le eccezioni tecniche (rete, Postgrest, Auth, Edge Function) in messaggi in italiano comprensibili; usato ovunque un errore raggiunga l'utente (liste/dettagli, form di salvataggio, login/registrazione, generazione AI, export) al posto del testo grezzo dell'eccezione
-- [ ] Backup manuale del DB Supabase se ancora su piano Free
+- [x] Backup manuale del DB Supabase se ancora su piano Free — `scripts/backup_db.ps1` (`pg_dump` sullo schema `public`, richiede `SUPABASE_DB_URL` in una variabile d'ambiente) e guida passo-passo in `docs/backup.md`; i file generati vanno in `backups/` (escluso da git, contiene dati personali)
 - [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro
 
 ## FASE 7 — Pallanuoto V2 (~3-5 settimane)

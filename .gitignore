@@ -47,3 +47,6 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Backup manuali del DB (dati personali di atleti/genitori): mai in git
+backups/
