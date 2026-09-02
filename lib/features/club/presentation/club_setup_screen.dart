@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
 
@@ -44,9 +45,9 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
             citta: _cittaController.text.trim(),
           );
       ref.invalidate(currentClubProvider);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = 'Impossibile creare il club. Riprova.');
+        setState(() => _errorMessage = messaggioErrore(e));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

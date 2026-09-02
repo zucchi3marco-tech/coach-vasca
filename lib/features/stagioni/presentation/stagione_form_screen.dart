@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/stagione.dart';
 
@@ -110,9 +111,9 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
         );
       }
       if (mounted) Navigator.of(context).pop(true);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+        setState(() => _errorMessage = messaggioErrore(e));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

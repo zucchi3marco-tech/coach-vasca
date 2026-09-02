@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../test/domain/test_ingresso.dart';
@@ -82,9 +83,9 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tabella passi salvata')),
       );
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+        setState(() => _errorMessage = messaggioErrore(e));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

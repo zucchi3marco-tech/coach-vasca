@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 
@@ -101,9 +102,9 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
         );
       }
       if (mounted) Navigator.of(context).pop(true);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = 'Salvataggio non riuscito. Riprova.');
+        setState(() => _errorMessage = messaggioErrore(e));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

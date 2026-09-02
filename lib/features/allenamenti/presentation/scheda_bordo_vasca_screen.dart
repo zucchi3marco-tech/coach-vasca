@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
@@ -148,7 +149,7 @@ class _SchedaBordoVascaScreenState
                 const Center(child: CircularProgressIndicator(color: _accento)),
             error: (error, _) => Center(
               child: Text(
-                'Errore: $error',
+                messaggioErrore(error),
                 style: const TextStyle(color: Colors.white),
               ),
             ),

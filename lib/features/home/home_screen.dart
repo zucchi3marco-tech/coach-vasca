@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/sync/sync_engine.dart';
+import '../../core/utils/error_messages.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
 import '../auth/data/auth_repository.dart';
@@ -48,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Errore: $error')),
+        error: (error, _) => Center(child: Text(messaggioErrore(error))),
       ),
       bottomNavigationBar: club == null
           ? null

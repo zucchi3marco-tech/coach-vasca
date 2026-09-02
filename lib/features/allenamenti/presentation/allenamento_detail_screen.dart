@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../export/export_actions.dart';
 import '../../presenze/presentation/presenze_screen.dart';
@@ -163,8 +164,9 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) =>
-                  Center(child: Text('Errore nel caricamento serie: $error')),
+              error: (error, _) => Center(
+                child: Text('Errore nel caricamento serie: ${messaggioErrore(error)}'),
+              ),
             ),
           ),
         ],

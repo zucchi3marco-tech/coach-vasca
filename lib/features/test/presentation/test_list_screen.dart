@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
@@ -45,7 +46,7 @@ class TestListScreen extends ConsumerWidget {
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
-            Center(child: Text('Errore nel caricamento test: $error')),
+            Center(child: Text('Errore nel caricamento test: ${messaggioErrore(error)}')),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab-test',

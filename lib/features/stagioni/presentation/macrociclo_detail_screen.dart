@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../application/mesocicli_providers.dart';
 import '../domain/macrociclo.dart';
 import 'macrociclo_form_screen.dart';
@@ -91,7 +92,9 @@ class MacrocicloDetailScreen extends ConsumerWidget {
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
-                child: Text('Errore nel caricamento mesocicli: $error'),
+                child: Text(
+                  'Errore nel caricamento mesocicli: ${messaggioErrore(error)}',
+                ),
               ),
             ),
           ),

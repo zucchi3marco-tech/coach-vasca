@@ -93,7 +93,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 ## FASE 6 — Polish e uso reale (~2 settimane)
 - [ ] 2-3 sessioni vere in piscina
 - [x] Export PDF/CSV scheda o settimana — `lib/features/export/` (pacchetti `pdf`/`printing`), icona "Esporta" nel dettaglio allenamento e "Esporta settimana" nel dettaglio microciclo; PDF apre la stampa/salvataggio nativa del browser/OS, CSV apre una schermata di testo da copiare (nessun download nativo cross-platform senza altre dipendenze)
-- [ ] Messaggi di errore chiari
+- [x] Messaggi di errore chiari — `lib/core/utils/error_messages.dart` (`messaggioErrore`) traduce le eccezioni tecniche (rete, Postgrest, Auth, Edge Function) in messaggi in italiano comprensibili; usato ovunque un errore raggiunga l'utente (liste/dettagli, form di salvataggio, login/registrazione, generazione AI, export) al posto del testo grezzo dell'eccezione
 - [ ] Backup manuale del DB Supabase se ancora su piano Free
 - [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
@@ -247,7 +248,7 @@ class _GeneraAllenamentoFormScreenState
       } catch (_) {}
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore nella generazione: $e')),
+        SnackBar(content: Text('Errore nella generazione: ${messaggioErrore(e)}')),
       );
     } finally {
       if (mounted) setState(() => _generazioneInCorso = false);
@@ -361,7 +362,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (error, _) =>
-                    Text('Errore nel caricamento settimane: $error'),
+                    Text('Errore nel caricamento settimane: ${messaggioErrore(error)}'),
               ),
               const Divider(height: 24),
               for (final s in scheda.serie)
@@ -460,7 +461,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore nel salvataggio: $e')),
+        SnackBar(content: Text('Errore nel salvataggio: ${messaggioErrore(e)}')),
       );
       setState(() => _salvataggioInCorso = false);
     }

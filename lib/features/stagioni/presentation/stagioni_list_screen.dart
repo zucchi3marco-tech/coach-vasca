@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../application/stagioni_providers.dart';
 import '../data/stagioni_repository.dart';
 import 'stagione_detail_screen.dart';
@@ -59,8 +60,9 @@ class StagioniListScreen extends ConsumerWidget {
                   },
                 ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) =>
-              Center(child: Text('Errore nel caricamento stagioni: $error')),
+          error: (error, _) => Center(
+            child: Text('Errore nel caricamento stagioni: ${messaggioErrore(error)}'),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

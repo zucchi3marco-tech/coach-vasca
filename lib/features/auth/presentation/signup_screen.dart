@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../data/auth_repository.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -66,7 +67,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       );
       Navigator.of(context).pop();
     } on AuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = messaggioErrore(e));
     } catch (_) {
       if (mounted) {
         setState(() => _errorMessage = 'Errore di connessione. Riprova.');

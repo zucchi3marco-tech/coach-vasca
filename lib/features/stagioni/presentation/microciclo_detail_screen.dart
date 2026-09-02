@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
 import '../../allenamenti/data/serie_repository.dart';
@@ -68,7 +69,7 @@ class MicrocicloDetailScreen extends ConsumerWidget {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Errore nella duplicazione: $e')),
+        SnackBar(content: Text('Errore nella duplicazione: ${messaggioErrore(e)}')),
       );
     }
   }
@@ -174,7 +175,9 @@ class MicrocicloDetailScreen extends ConsumerWidget {
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
-                child: Text('Errore nel caricamento allenamenti: $error'),
+                child: Text(
+                  'Errore nel caricamento allenamenti: ${messaggioErrore(error)}',
+                ),
               ),
             ),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'csv_export.dart';
 import 'csv_preview_screen.dart';
 import 'pdf_export.dart';
@@ -74,7 +75,7 @@ Future<T?> _conCaricamento<T>(
     if (context.mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Errore nell'esportazione: $e")),
+        SnackBar(content: Text("Errore nell'esportazione: ${messaggioErrore(e)}")),
       );
     }
     return null;

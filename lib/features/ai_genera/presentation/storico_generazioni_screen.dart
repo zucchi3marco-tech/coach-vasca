@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/generazione_ai_registrata.dart';
@@ -66,8 +67,9 @@ class StoricoGenerazioniScreen extends ConsumerWidget {
                 },
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Errore nel caricamento storico: $error')),
+        error: (error, _) => Center(
+          child: Text('Errore nel caricamento storico: ${messaggioErrore(error)}'),
+        ),
       ),
     );
   }

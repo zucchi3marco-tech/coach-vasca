@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../data/auth_repository.dart';
 import 'signup_screen.dart';
 
@@ -41,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
     } on AuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = messaggioErrore(e));
     } catch (_) {
       if (mounted) {
         setState(() => _errorMessage = 'Errore di connessione. Riprova.');
@@ -67,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBar(content: Text('Email di reset inviata a $email')),
       );
     } on AuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = messaggioErrore(e));
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../application/macrocicli_providers.dart';
 import '../domain/stagione.dart';
 import 'macrociclo_detail_screen.dart';
@@ -91,7 +92,9 @@ class StagioneDetailScreen extends ConsumerWidget {
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
-                child: Text('Errore nel caricamento macrocicli: $error'),
+                child: Text(
+                  'Errore nel caricamento macrocicli: ${messaggioErrore(error)}',
+                ),
               ),
             ),
           ),

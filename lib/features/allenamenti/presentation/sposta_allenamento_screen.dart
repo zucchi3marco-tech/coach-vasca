@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../stagioni/application/microcicli_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
@@ -59,8 +60,9 @@ class SpostaAllenamentoScreen extends ConsumerWidget {
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Errore nel caricamento microcicli: $error')),
+        error: (error, _) => Center(
+          child: Text('Errore nel caricamento microcicli: ${messaggioErrore(error)}'),
+        ),
       ),
     );
   }

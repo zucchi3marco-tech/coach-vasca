@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -63,13 +64,15 @@ class PresenzeScreen extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) =>
-                Center(child: Text('Errore nel caricamento presenze: $error')),
+            error: (error, _) => Center(
+              child: Text('Errore nel caricamento presenze: ${messaggioErrore(error)}'),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Errore nel caricamento atleti: $error')),
+        error: (error, _) => Center(
+          child: Text('Errore nel caricamento atleti: ${messaggioErrore(error)}'),
+        ),
       ),
     );
   }

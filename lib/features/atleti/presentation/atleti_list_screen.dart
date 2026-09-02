@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_messages.dart';
 import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
@@ -43,7 +44,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Errore nel caricamento atleti: $error'),
+                child: Text('Errore nel caricamento atleti: ${messaggioErrore(error)}'),
               ),
             ],
           ),
