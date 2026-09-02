@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/pace_format.dart';
+import '../../export/export_actions.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
+import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import 'allenamento_form_screen.dart';
@@ -70,6 +72,25 @@ class AllenamentoDetailScreen extends ConsumerWidget {
               MaterialPageRoute(
                 builder: (_) => SpostaAllenamentoScreen(allenamento: allenamento),
               ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Esporta',
+            onPressed: () => mostraMenuExport(
+              context,
+              titoloDocumento: allenamento.titolo != null &&
+                      allenamento.titolo!.isNotEmpty
+                  ? allenamento.titolo!
+                  : 'Allenamento',
+              caricaDati: () async => [
+                (
+                  allenamento,
+                  await ref
+                      .read(serieRepositoryProvider)
+                      .fetchPerAllenamento(allenamento.id),
+                ),
+              ],
             ),
           ),
           IconButton(

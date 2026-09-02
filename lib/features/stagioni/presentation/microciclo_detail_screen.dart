@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
+import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
+import '../../export/csv_export.dart' show AllenamentoConSerie;
+import '../../export/export_actions.dart';
 import '../data/duplicazione_settimana_service.dart';
 import '../domain/microciclo.dart';
 import 'microciclo_form_screen.dart';
@@ -70,6 +73,24 @@ class MicrocicloDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _esportaSettimana(BuildContext context, WidgetRef ref) async {
+    final filter = (clubId: microciclo.clubId, microcicloId: microciclo.id);
+    await mostraMenuExport(
+      context,
+      titoloDocumento: _titolo,
+      caricaDati: () async {
+        final allenamenti =
+            ref.read(allenamentiPerMicrocicloProvider(filter)).value ?? [];
+        final serieRepository = ref.read(serieRepositoryProvider);
+        final elenco = <AllenamentoConSerie>[];
+        for (final a in allenamenti) {
+          elenco.add((a, await serieRepository.fetchPerAllenamento(a.id)));
+        }
+        return elenco;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = (
@@ -86,6 +107,11 @@ class MicrocicloDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.content_copy_outlined),
             tooltip: 'Duplica settimana',
             onPressed: () => _duplicaSettimana(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Esporta settimana',
+            onPressed: () => _esportaSettimana(context, ref),
           ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),

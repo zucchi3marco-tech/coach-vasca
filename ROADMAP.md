@@ -92,7 +92,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 
 ## FASE 6 — Polish e uso reale (~2 settimane)
 - [ ] 2-3 sessioni vere in piscina
-- [ ] Export PDF/CSV scheda o settimana
+- [x] Export PDF/CSV scheda o settimana — `lib/features/export/` (pacchetti `pdf`/`printing`), icona "Esporta" nel dettaglio allenamento e "Esporta settimana" nel dettaglio microciclo; PDF apre la stampa/salvataggio nativa del browser/OS, CSV apre una schermata di testo da copiare (nessun download nativo cross-platform senza altre dipendenze)
 - [ ] Messaggi di errore chiari
 - [ ] Backup manuale del DB Supabase se ancora su piano Free
 - [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro
