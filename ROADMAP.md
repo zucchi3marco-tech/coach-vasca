@@ -101,12 +101,12 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Distinta FIN (13/15, portieri, capitani, fuoriquota) — tab "Partite" nella home: partite (data/ora/luogo/campionato/colore calottina, tetto 13/15), distinta con selezione atleti pallanuoto, numero calottina, capitano/vice capitano univoci, portiere, fuoriquota (validati anche a DB), export PDF della convocazione
 - [x] Partita + eventi base (tiro, fallo, uomo ±) — schermata "Eventi partita" (icona timeline nella distinta): tiro (di un convocato, esito semplice o dettagliato), espulsione (solo espulsioni, non falli ordinari), superiorità numerica nostra/avversaria (esito subito o inizio/fine); impostazioni di dettaglio scelte per partita e precompilate dall'ultima partita della squadra
 - [x] Plus/minus semplice — icona "Statistiche" nella distinta: per ogni convocato gol/tiri, percentuale realizzativa ed espulsioni subite, più riepilogo di squadra, calcolati dagli eventi già registrati (nessuna nuova tabella)
-- [ ] (Dopo) digitalizzazione referto solo con fogli reali di esempio
+- [ ] ~~(Dopo) digitalizzazione referto solo con fogli reali di esempio~~ — accorpato al punto "Referti" della Fase 8 (vedi sotto), stessa cosa
 
 ## FASE 8 — Avanzato V3
 - [ ] Parsing file .cl2 / .sd3 / risultati FIN
 - [ ] Banister / tapering su storico carichi
-- [ ] Referti: invio foto a un modello con visione invece di OCR dedicato
+- [ ] Referti: invio foto a un modello con visione invece di OCR dedicato — hai già un esempio reale di verbale FIN compilato pronto da condividere quando arriviamo a questo punto (contiene dati di giocatori altrui: non va committato nel repo)
 - [ ] Computer vision stroke rate (elaborazione locale sul device)
 - [ ] Supabase Pro (backup automatici)
 - [ ] Pubblicazione store (Play/App Store) se necessario
