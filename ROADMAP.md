@@ -105,7 +105,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 
 ## FASE 8 — Avanzato V3
 - [ ] Parsing file .cl2 / .sd3 / risultati FIN
-- [ ] Banister / tapering su storico carichi
+- [ ] Banister / tapering su storico carichi — icona "Carico" nella lista atleti: curva fitness/fatica/forma (modello Banister, costanti 42/7 giorni) calcolata da ripetute×distanza×peso-zona delle serie, contata solo nei giorni in cui l'atleta risulta "presente"; possibile miglioramento futuro: carico manuale (RPE×durata) invece che automatico da volume, e/o calcolo a livello di gruppo/allenamento invece che per singolo atleta
 - [x] Referti: invio foto a un modello con visione invece di OCR dedicato — tab "Partite", icona fotocamera: carica/scatta la foto di un referto FIN compilato, Edge Function `leggi-referto` (Gemini vision, stesso schema di `genera-allenamento`) estrae squadre/punteggio/parziali/giocatori (reti, espulsioni); tutti i campi restano modificabili in schermata per correggere errori di lettura (soprattutto nomi); solo visualizzazione, nessun salvataggio automatico in distinta/eventi; messaggi di errore chiari con pulsante "Riprova" se il servizio non risponde
 - [ ] Computer vision stroke rate (elaborazione locale sul device)
 - [ ] Supabase Pro (backup automatici)

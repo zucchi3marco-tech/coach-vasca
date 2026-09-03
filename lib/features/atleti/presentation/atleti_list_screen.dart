@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
@@ -36,6 +37,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
             onTapTest: (atleta) => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => TestListScreen(atleta: atleta),
+              ),
+            ),
+            onTapCarico: (atleta) => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CaricoAtletaScreen(atleta: atleta),
               ),
             ),
           ),
@@ -82,11 +88,13 @@ class _AtletiList extends StatelessWidget {
     required this.atleti,
     required this.onTap,
     required this.onTapTest,
+    required this.onTapCarico,
   });
 
   final List<Atleta> atleti;
   final ValueChanged<Atleta> onTap;
   final ValueChanged<Atleta> onTapTest;
+  final ValueChanged<Atleta> onTapCarico;
 
   @override
   Widget build(BuildContext context) {
@@ -126,10 +134,20 @@ class _AtletiList extends StatelessWidget {
               if (!atleta.attivo) 'inattivo',
             ].join(' · '),
           ),
-          trailing: IconButton(
-            icon: const Icon(Icons.speed_outlined),
-            tooltip: 'Test',
-            onPressed: () => onTapTest(atleta),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.show_chart),
+                tooltip: 'Carico',
+                onPressed: () => onTapCarico(atleta),
+              ),
+              IconButton(
+                icon: const Icon(Icons.speed_outlined),
+                tooltip: 'Test',
+                onPressed: () => onTapTest(atleta),
+              ),
+            ],
           ),
           onTap: () => onTap(atleta),
         );

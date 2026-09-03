@@ -1,0 +1,137 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/db/app_database.dart';
+import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+
+/// Peso relativo di ogni zona di intensita' nel calcolo del carico: una
+/// stima approssimativa (non un fattore TRIMP validato scientificamente,
+/// che richiederebbe la frequenza cardiaca), pensata solo per dare più
+/// peso alle serie più intense a parità di volume. Da ritoccare se l'uso
+/// reale mostra che non riflette bene lo sforzo percepito.
+const _pesoZona = {'A1': 1.0, 'A2': 1.2, 'B1': 1.6, 'B2': 2.0, 'C': 2.8, 'D': 3.5};
+
+double _pesoPerZona(String? zona) => _pesoZona[zona] ?? 1.0;
+
+/// Calcola, per un atleta, il carico di allenamento giorno per giorno a
+/// partire dallo storico di serie e presenze: base per il modello
+/// Banister (fitness/fatica/forma) usato per pianificare lo scarico
+/// pre-gara.
+class CaricoRepository {
+  CaricoRepository(this._client, this._db);
+
+  final SupabaseClient _client;
+  final AppDatabase _db;
+
+  /// Mappa allenamentoId -> carico totale (somma delle serie pesate per
+  /// zona) per tutti gli allenamenti del club.
+  Future<Map<String, double>> _caricoPerAllenamento(String clubId) async {
+    List<Map<String, dynamic>> righe;
+    try {
+      righe = await _client
+          .from('serie')
+          .select('allenamento_id, ripetute, distanza_m, zona')
+          .eq('club_id', clubId);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.serieTable,
+      )..where((t) => t.clubId.equals(clubId))).get();
+      righe = [
+        for (final r in locali)
+          {
+            'allenamento_id': r.allenamentoId,
+            'ripetute': r.ripetute,
+            'distanza_m': r.distanzaM,
+            'zona': r.zona,
+          },
+      ];
+    }
+    final carico = <String, double>{};
+    for (final r in righe) {
+      final allenamentoId = r['allenamento_id'] as String;
+      final ripetute = r['ripetute'] as int;
+      final distanzaM = r['distanza_m'] as int;
+      final peso = _pesoPerZona(r['zona'] as String?);
+      carico[allenamentoId] =
+          (carico[allenamentoId] ?? 0.0) + ripetute * distanzaM * peso;
+    }
+    return carico;
+  }
+
+  /// Mappa allenamentoId -> data, per tutti gli allenamenti del club.
+  Future<Map<String, DateTime>> _dataPerAllenamento(String clubId) async {
+    List<Map<String, dynamic>> righe;
+    try {
+      righe = await _client
+          .from('allenamenti')
+          .select('id, data')
+          .eq('club_id', clubId);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.allenamentiTable,
+      )..where((t) => t.clubId.equals(clubId))).get();
+      righe = [
+        for (final r in locali) {'id': r.id, 'data': r.data.toIso8601String()},
+      ];
+    }
+    return {
+      for (final r in righe)
+        r['id'] as String: DateTime.parse(r['data'] as String),
+    };
+  }
+
+  /// Id di tutti gli allenamenti a cui l'atleta risulta presente.
+  Future<Set<String>> _allenamentiPresenti(String atletaId) async {
+    List<Map<String, dynamic>> righe;
+    try {
+      righe = await _client
+          .from('presenze')
+          .select('allenamento_id')
+          .eq('atleta_id', atletaId)
+          .eq('stato', 'presente');
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(_db.presenzeTable)
+            ..where((t) => t.atletaId.equals(atletaId))
+            ..where((t) => t.stato.equals('presente')))
+          .get();
+      righe = [
+        for (final r in locali) {'allenamento_id': r.allenamentoId},
+      ];
+    }
+    return {for (final r in righe) r['allenamento_id'] as String};
+  }
+
+  /// Carico totale per giorno (normalizzato a mezzanotte), sommando gli
+  /// allenamenti a cui l'atleta era presente. Un giorno con piu'
+  /// allenamenti presenti somma i rispettivi carichi.
+  Future<Map<DateTime, double>> caricoGiornalieroPerAtleta({
+    required String atletaId,
+    required String clubId,
+  }) async {
+    final dataPerAllenamento = await _dataPerAllenamento(clubId);
+    final caricoPerAllenamento = await _caricoPerAllenamento(clubId);
+    final presenti = await _allenamentiPresenti(atletaId);
+
+    final risultato = <DateTime, double>{};
+    for (final allenamentoId in presenti) {
+      final data = dataPerAllenamento[allenamentoId];
+      if (data == null) continue;
+      final giorno = DateTime(data.year, data.month, data.day);
+      final carico = caricoPerAllenamento[allenamentoId] ?? 0.0;
+      risultato[giorno] = (risultato[giorno] ?? 0.0) + carico;
+    }
+    return risultato;
+  }
+}
+
+final caricoRepositoryProvider = Provider<CaricoRepository>((ref) {
+  return CaricoRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appDatabaseProvider),
+  );
+});
