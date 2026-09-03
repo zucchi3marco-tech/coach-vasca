@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../referti/presentation/leggi_referto_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import 'distinta_screen.dart';
@@ -72,15 +73,30 @@ class PartiteListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-partite',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => PartitaFormScreen(clubId: clubId),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'fab-leggi-referto',
+            mini: true,
+            tooltip: 'Leggi referto',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LeggiRefertoScreen()),
+            ),
+            child: const Icon(Icons.document_scanner_outlined),
           ),
-        ),
-        tooltip: 'Nuova partita',
-        child: const Icon(Icons.add),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'fab-partite',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PartitaFormScreen(clubId: clubId),
+              ),
+            ),
+            tooltip: 'Nuova partita',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

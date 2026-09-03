@@ -106,7 +106,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 ## FASE 8 — Avanzato V3
 - [ ] Parsing file .cl2 / .sd3 / risultati FIN
 - [ ] Banister / tapering su storico carichi
-- [ ] Referti: invio foto a un modello con visione invece di OCR dedicato — hai già un esempio reale di verbale FIN compilato pronto da condividere quando arriviamo a questo punto (contiene dati di giocatori altrui: non va committato nel repo)
+- [x] Referti: invio foto a un modello con visione invece di OCR dedicato — tab "Partite", icona fotocamera: carica/scatta la foto di un referto FIN compilato, Edge Function `leggi-referto` (Gemini vision, stesso schema di `genera-allenamento`) estrae squadre/punteggio/parziali/giocatori (reti, espulsioni); tutti i campi restano modificabili in schermata per correggere errori di lettura (soprattutto nomi); solo visualizzazione, nessun salvataggio automatico in distinta/eventi; messaggi di errore chiari con pulsante "Riprova" se il servizio non risponde
 - [ ] Computer vision stroke rate (elaborazione locale sul device)
 - [ ] Supabase Pro (backup automatici)
 - [ ] Pubblicazione store (Play/App Store) se necessario
