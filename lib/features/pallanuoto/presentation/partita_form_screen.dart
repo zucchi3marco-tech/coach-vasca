@@ -27,6 +27,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late final TextEditingController _noteController;
   late DateTime _data;
   late int _numeroMaxConvocati;
+  late String _dettaglioTiro;
+  late bool _tracciaTempo;
+  late String _modalitaSuperiorita;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -51,9 +54,26 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _noteController = TextEditingController(text: p?.note ?? '');
     _data = p?.data ?? DateTime.now();
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
+    _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
+    _tracciaTempo = p?.tracciaTempo ?? true;
+    _modalitaSuperiorita = p?.modalitaSuperiorita ?? 'singolo';
     if (!_isEditing) {
       ref.read(currentClubProvider.future).then((club) {
         if (mounted) _prefillClubSeVuoto(club?.nome);
+      });
+      // Precompila le impostazioni eventi copiando l'ultima partita della
+      // squadra: di fatto funge da default di club senza bisogno di uno
+      // screen impostazioni separato, restando modificabile qui sotto.
+      ref.read(partiteRepositoryProvider).ultimaPerClub(widget.clubId).then((
+        ultima,
+      ) {
+        if (mounted && ultima != null) {
+          setState(() {
+            _dettaglioTiro = ultima.dettaglioTiro;
+            _tracciaTempo = ultima.tracciaTempo;
+            _modalitaSuperiorita = ultima.modalitaSuperiorita;
+          });
+        }
       });
     }
   }
@@ -124,6 +144,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
           note: _noteController.text.trim(),
+          dettaglioTiro: _dettaglioTiro,
+          tracciaTempo: _tracciaTempo,
+          modalitaSuperiorita: _modalitaSuperiorita,
         );
       } else {
         await repository.createPartita(
@@ -137,6 +160,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
           note: _noteController.text.trim(),
+          dettaglioTiro: _dettaglioTiro,
+          tracciaTempo: _tracciaTempo,
+          modalitaSuperiorita: _modalitaSuperiorita,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -270,6 +296,60 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   selected: {_numeroMaxConvocati},
                   onSelectionChanged: (selezione) =>
                       setState(() => _numeroMaxConvocati = selezione.first),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Impostazioni eventi (per questa partita)',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Dettaglio tiro',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'semplice', label: Text('Semplice')),
+                    ButtonSegment(
+                      value: 'dettagliato',
+                      label: Text('Dettagliato'),
+                    ),
+                  ],
+                  selected: {_dettaglioTiro},
+                  onSelectionChanged: (s) =>
+                      setState(() => _dettaglioTiro = s.first),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Traccia il tempo di gioco'),
+                  subtitle: const Text(
+                    'Chiede il numero di tempo (1-4) per ogni evento',
+                  ),
+                  value: _tracciaTempo,
+                  onChanged: (v) => setState(() => _tracciaTempo = v),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Superiorità numerica',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'singolo',
+                      label: Text('Esito subito'),
+                    ),
+                    ButtonSegment(
+                      value: 'inizio_fine',
+                      label: Text('Inizio/fine'),
+                    ),
+                  ],
+                  selected: {_modalitaSuperiorita},
+                  onSelectionChanged: (s) =>
+                      setState(() => _modalitaSuperiorita = s.first),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

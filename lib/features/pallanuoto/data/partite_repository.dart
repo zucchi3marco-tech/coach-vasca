@@ -34,6 +34,9 @@ class PartiteRepository {
       squadraTrasferta: row.squadraTrasferta,
       numeroMaxConvocati: row.numeroMaxConvocati,
       note: row.note,
+      dettaglioTiro: row.dettaglioTiro,
+      tracciaTempo: row.tracciaTempo,
+      modalitaSuperiorita: row.modalitaSuperiorita,
     );
   }
 
@@ -50,6 +53,11 @@ class PartiteRepository {
       squadraTrasferta: map['squadra_trasferta'] as String,
       numeroMaxConvocati: Value(map['numero_max_convocati'] as int? ?? 15),
       note: Value(map['note'] as String?),
+      dettaglioTiro: Value(map['dettaglio_tiro'] as String? ?? 'semplice'),
+      tracciaTempo: Value(map['traccia_tempo'] as bool? ?? true),
+      modalitaSuperiorita: Value(
+        map['modalita_superiorita'] as String? ?? 'singolo',
+      ),
     );
   }
 
@@ -77,6 +85,19 @@ class PartiteRepository {
     });
   }
 
+  /// Ultima partita creata per questo club (per data), usata per
+  /// precompilare le impostazioni eventi (dettaglio tiro, traccia tempo,
+  /// modalita' superiorita') di una nuova partita.
+  Future<Partita?> ultimaPerClub(String clubId) async {
+    final rows =
+        await (_db.select(_db.partiteTable)
+              ..where((t) => t.clubId.equals(clubId))
+              ..orderBy([(t) => OrderingTerm.desc(t.data)])
+              ..limit(1))
+            .get();
+    return rows.isEmpty ? null : _fromRow(rows.first);
+  }
+
   Future<Partita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -96,6 +117,9 @@ class PartiteRepository {
     required String squadraTrasferta,
     required int numeroMaxConvocati,
     String? note,
+    required String dettaglioTiro,
+    required bool tracciaTempo,
+    required String modalitaSuperiorita,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -111,6 +135,9 @@ class PartiteRepository {
       'squadra_trasferta': squadraTrasferta,
       'numero_max_convocati': numeroMaxConvocati,
       if (note != null && note.isNotEmpty) 'note': note,
+      'dettaglio_tiro': dettaglioTiro,
+      'traccia_tempo': tracciaTempo,
+      'modalita_superiorita': modalitaSuperiorita,
     };
     try {
       final row = await _client
@@ -149,6 +176,9 @@ class PartiteRepository {
     required String squadraTrasferta,
     required int numeroMaxConvocati,
     String? note,
+    required String dettaglioTiro,
+    required bool tracciaTempo,
+    required String modalitaSuperiorita,
   }) async {
     final payload = {
       'data': formatDateOnly(data),
@@ -160,6 +190,9 @@ class PartiteRepository {
       'squadra_trasferta': squadraTrasferta,
       'numero_max_convocati': numeroMaxConvocati,
       'note': note,
+      'dettaglio_tiro': dettaglioTiro,
+      'traccia_tempo': tracciaTempo,
+      'modalita_superiorita': modalitaSuperiorita,
     };
     try {
       final row = await _client
@@ -185,6 +218,9 @@ class PartiteRepository {
               squadraTrasferta: Value(squadraTrasferta),
               numeroMaxConvocati: Value(numeroMaxConvocati),
               note: Value(note),
+              dettaglioTiro: Value(dettaglioTiro),
+              tracciaTempo: Value(tracciaTempo),
+              modalitaSuperiorita: Value(modalitaSuperiorita),
             ),
           );
       await enqueueOperation(

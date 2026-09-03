@@ -10,6 +10,7 @@ import '../data/distinta_repository.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/partita.dart';
 import '../pdf/distinta_pdf.dart';
+import 'eventi_partita_screen.dart';
 import 'partita_form_screen.dart';
 
 class DistintaScreen extends ConsumerWidget {
@@ -63,6 +64,15 @@ class DistintaScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text('${partita.squadraCasa} - ${partita.squadraTrasferta}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.timeline),
+            tooltip: 'Eventi partita',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => EventiPartitaScreen(partita: partita),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.ios_share),
             tooltip: 'Esporta distinta',

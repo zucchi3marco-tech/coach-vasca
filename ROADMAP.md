@@ -99,7 +99,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 
 ## FASE 7 — Pallanuoto V2 (~3-5 settimane)
 - [x] Distinta FIN (13/15, portieri, capitani, fuoriquota) — tab "Partite" nella home: partite (data/ora/luogo/campionato/colore calottina, tetto 13/15), distinta con selezione atleti pallanuoto, numero calottina, capitano/vice capitano univoci, portiere, fuoriquota (validati anche a DB), export PDF della convocazione
-- [ ] Partita + eventi base (tiro, fallo, uomo ±)
+- [x] Partita + eventi base (tiro, fallo, uomo ±) — schermata "Eventi partita" (icona timeline nella distinta): tiro (di un convocato, esito semplice o dettagliato), espulsione (solo espulsioni, non falli ordinari), superiorità numerica nostra/avversaria (esito subito o inizio/fine); impostazioni di dettaglio scelte per partita e precompilate dall'ultima partita della squadra
 - [ ] Plus/minus semplice
 - [ ] (Dopo) digitalizzazione referto solo con fogli reali di esempio
 

@@ -181,6 +181,12 @@ class PartiteTable extends Table {
   IntColumn get numeroMaxConvocati =>
       integer().withDefault(const Constant(15))();
   TextColumn get note => text().nullable()();
+  TextColumn get dettaglioTiro =>
+      text().withDefault(const Constant('semplice'))();
+  BoolColumn get tracciaTempo =>
+      boolean().withDefault(const Constant(true))();
+  TextColumn get modalitaSuperiorita =>
+      text().withDefault(const Constant('singolo'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -197,6 +203,28 @@ class DistintaGiocatoriTable extends Table {
       boolean().withDefault(const Constant(false))();
   BoolColumn get portiere => boolean().withDefault(const Constant(false))();
   BoolColumn get fuoriquota => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Log base degli eventi di una partita (tiro, espulsione, superiorita'
+/// numerica). Include creatoIl (a differenza delle altre tabelle di
+/// pallanuoto) perche' qui l'ordine cronologico e' l'unico ordinamento
+/// sensato, senza un campo di dominio equivalente (come numeroCalottina
+/// per la distinta).
+class EventiPartitaTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get partitaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get tipo => text()(); // tiro | espulsione | superiorita
+  TextColumn get squadra =>
+      text().withDefault(const Constant('nostra'))(); // nostra | avversaria
+  TextColumn get atletaId => text().nullable()();
+  IntColumn get periodo => integer().nullable()();
+  TextColumn get esito =>
+      text().nullable()(); // gol | non_gol | parato | palo_fuori
+  DateTimeColumn get creatoIl => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};

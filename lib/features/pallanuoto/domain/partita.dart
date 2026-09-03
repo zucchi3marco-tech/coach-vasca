@@ -11,6 +11,9 @@ class Partita {
     required this.squadraTrasferta,
     required this.numeroMaxConvocati,
     this.note,
+    this.dettaglioTiro = 'semplice',
+    this.tracciaTempo = true,
+    this.modalitaSuperiorita = 'singolo',
   });
 
   final String id;
@@ -24,6 +27,9 @@ class Partita {
   final String squadraTrasferta;
   final int numeroMaxConvocati; // 13 | 15
   final String? note;
+  final String dettaglioTiro; // semplice | dettagliato
+  final bool tracciaTempo;
+  final String modalitaSuperiorita; // singolo | inizio_fine
 
   factory Partita.fromMap(Map<String, dynamic> map) {
     return Partita(
@@ -38,6 +44,10 @@ class Partita {
       squadraTrasferta: map['squadra_trasferta'] as String,
       numeroMaxConvocati: map['numero_max_convocati'] as int,
       note: map['note'] as String?,
+      dettaglioTiro: map['dettaglio_tiro'] as String? ?? 'semplice',
+      tracciaTempo: map['traccia_tempo'] as bool? ?? true,
+      modalitaSuperiorita:
+          map['modalita_superiorita'] as String? ?? 'singolo',
     );
   }
 }

@@ -6492,6 +6492,45 @@ class $PartiteTableTable extends PartiteTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dettaglioTiroMeta = const VerificationMeta(
+    'dettaglioTiro',
+  );
+  @override
+  late final GeneratedColumn<String> dettaglioTiro = GeneratedColumn<String>(
+    'dettaglio_tiro',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('semplice'),
+  );
+  static const VerificationMeta _tracciaTempoMeta = const VerificationMeta(
+    'tracciaTempo',
+  );
+  @override
+  late final GeneratedColumn<bool> tracciaTempo = GeneratedColumn<bool>(
+    'traccia_tempo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("traccia_tempo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _modalitaSuperioritaMeta =
+      const VerificationMeta('modalitaSuperiorita');
+  @override
+  late final GeneratedColumn<String> modalitaSuperiorita =
+      GeneratedColumn<String>(
+        'modalita_superiorita',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('singolo'),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6505,6 +6544,9 @@ class $PartiteTableTable extends PartiteTable
     squadraTrasferta,
     numeroMaxConvocati,
     note,
+    dettaglioTiro,
+    tracciaTempo,
+    modalitaSuperiorita,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6603,6 +6645,33 @@ class $PartiteTableTable extends PartiteTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('dettaglio_tiro')) {
+      context.handle(
+        _dettaglioTiroMeta,
+        dettaglioTiro.isAcceptableOrUnknown(
+          data['dettaglio_tiro']!,
+          _dettaglioTiroMeta,
+        ),
+      );
+    }
+    if (data.containsKey('traccia_tempo')) {
+      context.handle(
+        _tracciaTempoMeta,
+        tracciaTempo.isAcceptableOrUnknown(
+          data['traccia_tempo']!,
+          _tracciaTempoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('modalita_superiorita')) {
+      context.handle(
+        _modalitaSuperioritaMeta,
+        modalitaSuperiorita.isAcceptableOrUnknown(
+          data['modalita_superiorita']!,
+          _modalitaSuperioritaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -6656,6 +6725,18 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      dettaglioTiro: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dettaglio_tiro'],
+      )!,
+      tracciaTempo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}traccia_tempo'],
+      )!,
+      modalitaSuperiorita: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modalita_superiorita'],
+      )!,
     );
   }
 
@@ -6678,6 +6759,9 @@ class PartiteTableData extends DataClass
   final String squadraTrasferta;
   final int numeroMaxConvocati;
   final String? note;
+  final String dettaglioTiro;
+  final bool tracciaTempo;
+  final String modalitaSuperiorita;
   const PartiteTableData({
     required this.id,
     required this.clubId,
@@ -6690,6 +6774,9 @@ class PartiteTableData extends DataClass
     required this.squadraTrasferta,
     required this.numeroMaxConvocati,
     this.note,
+    required this.dettaglioTiro,
+    required this.tracciaTempo,
+    required this.modalitaSuperiorita,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6715,6 +6802,9 @@ class PartiteTableData extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    map['dettaglio_tiro'] = Variable<String>(dettaglioTiro);
+    map['traccia_tempo'] = Variable<bool>(tracciaTempo);
+    map['modalita_superiorita'] = Variable<String>(modalitaSuperiorita);
     return map;
   }
 
@@ -6737,6 +6827,9 @@ class PartiteTableData extends DataClass
       squadraTrasferta: Value(squadraTrasferta),
       numeroMaxConvocati: Value(numeroMaxConvocati),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      dettaglioTiro: Value(dettaglioTiro),
+      tracciaTempo: Value(tracciaTempo),
+      modalitaSuperiorita: Value(modalitaSuperiorita),
     );
   }
 
@@ -6757,6 +6850,11 @@ class PartiteTableData extends DataClass
       squadraTrasferta: serializer.fromJson<String>(json['squadraTrasferta']),
       numeroMaxConvocati: serializer.fromJson<int>(json['numeroMaxConvocati']),
       note: serializer.fromJson<String?>(json['note']),
+      dettaglioTiro: serializer.fromJson<String>(json['dettaglioTiro']),
+      tracciaTempo: serializer.fromJson<bool>(json['tracciaTempo']),
+      modalitaSuperiorita: serializer.fromJson<String>(
+        json['modalitaSuperiorita'],
+      ),
     );
   }
   @override
@@ -6774,6 +6872,9 @@ class PartiteTableData extends DataClass
       'squadraTrasferta': serializer.toJson<String>(squadraTrasferta),
       'numeroMaxConvocati': serializer.toJson<int>(numeroMaxConvocati),
       'note': serializer.toJson<String?>(note),
+      'dettaglioTiro': serializer.toJson<String>(dettaglioTiro),
+      'tracciaTempo': serializer.toJson<bool>(tracciaTempo),
+      'modalitaSuperiorita': serializer.toJson<String>(modalitaSuperiorita),
     };
   }
 
@@ -6789,6 +6890,9 @@ class PartiteTableData extends DataClass
     String? squadraTrasferta,
     int? numeroMaxConvocati,
     Value<String?> note = const Value.absent(),
+    String? dettaglioTiro,
+    bool? tracciaTempo,
+    String? modalitaSuperiorita,
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -6803,6 +6907,9 @@ class PartiteTableData extends DataClass
     squadraTrasferta: squadraTrasferta ?? this.squadraTrasferta,
     numeroMaxConvocati: numeroMaxConvocati ?? this.numeroMaxConvocati,
     note: note.present ? note.value : this.note,
+    dettaglioTiro: dettaglioTiro ?? this.dettaglioTiro,
+    tracciaTempo: tracciaTempo ?? this.tracciaTempo,
+    modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
   );
   PartiteTableData copyWithCompanion(PartiteTableCompanion data) {
     return PartiteTableData(
@@ -6827,6 +6934,15 @@ class PartiteTableData extends DataClass
           ? data.numeroMaxConvocati.value
           : this.numeroMaxConvocati,
       note: data.note.present ? data.note.value : this.note,
+      dettaglioTiro: data.dettaglioTiro.present
+          ? data.dettaglioTiro.value
+          : this.dettaglioTiro,
+      tracciaTempo: data.tracciaTempo.present
+          ? data.tracciaTempo.value
+          : this.tracciaTempo,
+      modalitaSuperiorita: data.modalitaSuperiorita.present
+          ? data.modalitaSuperiorita.value
+          : this.modalitaSuperiorita,
     );
   }
 
@@ -6843,7 +6959,10 @@ class PartiteTableData extends DataClass
           ..write('squadraCasa: $squadraCasa, ')
           ..write('squadraTrasferta: $squadraTrasferta, ')
           ..write('numeroMaxConvocati: $numeroMaxConvocati, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('dettaglioTiro: $dettaglioTiro, ')
+          ..write('tracciaTempo: $tracciaTempo, ')
+          ..write('modalitaSuperiorita: $modalitaSuperiorita')
           ..write(')'))
         .toString();
   }
@@ -6861,6 +6980,9 @@ class PartiteTableData extends DataClass
     squadraTrasferta,
     numeroMaxConvocati,
     note,
+    dettaglioTiro,
+    tracciaTempo,
+    modalitaSuperiorita,
   );
   @override
   bool operator ==(Object other) =>
@@ -6876,7 +6998,10 @@ class PartiteTableData extends DataClass
           other.squadraCasa == this.squadraCasa &&
           other.squadraTrasferta == this.squadraTrasferta &&
           other.numeroMaxConvocati == this.numeroMaxConvocati &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.dettaglioTiro == this.dettaglioTiro &&
+          other.tracciaTempo == this.tracciaTempo &&
+          other.modalitaSuperiorita == this.modalitaSuperiorita);
 }
 
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
@@ -6891,6 +7016,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<String> squadraTrasferta;
   final Value<int> numeroMaxConvocati;
   final Value<String?> note;
+  final Value<String> dettaglioTiro;
+  final Value<bool> tracciaTempo;
+  final Value<String> modalitaSuperiorita;
   final Value<int> rowid;
   const PartiteTableCompanion({
     this.id = const Value.absent(),
@@ -6904,6 +7032,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.squadraTrasferta = const Value.absent(),
     this.numeroMaxConvocati = const Value.absent(),
     this.note = const Value.absent(),
+    this.dettaglioTiro = const Value.absent(),
+    this.tracciaTempo = const Value.absent(),
+    this.modalitaSuperiorita = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PartiteTableCompanion.insert({
@@ -6918,6 +7049,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     required String squadraTrasferta,
     this.numeroMaxConvocati = const Value.absent(),
     this.note = const Value.absent(),
+    this.dettaglioTiro = const Value.absent(),
+    this.tracciaTempo = const Value.absent(),
+    this.modalitaSuperiorita = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -6936,6 +7070,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Expression<String>? squadraTrasferta,
     Expression<int>? numeroMaxConvocati,
     Expression<String>? note,
+    Expression<String>? dettaglioTiro,
+    Expression<bool>? tracciaTempo,
+    Expression<String>? modalitaSuperiorita,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6951,6 +7088,10 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       if (numeroMaxConvocati != null)
         'numero_max_convocati': numeroMaxConvocati,
       if (note != null) 'note': note,
+      if (dettaglioTiro != null) 'dettaglio_tiro': dettaglioTiro,
+      if (tracciaTempo != null) 'traccia_tempo': tracciaTempo,
+      if (modalitaSuperiorita != null)
+        'modalita_superiorita': modalitaSuperiorita,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6967,6 +7108,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Value<String>? squadraTrasferta,
     Value<int>? numeroMaxConvocati,
     Value<String?>? note,
+    Value<String>? dettaglioTiro,
+    Value<bool>? tracciaTempo,
+    Value<String>? modalitaSuperiorita,
     Value<int>? rowid,
   }) {
     return PartiteTableCompanion(
@@ -6981,6 +7125,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       squadraTrasferta: squadraTrasferta ?? this.squadraTrasferta,
       numeroMaxConvocati: numeroMaxConvocati ?? this.numeroMaxConvocati,
       note: note ?? this.note,
+      dettaglioTiro: dettaglioTiro ?? this.dettaglioTiro,
+      tracciaTempo: tracciaTempo ?? this.tracciaTempo,
+      modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7021,6 +7168,15 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (dettaglioTiro.present) {
+      map['dettaglio_tiro'] = Variable<String>(dettaglioTiro.value);
+    }
+    if (tracciaTempo.present) {
+      map['traccia_tempo'] = Variable<bool>(tracciaTempo.value);
+    }
+    if (modalitaSuperiorita.present) {
+      map['modalita_superiorita'] = Variable<String>(modalitaSuperiorita.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7041,6 +7197,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
           ..write('squadraTrasferta: $squadraTrasferta, ')
           ..write('numeroMaxConvocati: $numeroMaxConvocati, ')
           ..write('note: $note, ')
+          ..write('dettaglioTiro: $dettaglioTiro, ')
+          ..write('tracciaTempo: $tracciaTempo, ')
+          ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7628,6 +7787,563 @@ class DistintaGiocatoriTableCompanion
   }
 }
 
+class $EventiPartitaTableTable extends EventiPartitaTable
+    with TableInfo<$EventiPartitaTableTable, EventiPartitaTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventiPartitaTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _partitaIdMeta = const VerificationMeta(
+    'partitaId',
+  );
+  @override
+  late final GeneratedColumn<String> partitaId = GeneratedColumn<String>(
+    'partita_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _squadraMeta = const VerificationMeta(
+    'squadra',
+  );
+  @override
+  late final GeneratedColumn<String> squadra = GeneratedColumn<String>(
+    'squadra',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('nostra'),
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _periodoMeta = const VerificationMeta(
+    'periodo',
+  );
+  @override
+  late final GeneratedColumn<int> periodo = GeneratedColumn<int>(
+    'periodo',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _esitoMeta = const VerificationMeta('esito');
+  @override
+  late final GeneratedColumn<String> esito = GeneratedColumn<String>(
+    'esito',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creatoIlMeta = const VerificationMeta(
+    'creatoIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> creatoIl = GeneratedColumn<DateTime>(
+    'creato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    partitaId,
+    clubId,
+    tipo,
+    squadra,
+    atletaId,
+    periodo,
+    esito,
+    creatoIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'eventi_partita_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventiPartitaTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('partita_id')) {
+      context.handle(
+        _partitaIdMeta,
+        partitaId.isAcceptableOrUnknown(data['partita_id']!, _partitaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_partitaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('squadra')) {
+      context.handle(
+        _squadraMeta,
+        squadra.isAcceptableOrUnknown(data['squadra']!, _squadraMeta),
+      );
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    }
+    if (data.containsKey('periodo')) {
+      context.handle(
+        _periodoMeta,
+        periodo.isAcceptableOrUnknown(data['periodo']!, _periodoMeta),
+      );
+    }
+    if (data.containsKey('esito')) {
+      context.handle(
+        _esitoMeta,
+        esito.isAcceptableOrUnknown(data['esito']!, _esitoMeta),
+      );
+    }
+    if (data.containsKey('creato_il')) {
+      context.handle(
+        _creatoIlMeta,
+        creatoIl.isAcceptableOrUnknown(data['creato_il']!, _creatoIlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_creatoIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EventiPartitaTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventiPartitaTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      partitaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partita_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      squadra: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}squadra'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      ),
+      periodo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}periodo'],
+      ),
+      esito: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esito'],
+      ),
+      creatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creato_il'],
+      )!,
+    );
+  }
+
+  @override
+  $EventiPartitaTableTable createAlias(String alias) {
+    return $EventiPartitaTableTable(attachedDatabase, alias);
+  }
+}
+
+class EventiPartitaTableData extends DataClass
+    implements Insertable<EventiPartitaTableData> {
+  final String id;
+  final String partitaId;
+  final String clubId;
+  final String tipo;
+  final String squadra;
+  final String? atletaId;
+  final int? periodo;
+  final String? esito;
+  final DateTime creatoIl;
+  const EventiPartitaTableData({
+    required this.id,
+    required this.partitaId,
+    required this.clubId,
+    required this.tipo,
+    required this.squadra,
+    this.atletaId,
+    this.periodo,
+    this.esito,
+    required this.creatoIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['partita_id'] = Variable<String>(partitaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['tipo'] = Variable<String>(tipo);
+    map['squadra'] = Variable<String>(squadra);
+    if (!nullToAbsent || atletaId != null) {
+      map['atleta_id'] = Variable<String>(atletaId);
+    }
+    if (!nullToAbsent || periodo != null) {
+      map['periodo'] = Variable<int>(periodo);
+    }
+    if (!nullToAbsent || esito != null) {
+      map['esito'] = Variable<String>(esito);
+    }
+    map['creato_il'] = Variable<DateTime>(creatoIl);
+    return map;
+  }
+
+  EventiPartitaTableCompanion toCompanion(bool nullToAbsent) {
+    return EventiPartitaTableCompanion(
+      id: Value(id),
+      partitaId: Value(partitaId),
+      clubId: Value(clubId),
+      tipo: Value(tipo),
+      squadra: Value(squadra),
+      atletaId: atletaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(atletaId),
+      periodo: periodo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodo),
+      esito: esito == null && nullToAbsent
+          ? const Value.absent()
+          : Value(esito),
+      creatoIl: Value(creatoIl),
+    );
+  }
+
+  factory EventiPartitaTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventiPartitaTableData(
+      id: serializer.fromJson<String>(json['id']),
+      partitaId: serializer.fromJson<String>(json['partitaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      squadra: serializer.fromJson<String>(json['squadra']),
+      atletaId: serializer.fromJson<String?>(json['atletaId']),
+      periodo: serializer.fromJson<int?>(json['periodo']),
+      esito: serializer.fromJson<String?>(json['esito']),
+      creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'partitaId': serializer.toJson<String>(partitaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'tipo': serializer.toJson<String>(tipo),
+      'squadra': serializer.toJson<String>(squadra),
+      'atletaId': serializer.toJson<String?>(atletaId),
+      'periodo': serializer.toJson<int?>(periodo),
+      'esito': serializer.toJson<String?>(esito),
+      'creatoIl': serializer.toJson<DateTime>(creatoIl),
+    };
+  }
+
+  EventiPartitaTableData copyWith({
+    String? id,
+    String? partitaId,
+    String? clubId,
+    String? tipo,
+    String? squadra,
+    Value<String?> atletaId = const Value.absent(),
+    Value<int?> periodo = const Value.absent(),
+    Value<String?> esito = const Value.absent(),
+    DateTime? creatoIl,
+  }) => EventiPartitaTableData(
+    id: id ?? this.id,
+    partitaId: partitaId ?? this.partitaId,
+    clubId: clubId ?? this.clubId,
+    tipo: tipo ?? this.tipo,
+    squadra: squadra ?? this.squadra,
+    atletaId: atletaId.present ? atletaId.value : this.atletaId,
+    periodo: periodo.present ? periodo.value : this.periodo,
+    esito: esito.present ? esito.value : this.esito,
+    creatoIl: creatoIl ?? this.creatoIl,
+  );
+  EventiPartitaTableData copyWithCompanion(EventiPartitaTableCompanion data) {
+    return EventiPartitaTableData(
+      id: data.id.present ? data.id.value : this.id,
+      partitaId: data.partitaId.present ? data.partitaId.value : this.partitaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      squadra: data.squadra.present ? data.squadra.value : this.squadra,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      periodo: data.periodo.present ? data.periodo.value : this.periodo,
+      esito: data.esito.present ? data.esito.value : this.esito,
+      creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventiPartitaTableData(')
+          ..write('id: $id, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('tipo: $tipo, ')
+          ..write('squadra: $squadra, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('periodo: $periodo, ')
+          ..write('esito: $esito, ')
+          ..write('creatoIl: $creatoIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    partitaId,
+    clubId,
+    tipo,
+    squadra,
+    atletaId,
+    periodo,
+    esito,
+    creatoIl,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventiPartitaTableData &&
+          other.id == this.id &&
+          other.partitaId == this.partitaId &&
+          other.clubId == this.clubId &&
+          other.tipo == this.tipo &&
+          other.squadra == this.squadra &&
+          other.atletaId == this.atletaId &&
+          other.periodo == this.periodo &&
+          other.esito == this.esito &&
+          other.creatoIl == this.creatoIl);
+}
+
+class EventiPartitaTableCompanion
+    extends UpdateCompanion<EventiPartitaTableData> {
+  final Value<String> id;
+  final Value<String> partitaId;
+  final Value<String> clubId;
+  final Value<String> tipo;
+  final Value<String> squadra;
+  final Value<String?> atletaId;
+  final Value<int?> periodo;
+  final Value<String?> esito;
+  final Value<DateTime> creatoIl;
+  final Value<int> rowid;
+  const EventiPartitaTableCompanion({
+    this.id = const Value.absent(),
+    this.partitaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.squadra = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.periodo = const Value.absent(),
+    this.esito = const Value.absent(),
+    this.creatoIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventiPartitaTableCompanion.insert({
+    required String id,
+    required String partitaId,
+    required String clubId,
+    required String tipo,
+    this.squadra = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.periodo = const Value.absent(),
+    this.esito = const Value.absent(),
+    required DateTime creatoIl,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       partitaId = Value(partitaId),
+       clubId = Value(clubId),
+       tipo = Value(tipo),
+       creatoIl = Value(creatoIl);
+  static Insertable<EventiPartitaTableData> custom({
+    Expression<String>? id,
+    Expression<String>? partitaId,
+    Expression<String>? clubId,
+    Expression<String>? tipo,
+    Expression<String>? squadra,
+    Expression<String>? atletaId,
+    Expression<int>? periodo,
+    Expression<String>? esito,
+    Expression<DateTime>? creatoIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (partitaId != null) 'partita_id': partitaId,
+      if (clubId != null) 'club_id': clubId,
+      if (tipo != null) 'tipo': tipo,
+      if (squadra != null) 'squadra': squadra,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (periodo != null) 'periodo': periodo,
+      if (esito != null) 'esito': esito,
+      if (creatoIl != null) 'creato_il': creatoIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventiPartitaTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? partitaId,
+    Value<String>? clubId,
+    Value<String>? tipo,
+    Value<String>? squadra,
+    Value<String?>? atletaId,
+    Value<int?>? periodo,
+    Value<String?>? esito,
+    Value<DateTime>? creatoIl,
+    Value<int>? rowid,
+  }) {
+    return EventiPartitaTableCompanion(
+      id: id ?? this.id,
+      partitaId: partitaId ?? this.partitaId,
+      clubId: clubId ?? this.clubId,
+      tipo: tipo ?? this.tipo,
+      squadra: squadra ?? this.squadra,
+      atletaId: atletaId ?? this.atletaId,
+      periodo: periodo ?? this.periodo,
+      esito: esito ?? this.esito,
+      creatoIl: creatoIl ?? this.creatoIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (partitaId.present) {
+      map['partita_id'] = Variable<String>(partitaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (squadra.present) {
+      map['squadra'] = Variable<String>(squadra.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (periodo.present) {
+      map['periodo'] = Variable<int>(periodo.value);
+    }
+    if (esito.present) {
+      map['esito'] = Variable<String>(esito.value);
+    }
+    if (creatoIl.present) {
+      map['creato_il'] = Variable<DateTime>(creatoIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventiPartitaTableCompanion(')
+          ..write('id: $id, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('tipo: $tipo, ')
+          ..write('squadra: $squadra, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('periodo: $periodo, ')
+          ..write('esito: $esito, ')
+          ..write('creatoIl: $creatoIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7655,6 +8371,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PartiteTableTable partiteTable = $PartiteTableTable(this);
   late final $DistintaGiocatoriTableTable distintaGiocatoriTable =
       $DistintaGiocatoriTableTable(this);
+  late final $EventiPartitaTableTable eventiPartitaTable =
+      $EventiPartitaTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7674,6 +8392,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pendingOperationsTable,
     partiteTable,
     distintaGiocatoriTable,
+    eventiPartitaTable,
   ];
 }
 
@@ -10983,6 +11702,9 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
       required String squadraTrasferta,
       Value<int> numeroMaxConvocati,
       Value<String?> note,
+      Value<String> dettaglioTiro,
+      Value<bool> tracciaTempo,
+      Value<String> modalitaSuperiorita,
       Value<int> rowid,
     });
 typedef $$PartiteTableTableUpdateCompanionBuilder =
@@ -10998,6 +11720,9 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
       Value<String> squadraTrasferta,
       Value<int> numeroMaxConvocati,
       Value<String?> note,
+      Value<String> dettaglioTiro,
+      Value<bool> tracciaTempo,
+      Value<String> modalitaSuperiorita,
       Value<int> rowid,
     });
 
@@ -11062,6 +11787,21 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dettaglioTiro => $composableBuilder(
+    column: $table.dettaglioTiro,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get tracciaTempo => $composableBuilder(
+    column: $table.tracciaTempo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modalitaSuperiorita => $composableBuilder(
+    column: $table.modalitaSuperiorita,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11129,6 +11869,21 @@ class $$PartiteTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get dettaglioTiro => $composableBuilder(
+    column: $table.dettaglioTiro,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get tracciaTempo => $composableBuilder(
+    column: $table.tracciaTempo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modalitaSuperiorita => $composableBuilder(
+    column: $table.modalitaSuperiorita,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PartiteTableTableAnnotationComposer
@@ -11182,6 +11937,21 @@ class $$PartiteTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get dettaglioTiro => $composableBuilder(
+    column: $table.dettaglioTiro,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get tracciaTempo => $composableBuilder(
+    column: $table.tracciaTempo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modalitaSuperiorita => $composableBuilder(
+    column: $table.modalitaSuperiorita,
+    builder: (column) => column,
+  );
 }
 
 class $$PartiteTableTableTableManager
@@ -11226,6 +11996,9 @@ class $$PartiteTableTableTableManager
                 Value<String> squadraTrasferta = const Value.absent(),
                 Value<int> numeroMaxConvocati = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String> dettaglioTiro = const Value.absent(),
+                Value<bool> tracciaTempo = const Value.absent(),
+                Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion(
                 id: id,
@@ -11239,6 +12012,9 @@ class $$PartiteTableTableTableManager
                 squadraTrasferta: squadraTrasferta,
                 numeroMaxConvocati: numeroMaxConvocati,
                 note: note,
+                dettaglioTiro: dettaglioTiro,
+                tracciaTempo: tracciaTempo,
+                modalitaSuperiorita: modalitaSuperiorita,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11254,6 +12030,9 @@ class $$PartiteTableTableTableManager
                 required String squadraTrasferta,
                 Value<int> numeroMaxConvocati = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String> dettaglioTiro = const Value.absent(),
+                Value<bool> tracciaTempo = const Value.absent(),
+                Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion.insert(
                 id: id,
@@ -11267,6 +12046,9 @@ class $$PartiteTableTableTableManager
                 squadraTrasferta: squadraTrasferta,
                 numeroMaxConvocati: numeroMaxConvocati,
                 note: note,
+                dettaglioTiro: dettaglioTiro,
+                tracciaTempo: tracciaTempo,
+                modalitaSuperiorita: modalitaSuperiorita,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -11595,6 +12377,295 @@ typedef $$DistintaGiocatoriTableTableProcessedTableManager =
       DistintaGiocatoriTableData,
       PrefetchHooks Function()
     >;
+typedef $$EventiPartitaTableTableCreateCompanionBuilder =
+    EventiPartitaTableCompanion Function({
+      required String id,
+      required String partitaId,
+      required String clubId,
+      required String tipo,
+      Value<String> squadra,
+      Value<String?> atletaId,
+      Value<int?> periodo,
+      Value<String?> esito,
+      required DateTime creatoIl,
+      Value<int> rowid,
+    });
+typedef $$EventiPartitaTableTableUpdateCompanionBuilder =
+    EventiPartitaTableCompanion Function({
+      Value<String> id,
+      Value<String> partitaId,
+      Value<String> clubId,
+      Value<String> tipo,
+      Value<String> squadra,
+      Value<String?> atletaId,
+      Value<int?> periodo,
+      Value<String?> esito,
+      Value<DateTime> creatoIl,
+      Value<int> rowid,
+    });
+
+class $$EventiPartitaTableTableFilterComposer
+    extends Composer<_$AppDatabase, $EventiPartitaTableTable> {
+  $$EventiPartitaTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get squadra => $composableBuilder(
+    column: $table.squadra,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get periodo => $composableBuilder(
+    column: $table.periodo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get esito => $composableBuilder(
+    column: $table.esito,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EventiPartitaTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $EventiPartitaTableTable> {
+  $$EventiPartitaTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get squadra => $composableBuilder(
+    column: $table.squadra,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get periodo => $composableBuilder(
+    column: $table.periodo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get esito => $composableBuilder(
+    column: $table.esito,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EventiPartitaTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EventiPartitaTableTable> {
+  $$EventiPartitaTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get partitaId =>
+      $composableBuilder(column: $table.partitaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<String> get squadra =>
+      $composableBuilder(column: $table.squadra, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<int> get periodo =>
+      $composableBuilder(column: $table.periodo, builder: (column) => column);
+
+  GeneratedColumn<String> get esito =>
+      $composableBuilder(column: $table.esito, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get creatoIl =>
+      $composableBuilder(column: $table.creatoIl, builder: (column) => column);
+}
+
+class $$EventiPartitaTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EventiPartitaTableTable,
+          EventiPartitaTableData,
+          $$EventiPartitaTableTableFilterComposer,
+          $$EventiPartitaTableTableOrderingComposer,
+          $$EventiPartitaTableTableAnnotationComposer,
+          $$EventiPartitaTableTableCreateCompanionBuilder,
+          $$EventiPartitaTableTableUpdateCompanionBuilder,
+          (
+            EventiPartitaTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $EventiPartitaTableTable,
+              EventiPartitaTableData
+            >,
+          ),
+          EventiPartitaTableData,
+          PrefetchHooks Function()
+        > {
+  $$EventiPartitaTableTableTableManager(
+    _$AppDatabase db,
+    $EventiPartitaTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventiPartitaTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventiPartitaTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventiPartitaTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> partitaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<String> squadra = const Value.absent(),
+                Value<String?> atletaId = const Value.absent(),
+                Value<int?> periodo = const Value.absent(),
+                Value<String?> esito = const Value.absent(),
+                Value<DateTime> creatoIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventiPartitaTableCompanion(
+                id: id,
+                partitaId: partitaId,
+                clubId: clubId,
+                tipo: tipo,
+                squadra: squadra,
+                atletaId: atletaId,
+                periodo: periodo,
+                esito: esito,
+                creatoIl: creatoIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String partitaId,
+                required String clubId,
+                required String tipo,
+                Value<String> squadra = const Value.absent(),
+                Value<String?> atletaId = const Value.absent(),
+                Value<int?> periodo = const Value.absent(),
+                Value<String?> esito = const Value.absent(),
+                required DateTime creatoIl,
+                Value<int> rowid = const Value.absent(),
+              }) => EventiPartitaTableCompanion.insert(
+                id: id,
+                partitaId: partitaId,
+                clubId: clubId,
+                tipo: tipo,
+                squadra: squadra,
+                atletaId: atletaId,
+                periodo: periodo,
+                esito: esito,
+                creatoIl: creatoIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EventiPartitaTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EventiPartitaTableTable,
+      EventiPartitaTableData,
+      $$EventiPartitaTableTableFilterComposer,
+      $$EventiPartitaTableTableOrderingComposer,
+      $$EventiPartitaTableTableAnnotationComposer,
+      $$EventiPartitaTableTableCreateCompanionBuilder,
+      $$EventiPartitaTableTableUpdateCompanionBuilder,
+      (
+        EventiPartitaTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $EventiPartitaTableTable,
+          EventiPartitaTableData
+        >,
+      ),
+      EventiPartitaTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11633,4 +12704,6 @@ class $AppDatabaseManager {
         _db,
         _db.distintaGiocatoriTable,
       );
+  $$EventiPartitaTableTableTableManager get eventiPartitaTable =>
+      $$EventiPartitaTableTableTableManager(_db, _db.eventiPartitaTable);
 }

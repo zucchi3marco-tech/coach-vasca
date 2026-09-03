@@ -21,13 +21,14 @@ part 'app_database.g.dart';
     PendingOperationsTable,
     PartiteTable,
     DistintaGiocatoriTable,
+    EventiPartitaTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,8 +51,48 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(partiteTable);
         await m.createTable(distintaGiocatoriTable);
       }
+      // v4 -> v5: eventi partita base (Fase 7, punto 2).
+      // Controlli difensivi (colonna/tabella gia' presente): la cache
+      // locale web (IndexedDB/OPFS) puo' restare a meta' tra due versioni
+      // dello schema se il dev server viene ricaricato a meta' di una
+      // migrazione precedente, senza che la versione salvata avanzi.
+      if (from < 5) {
+        if (!await _hasColumn(m, 'partite_table', 'dettaglio_tiro')) {
+          await m.addColumn(partiteTable, partiteTable.dettaglioTiro);
+        }
+        if (!await _hasColumn(m, 'partite_table', 'traccia_tempo')) {
+          await m.addColumn(partiteTable, partiteTable.tracciaTempo);
+        }
+        if (!await _hasColumn(m, 'partite_table', 'modalita_superiorita')) {
+          await m.addColumn(partiteTable, partiteTable.modalitaSuperiorita);
+        }
+        if (!await _hasTable(m, 'eventi_partita_table')) {
+          await m.createTable(eventiPartitaTable);
+        }
+      }
     },
   );
+
+  static Future<bool> _hasColumn(
+    Migrator m,
+    String table,
+    String column,
+  ) async {
+    final righe = await m.database
+        .customSelect('PRAGMA table_info($table)')
+        .get();
+    return righe.any((riga) => riga.data['name'] == column);
+  }
+
+  static Future<bool> _hasTable(Migrator m, String table) async {
+    final righe = await m.database
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+          variables: [Variable.withString(table)],
+        )
+        .get();
+    return righe.isNotEmpty;
+  }
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
