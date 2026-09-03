@@ -98,7 +98,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro
 
 ## FASE 7 — Pallanuoto V2 (~3-5 settimane)
-- [ ] Distinta FIN (13/15, portieri, capitani, fuoriquota)
+- [x] Distinta FIN (13/15, portieri, capitani, fuoriquota) — tab "Partite" nella home: partite (data/ora/luogo/campionato/colore calottina, tetto 13/15), distinta con selezione atleti pallanuoto, numero calottina, capitano/vice capitano univoci, portiere, fuoriquota (validati anche a DB), export PDF della convocazione
 - [ ] Partita + eventi base (tiro, fallo, uomo ±)
 - [ ] Plus/minus semplice
 - [ ] (Dopo) digitalizzazione referto solo con fogli reali di esempio
