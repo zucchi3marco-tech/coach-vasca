@@ -12,6 +12,7 @@ import '../domain/partita.dart';
 import '../pdf/distinta_pdf.dart';
 import 'eventi_partita_screen.dart';
 import 'partita_form_screen.dart';
+import 'statistiche_partita_screen.dart';
 
 class DistintaScreen extends ConsumerWidget {
   const DistintaScreen({required this.partita, super.key});
@@ -70,6 +71,15 @@ class DistintaScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => EventiPartitaScreen(partita: partita),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Statistiche',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StatistichePartitaScreen(partita: partita),
               ),
             ),
           ),
