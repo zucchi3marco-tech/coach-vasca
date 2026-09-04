@@ -30,6 +30,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late String _dettaglioTiro;
   late bool _tracciaTempo;
   late String _modalitaSuperiorita;
+  late String _nostraSquadra;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -57,6 +58,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
     _tracciaTempo = p?.tracciaTempo ?? true;
     _modalitaSuperiorita = p?.modalitaSuperiorita ?? 'singolo';
+    _nostraSquadra = p?.nostraSquadra ?? 'casa';
     if (!_isEditing) {
       ref.read(currentClubProvider.future).then((club) {
         if (mounted) _prefillClubSeVuoto(club?.nome);
@@ -147,6 +149,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           dettaglioTiro: _dettaglioTiro,
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: _modalitaSuperiorita,
+          nostraSquadra: _nostraSquadra,
         );
       } else {
         await repository.createPartita(
@@ -163,6 +166,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           dettaglioTiro: _dettaglioTiro,
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: _modalitaSuperiorita,
+          nostraSquadra: _nostraSquadra,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -260,6 +264,24 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'La mia squadra',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'casa', label: Text('Casa')),
+                    ButtonSegment(
+                      value: 'trasferta',
+                      label: Text('Trasferta'),
+                    ),
+                  ],
+                  selected: {_nostraSquadra},
+                  onSelectionChanged: (s) =>
+                      setState(() => _nostraSquadra = s.first),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

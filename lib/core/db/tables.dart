@@ -187,6 +187,8 @@ class PartiteTable extends Table {
       boolean().withDefault(const Constant(true))();
   TextColumn get modalitaSuperiorita =>
       text().withDefault(const Constant('singolo'))();
+  TextColumn get nostraSquadra =>
+      text().withDefault(const Constant('casa'))(); // casa | trasferta
 
   @override
   Set<Column> get primaryKey => {id};
@@ -224,6 +226,8 @@ class EventiPartitaTable extends Table {
   IntColumn get periodo => integer().nullable()();
   TextColumn get esito =>
       text().nullable()(); // gol | non_gol | parato | palo_fuori
+  TextColumn get contestoTiro =>
+      text().withDefault(const Constant('azione'))(); // azione | superiorita | rigore
   DateTimeColumn get creatoIl => dateTime()();
 
   @override

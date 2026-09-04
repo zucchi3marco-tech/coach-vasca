@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +75,20 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         if (!await _hasTable(m, 'referti_partita_table')) {
           await m.createTable(refertiPartitaTable);
+        }
+      }
+      // v6 -> v7: nostra squadra su partita, per le statistiche
+      // stagionali (Fase 8).
+      if (from < 7) {
+        if (!await _hasColumn(m, 'partite_table', 'nostra_squadra')) {
+          await m.addColumn(partiteTable, partiteTable.nostraSquadra);
+        }
+      }
+      // v7 -> v8: contesto del tiro (azione/superiorita/rigore), per le
+      // statistiche stagionali "da eventi live" (Fase 8).
+      if (from < 8) {
+        if (!await _hasColumn(m, 'eventi_partita_table', 'contesto_tiro')) {
+          await m.addColumn(eventiPartitaTable, eventiPartitaTable.contestoTiro);
         }
       }
     },

@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/data/distinta_repository.dart';
 import '../../pallanuoto/data/partite_repository.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
@@ -365,17 +368,15 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
             trasferta: _parseInt(trasferta, 'parziale trasferta'),
           ),
       ];
-      List<GiocatoreReferto> leggiGiocatori(List<_GiocatoreCtrl> ctrls) => [
-        for (final g in ctrls)
-          GiocatoreReferto(
-            numeroCalottina: _parseInt(g.numero, 'numero calottina'),
-            nome: g.nome.text.trim(),
-            reti: _parseInt(g.reti, 'reti'),
-            espulsioni: _parseInt(g.espulsioni, 'espulsioni'),
-          ),
-      ];
-      final giocatoriCasa = leggiGiocatori(_giocatoriCasaCtrl);
-      final giocatoriTrasferta = leggiGiocatori(_giocatoriTrasfertaCtrl);
+      // Valida subito i numeri dei giocatori (servono anche per il
+      // collegamento agli atleti più avanti): il resto della lettura
+      // (GiocatoreReferto con atletaId) si costruisce solo dopo, a
+      // collegamento fatto.
+      for (final g in [..._giocatoriCasaCtrl, ..._giocatoriTrasfertaCtrl]) {
+        _parseInt(g.numero, 'numero calottina');
+        _parseInt(g.reti, 'reti');
+        _parseInt(g.espulsioni, 'espulsioni');
+      }
 
       if (!mounted) return;
       final scelta = await showDialog<_ScelteSalvataggio>(
@@ -385,8 +386,10 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
       if (scelta == null) return;
 
       String partitaId;
+      String nostraSquadra;
       if (scelta.partitaEsistente != null) {
         partitaId = scelta.partitaEsistente!.id;
+        nostraSquadra = scelta.partitaEsistente!.nostraSquadra;
       } else {
         final nuova = await ref
             .read(partiteRepositoryProvider)
@@ -399,9 +402,38 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
               dettaglioTiro: 'semplice',
               tracciaTempo: true,
               modalitaSuperiorita: 'singolo',
+              nostraSquadra: scelta.nostraSquadraNuova!,
             );
         partitaId = nuova.id;
+        nostraSquadra = scelta.nostraSquadraNuova!;
       }
+
+      final nostriGiocatori = nostraSquadra == 'casa'
+          ? _giocatoriCasaCtrl
+          : _giocatoriTrasfertaCtrl;
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _DialogCollegaAtleti(
+          clubId: widget.clubId,
+          partitaId: partitaId,
+          giocatori: nostriGiocatori,
+        ),
+      );
+
+      List<GiocatoreReferto> leggiGiocatori(List<_GiocatoreCtrl> ctrls) => [
+        for (final g in ctrls)
+          GiocatoreReferto(
+            numeroCalottina: _parseInt(g.numero, 'numero calottina'),
+            nome: g.nome.text.trim(),
+            reti: _parseInt(g.reti, 'reti'),
+            espulsioni: _parseInt(g.espulsioni, 'espulsioni'),
+            atletaId: g.atletaId,
+          ),
+      ];
+      final giocatoriCasa = leggiGiocatori(_giocatoriCasaCtrl);
+      final giocatoriTrasferta = leggiGiocatori(_giocatoriTrasfertaCtrl);
 
       await ref
           .read(refertiRepositoryProvider)
@@ -430,13 +462,19 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
   }
 }
 
-/// Esito del dialog di scelta: o una partita esistente, o la data per una
-/// nuova partita da creare al volo (nome squadre presi dal referto).
+/// Esito del dialog di scelta: o una partita esistente, o data + nostra
+/// squadra (casa/trasferta) per una nuova partita da creare al volo (nome
+/// squadre presi dal referto).
 class _ScelteSalvataggio {
-  const _ScelteSalvataggio({this.partitaEsistente, this.dataNuovaPartita});
+  const _ScelteSalvataggio({
+    this.partitaEsistente,
+    this.dataNuovaPartita,
+    this.nostraSquadraNuova,
+  });
 
   final Partita? partitaEsistente;
   final DateTime? dataNuovaPartita;
+  final String? nostraSquadraNuova;
 }
 
 class _DialogSceltaPartita extends ConsumerStatefulWidget {
@@ -453,6 +491,7 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
   bool _nuovaPartita = false;
   Partita? _partitaSelezionata;
   DateTime _dataNuovaPartita = DateTime.now();
+  String _nostraSquadraNuova = 'casa';
 
   Future<void> _pickData() async {
     final selezionata = await showDatePicker(
@@ -542,6 +581,34 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                   onTap: _pickData,
                 ),
               ),
+            if (_nuovaPartita) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'La mia squadra',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'casa', label: Text('Casa')),
+                        ButtonSegment(
+                          value: 'trasferta',
+                          label: Text('Trasferta'),
+                        ),
+                      ],
+                      selected: {_nostraSquadraNuova},
+                      onSelectionChanged: (s) =>
+                          setState(() => _nostraSquadraNuova = s.first),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -555,7 +622,10 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
               ? null
               : () => Navigator.of(context).pop(
                   _nuovaPartita
-                      ? _ScelteSalvataggio(dataNuovaPartita: _dataNuovaPartita)
+                      ? _ScelteSalvataggio(
+                          dataNuovaPartita: _dataNuovaPartita,
+                          nostraSquadraNuova: _nostraSquadraNuova,
+                        )
                       : _ScelteSalvataggio(
                           partitaEsistente: _partitaSelezionata,
                         ),
@@ -567,17 +637,217 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
   }
 }
 
+/// Collega ogni giocatore della NOSTRA squadra (letto dal referto) a un
+/// Atleta esistente: serve per le statistiche stagionali per singolo
+/// atleta. Auto-collega prima dalla distinta della partita quando
+/// disponibile (stesso numero di calottina), poi per cognome (il referto
+/// scrive "COGNOME Iniziale."): se il cognome corrisponde a un solo
+/// atleta si collega da solo, se ne corrispondono piu' di uno si lascia
+/// la scelta manuale per non collegare quello sbagliato. Un giocatore
+/// senza collegamento resta comunque salvato nel referto (nome/reti/
+/// espulsioni), ma le sue statistiche non compaiono per nessun atleta:
+/// da qui l'avviso, non bloccante.
+class _DialogCollegaAtleti extends ConsumerStatefulWidget {
+  const _DialogCollegaAtleti({
+    required this.clubId,
+    required this.partitaId,
+    required this.giocatori,
+  });
+
+  final String clubId;
+  final String partitaId;
+  final List<_GiocatoreCtrl> giocatori;
+
+  @override
+  ConsumerState<_DialogCollegaAtleti> createState() =>
+      _DialogCollegaAtletiState();
+}
+
+class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
+  bool _caricamento = true;
+  bool _autoCollegoDaCognomeFatto = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoCollegaDaDistinta();
+  }
+
+  Future<void> _autoCollegaDaDistinta() async {
+    try {
+      final distintaRepo = ref.read(distintaRepositoryProvider);
+      await distintaRepo.refreshFromRemote(widget.partitaId);
+      final convocati = await distintaRepo
+          .watchPerPartita(widget.partitaId)
+          .first;
+      final atletaPerNumero = {
+        for (final c in convocati) c.numeroCalottina: c.atletaId,
+      };
+      for (final g in widget.giocatori) {
+        if (g.atletaId != null) continue;
+        final numero = int.tryParse(g.numero.text.trim());
+        if (numero != null && atletaPerNumero.containsKey(numero)) {
+          g.atletaId = atletaPerNumero[numero];
+        }
+      }
+    } catch (_) {
+      // Nessuna distinta per questa partita, o offline: si procede col
+      // collegamento per cognome e, per il resto, manuale.
+    } finally {
+      if (mounted) setState(() => _caricamento = false);
+    }
+  }
+
+  /// Per chi non e' stato collegato dalla distinta: cerca un atleta il cui
+  /// cognome compaia nel nome letto dal referto. Ambiguo (0 o piu' di 1
+  /// corrispondenza) → resta non collegato, scelta manuale.
+  void _autoCollegaDaCognome(List<Atleta> atleti) {
+    if (_autoCollegoDaCognomeFatto) return;
+    _autoCollegoDaCognomeFatto = true;
+    for (final g in widget.giocatori) {
+      if (g.atletaId != null) continue;
+      final nomeLetto = g.nome.text.trim().toUpperCase();
+      if (nomeLetto.isEmpty) continue;
+      final corrispondenti = atleti.where((a) {
+        final cognome = a.cognome.trim();
+        return cognome.isNotEmpty && nomeLetto.contains(cognome.toUpperCase());
+      }).toList();
+      if (corrispondenti.length == 1) {
+        g.atletaId = corrispondenti.first.id;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final atletiAsync = ref.watch(
+      atletiListProvider((clubId: widget.clubId, includeInactive: false)),
+    );
+    final nonCollegati = widget.giocatori
+        .where((g) => g.atletaId == null)
+        .length;
+
+    return AlertDialog(
+      title: const Text('Collega i giocatori agli atleti'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: _caricamento
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : atletiAsync.when(
+                data: (atleti) {
+                  _autoCollegaDaCognome(atleti);
+                  final ordinati = [...atleti]
+                    ..sort((a, b) => a.cognome.compareTo(b.cognome));
+                  return SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Solo per la nostra squadra: servono per le '
+                          'statistiche stagionali per singolo atleta. '
+                          'Collegati già in automatico: chi ha lo stesso '
+                          'numero di calottina di un convocato in distinta, '
+                          'o il cui cognome corrisponde a un solo atleta. '
+                          'Se due atleti hanno lo stesso cognome vanno '
+                          'scelti a mano qui sotto.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        for (final g in widget.giocatori)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    '${g.numero.text}  ${g.nome.text}',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 3,
+                                  child: DropdownButtonFormField<String?>(
+                                    initialValue: g.atletaId,
+                                    isExpanded: true,
+                                    isDense: true,
+                                    hint: const Text('Nessuno'),
+                                    items: [
+                                      const DropdownMenuItem<String?>(
+                                        child: Text('Nessuno'),
+                                      ),
+                                      for (final a in ordinati)
+                                        DropdownMenuItem<String?>(
+                                          value: a.id,
+                                          child: Text(
+                                            a.nomeCompleto,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: (v) =>
+                                        setState(() => g.atletaId = v),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (nonCollegati > 0) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            '$nonCollegati giocatori non collegati a un '
+                            'atleta: le loro reti/espulsioni non verranno '
+                            'conteggiate nelle statistiche per singolo '
+                            'atleta (restano comunque salvate nel referto).',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text(messaggioErrore(e)),
+              ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: _caricamento
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: const Text('Continua'),
+        ),
+      ],
+    );
+  }
+}
+
 class _GiocatoreCtrl {
   _GiocatoreCtrl(GiocatoreReferto g)
     : numero = TextEditingController(text: '${g.numeroCalottina}'),
       nome = TextEditingController(text: g.nome),
       reti = TextEditingController(text: '${g.reti}'),
-      espulsioni = TextEditingController(text: '${g.espulsioni}');
+      espulsioni = TextEditingController(text: '${g.espulsioni}'),
+      atletaId = g.atletaId;
 
   final TextEditingController numero;
   final TextEditingController nome;
   final TextEditingController reti;
   final TextEditingController espulsioni;
+
+  /// Collegato a un Atleta solo per i giocatori della nostra squadra,
+  /// scelto nel dialog "Collega atleti" dopo aver indicato la partita
+  /// (serve conoscere il numero di calottina e, se disponibile, la
+  /// distinta per l'auto-collegamento). Mutabile: il dialog lo aggiorna
+  /// direttamente su questi stessi oggetti.
+  String? atletaId;
 
   void dispose() {
     numero.dispose();

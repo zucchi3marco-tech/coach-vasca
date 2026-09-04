@@ -4,6 +4,7 @@ class GiocatoreReferto {
     required this.nome,
     required this.reti,
     required this.espulsioni,
+    this.atletaId,
   });
 
   final int numeroCalottina;
@@ -11,12 +12,19 @@ class GiocatoreReferto {
   final int reti;
   final int espulsioni;
 
+  /// Collegato a un Atleta solo per i giocatori della nostra squadra
+  /// (scelto a mano dopo la lettura AI, mai dedotto): serve per le
+  /// statistiche stagionali per singolo atleta. Null se non ancora
+  /// collegato o se e' un giocatore avversario.
+  final String? atletaId;
+
   factory GiocatoreReferto.fromMap(Map<String, dynamic> map) {
     return GiocatoreReferto(
       numeroCalottina: map['numeroCalottina'] as int,
       nome: map['nome'] as String,
       reti: map['reti'] as int,
       espulsioni: map['espulsioni'] as int,
+      atletaId: map['atletaId'] as String?,
     );
   }
 }

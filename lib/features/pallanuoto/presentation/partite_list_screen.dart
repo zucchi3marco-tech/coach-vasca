@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../referti/presentation/leggi_referto_screen.dart';
+import '../../statistiche/presentation/statistiche_squadra_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import 'distinta_screen.dart';
@@ -76,6 +77,18 @@ class PartiteListScreen extends ConsumerWidget {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          FloatingActionButton(
+            heroTag: 'fab-statistiche',
+            mini: true,
+            tooltip: 'Statistiche stagione',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StatisticheSquadraScreen(clubId: clubId),
+              ),
+            ),
+            child: const Icon(Icons.bar_chart),
+          ),
+          const SizedBox(height: 12),
           FloatingActionButton(
             heroTag: 'fab-leggi-referto',
             mini: true,

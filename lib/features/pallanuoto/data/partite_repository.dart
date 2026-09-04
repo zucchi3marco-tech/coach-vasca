@@ -37,6 +37,7 @@ class PartiteRepository {
       dettaglioTiro: row.dettaglioTiro,
       tracciaTempo: row.tracciaTempo,
       modalitaSuperiorita: row.modalitaSuperiorita,
+      nostraSquadra: row.nostraSquadra,
     );
   }
 
@@ -58,6 +59,7 @@ class PartiteRepository {
       modalitaSuperiorita: Value(
         map['modalita_superiorita'] as String? ?? 'singolo',
       ),
+      nostraSquadra: Value(map['nostra_squadra'] as String? ?? 'casa'),
     );
   }
 
@@ -98,6 +100,33 @@ class PartiteRepository {
     return rows.isEmpty ? null : _fromRow(rows.first);
   }
 
+  /// Partite del club con data nell'intervallo [dataInizio, dataFine]
+  /// (estremi inclusi), per le statistiche stagionali.
+  Future<List<Partita>> perClubEPeriodo({
+    required String clubId,
+    required DateTime dataInizio,
+    required DateTime dataFine,
+  }) async {
+    try {
+      final rows = await _client
+          .from('partite')
+          .select()
+          .eq('club_id', clubId)
+          .gte('data', formatDateOnly(dataInizio))
+          .lte('data', formatDateOnly(dataFine));
+      return [for (final r in rows) Partita.fromMap(r)];
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe =
+          await (_db.select(_db.partiteTable)
+                ..where((t) => t.clubId.equals(clubId))
+                ..where((t) => t.data.isBiggerOrEqualValue(dataInizio))
+                ..where((t) => t.data.isSmallerOrEqualValue(dataFine)))
+              .get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   Future<Partita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -120,6 +149,7 @@ class PartiteRepository {
     required String dettaglioTiro,
     required bool tracciaTempo,
     required String modalitaSuperiorita,
+    required String nostraSquadra,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -138,6 +168,7 @@ class PartiteRepository {
       'dettaglio_tiro': dettaglioTiro,
       'traccia_tempo': tracciaTempo,
       'modalita_superiorita': modalitaSuperiorita,
+      'nostra_squadra': nostraSquadra,
     };
     try {
       final row = await _client
@@ -179,6 +210,7 @@ class PartiteRepository {
     required String dettaglioTiro,
     required bool tracciaTempo,
     required String modalitaSuperiorita,
+    required String nostraSquadra,
   }) async {
     final payload = {
       'data': formatDateOnly(data),
@@ -193,6 +225,7 @@ class PartiteRepository {
       'dettaglio_tiro': dettaglioTiro,
       'traccia_tempo': tracciaTempo,
       'modalita_superiorita': modalitaSuperiorita,
+      'nostra_squadra': nostraSquadra,
     };
     try {
       final row = await _client
@@ -221,6 +254,7 @@ class PartiteRepository {
               dettaglioTiro: Value(dettaglioTiro),
               tracciaTempo: Value(tracciaTempo),
               modalitaSuperiorita: Value(modalitaSuperiorita),
+              nostraSquadra: Value(nostraSquadra),
             ),
           );
       await enqueueOperation(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
+import '../../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
@@ -42,6 +43,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
             onTapCarico: (atleta) => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => CaricoAtletaScreen(atleta: atleta),
+              ),
+            ),
+            onTapStatistiche: (atleta) => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StatisticheAtletaScreen(atleta: atleta),
               ),
             ),
           ),
@@ -89,12 +95,14 @@ class _AtletiList extends StatelessWidget {
     required this.onTap,
     required this.onTapTest,
     required this.onTapCarico,
+    required this.onTapStatistiche,
   });
 
   final List<Atleta> atleti;
   final ValueChanged<Atleta> onTap;
   final ValueChanged<Atleta> onTapTest;
   final ValueChanged<Atleta> onTapCarico;
+  final ValueChanged<Atleta> onTapStatistiche;
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +149,11 @@ class _AtletiList extends StatelessWidget {
                 icon: const Icon(Icons.show_chart),
                 tooltip: 'Carico',
                 onPressed: () => onTapCarico(atleta),
+              ),
+              IconButton(
+                icon: const Icon(Icons.query_stats),
+                tooltip: 'Statistiche',
+                onPressed: () => onTapStatistiche(atleta),
               ),
               IconButton(
                 icon: const Icon(Icons.speed_outlined),

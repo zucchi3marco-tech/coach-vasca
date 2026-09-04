@@ -16,6 +16,22 @@ const _esitiTiroDettagliato = [
   ('palo_fuori', 'Palo/fuori'),
 ];
 const _esitiSuperiorita = [('gol', 'Gol'), ('non_gol', 'Non gol')];
+const _contestiTiro = [
+  ('azione', 'Azione'),
+  ('superiorita', 'Superiorità'),
+  ('rigore', 'Rigore'),
+];
+
+String _etichettaContesto(String contesto) {
+  switch (contesto) {
+    case 'superiorita':
+      return 'superiorità';
+    case 'rigore':
+      return 'rigore';
+    default:
+      return '';
+  }
+}
 
 String _etichettaEsito(String? esito) {
   switch (esito) {
@@ -42,7 +58,9 @@ class EventiPartitaScreen extends ConsumerWidget {
     switch (e.tipo) {
       case 'tiro':
         final nome = atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso';
-        return 'Tiro — $nome — ${_etichettaEsito(e.esito)}$tempo';
+        final contesto = _etichettaContesto(e.contestoTiro);
+        final suffisso = contesto.isEmpty ? '' : ' ($contesto)';
+        return 'Tiro — $nome — ${_etichettaEsito(e.esito)}$suffisso$tempo';
       case 'espulsione':
         final nome = atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso';
         return 'Espulsione — $nome$tempo';
@@ -265,6 +283,7 @@ class _DialogRegistraTiro extends ConsumerStatefulWidget {
 class _DialogRegistraTiroState extends ConsumerState<_DialogRegistraTiro> {
   String? _atletaId;
   String? _esito;
+  String _contesto = 'azione';
   int? _periodo;
   bool _isSubmitting = false;
   String? _errore;
@@ -291,6 +310,7 @@ class _DialogRegistraTiroState extends ConsumerState<_DialogRegistraTiro> {
             atletaId: _atletaId!,
             esito: _esito!,
             periodo: _periodo,
+            contestoTiro: _contesto,
           );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -327,6 +347,23 @@ class _DialogRegistraTiroState extends ConsumerState<_DialogRegistraTiro> {
                     label: Text(etichetta),
                     selected: _esito == valore,
                     onSelected: (_) => setState(() => _esito = valore),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Contesto',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final (valore, etichetta) in _contestiTiro)
+                  ChoiceChip(
+                    label: Text(etichetta),
+                    selected: _contesto == valore,
+                    onSelected: (_) => setState(() => _contesto = valore),
                   ),
               ],
             ),

@@ -30,6 +30,7 @@ class EventiPartitaRepository {
       atletaId: row.atletaId,
       periodo: row.periodo,
       esito: row.esito,
+      contestoTiro: row.contestoTiro,
       creatoIl: row.creatoIl,
     );
   }
@@ -44,6 +45,7 @@ class EventiPartitaRepository {
       atletaId: Value(map['atleta_id'] as String?),
       periodo: Value(map['periodo'] as int?),
       esito: Value(map['esito'] as String?),
+      contestoTiro: Value(map['contesto_tiro'] as String? ?? 'azione'),
       creatoIl: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
@@ -77,6 +79,40 @@ class EventiPartitaRepository {
     });
   }
 
+  EventoPartita _fromMap(Map<String, dynamic> map) {
+    return EventoPartita(
+      id: map['id'] as String,
+      partitaId: map['partita_id'] as String,
+      clubId: map['club_id'] as String,
+      tipo: map['tipo'] as String,
+      squadra: map['squadra'] as String? ?? 'nostra',
+      atletaId: map['atleta_id'] as String?,
+      periodo: map['periodo'] as int?,
+      esito: map['esito'] as String?,
+      contestoTiro: map['contesto_tiro'] as String? ?? 'azione',
+      creatoIl: DateTime.parse(map['created_at'] as String),
+    );
+  }
+
+  /// Eventi di un insieme di partite (una stagione), per le statistiche
+  /// stagionali "da eventi live".
+  Future<List<EventoPartita>> perPartite(List<String> partitaIds) async {
+    if (partitaIds.isEmpty) return [];
+    try {
+      final rows = await _client
+          .from('eventi_partita')
+          .select()
+          .inFilter('partita_id', partitaIds);
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(
+        _db.eventiPartitaTable,
+      )..where((t) => t.partitaId.isIn(partitaIds))).get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   Future<EventoPartita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -92,6 +128,7 @@ class EventiPartitaRepository {
     String? atletaId,
     int? periodo,
     String? esito,
+    String contestoTiro = 'azione',
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -102,6 +139,7 @@ class EventiPartitaRepository {
       'atleta_id': ?atletaId,
       'periodo': ?periodo,
       'esito': ?esito,
+      'contesto_tiro': contestoTiro,
     };
     try {
       final row = await _client
@@ -140,6 +178,7 @@ class EventiPartitaRepository {
     required String atletaId,
     required String esito,
     int? periodo,
+    String contestoTiro = 'azione',
   }) {
     return _creaEvento(
       partitaId: partitaId,
@@ -147,6 +186,7 @@ class EventiPartitaRepository {
       atletaId: atletaId,
       periodo: periodo,
       esito: esito,
+      contestoTiro: contestoTiro,
     );
   }
 

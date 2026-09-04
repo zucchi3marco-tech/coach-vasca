@@ -77,6 +77,7 @@ class RefertiRepository {
     'nome': g.nome,
     'reti': g.reti,
     'espulsioni': g.espulsioni,
+    'atletaId': g.atletaId,
   };
 
   List<Map<String, dynamic>> _asListaMappe(dynamic valore) =>
@@ -154,6 +155,25 @@ class RefertiRepository {
         _db.refertiPartitaTable,
       )..where((t) => t.partitaId.equals(partitaId))).get();
       return locali.isEmpty ? null : _fromRow(locali.first);
+    }
+  }
+
+  /// Referti salvati per un insieme di partite (una stagione), per le
+  /// statistiche stagionali "da referti".
+  Future<List<RefertoPartita>> perPartite(List<String> partitaIds) async {
+    if (partitaIds.isEmpty) return [];
+    try {
+      final righe = await _client
+          .from('referti_partita')
+          .select()
+          .inFilter('partita_id', partitaIds);
+      return righe.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.refertiPartitaTable,
+      )..where((t) => t.partitaId.isIn(partitaIds))).get();
+      return locali.map(_fromRow).toList();
     }
   }
 

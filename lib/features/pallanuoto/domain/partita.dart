@@ -14,6 +14,7 @@ class Partita {
     this.dettaglioTiro = 'semplice',
     this.tracciaTempo = true,
     this.modalitaSuperiorita = 'singolo',
+    this.nostraSquadra = 'casa',
   });
 
   final String id;
@@ -30,6 +31,7 @@ class Partita {
   final String dettaglioTiro; // semplice | dettagliato
   final bool tracciaTempo;
   final String modalitaSuperiorita; // singolo | inizio_fine
+  final String nostraSquadra; // casa | trasferta
 
   factory Partita.fromMap(Map<String, dynamic> map) {
     return Partita(
@@ -48,6 +50,7 @@ class Partita {
       tracciaTempo: map['traccia_tempo'] as bool? ?? true,
       modalitaSuperiorita:
           map['modalita_superiorita'] as String? ?? 'singolo',
+      nostraSquadra: map['nostra_squadra'] as String? ?? 'casa',
     );
   }
 }
