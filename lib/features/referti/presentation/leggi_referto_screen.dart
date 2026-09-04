@@ -5,11 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/data/partite_repository.dart';
+import '../../pallanuoto/domain/partita.dart';
+import '../application/referti_providers.dart';
 import '../data/referti_repository.dart';
 import '../domain/referto_letto.dart';
 
 class LeggiRefertoScreen extends ConsumerStatefulWidget {
-  const LeggiRefertoScreen({super.key});
+  const LeggiRefertoScreen({required this.clubId, super.key});
+
+  final String clubId;
 
   @override
   ConsumerState<LeggiRefertoScreen> createState() =>
@@ -90,8 +96,8 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
               const Text(
                 'Carica la foto di un referto FIN già compilato: un modello '
                 'AI proverà a leggere punteggio, parziali e giocatori. '
-                'Controlla sempre i dati letti: non vengono salvati '
-                'automaticamente da nessuna parte.',
+                'Controlla sempre i dati letti prima di salvarli: non '
+                'vengono salvati automaticamente da nessuna parte.',
               ),
               const SizedBox(height: 16),
               if (_immagineBytes != null) ...[
@@ -141,6 +147,7 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
                 _RefertoModificabile(
                   key: ObjectKey(_risultato),
                   referto: _risultato!,
+                  clubId: widget.clubId,
                 ),
               ],
             ],
@@ -155,16 +162,24 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
 /// scritta a mano non è mai affidabile al 100%, soprattutto per i nomi, per
 /// cui ogni campo resta un testo modificabile invece di essere di sola
 /// lettura.
-class _RefertoModificabile extends StatefulWidget {
-  const _RefertoModificabile({required this.referto, super.key});
+class _RefertoModificabile extends ConsumerStatefulWidget {
+  const _RefertoModificabile({
+    required this.referto,
+    required this.clubId,
+    super.key,
+  });
 
   final RefertoLetto referto;
+  final String clubId;
 
   @override
-  State<_RefertoModificabile> createState() => _RefertoModificabileState();
+  ConsumerState<_RefertoModificabile> createState() =>
+      _RefertoModificabileState();
 }
 
-class _RefertoModificabileState extends State<_RefertoModificabile> {
+class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
+  bool _isSaving = false;
+  String? _saveError;
   late final TextEditingController _squadraCasaCtrl;
   late final TextEditingController _squadraTrasfertaCtrl;
   late final TextEditingController _risultatoCasaCtrl;
@@ -295,6 +310,257 @@ class _RefertoModificabileState extends State<_RefertoModificabile> {
         _TabellaSquadraModificabile(
           titolo: 'Squadra trasferta',
           giocatori: _giocatoriTrasfertaCtrl,
+        ),
+        const SizedBox(height: 24),
+        if (_saveError != null) ...[
+          Text(
+            _saveError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: 8),
+        ],
+        FilledButton.icon(
+          onPressed: _isSaving ? null : _salva,
+          icon: _isSaving
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_outlined),
+          label: const Text('Salva referto'),
+        ),
+      ],
+    );
+  }
+
+  int _parseInt(TextEditingController controller, String etichetta) {
+    final valore = int.tryParse(controller.text.trim());
+    if (valore == null) {
+      throw FormatException('Valore non valido per "$etichetta"');
+    }
+    return valore;
+  }
+
+  Future<void> _salva() async {
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+    try {
+      final squadraCasa = _squadraCasaCtrl.text.trim();
+      final squadraTrasferta = _squadraTrasfertaCtrl.text.trim();
+      if (squadraCasa.isEmpty || squadraTrasferta.isEmpty) {
+        throw const FormatException('Indica il nome di entrambe le squadre');
+      }
+      final risultatoCasa = _parseInt(_risultatoCasaCtrl, 'risultato casa');
+      final risultatoTrasferta = _parseInt(
+        _risultatoTrasfertaCtrl,
+        'risultato trasferta',
+      );
+      final parziali = [
+        for (final (casa, trasferta) in _parzialiCtrl)
+          ParzialeReferto(
+            casa: _parseInt(casa, 'parziale casa'),
+            trasferta: _parseInt(trasferta, 'parziale trasferta'),
+          ),
+      ];
+      List<GiocatoreReferto> leggiGiocatori(List<_GiocatoreCtrl> ctrls) => [
+        for (final g in ctrls)
+          GiocatoreReferto(
+            numeroCalottina: _parseInt(g.numero, 'numero calottina'),
+            nome: g.nome.text.trim(),
+            reti: _parseInt(g.reti, 'reti'),
+            espulsioni: _parseInt(g.espulsioni, 'espulsioni'),
+          ),
+      ];
+      final giocatoriCasa = leggiGiocatori(_giocatoriCasaCtrl);
+      final giocatoriTrasferta = leggiGiocatori(_giocatoriTrasfertaCtrl);
+
+      if (!mounted) return;
+      final scelta = await showDialog<_ScelteSalvataggio>(
+        context: context,
+        builder: (context) => _DialogSceltaPartita(clubId: widget.clubId),
+      );
+      if (scelta == null) return;
+
+      String partitaId;
+      if (scelta.partitaEsistente != null) {
+        partitaId = scelta.partitaEsistente!.id;
+      } else {
+        final nuova = await ref
+            .read(partiteRepositoryProvider)
+            .createPartita(
+              clubId: widget.clubId,
+              data: scelta.dataNuovaPartita!,
+              squadraCasa: squadraCasa,
+              squadraTrasferta: squadraTrasferta,
+              numeroMaxConvocati: 15,
+              dettaglioTiro: 'semplice',
+              tracciaTempo: true,
+              modalitaSuperiorita: 'singolo',
+            );
+        partitaId = nuova.id;
+      }
+
+      await ref
+          .read(refertiRepositoryProvider)
+          .salvaReferto(
+            partitaId: partitaId,
+            squadraCasa: squadraCasa,
+            squadraTrasferta: squadraTrasferta,
+            risultatoCasa: risultatoCasa,
+            risultatoTrasferta: risultatoTrasferta,
+            parziali: parziali,
+            giocatoriCasa: giocatoriCasa,
+            giocatoriTrasferta: giocatoriTrasferta,
+          );
+
+      ref.invalidate(refertoPerPartitaProvider(partitaId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Referto salvato.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _saveError = messaggioErrore(e));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+}
+
+/// Esito del dialog di scelta: o una partita esistente, o la data per una
+/// nuova partita da creare al volo (nome squadre presi dal referto).
+class _ScelteSalvataggio {
+  const _ScelteSalvataggio({this.partitaEsistente, this.dataNuovaPartita});
+
+  final Partita? partitaEsistente;
+  final DateTime? dataNuovaPartita;
+}
+
+class _DialogSceltaPartita extends ConsumerStatefulWidget {
+  const _DialogSceltaPartita({required this.clubId});
+
+  final String clubId;
+
+  @override
+  ConsumerState<_DialogSceltaPartita> createState() =>
+      _DialogSceltaPartitaState();
+}
+
+class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
+  bool _nuovaPartita = false;
+  Partita? _partitaSelezionata;
+  DateTime _dataNuovaPartita = DateTime.now();
+
+  Future<void> _pickData() async {
+    final selezionata = await showDatePicker(
+      context: context,
+      initialDate: _dataNuovaPartita,
+      firstDate: DateTime(DateTime.now().year - 2),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (selezionata != null) {
+      setState(() => _dataNuovaPartita = selezionata);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final partiteAsync = ref.watch(partiteListProvider(widget.clubId));
+
+    return AlertDialog(
+      title: const Text('Collega il referto a una partita'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('Partita esistente')),
+                ButtonSegment(value: true, label: Text('Nuova partita')),
+              ],
+              selected: {_nuovaPartita},
+              onSelectionChanged: (s) =>
+                  setState(() => _nuovaPartita = s.first),
+            ),
+            const SizedBox(height: 12),
+            if (!_nuovaPartita)
+              partiteAsync.when(
+                data: (partite) => partite.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.only(left: 16),
+                        child: Text('Nessuna partita in agenda per il club.'),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: DropdownButtonFormField<Partita>(
+                          initialValue: _partitaSelezionata,
+                          isExpanded: true,
+                          hint: const Text('Scegli la partita'),
+                          items: [
+                            for (final p in partite)
+                              DropdownMenuItem(
+                                value: p,
+                                child: Text(
+                                  '${p.squadraCasa} - ${p.squadraTrasferta} '
+                                  '(${p.data.day.toString().padLeft(2, '0')}/'
+                                  '${p.data.month.toString().padLeft(2, '0')}/'
+                                  '${p.data.year})',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: (v) =>
+                              setState(() => _partitaSelezionata = v),
+                        ),
+                      ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(left: 16),
+                  child: LinearProgressIndicator(),
+                ),
+                error: (e, _) => Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(messaggioErrore(e)),
+                ),
+              ),
+            if (_nuovaPartita)
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Data partita'),
+                  subtitle: Text(
+                    '${_dataNuovaPartita.day.toString().padLeft(2, '0')}/'
+                    '${_dataNuovaPartita.month.toString().padLeft(2, '0')}/'
+                    '${_dataNuovaPartita.year}',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: _pickData,
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: (!_nuovaPartita && _partitaSelezionata == null)
+              ? null
+              : () => Navigator.of(context).pop(
+                  _nuovaPartita
+                      ? _ScelteSalvataggio(dataNuovaPartita: _dataNuovaPartita)
+                      : _ScelteSalvataggio(
+                          partitaEsistente: _partitaSelezionata,
+                        ),
+                ),
+          child: const Text('Conferma'),
         ),
       ],
     );

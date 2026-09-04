@@ -81,7 +81,9 @@ class PartiteListScreen extends ConsumerWidget {
             mini: true,
             tooltip: 'Leggi referto',
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LeggiRefertoScreen()),
+              MaterialPageRoute(
+                builder: (_) => LeggiRefertoScreen(clubId: clubId),
+              ),
             ),
             child: const Icon(Icons.document_scanner_outlined),
           ),

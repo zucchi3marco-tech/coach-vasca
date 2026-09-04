@@ -230,6 +230,31 @@ class EventiPartitaTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Referto di una partita gia' giocata (risultato finale, parziali e rose
+/// complete di reti/espulsioni per entrambe le squadre), letto via AI
+/// vision da una foto e corretto a mano. Un solo referto per partita
+/// (upsert su partitaId, come "presenze" su allenamentoId+atletaId).
+/// parziali/giocatoriCasa/giocatoriTrasferta sono liste codificate come
+/// stringa JSON: niente query locali su questi campi, solo lettura
+/// integrale per mostrarli in UI.
+class RefertiPartitaTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get partitaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get squadraCasa => text()();
+  TextColumn get squadraTrasferta => text()();
+  IntColumn get risultatoCasa => integer()();
+  IntColumn get risultatoTrasferta => integer()();
+  TextColumn get parzialiJson => text().withDefault(const Constant('[]'))();
+  TextColumn get giocatoriCasaJson =>
+      text().withDefault(const Constant('[]'))();
+  TextColumn get giocatoriTrasfertaJson =>
+      text().withDefault(const Constant('[]'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Coda delle scritture non ancora sincronizzate con Supabase: una riga per
 /// ogni insert/update/delete fallito per un problema di rete (non per un
 /// errore reale del server, quello resta visibile subito in UI). Un motore

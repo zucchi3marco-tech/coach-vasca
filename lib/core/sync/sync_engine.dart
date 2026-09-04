@@ -34,6 +34,7 @@ class SyncEngine {
   static const _chiaveNaturalePerTabella = {
     'presenze': 'allenamento_id,atleta_id',
     'tabelle_passi': 'test_id,zona',
+    'referti_partita': 'partita_id',
   };
 
   Future<void> processQueue() async {

@@ -1,17 +1,30 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../core/db/app_database.dart';
+import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/sync/network_failure.dart';
+import '../../../core/sync/pending_operations.dart';
+import '../../../core/sync/sync_engine.dart';
 import '../domain/referto_letto.dart';
+import '../domain/referto_partita.dart';
 
-/// Chiama la Edge Function `leggi-referto`, che tiene la chiave del
-/// provider AI lato server e la inoltra a Gemini in modalita' visione.
+const _uuid = Uuid();
+
+/// Chiama la Edge Function `leggi-referto` per la lettura via AI vision, e
+/// salva il referto corretto a mano dall'utente collegato a una Partita
+/// (un solo referto per partita: salvare di nuovo sovrascrive).
 class RefertiRepository {
-  RefertiRepository(this._client);
+  RefertiRepository(this._client, this._db, this._syncEngine);
 
   final SupabaseClient _client;
+  final AppDatabase _db;
+  final SyncEngine _syncEngine;
 
   Future<RefertoLetto> leggiReferto({
     required List<int> immagineBytes,
@@ -58,8 +71,165 @@ class RefertiRepository {
         return errore ?? 'Errore imprevisto nella lettura del referto. Riprova.';
     }
   }
+
+  Map<String, dynamic> _mappaGiocatore(GiocatoreReferto g) => {
+    'numeroCalottina': g.numeroCalottina,
+    'nome': g.nome,
+    'reti': g.reti,
+    'espulsioni': g.espulsioni,
+  };
+
+  List<Map<String, dynamic>> _asListaMappe(dynamic valore) =>
+      (valore as List).cast<Map<String, dynamic>>();
+
+  RefertoPartita _fromRow(RefertiPartitaTableData row) {
+    return RefertoPartita(
+      id: row.id,
+      partitaId: row.partitaId,
+      clubId: row.clubId,
+      squadraCasa: row.squadraCasa,
+      squadraTrasferta: row.squadraTrasferta,
+      risultatoCasa: row.risultatoCasa,
+      risultatoTrasferta: row.risultatoTrasferta,
+      parziali: _asListaMappe(
+        jsonDecode(row.parzialiJson),
+      ).map(ParzialeReferto.fromMap).toList(),
+      giocatoriCasa: _asListaMappe(
+        jsonDecode(row.giocatoriCasaJson),
+      ).map(GiocatoreReferto.fromMap).toList(),
+      giocatoriTrasferta: _asListaMappe(
+        jsonDecode(row.giocatoriTrasfertaJson),
+      ).map(GiocatoreReferto.fromMap).toList(),
+    );
+  }
+
+  RefertoPartita _fromMap(Map<String, dynamic> map) {
+    return RefertoPartita(
+      id: map['id'] as String,
+      partitaId: map['partita_id'] as String,
+      clubId: map['club_id'] as String,
+      squadraCasa: map['squadra_casa'] as String,
+      squadraTrasferta: map['squadra_trasferta'] as String,
+      risultatoCasa: map['risultato_casa'] as int,
+      risultatoTrasferta: map['risultato_trasferta'] as int,
+      parziali: _asListaMappe(
+        map['parziali'],
+      ).map(ParzialeReferto.fromMap).toList(),
+      giocatoriCasa: _asListaMappe(
+        map['giocatori_casa'],
+      ).map(GiocatoreReferto.fromMap).toList(),
+      giocatoriTrasferta: _asListaMappe(
+        map['giocatori_trasferta'],
+      ).map(GiocatoreReferto.fromMap).toList(),
+    );
+  }
+
+  RefertiPartitaTableCompanion _companionFromMap(Map<String, dynamic> map) {
+    return RefertiPartitaTableCompanion.insert(
+      id: map['id'] as String,
+      partitaId: map['partita_id'] as String,
+      clubId: map['club_id'] as String,
+      squadraCasa: map['squadra_casa'] as String,
+      squadraTrasferta: map['squadra_trasferta'] as String,
+      risultatoCasa: map['risultato_casa'] as int,
+      risultatoTrasferta: map['risultato_trasferta'] as int,
+      parzialiJson: Value(jsonEncode(map['parziali'])),
+      giocatoriCasaJson: Value(jsonEncode(map['giocatori_casa'])),
+      giocatoriTrasfertaJson: Value(jsonEncode(map['giocatori_trasferta'])),
+    );
+  }
+
+  /// Referto gia' salvato per questa partita, se esiste (un solo referto
+  /// per partita).
+  Future<RefertoPartita?> perPartita(String partitaId) async {
+    try {
+      final righe = await _client
+          .from('referti_partita')
+          .select()
+          .eq('partita_id', partitaId);
+      return righe.isEmpty ? null : _fromMap(righe.first);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.refertiPartitaTable,
+      )..where((t) => t.partitaId.equals(partitaId))).get();
+      return locali.isEmpty ? null : _fromRow(locali.first);
+    }
+  }
+
+  /// Salva (o sovrascrive) il referto corretto a mano dall'utente,
+  /// collegandolo alla partita indicata.
+  Future<RefertoPartita> salvaReferto({
+    required String partitaId,
+    required String squadraCasa,
+    required String squadraTrasferta,
+    required int risultatoCasa,
+    required int risultatoTrasferta,
+    required List<ParzialeReferto> parziali,
+    required List<GiocatoreReferto> giocatoriCasa,
+    required List<GiocatoreReferto> giocatoriTrasferta,
+  }) async {
+    final payload = {
+      'partita_id': partitaId,
+      'squadra_casa': squadraCasa,
+      'squadra_trasferta': squadraTrasferta,
+      'risultato_casa': risultatoCasa,
+      'risultato_trasferta': risultatoTrasferta,
+      'parziali': [
+        for (final p in parziali) {'casa': p.casa, 'trasferta': p.trasferta},
+      ],
+      'giocatori_casa': [for (final g in giocatoriCasa) _mappaGiocatore(g)],
+      'giocatori_trasferta': [
+        for (final g in giocatoriTrasferta) _mappaGiocatore(g),
+      ],
+    };
+    try {
+      final row = await _client
+          .from('referti_partita')
+          .upsert(payload, onConflict: 'partita_id')
+          .select()
+          .single();
+      await _db
+          .into(_db.refertiPartitaTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+      return _fromMap(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      // club_id e' normalmente ricalcolato dal trigger a partire dalla
+      // partita: offline usiamo quello gia' in cache locale. Se esiste
+      // gia' un referto locale per questa partita lo riusiamo (stesso id).
+      final partita = await (_db.select(
+        _db.partiteTable,
+      )..where((t) => t.id.equals(partitaId))).getSingle();
+      final esistente = await (_db.select(
+        _db.refertiPartitaTable,
+      )..where((t) => t.partitaId.equals(partitaId))).getSingleOrNull();
+      final id = esistente?.id ?? _uuid.v4();
+      final payloadCompleto = {
+        ...payload,
+        'id': id,
+        'club_id': partita.clubId,
+      };
+      await _db
+          .into(_db.refertiPartitaTable)
+          .insertOnConflictUpdate(_companionFromMap(payloadCompleto));
+      await enqueueOperation(
+        _db,
+        tabella: 'referti_partita',
+        operazione: 'upsert',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+      return _fromMap(payloadCompleto);
+    }
+  }
 }
 
 final refertiRepositoryProvider = Provider<RefertiRepository>((ref) {
-  return RefertiRepository(ref.watch(supabaseClientProvider));
+  return RefertiRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appDatabaseProvider),
+    ref.watch(syncEngineProvider),
+  );
 });

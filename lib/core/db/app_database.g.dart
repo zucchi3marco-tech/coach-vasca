@@ -8344,6 +8344,655 @@ class EventiPartitaTableCompanion
   }
 }
 
+class $RefertiPartitaTableTable extends RefertiPartitaTable
+    with TableInfo<$RefertiPartitaTableTable, RefertiPartitaTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RefertiPartitaTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _partitaIdMeta = const VerificationMeta(
+    'partitaId',
+  );
+  @override
+  late final GeneratedColumn<String> partitaId = GeneratedColumn<String>(
+    'partita_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _squadraCasaMeta = const VerificationMeta(
+    'squadraCasa',
+  );
+  @override
+  late final GeneratedColumn<String> squadraCasa = GeneratedColumn<String>(
+    'squadra_casa',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _squadraTrasfertaMeta = const VerificationMeta(
+    'squadraTrasferta',
+  );
+  @override
+  late final GeneratedColumn<String> squadraTrasferta = GeneratedColumn<String>(
+    'squadra_trasferta',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _risultatoCasaMeta = const VerificationMeta(
+    'risultatoCasa',
+  );
+  @override
+  late final GeneratedColumn<int> risultatoCasa = GeneratedColumn<int>(
+    'risultato_casa',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _risultatoTrasfertaMeta =
+      const VerificationMeta('risultatoTrasferta');
+  @override
+  late final GeneratedColumn<int> risultatoTrasferta = GeneratedColumn<int>(
+    'risultato_trasferta',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _parzialiJsonMeta = const VerificationMeta(
+    'parzialiJson',
+  );
+  @override
+  late final GeneratedColumn<String> parzialiJson = GeneratedColumn<String>(
+    'parziali_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _giocatoriCasaJsonMeta = const VerificationMeta(
+    'giocatoriCasaJson',
+  );
+  @override
+  late final GeneratedColumn<String> giocatoriCasaJson =
+      GeneratedColumn<String>(
+        'giocatori_casa_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _giocatoriTrasfertaJsonMeta =
+      const VerificationMeta('giocatoriTrasfertaJson');
+  @override
+  late final GeneratedColumn<String> giocatoriTrasfertaJson =
+      GeneratedColumn<String>(
+        'giocatori_trasferta_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    partitaId,
+    clubId,
+    squadraCasa,
+    squadraTrasferta,
+    risultatoCasa,
+    risultatoTrasferta,
+    parzialiJson,
+    giocatoriCasaJson,
+    giocatoriTrasfertaJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'referti_partita_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RefertiPartitaTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('partita_id')) {
+      context.handle(
+        _partitaIdMeta,
+        partitaId.isAcceptableOrUnknown(data['partita_id']!, _partitaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_partitaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('squadra_casa')) {
+      context.handle(
+        _squadraCasaMeta,
+        squadraCasa.isAcceptableOrUnknown(
+          data['squadra_casa']!,
+          _squadraCasaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_squadraCasaMeta);
+    }
+    if (data.containsKey('squadra_trasferta')) {
+      context.handle(
+        _squadraTrasfertaMeta,
+        squadraTrasferta.isAcceptableOrUnknown(
+          data['squadra_trasferta']!,
+          _squadraTrasfertaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_squadraTrasfertaMeta);
+    }
+    if (data.containsKey('risultato_casa')) {
+      context.handle(
+        _risultatoCasaMeta,
+        risultatoCasa.isAcceptableOrUnknown(
+          data['risultato_casa']!,
+          _risultatoCasaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_risultatoCasaMeta);
+    }
+    if (data.containsKey('risultato_trasferta')) {
+      context.handle(
+        _risultatoTrasfertaMeta,
+        risultatoTrasferta.isAcceptableOrUnknown(
+          data['risultato_trasferta']!,
+          _risultatoTrasfertaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_risultatoTrasfertaMeta);
+    }
+    if (data.containsKey('parziali_json')) {
+      context.handle(
+        _parzialiJsonMeta,
+        parzialiJson.isAcceptableOrUnknown(
+          data['parziali_json']!,
+          _parzialiJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('giocatori_casa_json')) {
+      context.handle(
+        _giocatoriCasaJsonMeta,
+        giocatoriCasaJson.isAcceptableOrUnknown(
+          data['giocatori_casa_json']!,
+          _giocatoriCasaJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('giocatori_trasferta_json')) {
+      context.handle(
+        _giocatoriTrasfertaJsonMeta,
+        giocatoriTrasfertaJson.isAcceptableOrUnknown(
+          data['giocatori_trasferta_json']!,
+          _giocatoriTrasfertaJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RefertiPartitaTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RefertiPartitaTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      partitaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partita_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      squadraCasa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}squadra_casa'],
+      )!,
+      squadraTrasferta: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}squadra_trasferta'],
+      )!,
+      risultatoCasa: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}risultato_casa'],
+      )!,
+      risultatoTrasferta: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}risultato_trasferta'],
+      )!,
+      parzialiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parziali_json'],
+      )!,
+      giocatoriCasaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}giocatori_casa_json'],
+      )!,
+      giocatoriTrasfertaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}giocatori_trasferta_json'],
+      )!,
+    );
+  }
+
+  @override
+  $RefertiPartitaTableTable createAlias(String alias) {
+    return $RefertiPartitaTableTable(attachedDatabase, alias);
+  }
+}
+
+class RefertiPartitaTableData extends DataClass
+    implements Insertable<RefertiPartitaTableData> {
+  final String id;
+  final String partitaId;
+  final String clubId;
+  final String squadraCasa;
+  final String squadraTrasferta;
+  final int risultatoCasa;
+  final int risultatoTrasferta;
+  final String parzialiJson;
+  final String giocatoriCasaJson;
+  final String giocatoriTrasfertaJson;
+  const RefertiPartitaTableData({
+    required this.id,
+    required this.partitaId,
+    required this.clubId,
+    required this.squadraCasa,
+    required this.squadraTrasferta,
+    required this.risultatoCasa,
+    required this.risultatoTrasferta,
+    required this.parzialiJson,
+    required this.giocatoriCasaJson,
+    required this.giocatoriTrasfertaJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['partita_id'] = Variable<String>(partitaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['squadra_casa'] = Variable<String>(squadraCasa);
+    map['squadra_trasferta'] = Variable<String>(squadraTrasferta);
+    map['risultato_casa'] = Variable<int>(risultatoCasa);
+    map['risultato_trasferta'] = Variable<int>(risultatoTrasferta);
+    map['parziali_json'] = Variable<String>(parzialiJson);
+    map['giocatori_casa_json'] = Variable<String>(giocatoriCasaJson);
+    map['giocatori_trasferta_json'] = Variable<String>(giocatoriTrasfertaJson);
+    return map;
+  }
+
+  RefertiPartitaTableCompanion toCompanion(bool nullToAbsent) {
+    return RefertiPartitaTableCompanion(
+      id: Value(id),
+      partitaId: Value(partitaId),
+      clubId: Value(clubId),
+      squadraCasa: Value(squadraCasa),
+      squadraTrasferta: Value(squadraTrasferta),
+      risultatoCasa: Value(risultatoCasa),
+      risultatoTrasferta: Value(risultatoTrasferta),
+      parzialiJson: Value(parzialiJson),
+      giocatoriCasaJson: Value(giocatoriCasaJson),
+      giocatoriTrasfertaJson: Value(giocatoriTrasfertaJson),
+    );
+  }
+
+  factory RefertiPartitaTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RefertiPartitaTableData(
+      id: serializer.fromJson<String>(json['id']),
+      partitaId: serializer.fromJson<String>(json['partitaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      squadraCasa: serializer.fromJson<String>(json['squadraCasa']),
+      squadraTrasferta: serializer.fromJson<String>(json['squadraTrasferta']),
+      risultatoCasa: serializer.fromJson<int>(json['risultatoCasa']),
+      risultatoTrasferta: serializer.fromJson<int>(json['risultatoTrasferta']),
+      parzialiJson: serializer.fromJson<String>(json['parzialiJson']),
+      giocatoriCasaJson: serializer.fromJson<String>(json['giocatoriCasaJson']),
+      giocatoriTrasfertaJson: serializer.fromJson<String>(
+        json['giocatoriTrasfertaJson'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'partitaId': serializer.toJson<String>(partitaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'squadraCasa': serializer.toJson<String>(squadraCasa),
+      'squadraTrasferta': serializer.toJson<String>(squadraTrasferta),
+      'risultatoCasa': serializer.toJson<int>(risultatoCasa),
+      'risultatoTrasferta': serializer.toJson<int>(risultatoTrasferta),
+      'parzialiJson': serializer.toJson<String>(parzialiJson),
+      'giocatoriCasaJson': serializer.toJson<String>(giocatoriCasaJson),
+      'giocatoriTrasfertaJson': serializer.toJson<String>(
+        giocatoriTrasfertaJson,
+      ),
+    };
+  }
+
+  RefertiPartitaTableData copyWith({
+    String? id,
+    String? partitaId,
+    String? clubId,
+    String? squadraCasa,
+    String? squadraTrasferta,
+    int? risultatoCasa,
+    int? risultatoTrasferta,
+    String? parzialiJson,
+    String? giocatoriCasaJson,
+    String? giocatoriTrasfertaJson,
+  }) => RefertiPartitaTableData(
+    id: id ?? this.id,
+    partitaId: partitaId ?? this.partitaId,
+    clubId: clubId ?? this.clubId,
+    squadraCasa: squadraCasa ?? this.squadraCasa,
+    squadraTrasferta: squadraTrasferta ?? this.squadraTrasferta,
+    risultatoCasa: risultatoCasa ?? this.risultatoCasa,
+    risultatoTrasferta: risultatoTrasferta ?? this.risultatoTrasferta,
+    parzialiJson: parzialiJson ?? this.parzialiJson,
+    giocatoriCasaJson: giocatoriCasaJson ?? this.giocatoriCasaJson,
+    giocatoriTrasfertaJson:
+        giocatoriTrasfertaJson ?? this.giocatoriTrasfertaJson,
+  );
+  RefertiPartitaTableData copyWithCompanion(RefertiPartitaTableCompanion data) {
+    return RefertiPartitaTableData(
+      id: data.id.present ? data.id.value : this.id,
+      partitaId: data.partitaId.present ? data.partitaId.value : this.partitaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      squadraCasa: data.squadraCasa.present
+          ? data.squadraCasa.value
+          : this.squadraCasa,
+      squadraTrasferta: data.squadraTrasferta.present
+          ? data.squadraTrasferta.value
+          : this.squadraTrasferta,
+      risultatoCasa: data.risultatoCasa.present
+          ? data.risultatoCasa.value
+          : this.risultatoCasa,
+      risultatoTrasferta: data.risultatoTrasferta.present
+          ? data.risultatoTrasferta.value
+          : this.risultatoTrasferta,
+      parzialiJson: data.parzialiJson.present
+          ? data.parzialiJson.value
+          : this.parzialiJson,
+      giocatoriCasaJson: data.giocatoriCasaJson.present
+          ? data.giocatoriCasaJson.value
+          : this.giocatoriCasaJson,
+      giocatoriTrasfertaJson: data.giocatoriTrasfertaJson.present
+          ? data.giocatoriTrasfertaJson.value
+          : this.giocatoriTrasfertaJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RefertiPartitaTableData(')
+          ..write('id: $id, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('squadraCasa: $squadraCasa, ')
+          ..write('squadraTrasferta: $squadraTrasferta, ')
+          ..write('risultatoCasa: $risultatoCasa, ')
+          ..write('risultatoTrasferta: $risultatoTrasferta, ')
+          ..write('parzialiJson: $parzialiJson, ')
+          ..write('giocatoriCasaJson: $giocatoriCasaJson, ')
+          ..write('giocatoriTrasfertaJson: $giocatoriTrasfertaJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    partitaId,
+    clubId,
+    squadraCasa,
+    squadraTrasferta,
+    risultatoCasa,
+    risultatoTrasferta,
+    parzialiJson,
+    giocatoriCasaJson,
+    giocatoriTrasfertaJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RefertiPartitaTableData &&
+          other.id == this.id &&
+          other.partitaId == this.partitaId &&
+          other.clubId == this.clubId &&
+          other.squadraCasa == this.squadraCasa &&
+          other.squadraTrasferta == this.squadraTrasferta &&
+          other.risultatoCasa == this.risultatoCasa &&
+          other.risultatoTrasferta == this.risultatoTrasferta &&
+          other.parzialiJson == this.parzialiJson &&
+          other.giocatoriCasaJson == this.giocatoriCasaJson &&
+          other.giocatoriTrasfertaJson == this.giocatoriTrasfertaJson);
+}
+
+class RefertiPartitaTableCompanion
+    extends UpdateCompanion<RefertiPartitaTableData> {
+  final Value<String> id;
+  final Value<String> partitaId;
+  final Value<String> clubId;
+  final Value<String> squadraCasa;
+  final Value<String> squadraTrasferta;
+  final Value<int> risultatoCasa;
+  final Value<int> risultatoTrasferta;
+  final Value<String> parzialiJson;
+  final Value<String> giocatoriCasaJson;
+  final Value<String> giocatoriTrasfertaJson;
+  final Value<int> rowid;
+  const RefertiPartitaTableCompanion({
+    this.id = const Value.absent(),
+    this.partitaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.squadraCasa = const Value.absent(),
+    this.squadraTrasferta = const Value.absent(),
+    this.risultatoCasa = const Value.absent(),
+    this.risultatoTrasferta = const Value.absent(),
+    this.parzialiJson = const Value.absent(),
+    this.giocatoriCasaJson = const Value.absent(),
+    this.giocatoriTrasfertaJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RefertiPartitaTableCompanion.insert({
+    required String id,
+    required String partitaId,
+    required String clubId,
+    required String squadraCasa,
+    required String squadraTrasferta,
+    required int risultatoCasa,
+    required int risultatoTrasferta,
+    this.parzialiJson = const Value.absent(),
+    this.giocatoriCasaJson = const Value.absent(),
+    this.giocatoriTrasfertaJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       partitaId = Value(partitaId),
+       clubId = Value(clubId),
+       squadraCasa = Value(squadraCasa),
+       squadraTrasferta = Value(squadraTrasferta),
+       risultatoCasa = Value(risultatoCasa),
+       risultatoTrasferta = Value(risultatoTrasferta);
+  static Insertable<RefertiPartitaTableData> custom({
+    Expression<String>? id,
+    Expression<String>? partitaId,
+    Expression<String>? clubId,
+    Expression<String>? squadraCasa,
+    Expression<String>? squadraTrasferta,
+    Expression<int>? risultatoCasa,
+    Expression<int>? risultatoTrasferta,
+    Expression<String>? parzialiJson,
+    Expression<String>? giocatoriCasaJson,
+    Expression<String>? giocatoriTrasfertaJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (partitaId != null) 'partita_id': partitaId,
+      if (clubId != null) 'club_id': clubId,
+      if (squadraCasa != null) 'squadra_casa': squadraCasa,
+      if (squadraTrasferta != null) 'squadra_trasferta': squadraTrasferta,
+      if (risultatoCasa != null) 'risultato_casa': risultatoCasa,
+      if (risultatoTrasferta != null) 'risultato_trasferta': risultatoTrasferta,
+      if (parzialiJson != null) 'parziali_json': parzialiJson,
+      if (giocatoriCasaJson != null) 'giocatori_casa_json': giocatoriCasaJson,
+      if (giocatoriTrasfertaJson != null)
+        'giocatori_trasferta_json': giocatoriTrasfertaJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RefertiPartitaTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? partitaId,
+    Value<String>? clubId,
+    Value<String>? squadraCasa,
+    Value<String>? squadraTrasferta,
+    Value<int>? risultatoCasa,
+    Value<int>? risultatoTrasferta,
+    Value<String>? parzialiJson,
+    Value<String>? giocatoriCasaJson,
+    Value<String>? giocatoriTrasfertaJson,
+    Value<int>? rowid,
+  }) {
+    return RefertiPartitaTableCompanion(
+      id: id ?? this.id,
+      partitaId: partitaId ?? this.partitaId,
+      clubId: clubId ?? this.clubId,
+      squadraCasa: squadraCasa ?? this.squadraCasa,
+      squadraTrasferta: squadraTrasferta ?? this.squadraTrasferta,
+      risultatoCasa: risultatoCasa ?? this.risultatoCasa,
+      risultatoTrasferta: risultatoTrasferta ?? this.risultatoTrasferta,
+      parzialiJson: parzialiJson ?? this.parzialiJson,
+      giocatoriCasaJson: giocatoriCasaJson ?? this.giocatoriCasaJson,
+      giocatoriTrasfertaJson:
+          giocatoriTrasfertaJson ?? this.giocatoriTrasfertaJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (partitaId.present) {
+      map['partita_id'] = Variable<String>(partitaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (squadraCasa.present) {
+      map['squadra_casa'] = Variable<String>(squadraCasa.value);
+    }
+    if (squadraTrasferta.present) {
+      map['squadra_trasferta'] = Variable<String>(squadraTrasferta.value);
+    }
+    if (risultatoCasa.present) {
+      map['risultato_casa'] = Variable<int>(risultatoCasa.value);
+    }
+    if (risultatoTrasferta.present) {
+      map['risultato_trasferta'] = Variable<int>(risultatoTrasferta.value);
+    }
+    if (parzialiJson.present) {
+      map['parziali_json'] = Variable<String>(parzialiJson.value);
+    }
+    if (giocatoriCasaJson.present) {
+      map['giocatori_casa_json'] = Variable<String>(giocatoriCasaJson.value);
+    }
+    if (giocatoriTrasfertaJson.present) {
+      map['giocatori_trasferta_json'] = Variable<String>(
+        giocatoriTrasfertaJson.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RefertiPartitaTableCompanion(')
+          ..write('id: $id, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('squadraCasa: $squadraCasa, ')
+          ..write('squadraTrasferta: $squadraTrasferta, ')
+          ..write('risultatoCasa: $risultatoCasa, ')
+          ..write('risultatoTrasferta: $risultatoTrasferta, ')
+          ..write('parzialiJson: $parzialiJson, ')
+          ..write('giocatoriCasaJson: $giocatoriCasaJson, ')
+          ..write('giocatoriTrasfertaJson: $giocatoriTrasfertaJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8373,6 +9022,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DistintaGiocatoriTableTable(this);
   late final $EventiPartitaTableTable eventiPartitaTable =
       $EventiPartitaTableTable(this);
+  late final $RefertiPartitaTableTable refertiPartitaTable =
+      $RefertiPartitaTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8393,6 +9044,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     partiteTable,
     distintaGiocatoriTable,
     eventiPartitaTable,
+    refertiPartitaTable,
   ];
 }
 
@@ -12666,6 +13318,331 @@ typedef $$EventiPartitaTableTableProcessedTableManager =
       EventiPartitaTableData,
       PrefetchHooks Function()
     >;
+typedef $$RefertiPartitaTableTableCreateCompanionBuilder =
+    RefertiPartitaTableCompanion Function({
+      required String id,
+      required String partitaId,
+      required String clubId,
+      required String squadraCasa,
+      required String squadraTrasferta,
+      required int risultatoCasa,
+      required int risultatoTrasferta,
+      Value<String> parzialiJson,
+      Value<String> giocatoriCasaJson,
+      Value<String> giocatoriTrasfertaJson,
+      Value<int> rowid,
+    });
+typedef $$RefertiPartitaTableTableUpdateCompanionBuilder =
+    RefertiPartitaTableCompanion Function({
+      Value<String> id,
+      Value<String> partitaId,
+      Value<String> clubId,
+      Value<String> squadraCasa,
+      Value<String> squadraTrasferta,
+      Value<int> risultatoCasa,
+      Value<int> risultatoTrasferta,
+      Value<String> parzialiJson,
+      Value<String> giocatoriCasaJson,
+      Value<String> giocatoriTrasfertaJson,
+      Value<int> rowid,
+    });
+
+class $$RefertiPartitaTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RefertiPartitaTableTable> {
+  $$RefertiPartitaTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get squadraCasa => $composableBuilder(
+    column: $table.squadraCasa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get squadraTrasferta => $composableBuilder(
+    column: $table.squadraTrasferta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get risultatoCasa => $composableBuilder(
+    column: $table.risultatoCasa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get risultatoTrasferta => $composableBuilder(
+    column: $table.risultatoTrasferta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parzialiJson => $composableBuilder(
+    column: $table.parzialiJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get giocatoriCasaJson => $composableBuilder(
+    column: $table.giocatoriCasaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get giocatoriTrasfertaJson => $composableBuilder(
+    column: $table.giocatoriTrasfertaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RefertiPartitaTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RefertiPartitaTableTable> {
+  $$RefertiPartitaTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get squadraCasa => $composableBuilder(
+    column: $table.squadraCasa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get squadraTrasferta => $composableBuilder(
+    column: $table.squadraTrasferta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get risultatoCasa => $composableBuilder(
+    column: $table.risultatoCasa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get risultatoTrasferta => $composableBuilder(
+    column: $table.risultatoTrasferta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parzialiJson => $composableBuilder(
+    column: $table.parzialiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get giocatoriCasaJson => $composableBuilder(
+    column: $table.giocatoriCasaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get giocatoriTrasfertaJson => $composableBuilder(
+    column: $table.giocatoriTrasfertaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RefertiPartitaTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RefertiPartitaTableTable> {
+  $$RefertiPartitaTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get partitaId =>
+      $composableBuilder(column: $table.partitaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get squadraCasa => $composableBuilder(
+    column: $table.squadraCasa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get squadraTrasferta => $composableBuilder(
+    column: $table.squadraTrasferta,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get risultatoCasa => $composableBuilder(
+    column: $table.risultatoCasa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get risultatoTrasferta => $composableBuilder(
+    column: $table.risultatoTrasferta,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parzialiJson => $composableBuilder(
+    column: $table.parzialiJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get giocatoriCasaJson => $composableBuilder(
+    column: $table.giocatoriCasaJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get giocatoriTrasfertaJson => $composableBuilder(
+    column: $table.giocatoriTrasfertaJson,
+    builder: (column) => column,
+  );
+}
+
+class $$RefertiPartitaTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RefertiPartitaTableTable,
+          RefertiPartitaTableData,
+          $$RefertiPartitaTableTableFilterComposer,
+          $$RefertiPartitaTableTableOrderingComposer,
+          $$RefertiPartitaTableTableAnnotationComposer,
+          $$RefertiPartitaTableTableCreateCompanionBuilder,
+          $$RefertiPartitaTableTableUpdateCompanionBuilder,
+          (
+            RefertiPartitaTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $RefertiPartitaTableTable,
+              RefertiPartitaTableData
+            >,
+          ),
+          RefertiPartitaTableData,
+          PrefetchHooks Function()
+        > {
+  $$RefertiPartitaTableTableTableManager(
+    _$AppDatabase db,
+    $RefertiPartitaTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RefertiPartitaTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RefertiPartitaTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RefertiPartitaTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> partitaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> squadraCasa = const Value.absent(),
+                Value<String> squadraTrasferta = const Value.absent(),
+                Value<int> risultatoCasa = const Value.absent(),
+                Value<int> risultatoTrasferta = const Value.absent(),
+                Value<String> parzialiJson = const Value.absent(),
+                Value<String> giocatoriCasaJson = const Value.absent(),
+                Value<String> giocatoriTrasfertaJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RefertiPartitaTableCompanion(
+                id: id,
+                partitaId: partitaId,
+                clubId: clubId,
+                squadraCasa: squadraCasa,
+                squadraTrasferta: squadraTrasferta,
+                risultatoCasa: risultatoCasa,
+                risultatoTrasferta: risultatoTrasferta,
+                parzialiJson: parzialiJson,
+                giocatoriCasaJson: giocatoriCasaJson,
+                giocatoriTrasfertaJson: giocatoriTrasfertaJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String partitaId,
+                required String clubId,
+                required String squadraCasa,
+                required String squadraTrasferta,
+                required int risultatoCasa,
+                required int risultatoTrasferta,
+                Value<String> parzialiJson = const Value.absent(),
+                Value<String> giocatoriCasaJson = const Value.absent(),
+                Value<String> giocatoriTrasfertaJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RefertiPartitaTableCompanion.insert(
+                id: id,
+                partitaId: partitaId,
+                clubId: clubId,
+                squadraCasa: squadraCasa,
+                squadraTrasferta: squadraTrasferta,
+                risultatoCasa: risultatoCasa,
+                risultatoTrasferta: risultatoTrasferta,
+                parzialiJson: parzialiJson,
+                giocatoriCasaJson: giocatoriCasaJson,
+                giocatoriTrasfertaJson: giocatoriTrasfertaJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RefertiPartitaTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RefertiPartitaTableTable,
+      RefertiPartitaTableData,
+      $$RefertiPartitaTableTableFilterComposer,
+      $$RefertiPartitaTableTableOrderingComposer,
+      $$RefertiPartitaTableTableAnnotationComposer,
+      $$RefertiPartitaTableTableCreateCompanionBuilder,
+      $$RefertiPartitaTableTableUpdateCompanionBuilder,
+      (
+        RefertiPartitaTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $RefertiPartitaTableTable,
+          RefertiPartitaTableData
+        >,
+      ),
+      RefertiPartitaTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12706,4 +13683,6 @@ class $AppDatabaseManager {
       );
   $$EventiPartitaTableTableTableManager get eventiPartitaTable =>
       $$EventiPartitaTableTableTableManager(_db, _db.eventiPartitaTable);
+  $$RefertiPartitaTableTableTableManager get refertiPartitaTable =>
+      $$RefertiPartitaTableTableTableManager(_db, _db.refertiPartitaTable);
 }

@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../referti/presentation/referto_partita_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/distinta_repository.dart';
 import '../domain/distinta_giocatore.dart';
@@ -80,6 +81,15 @@ class DistintaScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => StatistichePartitaScreen(partita: partita),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.description_outlined),
+            tooltip: 'Referto',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => RefertoPartitaScreen(partita: partita),
               ),
             ),
           ),

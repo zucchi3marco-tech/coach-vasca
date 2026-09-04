@@ -22,13 +22,14 @@ part 'app_database.g.dart';
     PartiteTable,
     DistintaGiocatoriTable,
     EventiPartitaTable,
+    RefertiPartitaTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -68,6 +69,12 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'eventi_partita_table')) {
           await m.createTable(eventiPartitaTable);
+        }
+      }
+      // v5 -> v6: salvataggio referti analizzati (Fase 8).
+      if (from < 6) {
+        if (!await _hasTable(m, 'referti_partita_table')) {
+          await m.createTable(refertiPartitaTable);
         }
       }
     },
