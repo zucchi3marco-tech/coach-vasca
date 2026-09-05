@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 
@@ -19,6 +26,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _cognomeController;
+  late final TextEditingController _dataNascitaController;
   late final TextEditingController _gruppoController;
   late final TextEditingController _emailGenitoreController;
   late final TextEditingController _telefonoGenitoreController;
@@ -41,6 +49,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     final atleta = widget.atleta;
     _nomeController = TextEditingController(text: atleta?.nome ?? '');
     _cognomeController = TextEditingController(text: atleta?.cognome ?? '');
+    _dataNascita = atleta?.dataNascita;
+    _dataNascitaController = TextEditingController(
+      text: _formattaData(_dataNascita),
+    );
     _gruppoController = TextEditingController(text: atleta?.gruppo ?? '');
     _emailGenitoreController = TextEditingController(
       text: atleta?.emailGenitore ?? '',
@@ -52,7 +64,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _numeroTesseraFinController = TextEditingController(
       text: atleta?.numeroTesseraFin ?? '',
     );
-    _dataNascita = atleta?.dataNascita;
     _sesso = atleta?.sesso;
     _sport = atleta?.sport ?? 'nuoto';
     _consensoPrivacy = atleta?.consensoPrivacyFirmato ?? false;
@@ -62,12 +73,20 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   void dispose() {
     _nomeController.dispose();
     _cognomeController.dispose();
+    _dataNascitaController.dispose();
     _gruppoController.dispose();
     _emailGenitoreController.dispose();
     _telefonoGenitoreController.dispose();
     _noteController.dispose();
     _numeroTesseraFinController.dispose();
     super.dispose();
+  }
+
+  String _formattaData(DateTime? data) {
+    if (data == null) return '';
+    return '${data.day.toString().padLeft(2, '0')}/'
+        '${data.month.toString().padLeft(2, '0')}/'
+        '${data.year}';
   }
 
   Future<void> _pickDataNascita() async {
@@ -79,7 +98,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       lastDate: now,
     );
     if (selected != null) {
-      setState(() => _dataNascita = selected);
+      setState(() {
+        _dataNascita = selected;
+        _dataNascitaController.text = _formattaData(selected);
+      });
     }
   }
 
@@ -142,24 +164,37 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
 
   Future<void> _confermaArchiviazione() async {
     final atleta = widget.atleta!;
+    final archivia = atleta.attivo;
     final conferma = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(atleta.attivo ? 'Archiviare l\'atleta?' : 'Riattivare l\'atleta?'),
+        title: Text(
+          archivia
+              ? 'Archiviare ${atleta.nomeCompleto}?'
+              : 'Riattivare ${atleta.nomeCompleto}?',
+        ),
         content: Text(
-          atleta.attivo
-              ? 'L\'atleta non comparirà più nell\'elenco attivo, ma lo storico resta.'
-              : 'L\'atleta tornerà a comparire nell\'elenco attivo.',
+          archivia
+              ? 'Non comparirà più nell\'elenco attivo, ma lo storico resta.'
+              : 'Tornerà a comparire nell\'elenco attivo.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Conferma'),
-          ),
+          if (archivia)
+            DangerButton(
+              label: 'Archivia',
+              expanded: false,
+              onPressed: () => Navigator.of(context).pop(true),
+            )
+          else
+            PrimaryButton(
+              label: 'Riattiva',
+              expanded: false,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
         ],
       ),
     );
@@ -174,75 +209,60 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica atleta' : 'Nuovo atleta'),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: Icon(
-                widget.atleta!.attivo
-                    ? Icons.archive_outlined
-                    : Icons.unarchive_outlined,
-              ),
-              tooltip: widget.atleta!.attivo ? 'Archivia' : 'Riattiva',
-              onPressed: _confermaArchiviazione,
-            ),
-        ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormGroup(
+              titolo: 'Anagrafica',
+              campi: [
+                AppTextField(
+                  etichetta: 'Nome',
                   controller: _nomeController,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Obbligatorio'
+                      : null,
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Cognome',
                   controller: _cognomeController,
-                  decoration: const InputDecoration(labelText: 'Cognome'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Obbligatorio'
+                      : null,
                 ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data di nascita'),
-                  subtitle: Text(
-                    _dataNascita == null
-                        ? 'Seleziona una data'
-                        : '${_dataNascita!.day.toString().padLeft(2, '0')}/'
-                              '${_dataNascita!.month.toString().padLeft(2, '0')}/'
-                              '${_dataNascita!.year}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
+                AppTextField(
+                  etichetta: 'Data di nascita',
+                  controller: _dataNascitaController,
+                  readOnly: true,
                   onTap: _pickDataNascita,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  validator: (_) =>
+                      _dataNascita == null ? 'Obbligatoria' : null,
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _sesso,
-                  decoration: const InputDecoration(
-                    labelText: 'Sesso (opzionale)',
-                  ),
+                AppSelect<String>(
+                  etichetta: 'Sesso (facoltativo)',
+                  value: _sesso,
+                  hint: 'Non specificato',
                   items: const [
                     DropdownMenuItem(value: 'M', child: Text('M')),
                     DropdownMenuItem(value: 'F', child: Text('F')),
                   ],
                   onChanged: (value) => setState(() => _sesso = value),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _sport,
-                  decoration: const InputDecoration(labelText: 'Sport'),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Attività',
+              campi: [
+                AppSelect<String>(
+                  etichetta: 'Sport',
+                  value: _sport,
                   items: const [
                     DropdownMenuItem(value: 'nuoto', child: Text('Nuoto')),
                     DropdownMenuItem(
@@ -253,81 +273,109 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                   onChanged: (value) =>
                       setState(() => _sport = value ?? 'nuoto'),
                 ),
-                if (_sport == 'pallanuoto') ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
+                if (_sport == 'pallanuoto')
+                  AppTextField(
+                    etichetta: 'N. tessera FIN (facoltativo)',
                     controller: _numeroTesseraFinController,
-                    decoration: const InputDecoration(
-                      labelText: 'N. tessera FIN (opzionale)',
-                    ),
                   ),
-                ],
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Gruppo (facoltativo)',
                   controller: _gruppoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Gruppo (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+              ],
+            ),
+            FormGroup(
+              titolo: 'Contatti e consenso',
+              campi: [
+                AppTextField(
+                  etichetta: 'Email genitore (facoltativo)',
                   controller: _emailGenitoreController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email genitore (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Telefono genitore (facoltativo)',
                   controller: _telefonoGenitoreController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefono genitore (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Note (opzionale)',
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Consenso privacy firmato'),
-                  subtitle: const Text(
-                    'Vedi docs/privacy/ per il modulo da far firmare al genitore',
-                  ),
-                  value: _consensoPrivacy,
+                _ConsensoPrivacyRow(
+                  valore: _consensoPrivacy,
                   onChanged: (value) =>
                       setState(() => _consensoPrivacy = value),
                 ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva'),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Note',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
+                  controller: _noteController,
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            if (_errorMessage != null) ...[
+              ErrorBanner(messaggio: _errorMessage!),
+              const SizedBox(height: 16),
+            ],
+            PrimaryButton(
+              label: 'Salva atleta',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+            if (_isEditing) ...[
+              const SizedBox(height: 12),
+              DangerButton(
+                label: widget.atleta!.attivo
+                    ? 'Archivia atleta'
+                    : 'Riattiva atleta',
+                onPressed: _confermaArchiviazione,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Non è un componente della libreria (DESIGN.md sezione 14 non ne
+/// elenca uno per gli switch): resta locale a questo form, ma segue
+/// comunque i token di colore/tipografia dell'app.
+class _ConsensoPrivacyRow extends StatelessWidget {
+  const _ConsensoPrivacyRow({required this.valore, required this.onChanged});
+
+  final bool valore;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!valore),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Consenso privacy firmato',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Vedi docs/privacy/ per il modulo da far firmare al genitore',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-        ),
+          Switch(value: valore, onChanged: onChanged),
+        ],
       ),
     );
   }
