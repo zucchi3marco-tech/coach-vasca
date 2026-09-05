@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../statistiche/presentation/statistiche_atleta_screen.dart';
+import '../../stroke_rate/presentation/stroke_rate_screen.dart';
 import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
@@ -48,6 +50,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
             onTapStatistiche: (atleta) => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => StatisticheAtletaScreen(atleta: atleta),
+              ),
+            ),
+            onTapBracciate: (atleta) => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StrokeRateScreen(atleta: atleta),
               ),
             ),
           ),
@@ -96,6 +103,7 @@ class _AtletiList extends StatelessWidget {
     required this.onTapTest,
     required this.onTapCarico,
     required this.onTapStatistiche,
+    required this.onTapBracciate,
   });
 
   final List<Atleta> atleti;
@@ -103,6 +111,14 @@ class _AtletiList extends StatelessWidget {
   final ValueChanged<Atleta> onTapTest;
   final ValueChanged<Atleta> onTapCarico;
   final ValueChanged<Atleta> onTapStatistiche;
+  final ValueChanged<Atleta> onTapBracciate;
+
+  /// Il rilevamento bracciate usa la fotocamera + Google ML Kit: disponibile
+  /// solo nell'app nativa Android/iOS, non nella versione web.
+  static bool get _bracciateDisponibili =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +176,12 @@ class _AtletiList extends StatelessWidget {
                 tooltip: 'Test',
                 onPressed: () => onTapTest(atleta),
               ),
+              if (_bracciateDisponibili)
+                IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  tooltip: 'Bracciate',
+                  onPressed: () => onTapBracciate(atleta),
+                ),
             ],
           ),
           onTap: () => onTap(atleta),
