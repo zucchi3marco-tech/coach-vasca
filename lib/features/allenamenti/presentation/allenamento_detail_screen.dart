@@ -159,20 +159,64 @@ class AllenamentoDetailScreen extends ConsumerWidget {
           const Divider(height: 1),
           Expanded(
             child: serieAsync.when(
-              data: (serie) => serie.isEmpty
-                  ? EmptyState(
-                      icona: Icons.pool_outlined,
-                      titolo: 'Nessuna serie',
-                      descrizione:
-                          'Aggiungi la prima serie per costruire questo '
-                          'allenamento.',
-                      azionePrincipale: 'Nuova serie',
-                      onAzionePrincipale: apriNuovaSerie,
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(AppSpacing.s16),
-                      itemCount: serie.length,
-                      itemBuilder: (context, index) {
+              data: (serie) {
+                if (serie.isEmpty) {
+                  return EmptyState(
+                    icona: Icons.pool_outlined,
+                    titolo: 'Nessuna serie',
+                    descrizione:
+                        'Aggiungi la prima serie per costruire questo '
+                        'allenamento.',
+                    azionePrincipale: 'Nuova serie',
+                    onAzionePrincipale: apriNuovaSerie,
+                  );
+                }
+                // Riepilogo, non un campo a se': l'attrezzatura resta
+                // scritta sulla singola serie (vedi SerieFormScreen), qui
+                // si mostra solo l'elenco senza doppioni di quanto già
+                // compilato, per prepararsi prima di andare in vasca.
+                final materiale =
+                    {
+                      for (final s in serie)
+                        if (s.attrezzatura != null &&
+                            s.attrezzatura!.trim().isNotEmpty)
+                          s.attrezzatura!.trim(),
+                    }.toList()
+                      ..sort();
+                return Column(
+                  children: [
+                    if (materiale.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.s16,
+                          AppSpacing.s16,
+                          AppSpacing.s16,
+                          0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Materiale utilizzato',
+                              style: AppTypography.etichetta,
+                            ),
+                            const SizedBox(height: AppSpacing.s8),
+                            Wrap(
+                              spacing: AppSpacing.s8,
+                              runSpacing: AppSpacing.s8,
+                              children: [
+                                for (final m in materiale)
+                                  Chip(label: Text(m)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(AppSpacing.s16),
+                        itemCount: serie.length,
+                        itemBuilder: (context, index) {
                         final s = serie[index];
                         final tokens =
                             Theme.of(context).extension<DomainTokens>() ??
@@ -290,7 +334,11 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                           ),
                         );
                       },
+                      ),
                     ),
+                  ],
+                );
+              },
               loading: () => const Padding(
                 padding: EdgeInsets.all(AppSpacing.s16),
                 child: LoadingSkeletonList(righe: 5),

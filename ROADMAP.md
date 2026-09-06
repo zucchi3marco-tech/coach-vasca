@@ -117,7 +117,7 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Permessi atleta — RLS dedicata: l'atleta collegato vede solo il proprio carico, le proprie presenze (numero e % mensile/totale) e i propri PB, non la rubrica né i dati degli altri atleti. Il consenso privacy resta da confermare a mano dal coach anche per gli atleti auto-registrati col codice di gruppo
 - [x] Ricerca e ordinamento (cognome/data di nascita) nella lista atleti — aggiunto durante il test della Fase 9
 - [x] Scadenza visita medica in anagrafica, con avviso in elenco quando scaduta o in scadenza entro 30 giorni — aggiunto durante il test della Fase 9
-- [ ] Allenamenti: sezione "materiale utilizzato"
+- [x] Allenamenti: sezione "materiale utilizzato" — riepilogo automatico (senza doppioni) dei valori già scritti nel campo "Attrezzatura" delle singole serie, mostrato nella scheda allenamento sopra l'elenco delle serie; nessun campo nuovo da compilare
 - [ ] Nuovi codici zona/tipo lavoro: split di C in C1/C2/C3 (oltre ad A1, A2, B1, B2, D) più "tecnica", "gambe", "braccia", "remate"
 - [ ] Pagina Carico: mostrare il volume totale e il volume per ogni codice/tipo lavoro (gambe, braccia, ecc.)
 - [ ] Eventi partita pallanuoto: campo disegnato tipo lavagnetta — chi registra un tiro tocca il punto della porta/campo da cui è partito, poi sceglie gol/parato/fuori (sostituisce o affianca l'attuale selezione atleta+esito senza posizione); la posizione toccata va salvata insieme all'evento, per poi avere una statistica/mappa di calore di dove la squadra segna di più
