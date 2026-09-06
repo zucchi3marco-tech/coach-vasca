@@ -2,6 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/lane_rule.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/primary_button.dart';
+import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
@@ -48,6 +59,16 @@ String _etichettaEsito(String? esito) {
   }
 }
 
+/// Schermata da bordo vasca (DESIGN.md sezione 9): usata durante la
+/// partita per registrare tiri, espulsioni e superiorità in tempo reale.
+///
+/// Nota di design non risolta: i dialog sotto (registra tiro/espulsione)
+/// scelgono l'atleta da un menu a tendina, che è un "form" — vietato a
+/// bordo vasca dalla sezione 9. La regola alternativa (bottom sheet con
+/// al massimo tre scelte) non copre una scelta fra tutta la rosa (spesso
+/// 13+ convocati). Serve un pattern nuovo (es. una griglia di bersagli
+/// grandi con numero calottina) da definire in DESIGN.md prima di poter
+/// sistemare anche questa parte: per ora i dialog restano com'erano.
 class EventiPartitaScreen extends ConsumerWidget {
   const EventiPartitaScreen({required this.partita, super.key});
 
@@ -148,95 +169,170 @@ class EventiPartitaScreen extends ConsumerWidget {
             .toList()
           ..sort((a, b) => a.cognome.compareTo(b.cognome));
 
-    return Scaffold(
+    void apriDialogoTiro() => showDialog<void>(
+      context: context,
+      builder: (_) => _DialogRegistraTiro(
+        partita: partita,
+        convocati: convocatiAtleti,
+      ),
+    );
+
+    return AppScaffold(
       appBar: AppBar(
-        title: Text('Eventi — ${partita.squadraCasa} - ${partita.squadraTrasferta}'),
+        title: Text(
+          'Eventi — ${partita.squadraCasa} - ${partita.squadraTrasferta}',
+        ),
       ),
       body: Column(
         children: [
           Expanded(
             child: eventiAsync.when(
               data: (eventi) => eventi.isEmpty
-                  ? const Center(
-                      child: Text('Nessun evento. Usa i pulsanti sotto.'),
+                  ? EmptyState(
+                      icona: Icons.sports_handball_outlined,
+                      titolo: 'Nessun evento registrato',
+                      descrizione:
+                          'Usa i pulsanti qui sotto per registrare tiri, '
+                          'espulsioni e superiorità numeriche.',
+                      azionePrincipale: 'Registra un tiro',
+                      onAzionePrincipale: convocatiAtleti.isEmpty
+                          ? null
+                          : apriDialogoTiro,
                     )
                   : ListView.separated(
+                      padding: const EdgeInsets.all(AppSpacing.s16),
                       itemCount: eventi.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.s8),
                       itemBuilder: (context, index) {
                         final e = eventi[index];
-                        return ListTile(
-                          leading: Icon(_icona(e)),
-                          title: Text(_descrizione(e, atletiPerId)),
-                          trailing:
-                              e.tipo == 'superiorita' && e.esito == null
-                              ? const Text('Concludi')
-                              : null,
-                          onTap: () => _onTap(context, ref, e),
+                        final inCorso =
+                            e.tipo == 'superiorita' && e.esito == null;
+                        return LaneRule(
+                          colore: inCorso
+                              ? AppColors.rosso
+                              : AppColors.linea,
+                          child: PoolCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.s16,
+                              vertical: AppSpacing.s12,
+                            ),
+                            child: InkWell(
+                              onTap: () => _onTap(context, ref, e),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _icona(e),
+                                    size: 20,
+                                    color: AppColors.testoSecondario,
+                                  ),
+                                  const SizedBox(width: AppSpacing.s12),
+                                  Expanded(
+                                    child: Text(
+                                      _descrizione(e, atletiPerId),
+                                      style: AppTypography.corpoForte
+                                          .copyWith(color: AppColors.testo),
+                                    ),
+                                  ),
+                                  if (inCorso) ...[
+                                    const SizedBox(width: AppSpacing.s12),
+                                    Text(
+                                      'Concludi',
+                                      style: AppTypography.piccolo.copyWith(
+                                        color: AppColors.blu,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) =>
-                  Center(child: Text(messaggioErrore(error))),
+              loading: () => const Padding(
+                padding: EdgeInsets.all(AppSpacing.s16),
+                child: LoadingSkeletonList(righe: 5),
+              ),
+              error: (error, _) => Padding(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: ErrorBanner(
+                  messaggio: 'Non è stato possibile caricare gli eventi.',
+                  suggerimento:
+                      'Riprova. Se l\'errore continua, chiudi e riapri '
+                      'l\'app.',
+                  dettaglioTecnico: messaggioErrore(error),
+                ),
+              ),
             ),
           ),
           const Divider(height: 1),
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.s16),
               child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppSpacing.s12,
+                runSpacing: AppSpacing.s12,
                 children: [
-                  FilledButton.icon(
-                    onPressed: convocatiAtleti.isEmpty
-                        ? null
-                        : () => showDialog<void>(
-                            context: context,
-                            builder: (_) => _DialogRegistraTiro(
-                              partita: partita,
-                              convocati: convocatiAtleti,
-                            ),
-                          ),
-                    icon: const Icon(Icons.sports_handball_outlined),
-                    label: const Text('Tiro'),
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: PrimaryButton(
+                      label: 'Tiro',
+                      icon: Icons.sports_handball_outlined,
+                      expanded: false,
+                      onPressed: convocatiAtleti.isEmpty
+                          ? null
+                          : apriDialogoTiro,
+                    ),
                   ),
-                  FilledButton.icon(
-                    onPressed: convocatiAtleti.isEmpty
-                        ? null
-                        : () => showDialog<void>(
-                            context: context,
-                            builder: (_) => _DialogRegistraEspulsione(
-                              partita: partita,
-                              convocati: convocatiAtleti,
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: SecondaryButton(
+                      label: 'Espulsione',
+                      icon: Icons.warning_amber_outlined,
+                      expanded: false,
+                      onPressed: convocatiAtleti.isEmpty
+                          ? null
+                          : () => showDialog<void>(
+                              context: context,
+                              builder: (_) => _DialogRegistraEspulsione(
+                                partita: partita,
+                                convocati: convocatiAtleti,
+                              ),
                             ),
-                          ),
-                    icon: const Icon(Icons.warning_amber_outlined),
-                    label: const Text('Espulsione'),
+                    ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => _DialogRegistraSuperiorita(
-                        partita: partita,
-                        squadra: 'nostra',
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: SecondaryButton(
+                      label: 'Sup. nostra',
+                      icon: Icons.trending_up,
+                      expanded: false,
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => _DialogRegistraSuperiorita(
+                          partita: partita,
+                          squadra: 'nostra',
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.trending_up),
-                    label: const Text('Sup. nostra'),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => _DialogRegistraSuperiorita(
-                        partita: partita,
-                        squadra: 'avversaria',
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: SecondaryButton(
+                      label: 'Sup. avversaria',
+                      icon: Icons.trending_down,
+                      expanded: false,
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => _DialogRegistraSuperiorita(
+                          partita: partita,
+                          squadra: 'avversaria',
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.trending_down),
-                    label: const Text('Sup. avversaria'),
                   ),
                 ],
               ),
@@ -351,10 +447,7 @@ class _DialogRegistraTiroState extends ConsumerState<_DialogRegistraTiro> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              'Contesto',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text('Contesto', style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 4),
             Wrap(
               spacing: 8,

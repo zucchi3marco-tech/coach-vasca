@@ -287,6 +287,14 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
 
 - **Altezza minima dei bersagli: 64.** Mani bagnate, movimento, fretta.
 - **Massimo tre azioni per schermata.** Tutto il resto sta dietro un menu.
+  **Eccezione:** un'azione con una variante binaria imprevedibile che va
+  registrata nell'istante in cui succede (es. superiorità numerica nostra
+  o avversaria: non si sa in anticipo quale delle due, e un passaggio in
+  più per sceglierla costerebbe il momento esatto dell'evento) resta due
+  bersagli affiancati invece di un bottone più una scelta successiva.
+  Contano come una sola azione ai fini del limite. Non è una scappatoia
+  generale: si applica solo quando l'evento è imprevedibile e il ritardo
+  di un passaggio in più è il problema reale, non solo scomodo.
 - Tipografia `display` per l'informazione centrale (la serie in corso, il punteggio, il tempo). Deve leggersi a mezzo metro senza avvicinare il tablet.
 - Layout pensato per **orizzontale su tablet**, con le azioni sui lati raggiungibili col pollice.
 - Il rosso `rosso` compare qui, e solo qui, come indicatore di "in corso": un punto pulsante accanto al cronometro o un filetto sul blocco attivo.
