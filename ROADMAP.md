@@ -120,6 +120,19 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [ ] Pagina Carico: mostrare il volume totale e il volume per ogni codice/tipo lavoro (gambe, braccia, ecc.)
 - [ ] Eventi partita pallanuoto: campo disegnato tipo lavagnetta — chi registra un tiro tocca il punto della porta/campo da cui è partito, poi sceglie gol/parato/fuori (sostituisce o affianca l'attuale selezione atleta+esito senza posizione); la posizione toccata va salvata insieme all'evento, per poi avere una statistica/mappa di calore di dove la squadra segna di più
 
+## Restyling DESIGN.md (2026-09-06)
+
+Tutte le schermate dell'app sono state riportate a DESIGN.md, una alla volta: restyle di sola presentazione, `flutter analyze` pulito e commit dedicato per ciascuna (nessuna modifica a logica, dati, database, migrazioni o cartella `supabase/`). Fatte, in ordine: le tre schermate da bordo vasca (segna presenze, allenamento in corso, eventi partita), poi login/registrazione/crea club, le quattro liste della home (atleti, allenamenti + viste calendario, stagioni, partite), l'intera gerarchia stagione → macrociclo → mesociclo → microciclo (elenco e form a ogni livello), test (elenco e form), carico atleta, statistiche (selettore stagione, per atleta, per squadra), bracciate, pallanuoto (distinta, form partita, statistiche partita, referto, leggi referto), tabella passi, le due schermate AI genera, home e anteprima/esportazione CSV. Nessuna schermata è rimasta esclusa dall'elenco originale.
+
+Nel farlo sono stati aggiunti due componenti condivisi non previsti in DESIGN.md sezione 14 — `OrdineBadge` (numero cerchiato) e le estensioni opzionali di `AppTextField` (obscureText/autofillHints/onFieldSubmitted) e `AppListRow` (onLongPress) — e un'eccezione mirata alla regola "massimo tre azioni" a bordo vasca per varianti binarie imprevedibili (sezione 9), tutti già documentati direttamente in DESIGN.md.
+
+Punti lasciati aperti, per scelta deliberata o perché DESIGN.md non li copre ancora:
+- **Selezione atleta nei dialog "Registra tiro/espulsione" di Eventi partita**: usa ancora un menu a tendina, che è un "form" vietato a bordo vasca (sezione 9); la regola alternativa (bottom sheet max 3 scelte) non copre una scelta fra un'intera rosa (spesso 13+ persone). Serve un pattern nuovo (es. griglia di bersagli grandi con calottina/nome) da aggiungere a DESIGN.md prima di poterlo sistemare.
+- **Colore calottina per riga in Distinta**: `Partita.coloreCalottina` è testo libero (non un enum), quindi non è mappabile in sicurezza sui tre `CapColore` di `CapBadge`; il colore reale resta visibile solo in testo nell'intestazione, non per singolo convocato (eccetto il portiere, sempre rosso).
+- **Palette per i grafici a linee** (schermata Carico): DESIGN.md non ne definisce una; per ora Fitness/Fatica/Forma usano blu/attenzione/ok (mai rosso, riservato a "in corso"/errori).
+- **IBM Plex Sans Condensed** (colonne strette di distinta/tabella passi/referto): il pacchetto `google_fonts` in uso non la include; `AppTypography.condensata()` ripiega su IBM Plex Sans normale finché non si trova un'alternativa (font incluso come asset?).
+- **Chiaro o scuro a bordo vasca** (DESIGN.md sezione 16): decisione esplicitamente rimandata a una vera sessione in impianto, non presa qui.
+
 ---
 
 ## Ordine di dipendenze (non invertire)
