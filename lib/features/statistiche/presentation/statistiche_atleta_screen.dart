@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/stat_panel.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/statistiche_providers.dart';
@@ -24,32 +31,24 @@ class _StatisticheAtletaScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: Text('Statistiche — ${widget.atleta.nomeCompleto}'),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SelettoreStagione(
-                clubId: widget.atleta.clubId,
-                onCambiata: (s) => setState(() => _stagione = s),
-              ),
-              if (_stagione != null) ...[
-                const SizedBox(height: 16),
-                Expanded(
-                  child: _DatiAtleta(
-                    atleta: widget.atleta,
-                    stagione: _stagione!,
-                  ),
-                ),
-              ],
-            ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SelettoreStagione(
+            clubId: widget.atleta.clubId,
+            onCambiata: (s) => setState(() => _stagione = s),
           ),
-        ),
+          if (_stagione != null) ...[
+            const SizedBox(height: AppSpacing.s16),
+            Expanded(
+              child: _DatiAtleta(atleta: widget.atleta, stagione: _stagione!),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -92,59 +91,107 @@ class _DatiAtleta extends ConsumerWidget {
           final rigaEventi = _trovaEventi(e.perAtleta);
           return ListView(
             children: [
-              Text(
-                'Da referti',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
+              SectionHeader('Da referti'),
+              const SizedBox(height: AppSpacing.s8),
               Text(
                 'Non include i tiri sbagliati (non registrati nel referto).',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTypography.piccolo,
               ),
-              const SizedBox(height: 8),
-              Text(
-                rigaReferti == null
-                    ? 'Nessun dato da referto in questa stagione.'
-                    : '${rigaReferti.reti} reti · ${rigaReferti.espulsioni} '
-                          'espulsioni · ${rigaReferti.partite} partite · '
-                          '${rigaReferti.mediaRetiPartita.toStringAsFixed(2)} '
-                          'reti/partita',
-              ),
-              const Divider(height: 32),
-              Text(
-                'Da eventi live',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.s16),
+              if (rigaReferti == null)
+                Text(
+                  'Nessun dato da referto in questa stagione.',
+                  style: AppTypography.corpo,
+                )
+              else
+                Wrap(
+                  spacing: AppSpacing.s24,
+                  runSpacing: AppSpacing.s16,
+                  children: [
+                    StatPanel(etichetta: 'Reti', valore: '${rigaReferti.reti}'),
+                    StatPanel(
+                      etichetta: 'Espulsioni',
+                      valore: '${rigaReferti.espulsioni}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Partite',
+                      valore: '${rigaReferti.partite}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Reti/partita',
+                      valore: rigaReferti.mediaRetiPartita.toStringAsFixed(2),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: AppSpacing.s28),
+              SectionHeader('Da eventi live'),
+              const SizedBox(height: AppSpacing.s8),
               Text(
                 'Solo dalle partite seguite dal vivo con "Eventi partita".',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTypography.piccolo,
               ),
-              const SizedBox(height: 8),
-              Text(
-                rigaEventi == null
-                    ? 'Nessun evento registrato in questa stagione.'
-                    : 'Gol: ${rigaEventi.gol}/${rigaEventi.tiri}'
-                          '${rigaEventi.tiri > 0 ? ' (${(rigaEventi.gol / rigaEventi.tiri * 100).round()}%)' : ''}'
-                          ' · ${rigaEventi.espulsioni} espulsioni',
-              ),
-              if (rigaEventi != null) ...[
-                const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.s16),
+              if (rigaEventi == null)
                 Text(
-                  'Azione: ${rigaEventi.golAzione} · superiorità: '
-                  '${rigaEventi.golSuperiorita} · rigore: '
-                  '${rigaEventi.golRigore}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  'Nessun evento registrato in questa stagione.',
+                  style: AppTypography.corpo,
+                )
+              else ...[
+                Wrap(
+                  spacing: AppSpacing.s24,
+                  runSpacing: AppSpacing.s16,
+                  children: [
+                    StatPanel(
+                      etichetta: 'Gol',
+                      valore: '${rigaEventi.gol}/${rigaEventi.tiri}',
+                      confronto: rigaEventi.tiri > 0
+                          ? '${(rigaEventi.gol / rigaEventi.tiri * 100).round()}%'
+                          : null,
+                    ),
+                    StatPanel(
+                      etichetta: 'Espulsioni',
+                      valore: '${rigaEventi.espulsioni}',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s16),
+                Wrap(
+                  spacing: AppSpacing.s24,
+                  runSpacing: AppSpacing.s16,
+                  children: [
+                    StatPanel(
+                      etichetta: 'Gol azione',
+                      valore: '${rigaEventi.golAzione}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Gol superiorità',
+                      valore: '${rigaEventi.golSuperiorita}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Gol rigore',
+                      valore: '${rigaEventi.golRigore}',
+                    ),
+                  ],
                 ),
               ],
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text(messaggioErrore(err))),
+        loading: () => const LoadingSkeletonList(righe: 4),
+        error: (err, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli eventi.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(err),
+        ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text(messaggioErrore(err))),
+      loading: () => const LoadingSkeletonList(righe: 4),
+      error: (err, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare i referti.',
+        suggerimento:
+            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(err),
+      ),
     );
   }
 }

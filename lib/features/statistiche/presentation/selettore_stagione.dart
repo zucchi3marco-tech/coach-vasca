@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_select.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
 
@@ -34,9 +39,10 @@ class _SelettoreStagioneState extends ConsumerState<SelettoreStagione> {
     return stagioniAsync.when(
       data: (stagioni) {
         if (stagioni.isEmpty) {
-          return const Text(
+          return Text(
             'Nessuna stagione creata: creane una (tab "Stagioni") per '
             'vedere le statistiche stagionali.',
+            style: AppTypography.piccolo,
           );
         }
         final ordinate = [...stagioni]
@@ -74,11 +80,10 @@ class _SelettoreStagioneState extends ConsumerState<SelettoreStagione> {
           });
         }
 
-        return DropdownButtonFormField<Stagione>(
+        return AppSelect<Stagione>(
           key: ValueKey(trovata.id),
-          initialValue: trovata,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Stagione'),
+          etichetta: 'Stagione',
+          value: trovata,
           items: [
             for (final s in ordinate)
               DropdownMenuItem(value: s, child: Text(s.nome)),
@@ -93,9 +98,10 @@ class _SelettoreStagioneState extends ConsumerState<SelettoreStagione> {
           },
         );
       },
-      loading: () => const LinearProgressIndicator(),
+      loading: () => const LoadingSkeleton(height: AppSpacing.altezzaMinimaBersaglio),
       error: (e, _) => Text(
         'Errore nel caricamento stagioni: ${messaggioErrore(e)}',
+        style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
       ),
     );
   }
