@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../core/utils/error_messages.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import 'csv_export.dart';
 import 'csv_preview_screen.dart';
 import 'pdf_export.dart';
@@ -18,19 +20,22 @@ Future<void> mostraMenuExport(
   final scelta = await showModalBottomSheet<String>(
     context: context,
     builder: (context) => SafeArea(
-      child: Wrap(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.picture_as_pdf_outlined),
-            title: const Text('Esporta PDF'),
-            onTap: () => Navigator.of(context).pop('pdf'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
-            title: const Text('Esporta CSV'),
-            onTap: () => Navigator.of(context).pop('csv'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_outlined),
+              title: Text('Esporta PDF', style: AppTypography.corpo),
+              onTap: () => Navigator.of(context).pop('pdf'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart_outlined),
+              title: Text('Esporta CSV', style: AppTypography.corpo),
+              onTap: () => Navigator.of(context).pop('csv'),
+            ),
+          ],
+        ),
       ),
     ),
   );
