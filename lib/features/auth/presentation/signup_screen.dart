@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
 import '../data/auth_repository.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -79,85 +84,70 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('Crea account coach')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Inserisci la tua email';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.newPassword],
-                      decoration: const InputDecoration(labelText: 'Password'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Inserisci una password';
-                        }
-                        if (value.length < 6) {
-                          return 'Almeno 6 caratteri';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _confermaPasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Conferma password',
-                      ),
-                      validator: (value) {
-                        if (value != _passwordController.text) {
-                          return 'Le password non coincidono';
-                        }
-                        return null;
-                      },
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Crea account'),
-                    ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppTextField(
+                    etichetta: 'Email',
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Inserisci la tua email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  AppTextField(
+                    etichetta: 'Password',
+                    controller: _passwordController,
+                    obscureText: true,
+                    autofillHints: const [AutofillHints.newPassword],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Inserisci una password';
+                      }
+                      if (value.length < 6) {
+                        return 'Almeno 6 caratteri';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  AppTextField(
+                    etichetta: 'Conferma password',
+                    controller: _confermaPasswordController,
+                    obscureText: true,
+                    validator: (value) {
+                      if (value != _passwordController.text) {
+                        return 'Le password non coincidono';
+                      }
+                      return null;
+                    },
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.s12),
+                    ErrorBanner(messaggio: _errorMessage!),
                   ],
-                ),
+                  const SizedBox(height: AppSpacing.s24),
+                  PrimaryButton(
+                    label: 'Crea account',
+                    isLoading: _isSubmitting,
+                    onPressed: _isSubmitting ? null : _submit,
+                  ),
+                ],
               ),
             ),
           ),
