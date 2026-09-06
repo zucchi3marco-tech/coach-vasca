@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
+import '../../theme/app_spacing.dart';
+import '../../widgets/error_banner.dart';
+import '../../widgets/loading_skeleton.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
 import '../auth/data/auth_repository.dart';
@@ -50,8 +53,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   PartiteListScreen(clubId: club.id),
                 ],
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(messaggioErrore(error))),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 4),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare il club.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
+        ),
       ),
       bottomNavigationBar: club == null
           ? null
@@ -98,7 +112,7 @@ class _SyncStatusIndicator extends ConsumerWidget {
 
     if (inCoda == 0) {
       return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.s4),
         child: Tooltip(
           message: 'Tutto sincronizzato',
           child: Icon(Icons.cloud_done_outlined),
