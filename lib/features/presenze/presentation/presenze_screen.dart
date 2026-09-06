@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -19,7 +27,8 @@ class PresenzeScreen extends ConsumerWidget {
     final atletiAsync = ref.watch(atletiListProvider(filter));
     final presenzeAsync = ref.watch(presenzeListProvider(allenamento.id));
 
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(
           'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
@@ -35,8 +44,14 @@ class PresenzeScreen extends ConsumerWidget {
           return presenzeAsync.when(
             data: (presenze) {
               if (atleti.isEmpty) {
-                return const Center(
-                  child: Text('Nessun atleta attivo in questo club.'),
+                return EmptyState(
+                  icona: Icons.groups_outlined,
+                  titolo: 'Nessun atleta attivo in questo club',
+                  descrizione:
+                      'Aggiungi gli atleti dalla schermata Atleti per poter '
+                      'segnare le presenze.',
+                  azionePrincipale: 'Torna indietro',
+                  onAzionePrincipale: () => Navigator.of(context).pop(),
                 );
               }
 
@@ -44,40 +59,47 @@ class PresenzeScreen extends ConsumerWidget {
                 for (final p in presenze) p.atletaId: p.stato,
               };
 
-              return ListView.separated(
-                itemCount: atleti.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final atleta = atleti[index];
-                  return _RigaPresenza(
-                    atleta: atleta,
-                    statoAttuale: statoPerAtleta[atleta.id],
-                    onSelect: (nuovoStato) => ref
-                        .read(presenzeRepositoryProvider)
-                        .segnaPresenza(
-                          allenamentoId: allenamento.id,
-                          atletaId: atleta.id,
-                          stato: nuovoStato,
-                        ),
-                  );
-                },
+              return AppListPanel(
+                righe: [
+                  for (final atleta in atleti)
+                    _RigaPresenza(
+                      atleta: atleta,
+                      statoAttuale: statoPerAtleta[atleta.id],
+                      onSelect: (nuovoStato) => ref
+                          .read(presenzeRepositoryProvider)
+                          .segnaPresenza(
+                            allenamentoId: allenamento.id,
+                            atletaId: atleta.id,
+                            stato: nuovoStato,
+                          ),
+                    ),
+                ],
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Text('Errore nel caricamento presenze: ${messaggioErrore(error)}'),
+            loading: () => const LoadingSkeletonList(righe: 6),
+            error: (error, _) => ErrorBanner(
+              messaggio: 'Non è stato possibile caricare le presenze.',
+              suggerimento:
+                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+              dettaglioTecnico: messaggioErrore(error),
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Text('Errore nel caricamento atleti: ${messaggioErrore(error)}'),
+        loading: () => const LoadingSkeletonList(righe: 6),
+        error: (error, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli atleti.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
         ),
       ),
     );
   }
 }
 
+/// Riga di un atleta con i tre stati possibili come bersagli grandi — vedi
+/// DESIGN.md sezione 9: a bordo vasca i dati si inseriscono con "bottoni
+/// grandi", altezza minima 64, mai un form o un menu a tendina.
 class _RigaPresenza extends StatelessWidget {
   const _RigaPresenza({
     required this.atleta,
@@ -91,27 +113,112 @@ class _RigaPresenza extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(atleta.nomeCompleto),
-      trailing: SegmentedButton<String>(
-        segments: const [
-          ButtonSegment(
-            value: 'presente',
-            label: Text('P'),
-            tooltip: 'Presente',
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s16,
+        vertical: AppSpacing.s12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            atleta.nomeCompleto,
+            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
           ),
-          ButtonSegment(value: 'assente', label: Text('A'), tooltip: 'Assente'),
-          ButtonSegment(
-            value: 'giustificato',
-            label: Text('G'),
-            tooltip: 'Giustificato',
+          const SizedBox(height: AppSpacing.s12),
+          Row(
+            children: [
+              Expanded(
+                child: _BottoneStato(
+                  etichetta: 'Presente',
+                  icona: Icons.check,
+                  colore: AppColors.ok,
+                  selezionato: statoAttuale == 'presente',
+                  onTap: () => onSelect('presente'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s12),
+              Expanded(
+                child: _BottoneStato(
+                  etichetta: 'Assente',
+                  icona: Icons.close,
+                  colore: AppColors.testoSecondario,
+                  selezionato: statoAttuale == 'assente',
+                  onTap: () => onSelect('assente'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s12),
+              Expanded(
+                child: _BottoneStato(
+                  etichetta: 'Giustificato',
+                  icona: Icons.event_note_outlined,
+                  colore: AppColors.attenzione,
+                  selezionato: statoAttuale == 'giustificato',
+                  onTap: () => onSelect('giustificato'),
+                ),
+              ),
+            ],
           ),
         ],
-        selected: statoAttuale == null ? const {} : {statoAttuale!},
-        emptySelectionAllowed: true,
-        onSelectionChanged: (selection) {
-          if (selection.isNotEmpty) onSelect(selection.first);
-        },
+      ),
+    );
+  }
+}
+
+class _BottoneStato extends StatelessWidget {
+  const _BottoneStato({
+    required this.etichetta,
+    required this.icona,
+    required this.colore,
+    required this.selezionato,
+    required this.onTap,
+  });
+
+  final String etichetta;
+  final IconData icona;
+  final Color colore;
+  final bool selezionato;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+      child: Container(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.altezzaMinimaBersaglioVasca,
+        ),
+        decoration: BoxDecoration(
+          color: selezionato ? colore : AppColors.superficie,
+          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+          border: Border.all(
+            color: selezionato ? colore : AppColors.linea,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icona,
+              size: 24,
+              color: selezionato
+                  ? AppColors.superficie
+                  : AppColors.testoSecondario,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              etichetta,
+              style: AppTypography.piccolo.copyWith(
+                color: selezionato
+                    ? AppColors.superficie
+                    : AppColors.testoSecondario,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
