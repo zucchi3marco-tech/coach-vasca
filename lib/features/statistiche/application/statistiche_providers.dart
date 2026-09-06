@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../pallanuoto/data/eventi_partita_repository.dart';
 import '../../pallanuoto/data/partite_repository.dart';
+import '../../pallanuoto/domain/evento_partita.dart';
 import '../../referti/data/referti_repository.dart';
 import '../domain/statistiche_stagionali.dart';
 
@@ -173,4 +174,30 @@ final riepilogoEventiProvider =
             ),
         ],
       );
+    });
+
+/// Tiri grezzi (con posizione) di tutte le partite del club nel periodo
+/// indicato, per la mappa di calore di squadra: stessa fonte dati di
+/// [riepilogoEventiProvider], solo senza l'aggregazione.
+final tiriStagionePerMappaProvider =
+    FutureProvider.family<List<EventoPartita>, ChiaveStagioneStatistiche>((
+      ref,
+      chiave,
+    ) async {
+      final partite = await ref
+          .watch(partiteRepositoryProvider)
+          .perClubEPeriodo(
+            clubId: chiave.clubId,
+            dataInizio: chiave.dataInizio,
+            dataFine: chiave.dataFine,
+          );
+      if (partite.isEmpty) return [];
+
+      final eventi = await ref
+          .watch(eventiPartitaRepositoryProvider)
+          .perPartite([for (final p in partite) p.id]);
+      return [
+        for (final e in eventi)
+          if (e.tipo == 'tiro' && e.posX != null && e.posY != null) e,
+      ];
     });

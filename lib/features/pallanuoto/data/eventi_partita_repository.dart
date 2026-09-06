@@ -31,6 +31,10 @@ class EventiPartitaRepository {
       periodo: row.periodo,
       esito: row.esito,
       contestoTiro: row.contestoTiro,
+      posX: row.posX,
+      posY: row.posY,
+      numeroCalottinaAvversario: row.numeroCalottinaAvversario,
+      espulsioneDaRigore: row.espulsioneDaRigore,
       creatoIl: row.creatoIl,
     );
   }
@@ -46,6 +50,14 @@ class EventiPartitaRepository {
       periodo: Value(map['periodo'] as int?),
       esito: Value(map['esito'] as String?),
       contestoTiro: Value(map['contesto_tiro'] as String? ?? 'azione'),
+      posX: Value((map['pos_x'] as num?)?.toDouble()),
+      posY: Value((map['pos_y'] as num?)?.toDouble()),
+      numeroCalottinaAvversario: Value(
+        map['numero_calottina_avversario'] as int?,
+      ),
+      espulsioneDaRigore: Value(
+        map['espulsione_da_rigore'] as bool? ?? false,
+      ),
       creatoIl: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
@@ -90,6 +102,10 @@ class EventiPartitaRepository {
       periodo: map['periodo'] as int?,
       esito: map['esito'] as String?,
       contestoTiro: map['contesto_tiro'] as String? ?? 'azione',
+      posX: (map['pos_x'] as num?)?.toDouble(),
+      posY: (map['pos_y'] as num?)?.toDouble(),
+      numeroCalottinaAvversario: map['numero_calottina_avversario'] as int?,
+      espulsioneDaRigore: map['espulsione_da_rigore'] as bool? ?? false,
       creatoIl: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -113,6 +129,27 @@ class EventiPartitaRepository {
     }
   }
 
+  /// Tutti i tiri di un atleta, senza filtro di stagione (stesso
+  /// perimetro "da sempre" del resto della pagina Carico): usata per la
+  /// mappa di calore personale.
+  Future<List<EventoPartita>> perAtleta(String atletaId) async {
+    try {
+      final rows = await _client
+          .from('eventi_partita')
+          .select()
+          .eq('atleta_id', atletaId)
+          .eq('tipo', 'tiro');
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(_db.eventiPartitaTable)
+            ..where((t) => t.atletaId.equals(atletaId))
+            ..where((t) => t.tipo.equals('tiro')))
+          .get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   Future<EventoPartita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -129,6 +166,10 @@ class EventiPartitaRepository {
     int? periodo,
     String? esito,
     String contestoTiro = 'azione',
+    double? posX,
+    double? posY,
+    int? numeroCalottinaAvversario,
+    bool espulsioneDaRigore = false,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -140,6 +181,10 @@ class EventiPartitaRepository {
       'periodo': ?periodo,
       'esito': ?esito,
       'contesto_tiro': contestoTiro,
+      'pos_x': ?posX,
+      'pos_y': ?posY,
+      'numero_calottina_avversario': ?numeroCalottinaAvversario,
+      'espulsione_da_rigore': espulsioneDaRigore,
     };
     try {
       final row = await _client
@@ -173,12 +218,18 @@ class EventiPartitaRepository {
     return _rileggiLocale(id);
   }
 
+  /// [posX]/[posY] sono la posizione toccata sul campo disegnato
+  /// (percentuale 0-100): il nuovo flusso di registrazione le fornisce
+  /// sempre, ma restano facoltative per non rompere eventuali chiamate
+  /// da codice non ancora aggiornato.
   Future<EventoPartita> registraTiro({
     required String partitaId,
     required String atletaId,
     required String esito,
     int? periodo,
     String contestoTiro = 'azione',
+    double? posX,
+    double? posY,
   }) {
     return _creaEvento(
       partitaId: partitaId,
@@ -187,19 +238,34 @@ class EventiPartitaRepository {
       periodo: periodo,
       esito: esito,
       contestoTiro: contestoTiro,
+      posX: posX,
+      posY: posY,
     );
   }
 
+  /// Un'espulsione e' o di un nostro convocato ([atletaId]) o di un
+  /// giocatore avversario identificato solo dal numero di calottina
+  /// ([numeroCalottinaAvversario]): mai entrambi, mai nessuno dei due.
   Future<EventoPartita> registraEspulsione({
     required String partitaId,
-    required String atletaId,
+    String? atletaId,
+    int? numeroCalottinaAvversario,
     int? periodo,
+    bool espulsioneDaRigore = false,
   }) {
+    assert(
+      (atletaId == null) != (numeroCalottinaAvversario == null),
+      'Indica un atleta nostro oppure un numero di calottina avversario, '
+      'non entrambi ne nessuno dei due',
+    );
     return _creaEvento(
       partitaId: partitaId,
       tipo: 'espulsione',
+      squadra: atletaId != null ? 'nostra' : 'avversaria',
       atletaId: atletaId,
+      numeroCalottinaAvversario: numeroCalottinaAvversario,
       periodo: periodo,
+      espulsioneDaRigore: espulsioneDaRigore,
     );
   }
 

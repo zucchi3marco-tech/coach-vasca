@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -106,6 +106,35 @@ class AppDatabase extends _$AppDatabase {
       if (from < 10) {
         if (!await _hasColumn(m, 'atleti_table', 'visita_medica_scadenza')) {
           await m.addColumn(atletiTable, atletiTable.visitaMedicaScadenza);
+        }
+      }
+      // v10 -> v11: posizione del tiro ed espulsioni avversarie (Fase 9).
+      if (from < 11) {
+        if (!await _hasColumn(m, 'eventi_partita_table', 'pos_x')) {
+          await m.addColumn(eventiPartitaTable, eventiPartitaTable.posX);
+        }
+        if (!await _hasColumn(m, 'eventi_partita_table', 'pos_y')) {
+          await m.addColumn(eventiPartitaTable, eventiPartitaTable.posY);
+        }
+        if (!await _hasColumn(
+          m,
+          'eventi_partita_table',
+          'numero_calottina_avversario',
+        )) {
+          await m.addColumn(
+            eventiPartitaTable,
+            eventiPartitaTable.numeroCalottinaAvversario,
+          );
+        }
+        if (!await _hasColumn(
+          m,
+          'eventi_partita_table',
+          'espulsione_da_rigore',
+        )) {
+          await m.addColumn(
+            eventiPartitaTable,
+            eventiPartitaTable.espulsioneDaRigore,
+          );
         }
       }
     },

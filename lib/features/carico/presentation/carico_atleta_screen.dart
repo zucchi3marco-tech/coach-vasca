@@ -14,6 +14,8 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/presentation/campo_tiro.dart';
 import '../application/carico_providers.dart';
 import '../domain/banister.dart';
 
@@ -111,6 +113,10 @@ class CaricoAtletaScreen extends ConsumerWidget {
                     const _Legenda(),
                     const SizedBox(height: AppSpacing.s28),
                     _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
+                    if (atleta.sport == 'pallanuoto') ...[
+                      const SizedBox(height: AppSpacing.s28),
+                      _SezioneMappaTiri(atletaId: atleta.id),
+                    ],
                   ],
                 ),
               ),
@@ -310,6 +316,61 @@ class _SezioneVolumi extends ConsumerWidget {
             'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(error),
       ),
+    );
+  }
+}
+
+/// Mappa di calore dei tiri dell'atleta (pallanuoto), da sempre — stesso
+/// perimetro "senza filtro di stagione" del resto di questa pagina.
+class _SezioneMappaTiri extends ConsumerWidget {
+  const _SezioneMappaTiri({required this.atletaId});
+
+  final String atletaId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tiriAsync = ref.watch(tiriAtletaProvider(atletaId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader('Mappa di calore dei tiri'),
+        const SizedBox(height: AppSpacing.s16),
+        tiriAsync.when(
+          data: (tiri) {
+            final conPosizione = [
+              for (final e in tiri)
+                if (e.posX != null && e.posY != null) e,
+            ];
+            if (conPosizione.isEmpty) {
+              return Text(
+                'Nessun tiro con posizione registrato per questo atleta.',
+                style: AppTypography.piccolo,
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CampoTiro(
+                  punti: [
+                    for (final e in conPosizione)
+                      (x: e.posX!, y: e.posY!, esito: e.esito),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                const LegendaCampoTiro(),
+              ],
+            );
+          },
+          loading: () => const LoadingSkeleton(height: 240),
+          error: (error, _) => ErrorBanner(
+            messaggio: 'Non è stato possibile caricare i tiri.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
+        ),
+      ],
     );
   }
 }

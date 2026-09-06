@@ -8541,6 +8541,49 @@ class $EventiPartitaTableTable extends EventiPartitaTable
     requiredDuringInsert: false,
     defaultValue: const Constant('azione'),
   );
+  static const VerificationMeta _posXMeta = const VerificationMeta('posX');
+  @override
+  late final GeneratedColumn<double> posX = GeneratedColumn<double>(
+    'pos_x',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _posYMeta = const VerificationMeta('posY');
+  @override
+  late final GeneratedColumn<double> posY = GeneratedColumn<double>(
+    'pos_y',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _numeroCalottinaAvversarioMeta =
+      const VerificationMeta('numeroCalottinaAvversario');
+  @override
+  late final GeneratedColumn<int> numeroCalottinaAvversario =
+      GeneratedColumn<int>(
+        'numero_calottina_avversario',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _espulsioneDaRigoreMeta =
+      const VerificationMeta('espulsioneDaRigore');
+  @override
+  late final GeneratedColumn<bool> espulsioneDaRigore = GeneratedColumn<bool>(
+    'espulsione_da_rigore',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("espulsione_da_rigore" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _creatoIlMeta = const VerificationMeta(
     'creatoIl',
   );
@@ -8563,6 +8606,10 @@ class $EventiPartitaTableTable extends EventiPartitaTable
     periodo,
     esito,
     contestoTiro,
+    posX,
+    posY,
+    numeroCalottinaAvversario,
+    espulsioneDaRigore,
     creatoIl,
   ];
   @override
@@ -8639,6 +8686,36 @@ class $EventiPartitaTableTable extends EventiPartitaTable
         ),
       );
     }
+    if (data.containsKey('pos_x')) {
+      context.handle(
+        _posXMeta,
+        posX.isAcceptableOrUnknown(data['pos_x']!, _posXMeta),
+      );
+    }
+    if (data.containsKey('pos_y')) {
+      context.handle(
+        _posYMeta,
+        posY.isAcceptableOrUnknown(data['pos_y']!, _posYMeta),
+      );
+    }
+    if (data.containsKey('numero_calottina_avversario')) {
+      context.handle(
+        _numeroCalottinaAvversarioMeta,
+        numeroCalottinaAvversario.isAcceptableOrUnknown(
+          data['numero_calottina_avversario']!,
+          _numeroCalottinaAvversarioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('espulsione_da_rigore')) {
+      context.handle(
+        _espulsioneDaRigoreMeta,
+        espulsioneDaRigore.isAcceptableOrUnknown(
+          data['espulsione_da_rigore']!,
+          _espulsioneDaRigoreMeta,
+        ),
+      );
+    }
     if (data.containsKey('creato_il')) {
       context.handle(
         _creatoIlMeta,
@@ -8692,6 +8769,22 @@ class $EventiPartitaTableTable extends EventiPartitaTable
         DriftSqlType.string,
         data['${effectivePrefix}contesto_tiro'],
       )!,
+      posX: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pos_x'],
+      ),
+      posY: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pos_y'],
+      ),
+      numeroCalottinaAvversario: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}numero_calottina_avversario'],
+      ),
+      espulsioneDaRigore: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}espulsione_da_rigore'],
+      )!,
       creatoIl: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}creato_il'],
@@ -8716,6 +8809,10 @@ class EventiPartitaTableData extends DataClass
   final int? periodo;
   final String? esito;
   final String contestoTiro;
+  final double? posX;
+  final double? posY;
+  final int? numeroCalottinaAvversario;
+  final bool espulsioneDaRigore;
   final DateTime creatoIl;
   const EventiPartitaTableData({
     required this.id,
@@ -8727,6 +8824,10 @@ class EventiPartitaTableData extends DataClass
     this.periodo,
     this.esito,
     required this.contestoTiro,
+    this.posX,
+    this.posY,
+    this.numeroCalottinaAvversario,
+    required this.espulsioneDaRigore,
     required this.creatoIl,
   });
   @override
@@ -8747,6 +8848,18 @@ class EventiPartitaTableData extends DataClass
       map['esito'] = Variable<String>(esito);
     }
     map['contesto_tiro'] = Variable<String>(contestoTiro);
+    if (!nullToAbsent || posX != null) {
+      map['pos_x'] = Variable<double>(posX);
+    }
+    if (!nullToAbsent || posY != null) {
+      map['pos_y'] = Variable<double>(posY);
+    }
+    if (!nullToAbsent || numeroCalottinaAvversario != null) {
+      map['numero_calottina_avversario'] = Variable<int>(
+        numeroCalottinaAvversario,
+      );
+    }
+    map['espulsione_da_rigore'] = Variable<bool>(espulsioneDaRigore);
     map['creato_il'] = Variable<DateTime>(creatoIl);
     return map;
   }
@@ -8768,6 +8881,13 @@ class EventiPartitaTableData extends DataClass
           ? const Value.absent()
           : Value(esito),
       contestoTiro: Value(contestoTiro),
+      posX: posX == null && nullToAbsent ? const Value.absent() : Value(posX),
+      posY: posY == null && nullToAbsent ? const Value.absent() : Value(posY),
+      numeroCalottinaAvversario:
+          numeroCalottinaAvversario == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numeroCalottinaAvversario),
+      espulsioneDaRigore: Value(espulsioneDaRigore),
       creatoIl: Value(creatoIl),
     );
   }
@@ -8787,6 +8907,12 @@ class EventiPartitaTableData extends DataClass
       periodo: serializer.fromJson<int?>(json['periodo']),
       esito: serializer.fromJson<String?>(json['esito']),
       contestoTiro: serializer.fromJson<String>(json['contestoTiro']),
+      posX: serializer.fromJson<double?>(json['posX']),
+      posY: serializer.fromJson<double?>(json['posY']),
+      numeroCalottinaAvversario: serializer.fromJson<int?>(
+        json['numeroCalottinaAvversario'],
+      ),
+      espulsioneDaRigore: serializer.fromJson<bool>(json['espulsioneDaRigore']),
       creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
     );
   }
@@ -8803,6 +8929,12 @@ class EventiPartitaTableData extends DataClass
       'periodo': serializer.toJson<int?>(periodo),
       'esito': serializer.toJson<String?>(esito),
       'contestoTiro': serializer.toJson<String>(contestoTiro),
+      'posX': serializer.toJson<double?>(posX),
+      'posY': serializer.toJson<double?>(posY),
+      'numeroCalottinaAvversario': serializer.toJson<int?>(
+        numeroCalottinaAvversario,
+      ),
+      'espulsioneDaRigore': serializer.toJson<bool>(espulsioneDaRigore),
       'creatoIl': serializer.toJson<DateTime>(creatoIl),
     };
   }
@@ -8817,6 +8949,10 @@ class EventiPartitaTableData extends DataClass
     Value<int?> periodo = const Value.absent(),
     Value<String?> esito = const Value.absent(),
     String? contestoTiro,
+    Value<double?> posX = const Value.absent(),
+    Value<double?> posY = const Value.absent(),
+    Value<int?> numeroCalottinaAvversario = const Value.absent(),
+    bool? espulsioneDaRigore,
     DateTime? creatoIl,
   }) => EventiPartitaTableData(
     id: id ?? this.id,
@@ -8828,6 +8964,12 @@ class EventiPartitaTableData extends DataClass
     periodo: periodo.present ? periodo.value : this.periodo,
     esito: esito.present ? esito.value : this.esito,
     contestoTiro: contestoTiro ?? this.contestoTiro,
+    posX: posX.present ? posX.value : this.posX,
+    posY: posY.present ? posY.value : this.posY,
+    numeroCalottinaAvversario: numeroCalottinaAvversario.present
+        ? numeroCalottinaAvversario.value
+        : this.numeroCalottinaAvversario,
+    espulsioneDaRigore: espulsioneDaRigore ?? this.espulsioneDaRigore,
     creatoIl: creatoIl ?? this.creatoIl,
   );
   EventiPartitaTableData copyWithCompanion(EventiPartitaTableCompanion data) {
@@ -8843,6 +8985,14 @@ class EventiPartitaTableData extends DataClass
       contestoTiro: data.contestoTiro.present
           ? data.contestoTiro.value
           : this.contestoTiro,
+      posX: data.posX.present ? data.posX.value : this.posX,
+      posY: data.posY.present ? data.posY.value : this.posY,
+      numeroCalottinaAvversario: data.numeroCalottinaAvversario.present
+          ? data.numeroCalottinaAvversario.value
+          : this.numeroCalottinaAvversario,
+      espulsioneDaRigore: data.espulsioneDaRigore.present
+          ? data.espulsioneDaRigore.value
+          : this.espulsioneDaRigore,
       creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
     );
   }
@@ -8859,6 +9009,10 @@ class EventiPartitaTableData extends DataClass
           ..write('periodo: $periodo, ')
           ..write('esito: $esito, ')
           ..write('contestoTiro: $contestoTiro, ')
+          ..write('posX: $posX, ')
+          ..write('posY: $posY, ')
+          ..write('numeroCalottinaAvversario: $numeroCalottinaAvversario, ')
+          ..write('espulsioneDaRigore: $espulsioneDaRigore, ')
           ..write('creatoIl: $creatoIl')
           ..write(')'))
         .toString();
@@ -8875,6 +9029,10 @@ class EventiPartitaTableData extends DataClass
     periodo,
     esito,
     contestoTiro,
+    posX,
+    posY,
+    numeroCalottinaAvversario,
+    espulsioneDaRigore,
     creatoIl,
   );
   @override
@@ -8890,6 +9048,10 @@ class EventiPartitaTableData extends DataClass
           other.periodo == this.periodo &&
           other.esito == this.esito &&
           other.contestoTiro == this.contestoTiro &&
+          other.posX == this.posX &&
+          other.posY == this.posY &&
+          other.numeroCalottinaAvversario == this.numeroCalottinaAvversario &&
+          other.espulsioneDaRigore == this.espulsioneDaRigore &&
           other.creatoIl == this.creatoIl);
 }
 
@@ -8904,6 +9066,10 @@ class EventiPartitaTableCompanion
   final Value<int?> periodo;
   final Value<String?> esito;
   final Value<String> contestoTiro;
+  final Value<double?> posX;
+  final Value<double?> posY;
+  final Value<int?> numeroCalottinaAvversario;
+  final Value<bool> espulsioneDaRigore;
   final Value<DateTime> creatoIl;
   final Value<int> rowid;
   const EventiPartitaTableCompanion({
@@ -8916,6 +9082,10 @@ class EventiPartitaTableCompanion
     this.periodo = const Value.absent(),
     this.esito = const Value.absent(),
     this.contestoTiro = const Value.absent(),
+    this.posX = const Value.absent(),
+    this.posY = const Value.absent(),
+    this.numeroCalottinaAvversario = const Value.absent(),
+    this.espulsioneDaRigore = const Value.absent(),
     this.creatoIl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8929,6 +9099,10 @@ class EventiPartitaTableCompanion
     this.periodo = const Value.absent(),
     this.esito = const Value.absent(),
     this.contestoTiro = const Value.absent(),
+    this.posX = const Value.absent(),
+    this.posY = const Value.absent(),
+    this.numeroCalottinaAvversario = const Value.absent(),
+    this.espulsioneDaRigore = const Value.absent(),
     required DateTime creatoIl,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -8946,6 +9120,10 @@ class EventiPartitaTableCompanion
     Expression<int>? periodo,
     Expression<String>? esito,
     Expression<String>? contestoTiro,
+    Expression<double>? posX,
+    Expression<double>? posY,
+    Expression<int>? numeroCalottinaAvversario,
+    Expression<bool>? espulsioneDaRigore,
     Expression<DateTime>? creatoIl,
     Expression<int>? rowid,
   }) {
@@ -8959,6 +9137,12 @@ class EventiPartitaTableCompanion
       if (periodo != null) 'periodo': periodo,
       if (esito != null) 'esito': esito,
       if (contestoTiro != null) 'contesto_tiro': contestoTiro,
+      if (posX != null) 'pos_x': posX,
+      if (posY != null) 'pos_y': posY,
+      if (numeroCalottinaAvversario != null)
+        'numero_calottina_avversario': numeroCalottinaAvversario,
+      if (espulsioneDaRigore != null)
+        'espulsione_da_rigore': espulsioneDaRigore,
       if (creatoIl != null) 'creato_il': creatoIl,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8974,6 +9158,10 @@ class EventiPartitaTableCompanion
     Value<int?>? periodo,
     Value<String?>? esito,
     Value<String>? contestoTiro,
+    Value<double?>? posX,
+    Value<double?>? posY,
+    Value<int?>? numeroCalottinaAvversario,
+    Value<bool>? espulsioneDaRigore,
     Value<DateTime>? creatoIl,
     Value<int>? rowid,
   }) {
@@ -8987,6 +9175,11 @@ class EventiPartitaTableCompanion
       periodo: periodo ?? this.periodo,
       esito: esito ?? this.esito,
       contestoTiro: contestoTiro ?? this.contestoTiro,
+      posX: posX ?? this.posX,
+      posY: posY ?? this.posY,
+      numeroCalottinaAvversario:
+          numeroCalottinaAvversario ?? this.numeroCalottinaAvversario,
+      espulsioneDaRigore: espulsioneDaRigore ?? this.espulsioneDaRigore,
       creatoIl: creatoIl ?? this.creatoIl,
       rowid: rowid ?? this.rowid,
     );
@@ -9022,6 +9215,20 @@ class EventiPartitaTableCompanion
     if (contestoTiro.present) {
       map['contesto_tiro'] = Variable<String>(contestoTiro.value);
     }
+    if (posX.present) {
+      map['pos_x'] = Variable<double>(posX.value);
+    }
+    if (posY.present) {
+      map['pos_y'] = Variable<double>(posY.value);
+    }
+    if (numeroCalottinaAvversario.present) {
+      map['numero_calottina_avversario'] = Variable<int>(
+        numeroCalottinaAvversario.value,
+      );
+    }
+    if (espulsioneDaRigore.present) {
+      map['espulsione_da_rigore'] = Variable<bool>(espulsioneDaRigore.value);
+    }
     if (creatoIl.present) {
       map['creato_il'] = Variable<DateTime>(creatoIl.value);
     }
@@ -9043,6 +9250,10 @@ class EventiPartitaTableCompanion
           ..write('periodo: $periodo, ')
           ..write('esito: $esito, ')
           ..write('contestoTiro: $contestoTiro, ')
+          ..write('posX: $posX, ')
+          ..write('posY: $posY, ')
+          ..write('numeroCalottinaAvversario: $numeroCalottinaAvversario, ')
+          ..write('espulsioneDaRigore: $espulsioneDaRigore, ')
           ..write('creatoIl: $creatoIl, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -14080,6 +14291,10 @@ typedef $$EventiPartitaTableTableCreateCompanionBuilder =
       Value<int?> periodo,
       Value<String?> esito,
       Value<String> contestoTiro,
+      Value<double?> posX,
+      Value<double?> posY,
+      Value<int?> numeroCalottinaAvversario,
+      Value<bool> espulsioneDaRigore,
       required DateTime creatoIl,
       Value<int> rowid,
     });
@@ -14094,6 +14309,10 @@ typedef $$EventiPartitaTableTableUpdateCompanionBuilder =
       Value<int?> periodo,
       Value<String?> esito,
       Value<String> contestoTiro,
+      Value<double?> posX,
+      Value<double?> posY,
+      Value<int?> numeroCalottinaAvversario,
+      Value<bool> espulsioneDaRigore,
       Value<DateTime> creatoIl,
       Value<int> rowid,
     });
@@ -14149,6 +14368,26 @@ class $$EventiPartitaTableTableFilterComposer
 
   ColumnFilters<String> get contestoTiro => $composableBuilder(
     column: $table.contestoTiro,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get posX => $composableBuilder(
+    column: $table.posX,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get posY => $composableBuilder(
+    column: $table.posY,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get numeroCalottinaAvversario => $composableBuilder(
+    column: $table.numeroCalottinaAvversario,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get espulsioneDaRigore => $composableBuilder(
+    column: $table.espulsioneDaRigore,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14212,6 +14451,26 @@ class $$EventiPartitaTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get posX => $composableBuilder(
+    column: $table.posX,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get posY => $composableBuilder(
+    column: $table.posY,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get numeroCalottinaAvversario => $composableBuilder(
+    column: $table.numeroCalottinaAvversario,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get espulsioneDaRigore => $composableBuilder(
+    column: $table.espulsioneDaRigore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get creatoIl => $composableBuilder(
     column: $table.creatoIl,
     builder: (column) => ColumnOrderings(column),
@@ -14253,6 +14512,22 @@ class $$EventiPartitaTableTableAnnotationComposer
 
   GeneratedColumn<String> get contestoTiro => $composableBuilder(
     column: $table.contestoTiro,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get posX =>
+      $composableBuilder(column: $table.posX, builder: (column) => column);
+
+  GeneratedColumn<double> get posY =>
+      $composableBuilder(column: $table.posY, builder: (column) => column);
+
+  GeneratedColumn<int> get numeroCalottinaAvversario => $composableBuilder(
+    column: $table.numeroCalottinaAvversario,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get espulsioneDaRigore => $composableBuilder(
+    column: $table.espulsioneDaRigore,
     builder: (column) => column,
   );
 
@@ -14309,6 +14584,10 @@ class $$EventiPartitaTableTableTableManager
                 Value<int?> periodo = const Value.absent(),
                 Value<String?> esito = const Value.absent(),
                 Value<String> contestoTiro = const Value.absent(),
+                Value<double?> posX = const Value.absent(),
+                Value<double?> posY = const Value.absent(),
+                Value<int?> numeroCalottinaAvversario = const Value.absent(),
+                Value<bool> espulsioneDaRigore = const Value.absent(),
                 Value<DateTime> creatoIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EventiPartitaTableCompanion(
@@ -14321,6 +14600,10 @@ class $$EventiPartitaTableTableTableManager
                 periodo: periodo,
                 esito: esito,
                 contestoTiro: contestoTiro,
+                posX: posX,
+                posY: posY,
+                numeroCalottinaAvversario: numeroCalottinaAvversario,
+                espulsioneDaRigore: espulsioneDaRigore,
                 creatoIl: creatoIl,
                 rowid: rowid,
               ),
@@ -14335,6 +14618,10 @@ class $$EventiPartitaTableTableTableManager
                 Value<int?> periodo = const Value.absent(),
                 Value<String?> esito = const Value.absent(),
                 Value<String> contestoTiro = const Value.absent(),
+                Value<double?> posX = const Value.absent(),
+                Value<double?> posY = const Value.absent(),
+                Value<int?> numeroCalottinaAvversario = const Value.absent(),
+                Value<bool> espulsioneDaRigore = const Value.absent(),
                 required DateTime creatoIl,
                 Value<int> rowid = const Value.absent(),
               }) => EventiPartitaTableCompanion.insert(
@@ -14347,6 +14634,10 @@ class $$EventiPartitaTableTableTableManager
                 periodo: periodo,
                 esito: esito,
                 contestoTiro: contestoTiro,
+                posX: posX,
+                posY: posY,
+                numeroCalottinaAvversario: numeroCalottinaAvversario,
+                espulsioneDaRigore: espulsioneDaRigore,
                 creatoIl: creatoIl,
                 rowid: rowid,
               ),

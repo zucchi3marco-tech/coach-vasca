@@ -36,3 +36,12 @@ final eventiPartitaListProvider =
         watch: () => repository.watchPerPartita(partitaId),
       );
     });
+
+/// Tutti i tiri di un atleta, per la mappa di calore personale nella
+/// pagina Carico.
+final tiriAtletaProvider = FutureProvider.family<List<EventoPartita>, String>((
+  ref,
+  atletaId,
+) {
+  return ref.watch(eventiPartitaRepositoryProvider).perAtleta(atletaId);
+});

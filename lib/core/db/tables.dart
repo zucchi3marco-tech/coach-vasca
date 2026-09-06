@@ -246,6 +246,11 @@ class EventiPartitaTable extends Table {
       text().nullable()(); // gol | non_gol | parato | palo_fuori
   TextColumn get contestoTiro =>
       text().withDefault(const Constant('azione'))(); // azione | superiorita | rigore
+  RealColumn get posX => real().nullable()();
+  RealColumn get posY => real().nullable()();
+  IntColumn get numeroCalottinaAvversario => integer().nullable()();
+  BoolColumn get espulsioneDaRigore =>
+      boolean().withDefault(const Constant(false))();
   DateTimeColumn get creatoIl => dateTime()();
 
   @override

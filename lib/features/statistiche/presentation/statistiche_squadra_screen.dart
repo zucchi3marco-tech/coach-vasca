@@ -12,6 +12,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../pallanuoto/presentation/campo_tiro.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/statistiche_providers.dart';
 import '../domain/statistiche_stagionali.dart';
@@ -204,6 +205,7 @@ class _SezioneEventi extends ConsumerWidget {
       dataFine: stagione.dataFine,
     );
     final riepilogoAsync = ref.watch(riepilogoEventiProvider(chiave));
+    final tiriMappaAsync = ref.watch(tiriStagionePerMappaProvider(chiave));
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: clubId, includeInactive: true)),
     );
@@ -281,6 +283,35 @@ class _SezioneEventi extends ConsumerWidget {
                       ),
                   ],
                 ),
+              const SizedBox(height: AppSpacing.s24),
+              SectionHeader('Mappa di calore dei tiri'),
+              const SizedBox(height: AppSpacing.s16),
+              tiriMappaAsync.when(
+                data: (tiri) => tiri.isEmpty
+                    ? Text(
+                        'Nessun tiro con posizione registrata in questa '
+                        'stagione.',
+                        style: AppTypography.corpo,
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CampoTiro(
+                            punti: [
+                              for (final e in tiri)
+                                (x: e.posX!, y: e.posY!, esito: e.esito),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.s12),
+                          const LegendaCampoTiro(),
+                        ],
+                      ),
+                loading: () => const LoadingSkeleton(height: 240),
+                error: (err, _) => ErrorBanner(
+                  messaggio: 'Non è stato possibile caricare la mappa.',
+                  dettaglioTecnico: messaggioErrore(err),
+                ),
+              ),
             ],
           );
         },

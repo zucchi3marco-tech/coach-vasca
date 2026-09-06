@@ -10,6 +10,7 @@ import '../../../widgets/cap_badge.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -17,6 +18,7 @@ import '../application/pallanuoto_providers.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
+import 'campo_tiro.dart';
 
 typedef _StatisticaGiocatore = ({
   DistintaGiocatore giocatore,
@@ -131,6 +133,25 @@ class StatistichePartitaScreen extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  if (eventi.any(
+                    (e) =>
+                        e.tipo == 'tiro' && e.posX != null && e.posY != null,
+                  )) ...[
+                    const SizedBox(height: AppSpacing.s24),
+                    SectionHeader('Mappa di calore dei tiri'),
+                    const SizedBox(height: AppSpacing.s16),
+                    CampoTiro(
+                      punti: [
+                        for (final e in eventi)
+                          if (e.tipo == 'tiro' &&
+                              e.posX != null &&
+                              e.posY != null)
+                            (x: e.posX!, y: e.posY!, esito: e.esito),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                    const LegendaCampoTiro(),
+                  ],
                 ],
               );
             },

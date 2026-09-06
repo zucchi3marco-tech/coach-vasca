@@ -19,56 +19,16 @@ import '../application/pallanuoto_providers.dart';
 import '../data/eventi_partita_repository.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
-
-const _esitiTiroSemplice = [('gol', 'Gol'), ('non_gol', 'Non gol')];
-const _esitiTiroDettagliato = [
-  ('gol', 'Gol'),
-  ('parato', 'Parato'),
-  ('palo_fuori', 'Palo/fuori'),
-];
-const _esitiSuperiorita = [('gol', 'Gol'), ('non_gol', 'Non gol')];
-const _contestiTiro = [
-  ('azione', 'Azione'),
-  ('superiorita', 'Superiorità'),
-  ('rigore', 'Rigore'),
-];
-
-String _etichettaContesto(String contesto) {
-  switch (contesto) {
-    case 'superiorita':
-      return 'superiorità';
-    case 'rigore':
-      return 'rigore';
-    default:
-      return '';
-  }
-}
-
-String _etichettaEsito(String? esito) {
-  switch (esito) {
-    case 'gol':
-      return 'Gol';
-    case 'non_gol':
-      return 'Non gol';
-    case 'parato':
-      return 'Parato';
-    case 'palo_fuori':
-      return 'Palo/fuori';
-    default:
-      return 'In corso';
-  }
-}
+import 'eventi_labels.dart';
+import 'registra_espulsione_screen.dart';
+import 'registra_tiro_screen.dart';
+import 'selettore_giocatore_partita.dart';
 
 /// Schermata da bordo vasca (DESIGN.md sezione 9): usata durante la
 /// partita per registrare tiri, espulsioni e superiorità in tempo reale.
-///
-/// Nota di design non risolta: i dialog sotto (registra tiro/espulsione)
-/// scelgono l'atleta da un menu a tendina, che è un "form" — vietato a
-/// bordo vasca dalla sezione 9. La regola alternativa (bottom sheet con
-/// al massimo tre scelte) non copre una scelta fra tutta la rosa (spesso
-/// 13+ convocati). Serve un pattern nuovo (es. una griglia di bersagli
-/// grandi con numero calottina) da definire in DESIGN.md prima di poter
-/// sistemare anche questa parte: per ora i dialog restano com'erano.
+/// "Tiro" ed "Espulsione" aprono schermate a tutto schermo con bersagli
+/// grandi (`RegistraTiroScreen`/`RegistraEspulsioneScreen`), non più un
+/// dialog con menu a tendina.
 class EventiPartitaScreen extends ConsumerWidget {
   const EventiPartitaScreen({required this.partita, super.key});
 
@@ -79,15 +39,18 @@ class EventiPartitaScreen extends ConsumerWidget {
     switch (e.tipo) {
       case 'tiro':
         final nome = atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso';
-        final contesto = _etichettaContesto(e.contestoTiro);
+        final contesto = etichettaContesto(e.contestoTiro);
         final suffisso = contesto.isEmpty ? '' : ' ($contesto)';
-        return 'Tiro — $nome — ${_etichettaEsito(e.esito)}$suffisso$tempo';
+        return 'Tiro — $nome — ${etichettaEsito(e.esito)}$suffisso$tempo';
       case 'espulsione':
-        final nome = atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso';
-        return 'Espulsione — $nome$tempo';
+        final nome = e.atletaId != null
+            ? (atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso')
+            : 'Avversario n. ${e.numeroCalottinaAvversario}';
+        final rigore = e.espulsioneDaRigore ? ' (fallo da rigore)' : '';
+        return 'Espulsione — $nome$rigore$tempo';
       case 'superiorita':
         final squadra = e.squadra == 'nostra' ? 'nostra' : 'avversaria';
-        return 'Superiorità $squadra — ${_etichettaEsito(e.esito)}$tempo';
+        return 'Superiorità $squadra — ${etichettaEsito(e.esito)}$tempo';
       default:
         return e.tipo;
     }
@@ -162,18 +125,32 @@ class EventiPartitaScreen extends ConsumerWidget {
     final atletiPerId = {
       for (final a in atletiAsync.value ?? const <Atleta>[]) a.id: a,
     };
-    final convocatiAtleti =
-        (convocatiAsync.value ?? [])
-            .map((g) => atletiPerId[g.atletaId])
-            .whereType<Atleta>()
-            .toList()
-          ..sort((a, b) => a.cognome.compareTo(b.cognome));
+    final convocatiConAtleta = <ConvocatoConAtleta>[
+      for (final g in convocatiAsync.value ?? const [])
+        if (atletiPerId[g.atletaId] != null)
+          (giocatore: g, atleta: atletiPerId[g.atletaId]!),
+    ]..sort(
+      (a, b) => a.atleta.cognome.compareTo(b.atleta.cognome),
+    );
+    final eventi = eventiAsync.value ?? const <EventoPartita>[];
 
-    void apriDialogoTiro() => showDialog<void>(
-      context: context,
-      builder: (_) => _DialogRegistraTiro(
-        partita: partita,
-        convocati: convocatiAtleti,
+    void apriRegistraTiro() => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => RegistraTiroScreen(
+          partita: partita,
+          convocati: convocatiConAtleta,
+          eventi: eventi,
+        ),
+      ),
+    );
+
+    void apriRegistraEspulsione() => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => RegistraEspulsioneScreen(
+          partita: partita,
+          convocati: convocatiConAtleta,
+          eventi: eventi,
+        ),
       ),
     );
 
@@ -195,9 +172,9 @@ class EventiPartitaScreen extends ConsumerWidget {
                           'Usa i pulsanti qui sotto per registrare tiri, '
                           'espulsioni e superiorità numeriche.',
                       azionePrincipale: 'Registra un tiro',
-                      onAzionePrincipale: convocatiAtleti.isEmpty
+                      onAzionePrincipale: convocatiConAtleta.isEmpty
                           ? null
-                          : apriDialogoTiro,
+                          : apriRegistraTiro,
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(AppSpacing.s16),
@@ -282,9 +259,9 @@ class EventiPartitaScreen extends ConsumerWidget {
                       label: 'Tiro',
                       icon: Icons.sports_handball_outlined,
                       expanded: false,
-                      onPressed: convocatiAtleti.isEmpty
+                      onPressed: convocatiConAtleta.isEmpty
                           ? null
-                          : apriDialogoTiro,
+                          : apriRegistraTiro,
                     ),
                   ),
                   SizedBox(
@@ -293,15 +270,7 @@ class EventiPartitaScreen extends ConsumerWidget {
                       label: 'Espulsione',
                       icon: Icons.warning_amber_outlined,
                       expanded: false,
-                      onPressed: convocatiAtleti.isEmpty
-                          ? null
-                          : () => showDialog<void>(
-                              context: context,
-                              builder: (_) => _DialogRegistraEspulsione(
-                                partita: partita,
-                                convocati: convocatiAtleti,
-                              ),
-                            ),
+                      onPressed: apriRegistraEspulsione,
                     ),
                   ),
                   SizedBox(
@@ -361,227 +330,6 @@ class _SelettorePeriodo extends StatelessWidget {
           DropdownMenuItem(value: t, child: Text('Tempo $t')),
       ],
       onChanged: onChanged,
-    );
-  }
-}
-
-class _DialogRegistraTiro extends ConsumerStatefulWidget {
-  const _DialogRegistraTiro({required this.partita, required this.convocati});
-
-  final Partita partita;
-  final List<Atleta> convocati;
-
-  @override
-  ConsumerState<_DialogRegistraTiro> createState() =>
-      _DialogRegistraTiroState();
-}
-
-class _DialogRegistraTiroState extends ConsumerState<_DialogRegistraTiro> {
-  String? _atletaId;
-  String? _esito;
-  String _contesto = 'azione';
-  int? _periodo;
-  bool _isSubmitting = false;
-  String? _errore;
-
-  List<(String, String)> get _opzioniEsito =>
-      widget.partita.dettaglioTiro == 'dettagliato'
-      ? _esitiTiroDettagliato
-      : _esitiTiroSemplice;
-
-  Future<void> _salva() async {
-    if (_atletaId == null || _esito == null) {
-      setState(() => _errore = 'Seleziona atleta ed esito');
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _errore = null;
-    });
-    try {
-      await ref
-          .read(eventiPartitaRepositoryProvider)
-          .registraTiro(
-            partitaId: widget.partita.id,
-            atletaId: _atletaId!,
-            esito: _esito!,
-            periodo: _periodo,
-            contestoTiro: _contesto,
-          );
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted) setState(() => _errore = messaggioErrore(e));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Registra tiro'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: _atletaId,
-              decoration: const InputDecoration(labelText: 'Atleta'),
-              items: [
-                for (final a in widget.convocati)
-                  DropdownMenuItem(value: a.id, child: Text(a.nomeCompleto)),
-              ],
-              onChanged: (v) => setState(() => _atletaId = v),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final (valore, etichetta) in _opzioniEsito)
-                  ChoiceChip(
-                    label: Text(etichetta),
-                    selected: _esito == valore,
-                    onSelected: (_) => setState(() => _esito = valore),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text('Contesto', style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final (valore, etichetta) in _contestiTiro)
-                  ChoiceChip(
-                    label: Text(etichetta),
-                    selected: _contesto == valore,
-                    onSelected: (_) => setState(() => _contesto = valore),
-                  ),
-              ],
-            ),
-            if (widget.partita.tracciaTempo) ...[
-              const SizedBox(height: 12),
-              _SelettorePeriodo(
-                value: _periodo,
-                onChanged: (v) => setState(() => _periodo = v),
-              ),
-            ],
-            if (_errore != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _errore!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _salva,
-          child: const Text('Salva'),
-        ),
-      ],
-    );
-  }
-}
-
-class _DialogRegistraEspulsione extends ConsumerStatefulWidget {
-  const _DialogRegistraEspulsione({
-    required this.partita,
-    required this.convocati,
-  });
-
-  final Partita partita;
-  final List<Atleta> convocati;
-
-  @override
-  ConsumerState<_DialogRegistraEspulsione> createState() =>
-      _DialogRegistraEspulsioneState();
-}
-
-class _DialogRegistraEspulsioneState
-    extends ConsumerState<_DialogRegistraEspulsione> {
-  String? _atletaId;
-  int? _periodo;
-  bool _isSubmitting = false;
-  String? _errore;
-
-  Future<void> _salva() async {
-    if (_atletaId == null) {
-      setState(() => _errore = 'Seleziona un atleta');
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _errore = null;
-    });
-    try {
-      await ref
-          .read(eventiPartitaRepositoryProvider)
-          .registraEspulsione(
-            partitaId: widget.partita.id,
-            atletaId: _atletaId!,
-            periodo: _periodo,
-          );
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted) setState(() => _errore = messaggioErrore(e));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Registra espulsione'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: _atletaId,
-              decoration: const InputDecoration(labelText: 'Atleta'),
-              items: [
-                for (final a in widget.convocati)
-                  DropdownMenuItem(value: a.id, child: Text(a.nomeCompleto)),
-              ],
-              onChanged: (v) => setState(() => _atletaId = v),
-            ),
-            if (widget.partita.tracciaTempo) ...[
-              const SizedBox(height: 12),
-              _SelettorePeriodo(
-                value: _periodo,
-                onChanged: (v) => setState(() => _periodo = v),
-              ),
-            ],
-            if (_errore != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _errore!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _salva,
-          child: const Text('Salva'),
-        ),
-      ],
     );
   }
 }
@@ -651,7 +399,7 @@ class _DialogRegistraSuperioritaState
               Wrap(
                 spacing: 8,
                 children: [
-                  for (final (valore, etichetta) in _esitiSuperiorita)
+                  for (final (valore, etichetta) in esitiSuperiorita)
                     ChoiceChip(
                       label: Text(etichetta),
                       selected: _esito == valore,
@@ -742,7 +490,7 @@ class _DialogConcludiSuperioritaState
           Wrap(
             spacing: 8,
             children: [
-              for (final (valore, etichetta) in _esitiSuperiorita)
+              for (final (valore, etichetta) in esitiSuperiorita)
                 ChoiceChip(
                   label: Text(etichetta),
                   selected: _esito == valore,
