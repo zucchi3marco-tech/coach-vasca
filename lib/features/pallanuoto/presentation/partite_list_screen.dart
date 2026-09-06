@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../referti/presentation/leggi_referto_screen.dart';
 import '../../statistiche/presentation/statistiche_squadra_screen.dart';
 import '../application/pallanuoto_providers.dart';
@@ -23,54 +30,76 @@ class PartiteListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final partiteAsync = ref.watch(partiteListProvider(clubId));
 
-    return Scaffold(
+    return AppScaffold(
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(partiteRepositoryProvider).refreshFromRemote(clubId),
         child: partiteAsync.when(
           data: (partite) => partite.isEmpty
               ? ListView(
-                  children: const [
-                    Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(
-                        child: Text(
-                          'Nessuna partita. Tocca "+" per crearne una.',
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    EmptyState(
+                      icona: Icons.sports_handball_outlined,
+                      titolo: 'Nessuna partita',
+                      descrizione:
+                          'Crea la prima partita per gestire distinta, '
+                          'eventi e referto.',
+                      azionePrincipale: 'Nuova partita',
+                      onAzionePrincipale: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PartitaFormScreen(clubId: clubId),
                         ),
                       ),
                     ),
                   ],
                 )
-              : ListView.separated(
-                  itemCount: partite.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final p = partite[index];
-                    return ListTile(
-                      title: Text('${p.squadraCasa} - ${p.squadraTrasferta}'),
-                      subtitle: Text(
-                        '${_formattaData(p.data)}'
-                        '${p.ora != null && p.ora!.isNotEmpty ? ' · ${p.ora}' : ''}'
-                        '${p.campionato != null && p.campionato!.isNotEmpty ? ' · ${p.campionato}' : ''}',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => DistintaScreen(partita: p),
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(AppSpacing.s16),
+                  child: AppListPanel(
+                    righe: [
+                      for (final p in partite)
+                        AppListRow(
+                          titolo: '${p.squadraCasa} - ${p.squadraTrasferta}',
+                          sottotitolo:
+                              '${_formattaData(p.data)}'
+                              '${p.ora != null && p.ora!.isNotEmpty ? ' · ${p.ora}' : ''}'
+                              '${p.campionato != null && p.campionato!.isNotEmpty ? ' · ${p.campionato}' : ''}',
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => DistintaScreen(partita: p),
+                            ),
+                          ),
+                          onLongPress: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PartitaFormScreen(
+                                clubId: clubId,
+                                partita: p,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      onLongPress: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              PartitaFormScreen(clubId: clubId, partita: p),
-                        ),
-                      ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Text('Errore nel caricamento partite: ${messaggioErrore(error)}'),
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            children: const [LoadingSkeletonList(righe: 6)],
+          ),
+          error: (error, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            children: [
+              ErrorBanner(
+                messaggio: 'Non è stato possibile caricare le partite.',
+                suggerimento:
+                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+                dettaglioTecnico: messaggioErrore(error),
+              ),
+            ],
           ),
         ),
       ),
@@ -88,7 +117,7 @@ class PartiteListScreen extends ConsumerWidget {
             ),
             child: const Icon(Icons.bar_chart),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s12),
           FloatingActionButton(
             heroTag: 'fab-leggi-referto',
             mini: true,
@@ -100,7 +129,7 @@ class PartiteListScreen extends ConsumerWidget {
             ),
             child: const Icon(Icons.document_scanner_outlined),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s12),
           FloatingActionButton(
             heroTag: 'fab-partite',
             onPressed: () => Navigator.of(context).push(
