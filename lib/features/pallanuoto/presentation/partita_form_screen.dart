@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../../club/application/current_club_provider.dart';
 import '../data/partite_repository.dart';
 import '../domain/partita.dart';
@@ -18,6 +27,7 @@ class PartitaFormScreen extends ConsumerStatefulWidget {
 
 class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _dataController;
   late final TextEditingController _oraController;
   late final TextEditingController _luogoController;
   late final TextEditingController _campionatoController;
@@ -54,6 +64,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     );
     _noteController = TextEditingController(text: p?.note ?? '');
     _data = p?.data ?? DateTime.now();
+    _dataController = TextEditingController(text: _formattaData(_data));
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
     _tracciaTempo = p?.tracciaTempo ?? true;
@@ -82,6 +93,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
 
   @override
   void dispose() {
+    _dataController.dispose();
     _oraController.dispose();
     _luogoController.dispose();
     _campionatoController.dispose();
@@ -100,6 +112,11 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _clubPrefillFatto = true;
   }
 
+  String _formattaData(DateTime data) =>
+      '${data.day.toString().padLeft(2, '0')}/'
+      '${data.month.toString().padLeft(2, '0')}/'
+      '${data.year}';
+
   Future<void> _pickData() async {
     final selected = await showDatePicker(
       context: context,
@@ -107,7 +124,12 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
       firstDate: DateTime(DateTime.now().year - 2),
       lastDate: DateTime(DateTime.now().year + 2),
     );
-    if (selected != null) setState(() => _data = selected);
+    if (selected != null) {
+      setState(() {
+        _data = selected;
+        _dataController.text = _formattaData(selected);
+      });
+    }
   }
 
   Future<void> _pickOra() async {
@@ -190,9 +212,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -207,142 +230,139 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica partita' : 'Nuova partita'),
         actions: [
           if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Elimina',
+            TextButton.icon(
               onPressed: _elimina,
+              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
+              label: const Text(
+                'Elimina',
+                style: TextStyle(color: AppColors.rosso),
+              ),
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data'),
-                  subtitle: Text(
-                    '${_data.day.toString().padLeft(2, '0')}/'
-                    '${_data.month.toString().padLeft(2, '0')}/'
-                    '${_data.year}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormGroup(
+              titolo: 'Partita',
+              campi: [
+                AppTextField(
+                  etichetta: 'Data',
+                  controller: _dataController,
+                  readOnly: true,
                   onTap: _pickData,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Ora (opzionale)'),
-                  subtitle: Text(
-                    _oraController.text.isEmpty
-                        ? 'Nessuna'
-                        : _oraController.text,
-                  ),
-                  trailing: const Icon(Icons.access_time),
+                AppTextField(
+                  etichetta: 'Ora (facoltativo)',
+                  controller: _oraController,
+                  readOnly: true,
                   onTap: _pickOra,
+                  suffixIcon: const Icon(Icons.access_time),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Squadra casa',
                   controller: _squadraCasaController,
-                  decoration: const InputDecoration(labelText: 'Squadra casa'),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Squadra trasferta',
                   controller: _squadraTrasfertaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Squadra trasferta',
-                  ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'La mia squadra',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'casa', label: Text('Casa')),
-                    ButtonSegment(
-                      value: 'trasferta',
-                      label: Text('Trasferta'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('La mia squadra', style: AppTypography.etichetta),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'casa', label: Text('Casa')),
+                        ButtonSegment(
+                          value: 'trasferta',
+                          label: Text('Trasferta'),
+                        ),
+                      ],
+                      selected: {_nostraSquadra},
+                      onSelectionChanged: (s) =>
+                          setState(() => _nostraSquadra = s.first),
                     ),
                   ],
-                  selected: {_nostraSquadra},
-                  onSelectionChanged: (s) =>
-                      setState(() => _nostraSquadra = s.first),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+              ],
+            ),
+            FormGroup(
+              titolo: 'Dettagli',
+              campi: [
+                AppTextField(
+                  etichetta: 'Luogo (facoltativo)',
                   controller: _luogoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Luogo (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Campionato (facoltativo)',
                   controller: _campionatoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Campionato (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Colore calottina (facoltativo)',
                   controller: _coloreCalottinaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Colore calottina (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Numero massimo convocati',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 13, label: Text('13')),
-                    ButtonSegment(value: 15, label: Text('15')),
-                  ],
-                  selected: {_numeroMaxConvocati},
-                  onSelectionChanged: (selezione) =>
-                      setState(() => _numeroMaxConvocati = selezione.first),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Impostazioni eventi (per questa partita)',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Dettaglio tiro',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'semplice', label: Text('Semplice')),
-                    ButtonSegment(
-                      value: 'dettagliato',
-                      label: Text('Dettagliato'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Numero massimo convocati',
+                      style: AppTypography.etichetta,
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 13, label: Text('13')),
+                        ButtonSegment(value: 15, label: Text('15')),
+                      ],
+                      selected: {_numeroMaxConvocati},
+                      onSelectionChanged: (selezione) => setState(
+                        () => _numeroMaxConvocati = selezione.first,
+                      ),
                     ),
                   ],
-                  selected: {_dettaglioTiro},
-                  onSelectionChanged: (s) =>
-                      setState(() => _dettaglioTiro = s.first),
                 ),
-                const SizedBox(height: 16),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Impostazioni eventi (per questa partita)',
+              campi: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Dettaglio tiro', style: AppTypography.etichetta),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'semplice',
+                          label: Text('Semplice'),
+                        ),
+                        ButtonSegment(
+                          value: 'dettagliato',
+                          label: Text('Dettagliato'),
+                        ),
+                      ],
+                      selected: {_dettaglioTiro},
+                      onSelectionChanged: (s) =>
+                          setState(() => _dettaglioTiro = s.first),
+                    ),
+                  ],
+                ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Traccia il tempo di gioco'),
@@ -352,58 +372,54 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   value: _tracciaTempo,
                   onChanged: (v) => setState(() => _tracciaTempo = v),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Superiorità numerica',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 'singolo',
-                      label: Text('Esito subito'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Superiorità numerica',
+                      style: AppTypography.etichetta,
                     ),
-                    ButtonSegment(
-                      value: 'inizio_fine',
-                      label: Text('Inizio/fine'),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'singolo',
+                          label: Text('Esito subito'),
+                        ),
+                        ButtonSegment(
+                          value: 'inizio_fine',
+                          label: Text('Inizio/fine'),
+                        ),
+                      ],
+                      selected: {_modalitaSuperiorita},
+                      onSelectionChanged: (s) =>
+                          setState(() => _modalitaSuperiorita = s.first),
                     ),
                   ],
-                  selected: {_modalitaSuperiorita},
-                  onSelectionChanged: (s) =>
-                      setState(() => _modalitaSuperiorita = s.first),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Note (opzionale)',
-                  ),
-                  maxLines: 3,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva'),
                 ),
               ],
             ),
-          ),
+            FormGroup(
+              titolo: 'Note',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
+                  controller: _noteController,
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            if (_errorMessage != null) ...[
+              ErrorBanner(messaggio: _errorMessage!),
+              const SizedBox(height: AppSpacing.s16),
+            ],
+            PrimaryButton(
+              label: 'Salva partita',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+          ],
         ),
       ),
     );
