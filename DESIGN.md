@@ -391,7 +391,7 @@ I token di dominio (zone, calottine, "in corso") non stanno in `ColorScheme`: va
 
 Vivono in `lib/widgets/`. Una schermata nuova si compone con questi, non ricostruisce nulla da zero:
 
-`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`.
+`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`.
 
 Se serve un componente nuovo, si aggiunge qui e si documenta in questo file. Non si scrive un widget su misura dentro una singola schermata.
 

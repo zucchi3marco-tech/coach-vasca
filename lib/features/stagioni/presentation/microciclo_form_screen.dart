@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../data/microcicli_repository.dart';
 import '../domain/microciclo.dart';
 
@@ -28,6 +36,8 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
   late final TextEditingController _numeroSettimanaController;
   late final TextEditingController _ordineController;
   late final TextEditingController _tipoController;
+  late final TextEditingController _dataInizioController;
+  late final TextEditingController _dataFineController;
   late DateTime _dataInizio;
   late DateTime _dataFine;
 
@@ -51,6 +61,12 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     final oggi = DateTime.now();
     _dataInizio = m?.dataInizio ?? oggi;
     _dataFine = m?.dataFine ?? oggi.add(const Duration(days: 6));
+    _dataInizioController = TextEditingController(
+      text: _formattaData(_dataInizio),
+    );
+    _dataFineController = TextEditingController(
+      text: _formattaData(_dataFine),
+    );
   }
 
   @override
@@ -59,6 +75,8 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     _numeroSettimanaController.dispose();
     _ordineController.dispose();
     _tipoController.dispose();
+    _dataInizioController.dispose();
+    _dataFineController.dispose();
     super.dispose();
   }
 
@@ -74,7 +92,12 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
       firstDate: DateTime(DateTime.now().year - 2),
       lastDate: DateTime(DateTime.now().year + 3),
     );
-    if (selezionata != null) setState(() => _dataInizio = selezionata);
+    if (selezionata != null) {
+      setState(() {
+        _dataInizio = selezionata;
+        _dataInizioController.text = _formattaData(selezionata);
+      });
+    }
   }
 
   Future<void> _pickDataFine() async {
@@ -84,7 +107,12 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
       firstDate: _dataInizio,
       lastDate: DateTime(DateTime.now().year + 3),
     );
-    if (selezionata != null) setState(() => _dataFine = selezionata);
+    if (selezionata != null) {
+      setState(() {
+        _dataFine = selezionata;
+        _dataFineController.text = _formattaData(selezionata);
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -145,16 +173,18 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Eliminare il microciclo?'),
         content: const Text(
-          'Gli eventuali allenamenti collegati non verranno eliminati, resteranno solo senza microciclo.',
+          'Gli eventuali allenamenti collegati non verranno eliminati, '
+          'resteranno solo senza microciclo.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -169,50 +199,49 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica microciclo' : 'Nuovo microciclo'),
         actions: [
           if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Elimina',
+            TextButton.icon(
               onPressed: _elimina,
+              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
+              label: const Text(
+                'Elimina',
+                style: TextStyle(color: AppColors.rosso),
+              ),
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormGroup(
+              titolo: 'Identificazione',
+              campi: [
+                AppTextField(
+                  etichetta: 'Nome (facoltativo)',
                   controller: _nomeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'N. settimana (facoltativo)',
                         controller: _numeroSettimanaController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'N. settimana (opzionale)',
-                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Ordine',
                         controller: _ordineController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Ordine'),
                         validator: (v) =>
                             int.tryParse(v?.trim() ?? '') == null
                             ? 'N.'
@@ -221,51 +250,42 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data inizio'),
-                  subtitle: Text(_formattaData(_dataInizio)),
-                  trailing: const Icon(Icons.calendar_today),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Periodo e tipo',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Data inizio',
+                  controller: _dataInizioController,
+                  readOnly: true,
                   onTap: _pickDataInizio,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data fine'),
-                  subtitle: Text(_formattaData(_dataFine)),
-                  trailing: const Icon(Icons.calendar_today),
+                AppTextField(
+                  etichetta: 'Data fine',
+                  controller: _dataFineController,
+                  readOnly: true,
                   onTap: _pickDataFine,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Tipo (facoltativo, es. carico/scarico)',
                   controller: _tipoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo (opzionale, es. carico/scarico)',
-                  ),
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva'),
                 ),
               ],
             ),
-          ),
+            if (_errorMessage != null) ...[
+              ErrorBanner(messaggio: _errorMessage!),
+              const SizedBox(height: AppSpacing.s16),
+            ],
+            PrimaryButton(
+              label: 'Salva microciclo',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+          ],
         ),
       ),
     );

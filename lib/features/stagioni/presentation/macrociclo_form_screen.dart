@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
 import '../data/macrocicli_repository.dart';
 import '../domain/macrociclo.dart';
 
@@ -27,6 +34,8 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
   late final TextEditingController _nomeController;
   late final TextEditingController _ordineController;
   late final TextEditingController _obiettivoController;
+  late final TextEditingController _dataInizioController;
+  late final TextEditingController _dataFineController;
   late DateTime _dataInizio;
   late DateTime _dataFine;
 
@@ -47,6 +56,12 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
     final oggi = DateTime.now();
     _dataInizio = m?.dataInizio ?? oggi;
     _dataFine = m?.dataFine ?? oggi.add(const Duration(days: 27));
+    _dataInizioController = TextEditingController(
+      text: _formattaData(_dataInizio),
+    );
+    _dataFineController = TextEditingController(
+      text: _formattaData(_dataFine),
+    );
   }
 
   @override
@@ -54,6 +69,8 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
     _nomeController.dispose();
     _ordineController.dispose();
     _obiettivoController.dispose();
+    _dataInizioController.dispose();
+    _dataFineController.dispose();
     super.dispose();
   }
 
@@ -69,7 +86,12 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
       firstDate: DateTime(DateTime.now().year - 2),
       lastDate: DateTime(DateTime.now().year + 3),
     );
-    if (selezionata != null) setState(() => _dataInizio = selezionata);
+    if (selezionata != null) {
+      setState(() {
+        _dataInizio = selezionata;
+        _dataInizioController.text = _formattaData(selezionata);
+      });
+    }
   }
 
   Future<void> _pickDataFine() async {
@@ -79,7 +101,12 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
       firstDate: _dataInizio,
       lastDate: DateTime(DateTime.now().year + 3),
     );
-    if (selezionata != null) setState(() => _dataFine = selezionata);
+    if (selezionata != null) {
+      setState(() {
+        _dataFine = selezionata;
+        _dataFineController.text = _formattaData(selezionata);
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -142,9 +169,10 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -159,86 +187,74 @@ class _MacrocicloFormScreenState extends ConsumerState<MacrocicloFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica macrociclo' : 'Nuovo macrociclo'),
         actions: [
           if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Elimina',
+            TextButton.icon(
               onPressed: _elimina,
+              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
+              label: const Text(
+                'Elimina',
+                style: TextStyle(color: AppColors.rosso),
+              ),
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nomeController,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _ordineController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Ordine'),
-                  validator: (v) =>
-                      int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data inizio'),
-                  subtitle: Text(_formattaData(_dataInizio)),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: _pickDataInizio,
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data fine'),
-                  subtitle: Text(_formattaData(_dataFine)),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: _pickDataFine,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _obiettivoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Obiettivo (opzionale)',
-                  ),
-                  maxLines: 2,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva'),
-                ),
-              ],
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppTextField(
+              etichetta: 'Nome',
+              controller: _nomeController,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
             ),
-          ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              etichetta: 'Ordine',
+              controller: _ordineController,
+              keyboardType: TextInputType.number,
+              validator: (v) =>
+                  int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              etichetta: 'Data inizio',
+              controller: _dataInizioController,
+              readOnly: true,
+              onTap: _pickDataInizio,
+              suffixIcon: const Icon(Icons.calendar_today_outlined),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              etichetta: 'Data fine',
+              controller: _dataFineController,
+              readOnly: true,
+              onTap: _pickDataFine,
+              suffixIcon: const Icon(Icons.calendar_today_outlined),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              etichetta: 'Obiettivo (facoltativo)',
+              controller: _obiettivoController,
+              maxLines: 2,
+            ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: AppSpacing.s12),
+              ErrorBanner(messaggio: _errorMessage!),
+            ],
+            const SizedBox(height: AppSpacing.s24),
+            PrimaryButton(
+              label: 'Salva macrociclo',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+          ],
         ),
       ),
     );

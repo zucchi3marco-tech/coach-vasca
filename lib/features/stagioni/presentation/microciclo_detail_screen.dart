@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
 import '../../allenamenti/data/serie_repository.dart';
@@ -69,7 +78,9 @@ class MicrocicloDetailScreen extends ConsumerWidget {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Errore nella duplicazione: ${messaggioErrore(e)}')),
+        SnackBar(
+          content: Text('Errore nella duplicazione: ${messaggioErrore(e)}'),
+        ),
       );
     }
   }
@@ -94,89 +105,120 @@ class MicrocicloDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filter = (
-      clubId: microciclo.clubId,
-      microcicloId: microciclo.id,
+    final filter = (clubId: microciclo.clubId, microcicloId: microciclo.id);
+    final allenamentiAsync = ref.watch(
+      allenamentiPerMicrocicloProvider(filter),
     );
-    final allenamentiAsync = ref.watch(allenamentiPerMicrocicloProvider(filter));
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: Text(_titolo),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.content_copy_outlined),
-            tooltip: 'Duplica settimana',
-            onPressed: () => _duplicaSettimana(context, ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.ios_share),
-            tooltip: 'Esporta settimana',
-            onPressed: () => _esportaSettimana(context, ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Modifica',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => MicrocicloFormScreen(
-                  mesocicloId: microciclo.mesocicloId,
-                  ordineSuccessivo: microciclo.ordine,
-                  microciclo: microciclo,
+          PopupMenuButton<VoidCallback>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (azione) => azione(),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: () => _duplicaSettimana(context, ref),
+                child: const _VoceMenu(
+                  icona: Icons.content_copy_outlined,
+                  etichetta: 'Duplica settimana',
                 ),
               ),
-            ),
+              PopupMenuItem(
+                value: () => _esportaSettimana(context, ref),
+                child: const _VoceMenu(
+                  icona: Icons.ios_share,
+                  etichetta: 'Esporta settimana',
+                ),
+              ),
+              PopupMenuItem(
+                value: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MicrocicloFormScreen(
+                      mesocicloId: microciclo.mesocicloId,
+                      ordineSuccessivo: microciclo.ordine,
+                      microciclo: microciclo,
+                    ),
+                  ),
+                ),
+                child: const _VoceMenu(
+                  icona: Icons.edit_outlined,
+                  etichetta: 'Modifica',
+                ),
+              ),
+            ],
           ),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.s16),
             child: Text(
-              '${_formattaData(microciclo.dataInizio)} — ${_formattaData(microciclo.dataFine)}'
+              '${_formattaData(microciclo.dataInizio)} — '
+              '${_formattaData(microciclo.dataFine)}'
               '${microciclo.tipo != null && microciclo.tipo!.isNotEmpty ? ' · ${microciclo.tipo}' : ''}',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: AppTypography.sezione,
             ),
           ),
           const Divider(height: 1),
           Expanded(
             child: allenamentiAsync.when(
               data: (allenamenti) => allenamenti.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Nessun allenamento in questa settimana. Tocca "+" per crearne uno.',
+                  ? EmptyState(
+                      icona: Icons.calendar_month_outlined,
+                      titolo: 'Nessun allenamento in questa settimana',
+                      descrizione:
+                          'Crea il primo allenamento a mano oppure genera '
+                          'una proposta con l\'AI.',
+                      azionePrincipale: 'Nuovo allenamento',
+                      onAzionePrincipale: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AllenamentoFormScreen(
+                            clubId: microciclo.clubId,
+                            microcicloId: microciclo.id,
+                            dataPredefinita: microciclo.dataInizio,
+                          ),
+                        ),
                       ),
                     )
-                  : ListView.separated(
-                      itemCount: allenamenti.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final a = allenamenti[index];
-                        return ListTile(
-                          title: Text(
-                            a.titolo != null && a.titolo!.isNotEmpty
-                                ? a.titolo!
-                                : 'Allenamento',
-                          ),
-                          subtitle: Text(
-                            '${_formattaData(a.data)}'
-                            '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  AllenamentoDetailScreen(allenamento: a),
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(AppSpacing.s16),
+                      child: AppListPanel(
+                        righe: [
+                          for (final a in allenamenti)
+                            AppListRow(
+                              titolo: a.titolo != null && a.titolo!.isNotEmpty
+                                  ? a.titolo!
+                                  : 'Allenamento',
+                              sottotitolo:
+                                  '${_formattaData(a.data)}'
+                                  '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AllenamentoDetailScreen(allenamento: a),
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Text(
-                  'Errore nel caricamento allenamenti: ${messaggioErrore(error)}',
+              loading: () => const Padding(
+                padding: EdgeInsets.all(AppSpacing.s16),
+                child: LoadingSkeletonList(righe: 4),
+              ),
+              error: (error, _) => Padding(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: ErrorBanner(
+                  messaggio: 'Non è stato possibile caricare gli '
+                      'allenamenti.',
+                  suggerimento:
+                      'Riprova. Se l\'errore continua, chiudi e riapri '
+                      'l\'app.',
+                  dettaglioTecnico: messaggioErrore(error),
                 ),
               ),
             ),
@@ -200,7 +242,7 @@ class MicrocicloDetailScreen extends ConsumerWidget {
             tooltip: 'Genera con AI',
             child: const Icon(Icons.auto_awesome),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s12),
           FloatingActionButton(
             heroTag: 'fab-allenamenti-microciclo',
             onPressed: () => Navigator.of(context).push(
@@ -217,6 +259,24 @@ class MicrocicloDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VoceMenu extends StatelessWidget {
+  const _VoceMenu({required this.icona, required this.etichetta});
+
+  final IconData icona;
+  final String etichetta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        const SizedBox(width: AppSpacing.s12),
+        Text(etichetta, style: AppTypography.corpo),
+      ],
     );
   }
 }
