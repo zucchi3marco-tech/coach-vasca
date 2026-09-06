@@ -38,6 +38,8 @@ class AtletiRepository {
       note: row.note,
       attivo: row.attivo,
       numeroTesseraFin: row.numeroTesseraFin,
+      userId: row.userId,
+      visitaMedicaScadenza: row.visitaMedicaScadenza,
     );
   }
 
@@ -97,6 +99,12 @@ class AtletiRepository {
       note: Value(map['note'] as String?),
       attivo: Value(map['attivo'] as bool? ?? true),
       numeroTesseraFin: Value(map['numero_tessera_fin'] as String?),
+      userId: Value(map['user_id'] as String?),
+      visitaMedicaScadenza: Value(
+        map['visita_medica_scadenza'] == null
+            ? null
+            : DateTime.parse(map['visita_medica_scadenza'] as String),
+      ),
     );
   }
 
@@ -114,6 +122,28 @@ class AtletiRepository {
     );
   }
 
+  /// L'atleta collegato all'utente autenticato corrente (FASE 9), o null
+  /// se questo login non e' (ancora) un account atleta collegato. La RLS
+  /// su `atleti` lascia leggere il proprio record via `user_id` anche a
+  /// chi non e' membro di nessun club.
+  Future<Atleta?> fetchAtletaCollegato() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+    try {
+      final rows = await _client.from('atleti').select().eq('user_id', userId);
+      if (rows.isEmpty) return null;
+      final row = rows.first;
+      await _salvaLocale(row);
+      return Atleta.fromMap(row);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locale = await (_db.select(
+        _db.atletiTable,
+      )..where((t) => t.userId.equals(userId))).getSingleOrNull();
+      return locale == null ? null : _fromRow(locale);
+    }
+  }
+
   Future<Atleta> createAtleta({
     required String clubId,
     required String nome,
@@ -127,6 +157,7 @@ class AtletiRepository {
     bool consensoPrivacyFirmato = false,
     String? note,
     String? numeroTesseraFin,
+    DateTime? visitaMedicaScadenza,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -148,6 +179,8 @@ class AtletiRepository {
       if (note != null && note.isNotEmpty) 'note': note,
       if (numeroTesseraFin != null && numeroTesseraFin.isNotEmpty)
         'numero_tessera_fin': numeroTesseraFin,
+      if (visitaMedicaScadenza != null)
+        'visita_medica_scadenza': formatDateOnly(visitaMedicaScadenza),
     };
     try {
       final row = await _client
@@ -185,6 +218,7 @@ class AtletiRepository {
     DateTime? consensoPrivacyData,
     String? note,
     String? numeroTesseraFin,
+    DateTime? visitaMedicaScadenza,
   }) async {
     final payload = {
       'nome': nome,
@@ -201,6 +235,9 @@ class AtletiRepository {
           : null,
       'note': note,
       'numero_tessera_fin': numeroTesseraFin,
+      'visita_medica_scadenza': visitaMedicaScadenza == null
+          ? null
+          : formatDateOnly(visitaMedicaScadenza),
     };
     try {
       final row = await _client
@@ -232,6 +269,7 @@ class AtletiRepository {
           ),
           note: Value(note),
           numeroTesseraFin: Value(numeroTesseraFin),
+          visitaMedicaScadenza: Value(visitaMedicaScadenza),
         ),
       );
       await enqueueOperation(
@@ -244,6 +282,28 @@ class AtletiRepository {
       _syncEngine.processQueue();
     }
     return _rileggiLocale(id);
+  }
+
+  /// Scollega l'account atleta da questo record (FASE 9): l'atleta potra'
+  /// riscattare un nuovo invito per ricollegarsi. Usa la stessa policy di
+  /// update gia' esistente (is_membro_club), nessuna RPC dedicata.
+  Future<void> scollegaAccount(String id) async {
+    try {
+      await _client.from('atleti').update({'user_id': null}).eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'atleti',
+        operazione: 'update',
+        rigaId: id,
+        payload: {'user_id': null},
+      );
+      _syncEngine.processQueue();
+    }
+    await (_db.update(_db.atletiTable)..where((t) => t.id.equals(id))).write(
+      const AtletiTableCompanion(userId: Value(null)),
+    );
   }
 
   Future<void> setAttivo({required String id, required bool attivo}) async {

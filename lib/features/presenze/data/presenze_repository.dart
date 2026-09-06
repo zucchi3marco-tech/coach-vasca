@@ -59,6 +59,32 @@ class PresenzeRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Tutte le presenze proprie di un atleta (FASE 9, "le mie presenze").
+  Stream<List<Presenza>> watchPerAtleta(String atletaId) {
+    final query = _db.select(_db.presenzeTable)
+      ..where((t) => t.atletaId.equals(atletaId));
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Sostituzione totale delle presenze di un atleta (non insertOrReplace):
+  /// stesso motivo di [refreshFromRemote].
+  Future<void> refreshFromRemotePerAtleta(String atletaId) async {
+    final rows = await _client
+        .from('presenze')
+        .select()
+        .eq('atleta_id', atletaId);
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.presenzeTable,
+      )..where((t) => t.atletaId.equals(atletaId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.presenzeTable, _companionFromMap(row));
+        }
+      });
+    });
+  }
+
   Future<void> refreshFromRemote(String allenamentoId) async {
     final rows = await _client
         .from('presenze')

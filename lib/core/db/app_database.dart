@@ -9,6 +9,7 @@ part 'app_database.g.dart';
   tables: [
     ClubTable,
     AtletiTable,
+    PersonalBestTable,
     TestIngressoTable,
     TabellePassiTable,
     StagioniTable,
@@ -29,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,6 +90,22 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         if (!await _hasColumn(m, 'eventi_partita_table', 'contesto_tiro')) {
           await m.addColumn(eventiPartitaTable, eventiPartitaTable.contestoTiro);
+        }
+      }
+      // v8 -> v9: account atleta (user_id su atleti) e personal best
+      // (Fase 9).
+      if (from < 9) {
+        if (!await _hasColumn(m, 'atleti_table', 'user_id')) {
+          await m.addColumn(atletiTable, atletiTable.userId);
+        }
+        if (!await _hasTable(m, 'personal_best_table')) {
+          await m.createTable(personalBestTable);
+        }
+      }
+      // v9 -> v10: scadenza visita medica (Fase 9).
+      if (from < 10) {
+        if (!await _hasColumn(m, 'atleti_table', 'visita_medica_scadenza')) {
+          await m.addColumn(atletiTable, atletiTable.visitaMedicaScadenza);
         }
       }
     },

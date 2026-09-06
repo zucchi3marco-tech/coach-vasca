@@ -15,6 +15,8 @@ class Atleta {
     this.note,
     required this.attivo,
     this.numeroTesseraFin,
+    this.userId,
+    this.visitaMedicaScadenza,
   });
 
   final String id;
@@ -33,7 +35,27 @@ class Atleta {
   final bool attivo;
   final String? numeroTesseraFin;
 
+  /// Id in auth.users dell'account atleta collegato a questo record
+  /// (FASE 9), null finche' l'invito non e' stato riscattato.
+  final String? userId;
+
+  /// Scadenza del certificato medico sportivo (facoltativa).
+  final DateTime? visitaMedicaScadenza;
+
   String get nomeCompleto => '$nome $cognome';
+
+  bool get haAccountCollegato => userId != null;
+
+  bool get visitaMedicaScaduta =>
+      visitaMedicaScadenza != null &&
+      visitaMedicaScadenza!.isBefore(DateTime.now());
+
+  bool get visitaMedicaInScadenza =>
+      visitaMedicaScadenza != null &&
+      !visitaMedicaScaduta &&
+      visitaMedicaScadenza!.isBefore(
+        DateTime.now().add(const Duration(days: 30)),
+      );
 
   factory Atleta.fromMap(Map<String, dynamic> map) {
     return Atleta(
@@ -54,6 +76,10 @@ class Atleta {
       note: map['note'] as String?,
       attivo: map['attivo'] as bool,
       numeroTesseraFin: map['numero_tessera_fin'] as String?,
+      userId: map['user_id'] as String?,
+      visitaMedicaScadenza: map['visita_medica_scadenza'] == null
+          ? null
+          : DateTime.parse(map['visita_medica_scadenza'] as String),
     );
   }
 }

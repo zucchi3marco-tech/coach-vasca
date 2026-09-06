@@ -9,6 +9,7 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/auth_repository.dart';
+import 'riscatta_invito_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -154,6 +155,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                     child: const Text('Non hai un account? Registrati'),
+                  ),
+                  TextButton(
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RiscattaInvitoScreen(),
+                            ),
+                          ),
+                    child: const Text('Sei un atleta? Ho un codice invito'),
                   ),
                 ],
               ),

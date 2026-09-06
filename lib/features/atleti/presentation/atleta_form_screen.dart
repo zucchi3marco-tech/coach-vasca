@@ -32,8 +32,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   late final TextEditingController _telefonoGenitoreController;
   late final TextEditingController _noteController;
   late final TextEditingController _numeroTesseraFinController;
+  late final TextEditingController _visitaMedicaController;
 
   DateTime? _dataNascita;
+  DateTime? _visitaMedicaScadenza;
   String? _sesso;
   late String _sport;
   late bool _consensoPrivacy;
@@ -64,6 +66,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _numeroTesseraFinController = TextEditingController(
       text: atleta?.numeroTesseraFin ?? '',
     );
+    _visitaMedicaScadenza = atleta?.visitaMedicaScadenza;
+    _visitaMedicaController = TextEditingController(
+      text: _formattaData(_visitaMedicaScadenza),
+    );
     _sesso = atleta?.sesso;
     _sport = atleta?.sport ?? 'nuoto';
     _consensoPrivacy = atleta?.consensoPrivacyFirmato ?? false;
@@ -79,6 +85,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _telefonoGenitoreController.dispose();
     _noteController.dispose();
     _numeroTesseraFinController.dispose();
+    _visitaMedicaController.dispose();
     super.dispose();
   }
 
@@ -101,6 +108,22 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       setState(() {
         _dataNascita = selected;
         _dataNascitaController.text = _formattaData(selected);
+      });
+    }
+  }
+
+  Future<void> _pickVisitaMedica() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _visitaMedicaScadenza ?? now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (selected != null) {
+      setState(() {
+        _visitaMedicaScadenza = selected;
+        _visitaMedicaController.text = _formattaData(selected);
       });
     }
   }
@@ -135,6 +158,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           consensoPrivacyData: widget.atleta!.consensoPrivacyData,
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
+          visitaMedicaScadenza: _visitaMedicaScadenza,
         );
       } else {
         await repository.createAtleta(
@@ -150,6 +174,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           consensoPrivacyFirmato: _consensoPrivacy,
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
+          visitaMedicaScadenza: _visitaMedicaScadenza,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -281,6 +306,13 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                 AppTextField(
                   etichetta: 'Gruppo (facoltativo)',
                   controller: _gruppoController,
+                ),
+                AppTextField(
+                  etichetta: 'Scadenza visita medica (facoltativo)',
+                  controller: _visitaMedicaController,
+                  readOnly: true,
+                  onTap: _pickVisitaMedica,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
               ],
             ),

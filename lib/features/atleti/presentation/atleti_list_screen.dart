@@ -20,6 +20,10 @@ import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
+import 'codici_gruppo_screen.dart';
+import 'gestisci_account_atleta_dialog.dart';
+
+enum _Ordinamento { cognome, dataNascita }
 
 class AtletiListScreen extends ConsumerStatefulWidget {
   const AtletiListScreen({required this.clubId, super.key});
@@ -32,6 +36,8 @@ class AtletiListScreen extends ConsumerStatefulWidget {
 
 class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   bool _mostraInattivi = false;
+  String _ricerca = '';
+  _Ordinamento _ordinamento = _Ordinamento.cognome;
 
   @override
   Widget build(BuildContext context) {
@@ -39,53 +45,102 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
     final atletiAsync = ref.watch(atletiListProvider(filter));
 
     return AppScaffold(
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(atletiRepositoryProvider).refreshFromRemote(widget.clubId),
-        child: atletiAsync.when(
-          data: (atleti) => _AtletiList(
-            atleti: atleti,
-            onTap: (atleta) => _apriForm(context, atleta: atleta),
-            onTapNuovo: () => _apriForm(context),
-            onTapTest: (atleta) => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => TestListScreen(atleta: atleta),
-              ),
-            ),
-            onTapCarico: (atleta) => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => CaricoAtletaScreen(atleta: atleta),
-              ),
-            ),
-            onTapStatistiche: (atleta) => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => StatisticheAtletaScreen(atleta: atleta),
-              ),
-            ),
-            onTapBracciate: (atleta) => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => StrokeRateScreen(atleta: atleta),
-              ),
-            ),
-          ),
-          loading: () => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            children: const [LoadingSkeletonList(righe: 6)],
-          ),
-          error: (error, _) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.s16),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              ErrorBanner(
-                messaggio: 'Non è stato possibile caricare gli atleti.',
-                suggerimento:
-                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-                dettaglioTecnico: messaggioErrore(error),
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Cerca per nome o cognome',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (value) => setState(() => _ricerca = value),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s8),
+              PopupMenuButton<_Ordinamento>(
+                icon: const Icon(
+                  Icons.sort,
+                  color: AppColors.testoSecondario,
+                ),
+                tooltip: 'Ordina',
+                onSelected: (valore) =>
+                    setState(() => _ordinamento = valore),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _Ordinamento.cognome,
+                    child: _VoceMenu(
+                      icona: Icons.sort_by_alpha,
+                      etichetta: 'Cognome (A-Z)',
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _Ordinamento.dataNascita,
+                    child: _VoceMenu(
+                      icona: Icons.cake_outlined,
+                      etichetta: 'Data di nascita',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.s16),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref
+                  .read(atletiRepositoryProvider)
+                  .refreshFromRemote(widget.clubId),
+              child: atletiAsync.when(
+                data: (atleti) => _AtletiList(
+                  atleti: atleti,
+                  ricerca: _ricerca,
+                  ordinamento: _ordinamento,
+                  onTap: (atleta) => _apriForm(context, atleta: atleta),
+                  onTapNuovo: () => _apriForm(context),
+                  onTapTest: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => TestListScreen(atleta: atleta),
+                    ),
+                  ),
+                  onTapCarico: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CaricoAtletaScreen(atleta: atleta),
+                    ),
+                  ),
+                  onTapStatistiche: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StatisticheAtletaScreen(atleta: atleta),
+                    ),
+                  ),
+                  onTapBracciate: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StrokeRateScreen(atleta: atleta),
+                    ),
+                  ),
+                ),
+                loading: () => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [LoadingSkeletonList(righe: 6)],
+                ),
+                error: (error, _) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    ErrorBanner(
+                      messaggio: 'Non è stato possibile caricare gli atleti.',
+                      suggerimento:
+                          'Riprova. Se l\'errore continua, chiudi e riapri '
+                          'l\'app.',
+                      dettaglioTecnico: messaggioErrore(error),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       persistentFooterButtons: [
         SwitchListTile(
@@ -95,11 +150,28 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           onChanged: (value) => setState(() => _mostraInattivi = value),
         ),
       ],
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-atleti',
-        onPressed: () => _apriForm(context),
-        tooltip: 'Nuovo atleta',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'fab-codici-gruppo',
+            mini: true,
+            tooltip: 'Codici di gruppo',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CodiciGruppoScreen(clubId: widget.clubId),
+              ),
+            ),
+            child: const Icon(Icons.qr_code_2_outlined),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          FloatingActionButton(
+            heroTag: 'fab-atleti',
+            onPressed: () => _apriForm(context),
+            tooltip: 'Nuovo atleta',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -117,6 +189,8 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
 class _AtletiList extends StatelessWidget {
   const _AtletiList({
     required this.atleti,
+    required this.ricerca,
+    required this.ordinamento,
     required this.onTap,
     required this.onTapNuovo,
     required this.onTapTest,
@@ -126,6 +200,8 @@ class _AtletiList extends StatelessWidget {
   });
 
   final List<Atleta> atleti;
+  final String ricerca;
+  final _Ordinamento ordinamento;
   final ValueChanged<Atleta> onTap;
   final VoidCallback onTapNuovo;
   final ValueChanged<Atleta> onTapTest;
@@ -139,6 +215,25 @@ class _AtletiList extends StatelessWidget {
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
+
+  List<Atleta> _filtrati() {
+    final query = ricerca.trim().toLowerCase();
+    final filtrati = query.isEmpty
+        ? [...atleti]
+        : atleti
+              .where(
+                (a) => a.nomeCompleto.toLowerCase().contains(query),
+              )
+              .toList();
+    filtrati.sort((a, b) {
+      if (ordinamento == _Ordinamento.dataNascita) {
+        return a.dataNascita.compareTo(b.dataNascita);
+      }
+      final perCognome = a.cognome.compareTo(b.cognome);
+      return perCognome != 0 ? perCognome : a.nome.compareTo(b.nome);
+    });
+    return filtrati;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,12 +254,26 @@ class _AtletiList extends StatelessWidget {
       );
     }
 
+    final filtrati = _filtrati();
+    if (filtrati.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          EmptyState(
+            icona: Icons.search_off,
+            titolo: 'Nessun atleta trovato',
+            descrizione: 'Prova a cercare con un altro nome o cognome.',
+            azionePrincipale: 'Ho capito',
+          ),
+        ],
+      );
+    }
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.s16),
       child: AppListPanel(
         righe: [
-          for (final atleta in atleti)
+          for (final atleta in filtrati)
             AppListRow(
               leading: _AvatarAtleta(atleta: atleta),
               titolo: atleta.nomeCompleto,
@@ -173,13 +282,32 @@ class _AtletiList extends StatelessWidget {
                 if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
                   atleta.gruppo!,
               ].join(' · ') + (atleta.attivo ? '' : ' · inattivo'),
-              trailing: PopupMenuButton<VoidCallback>(
-                icon: const Icon(
-                  Icons.more_vert,
-                  color: AppColors.testoSecondario,
-                ),
-                onSelected: (azione) => azione(),
-                itemBuilder: (context) => [
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (atleta.visitaMedicaScaduta)
+                    const Tooltip(
+                      message: 'Visita medica scaduta',
+                      child: Icon(
+                        Icons.medical_information_outlined,
+                        color: AppColors.attenzione,
+                      ),
+                    )
+                  else if (atleta.visitaMedicaInScadenza)
+                    const Tooltip(
+                      message: 'Visita medica in scadenza',
+                      child: Icon(
+                        Icons.medical_information_outlined,
+                        color: AppColors.attenzione,
+                      ),
+                    ),
+                  PopupMenuButton<VoidCallback>(
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: AppColors.testoSecondario,
+                    ),
+                    onSelected: (azione) => azione(),
+                    itemBuilder: (context) => [
                   PopupMenuItem(
                     value: () => onTapCarico(atleta),
                     child: const _VoceMenu(
@@ -209,6 +337,21 @@ class _AtletiList extends StatelessWidget {
                         etichetta: 'Bracciate',
                       ),
                     ),
+                  PopupMenuItem(
+                    value: () => showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          GestisciAccountAtletaDialog(atleta: atleta),
+                    ),
+                    child: _VoceMenu(
+                      icona: atleta.haAccountCollegato
+                          ? Icons.verified_user_outlined
+                          : Icons.person_add_alt_outlined,
+                      etichetta: 'Account atleta',
+                    ),
+                  ),
+                ],
+                  ),
                 ],
               ),
               onTap: () => onTap(atleta),

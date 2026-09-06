@@ -423,6 +423,26 @@ class $AtletiTableTable extends AtletiTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _visitaMedicaScadenzaMeta =
+      const VerificationMeta('visitaMedicaScadenza');
+  @override
+  late final GeneratedColumn<DateTime> visitaMedicaScadenza =
+      GeneratedColumn<DateTime>(
+        'visita_medica_scadenza',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -440,6 +460,8 @@ class $AtletiTableTable extends AtletiTable
     note,
     attivo,
     numeroTesseraFin,
+    userId,
+    visitaMedicaScadenza,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -570,6 +592,21 @@ class $AtletiTableTable extends AtletiTable
         ),
       );
     }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('visita_medica_scadenza')) {
+      context.handle(
+        _visitaMedicaScadenzaMeta,
+        visitaMedicaScadenza.isAcceptableOrUnknown(
+          data['visita_medica_scadenza']!,
+          _visitaMedicaScadenzaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -639,6 +676,14 @@ class $AtletiTableTable extends AtletiTable
         DriftSqlType.string,
         data['${effectivePrefix}numero_tessera_fin'],
       ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      visitaMedicaScadenza: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}visita_medica_scadenza'],
+      ),
     );
   }
 
@@ -664,6 +709,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
   final String? note;
   final bool attivo;
   final String? numeroTesseraFin;
+  final String? userId;
+  final DateTime? visitaMedicaScadenza;
   const AtletiTableData({
     required this.id,
     required this.clubId,
@@ -680,6 +727,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     this.note,
     required this.attivo,
     this.numeroTesseraFin,
+    this.userId,
+    this.visitaMedicaScadenza,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -713,6 +762,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     if (!nullToAbsent || numeroTesseraFin != null) {
       map['numero_tessera_fin'] = Variable<String>(numeroTesseraFin);
     }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || visitaMedicaScadenza != null) {
+      map['visita_medica_scadenza'] = Variable<DateTime>(visitaMedicaScadenza);
+    }
     return map;
   }
 
@@ -745,6 +800,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       numeroTesseraFin: numeroTesseraFin == null && nullToAbsent
           ? const Value.absent()
           : Value(numeroTesseraFin),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      visitaMedicaScadenza: visitaMedicaScadenza == null && nullToAbsent
+          ? const Value.absent()
+          : Value(visitaMedicaScadenza),
     );
   }
 
@@ -773,6 +834,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       note: serializer.fromJson<String?>(json['note']),
       attivo: serializer.fromJson<bool>(json['attivo']),
       numeroTesseraFin: serializer.fromJson<String?>(json['numeroTesseraFin']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      visitaMedicaScadenza: serializer.fromJson<DateTime?>(
+        json['visitaMedicaScadenza'],
+      ),
     );
   }
   @override
@@ -794,6 +859,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       'note': serializer.toJson<String?>(note),
       'attivo': serializer.toJson<bool>(attivo),
       'numeroTesseraFin': serializer.toJson<String?>(numeroTesseraFin),
+      'userId': serializer.toJson<String?>(userId),
+      'visitaMedicaScadenza': serializer.toJson<DateTime?>(
+        visitaMedicaScadenza,
+      ),
     };
   }
 
@@ -813,6 +882,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     Value<String?> note = const Value.absent(),
     bool? attivo,
     Value<String?> numeroTesseraFin = const Value.absent(),
+    Value<String?> userId = const Value.absent(),
+    Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
   }) => AtletiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -838,6 +909,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     numeroTesseraFin: numeroTesseraFin.present
         ? numeroTesseraFin.value
         : this.numeroTesseraFin,
+    userId: userId.present ? userId.value : this.userId,
+    visitaMedicaScadenza: visitaMedicaScadenza.present
+        ? visitaMedicaScadenza.value
+        : this.visitaMedicaScadenza,
   );
   AtletiTableData copyWithCompanion(AtletiTableCompanion data) {
     return AtletiTableData(
@@ -868,6 +943,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       numeroTesseraFin: data.numeroTesseraFin.present
           ? data.numeroTesseraFin.value
           : this.numeroTesseraFin,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      visitaMedicaScadenza: data.visitaMedicaScadenza.present
+          ? data.visitaMedicaScadenza.value
+          : this.visitaMedicaScadenza,
     );
   }
 
@@ -888,7 +967,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ..write('consensoPrivacyData: $consensoPrivacyData, ')
           ..write('note: $note, ')
           ..write('attivo: $attivo, ')
-          ..write('numeroTesseraFin: $numeroTesseraFin')
+          ..write('numeroTesseraFin: $numeroTesseraFin, ')
+          ..write('userId: $userId, ')
+          ..write('visitaMedicaScadenza: $visitaMedicaScadenza')
           ..write(')'))
         .toString();
   }
@@ -910,6 +991,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     note,
     attivo,
     numeroTesseraFin,
+    userId,
+    visitaMedicaScadenza,
   );
   @override
   bool operator ==(Object other) =>
@@ -929,7 +1012,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           other.consensoPrivacyData == this.consensoPrivacyData &&
           other.note == this.note &&
           other.attivo == this.attivo &&
-          other.numeroTesseraFin == this.numeroTesseraFin);
+          other.numeroTesseraFin == this.numeroTesseraFin &&
+          other.userId == this.userId &&
+          other.visitaMedicaScadenza == this.visitaMedicaScadenza);
 }
 
 class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
@@ -948,6 +1033,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
   final Value<String?> note;
   final Value<bool> attivo;
   final Value<String?> numeroTesseraFin;
+  final Value<String?> userId;
+  final Value<DateTime?> visitaMedicaScadenza;
   final Value<int> rowid;
   const AtletiTableCompanion({
     this.id = const Value.absent(),
@@ -965,6 +1052,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.note = const Value.absent(),
     this.attivo = const Value.absent(),
     this.numeroTesseraFin = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.visitaMedicaScadenza = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AtletiTableCompanion.insert({
@@ -983,6 +1072,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.note = const Value.absent(),
     this.attivo = const Value.absent(),
     this.numeroTesseraFin = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.visitaMedicaScadenza = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -1006,6 +1097,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Expression<String>? note,
     Expression<bool>? attivo,
     Expression<String>? numeroTesseraFin,
+    Expression<String>? userId,
+    Expression<DateTime>? visitaMedicaScadenza,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1026,6 +1119,9 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       if (note != null) 'note': note,
       if (attivo != null) 'attivo': attivo,
       if (numeroTesseraFin != null) 'numero_tessera_fin': numeroTesseraFin,
+      if (userId != null) 'user_id': userId,
+      if (visitaMedicaScadenza != null)
+        'visita_medica_scadenza': visitaMedicaScadenza,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1046,6 +1142,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Value<String?>? note,
     Value<bool>? attivo,
     Value<String?>? numeroTesseraFin,
+    Value<String?>? userId,
+    Value<DateTime?>? visitaMedicaScadenza,
     Value<int>? rowid,
   }) {
     return AtletiTableCompanion(
@@ -1065,6 +1163,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       note: note ?? this.note,
       attivo: attivo ?? this.attivo,
       numeroTesseraFin: numeroTesseraFin ?? this.numeroTesseraFin,
+      userId: userId ?? this.userId,
+      visitaMedicaScadenza: visitaMedicaScadenza ?? this.visitaMedicaScadenza,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1121,6 +1221,14 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     if (numeroTesseraFin.present) {
       map['numero_tessera_fin'] = Variable<String>(numeroTesseraFin.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (visitaMedicaScadenza.present) {
+      map['visita_medica_scadenza'] = Variable<DateTime>(
+        visitaMedicaScadenza.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1145,6 +1253,502 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
           ..write('note: $note, ')
           ..write('attivo: $attivo, ')
           ..write('numeroTesseraFin: $numeroTesseraFin, ')
+          ..write('userId: $userId, ')
+          ..write('visitaMedicaScadenza: $visitaMedicaScadenza, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonalBestTableTable extends PersonalBestTable
+    with TableInfo<$PersonalBestTableTable, PersonalBestTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonalBestTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stileMeta = const VerificationMeta('stile');
+  @override
+  late final GeneratedColumn<String> stile = GeneratedColumn<String>(
+    'stile',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanzaMMeta = const VerificationMeta(
+    'distanzaM',
+  );
+  @override
+  late final GeneratedColumn<int> distanzaM = GeneratedColumn<int>(
+    'distanza_m',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tempoSMeta = const VerificationMeta('tempoS');
+  @override
+  late final GeneratedColumn<double> tempoS = GeneratedColumn<double>(
+    'tempo_s',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    atletaId,
+    clubId,
+    stile,
+    distanzaM,
+    tempoS,
+    data,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personal_best_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PersonalBestTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('stile')) {
+      context.handle(
+        _stileMeta,
+        stile.isAcceptableOrUnknown(data['stile']!, _stileMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stileMeta);
+    }
+    if (data.containsKey('distanza_m')) {
+      context.handle(
+        _distanzaMMeta,
+        distanzaM.isAcceptableOrUnknown(data['distanza_m']!, _distanzaMMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_distanzaMMeta);
+    }
+    if (data.containsKey('tempo_s')) {
+      context.handle(
+        _tempoSMeta,
+        tempoS.isAcceptableOrUnknown(data['tempo_s']!, _tempoSMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tempoSMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PersonalBestTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonalBestTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      stile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stile'],
+      )!,
+      distanzaM: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distanza_m'],
+      )!,
+      tempoS: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tempo_s'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $PersonalBestTableTable createAlias(String alias) {
+    return $PersonalBestTableTable(attachedDatabase, alias);
+  }
+}
+
+class PersonalBestTableData extends DataClass
+    implements Insertable<PersonalBestTableData> {
+  final String id;
+  final String atletaId;
+  final String clubId;
+  final String stile;
+  final int distanzaM;
+  final double tempoS;
+  final DateTime? data;
+  final String? note;
+  const PersonalBestTableData({
+    required this.id,
+    required this.atletaId,
+    required this.clubId,
+    required this.stile,
+    required this.distanzaM,
+    required this.tempoS,
+    this.data,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['stile'] = Variable<String>(stile);
+    map['distanza_m'] = Variable<int>(distanzaM);
+    map['tempo_s'] = Variable<double>(tempoS);
+    if (!nullToAbsent || data != null) {
+      map['data'] = Variable<DateTime>(data);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  PersonalBestTableCompanion toCompanion(bool nullToAbsent) {
+    return PersonalBestTableCompanion(
+      id: Value(id),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      stile: Value(stile),
+      distanzaM: Value(distanzaM),
+      tempoS: Value(tempoS),
+      data: data == null && nullToAbsent ? const Value.absent() : Value(data),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory PersonalBestTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonalBestTableData(
+      id: serializer.fromJson<String>(json['id']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      stile: serializer.fromJson<String>(json['stile']),
+      distanzaM: serializer.fromJson<int>(json['distanzaM']),
+      tempoS: serializer.fromJson<double>(json['tempoS']),
+      data: serializer.fromJson<DateTime?>(json['data']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'stile': serializer.toJson<String>(stile),
+      'distanzaM': serializer.toJson<int>(distanzaM),
+      'tempoS': serializer.toJson<double>(tempoS),
+      'data': serializer.toJson<DateTime?>(data),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  PersonalBestTableData copyWith({
+    String? id,
+    String? atletaId,
+    String? clubId,
+    String? stile,
+    int? distanzaM,
+    double? tempoS,
+    Value<DateTime?> data = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => PersonalBestTableData(
+    id: id ?? this.id,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    stile: stile ?? this.stile,
+    distanzaM: distanzaM ?? this.distanzaM,
+    tempoS: tempoS ?? this.tempoS,
+    data: data.present ? data.value : this.data,
+    note: note.present ? note.value : this.note,
+  );
+  PersonalBestTableData copyWithCompanion(PersonalBestTableCompanion data) {
+    return PersonalBestTableData(
+      id: data.id.present ? data.id.value : this.id,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      stile: data.stile.present ? data.stile.value : this.stile,
+      distanzaM: data.distanzaM.present ? data.distanzaM.value : this.distanzaM,
+      tempoS: data.tempoS.present ? data.tempoS.value : this.tempoS,
+      data: data.data.present ? data.data.value : this.data,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalBestTableData(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('stile: $stile, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('tempoS: $tempoS, ')
+          ..write('data: $data, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, atletaId, clubId, stile, distanzaM, tempoS, data, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonalBestTableData &&
+          other.id == this.id &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.stile == this.stile &&
+          other.distanzaM == this.distanzaM &&
+          other.tempoS == this.tempoS &&
+          other.data == this.data &&
+          other.note == this.note);
+}
+
+class PersonalBestTableCompanion
+    extends UpdateCompanion<PersonalBestTableData> {
+  final Value<String> id;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<String> stile;
+  final Value<int> distanzaM;
+  final Value<double> tempoS;
+  final Value<DateTime?> data;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const PersonalBestTableCompanion({
+    this.id = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.stile = const Value.absent(),
+    this.distanzaM = const Value.absent(),
+    this.tempoS = const Value.absent(),
+    this.data = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonalBestTableCompanion.insert({
+    required String id,
+    required String atletaId,
+    required String clubId,
+    required String stile,
+    required int distanzaM,
+    required double tempoS,
+    this.data = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       stile = Value(stile),
+       distanzaM = Value(distanzaM),
+       tempoS = Value(tempoS);
+  static Insertable<PersonalBestTableData> custom({
+    Expression<String>? id,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<String>? stile,
+    Expression<int>? distanzaM,
+    Expression<double>? tempoS,
+    Expression<DateTime>? data,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (stile != null) 'stile': stile,
+      if (distanzaM != null) 'distanza_m': distanzaM,
+      if (tempoS != null) 'tempo_s': tempoS,
+      if (data != null) 'data': data,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonalBestTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<String>? stile,
+    Value<int>? distanzaM,
+    Value<double>? tempoS,
+    Value<DateTime?>? data,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return PersonalBestTableCompanion(
+      id: id ?? this.id,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      stile: stile ?? this.stile,
+      distanzaM: distanzaM ?? this.distanzaM,
+      tempoS: tempoS ?? this.tempoS,
+      data: data ?? this.data,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (stile.present) {
+      map['stile'] = Variable<String>(stile.value);
+    }
+    if (distanzaM.present) {
+      map['distanza_m'] = Variable<int>(distanzaM.value);
+    }
+    if (tempoS.present) {
+      map['tempo_s'] = Variable<double>(tempoS.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalBestTableCompanion(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('stile: $stile, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('tempoS: $tempoS, ')
+          ..write('data: $data, ')
+          ..write('note: $note, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9100,6 +9704,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ClubTableTable clubTable = $ClubTableTable(this);
   late final $AtletiTableTable atletiTable = $AtletiTableTable(this);
+  late final $PersonalBestTableTable personalBestTable =
+      $PersonalBestTableTable(this);
   late final $TestIngressoTableTable testIngressoTable =
       $TestIngressoTableTable(this);
   late final $TabellePassiTableTable tabellePassiTable =
@@ -9133,6 +9739,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     clubTable,
     atletiTable,
+    personalBestTable,
     testIngressoTable,
     tabellePassiTable,
     stagioniTable,
@@ -9327,6 +9934,8 @@ typedef $$AtletiTableTableCreateCompanionBuilder =
       Value<String?> note,
       Value<bool> attivo,
       Value<String?> numeroTesseraFin,
+      Value<String?> userId,
+      Value<DateTime?> visitaMedicaScadenza,
       Value<int> rowid,
     });
 typedef $$AtletiTableTableUpdateCompanionBuilder =
@@ -9346,6 +9955,8 @@ typedef $$AtletiTableTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<bool> attivo,
       Value<String?> numeroTesseraFin,
+      Value<String?> userId,
+      Value<DateTime?> visitaMedicaScadenza,
       Value<int> rowid,
     });
 
@@ -9430,6 +10041,16 @@ class $$AtletiTableTableFilterComposer
 
   ColumnFilters<String> get numeroTesseraFin => $composableBuilder(
     column: $table.numeroTesseraFin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get visitaMedicaScadenza => $composableBuilder(
+    column: $table.visitaMedicaScadenza,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9517,6 +10138,16 @@ class $$AtletiTableTableOrderingComposer
     column: $table.numeroTesseraFin,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get visitaMedicaScadenza => $composableBuilder(
+    column: $table.visitaMedicaScadenza,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AtletiTableTableAnnotationComposer
@@ -9584,6 +10215,14 @@ class $$AtletiTableTableAnnotationComposer
     column: $table.numeroTesseraFin,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get visitaMedicaScadenza => $composableBuilder(
+    column: $table.visitaMedicaScadenza,
+    builder: (column) => column,
+  );
 }
 
 class $$AtletiTableTableTableManager
@@ -9632,6 +10271,8 @@ class $$AtletiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<bool> attivo = const Value.absent(),
                 Value<String?> numeroTesseraFin = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion(
                 id: id,
@@ -9649,6 +10290,8 @@ class $$AtletiTableTableTableManager
                 note: note,
                 attivo: attivo,
                 numeroTesseraFin: numeroTesseraFin,
+                userId: userId,
+                visitaMedicaScadenza: visitaMedicaScadenza,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -9668,6 +10311,8 @@ class $$AtletiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<bool> attivo = const Value.absent(),
                 Value<String?> numeroTesseraFin = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion.insert(
                 id: id,
@@ -9685,6 +10330,8 @@ class $$AtletiTableTableTableManager
                 note: note,
                 attivo: attivo,
                 numeroTesseraFin: numeroTesseraFin,
+                userId: userId,
+                visitaMedicaScadenza: visitaMedicaScadenza,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9710,6 +10357,276 @@ typedef $$AtletiTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $AtletiTableTable, AtletiTableData>,
       ),
       AtletiTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$PersonalBestTableTableCreateCompanionBuilder =
+    PersonalBestTableCompanion Function({
+      required String id,
+      required String atletaId,
+      required String clubId,
+      required String stile,
+      required int distanzaM,
+      required double tempoS,
+      Value<DateTime?> data,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$PersonalBestTableTableUpdateCompanionBuilder =
+    PersonalBestTableCompanion Function({
+      Value<String> id,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<String> stile,
+      Value<int> distanzaM,
+      Value<double> tempoS,
+      Value<DateTime?> data,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$PersonalBestTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonalBestTableTable> {
+  $$PersonalBestTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tempoS => $composableBuilder(
+    column: $table.tempoS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PersonalBestTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonalBestTableTable> {
+  $$PersonalBestTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tempoS => $composableBuilder(
+    column: $table.tempoS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PersonalBestTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonalBestTableTable> {
+  $$PersonalBestTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get stile =>
+      $composableBuilder(column: $table.stile, builder: (column) => column);
+
+  GeneratedColumn<int> get distanzaM =>
+      $composableBuilder(column: $table.distanzaM, builder: (column) => column);
+
+  GeneratedColumn<double> get tempoS =>
+      $composableBuilder(column: $table.tempoS, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$PersonalBestTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PersonalBestTableTable,
+          PersonalBestTableData,
+          $$PersonalBestTableTableFilterComposer,
+          $$PersonalBestTableTableOrderingComposer,
+          $$PersonalBestTableTableAnnotationComposer,
+          $$PersonalBestTableTableCreateCompanionBuilder,
+          $$PersonalBestTableTableUpdateCompanionBuilder,
+          (
+            PersonalBestTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $PersonalBestTableTable,
+              PersonalBestTableData
+            >,
+          ),
+          PersonalBestTableData,
+          PrefetchHooks Function()
+        > {
+  $$PersonalBestTableTableTableManager(
+    _$AppDatabase db,
+    $PersonalBestTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonalBestTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonalBestTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonalBestTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> stile = const Value.absent(),
+                Value<int> distanzaM = const Value.absent(),
+                Value<double> tempoS = const Value.absent(),
+                Value<DateTime?> data = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalBestTableCompanion(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                stile: stile,
+                distanzaM: distanzaM,
+                tempoS: tempoS,
+                data: data,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String atletaId,
+                required String clubId,
+                required String stile,
+                required int distanzaM,
+                required double tempoS,
+                Value<DateTime?> data = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalBestTableCompanion.insert(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                stile: stile,
+                distanzaM: distanzaM,
+                tempoS: tempoS,
+                data: data,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PersonalBestTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PersonalBestTableTable,
+      PersonalBestTableData,
+      $$PersonalBestTableTableFilterComposer,
+      $$PersonalBestTableTableOrderingComposer,
+      $$PersonalBestTableTableAnnotationComposer,
+      $$PersonalBestTableTableCreateCompanionBuilder,
+      $$PersonalBestTableTableUpdateCompanionBuilder,
+      (
+        PersonalBestTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $PersonalBestTableTable,
+          PersonalBestTableData
+        >,
+      ),
+      PersonalBestTableData,
       PrefetchHooks Function()
     >;
 typedef $$TestIngressoTableTableCreateCompanionBuilder =
@@ -13795,6 +14712,8 @@ class $AppDatabaseManager {
       $$ClubTableTableTableManager(_db, _db.clubTable);
   $$AtletiTableTableTableManager get atletiTable =>
       $$AtletiTableTableTableManager(_db, _db.atletiTable);
+  $$PersonalBestTableTableTableManager get personalBestTable =>
+      $$PersonalBestTableTableTableManager(_db, _db.personalBestTable);
   $$TestIngressoTableTableTableManager get testIngressoTable =>
       $$TestIngressoTableTableTableManager(_db, _db.testIngressoTable);
   $$TabellePassiTableTableTableManager get tabellePassiTable =>

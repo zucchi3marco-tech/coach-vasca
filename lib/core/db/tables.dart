@@ -33,6 +33,24 @@ class AtletiTable extends Table {
   TextColumn get note => text().nullable()();
   BoolColumn get attivo => boolean().withDefault(const Constant(true))();
   TextColumn get numeroTesseraFin => text().nullable()();
+  TextColumn get userId => text().nullable()();
+  DateTimeColumn get visitaMedicaScadenza => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Personal best inseriti dall'atleta stesso (FASE 9), visibili anche al
+/// coach ma modificabili solo dall'atleta a cui appartengono.
+class PersonalBestTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get stile => text()();
+  IntColumn get distanzaM => integer()();
+  RealColumn get tempoS => real()();
+  DateTimeColumn get data => dateTime().nullable()();
+  TextColumn get note => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
