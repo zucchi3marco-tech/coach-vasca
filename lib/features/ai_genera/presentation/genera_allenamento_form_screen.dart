@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
@@ -19,7 +26,8 @@ const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
 const _regimi = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
 
-String _capitalizza(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _capitalizza(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({
@@ -63,111 +71,113 @@ class _GeneraAllenamentoFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: const Text('Genera con AI'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Storico generazioni',
+          TextButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => StoricoGenerazioniScreen(clubId: widget.clubId),
+                builder: (_) =>
+                    StoricoGenerazioniScreen(clubId: widget.clubId),
               ),
             ),
+            icon: const Icon(Icons.history, size: 20),
+            label: const Text('Storico'),
           ),
         ],
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextFormField(
-              controller: _gruppoController,
-              decoration: const InputDecoration(
-                labelText: 'Gruppo/livello (es. Juniores)',
-              ),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Campo obbligatorio'
-                  : null,
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _livello,
-              decoration: const InputDecoration(labelText: 'Livello'),
-              items: [
-                for (final l in _livelli)
-                  DropdownMenuItem(value: l, child: Text(_capitalizza(l))),
-              ],
-              onChanged: (value) =>
-                  setState(() => _livello = value ?? _livelli.first),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _volumeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Volume totale (metri)',
-              ),
-              validator: (value) {
-                final n = int.tryParse(value ?? '');
-                if (n == null || n <= 0) return 'Inserisci un numero valido';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _focusSelezionato,
-              decoration: const InputDecoration(labelText: 'Focus'),
-              items: [
-                for (final f in _focus)
-                  DropdownMenuItem(value: f, child: Text(_capitalizza(f))),
-              ],
-              onChanged: (value) =>
-                  setState(() => _focusSelezionato = value ?? _focus.first),
-            ),
-            const SizedBox(height: 16),
-            Text('Regimi ammessi', style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final r in _regimi)
-                  FilterChip(
-                    label: Text(r),
-                    selected: _regimiSelezionati.contains(r),
-                    onSelected: (selezionato) => setState(() {
-                      if (selezionato) {
-                        _regimiSelezionati.add(r);
-                      } else {
-                        _regimiSelezionati.remove(r);
-                      }
-                    }),
+            FormGroup(
+              titolo: 'Parametri',
+              campi: [
+                AppTextField(
+                  etichetta: 'Gruppo/livello (es. Juniores)',
+                  controller: _gruppoController,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Campo obbligatorio'
+                      : null,
+                ),
+                AppSelect<String>(
+                  etichetta: 'Livello',
+                  value: _livello,
+                  items: [
+                    for (final l in _livelli)
+                      DropdownMenuItem(value: l, child: Text(_capitalizza(l))),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _livello = value ?? _livelli.first),
+                ),
+                AppTextField(
+                  etichetta: 'Volume totale (metri)',
+                  controller: _volumeController,
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    final n = int.tryParse(value ?? '');
+                    if (n == null || n <= 0) {
+                      return 'Inserisci un numero valido';
+                    }
+                    return null;
+                  },
+                ),
+                AppSelect<String>(
+                  etichetta: 'Focus',
+                  value: _focusSelezionato,
+                  items: [
+                    for (final f in _focus)
+                      DropdownMenuItem(value: f, child: Text(_capitalizza(f))),
+                  ],
+                  onChanged: (value) => setState(
+                    () => _focusSelezionato = value ?? _focus.first,
                   ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _vincoliController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Vincoli (opzionale)',
-                hintText: 'Es. niente pinne, max 75 minuti, vasca 25m',
-              ),
+            FormGroup(
+              titolo: 'Regimi e vincoli',
+              isUltimo: true,
+              campi: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Regimi ammessi', style: AppTypography.etichetta),
+                    const SizedBox(height: AppSpacing.s8),
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      children: [
+                        for (final r in _regimi)
+                          FilterChip(
+                            label: Text(r),
+                            selected: _regimiSelezionati.contains(r),
+                            onSelected: (selezionato) => setState(() {
+                              if (selezionato) {
+                                _regimiSelezionati.add(r);
+                              } else {
+                                _regimiSelezionati.remove(r);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                AppTextField(
+                  etichetta: 'Vincoli (facoltativo)',
+                  controller: _vincoliController,
+                  maxLines: 3,
+                  aiuto: 'Es. niente pinne, max 75 minuti, vasca 25m',
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            FilledButton(
+            PrimaryButton(
+              label: 'Genera',
+              isLoading: _generazioneInCorso,
               onPressed: _generazioneInCorso ? null : _conferma,
-              child: _generazioneInCorso
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Genera'),
             ),
           ],
         ),
@@ -248,7 +258,9 @@ class _GeneraAllenamentoFormScreenState
       } catch (_) {}
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore nella generazione: ${messaggioErrore(e)}')),
+        SnackBar(
+          content: Text('Errore nella generazione: ${messaggioErrore(e)}'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _generazioneInCorso = false);
@@ -282,7 +294,8 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
       _DialogSchedaGeneratedState();
 }
 
-class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
+class _DialogSchedaGeneratedState
+    extends ConsumerState<_DialogSchedaGenerata> {
   late DateTime _data = widget.dataIniziale ?? DateTime.now();
   late String? _microcicloId = widget.microcicloIniziale;
   bool _salvataggioInCorso = false;
@@ -311,7 +324,9 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
   @override
   Widget build(BuildContext context) {
     final scheda = widget.scheda;
-    final microcicliAsync = ref.watch(microcicliDelClubProvider(widget.clubId));
+    final microcicliAsync = ref.watch(
+      microcicliDelClubProvider(widget.clubId),
+    );
     return AlertDialog(
       title: Text(scheda.titolo),
       content: SizedBox(
@@ -323,13 +338,13 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
             children: [
               Text(
                 'Volume totale: ${scheda.volumeTotaleM} m',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTypography.piccolo,
               ),
               if (scheda.note != null && scheda.note!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(scheda.note!),
+                const SizedBox(height: AppSpacing.s4),
+                Text(scheda.note!, style: AppTypography.corpo),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Data'),
@@ -337,7 +352,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
                 trailing: const Icon(Icons.calendar_today_outlined),
                 onTap: _salvataggioInCorso ? null : _scegliData,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s8),
               microcicliAsync.when(
                 data: (microcicli) => DropdownButtonFormField<String?>(
                   isExpanded: true,
@@ -361,23 +376,32 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
                       : (value) => setState(() => _microcicloId = value),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (error, _) =>
-                    Text('Errore nel caricamento settimane: ${messaggioErrore(error)}'),
+                error: (error, _) => Text(
+                  'Errore nel caricamento settimane: '
+                  '${messaggioErrore(error)}',
+                  style: AppTypography.piccolo,
+                ),
               ),
-              const Divider(height: 24),
+              const Divider(height: AppSpacing.s24),
               for (final s in scheda.serie)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.s4,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
                         '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: AppTypography.corpoForte,
                       ),
-                      Text(_sottotitoloSerie(s)),
-                      if (s.note != null && s.note!.isNotEmpty) Text(s.note!),
+                      Text(
+                        _sottotitoloSerie(s),
+                        style: AppTypography.piccolo,
+                      ),
+                      if (s.note != null && s.note!.isNotEmpty)
+                        Text(s.note!, style: AppTypography.piccolo),
                     ],
                   ),
                 ),
@@ -461,7 +485,9 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore nel salvataggio: ${messaggioErrore(e)}')),
+        SnackBar(
+          content: Text('Errore nel salvataggio: ${messaggioErrore(e)}'),
+        ),
       );
       setState(() => _salvataggioInCorso = false);
     }

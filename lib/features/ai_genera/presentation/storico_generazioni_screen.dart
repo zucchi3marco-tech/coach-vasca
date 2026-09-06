@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/generazione_ai_registrata.dart';
@@ -30,45 +39,65 @@ class StoricoGenerazioniScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final storicoAsync = ref.watch(storicoGenerazioniAiProvider(clubId));
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('Storico generazioni AI')),
       body: storicoAsync.when(
         data: (storico) => storico.isEmpty
-            ? const Center(child: Text('Nessuna generazione ancora effettuata.'))
-            : ListView.separated(
-                itemCount: storico.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final voce = storico[index];
-                  final salvata = voce.allenamentoId != null;
-                  return ListTile(
-                    leading: Icon(
-                      !voce.successo
-                          ? Icons.error_outline
-                          : salvata
-                          ? Icons.check_circle
-                          : Icons.check_circle_outline,
-                      color: !voce.successo
-                          ? Colors.red
-                          : salvata
-                          ? Colors.green
-                          : Colors.grey,
-                    ),
-                    title: Text(_riassuntoParametri(voce.parametri)),
-                    subtitle: Text(
-                      '${_formattaData(voce.creatoIl)} · '
-                      '${!voce.successo ? 'generazione fallita' : salvata ? 'salvata come allenamento' : 'generata, non salvata'}',
-                    ),
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (context) => _DialogDettaglioVoce(voce: voce),
-                    ),
-                  );
-                },
+            ? const EmptyState(
+                icona: Icons.auto_awesome_outlined,
+                titolo: 'Nessuna generazione ancora effettuata',
+                descrizione:
+                    'Le proposte generate con l\'AI comparirano qui, anche '
+                    'quelle non salvate come allenamento.',
+                azionePrincipale: 'Torna indietro',
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: AppListPanel(
+                  righe: [
+                    for (final voce in storico)
+                      AppListRow(
+                        leading: Icon(
+                          !voce.successo
+                              ? Icons.error_outline
+                              : voce.allenamentoId != null
+                              ? Icons.check_circle
+                              : Icons.check_circle_outline,
+                          color: !voce.successo
+                              ? AppColors.rosso
+                              : voce.allenamentoId != null
+                              ? AppColors.ok
+                              : AppColors.testoTenue,
+                        ),
+                        titolo: _riassuntoParametri(voce.parametri),
+                        sottotitolo:
+                            '${_formattaData(voce.creatoIl)} · '
+                            '${!voce.successo
+                                ? 'generazione fallita'
+                                : voce.allenamentoId != null
+                                ? 'salvata come allenamento'
+                                : 'generata, non salvata'}',
+                        onTap: () => showDialog<void>(
+                          context: context,
+                          builder: (context) =>
+                              _DialogDettaglioVoce(voce: voce),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Text('Errore nel caricamento storico: ${messaggioErrore(error)}'),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 6),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare lo storico.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
         ),
       ),
     );
@@ -99,30 +128,36 @@ class _DialogDettaglioVoce extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Parametri',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
+              Text('Parametri', style: AppTypography.etichetta),
+              const SizedBox(height: AppSpacing.s4),
               for (final voceParam in voce.parametri.entries)
-                Text('${voceParam.key}: ${voceParam.value}'),
-              const SizedBox(height: 16),
+                Text(
+                  '${voceParam.key}: ${voceParam.value}',
+                  style: AppTypography.corpo,
+                ),
+              const SizedBox(height: AppSpacing.s16),
               if (voce.messaggioErrore != null) ...[
-                Text('Errore', style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Text(voce.messaggioErrore!),
+                Text('Errore', style: AppTypography.etichetta),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  voce.messaggioErrore!,
+                  style: AppTypography.piccolo.copyWith(
+                    color: AppColors.rosso,
+                  ),
+                ),
               ],
               if (scheda != null) ...[
                 Text(
                   scheda['titolo'] as String? ?? 'Scheda generata',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: AppTypography.etichetta,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.s4),
                 for (final s in (scheda['serie'] as List? ?? []))
                   Text(
                     '${s['ordine']}. ${s['ripetute']}×${s['distanzaM']}m '
                     '${labelStile(s['stile'] as String)} '
                     '${labelEsecuzione(s['esecuzione'] as String)}',
+                    style: AppTypography.corpo,
                   ),
               ],
             ],
