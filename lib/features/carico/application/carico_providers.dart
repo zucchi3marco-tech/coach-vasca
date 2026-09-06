@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/carico_repository.dart';
 import '../domain/banister.dart';
+import '../domain/volumi_atleta.dart';
 
 typedef _ChiaveCarico = ({String atletaId, String clubId});
 
@@ -17,3 +18,13 @@ final andamentoCaricoProvider =
       );
       return calcolaBanister(caricoPerGiorno);
     });
+
+final volumiAtletaProvider = FutureProvider.family<VolumiAtleta, _ChiaveCarico>(
+  (ref, chiave) async {
+    final repository = ref.watch(caricoRepositoryProvider);
+    return repository.volumiPerAtleta(
+      atletaId: chiave.atletaId,
+      clubId: chiave.clubId,
+    );
+  },
+);

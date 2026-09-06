@@ -10,10 +10,36 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
+import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
 import '../domain/banister.dart';
+
+const _ordineZonePerVolume = [
+  'A1',
+  'A2',
+  'B1',
+  'B2',
+  'C1',
+  'C2',
+  'C3',
+  'C',
+  'D',
+];
+const _ordineEsecuzionePerVolume = [
+  'nuoto',
+  'gambe',
+  'braccia',
+  'pull',
+  'tecnica',
+  'remate',
+];
+
+String _formattaVolume(int metri) => metri >= 1000
+    ? '${(metri / 1000).toStringAsFixed(1)} km'
+    : '$metri m';
 
 /// Nota: DESIGN.md non definisce ancora una palette per i grafici a
 /// linee. In attesa di un token dedicato, questa schermata usa `blu`
@@ -83,6 +109,8 @@ class CaricoAtletaScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.s12),
                     const _Legenda(),
+                    const SizedBox(height: AppSpacing.s28),
+                    _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
                   ],
                 ),
               ),
@@ -197,6 +225,91 @@ class _Legenda extends StatelessWidget {
         voce(AppColors.attenzione, 'Fatica'),
         voce(AppColors.ok, 'Forma'),
       ],
+    );
+  }
+}
+
+/// Volume totale e scomposto per zona/tipo di lavoro (FASE 9): stesso
+/// perimetro dati del grafico Banister sopra (solo presenze segnate
+/// "presente"), ma come somma di metri invece che curva pesata.
+class _SezioneVolumi extends ConsumerWidget {
+  const _SezioneVolumi({required this.atletaId, required this.clubId});
+
+  final String atletaId;
+  final String clubId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final volumiAsync = ref.watch(
+      volumiAtletaProvider((atletaId: atletaId, clubId: clubId)),
+    );
+
+    return volumiAsync.when(
+      data: (volumi) {
+        final zoneOrdinate = [
+          for (final z in _ordineZonePerVolume)
+            if (volumi.perZona.containsKey(z)) z,
+        ];
+        final esecuzioniOrdinate = [
+          for (final e in _ordineEsecuzionePerVolume)
+            if (volumi.perEsecuzione.containsKey(e)) e,
+        ];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader('Volume'),
+            const SizedBox(height: AppSpacing.s16),
+            StatPanel(
+              etichetta: 'Volume totale',
+              valore: _formattaVolume(volumi.volumeTotaleM),
+            ),
+            const SizedBox(height: AppSpacing.s24),
+            Text('Per zona', style: AppTypography.etichetta),
+            const SizedBox(height: AppSpacing.s16),
+            if (zoneOrdinate.isEmpty)
+              Text(
+                'Nessuna serie con zona indicata.',
+                style: AppTypography.piccolo,
+              )
+            else
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  for (final z in zoneOrdinate)
+                    StatPanel(
+                      etichetta: z,
+                      valore: _formattaVolume(volumi.perZona[z]!),
+                    ),
+                ],
+              ),
+            const SizedBox(height: AppSpacing.s24),
+            Text('Per tipo di lavoro', style: AppTypography.etichetta),
+            const SizedBox(height: AppSpacing.s16),
+            if (esecuzioniOrdinate.isEmpty)
+              Text('Nessuna serie registrata.', style: AppTypography.piccolo)
+            else
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  for (final e in esecuzioniOrdinate)
+                    StatPanel(
+                      etichetta: labelEsecuzione(e),
+                      valore: _formattaVolume(volumi.perEsecuzione[e]!),
+                    ),
+                ],
+              ),
+          ],
+        );
+      },
+      loading: () => const LoadingSkeleton(height: 120),
+      error: (error, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare i volumi.',
+        suggerimento:
+            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(error),
+      ),
     );
   }
 }

@@ -5,6 +5,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
+import '../domain/volumi_atleta.dart';
 
 /// Peso relativo di ogni zona di intensita' nel calcolo del carico: una
 /// stima approssimativa (non un fattore TRIMP validato scientificamente,
@@ -138,6 +139,63 @@ class CaricoRepository {
       risultato[giorno] = (risultato[giorno] ?? 0.0) + carico;
     }
     return risultato;
+  }
+
+  /// Righe di tutte le serie del club (zona ed esecuzione incluse),
+  /// stesso schema try/fallback-locale di [_caricoPerAllenamento].
+  Future<List<Map<String, dynamic>>> _serieDelClub(String clubId) async {
+    try {
+      return await _client
+          .from('serie')
+          .select('allenamento_id, ripetute, distanza_m, zona, esecuzione')
+          .eq('club_id', clubId);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.serieTable,
+      )..where((t) => t.clubId.equals(clubId))).get();
+      return [
+        for (final r in locali)
+          {
+            'allenamento_id': r.allenamentoId,
+            'ripetute': r.ripetute,
+            'distanza_m': r.distanzaM,
+            'zona': r.zona,
+            'esecuzione': r.esecuzione,
+          },
+      ];
+    }
+  }
+
+  /// Volume (metri) di un atleta scomposto per zona e per tipo di
+  /// lavoro, contato solo negli allenamenti a cui risulta presente
+  /// (stesso perimetro di [caricoGiornalieroPerAtleta]).
+  Future<VolumiAtleta> volumiPerAtleta({
+    required String atletaId,
+    required String clubId,
+  }) async {
+    final serie = await _serieDelClub(clubId);
+    final presenti = await _allenamentiPresenti(atletaId);
+
+    var totale = 0;
+    final perZona = <String, int>{};
+    final perEsecuzione = <String, int>{};
+    for (final r in serie) {
+      if (!presenti.contains(r['allenamento_id'] as String)) continue;
+      final volume = (r['ripetute'] as int) * (r['distanza_m'] as int);
+      totale += volume;
+      final zona = r['zona'] as String?;
+      if (zona != null) {
+        perZona[zona] = (perZona[zona] ?? 0) + volume;
+      }
+      final esecuzione = r['esecuzione'] as String;
+      perEsecuzione[esecuzione] = (perEsecuzione[esecuzione] ?? 0) + volume;
+    }
+    return VolumiAtleta(
+      volumeTotaleM: totale,
+      perZona: perZona,
+      perEsecuzione: perEsecuzione,
+    );
   }
 }
 
