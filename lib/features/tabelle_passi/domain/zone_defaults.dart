@@ -8,11 +8,14 @@ const defaultPercentualiZona = <String, double>{
   'A2': 108,
   'B1': 104,
   'B2': 100,
-  'C': 96,
+  'C1': 97,
+  'C2': 94,
+  'C3': 91,
   'D': 90,
 };
 
-/// Ordine di visualizzazione delle zone (coincide con l'ordine dichiarato
-/// nell'enum Postgres `zona_intensita`, quindi anche con l'ordinamento
-/// naturale di una query `order by zona`).
-const ordineZone = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
+/// Ordine di visualizzazione delle zone per una nuova tabella passi.
+/// "C" (zona storica prima dello split in C1/C2/C3) non compare piu'
+/// qui: le tabelle gia' generate con quella zona restano leggibili,
+/// semplicemente non si rigenera piu' una riga per quel valore.
+const ordineZone = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D'];

@@ -25,8 +25,8 @@ class Serie {
   final int ripetute;
   final int distanzaM;
   final String stile; // libero | dorso | rana | delfino | misti
-  final String esecuzione; // nuoto | gambe | braccia | pull | tecnica
-  final String? zona; // A1 | A2 | B1 | B2 | C | D
+  final String esecuzione; // nuoto | gambe | braccia | pull | tecnica | remate
+  final String? zona; // A1 | A2 | B1 | B2 | C1 | C2 | C3 | D (C: storico)
   final double? passoObiettivoS;
   final int? recuperoS;
   final double? ripartenzaS;

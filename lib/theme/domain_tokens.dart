@@ -28,7 +28,10 @@ class DomainTokens extends ThemeExtension<DomainTokens> {
       'A2': AppColors.zonaA2,
       'B1': AppColors.zonaB1,
       'B2': AppColors.zonaB2,
-      'C': AppColors.zonaC,
+      'C': AppColors.zonaC, // storico, non piu' proposta nelle schermate
+      'C1': AppColors.zonaC1,
+      'C2': AppColors.zonaC2,
+      'C3': AppColors.zonaC3,
       'D': AppColors.zonaD,
     },
     calottinaBianca: AppColors.calottinaBianca,

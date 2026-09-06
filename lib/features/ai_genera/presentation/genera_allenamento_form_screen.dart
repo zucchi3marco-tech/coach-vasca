@@ -24,7 +24,7 @@ import 'storico_generazioni_screen.dart';
 
 const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
-const _regimi = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
+const _regimi = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D'];
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

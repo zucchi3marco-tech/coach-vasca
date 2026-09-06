@@ -11,7 +11,19 @@ import '../../../core/sync/network_failure.dart';
 /// che richiederebbe la frequenza cardiaca), pensata solo per dare più
 /// peso alle serie più intense a parità di volume. Da ritoccare se l'uso
 /// reale mostra che non riflette bene lo sforzo percepito.
-const _pesoZona = {'A1': 1.0, 'A2': 1.2, 'B1': 1.6, 'B2': 2.0, 'C': 2.8, 'D': 3.5};
+// 'C' resta per pesare correttamente le serie storiche create prima
+// dello split in C1/C2/C3 (mai piu' assegnata a serie nuove).
+const _pesoZona = {
+  'A1': 1.0,
+  'A2': 1.2,
+  'B1': 1.6,
+  'B2': 2.0,
+  'C': 2.8,
+  'C1': 2.4,
+  'C2': 2.8,
+  'C3': 3.2,
+  'D': 3.5,
+};
 
 double _pesoPerZona(String? zona) => _pesoZona[zona] ?? 1.0;
 

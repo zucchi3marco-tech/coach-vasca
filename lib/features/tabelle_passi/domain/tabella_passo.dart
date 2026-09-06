@@ -13,7 +13,8 @@ class TabellaPasso {
   final String testId;
   final String atletaId;
   final String clubId;
-  final String zona; // 'A1' | 'A2' | 'B1' | 'B2' | 'C' | 'D'
+  final String zona; // 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'C3' | 'D'
+  // ('C' compare ancora solo su righe salvate prima dello split in C1/C2/C3)
   final double passo100S;
   final double? percentualeRiferimento;
 

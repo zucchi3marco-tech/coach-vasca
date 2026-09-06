@@ -28,7 +28,13 @@ abstract final class AppColors {
   static const zonaA2 = Color(0xFF2E8B8B);
   static const zonaB1 = Color(0xFF5A9E3F);
   static const zonaB2 = Color(0xFFC79A18);
+  // "C" resta per lo storico (serie/tabelle_passi salvate prima dello
+  // split): non piu' proposta nelle schermate, ma ancora un valore
+  // valido dell'enum Postgres, quindi va ancora colorata se incontrata.
   static const zonaC = Color(0xFFD9741F);
+  static const zonaC1 = Color(0xFFD68A3A);
+  static const zonaC2 = Color(0xFFD9741F);
+  static const zonaC3 = Color(0xFFC2571A);
   static const zonaD = Color(0xFF8E3B8F);
 
   // Calottine (pallanuoto)

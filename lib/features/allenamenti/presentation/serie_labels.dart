@@ -13,6 +13,7 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   'braccia' => 'Braccia',
   'pull' => 'Pull',
   'tecnica' => 'Tecnica',
+  'remate' => 'Remate',
   _ => esecuzione,
 };
 

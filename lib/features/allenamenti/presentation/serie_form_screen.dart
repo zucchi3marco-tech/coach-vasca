@@ -16,7 +16,12 @@ import '../../../widgets/primary_button.dart';
 import '../data/serie_repository.dart';
 import '../domain/serie.dart';
 
-const _zoneDisponibili = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
+// "C" (zona storica prima dello split in C1/C2/C3) non e' piu' tra le
+// scelte proposte: resta pero' un valore valido dell'enum, quindi se una
+// serie gia' salvata la usa va comunque rappresentabile (vedi
+// _voceZonaCorrente sotto, altrimenti DropdownButtonFormField va in
+// assert perche' il valore attuale non e' tra gli item).
+const _zoneDisponibili = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D'];
 
 class SerieFormScreen extends ConsumerStatefulWidget {
   const SerieFormScreen({
@@ -322,6 +327,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                       value: 'tecnica',
                       child: Text('Tecnica'),
                     ),
+                    DropdownMenuItem(value: 'remate', child: Text('Remate')),
                   ],
                   onChanged: (value) =>
                       setState(() => _esecuzione = value ?? 'nuoto'),
@@ -333,6 +339,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                   items: [
                     const DropdownMenuItem(value: null, child: Text('Nessuna')),
                     for (final z in _zoneDisponibili) _voceZona(context, z),
+                    // "C" non e' piu' tra le scelte, ma se questa serie la
+                    // usa gia' deve restare rappresentabile nel menu.
+                    if (_zona == 'C') _voceZona(context, 'C'),
                   ],
                   onChanged: (value) => setState(() => _zona = value),
                 ),

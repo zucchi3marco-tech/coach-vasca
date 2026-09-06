@@ -91,8 +91,12 @@ Le zone sono il vocabolario tecnico dell'allenatore. Hanno un colore fisso in tu
 | A2 | `#2E8B8B` |
 | B1 | `#5A9E3F` |
 | B2 | `#C79A18` |
-| C | `#D9741F` |
+| C1 | `#D68A3A` |
+| C2 | `#D9741F` |
+| C3 | `#C2571A` |
 | D | `#8E3B8F` |
+
+`C` (senza numero) è una zona storica, sostituita da C1/C2/C3: non compare più nelle schermate per nuove serie, ma resta un colore valido (`#D9741F`, lo stesso di C2) per le serie salvate prima dello split, mai rimossa dall'enum del database.
 
 **Il colore non basta mai da solo.** La sigla della zona deve sempre essere scritta accanto al colore. Un allenatore daltonico deve poter usare l'app, e comunque un colore senza etichetta va imparato a memoria.
 
