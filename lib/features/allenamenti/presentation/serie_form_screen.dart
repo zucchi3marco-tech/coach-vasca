@@ -2,8 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../theme/domain_tokens.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../data/serie_repository.dart';
 import '../domain/serie.dart';
+
+const _zoneDisponibili = ['A1', 'A2', 'B1', 'B2', 'C', 'D'];
 
 class SerieFormScreen extends ConsumerStatefulWidget {
   const SerieFormScreen({
@@ -191,9 +204,10 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -204,32 +218,58 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     }
   }
 
+  DropdownMenuItem<String> _voceZona(BuildContext context, String sigla) {
+    final tokens =
+        Theme.of(context).extension<DomainTokens>() ?? DomainTokens.standard;
+    return DropdownMenuItem(
+      value: sigla,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: tokens.colorePerZona(sigla),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s8),
+          Text(sigla),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica serie' : 'Nuova serie'),
         actions: [
           if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Elimina',
+            TextButton.icon(
               onPressed: _elimina,
+              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
+              label: const Text(
+                'Elimina',
+                style: TextStyle(color: AppColors.rosso),
+              ),
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _blocco,
-                  decoration: const InputDecoration(labelText: 'Blocco'),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormGroup(
+              titolo: 'Tipo di serie',
+              campi: [
+                AppSelect<String>(
+                  etichetta: 'Blocco',
+                  value: _blocco,
                   items: const [
                     DropdownMenuItem(
                       value: 'riscaldamento',
@@ -248,57 +288,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                   onChanged: (value) =>
                       setState(() => _blocco = value ?? 'principale'),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _ordineController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Ordine',
-                        ),
-                        validator: (v) =>
-                            int.tryParse(v?.trim() ?? '') == null
-                            ? 'N.'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _ripeteController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Ripetute',
-                        ),
-                        validator: (v) {
-                          final n = int.tryParse(v?.trim() ?? '');
-                          return (n == null || n <= 0) ? '> 0' : null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _distanzaController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Distanza (m)',
-                        ),
-                        validator: (v) {
-                          final n = int.tryParse(v?.trim() ?? '');
-                          return (n == null || n <= 0) ? '> 0' : null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _stile,
-                  decoration: const InputDecoration(labelText: 'Stile'),
+                AppSelect<String>(
+                  etichetta: 'Stile',
+                  value: _stile,
                   items: const [
                     DropdownMenuItem(value: 'libero', child: Text('Libero')),
                     DropdownMenuItem(value: 'dorso', child: Text('Dorso')),
@@ -312,11 +304,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                   onChanged: (value) =>
                       setState(() => _stile = value ?? 'libero'),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _esecuzione,
-                  decoration: const InputDecoration(labelText: 'Esecuzione'),
+                AppSelect<String>(
+                  etichetta: 'Esecuzione',
+                  value: _esecuzione,
                   items: const [
                     DropdownMenuItem(
                       value: 'nuoto',
@@ -336,132 +326,148 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                   onChanged: (value) =>
                       setState(() => _esecuzione = value ?? 'nuoto'),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String?>(
-                  isExpanded: true,
-                  initialValue: _zona,
-                  decoration: const InputDecoration(
-                    labelText: 'Zona (opzionale)',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Nessuna')),
-                    DropdownMenuItem(value: 'A1', child: Text('A1')),
-                    DropdownMenuItem(value: 'A2', child: Text('A2')),
-                    DropdownMenuItem(value: 'B1', child: Text('B1')),
-                    DropdownMenuItem(value: 'B2', child: Text('B2')),
-                    DropdownMenuItem(value: 'C', child: Text('C')),
-                    DropdownMenuItem(value: 'D', child: Text('D')),
+                AppSelect<String?>(
+                  etichetta: 'Zona (facoltativo)',
+                  value: _zona,
+                  hint: 'Nessuna',
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Nessuna')),
+                    for (final z in _zoneDisponibili) _voceZona(context, z),
                   ],
                   onChanged: (value) => setState(() => _zona = value),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Passo obiettivo /100m (opzionale)',
-                  style: Theme.of(context).textTheme.bodySmall,
+              ],
+            ),
+            FormGroup(
+              titolo: 'Volume',
+              campi: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        etichetta: 'Ordine',
+                        controller: _ordineController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) =>
+                            int.tryParse(v?.trim() ?? '') == null
+                            ? 'N.'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: AppTextField(
+                        etichetta: 'Ripetute',
+                        controller: _ripeteController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          final n = int.tryParse(v?.trim() ?? '');
+                          return (n == null || n <= 0) ? '> 0' : null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: AppTextField(
+                        etichetta: 'Distanza (m)',
+                        controller: _distanzaController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          final n = int.tryParse(v?.trim() ?? '');
+                          return (n == null || n <= 0) ? '> 0' : null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Ritmo',
+              campi: [
+                Text(
+                  'Passo obiettivo /100m (facoltativo)',
+                  style: AppTypography.etichetta,
+                ),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Minuti',
                         controller: _passoMinutiController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Minuti',
-                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Secondi',
                         controller: _passoSecondiController,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: 'Secondi',
-                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Recupero, secondi (facoltativo)',
                   controller: _recuperoController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Recupero, secondi (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 16),
                 Text(
-                  'Ripartenza / interval (opzionale)',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  'Ripartenza / interval (facoltativo)',
+                  style: AppTypography.etichetta,
                 ),
-                const SizedBox(height: 4),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Minuti',
                         controller: _ripartenzaMinutiController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Minuti',
-                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Secondi',
                         controller: _ripartenzaSecondiController,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: 'Secondi',
-                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+              ],
+            ),
+            FormGroup(
+              titolo: 'Altro',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Attrezzatura (facoltativo)',
                   controller: _attrezzaturaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Attrezzatura (opzionale)',
-                  ),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
                   controller: _noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Note (opzionale)',
-                  ),
                   maxLines: 2,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva'),
                 ),
               ],
             ),
-          ),
+            if (_errorMessage != null) ...[
+              ErrorBanner(messaggio: _errorMessage!),
+              const SizedBox(height: AppSpacing.s16),
+            ],
+            PrimaryButton(
+              label: 'Salva serie',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+          ],
         ),
       ),
     );
