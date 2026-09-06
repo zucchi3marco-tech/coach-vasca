@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/primary_button.dart';
 import '../../atleti/domain/atleta.dart';
 import '../data/test_repository.dart';
 
@@ -21,6 +27,7 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
   final _minutiController = TextEditingController(text: '0');
   final _secondiController = TextEditingController();
   final _noteController = TextEditingController();
+  late final TextEditingController _dataController;
 
   String _tipo = 'BVS';
   DateTime _dataTest = DateTime.now();
@@ -28,13 +35,25 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _dataController = TextEditingController(text: _formattaData(_dataTest));
+  }
+
+  @override
   void dispose() {
     _distanzaController.dispose();
     _minutiController.dispose();
     _secondiController.dispose();
     _noteController.dispose();
+    _dataController.dispose();
     super.dispose();
   }
+
+  String _formattaData(DateTime data) =>
+      '${data.day.toString().padLeft(2, '0')}/'
+      '${data.month.toString().padLeft(2, '0')}/'
+      '${data.year}';
 
   Future<void> _pickData() async {
     final selected = await showDatePicker(
@@ -44,7 +63,10 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
       lastDate: DateTime.now(),
     );
     if (selected != null) {
-      setState(() => _dataTest = selected);
+      setState(() {
+        _dataTest = selected;
+        _dataController.text = _formattaData(selected);
+      });
     }
   }
 
@@ -75,7 +97,8 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Test salvato — passo medio: ${formatPaceSeconds(test.passoMedio100S)}/100m',
+            'Test salvato — passo medio: '
+            '${formatPaceSeconds(test.passoMedio100S)}/100m',
           ),
         ),
       );
@@ -91,18 +114,17 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Nuovo test — ${widget.atleta.nomeCompleto}'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+    return AppScaffold(
+      scrollabile: true,
+      appBar: AppBar(title: Text('Nuovo test — ${widget.atleta.nomeCompleto}')),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormGroup(
+              titolo: 'Tipo di test',
+              campi: [
                 SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(value: 'BVS', label: Text('BVS')),
@@ -112,52 +134,47 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
                   onSelectionChanged: (selection) =>
                       setState(() => _tipo = selection.first),
                 ),
-                const SizedBox(height: 16),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data del test'),
-                  subtitle: Text(
-                    '${_dataTest.day.toString().padLeft(2, '0')}/'
-                    '${_dataTest.month.toString().padLeft(2, '0')}/'
-                    '${_dataTest.year}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
+                AppTextField(
+                  etichetta: 'Data del test',
+                  controller: _dataController,
+                  readOnly: true,
                   onTap: _pickData,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+              ],
+            ),
+            FormGroup(
+              titolo: 'Risultato',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Distanza totale (m)',
                   controller: _distanzaController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Distanza totale (m)',
-                  ),
                   validator: (value) {
                     final n = int.tryParse(value?.trim() ?? '');
-                    if (n == null || n <= 0) return 'Inserisci una distanza valida';
+                    if (n == null || n <= 0) {
+                      return 'Inserisci una distanza valida';
+                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Minuti',
                         controller: _minutiController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Minuti',
-                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
-                      child: TextFormField(
+                      child: AppTextField(
+                        etichetta: 'Secondi',
                         controller: _secondiController,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Secondi',
                         ),
                         validator: (value) {
                           final minuti =
@@ -180,37 +197,23 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
                   controller: _noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Note (opzionale)',
-                  ),
                   maxLines: 2,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salva test'),
                 ),
               ],
             ),
-          ),
+            if (_errorMessage != null) ...[
+              ErrorBanner(messaggio: _errorMessage!),
+              const SizedBox(height: AppSpacing.s16),
+            ],
+            PrimaryButton(
+              label: 'Salva test',
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _submit,
+            ),
+          ],
         ),
       ),
     );

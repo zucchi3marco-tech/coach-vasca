@@ -3,6 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_colors.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
 import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
@@ -20,33 +27,36 @@ class TestListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final testAsync = ref.watch(testListProvider(atleta.id));
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: Text('Test — ${atleta.nomeCompleto}')),
       body: testAsync.when(
         data: (test) => test.isEmpty
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'Nessun test registrato. Tocca "+" per aggiungerne uno.',
-                  ),
-                ),
+            ? EmptyState(
+                icona: Icons.speed_outlined,
+                titolo: 'Nessun test registrato',
+                descrizione:
+                    'I passi delle zone si calcolano dal primo test BVS '
+                    'o T30.',
+                azionePrincipale: 'Nuovo test',
+                onAzionePrincipale: () => _apriForm(context, ref),
               )
-            : ListView.separated(
-                itemCount: test.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final t = test[index];
-                  return _TestTile(
-                    test: t,
-                    atleta: atleta,
-                    onDelete: () => _confermaEliminazione(context, ref, t),
-                  );
-                },
+            : AppListPanel(
+                righe: [
+                  for (final t in test)
+                    _TestTile(
+                      test: t,
+                      atleta: atleta,
+                      onDelete: () => _confermaEliminazione(context, ref, t),
+                    ),
+                ],
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Errore nel caricamento test: ${messaggioErrore(error)}')),
+        loading: () => const LoadingSkeletonList(righe: 5),
+        error: (error, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare i test.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab-test',
@@ -73,7 +83,8 @@ class TestListScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Eliminare il test?'),
         content: Text(
-          'Verranno eliminate anche le eventuali tabelle passi collegate a questo test (${test.tipo} del '
+          'Verranno eliminate anche le eventuali tabelle passi collegate a '
+          'questo test (${test.tipo} del '
           '${test.dataTest.day.toString().padLeft(2, '0')}/'
           '${test.dataTest.month.toString().padLeft(2, '0')}/'
           '${test.dataTest.year}).',
@@ -113,23 +124,20 @@ class _TestTile extends ConsumerWidget {
     final tabellaGenerata =
         ref.watch(tabellePassiProvider(test.id)).value?.isNotEmpty ?? false;
 
-    return ListTile(
-      title: Text(
-        '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
+    return AppListRow(
+      leading: Icon(
+        tabellaGenerata ? Icons.table_chart : Icons.table_chart_outlined,
+        color: tabellaGenerata ? AppColors.ok : AppColors.testoSecondario,
       ),
-      subtitle: Text(
-        '${test.dataTest.day.toString().padLeft(2, '0')}/'
-        '${test.dataTest.month.toString().padLeft(2, '0')}/'
-        '${test.dataTest.year} · '
-        '${test.distanzaTotaleM} m in ${formatPaceSeconds(test.tempoTotaleS)}'
-        '${tabellaGenerata ? ' · tabella passi generata' : ''}',
-      ),
-      leading: tabellaGenerata
-          ? const Icon(Icons.table_chart, color: Colors.green)
-          : const Icon(Icons.table_chart_outlined),
+      titolo: '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
+      sottotitolo:
+          '${test.dataTest.day.toString().padLeft(2, '0')}/'
+          '${test.dataTest.month.toString().padLeft(2, '0')}/'
+          '${test.dataTest.year} · '
+          '${test.distanzaTotaleM} m in ${formatPaceSeconds(test.tempoTotaleS)}',
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
-        tooltip: 'Elimina',
+        tooltip: 'Elimina test',
         onPressed: onDelete,
       ),
       onTap: () => Navigator.of(context).push(
