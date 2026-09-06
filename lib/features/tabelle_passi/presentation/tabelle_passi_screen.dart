@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
+import '../../../widgets/zone_chip.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../test/domain/test_ingresso.dart';
 import '../application/tabelle_passi_providers.dart';
@@ -11,7 +17,11 @@ import '../domain/tabella_passo.dart';
 import '../domain/zone_defaults.dart';
 
 class TabellePassiScreen extends ConsumerStatefulWidget {
-  const TabellePassiScreen({required this.test, required this.atleta, super.key});
+  const TabellePassiScreen({
+    required this.test,
+    required this.atleta,
+    super.key,
+  });
 
   final TestIngresso test;
   final Atleta atleta;
@@ -45,8 +55,10 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
     if (_prefillFatto || righeEsistenti.isEmpty) return;
     for (final riga in righeEsistenti) {
       final percentuale = riga.percentualeRiferimento;
-      if (percentuale != null && _percentualeControllers.containsKey(riga.zona)) {
-        _percentualeControllers[riga.zona]!.text = percentuale.toStringAsFixed(1);
+      if (percentuale != null &&
+          _percentualeControllers.containsKey(riga.zona)) {
+        _percentualeControllers[riga.zona]!.text = percentuale
+            .toStringAsFixed(1);
       }
     }
     _prefillFatto = true;
@@ -98,86 +110,70 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
 
     esistentiAsync.whenData(_prefillDaEsistenti);
 
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
-        title: Text(
-          'Tabella passi — ${widget.atleta.nomeCompleto}',
-        ),
+        title: Text('Tabella passi — ${widget.atleta.nomeCompleto}'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '${widget.test.tipo} · passo medio '
-                '${formatPaceSeconds(widget.test.passoMedio100S)}/100m',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Percentuali di partenza generiche: modificale liberamente '
-                'in base alla tua metodologia prima di generare.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              for (final zona in ordineZone) ...[
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 40,
-                      child: Text(
-                        zona,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _percentualeControllers[zona],
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: '% del passo medio',
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 90,
-                      child: Text(
-                        '${formatPaceSeconds(_passoPerZona(zona))}/100m',
-                        textAlign: TextAlign.end,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _isSubmitting ? null : _genera,
-                child: _isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Genera tabella passi'),
-              ),
-            ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '${widget.test.tipo} · passo medio '
+            '${formatPaceSeconds(widget.test.passoMedio100S)}/100m',
+            style: AppTypography.cifreTabulari(AppTypography.corpo),
           ),
-        ),
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            'Percentuali di partenza generiche: modificale liberamente in '
+            'base alla tua metodologia prima di generare.',
+            style: AppTypography.piccolo,
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          for (final zona in ordineZone) ...[
+            Row(
+              children: [
+                ZoneChip(sigla: zona),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _percentualeControllers[zona],
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    decoration: const InputDecoration(
+                      labelText: '% del passo medio',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s12),
+                SizedBox(
+                  width: 90,
+                  child: Text(
+                    '${formatPaceSeconds(_passoPerZona(zona))}/100m',
+                    textAlign: TextAlign.end,
+                    style: AppTypography.cifreTabulari(
+                      AppTypography.corpoForte,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s8),
+          ],
+          if (_errorMessage != null) ...[
+            const SizedBox(height: AppSpacing.s8),
+            ErrorBanner(messaggio: _errorMessage!),
+          ],
+          const SizedBox(height: AppSpacing.s16),
+          PrimaryButton(
+            label: 'Genera tabella passi',
+            isLoading: _isSubmitting,
+            onPressed: _isSubmitting ? null : _genera,
+          ),
+        ],
       ),
     );
   }
