@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_spacing.dart';
+import '../../../../theme/app_typography.dart';
+import '../../../../widgets/app_list_panel.dart';
+import '../../../../widgets/app_list_row.dart';
 import '../../domain/allenamento.dart';
 import 'allenamenti_per_giorno.dart';
 
@@ -52,12 +57,18 @@ class _CalendarioSettimanaleViewState
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s4,
+            vertical: AppSpacing.s4,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left),
+                icon: const Icon(
+                  Icons.chevron_left,
+                  color: AppColors.testoSecondario,
+                ),
                 onPressed: () => setState(
                   () => _inizioSettimana = _inizioSettimana.subtract(
                     const Duration(days: 7),
@@ -66,10 +77,13 @@ class _CalendarioSettimanaleViewState
               ),
               Text(
                 '${_formattaData(_inizioSettimana)} — ${_formattaData(fineSettimana)}',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: AppTypography.sezione,
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.testoSecondario,
+                ),
                 onPressed: () => setState(
                   () => _inizioSettimana = _inizioSettimana.add(
                     const Duration(days: 7),
@@ -80,34 +94,54 @@ class _CalendarioSettimanaleViewState
           ),
         ),
         Expanded(
-          child: ListView.separated(
-            itemCount: 7,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final data = _inizioSettimana.add(Duration(days: index));
-              final sessioni = perGiorno[data] ?? const [];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: isStessoGiorno(data, oggi)
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                  child: Text('${data.day}'),
-                ),
-                title: Text(_nomiGiorni[index]),
-                subtitle: Text(
-                  sessioni.isEmpty
-                      ? 'Nessun allenamento'
-                      : sessioni
-                            .map(
-                              (a) => a.titolo != null && a.titolo!.isNotEmpty
-                                  ? a.titolo!
-                                  : 'Allenamento',
-                            )
-                            .join(', '),
-                ),
-                onTap: () => widget.onGiornoSelezionato(data),
-              );
-            },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: AppListPanel(
+              righe: [
+                for (var index = 0; index < 7; index++)
+                  Builder(
+                    builder: (context) {
+                      final data = _inizioSettimana.add(Duration(days: index));
+                      final sessioni = perGiorno[data] ?? const [];
+                      final oggiStesso = isStessoGiorno(data, oggi);
+                      return AppListRow(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: oggiStesso
+                                ? AppColors.blu
+                                : AppColors.superficieTenue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${data.day}',
+                            style: AppTypography.corpoForte.copyWith(
+                              color: oggiStesso
+                                  ? Colors.white
+                                  : AppColors.testo,
+                            ),
+                          ),
+                        ),
+                        titolo: _nomiGiorni[index],
+                        sottotitolo: sessioni.isEmpty
+                            ? 'Nessun allenamento'
+                            : sessioni
+                                  .map(
+                                    (a) =>
+                                        a.titolo != null &&
+                                            a.titolo!.isNotEmpty
+                                        ? a.titolo!
+                                        : 'Allenamento',
+                                  )
+                                  .join(', '),
+                        onTap: () => widget.onGiornoSelezionato(data),
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ],

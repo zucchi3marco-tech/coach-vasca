@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_spacing.dart';
+import '../../../../theme/app_typography.dart';
 import '../../domain/allenamento.dart';
 import 'allenamenti_per_giorno.dart';
 
@@ -62,30 +65,40 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
           haAllenamenti: perGiorno.containsKey(
             DateTime(_mese.year, _mese.month, giorno),
           ),
-          onTap: () =>
-              widget.onGiornoSelezionato(DateTime(_mese.year, _mese.month, giorno)),
+          onTap: () => widget.onGiornoSelezionato(
+            DateTime(_mese.year, _mese.month, giorno),
+          ),
         ),
     ];
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s4,
+            vertical: AppSpacing.s4,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left),
+                icon: const Icon(
+                  Icons.chevron_left,
+                  color: AppColors.testoSecondario,
+                ),
                 onPressed: () => setState(
                   () => _mese = DateTime(_mese.year, _mese.month - 1),
                 ),
               ),
               Text(
                 '${_nomiMesi[_mese.month - 1]} ${_mese.year}',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: AppTypography.sezione,
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.testoSecondario,
+                ),
                 onPressed: () => setState(
                   () => _mese = DateTime(_mese.year, _mese.month + 1),
                 ),
@@ -97,12 +110,7 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
           children: _nomiGiorni
               .map(
                 (g) => Expanded(
-                  child: Center(
-                    child: Text(
-                      g,
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ),
+                  child: Center(child: Text(g, style: AppTypography.etichetta)),
                 ),
               )
               .toList(),
@@ -135,26 +143,28 @@ class _CellaGiorno extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
       child: Container(
-        margin: const EdgeInsets.all(2),
+        margin: const EdgeInsets.all(AppSpacing.s4),
         decoration: BoxDecoration(
-          border: evidenziato
-              ? Border.all(color: Theme.of(context).colorScheme.primary)
-              : null,
-          borderRadius: BorderRadius.circular(6),
+          border: evidenziato ? Border.all(color: AppColors.blu) : null,
+          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('$giorno'),
+            Text(
+              '$giorno',
+              style: AppTypography.corpo.copyWith(color: AppColors.testo),
+            ),
             const SizedBox(height: 2),
             SizedBox(
               height: 6,
               width: 6,
               child: haAllenamenti
-                  ? DecoratedBox(
+                  ? const DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppColors.blu,
                         shape: BoxShape.circle,
                       ),
                     )

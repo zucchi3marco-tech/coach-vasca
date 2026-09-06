@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
@@ -32,11 +39,11 @@ class _AllenamentiListScreenState
   Widget build(BuildContext context) {
     final allenamentiAsync = ref.watch(allenamentiListProvider(widget.clubId));
 
-    return Scaffold(
+    return AppScaffold(
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.s8),
             child: SegmentedButton<_Vista>(
               segments: const [
                 ButtonSegment(value: _Vista.elenco, label: Text('Elenco')),
@@ -64,11 +71,24 @@ class _AllenamentiListScreenState
                   onGiornoSelezionato: (data) => _apriGiorno(data),
                 ),
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Text(
-                  'Errore nel caricamento allenamenti: ${messaggioErrore(error)}',
-                ),
+              loading: () => ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                children: const [LoadingSkeletonList(righe: 6)],
+              ),
+              error: (error, _) => ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                children: [
+                  ErrorBanner(
+                    messaggio: 'Non è stato possibile caricare gli '
+                        'allenamenti.',
+                    suggerimento:
+                        'Riprova. Se l\'errore continua, chiudi e riapri '
+                        'l\'app.',
+                    dettaglioTecnico: messaggioErrore(error),
+                  ),
+                ],
               ),
             ),
           ),
@@ -83,7 +103,7 @@ class _AllenamentiListScreenState
             tooltip: 'Genera con AI',
             child: const Icon(Icons.auto_awesome),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s12),
           FloatingActionButton(
             heroTag: 'fab-allenamenti',
             onPressed: _apriForm,
@@ -102,42 +122,44 @@ class _AllenamentiListScreenState
           .refreshFromRemote(widget.clubId),
       child: allenamenti.isEmpty
           ? ListView(
-              children: const [
-                Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text(
-                      'Nessun allenamento. Tocca "+" per crearne uno.',
-                    ),
-                  ),
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                EmptyState(
+                  icona: Icons.calendar_month_outlined,
+                  titolo: 'Nessun allenamento',
+                  descrizione:
+                      'Crea il primo allenamento a mano oppure genera una '
+                      'proposta con l\'AI.',
+                  azionePrincipale: 'Nuovo allenamento',
+                  onAzionePrincipale: _apriForm,
                 ),
               ],
             )
-          : ListView.separated(
-              itemCount: allenamenti.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final a = allenamenti[index];
-                return ListTile(
-                  title: Text(
-                    a.titolo != null && a.titolo!.isNotEmpty
-                        ? a.titolo!
-                        : 'Allenamento',
-                  ),
-                  subtitle: Text(
-                    '${a.data.day.toString().padLeft(2, '0')}/'
-                    '${a.data.month.toString().padLeft(2, '0')}/'
-                    '${a.data.year}'
-                    '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AllenamentoDetailScreen(allenamento: a),
+          : SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.s16),
+              child: AppListPanel(
+                righe: [
+                  for (final a in allenamenti)
+                    AppListRow(
+                      titolo: a.titolo != null && a.titolo!.isNotEmpty
+                          ? a.titolo!
+                          : 'Allenamento',
+                      sottotitolo:
+                          '${a.data.day.toString().padLeft(2, '0')}/'
+                          '${a.data.month.toString().padLeft(2, '0')}/'
+                          '${a.data.year}'
+                          '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AllenamentoDetailScreen(allenamento: a),
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
+                ],
+              ),
             ),
     );
   }
