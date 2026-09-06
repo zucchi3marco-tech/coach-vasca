@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/cap_badge.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/stat_panel.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
@@ -46,7 +55,8 @@ class StatistichePartitaScreen extends ConsumerWidget {
       ));
     }
     righe.sort(
-      (a, b) => a.giocatore.numeroCalottina.compareTo(b.giocatore.numeroCalottina),
+      (a, b) =>
+          a.giocatore.numeroCalottina.compareTo(b.giocatore.numeroCalottina),
     );
     return righe;
   }
@@ -59,7 +69,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
       atletiListProvider((clubId: partita.clubId, includeInactive: false)),
     );
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: Text(
           'Statistiche — ${partita.squadraCasa} - ${partita.squadraTrasferta}',
@@ -72,8 +82,13 @@ class StatistichePartitaScreen extends ConsumerWidget {
               final atletiPerId = {for (final a in atleti) a.id: a};
               final righe = _calcola(convocati, eventi, atletiPerId);
               if (righe.isEmpty) {
-                return const Center(
-                  child: Text('Nessun convocato in distinta.'),
+                return const EmptyState(
+                  icona: Icons.bar_chart_outlined,
+                  titolo: 'Nessun convocato in distinta',
+                  descrizione:
+                      'Le statistiche si calcolano dai convocati e dagli '
+                      'eventi registrati per questa partita.',
+                  azionePrincipale: 'Torna indietro',
                 );
               }
               final tiriTotali = righe.fold<int>(0, (s, r) => s + r.tiri);
@@ -82,51 +97,85 @@ class StatistichePartitaScreen extends ConsumerWidget {
                 0,
                 (s, r) => s + r.espulsioni,
               );
-              return Column(
+              return ListView(
+                padding: const EdgeInsets.all(AppSpacing.s16),
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Squadra: $golTotali gol su $tiriTotali tiri'
-                      '${tiriTotali > 0 ? ' (${(golTotali / tiriTotali * 100).round()}%)' : ''}'
-                      ' · $espulsioniTotali espulsioni',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+                  Wrap(
+                    spacing: AppSpacing.s24,
+                    runSpacing: AppSpacing.s16,
+                    children: [
+                      StatPanel(
+                        etichetta: 'Gol',
+                        valore: '$golTotali/$tiriTotali',
+                        confronto: tiriTotali > 0
+                            ? '${(golTotali / tiriTotali * 100).round()}%'
+                            : null,
+                      ),
+                      StatPanel(
+                        etichetta: 'Espulsioni',
+                        valore: '$espulsioniTotali',
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: righe.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final r = righe[index];
-                        final percentuale = r.tiri > 0
-                            ? '${(r.gol / r.tiri * 100).round()}%'
-                            : '—';
-                        return ListTile(
-                          leading: CircleAvatar(
-                            child: Text('${r.giocatore.numeroCalottina}'),
-                          ),
-                          title: Text(r.atleta.nomeCompleto),
-                          subtitle: Text(
-                            'Gol: ${r.gol}/${r.tiri} ($percentuale) · '
-                            'Espulsioni: ${r.espulsioni}',
-                          ),
-                        );
-                      },
-                    ),
+                  const SizedBox(height: AppSpacing.s24),
+                  AppListPanel(
+                    righe: [
+                      for (final r in righe)
+                        AppListRow(
+                          leading: CapBadge(numero: r.giocatore.numeroCalottina),
+                          titolo: r.atleta.nomeCompleto,
+                          sottotitolo:
+                              'Gol: ${r.gol}/${r.tiri} '
+                              '(${r.tiri > 0 ? '${(r.gol / r.tiri * 100).round()}%' : '—'}) · '
+                              'Espulsioni: ${r.espulsioni}',
+                        ),
+                    ],
                   ),
                 ],
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(child: Text(messaggioErrore(error))),
+            loading: () => const Padding(
+              padding: EdgeInsets.all(AppSpacing.s16),
+              child: LoadingSkeletonList(righe: 5),
+            ),
+            error: (error, _) => Padding(
+              padding: const EdgeInsets.all(AppSpacing.s16),
+              child: ErrorBanner(
+                messaggio: 'Non è stato possibile caricare gli atleti.',
+                suggerimento:
+                    'Riprova. Se l\'errore continua, chiudi e riapri '
+                    'l\'app.',
+                dettaglioTecnico: messaggioErrore(error),
+              ),
+            ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text(messaggioErrore(error))),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(AppSpacing.s16),
+            child: LoadingSkeletonList(righe: 5),
+          ),
+          error: (error, _) => Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: ErrorBanner(
+              messaggio: 'Non è stato possibile caricare la distinta.',
+              suggerimento:
+                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+              dettaglioTecnico: messaggioErrore(error),
+            ),
+          ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(messaggioErrore(error))),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 5),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare gli eventi.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
+        ),
       ),
     );
   }
