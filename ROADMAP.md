@@ -113,8 +113,10 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [ ] Pubblicazione store (Play/App Store) se necessario
 
 ## FASE 9 — Area atleta e raffinamenti allenamento
-- [ ] Account atleta — pagina personale in cui l'atleta inserisce i propri PB, condivisi con l'account allenatore
-- [ ] Permessi atleta — l'atleta vede solo i propri dati: carico, presenze (numero effettivo, % mensile, % totale) e tutto ciò che lo riguarda, non quelli degli altri atleti
+- [x] Account atleta — pagina personale in cui l'atleta inserisce i propri PB, condivisi con l'account allenatore. Collegamento tramite invito: per singolo atleta (codice monouso dalla sua scheda) o per gruppo intero (codice riutilizzabile, l'atleta compila da solo la propria anagrafica ed entra già nel gruppo giusto — pensato per onboarding di tante persone insieme, es. una squadra U14/U16)
+- [x] Permessi atleta — RLS dedicata: l'atleta collegato vede solo il proprio carico, le proprie presenze (numero e % mensile/totale) e i propri PB, non la rubrica né i dati degli altri atleti. Il consenso privacy resta da confermare a mano dal coach anche per gli atleti auto-registrati col codice di gruppo
+- [x] Ricerca e ordinamento (cognome/data di nascita) nella lista atleti — aggiunto durante il test della Fase 9
+- [x] Scadenza visita medica in anagrafica, con avviso in elenco quando scaduta o in scadenza entro 30 giorni — aggiunto durante il test della Fase 9
 - [ ] Allenamenti: sezione "materiale utilizzato"
 - [ ] Nuovi codici zona/tipo lavoro: split di C in C1/C2/C3 (oltre ad A1, A2, B1, B2, D) più "tecnica", "gambe", "braccia", "remate"
 - [ ] Pagina Carico: mostrare il volume totale e il volume per ogni codice/tipo lavoro (gambe, braccia, ecc.)
