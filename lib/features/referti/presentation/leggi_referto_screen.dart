@@ -5,6 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
+import '../../../widgets/secondary_button.dart';
+import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
@@ -33,7 +41,10 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
   RefertoLetto? _risultato;
 
   Future<void> _scegliFoto(ImageSource source) async {
-    final file = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final file = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
     setState(() {
@@ -88,74 +99,69 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(title: const Text('Leggi referto')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Carica la foto di un referto FIN già compilato: un modello '
-                'AI proverà a leggere punteggio, parziali e giocatori. '
-                'Controlla sempre i dati letti prima di salvarli: non '
-                'vengono salvati automaticamente da nessuna parte.',
-              ),
-              const SizedBox(height: 16),
-              if (_immagineBytes != null) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(_immagineBytes!, height: 220, fit: BoxFit.cover),
-                ),
-                const SizedBox(height: 12),
-              ],
-              OutlinedButton.icon(
-                onPressed: _isLoading ? null : _mostraSceltaFonte,
-                icon: const Icon(Icons.add_a_photo_outlined),
-                label: Text(_immagineBytes == null ? 'Scegli foto' : 'Cambia foto'),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: (_immagineBytes == null || _isLoading) ? null : _analizza,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Analizza'),
-              ),
-              if (_errore != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _errore!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _analizza,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Riprova'),
-                ),
-              ],
-              if (_risultato != null) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Correggi qui sotto eventuali errori di lettura (soprattutto '
-                  'i nomi) prima di usare questi dati.',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-                const SizedBox(height: 12),
-                _RefertoModificabile(
-                  key: ObjectKey(_risultato),
-                  referto: _risultato!,
-                  clubId: widget.clubId,
-                ),
-              ],
-            ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Carica la foto di un referto FIN già compilato: un modello '
+            'AI proverà a leggere punteggio, parziali e giocatori. '
+            'Controlla sempre i dati letti prima di salvarli: non vengono '
+            'salvati automaticamente da nessuna parte.',
+            style: AppTypography.piccolo,
           ),
-        ),
+          const SizedBox(height: AppSpacing.s16),
+          if (_immagineBytes != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+              child: Image.memory(
+                _immagineBytes!,
+                height: 220,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+          ],
+          SecondaryButton(
+            onPressed: _isLoading ? null : _mostraSceltaFonte,
+            icon: Icons.add_a_photo_outlined,
+            label: _immagineBytes == null ? 'Scegli foto' : 'Cambia foto',
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          PrimaryButton(
+            label: 'Analizza',
+            isLoading: _isLoading,
+            onPressed: (_immagineBytes == null || _isLoading)
+                ? null
+                : _analizza,
+          ),
+          if (_errore != null) ...[
+            const SizedBox(height: AppSpacing.s16),
+            ErrorBanner(messaggio: _errore!),
+            const SizedBox(height: AppSpacing.s8),
+            SecondaryButton(
+              onPressed: _isLoading ? null : _analizza,
+              icon: Icons.refresh,
+              label: 'Riprova',
+            ),
+          ],
+          if (_risultato != null) ...[
+            const SizedBox(height: AppSpacing.s24),
+            Text(
+              'Correggi qui sotto eventuali errori di lettura (soprattutto '
+              'i nomi) prima di usare questi dati.',
+              style: AppTypography.piccolo,
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            _RefertoModificabile(
+              key: ObjectKey(_risultato),
+              referto: _risultato!,
+              clubId: widget.clubId,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -165,6 +171,11 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
 /// scritta a mano non è mai affidabile al 100%, soprattutto per i nomi, per
 /// cui ogni campo resta un testo modificabile invece di essere di sola
 /// lettura.
+///
+/// Nota di design: le righe della tabella giocatori usano `TextFormField`
+/// stretti invece di `AppTextField` (che impone un'etichetta sopra e
+/// occupa tutta la larghezza) — DESIGN.md sezione 4 prevede proprio questa
+/// eccezione per le "colonne strette" di distinta/tabella passi/referto.
 class _RefertoModificabile extends ConsumerStatefulWidget {
   const _RefertoModificabile({
     required this.referto,
@@ -187,7 +198,8 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
   late final TextEditingController _squadraTrasfertaCtrl;
   late final TextEditingController _risultatoCasaCtrl;
   late final TextEditingController _risultatoTrasfertaCtrl;
-  late final List<(TextEditingController, TextEditingController)> _parzialiCtrl;
+  late final List<(TextEditingController, TextEditingController)>
+  _parzialiCtrl;
   late final List<_GiocatoreCtrl> _giocatoriCasaCtrl;
   late final List<_GiocatoreCtrl> _giocatoriTrasfertaCtrl;
 
@@ -246,25 +258,27 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                 decoration: const InputDecoration(labelText: 'Squadra casa'),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.s8),
             SizedBox(
               width: 48,
               child: TextFormField(
                 controller: _risultatoCasaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
+                style: AppTypography.cifreTabulari(AppTypography.corpo),
               ),
             ),
-            const Text(' - '),
+            Text(' - ', style: AppTypography.corpo),
             SizedBox(
               width: 48,
               child: TextFormField(
                 controller: _risultatoTrasfertaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
+                style: AppTypography.cifreTabulari(AppTypography.corpo),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.s8),
             Expanded(
               child: TextFormField(
                 controller: _squadraTrasfertaCtrl,
@@ -275,63 +289,57 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Text('Parziali', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.s16),
+        SectionHeader('Parziali'),
+        const SizedBox(height: AppSpacing.s8),
         for (var i = 0; i < _parzialiCtrl.length; i++)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
             child: Row(
               children: [
-                Text('Tempo ${i + 1}: '),
+                Text('Tempo ${i + 1}: ', style: AppTypography.corpo),
                 SizedBox(
                   width: 48,
                   child: TextFormField(
                     controller: _parzialiCtrl[i].$1,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
                   ),
                 ),
-                const Text(' - '),
+                Text(' - ', style: AppTypography.corpo),
                 SizedBox(
                   width: 48,
                   child: TextFormField(
                     controller: _parzialiCtrl[i].$2,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
                   ),
                 ),
               ],
             ),
           ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.s24),
         _TabellaSquadraModificabile(
           titolo: 'Squadra casa',
           giocatori: _giocatoriCasaCtrl,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.s24),
         _TabellaSquadraModificabile(
           titolo: 'Squadra trasferta',
           giocatori: _giocatoriTrasfertaCtrl,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.s24),
         if (_saveError != null) ...[
-          Text(
-            _saveError!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-          const SizedBox(height: 8),
+          ErrorBanner(messaggio: _saveError!),
+          const SizedBox(height: AppSpacing.s8),
         ],
-        FilledButton.icon(
+        PrimaryButton(
+          label: 'Salva referto',
+          icon: Icons.save_outlined,
+          isLoading: _isSaving,
           onPressed: _isSaving ? null : _salva,
-          icon: _isSaving
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.save_outlined),
-          label: const Text('Salva referto'),
         ),
       ],
     );
@@ -526,16 +534,19 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
               onSelectionChanged: (s) =>
                   setState(() => _nuovaPartita = s.first),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.s12),
             if (!_nuovaPartita)
               partiteAsync.when(
                 data: (partite) => partite.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.only(left: 16),
-                        child: Text('Nessuna partita in agenda per il club.'),
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.s16),
+                        child: Text(
+                          'Nessuna partita in agenda per il club.',
+                          style: AppTypography.corpo,
+                        ),
                       )
                     : Padding(
-                        padding: const EdgeInsets.only(left: 16),
+                        padding: const EdgeInsets.only(left: AppSpacing.s16),
                         child: DropdownButtonFormField<Partita>(
                           initialValue: _partitaSelezionata,
                           isExpanded: true,
@@ -558,17 +569,22 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                         ),
                       ),
                 loading: () => const Padding(
-                  padding: EdgeInsets.only(left: 16),
+                  padding: EdgeInsets.only(left: AppSpacing.s16),
                   child: LinearProgressIndicator(),
                 ),
                 error: (e, _) => Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Text(messaggioErrore(e)),
+                  padding: const EdgeInsets.only(left: AppSpacing.s16),
+                  child: Text(
+                    messaggioErrore(e),
+                    style: AppTypography.piccolo.copyWith(
+                      color: AppColors.rosso,
+                    ),
+                  ),
                 ),
               ),
             if (_nuovaPartita)
               Padding(
-                padding: const EdgeInsets.only(left: 16),
+                padding: const EdgeInsets.only(left: AppSpacing.s16),
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Data partita'),
@@ -582,17 +598,14 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                 ),
               ),
             if (_nuovaPartita) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s8),
               Padding(
-                padding: const EdgeInsets.only(left: 16),
+                padding: const EdgeInsets.only(left: AppSpacing.s16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'La mia squadra',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
+                    Text('La mia squadra', style: AppTypography.etichetta),
+                    const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(value: 'casa', label: Text('Casa')),
@@ -710,7 +723,8 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
       if (nomeLetto.isEmpty) continue;
       final corrispondenti = atleti.where((a) {
         final cognome = a.cognome.trim();
-        return cognome.isNotEmpty && nomeLetto.contains(cognome.toUpperCase());
+        return cognome.isNotEmpty &&
+            nomeLetto.contains(cognome.toUpperCase());
       }).toList();
       if (corrispondenti.length == 1) {
         g.atletaId = corrispondenti.first.id;
@@ -733,7 +747,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
         width: double.maxFinite,
         child: _caricamento
             ? const Padding(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(AppSpacing.s24),
                 child: Center(child: CircularProgressIndicator()),
               )
             : atletiAsync.when(
@@ -754,12 +768,14 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                           'o il cui cognome corrisponde a un solo atleta. '
                           'Se due atleti hanno lo stesso cognome vanno '
                           'scelti a mano qui sotto.',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: AppTypography.piccolo,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.s12),
                         for (final g in widget.giocatori)
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.s4,
+                            ),
                             child: Row(
                               children: [
                                 Expanded(
@@ -767,9 +783,10 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                                   child: Text(
                                     '${g.numero.text}  ${g.nome.text}',
                                     overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.corpo,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: AppSpacing.s8),
                                 Expanded(
                                   flex: 3,
                                   child: DropdownButtonFormField<String?>(
@@ -798,14 +815,14 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                             ),
                           ),
                         if (nonCollegati > 0) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.s12),
                           Text(
                             '$nonCollegati giocatori non collegati a un '
                             'atleta: le loro reti/espulsioni non verranno '
                             'conteggiate nelle statistiche per singolo '
                             'atleta (restano comunque salvate nel referto).',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
+                            style: AppTypography.piccolo.copyWith(
+                              color: AppColors.rosso,
                             ),
                           ),
                         ],
@@ -814,14 +831,17 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text(messaggioErrore(e)),
+                error: (e, _) => Text(
+                  messaggioErrore(e),
+                  style: AppTypography.piccolo.copyWith(
+                    color: AppColors.rosso,
+                  ),
+                ),
               ),
       ),
       actions: [
         FilledButton(
-          onPressed: _caricamento
-              ? null
-              : () => Navigator.of(context).pop(),
+          onPressed: _caricamento ? null : () => Navigator.of(context).pop(),
           child: const Text('Continua'),
         ),
       ],
@@ -871,11 +891,11 @@ class _TabellaSquadraModificabile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titolo, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        SectionHeader(titolo),
+        const SizedBox(height: AppSpacing.s8),
         for (final g in giocatori)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
             child: Row(
               children: [
                 SizedBox(
@@ -884,36 +904,40 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.numero,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
                     decoration: const InputDecoration(isDense: true),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.s8),
                 Expanded(
                   child: TextFormField(
                     controller: g.nome,
+                    style: AppTypography.corpo,
                     decoration: const InputDecoration(isDense: true),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.s8),
                 SizedBox(
                   width: 56,
                   child: TextFormField(
                     controller: g.reti,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Reti',
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.s8),
                 SizedBox(
                   width: 56,
                   child: TextFormField(
                     controller: g.espulsioni,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
+                    style: AppTypography.cifreTabulari(AppTypography.corpo),
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Esp.',
