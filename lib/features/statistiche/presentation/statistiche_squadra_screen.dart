@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/stat_panel.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/statistiche_providers.dart';
+import '../domain/statistiche_stagionali.dart';
 import 'selettore_stagione.dart';
 
 enum _FonteStatistiche { referti, eventi, confronto }
@@ -31,59 +41,54 @@ class _StatisticheSquadraScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('Statistiche stagione')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SelettoreStagione(
-                clubId: widget.clubId,
-                onCambiata: (s) => setState(() => _stagione = s),
-              ),
-              if (_stagione != null) ...[
-                const SizedBox(height: 16),
-                SegmentedButton<_FonteStatistiche>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _FonteStatistiche.referti,
-                      label: Text('Da referti'),
-                    ),
-                    ButtonSegment(
-                      value: _FonteStatistiche.eventi,
-                      label: Text('Da eventi live'),
-                    ),
-                    ButtonSegment(
-                      value: _FonteStatistiche.confronto,
-                      label: Text('Confronto'),
-                    ),
-                  ],
-                  selected: {_fonte},
-                  onSelectionChanged: (s) => setState(() => _fonte = s.first),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SelettoreStagione(
+            clubId: widget.clubId,
+            onCambiata: (s) => setState(() => _stagione = s),
+          ),
+          if (_stagione != null) ...[
+            const SizedBox(height: AppSpacing.s16),
+            SegmentedButton<_FonteStatistiche>(
+              segments: const [
+                ButtonSegment(
+                  value: _FonteStatistiche.referti,
+                  label: Text('Da referti'),
                 ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: switch (_fonte) {
-                    _FonteStatistiche.referti => _SezioneReferti(
-                      clubId: widget.clubId,
-                      stagione: _stagione!,
-                    ),
-                    _FonteStatistiche.eventi => _SezioneEventi(
-                      clubId: widget.clubId,
-                      stagione: _stagione!,
-                    ),
-                    _FonteStatistiche.confronto => _SezioneConfronto(
-                      clubId: widget.clubId,
-                      stagione: _stagione!,
-                    ),
-                  },
+                ButtonSegment(
+                  value: _FonteStatistiche.eventi,
+                  label: Text('Da eventi live'),
+                ),
+                ButtonSegment(
+                  value: _FonteStatistiche.confronto,
+                  label: Text('Confronto'),
                 ),
               ],
-            ],
-          ),
-        ),
+              selected: {_fonte},
+              onSelectionChanged: (s) => setState(() => _fonte = s.first),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            Expanded(
+              child: switch (_fonte) {
+                _FonteStatistiche.referti => _SezioneReferti(
+                  clubId: widget.clubId,
+                  stagione: _stagione!,
+                ),
+                _FonteStatistiche.eventi => _SezioneEventi(
+                  clubId: widget.clubId,
+                  stagione: _stagione!,
+                ),
+                _FonteStatistiche.confronto => _SezioneConfronto(
+                  clubId: widget.clubId,
+                  stagione: _stagione!,
+                ),
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -113,58 +118,74 @@ class _SezioneReferti extends ConsumerWidget {
           final nomiPerId = {for (final a in atleti) a.id: a.nomeCompleto};
           final righe = [...r.perAtleta]
             ..sort((a, b) => b.reti.compareTo(a.reti));
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          return ListView(
             children: [
-              Text(
-                '${r.partite} partite · ${r.vittorie}V ${r.pareggi}P '
-                '${r.sconfitte}S · ${r.golFatti}-${r.golSubiti} gol · '
-                '${r.mediaGolPartita.toStringAsFixed(2)} gol/partita',
-                style: Theme.of(context).textTheme.bodyMedium,
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  StatPanel(etichetta: 'Partite', valore: '${r.partite}'),
+                  StatPanel(
+                    etichetta: 'V-P-S',
+                    valore: '${r.vittorie}-${r.pareggi}-${r.sconfitte}',
+                  ),
+                  StatPanel(
+                    etichetta: 'Gol fatti-subiti',
+                    valore: '${r.golFatti}-${r.golSubiti}',
+                  ),
+                  StatPanel(
+                    etichetta: 'Gol/partita',
+                    valore: r.mediaGolPartita.toStringAsFixed(2),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.s8),
               Text(
                 'Non include i tiri sbagliati (non registrati nel referto).',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTypography.piccolo,
               ),
-              const Divider(height: 24),
-              Expanded(
-                child: righe.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Nessun dato per atleta in questa stagione: '
-                          'collega i giocatori agli atleti salvando i '
-                          'referti.',
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: righe.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final riga = righe[index];
-                          return ListTile(
-                            title: Text(
-                              nomiPerId[riga.atletaId] ?? 'Atleta rimosso',
-                            ),
-                            subtitle: Text(
-                              '${riga.reti} reti · ${riga.espulsioni} '
-                              'espulsioni · ${riga.partite} partite · '
-                              '${riga.mediaRetiPartita.toStringAsFixed(2)} '
-                              'reti/partita',
-                            ),
-                          );
-                        },
+              const SizedBox(height: AppSpacing.s24),
+              SectionHeader('Per atleta'),
+              const SizedBox(height: AppSpacing.s16),
+              if (righe.isEmpty)
+                Text(
+                  'Nessun dato per atleta in questa stagione: collega i '
+                  'giocatori agli atleti salvando i referti.',
+                  style: AppTypography.corpo,
+                )
+              else
+                AppListPanel(
+                  righe: [
+                    for (final riga in righe)
+                      _RigaConMetriche(
+                        titolo: nomiPerId[riga.atletaId] ?? 'Atleta rimosso',
+                        metriche: [
+                          '${riga.reti} reti',
+                          '${riga.espulsioni} espulsioni',
+                          '${riga.partite} partite',
+                          '${riga.mediaRetiPartita.toStringAsFixed(2)} reti/partita',
+                        ],
                       ),
-              ),
+                  ],
+                ),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(messaggioErrore(e))),
+        loading: () => const LoadingSkeletonList(righe: 5),
+        error: (e, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli atleti.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(e),
+        ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(messaggioErrore(e))),
+      loading: () => const LoadingSkeletonList(righe: 5),
+      error: (e, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare i referti.',
+        suggerimento:
+            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(e),
+      ),
     );
   }
 }
@@ -196,66 +217,88 @@ class _SezioneEventi extends ConsumerWidget {
           final percentuale = r.tiri > 0
               ? '${(r.gol / r.tiri * 100).round()}%'
               : '—';
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          return ListView(
             children: [
-              Text(
-                '${r.gol} gol su ${r.tiri} tiri ($percentuale) · '
-                '${r.espulsioni} espulsioni · '
-                '${r.mediaGolPartita.toStringAsFixed(2)} gol/partita',
-                style: Theme.of(context).textTheme.bodyMedium,
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  StatPanel(
+                    etichetta: 'Gol',
+                    valore: '${r.gol}/${r.tiri}',
+                    confronto: percentuale,
+                  ),
+                  StatPanel(
+                    etichetta: 'Espulsioni',
+                    valore: '${r.espulsioni}',
+                  ),
+                  StatPanel(
+                    etichetta: 'Gol/partita',
+                    valore: r.mediaGolPartita.toStringAsFixed(2),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Di cui su azione: ${r.golAzione} · su superiorità: '
-                '${r.golSuperiorita} · su rigore: ${r.golRigore}',
-                style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(height: AppSpacing.s16),
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  StatPanel(etichetta: 'Gol azione', valore: '${r.golAzione}'),
+                  StatPanel(
+                    etichetta: 'Gol superiorità',
+                    valore: '${r.golSuperiorita}',
+                  ),
+                  StatPanel(etichetta: 'Gol rigore', valore: '${r.golRigore}'),
+                ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.s8),
               Text(
                 '${r.partite} partite seguite dal vivo con "Eventi partita".',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTypography.piccolo,
               ),
-              const Divider(height: 24),
-              Expanded(
-                child: righe.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Nessun evento registrato in questa stagione.',
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: righe.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final riga = righe[index];
-                          final perc = riga.tiri > 0
-                              ? '${(riga.gol / riga.tiri * 100).round()}%'
-                              : '—';
-                          return ListTile(
-                            title: Text(
-                              nomiPerId[riga.atletaId] ?? 'Atleta rimosso',
-                            ),
-                            subtitle: Text(
-                              'Gol: ${riga.gol}/${riga.tiri} ($perc) · '
-                              '${riga.espulsioni} espulsioni\n'
-                              'Azione: ${riga.golAzione} · superiorità: '
-                              '${riga.golSuperiorita} · rigore: '
-                              '${riga.golRigore}',
-                            ),
-                            isThreeLine: true,
-                          );
-                        },
+              const SizedBox(height: AppSpacing.s24),
+              SectionHeader('Per atleta'),
+              const SizedBox(height: AppSpacing.s16),
+              if (righe.isEmpty)
+                Text(
+                  'Nessun evento registrato in questa stagione.',
+                  style: AppTypography.corpo,
+                )
+              else
+                AppListPanel(
+                  righe: [
+                    for (final riga in righe)
+                      _RigaConMetriche(
+                        titolo: nomiPerId[riga.atletaId] ?? 'Atleta rimosso',
+                        metriche: [
+                          'Gol ${riga.gol}/${riga.tiri}'
+                              '${riga.tiri > 0 ? ' (${(riga.gol / riga.tiri * 100).round()}%)' : ''}',
+                          '${riga.espulsioni} espulsioni',
+                          'azione ${riga.golAzione}',
+                          'superiorità ${riga.golSuperiorita}',
+                          'rigore ${riga.golRigore}',
+                        ],
                       ),
-              ),
+                  ],
+                ),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(messaggioErrore(e))),
+        loading: () => const LoadingSkeletonList(righe: 5),
+        error: (e, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli atleti.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(e),
+        ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(messaggioErrore(e))),
+      loading: () => const LoadingSkeletonList(righe: 5),
+      error: (e, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare gli eventi.',
+        suggerimento:
+            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(e),
+      ),
     );
   }
 }
@@ -300,8 +343,7 @@ class _SezioneConfronto extends ConsumerWidget {
                       (nomiPerId[a] ?? '').compareTo(nomiPerId[b] ?? ''),
                 );
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            return ListView(
               children: [
                 Text(
                   'Squadra — da referti: ${r.golFatti} gol in ${r.partite} '
@@ -309,49 +351,129 @@ class _SezioneConfronto extends ConsumerWidget {
                   'partita) · da eventi live: ${e.gol} gol in ${e.partite} '
                   'partite tracciate (${e.mediaGolPartita.toStringAsFixed(2)}'
                   '/partita)',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: AppTypography.piccolo,
                 ),
-                const Divider(height: 24),
-                Expanded(
-                  child: tuttiGliId.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Nessun dato da nessuna delle due fonti in '
-                            'questa stagione.',
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: tuttiGliId.length,
-                          separatorBuilder: (_, _) =>
-                              const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final atletaId = tuttiGliId[index];
-                            final rigaReferti = refertiPerId[atletaId];
-                            final rigaEventi = eventiPerId[atletaId];
-                            return ListTile(
-                              title: Text(
-                                nomiPerId[atletaId] ?? 'Atleta rimosso',
-                              ),
-                              subtitle: Text(
-                                'Da referti: ${rigaReferti != null ? '${rigaReferti.reti} reti in ${rigaReferti.partite} partite' : 'nessun dato'}\n'
-                                'Da eventi live: ${rigaEventi != null ? '${rigaEventi.gol} gol su ${rigaEventi.tiri} tiri' : 'nessun dato'}',
-                              ),
-                              isThreeLine: true,
-                            );
-                          },
+                const SizedBox(height: AppSpacing.s24),
+                if (tuttiGliId.isEmpty)
+                  Text(
+                    'Nessun dato da nessuna delle due fonti in questa '
+                    'stagione.',
+                    style: AppTypography.corpo,
+                  )
+                else
+                  AppListPanel(
+                    righe: [
+                      for (final atletaId in tuttiGliId)
+                        _RigaConfronto(
+                          titolo: nomiPerId[atletaId] ?? 'Atleta rimosso',
+                          referti: refertiPerId[atletaId],
+                          eventi: eventiPerId[atletaId],
                         ),
-                ),
+                    ],
+                  ),
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text(messaggioErrore(err))),
+          loading: () => const LoadingSkeletonList(righe: 5),
+          error: (err, _) => ErrorBanner(
+            messaggio: 'Non è stato possibile caricare gli atleti.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(err),
+          ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text(messaggioErrore(err))),
+        loading: () => const LoadingSkeletonList(righe: 5),
+        error: (err, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli eventi.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(err),
+        ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text(messaggioErrore(err))),
+      loading: () => const LoadingSkeletonList(righe: 5),
+      error: (err, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare i referti.',
+        suggerimento:
+            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(err),
+      ),
+    );
+  }
+}
+
+/// Riga di elenco con un titolo e più metriche affiancate (mai unite da
+/// puntini, per non superare le due informazioni per riga di DESIGN.md
+/// sezione 8) — usata dalle sezioni "Da referti" e "Da eventi live".
+class _RigaConMetriche extends StatelessWidget {
+  const _RigaConMetriche({required this.titolo, required this.metriche});
+
+  final String titolo;
+  final List<String> metriche;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s16,
+        vertical: AppSpacing.s12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titolo,
+            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          Wrap(
+            spacing: AppSpacing.s16,
+            runSpacing: AppSpacing.s4,
+            children: [
+              for (final m in metriche) Text(m, style: AppTypography.piccolo),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RigaConfronto extends StatelessWidget {
+  const _RigaConfronto({
+    required this.titolo,
+    required this.referti,
+    required this.eventi,
+  });
+
+  final String titolo;
+  final RigaAtletaReferti? referti;
+  final RigaAtletaEventi? eventi;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s16,
+        vertical: AppSpacing.s12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titolo,
+            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            'Da referti: ${referti != null ? '${referti!.reti} reti in ${referti!.partite} partite' : 'nessun dato'}',
+            style: AppTypography.piccolo,
+          ),
+          Text(
+            'Da eventi live: ${eventi != null ? '${eventi!.gol} gol su ${eventi!.tiri} tiri' : 'nessun dato'}',
+            style: AppTypography.piccolo,
+          ),
+        ],
+      ),
     );
   }
 }
