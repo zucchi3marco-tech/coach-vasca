@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../../stroke_rate/presentation/stroke_rate_screen.dart';
@@ -29,7 +38,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
     final filter = (clubId: widget.clubId, includeInactive: _mostraInattivi);
     final atletiAsync = ref.watch(atletiListProvider(filter));
 
-    return Scaffold(
+    return AppScaffold(
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(atletiRepositoryProvider).refreshFromRemote(widget.clubId),
@@ -37,6 +46,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           data: (atleti) => _AtletiList(
             atleti: atleti,
             onTap: (atleta) => _apriForm(context, atleta: atleta),
+            onTapNuovo: () => _apriForm(context),
             onTapTest: (atleta) => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => TestListScreen(atleta: atleta),
@@ -58,12 +68,20 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
               ),
             ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            children: const [LoadingSkeletonList(righe: 6)],
+          ),
           error: (error, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.s16),
             children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text('Errore nel caricamento atleti: ${messaggioErrore(error)}'),
+              ErrorBanner(
+                messaggio: 'Non è stato possibile caricare gli atleti.',
+                suggerimento:
+                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+                dettaglioTecnico: messaggioErrore(error),
               ),
             ],
           ),
@@ -100,6 +118,7 @@ class _AtletiList extends StatelessWidget {
   const _AtletiList({
     required this.atleti,
     required this.onTap,
+    required this.onTapNuovo,
     required this.onTapTest,
     required this.onTapCarico,
     required this.onTapStatistiche,
@@ -108,6 +127,7 @@ class _AtletiList extends StatelessWidget {
 
   final List<Atleta> atleti;
   final ValueChanged<Atleta> onTap;
+  final VoidCallback onTapNuovo;
   final ValueChanged<Atleta> onTapTest;
   final ValueChanged<Atleta> onTapCarico;
   final ValueChanged<Atleta> onTapStatistiche;
@@ -124,69 +144,123 @@ class _AtletiList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (atleti.isEmpty) {
       return ListView(
-        children: const [
-          Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(
-              child: Text('Nessun atleta. Tocca "+" per aggiungerne uno.'),
-            ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          EmptyState(
+            icona: Icons.groups_outlined,
+            titolo: 'Nessun atleta',
+            descrizione:
+                'Aggiungi il primo atleta per iniziare a programmare '
+                'allenamenti e tenere le presenze.',
+            azionePrincipale: 'Nuovo atleta',
+            onAzionePrincipale: onTapNuovo,
           ),
         ],
       );
     }
 
-    return ListView.separated(
-      itemCount: atleti.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final atleta = atleti[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: atleta.attivo
-                ? null
-                : Theme.of(context).disabledColor,
-            child: Text(
-              atleta.nome.isNotEmpty ? atleta.nome[0].toUpperCase() : '?',
-            ),
-          ),
-          title: Text(atleta.nomeCompleto),
-          subtitle: Text(
-            [
-              atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
-              if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
-                atleta.gruppo!,
-              if (!atleta.attivo) 'inattivo',
-            ].join(' · '),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.show_chart),
-                tooltip: 'Carico',
-                onPressed: () => onTapCarico(atleta),
-              ),
-              IconButton(
-                icon: const Icon(Icons.query_stats),
-                tooltip: 'Statistiche',
-                onPressed: () => onTapStatistiche(atleta),
-              ),
-              IconButton(
-                icon: const Icon(Icons.speed_outlined),
-                tooltip: 'Test',
-                onPressed: () => onTapTest(atleta),
-              ),
-              if (_bracciateDisponibili)
-                IconButton(
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  tooltip: 'Bracciate',
-                  onPressed: () => onTapBracciate(atleta),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      child: AppListPanel(
+        righe: [
+          for (final atleta in atleti)
+            AppListRow(
+              leading: _AvatarAtleta(atleta: atleta),
+              titolo: atleta.nomeCompleto,
+              sottotitolo: [
+                atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
+                if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
+                  atleta.gruppo!,
+              ].join(' · ') + (atleta.attivo ? '' : ' · inattivo'),
+              trailing: PopupMenuButton<VoidCallback>(
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: AppColors.testoSecondario,
                 ),
-            ],
-          ),
-          onTap: () => onTap(atleta),
-        );
-      },
+                onSelected: (azione) => azione(),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: () => onTapCarico(atleta),
+                    child: const _VoceMenu(
+                      icona: Icons.show_chart,
+                      etichetta: 'Carico',
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: () => onTapStatistiche(atleta),
+                    child: const _VoceMenu(
+                      icona: Icons.query_stats,
+                      etichetta: 'Statistiche',
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: () => onTapTest(atleta),
+                    child: const _VoceMenu(
+                      icona: Icons.speed_outlined,
+                      etichetta: 'Test',
+                    ),
+                  ),
+                  if (_bracciateDisponibili)
+                    PopupMenuItem(
+                      value: () => onTapBracciate(atleta),
+                      child: const _VoceMenu(
+                        icona: Icons.camera_alt_outlined,
+                        etichetta: 'Bracciate',
+                      ),
+                    ),
+                ],
+              ),
+              onTap: () => onTap(atleta),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoceMenu extends StatelessWidget {
+  const _VoceMenu({required this.icona, required this.etichetta});
+
+  final IconData icona;
+  final String etichetta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        const SizedBox(width: AppSpacing.s12),
+        Text(etichetta, style: AppTypography.corpo),
+      ],
+    );
+  }
+}
+
+class _AvatarAtleta extends StatelessWidget {
+  const _AvatarAtleta({required this.atleta});
+
+  final Atleta atleta;
+
+  @override
+  Widget build(BuildContext context) {
+    final iniziale = atleta.nome.isNotEmpty
+        ? atleta.nome[0].toUpperCase()
+        : '?';
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: atleta.attivo ? AppColors.bluTenue : AppColors.superficieTenue,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        iniziale,
+        style: AppTypography.corpoForte.copyWith(
+          color: atleta.attivo ? AppColors.blu : AppColors.testoTenue,
+        ),
+      ),
     );
   }
 }
