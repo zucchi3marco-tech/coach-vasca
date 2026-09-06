@@ -3,10 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/stat_panel.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
 import '../domain/banister.dart';
 
+/// Nota: DESIGN.md non definisce ancora una palette per i grafici a
+/// linee. In attesa di un token dedicato, questa schermata usa `blu`
+/// per Fitness, `attenzione` per Fatica e `ok` per Forma — non `rosso`,
+/// riservato esclusivamente a "in corso" ed errori (sezione 3).
 class CaricoAtletaScreen extends ConsumerWidget {
   const CaricoAtletaScreen({required this.atleta, super.key});
 
@@ -18,85 +30,76 @@ class CaricoAtletaScreen extends ConsumerWidget {
       andamentoCaricoProvider((atletaId: atleta.id, clubId: atleta.clubId)),
     );
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: Text('Carico — ${atleta.nomeCompleto}')),
-      body: SafeArea(
-        child: puntiAsync.when(
-          data: (punti) => punti.isEmpty
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text(
-                      'Nessuna presenza registrata per questo atleta: '
-                      'niente da mostrare finché non ci sono allenamenti '
-                      'con presenza segnata come "presente".',
-                      textAlign: TextAlign.center,
+      body: puntiAsync.when(
+        data: (punti) => punti.isEmpty
+            ? EmptyState(
+                icona: Icons.show_chart,
+                titolo: 'Nessuna presenza registrata',
+                descrizione:
+                    'Il carico si calcola dagli allenamenti con presenza '
+                    'segnata come "presente": non c\'è ancora niente da '
+                    'mostrare per questo atleta.',
+                azionePrincipale: 'Torna indietro',
+                onAzionePrincipale: () => Navigator.of(context).pop(),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Modello Banister (fitness/fatica/forma) calcolato '
+                      'dal volume di allenamento pesato per zona di '
+                      'intensità, contato solo nei giorni in cui l\'atleta '
+                      'era presente. È un indice relativo utile per '
+                      'valutare l\'andamento nel tempo, non un valore '
+                      'fisiologico assoluto.',
+                      style: AppTypography.piccolo,
                     ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Modello Banister (fitness/fatica/forma) calcolato '
-                        'dal volume di allenamento pesato per zona di '
-                        'intensità, contato solo nei giorni in cui l\'atleta '
-                        'era presente. È un indice relativo utile per '
-                        'valutare l\'andamento nel tempo, non un valore '
-                        'fisiologico assoluto.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      _RiepilogoAttuale(punto: punti.last),
-                      const SizedBox(height: 16),
-                      SizedBox(height: 280, child: _GraficoBanister(punti: punti)),
-                      const SizedBox(height: 12),
-                      _Legenda(),
-                    ],
-                  ),
+                    const SizedBox(height: AppSpacing.s16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        StatPanel(
+                          etichetta: 'Fitness',
+                          valore: punti.last.fitness.round().toString(),
+                        ),
+                        StatPanel(
+                          etichetta: 'Fatica',
+                          valore: punti.last.fatica.round().toString(),
+                        ),
+                        StatPanel(
+                          etichetta: 'Forma',
+                          valore: punti.last.forma.round().toString(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s16),
+                    SizedBox(
+                      height: 280,
+                      child: _GraficoBanister(punti: punti),
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                    const _Legenda(),
+                  ],
                 ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text(messaggioErrore(error))),
+              ),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeleton(height: 280),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare il carico.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _RiepilogoAttuale extends StatelessWidget {
-  const _RiepilogoAttuale({required this.punto});
-
-  final PuntoBanister punto;
-
-  @override
-  Widget build(BuildContext context) {
-    String arrotonda(double v) => v.round().toString();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _ValoreOggi(etichetta: 'Fitness', valore: arrotonda(punto.fitness)),
-        _ValoreOggi(etichetta: 'Fatica', valore: arrotonda(punto.fatica)),
-        _ValoreOggi(etichetta: 'Forma', valore: arrotonda(punto.forma)),
-      ],
-    );
-  }
-}
-
-class _ValoreOggi extends StatelessWidget {
-  const _ValoreOggi({required this.etichetta, required this.valore});
-
-  final String etichetta;
-  final String valore;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(valore, style: Theme.of(context).textTheme.headlineSmall),
-        Text(etichetta, style: Theme.of(context).textTheme.bodySmall),
-      ],
     );
   }
 }
@@ -108,35 +111,39 @@ class _GraficoBanister extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colori = Theme.of(context).colorScheme;
-    final coloreFitness = colori.primary;
-    final coloreFatica = colori.error;
-    const coloreForma = Colors.green;
-
     List<FlSpot> spot(double Function(PuntoBanister) valore) => [
-      for (var i = 0; i < punti.length; i++) FlSpot(i.toDouble(), valore(punti[i])),
+      for (var i = 0; i < punti.length; i++)
+        FlSpot(i.toDouble(), valore(punti[i])),
     ];
 
-    LineChartBarData linea(List<FlSpot> dati, Color colore) => LineChartBarData(
-      spots: dati,
-      isCurved: false,
-      color: colore,
-      barWidth: 2,
-      dotData: const FlDotData(show: false),
-    );
+    LineChartBarData linea(List<FlSpot> dati, Color colore) =>
+        LineChartBarData(
+          spots: dati,
+          isCurved: false,
+          color: colore,
+          barWidth: 2,
+          dotData: const FlDotData(show: false),
+        );
 
-    final intervalloEtichette = (punti.length / 5).ceil().clamp(1, punti.length);
+    final intervalloEtichette = (punti.length / 5).ceil().clamp(
+      1,
+      punti.length,
+    );
 
     return LineChart(
       LineChartData(
         lineBarsData: [
-          linea(spot((p) => p.fitness), coloreFitness),
-          linea(spot((p) => p.fatica), coloreFatica),
-          linea(spot((p) => p.forma), coloreForma),
+          linea(spot((p) => p.fitness), AppColors.blu),
+          linea(spot((p) => p.fatica), AppColors.attenzione),
+          linea(spot((p) => p.forma), AppColors.ok),
         ],
         titlesData: FlTitlesData(
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(showTitles: true, reservedSize: 40),
           ),
@@ -152,11 +159,11 @@ class _GraficoBanister extends StatelessWidget {
                 }
                 final data = punti[indice].data;
                 return Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.only(top: AppSpacing.s4),
                   child: Text(
                     '${data.day.toString().padLeft(2, '0')}/'
                     '${data.month.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontSize: 10),
+                    style: AppTypography.piccolo,
                   ),
                 );
               },
@@ -171,23 +178,24 @@ class _GraficoBanister extends StatelessWidget {
 }
 
 class _Legenda extends StatelessWidget {
+  const _Legenda();
+
   @override
   Widget build(BuildContext context) {
-    final colori = Theme.of(context).colorScheme;
     Widget voce(Color colore, String etichetta) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 12, height: 12, color: colore),
-        const SizedBox(width: 4),
-        Text(etichetta, style: Theme.of(context).textTheme.bodySmall),
+        Container(width: AppSpacing.s12, height: AppSpacing.s12, color: colore),
+        const SizedBox(width: AppSpacing.s4),
+        Text(etichetta, style: AppTypography.piccolo),
       ],
     );
     return Wrap(
-      spacing: 16,
+      spacing: AppSpacing.s16,
       children: [
-        voce(colori.primary, 'Fitness'),
-        voce(colori.error, 'Fatica'),
-        voce(Colors.green, 'Forma'),
+        voce(AppColors.blu, 'Fitness'),
+        voce(AppColors.attenzione, 'Fatica'),
+        voce(AppColors.ok, 'Forma'),
       ],
     );
   }
