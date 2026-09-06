@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
 
 /// Mostrato quando l'utente autenticato non e' ancora membro di nessun
 /// club: crea il primo club (diventandone owner tramite il trigger DB).
+///
+/// Nota: e' contenuto nel body di HomeScreen (che ha gia' Scaffold e
+/// AppBar), quindi non usa AppScaffold per non annidare due Scaffold.
 class ClubSetupScreen extends ConsumerStatefulWidget {
   const ClubSetupScreen({super.key});
 
@@ -61,7 +68,7 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.s24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -73,48 +80,35 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                     style: Theme.of(context).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.s4),
                   Text(
                     'Sarai impostato automaticamente come owner.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
-                  TextFormField(
+                  const SizedBox(height: AppSpacing.s24),
+                  AppTextField(
+                    etichetta: 'Nome del club',
                     controller: _nomeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome del club',
-                    ),
-                    validator: (value) => (value == null || value.trim().isEmpty)
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
                         ? 'Inserisci un nome'
                         : null,
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
+                  const SizedBox(height: AppSpacing.s16),
+                  AppTextField(
+                    etichetta: 'Città (facoltativo)',
                     controller: _cittaController,
-                    decoration: const InputDecoration(
-                      labelText: 'Città (opzionale)',
-                    ),
                   ),
                   if (_errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                    ErrorBanner(messaggio: _errorMessage!),
                   ],
-                  const SizedBox(height: 24),
-                  FilledButton(
+                  const SizedBox(height: AppSpacing.s24),
+                  PrimaryButton(
+                    label: 'Crea club',
+                    isLoading: _isSubmitting,
                     onPressed: _isSubmitting ? null : _submit,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Crea club'),
                   ),
                 ],
               ),
