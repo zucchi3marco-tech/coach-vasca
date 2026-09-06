@@ -5,6 +5,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/error_banner.dart';
+import '../../../widgets/primary_button.dart';
 import '../../atleti/domain/atleta.dart';
 
 const _durataClip = Duration(seconds: 15);
@@ -59,7 +65,8 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
       if (cameras.isEmpty) {
         if (mounted) {
           setState(
-            () => _errore = 'Nessuna fotocamera disponibile su questo dispositivo.',
+            () => _errore =
+                'Nessuna fotocamera disponibile su questo dispositivo.',
           );
         }
         return;
@@ -145,7 +152,8 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
       _campioni.add(
         _CampionePolso(
           istante: DateTime.now(),
-          ySinistro: (sinistro != null && sinistro.likelihood >= _sogliaLikelihood)
+          ySinistro:
+              (sinistro != null && sinistro.likelihood >= _sogliaLikelihood)
               ? sinistro.y
               : null,
           yDestro: (destro != null && destro.likelihood >= _sogliaLikelihood)
@@ -183,7 +191,9 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
   double? _calcolaBracciatePerMinuto(List<_CampionePolso> campioni) {
     if (campioni.length < 6) return null;
 
-    final conteggioSinistro = campioni.where((c) => c.ySinistro != null).length;
+    final conteggioSinistro = campioni
+        .where((c) => c.ySinistro != null)
+        .length;
     final conteggioDestro = campioni.where((c) => c.yDestro != null).length;
     final usaSinistro = conteggioSinistro >= conteggioDestro;
 
@@ -258,11 +268,9 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Bracciate — ${widget.atleta.nomeCompleto}'),
-      ),
-      body: SafeArea(child: _buildBody(context)),
+    return AppScaffold(
+      appBar: AppBar(title: Text('Bracciate — ${widget.atleta.nomeCompleto}')),
+      body: _buildBody(context),
     );
   }
 
@@ -270,8 +278,8 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
     if (_errore != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(_errore!, textAlign: TextAlign.center),
+          padding: const EdgeInsets.all(AppSpacing.s24),
+          child: ErrorBanner(messaggio: _errore!),
         ),
       );
     }
@@ -286,21 +294,22 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
           children: [
             Expanded(child: CameraPreview(controller)),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.s16),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Inquadra il nuotatore per tutta la corsia, poi tocca '
                     '"Registra": la clip dura 15 secondi. Stima '
                     'sperimentale: verificala sempre con un conteggio '
                     'manuale.',
+                    style: AppTypography.piccolo,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
+                  const SizedBox(height: AppSpacing.s12),
+                  PrimaryButton(
+                    label: 'Registra',
+                    icon: Icons.fiber_manual_record,
                     onPressed: _avviaRegistrazione,
-                    icon: const Icon(Icons.fiber_manual_record),
-                    label: const Text('Registra'),
                   ),
                 ],
               ),
@@ -312,22 +321,26 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
           children: [
             Expanded(child: CameraPreview(controller)),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Registrazione in corso... $_secondiRimasti s',
-                style: Theme.of(context).textTheme.titleMedium,
+              padding: const EdgeInsets.all(AppSpacing.s16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.circle, size: 12, color: AppColors.rosso),
+                  const SizedBox(width: AppSpacing.s8),
+                  Text('$_secondiRimasti s', style: AppTypography.display),
+                ],
               ),
             ),
           ],
         );
       case _Fase.elaborazione:
-        return const Center(
+        return Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 12),
-              Text('Elaborazione...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: AppSpacing.s12),
+              Text('Elaborazione...', style: AppTypography.corpo),
             ],
           ),
         );
@@ -335,7 +348,7 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
         final valore = _bracciatePerMinuto;
         return Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.s24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -346,22 +359,25 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
                             'nuotatore, possibilmente da bordo vasca a '
                             'livello dell\'acqua.'
                       : '${valore.round()} bracciate/min',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: valore == null
+                      ? AppTypography.titolo
+                      : AppTypography.display,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.s8),
                 Text(
                   'Stima sperimentale dal movimento del polso: verifica '
                   'sempre con un conteggio manuale prima di fidartene. '
                   'Il risultato non viene salvato.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: AppTypography.piccolo,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
+                const SizedBox(height: AppSpacing.s16),
+                PrimaryButton(
+                  label: 'Ripeti',
+                  icon: Icons.refresh,
+                  expanded: false,
                   onPressed: () => setState(() => _fase = _Fase.pronto),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Ripeti'),
                 ),
               ],
             ),
