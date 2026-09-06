@@ -18,6 +18,9 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.suffixIcon,
+    this.obscureText = false,
+    this.autofillHints,
+    this.onFieldSubmitted,
     super.key,
   });
 
@@ -30,6 +33,13 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final Widget? suffixIcon;
+
+  /// Per i campi password. Vedi DESIGN.md sezione 8: nessun widget su
+  /// misura dentro una schermata, quindi questi casi restano parametri
+  /// opzionali del componente condiviso invece di un campo locale.
+  final bool obscureText;
+  final Iterable<String>? autofillHints;
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +55,9 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           readOnly: readOnly,
           onTap: onTap,
+          obscureText: obscureText,
+          autofillHints: autofillHints,
+          onFieldSubmitted: onFieldSubmitted,
           style: AppTypography.corpo.copyWith(color: AppColors.testo),
           decoration: InputDecoration(
             helperText: aiuto,
