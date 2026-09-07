@@ -306,6 +306,12 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
   rosso e giallo per le linee reali della vasca (2m, 5m, 6m) — un uso
   rappresentativo dei colori del regolamento, non uno stato "in corso".
 - **Nessun form.** Se serve inserire un dato, si fa con bottoni grandi o un bottom sheet con al massimo tre scelte.
+  **Eccezione:** scegliere una persona dentro un'intera rosa (13+ convocati)
+  non ci sta in tre bottoni né in un menu a tendina (vietato a bordo vasca).
+  Pattern accettato: una fascia di calottine numerate sui bordi dello
+  schermo (bianche a sinistra/casa, blu a destra/trasferta), sempre
+  visibili, che diventano toccabili solo quando serve scegliere un
+  giocatore — vedi eventi partita pallanuoto.
 - Nessuna azione distruttiva raggiungibile con un tap solo.
 - Lo schermo non si spegne mentre una sessione è attiva.
 
