@@ -128,11 +128,10 @@ Tutte le schermate dell'app sono state riportate a DESIGN.md, una alla volta: re
 
 Nel farlo sono stati aggiunti due componenti condivisi non previsti in DESIGN.md sezione 14 — `OrdineBadge` (numero cerchiato) e le estensioni opzionali di `AppTextField` (obscureText/autofillHints/onFieldSubmitted) e `AppListRow` (onLongPress) — e un'eccezione mirata alla regola "massimo tre azioni" a bordo vasca per varianti binarie imprevedibili (sezione 9), tutti già documentati direttamente in DESIGN.md.
 
-Punti lasciati aperti, per scelta deliberata o perché DESIGN.md non li copre ancora:
-- **Colore calottina per riga in Distinta**: `Partita.coloreCalottina` è testo libero (non un enum), quindi non è mappabile in sicurezza sui tre `CapColore` di `CapBadge`; il colore reale resta visibile solo in testo nell'intestazione, non per singolo convocato (eccetto il portiere, sempre rosso).
-- **Palette per i grafici a linee** (schermata Carico): DESIGN.md non ne definisce una; per ora Fitness/Fatica/Forma usano blu/attenzione/ok (mai rosso, riservato a "in corso"/errori).
-- **IBM Plex Sans Condensed** (colonne strette di distinta/tabella passi/referto): il pacchetto `google_fonts` in uso non la include; `AppTypography.condensata()` ripiega su IBM Plex Sans normale finché non si trova un'alternativa (font incluso come asset?).
-- **Chiaro o scuro a bordo vasca** (DESIGN.md sezione 16): decisione esplicitamente rimandata a una vera sessione in impianto, non presa qui.
+Il 2026-09-07 sono stati chiusi tre dei quattro punti aperti dal restyling: palette dei grafici a linee formalizzata in DESIGN.md, colore calottina in Distinta vincolato a bianca/blu (invece di testo libero), e chiaro/scuro a bordo vasca reso un interruttore a scelta dell'allenatore invece di una decisione unica per tutti — vedi DESIGN.md sezioni 3 e 9.
+
+Punto lasciato aperto:
+- **IBM Plex Sans Condensed** (DESIGN.md sezione 4): provato come font-asset locale il 2026-09-07 e rimosso lo stesso giorno — causava instabilità di rendering diffusa sul web (liste che smettevano di comparire, blocchi dell'app), quasi certamente per come il motore di rendering web gestiva quel font specifico. `AppTypography.condensata()` resta un ripiego su IBM Plex Sans normale.
 
 ---
 

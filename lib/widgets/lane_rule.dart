@@ -12,12 +12,20 @@ class LaneRule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(width: 3, color: colore),
-        Expanded(child: child),
-      ],
+    // IntrinsicHeight: senza, il Row con CrossAxisAlignment.stretch va in
+    // crash appena finisce dentro una lista (ListView/SliverList), che gli
+    // passa un'altezza illimitata — lo stretch non ha un'altezza a cui
+    // riferirsi. IntrinsicHeight gliene dà una concreta, presa dal
+    // contenuto, così il filetto può ancora estendersi per tutta l'altezza
+    // della card.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(width: 3, color: colore),
+          Expanded(child: child),
+        ],
+      ),
     );
   }
 }

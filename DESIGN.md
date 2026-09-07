@@ -81,6 +81,19 @@ Tutti i valori vivono in `lib/theme/app_colors.dart`. Nomi in italiano, come qui
 - **Errore** → sempre dentro una fascia con `rossoTenue` come fondo, con un'icona e un testo.
 - **Azioni distruttive** (elimina, archivia) → pulsante con **solo bordo** rosso, mai pieno, e sempre con conferma. Un pulsante rosso pieno non esiste in questa app.
 
+### Grafici a linee
+
+Il grafico Banister (pagina Carico: fitness/fatica/forma) è l'unico grafico a
+linee dell'app. Non ha una palette dedicata: usa tre token già esistenti,
+scelti per restare fuori dalla regola sul rosso (riservato a "in corso" ed
+errori) — **mai** una linea rossa in questo grafico.
+
+| Curva | Token |
+| --- | --- |
+| Fitness | `blu` |
+| Fatica | `attenzione` |
+| Forma | `ok` |
+
 ### Zone di intensità
 
 Le zone sono il vocabolario tecnico dell'allenatore. Hanno un colore fisso in tutta l'app: nelle serie, nel calendario, nelle statistiche, nella tabella passi.
@@ -112,7 +125,7 @@ Nella distinta e negli eventi partita, il numero dell'atleta sta dentro un cerch
 
 Scelto perché è disegnato per la leggibilità tecnica: cifre chiare e distinguibili, forme aperte che reggono a distanza e con schermo bagnato, e un carattere "da strumento di lavoro" invece che da app di consumo.
 
-**IBM Plex Sans Condensed** si usa solo dove servono davvero colonne strette: distinta, tabella passi, referto. Mai per il testo normale.
+**IBM Plex Sans Condensed** si userebbe solo dove servono davvero colonne strette: i campi numerici di distinta, tabella passi e referto, più il numero dentro `CapBadge` ovunque appaia. Non è nel catalogo del pacchetto `google_fonts` in uso — un font-asset locale (scaricato da github.com/IBM/plex) è stato provato il 2026-09-07 e **rimosso lo stesso giorno**: causava instabilità di rendering diffusa sul web (liste che smettevano di comparire — allenamenti, atleti — e blocchi dell'app), quasi certamente per come il motore di rendering web gestisce quel font specifico. `AppTypography.condensata()` resta quindi un ripiego su IBM Plex Sans normale finché non si trova un'alternativa sicura (magari un formato diverso, o un altro font condensato).
 
 ### Cifre tabulari — obbligatorie
 
@@ -317,11 +330,28 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
 
 ### Chiaro o scuro?
 
-**Per la versione 1 l'app è tutta chiara, anche a bordo vasca.** Motivo: in un impianto illuminato, uno schermo chiaro alla massima luminosità si legge meglio, perché uno schermo scuro fa da specchio e restituisce i riflessi delle luci e dell'acqua.
+**Chiaro di default, ma l'allenatore può passare a scuro.** Non è più una
+decisione presa a tavolino per tutti: dipende dall'impianto (luci, riflessi
+dell'acqua) e da chi tocca il tablet quel giorno, quindi le tre schermate da
+bordo vasca hanno un interruttore (icona sole/luna nell'AppBar) che ricorda
+la scelta sul device.
 
-L'istinto dietro l'attuale schermata giallo su nero è giusto — massimo contrasto, caratteri enormi — ma si ottiene lo stesso risultato con testo quasi nero su bianco, e senza mantenere due temi separati.
+Resta valido il motivo per cui il chiaro è il default: in un impianto
+illuminato uno schermo chiaro alla massima luminosità si legge meglio,
+perché uno schermo scuro fa da specchio e restituisce i riflessi delle luci
+e dell'acqua. Lo scuro serve per l'opposto — poca luce in impianto, o
+riflessi fastidiosi sullo specifico tablet — da valutare a occhio, non a
+tavolino.
 
-**Questo punto va verificato sul campo.** Alla prima sessione vera in vasca, guarda lo schermo controluce e con le luci accese. Se la versione chiara non si legge, torniamo qui e aggiungiamo una modalità scura per queste tre schermate soltanto. È l'unica decisione di questo documento che va presa con gli occhi, non a tavolino.
+**Implementazione:** `SuperficiTema` (in `lib/theme/superfici_tema.dart`) è
+un `ThemeExtension` con le due varianti (chiaro/scuro) dei soli colori
+neutri (sfondo, superficie, testo, linea); `AppTheme.scuroBordoVasca` la usa
+al posto di `AppTheme.chiaro`. La scelta è letta da
+`temaBordoVascaScuroProvider` (salvata con `shared_preferences`, non
+sincronizzata su Supabase: è un gusto del device, non un dato del club).
+Riguarda solo le tre schermate da bordo vasca — il resto dell'app resta
+sempre chiaro, perché `AppTypography`/`AppColors` restano fissi come prima
+ovunque quella scelta non venga letta esplicitamente.
 
 ---
 
@@ -448,6 +478,6 @@ Non si rifà tutta l'app in una volta. Ordine:
 
 Da chiudere con l'uso reale, non a tavolino:
 
-1. **Chiaro o scuro a bordo vasca** (sezione 9). Verifica alla prima sessione in impianto.
+1. ~~Chiaro o scuro a bordo vasca~~ (sezione 9) — risolto: ora è una scelta dell'allenatore, non più una decisione unica per tutti.
 2. **Densità su tablet.** Se in orizzontale rimane troppo spazio vuoto, valutare un layout a due colonne per le schermate di gestione. Da decidere quando ci saranno dati veri.
 3. **Colore delle zone.** Se un allenatore che usa già una convenzione diversa fatica a leggerle, si cambia la palette: sono token, cambia un file.

@@ -74,10 +74,11 @@ abstract final class AppTypography {
   /// passi, referto), mai per il testo normale.
   ///
   /// "IBM Plex Sans Condensed" non è nel catalogo servito dal pacchetto
-  /// `google_fonts` in uso: finché non si trova un'alternativa (font
-  /// incluso come asset, es.), si usa la IBM Plex Sans normale. Le
-  /// colonne strette restano quindi da verificare quando si arriverà
-  /// davvero a rifare distinta/tabella passi/referto.
+  /// `google_fonts` in uso: un font-asset locale (scaricato da
+  /// github.com/IBM/plex) è stato provato e ha causato instabilità di
+  /// rendering diffusa sul web (liste che smettevano di comparire,
+  /// blocchi) — vedi ROADMAP.md. Finché non si trova un'alternativa
+  /// sicura, si usa la IBM Plex Sans normale.
   static TextStyle condensata(TextStyle base) {
     return GoogleFonts.ibmPlexSans(textStyle: base);
   }
@@ -85,9 +86,7 @@ abstract final class AppTypography {
   /// Obbligatoria per ogni numero in colonna o che rappresenta un tempo:
   /// senza, le colonne di cifre ballano e diventano illeggibili.
   static TextStyle cifreTabulari(TextStyle base) {
-    return base.copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+    return base.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
   }
 
   static TextTheme textTheme = TextTheme(

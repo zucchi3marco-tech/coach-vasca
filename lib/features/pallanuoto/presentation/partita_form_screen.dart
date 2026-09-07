@@ -31,7 +31,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late final TextEditingController _oraController;
   late final TextEditingController _luogoController;
   late final TextEditingController _campionatoController;
-  late final TextEditingController _coloreCalottinaController;
+  late String _coloreCalottina;
   late final TextEditingController _squadraCasaController;
   late final TextEditingController _squadraTrasfertaController;
   late final TextEditingController _noteController;
@@ -55,9 +55,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _oraController = TextEditingController(text: p?.ora ?? '');
     _luogoController = TextEditingController(text: p?.luogo ?? '');
     _campionatoController = TextEditingController(text: p?.campionato ?? '');
-    _coloreCalottinaController = TextEditingController(
-      text: p?.coloreCalottina ?? '',
-    );
+    _coloreCalottina = p?.coloreCalottina == 'blu' ? 'blu' : 'bianca';
     _squadraCasaController = TextEditingController(text: p?.squadraCasa ?? '');
     _squadraTrasfertaController = TextEditingController(
       text: p?.squadraTrasferta ?? '',
@@ -97,7 +95,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _oraController.dispose();
     _luogoController.dispose();
     _campionatoController.dispose();
-    _coloreCalottinaController.dispose();
     _squadraCasaController.dispose();
     _squadraTrasfertaController.dispose();
     _noteController.dispose();
@@ -163,7 +160,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
           campionato: _campionatoController.text.trim(),
-          coloreCalottina: _coloreCalottinaController.text.trim(),
+          coloreCalottina: _coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
@@ -180,7 +177,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
           campionato: _campionatoController.text.trim(),
-          coloreCalottina: _coloreCalottinaController.text.trim(),
+          coloreCalottina: _coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
@@ -312,9 +309,21 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   etichetta: 'Campionato (facoltativo)',
                   controller: _campionatoController,
                 ),
-                AppTextField(
-                  etichetta: 'Colore calottina (facoltativo)',
-                  controller: _coloreCalottinaController,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Colore calottina', style: AppTypography.etichetta),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'bianca', label: Text('Bianca')),
+                        ButtonSegment(value: 'blu', label: Text('Blu')),
+                      ],
+                      selected: {_coloreCalottina},
+                      onSelectionChanged: (s) =>
+                          setState(() => _coloreCalottina = s.first),
+                    ),
+                  ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,9 +339,8 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                         ButtonSegment(value: 15, label: Text('15')),
                       ],
                       selected: {_numeroMaxConvocati},
-                      onSelectionChanged: (selezione) => setState(
-                        () => _numeroMaxConvocati = selezione.first,
-                      ),
+                      onSelectionChanged: (selezione) =>
+                          setState(() => _numeroMaxConvocati = selezione.first),
                     ),
                   ],
                 ),

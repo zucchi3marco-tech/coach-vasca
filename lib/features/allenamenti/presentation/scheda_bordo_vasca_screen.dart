@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/domain_tokens.dart';
+import '../../../theme/superfici_tema.dart';
+import '../../../theme/tema_bordo_vasca_provider.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/lane_rule.dart';
@@ -24,8 +27,9 @@ import 'serie_labels.dart';
 
 /// Vista pensata per un tablet fissato a bordo vasca — vedi DESIGN.md
 /// sezione 2 e 9: tipografia enorme, colori ridotti all'osso, bersagli
-/// da 64, orientamento forzato landscape. Solo lettura: la modifica
-/// della scheda resta nella schermata di dettaglio "da ufficio".
+/// da 64, orientamento forzato landscape, e — a scelta dell'allenatore —
+/// sfondo scuro. Solo lettura: la modifica della scheda resta nella
+/// schermata di dettaglio "da ufficio".
 class SchedaBordoVascaScreen extends ConsumerStatefulWidget {
   const SchedaBordoVascaScreen({required this.allenamento, super.key});
 
@@ -69,108 +73,123 @@ class _SchedaBordoVascaScreenState
   Widget build(BuildContext context) {
     final allenamento = widget.allenamento;
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
+    final scuro = ref.watch(temaBordoVascaScuroProvider);
 
-    return AppScaffold(
-      appBar: AppBar(
-        title: Text(
-          '${allenamento.data.day.toString().padLeft(2, '0')}/'
-          '${allenamento.data.month.toString().padLeft(2, '0')}/'
-          '${allenamento.data.year}'
-          '${allenamento.gruppo != null && allenamento.gruppo!.isNotEmpty ? ' · ${allenamento.gruppo}' : ''}',
+    return Theme(
+      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
+      child: AppScaffold(
+        appBar: AppBar(
+          title: Text(
+            '${allenamento.data.day.toString().padLeft(2, '0')}/'
+            '${allenamento.data.month.toString().padLeft(2, '0')}/'
+            '${allenamento.data.year}'
+            '${allenamento.gruppo != null && allenamento.gruppo!.isNotEmpty ? ' · ${allenamento.gruppo}' : ''}',
+          ),
+          actions: const [BottoneTemaBordoVasca()],
         ),
-      ),
-      body: serieAsync.when(
-        data: (serie) => serie.isEmpty
-            ? EmptyState(
-                icona: Icons.pool_outlined,
-                titolo: 'Nessuna serie in questo allenamento',
-                descrizione:
-                    'Aggiungi le serie dalla scheda allenamento per vederle '
-                    'qui a bordo vasca.',
-                azionePrincipale: 'Torna indietro',
-                onAzionePrincipale: () => Navigator.of(context).pop(),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                itemCount: serie.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.s12),
-                itemBuilder: (context, index) {
-                  final s = serie[index];
-                  final tokens =
-                      Theme.of(context).extension<DomainTokens>() ??
-                      DomainTokens.standard;
-                  final coloreZona = s.zona != null
-                      ? tokens.colorePerZona(s.zona)
-                      : AppColors.linea;
-                  final meta = _metaSerie(s);
-                  return LaneRule(
-                    colore: coloreZona,
-                    child: PoolCard(
-                      padding: const EdgeInsets.all(AppSpacing.s20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                labelBlocco(s.blocco),
-                                style: AppTypography.etichetta,
-                              ),
-                              if (s.zona != null) ...[
-                                const SizedBox(width: AppSpacing.s8),
-                                ZoneChip(sigla: s.zona!),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.s8),
-                          Text(
-                            '${s.ripetute}×${s.distanzaM}m '
-                            '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                            style: AppTypography.display,
-                          ),
-                          if (meta.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.s8),
-                            Wrap(
-                              spacing: AppSpacing.s16,
-                              runSpacing: AppSpacing.s4,
+        body: serieAsync.when(
+          data: (serie) => serie.isEmpty
+              ? EmptyState(
+                  icona: Icons.pool_outlined,
+                  titolo: 'Nessuna serie in questo allenamento',
+                  descrizione:
+                      'Aggiungi le serie dalla scheda allenamento per vederle '
+                      'qui a bordo vasca.',
+                  azionePrincipale: 'Torna indietro',
+                  onAzionePrincipale: () => Navigator.of(context).pop(),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(AppSpacing.s16),
+                  itemCount: serie.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.s12),
+                  itemBuilder: (context, index) {
+                    final s = serie[index];
+                    final tokens =
+                        Theme.of(context).extension<DomainTokens>() ??
+                        DomainTokens.standard;
+                    final tema = SuperficiTema.of(context);
+                    final coloreZona = s.zona != null
+                        ? tokens.colorePerZona(s.zona)
+                        : tema.linea;
+                    final meta = _metaSerie(s);
+                    return LaneRule(
+                      colore: coloreZona,
+                      child: PoolCard(
+                        padding: const EdgeInsets.all(AppSpacing.s20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                for (final m in meta)
-                                  Text(m, style: AppTypography.piccolo),
+                                Text(
+                                  labelBlocco(s.blocco),
+                                  style: AppTypography.etichetta.copyWith(
+                                    color: tema.testoSecondario,
+                                  ),
+                                ),
+                                if (s.zona != null) ...[
+                                  const SizedBox(width: AppSpacing.s8),
+                                  ZoneChip(sigla: s.zona!),
+                                ],
                               ],
                             ),
+                            const SizedBox(height: AppSpacing.s8),
+                            Text(
+                              '${s.ripetute}×${s.distanzaM}m '
+                              '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                              style: AppTypography.display.copyWith(
+                                color: tema.testo,
+                              ),
+                            ),
+                            if (meta.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.s8),
+                              Wrap(
+                                spacing: AppSpacing.s16,
+                                runSpacing: AppSpacing.s4,
+                                children: [
+                                  for (final m in meta)
+                                    Text(
+                                      m,
+                                      style: AppTypography.piccolo.copyWith(
+                                        color: tema.testoSecondario,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-        loading: () => const Padding(
-          padding: EdgeInsets.all(AppSpacing.s16),
-          child: LoadingSkeletonList(righe: 5),
-        ),
-        error: (error, _) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: ErrorBanner(
-            messaggio: 'Non è stato possibile caricare la scheda.',
-            suggerimento:
-                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-            dettaglioTecnico: messaggioErrore(error),
+                    );
+                  },
+                ),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(AppSpacing.s16),
+            child: LoadingSkeletonList(righe: 5),
+          ),
+          error: (error, _) => Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: ErrorBanner(
+              messaggio: 'Non è stato possibile caricare la scheda.',
+              suggerimento:
+                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+              dettaglioTecnico: messaggioErrore(error),
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: SizedBox(
-            height: AppSpacing.altezzaMinimaBersaglioVasca,
-            child: PrimaryButton(
-              label: 'Segna presenze',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PresenzeScreen(allenamento: allenamento),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: SizedBox(
+              height: AppSpacing.altezzaMinimaBersaglioVasca,
+              child: PrimaryButton(
+                label: 'Segna presenze',
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PresenzeScreen(allenamento: allenamento),
+                  ),
                 ),
               ),
             ),

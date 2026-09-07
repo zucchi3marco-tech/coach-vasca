@@ -27,8 +27,7 @@ class TabellePassiScreen extends ConsumerStatefulWidget {
   final Atleta atleta;
 
   @override
-  ConsumerState<TabellePassiScreen> createState() =>
-      _TabellePassiScreenState();
+  ConsumerState<TabellePassiScreen> createState() => _TabellePassiScreenState();
 }
 
 class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
@@ -57,8 +56,9 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
       final percentuale = riga.percentualeRiferimento;
       if (percentuale != null &&
           _percentualeControllers.containsKey(riga.zona)) {
-        _percentualeControllers[riga.zona]!.text = percentuale
-            .toStringAsFixed(1);
+        _percentualeControllers[riga.zona]!.text = percentuale.toStringAsFixed(
+          1,
+        );
       }
     }
     _prefillFatto = true;
@@ -92,9 +92,8 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
           .read(tabellePassiRepositoryProvider)
           .upsertPerTest(testId: widget.test.id, righe: righe);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tabella passi salvata')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Tabella passi salvata')));
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = messaggioErrore(e));
@@ -141,7 +140,9 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                     decoration: const InputDecoration(
                       labelText: '% del passo medio',
                     ),
@@ -154,8 +155,8 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
                   child: Text(
                     '${formatPaceSeconds(_passoPerZona(zona))}/100m',
                     textAlign: TextAlign.end,
-                    style: AppTypography.cifreTabulari(
-                      AppTypography.corpoForte,
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpoForte),
                     ),
                   ),
                 ),

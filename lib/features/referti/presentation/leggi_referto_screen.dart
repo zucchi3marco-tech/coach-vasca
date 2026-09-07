@@ -29,8 +29,7 @@ class LeggiRefertoScreen extends ConsumerStatefulWidget {
   final String clubId;
 
   @override
-  ConsumerState<LeggiRefertoScreen> createState() =>
-      _LeggiRefertoScreenState();
+  ConsumerState<LeggiRefertoScreen> createState() => _LeggiRefertoScreenState();
 }
 
 class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
@@ -204,8 +203,7 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
   late final TextEditingController _squadraTrasfertaCtrl;
   late final TextEditingController _risultatoCasaCtrl;
   late final TextEditingController _risultatoTrasfertaCtrl;
-  late final List<(TextEditingController, TextEditingController)>
-  _parzialiCtrl;
+  late final List<(TextEditingController, TextEditingController)> _parzialiCtrl;
   late final List<_GiocatoreCtrl> _giocatoriCasaCtrl;
   late final List<_GiocatoreCtrl> _giocatoriTrasfertaCtrl;
 
@@ -271,7 +269,9 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                 controller: _risultatoCasaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: AppTypography.cifreTabulari(AppTypography.corpo),
+                style: AppTypography.condensata(
+                  AppTypography.cifreTabulari(AppTypography.corpo),
+                ),
               ),
             ),
             Text(' - ', style: AppTypography.corpo),
@@ -281,7 +281,9 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                 controller: _risultatoTrasfertaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: AppTypography.cifreTabulari(AppTypography.corpo),
+                style: AppTypography.condensata(
+                  AppTypography.cifreTabulari(AppTypography.corpo),
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.s8),
@@ -310,7 +312,9 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                     controller: _parzialiCtrl[i].$1,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                   ),
                 ),
                 Text(' - ', style: AppTypography.corpo),
@@ -320,7 +324,9 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                     controller: _parzialiCtrl[i].$2,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                   ),
                 ),
               ],
@@ -464,9 +470,8 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
 
       ref.invalidate(refertoPerPartitaProvider(partitaId));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Referto salvato.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Referto salvato.')));
       }
     } catch (e) {
       if (mounted) setState(() => _saveError = messaggioErrore(e));
@@ -729,8 +734,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
       if (nomeLetto.isEmpty) continue;
       final corrispondenti = atleti.where((a) {
         final cognome = a.cognome.trim();
-        return cognome.isNotEmpty &&
-            nomeLetto.contains(cognome.toUpperCase());
+        return cognome.isNotEmpty && nomeLetto.contains(cognome.toUpperCase());
       }).toList();
       if (corrispondenti.length == 1) {
         g.atletaId = corrispondenti.first.id;
@@ -839,9 +843,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text(
                   messaggioErrore(e),
-                  style: AppTypography.piccolo.copyWith(
-                    color: AppColors.rosso,
-                  ),
+                  style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
                 ),
               ),
       ),
@@ -910,7 +912,9 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.numero,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                     decoration: const InputDecoration(isDense: true),
                   ),
                 ),
@@ -929,7 +933,9 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.reti,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Reti',
@@ -943,7 +949,9 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.espulsioni,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Esp.',

@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/superfici_tema.dart';
+import '../../../theme/tema_bordo_vasca_provider.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -16,6 +20,9 @@ import '../../atleti/domain/atleta.dart';
 import '../application/presenze_providers.dart';
 import '../data/presenze_repository.dart';
 
+/// Schermata da bordo vasca (DESIGN.md sezione 9): bersagli grandi, niente
+/// form, e — a scelta dell'allenatore — sfondo scuro (vedi
+/// [temaBordoVascaScuroProvider]).
 class PresenzeScreen extends ConsumerWidget {
   const PresenzeScreen({required this.allenamento, super.key});
 
@@ -26,71 +33,76 @@ class PresenzeScreen extends ConsumerWidget {
     final filter = (clubId: allenamento.clubId, includeInactive: false);
     final atletiAsync = ref.watch(atletiListProvider(filter));
     final presenzeAsync = ref.watch(presenzeListProvider(allenamento.id));
+    final scuro = ref.watch(temaBordoVascaScuroProvider);
 
-    return AppScaffold(
-      scrollabile: true,
-      appBar: AppBar(
-        title: Text(
-          'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
-          '${allenamento.data.month.toString().padLeft(2, '0')}/'
-          '${allenamento.data.year}',
+    return Theme(
+      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
+      child: AppScaffold(
+        scrollabile: true,
+        appBar: AppBar(
+          title: Text(
+            'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
+            '${allenamento.data.month.toString().padLeft(2, '0')}/'
+            '${allenamento.data.year}',
+          ),
+          actions: const [BottoneTemaBordoVasca()],
         ),
-      ),
-      body: atletiAsync.when(
-        data: (atleti) {
-          // Nessun filtro per gruppo: e' un campo testo libero (vedi
-          // supabase/README.md), un confronto esatto rischia di
-          // nascondere atleti per un semplice refuso o campo vuoto.
-          return presenzeAsync.when(
-            data: (presenze) {
-              if (atleti.isEmpty) {
-                return EmptyState(
-                  icona: Icons.groups_outlined,
-                  titolo: 'Nessun atleta attivo in questo club',
-                  descrizione:
-                      'Aggiungi gli atleti dalla schermata Atleti per poter '
-                      'segnare le presenze.',
-                  azionePrincipale: 'Torna indietro',
-                  onAzionePrincipale: () => Navigator.of(context).pop(),
+        body: atletiAsync.when(
+          data: (atleti) {
+            // Nessun filtro per gruppo: e' un campo testo libero (vedi
+            // supabase/README.md), un confronto esatto rischia di
+            // nascondere atleti per un semplice refuso o campo vuoto.
+            return presenzeAsync.when(
+              data: (presenze) {
+                if (atleti.isEmpty) {
+                  return EmptyState(
+                    icona: Icons.groups_outlined,
+                    titolo: 'Nessun atleta attivo in questo club',
+                    descrizione:
+                        'Aggiungi gli atleti dalla schermata Atleti per poter '
+                        'segnare le presenze.',
+                    azionePrincipale: 'Torna indietro',
+                    onAzionePrincipale: () => Navigator.of(context).pop(),
+                  );
+                }
+
+                final statoPerAtleta = {
+                  for (final p in presenze) p.atletaId: p.stato,
+                };
+
+                return AppListPanel(
+                  righe: [
+                    for (final atleta in atleti)
+                      _RigaPresenza(
+                        atleta: atleta,
+                        statoAttuale: statoPerAtleta[atleta.id],
+                        onSelect: (nuovoStato) => ref
+                            .read(presenzeRepositoryProvider)
+                            .segnaPresenza(
+                              allenamentoId: allenamento.id,
+                              atletaId: atleta.id,
+                              stato: nuovoStato,
+                            ),
+                      ),
+                  ],
                 );
-              }
-
-              final statoPerAtleta = {
-                for (final p in presenze) p.atletaId: p.stato,
-              };
-
-              return AppListPanel(
-                righe: [
-                  for (final atleta in atleti)
-                    _RigaPresenza(
-                      atleta: atleta,
-                      statoAttuale: statoPerAtleta[atleta.id],
-                      onSelect: (nuovoStato) => ref
-                          .read(presenzeRepositoryProvider)
-                          .segnaPresenza(
-                            allenamentoId: allenamento.id,
-                            atletaId: atleta.id,
-                            stato: nuovoStato,
-                          ),
-                    ),
-                ],
-              );
-            },
-            loading: () => const LoadingSkeletonList(righe: 6),
-            error: (error, _) => ErrorBanner(
-              messaggio: 'Non è stato possibile caricare le presenze.',
-              suggerimento:
-                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-              dettaglioTecnico: messaggioErrore(error),
-            ),
-          );
-        },
-        loading: () => const LoadingSkeletonList(righe: 6),
-        error: (error, _) => ErrorBanner(
-          messaggio: 'Non è stato possibile caricare gli atleti.',
-          suggerimento:
-              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-          dettaglioTecnico: messaggioErrore(error),
+              },
+              loading: () => const LoadingSkeletonList(righe: 6),
+              error: (error, _) => ErrorBanner(
+                messaggio: 'Non è stato possibile caricare le presenze.',
+                suggerimento:
+                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+                dettaglioTecnico: messaggioErrore(error),
+              ),
+            );
+          },
+          loading: () => const LoadingSkeletonList(righe: 6),
+          error: (error, _) => ErrorBanner(
+            messaggio: 'Non è stato possibile caricare gli atleti.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
         ),
       ),
     );
@@ -113,6 +125,7 @@ class _RigaPresenza extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
@@ -123,7 +136,7 @@ class _RigaPresenza extends StatelessWidget {
         children: [
           Text(
             atleta.nomeCompleto,
-            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+            style: AppTypography.corpoForte.copyWith(color: tema.testo),
           ),
           const SizedBox(height: AppSpacing.s12),
           Row(
@@ -182,6 +195,7 @@ class _BottoneStato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
@@ -190,11 +204,9 @@ class _BottoneStato extends StatelessWidget {
           minHeight: AppSpacing.altezzaMinimaBersaglioVasca,
         ),
         decoration: BoxDecoration(
-          color: selezionato ? colore : AppColors.superficie,
+          color: selezionato ? colore : tema.superficie,
           borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-          border: Border.all(
-            color: selezionato ? colore : AppColors.linea,
-          ),
+          border: Border.all(color: selezionato ? colore : tema.linea),
         ),
         alignment: Alignment.center,
         child: Column(
@@ -203,17 +215,13 @@ class _BottoneStato extends StatelessWidget {
             Icon(
               icona,
               size: 24,
-              color: selezionato
-                  ? AppColors.superficie
-                  : AppColors.testoSecondario,
+              color: selezionato ? Colors.white : tema.testoSecondario,
             ),
             const SizedBox(height: 4),
             Text(
               etichetta,
               style: AppTypography.piccolo.copyWith(
-                color: selezionato
-                    ? AppColors.superficie
-                    : AppColors.testoSecondario,
+                color: selezionato ? Colors.white : tema.testoSecondario,
                 fontWeight: FontWeight.w600,
               ),
             ),

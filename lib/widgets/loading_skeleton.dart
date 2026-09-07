@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/superfici_tema.dart';
 
 /// Scheletro di caricamento — vedi DESIGN.md sezione 8, "Caricamento".
 /// Un rettangolo `superficieTenue` della forma del contenuto in arrivo;
@@ -22,7 +22,7 @@ class LoadingSkeleton extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.superficieTenue,
+        color: SuperficiTema.of(context).superficieTenue,
         borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
       ),
     );

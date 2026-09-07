@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/superfici_tema.dart';
 
 /// Un tiro gia' registrato, per la mappa di calore in sola lettura:
 /// posizione (percentuale 0-100 su entrambi gli assi) ed esito.
@@ -38,6 +39,7 @@ class CampoTiro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return AspectRatio(
       aspectRatio: 4 / 3,
       child: ClipRRect(
@@ -61,13 +63,15 @@ class CampoTiro extends StatelessWidget {
                   : (details) => gestisciTocco(details.localPosition),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.bluTenue,
-                  border: Border.all(color: AppColors.linea),
+                  color: tema.campoTiro,
+                  border: Border.all(color: tema.linea),
                 ),
                 child: Stack(
                   children: [
                     Positioned.fill(
-                      child: CustomPaint(painter: _CampoPainter()),
+                      child: CustomPaint(
+                        painter: _CampoPainter(coloreEvidenziato: tema.testo),
+                      ),
                     ),
                     for (final p in punti)
                       Positioned(
@@ -95,10 +99,16 @@ class CampoTiro extends StatelessWidget {
 }
 
 class _CampoPainter extends CustomPainter {
+  _CampoPainter({required this.coloreEvidenziato});
+
+  /// Nero in chiaro, quasi bianco in scuro: la porta deve restare
+  /// leggibile sullo sfondo del campo in entrambi i temi.
+  final Color coloreEvidenziato;
+
   @override
   void paint(Canvas canvas, Size size) {
     final trattoPorta = Paint()
-      ..color = AppColors.testo
+      ..color = coloreEvidenziato
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
@@ -200,7 +210,8 @@ class _CampoPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CampoPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CampoPainter oldDelegate) =>
+      oldDelegate.coloreEvidenziato != coloreEvidenziato;
 }
 
 /// Legenda della mappa di calore, per la sola-lettura — stesso schema

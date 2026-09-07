@@ -4,9 +4,12 @@ import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 import 'domain_tokens.dart';
+import 'superfici_tema.dart';
 
 /// ThemeData completo dell'app — vedi DESIGN.md sezione 14. Un solo tema
-/// chiaro (vedi sezione 9 sul chiaro/scuro a bordo vasca, ancora aperta).
+/// chiaro per le schermate da scrivania; [scuroBordoVasca] è una variante
+/// che solo le tre schermate da bordo vasca possono scegliere di
+/// applicare (DESIGN.md sezione 9, "Chiaro o scuro?").
 abstract final class AppTheme {
   static ThemeData chiaro = ThemeData(
     useMaterial3: true,
@@ -83,22 +86,25 @@ abstract final class AppTheme {
     ),
 
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.blu,
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.testoTenue,
-        minimumSize: const Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-        ),
-        textStyle: AppTypography.corpoForte,
-      ).copyWith(
-        overlayColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.pressed)
-              ? AppColors.bluPremuto
-              : null,
-        ),
-      ),
+      style:
+          FilledButton.styleFrom(
+            backgroundColor: AppColors.blu,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.testoTenue,
+            minimumSize: const Size.fromHeight(
+              AppSpacing.altezzaMinimaBersaglio,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+            ),
+            textStyle: AppTypography.corpoForte,
+          ).copyWith(
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? AppColors.bluPremuto
+                  : null,
+            ),
+          ),
     ),
 
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -175,6 +181,109 @@ abstract final class AppTheme {
         (states) => states.contains(WidgetState.selected)
             ? AppColors.bluTenue
             : AppColors.linea,
+      ),
+    ),
+  );
+
+  /// Variante scura, solo per le tre schermate da bordo vasca. Stessa
+  /// struttura di [chiaro]: cambiano i neutri (via [SuperficiTema.scuro]),
+  /// restano invariati i colori d'azione/segnale (blu, rosso, ok,
+  /// attenzione) perché quelli portano un significato, non solo contrasto.
+  static ThemeData scuroBordoVasca = ThemeData(
+    useMaterial3: true,
+    scaffoldBackgroundColor: SuperficiTema.scuro.sfondo,
+    colorScheme: ColorScheme.dark(
+      primary: AppColors.blu,
+      onPrimary: Colors.white,
+      secondary: AppColors.blu,
+      onSecondary: Colors.white,
+      error: AppColors.rosso,
+      onError: Colors.white,
+      surface: SuperficiTema.scuro.superficie,
+      onSurface: SuperficiTema.scuro.testo,
+    ),
+    fontFamily: AppTypography.corpo.fontFamily,
+    extensions: [DomainTokens.standard, SuperficiTema.scuro],
+
+    appBarTheme: AppBarTheme(
+      backgroundColor: SuperficiTema.scuro.superficie,
+      foregroundColor: SuperficiTema.scuro.testo,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: AppTypography.titolo.copyWith(
+        color: SuperficiTema.scuro.testo,
+      ),
+    ),
+
+    dividerTheme: DividerThemeData(
+      color: SuperficiTema.scuro.linea,
+      thickness: 1,
+      space: 1,
+    ),
+
+    filledButtonTheme: FilledButtonThemeData(
+      style:
+          FilledButton.styleFrom(
+            backgroundColor: AppColors.blu,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: SuperficiTema.scuro.testoTenue,
+            minimumSize: const Size.fromHeight(
+              AppSpacing.altezzaMinimaBersaglio,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+            ),
+            textStyle: AppTypography.corpoForte,
+          ).copyWith(
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? AppColors.bluPremuto
+                  : null,
+            ),
+          ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: SuperficiTema.scuro.testo,
+        backgroundColor: SuperficiTema.scuro.superficie,
+        side: BorderSide(color: SuperficiTema.scuro.linea),
+        minimumSize: const Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+        ),
+        textStyle: AppTypography.corpoForte,
+      ),
+    ),
+
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: AppColors.ok,
+      contentTextStyle: AppTypography.corpo.copyWith(color: Colors.white),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+      ),
+    ),
+
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: SuperficiTema.scuro.superficie,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.raggioSheet),
+        ),
+      ),
+    ),
+
+    dialogTheme: DialogThemeData(
+      backgroundColor: SuperficiTema.scuro.superficie,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.raggioSheet),
+      ),
+      titleTextStyle: AppTypography.titolo.copyWith(
+        color: SuperficiTema.scuro.testo,
+      ),
+      contentTextStyle: AppTypography.corpo.copyWith(
+        color: SuperficiTema.scuro.testo,
       ),
     ),
   );

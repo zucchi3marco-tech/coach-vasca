@@ -81,7 +81,9 @@ class _RefertoSalvatoView extends StatelessWidget {
                   '${referto.squadraCasa}   '
                   '${referto.risultatoCasa} - ${referto.risultatoTrasferta}'
                   '   ${referto.squadraTrasferta}',
-                  style: AppTypography.cifreTabulari(AppTypography.titoloXl),
+                  style: AppTypography.condensata(
+                    AppTypography.cifreTabulari(AppTypography.titoloXl),
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 if (referto.parziali.isNotEmpty) ...[
@@ -92,7 +94,9 @@ class _RefertoSalvatoView extends StatelessWidget {
                         'T${i + 1}: ${referto.parziali[i].casa}-'
                             '${referto.parziali[i].trasferta}',
                     ].join('   '),
-                    style: AppTypography.cifreTabulari(AppTypography.corpo),
+                    style: AppTypography.condensata(
+                      AppTypography.cifreTabulari(AppTypography.corpo),
+                    ),
                   ),
                 ],
               ],
@@ -138,8 +142,10 @@ class _TabellaGiocatoriSalvata extends StatelessWidget {
                 titolo: g.nome,
                 trailing: Text(
                   '${g.reti} reti · ${g.espulsioni} esp.',
-                  style: AppTypography.cifreTabulari(
-                    AppTypography.piccolo.copyWith(color: AppColors.testo),
+                  style: AppTypography.condensata(
+                    AppTypography.cifreTabulari(
+                      AppTypography.piccolo.copyWith(color: AppColors.testo),
+                    ),
                   ),
                 ),
               ),

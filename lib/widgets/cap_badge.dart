@@ -39,7 +39,11 @@ class CapBadge extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         '$numero',
-        style: AppTypography.corpoForte.copyWith(color: testo),
+        style: AppTypography.condensata(
+          AppTypography.cifreTabulari(
+            AppTypography.corpoForte.copyWith(color: testo),
+          ),
+        ),
       ),
     );
   }

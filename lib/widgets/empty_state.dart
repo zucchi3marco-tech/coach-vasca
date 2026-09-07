@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/superfici_tema.dart';
 import 'primary_button.dart';
 import 'secondary_button.dart';
 
@@ -30,23 +30,26 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icona, size: 48, color: AppColors.testoTenue),
+            Icon(icona, size: 48, color: tema.testoTenue),
             const SizedBox(height: AppSpacing.s16),
             Text(
               titolo,
-              style: AppTypography.sezione,
+              style: AppTypography.sezione.copyWith(color: tema.testo),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.s8),
             Text(
               descrizione,
-              style: AppTypography.piccolo,
+              style: AppTypography.piccolo.copyWith(
+                color: tema.testoSecondario,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.s20),

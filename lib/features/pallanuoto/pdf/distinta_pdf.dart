@@ -34,7 +34,8 @@ Future<Uint8List> generaDistintaPdf({
   final doc = pw.Document();
   final ordinati = [...convocati]
     ..sort(
-      (a, b) => a.giocatore.numeroCalottina.compareTo(b.giocatore.numeroCalottina),
+      (a, b) =>
+          a.giocatore.numeroCalottina.compareTo(b.giocatore.numeroCalottina),
     );
 
   doc.addPage(
@@ -56,7 +57,10 @@ Future<Uint8List> generaDistintaPdf({
           pw.Text('Campionato: ${partita.campionato}'),
         if (partita.coloreCalottina != null &&
             partita.coloreCalottina!.isNotEmpty)
-          pw.Text('Colore calottina: ${partita.coloreCalottina}'),
+          pw.Text(
+            'Colore calottina: '
+            '${partita.coloreCalottina == 'blu' ? 'Blu' : 'Bianca'}',
+          ),
         pw.SizedBox(height: 16),
         pw.TableHelper.fromTextArray(
           headers: ['N°', 'Giocatore', 'Tessera FIN', 'Ruolo'],

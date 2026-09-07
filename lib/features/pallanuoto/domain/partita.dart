@@ -23,7 +23,7 @@ class Partita {
   final String? ora;
   final String? luogo;
   final String? campionato;
-  final String? coloreCalottina;
+  final String? coloreCalottina; // bianca | blu
   final String squadraCasa;
   final String squadraTrasferta;
   final int numeroMaxConvocati; // 13 | 15
@@ -48,8 +48,7 @@ class Partita {
       note: map['note'] as String?,
       dettaglioTiro: map['dettaglio_tiro'] as String? ?? 'semplice',
       tracciaTempo: map['traccia_tempo'] as bool? ?? true,
-      modalitaSuperiorita:
-          map['modalita_superiorita'] as String? ?? 'singolo',
+      modalitaSuperiorita: map['modalita_superiorita'] as String? ?? 'singolo',
       nostraSquadra: map['nostra_squadra'] as String? ?? 'casa',
     );
   }

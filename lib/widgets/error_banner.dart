@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/superfici_tema.dart';
 
 /// Fascia di errore — vedi DESIGN.md sezione 8, "Errori". Non deve mai
 /// comparire un errore tecnico grezzo nell'interfaccia: [messaggio] è il
@@ -29,6 +30,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return Container(
       decoration: BoxDecoration(
         color: AppColors.rossoTenue,
@@ -44,11 +46,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: AppColors.rosso,
-                size: 20,
-              ),
+              const Icon(Icons.error_outline, color: AppColors.rosso, size: 20),
               const SizedBox(width: AppSpacing.s8),
               Expanded(
                 child: Column(
@@ -57,14 +55,16 @@ class _ErrorBannerState extends State<ErrorBanner> {
                     Text(
                       widget.messaggio,
                       style: AppTypography.corpoForte.copyWith(
-                        color: AppColors.testo,
+                        color: tema.testo,
                       ),
                     ),
                     if (widget.suggerimento != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         widget.suggerimento!,
-                        style: AppTypography.piccolo,
+                        style: AppTypography.piccolo.copyWith(
+                          color: tema.testoSecondario,
+                        ),
                       ),
                     ],
                   ],
@@ -86,7 +86,12 @@ class _ErrorBannerState extends State<ErrorBanner> {
             ),
             if (_mostraDettagli) ...[
               const SizedBox(height: AppSpacing.s8),
-              Text(widget.dettaglioTecnico!, style: AppTypography.piccolo),
+              Text(
+                widget.dettaglioTecnico!,
+                style: AppTypography.piccolo.copyWith(
+                  color: tema.testoSecondario,
+                ),
+              ),
             ],
           ],
         ],

@@ -110,19 +110,23 @@ class _BadgeCalottina extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (squalificato) {
+      // Nero puro, non il token "testo": deve restare la casella piu'
+      // scura sullo schermo anche quando il resto passa al tema scuro.
       return const SizedBox(
         width: AppSpacing.altezzaMinimaBersaglioVasca,
         height: AppSpacing.altezzaMinimaBersaglioVasca,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.testo,
+            color: Colors.black,
             shape: BoxShape.circle,
           ),
         ),
       );
     }
 
-    final badge = Center(child: CapBadge(numero: numero, colore: colore));
+    final badge = Center(
+      child: CapBadge(numero: numero, colore: colore),
+    );
 
     return SizedBox(
       width: AppSpacing.altezzaMinimaBersaglioVasca,

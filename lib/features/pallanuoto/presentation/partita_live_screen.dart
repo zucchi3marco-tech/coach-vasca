@@ -5,7 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/superfici_tema.dart';
+import '../../../theme/tema_bordo_vasca_provider.dart';
+import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
@@ -104,9 +108,8 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     } finally {
       if (mounted) _annullaInterazione();
@@ -129,9 +132,8 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     } finally {
       if (mounted) _annullaInterazione();
@@ -156,33 +158,36 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }
 
   Future<void> _scegliEsitoTiroAvversario(List<EventoPartita> eventi) async {
+    final tema = Theme.of(context);
     final esito = await showModalBottomSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final (valore, etichetta) in esitiTiroSemplice) ...[
-                SizedBox(
-                  height: AppSpacing.altezzaMinimaBersaglioVasca,
-                  child: PrimaryButton(
-                    label: etichetta,
-                    onPressed: () => Navigator.of(context).pop(valore),
+      builder: (sheetContext) => Theme(
+        data: tema,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (valore, etichetta) in esitiTiroSemplice) ...[
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: PrimaryButton(
+                      label: etichetta,
+                      onPressed: () => Navigator.of(sheetContext).pop(valore),
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.s12),
+                  const SizedBox(height: AppSpacing.s12),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -203,25 +208,29 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         contesto == 'rigore' || widget.partita.dettaglioTiro == 'dettagliato'
         ? esitiTiroDettagliato
         : esitiTiroSemplice;
+    final tema = Theme.of(context);
     final esito = await showModalBottomSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final (valore, etichetta) in opzioni) ...[
-                SizedBox(
-                  height: AppSpacing.altezzaMinimaBersaglioVasca,
-                  child: PrimaryButton(
-                    label: etichetta,
-                    onPressed: () => Navigator.of(context).pop(valore),
+      builder: (sheetContext) => Theme(
+        data: tema,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (valore, etichetta) in opzioni) ...[
+                  SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: PrimaryButton(
+                      label: etichetta,
+                      onPressed: () => Navigator.of(sheetContext).pop(valore),
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.s12),
+                  const SizedBox(height: AppSpacing.s12),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -234,24 +243,28 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   }
 
   Future<void> _confermaFinePartita(BuildContext context) async {
+    final tema = Theme.of(context);
     final conferma = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Concludere la partita?'),
-        content: const Text(
-          'Punteggio ed eventi restano salvati. Potrai riaprire questa '
-          'partita in un secondo momento da Distinta.',
+      builder: (dialogContext) => Theme(
+        data: tema,
+        child: AlertDialog(
+          title: const Text('Concludere la partita?'),
+          content: const Text(
+            'Punteggio ed eventi restano salvati. Potrai riaprire questa '
+            'partita in un secondo momento da Distinta.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Fine partita'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Fine partita'),
-          ),
-        ],
       ),
     );
     if (conferma == true && context.mounted) {
@@ -286,12 +299,16 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       )),
     );
 
-    if (eventiAsync.isLoading || convocatiAsync.isLoading || atletiAsync.isLoading) {
+    if (eventiAsync.isLoading ||
+        convocatiAsync.isLoading ||
+        atletiAsync.isLoading) {
       return const Scaffold(
         body: Center(child: LoadingSkeleton(width: 240, height: 40)),
       );
     }
-    if (eventiAsync.hasError || convocatiAsync.hasError || atletiAsync.hasError) {
+    if (eventiAsync.hasError ||
+        convocatiAsync.hasError ||
+        atletiAsync.hasError) {
       final errore =
           eventiAsync.error ?? convocatiAsync.error ?? atletiAsync.error;
       return Scaffold(
@@ -343,181 +360,204 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         .length;
 
     final attiva = _interazione != _Interazione.riposo;
+    final scuro = ref.watch(temaBordoVascaScuroProvider);
 
-    return PopScope(
-      canPop: !attiva,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && attiva) _annullaInterazione();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.sfondo,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.s16,
-                  vertical: AppSpacing.s8,
-                ),
-                child: Row(
+    return Theme(
+      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
+      // Builder per un context che veda gia' il Theme appena impostato
+      // sopra (serve a SuperficiTema.of piu' sotto).
+      child: Builder(
+        builder: (context) {
+          final tema = SuperficiTema.of(context);
+          return PopScope(
+            canPop: !attiva,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop && attiva) _annullaInterazione();
+            },
+            child: Scaffold(
+              body: SafeArea(
+                child: Column(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.history),
-                      tooltip: 'Cronologia',
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              EventiPartitaScreen(partita: widget.partita),
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s16,
+                        vertical: AppSpacing.s8,
                       ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          '$golCasa - $golTrasferta',
-                          style: AppTypography.display,
-                        ),
-                      ),
-                    ),
-                    if (widget.partita.tracciaTempo)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Row(
                         children: [
-                          for (var t = 1; t <= 4; t++)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: AppSpacing.s4,
-                              ),
-                              child: _ChipTempo(
-                                tempo: t,
-                                selezionato: _periodo == t,
-                                onTap: () => setState(() => _periodo = t),
-                              ),
-                            ),
-                        ],
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.sports_score),
-                      tooltip: 'Fine partita',
-                      onPressed: () => _confermaFinePartita(context),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    FasciaCalottinePartita(
-                      partita: widget.partita,
-                      casa: true,
-                      convocati: convocati,
-                      attiva: attiva,
-                      soloNostra: _interazione == _Interazione.sceltaGiocatoreTiro,
-                      disqualificati: disqualificati,
-                      conteggiRigore: conteggiRigore,
-                      onSelezionato: (id) => _onSelezionatoGiocatore(eventi, id),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.s12,
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CampoTiro(
-                              onTocca: convocati.isEmpty
-                                  ? null
-                                  : (x, y) {
-                                      setState(() {
-                                        _posX = x;
-                                        _posY = y;
-                                        _interazione =
-                                            _Interazione.sceltaGiocatoreTiro;
-                                      });
-                                    },
-                            ),
-                            if (attiva)
-                              Positioned.fill(
-                                child: GestureDetector(
-                                  onTap: _annullaInterazione,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(
-                                        AppSpacing.raggioPannello,
-                                      ),
-                                    ),
-                                  ),
+                          IconButton(
+                            icon: const Icon(Icons.history),
+                            tooltip: 'Cronologia',
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => EventiPartitaScreen(
+                                  partita: widget.partita,
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                          ),
+                          const BottoneTemaBordoVasca(),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                '$golCasa - $golTrasferta',
+                                style: AppTypography.display.copyWith(
+                                  color: tema.testo,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (widget.partita.tracciaTempo)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (var t = 1; t <= 4; t++)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: AppSpacing.s4,
+                                    ),
+                                    child: _ChipTempo(
+                                      tempo: t,
+                                      selezionato: _periodo == t,
+                                      onTap: () => setState(() => _periodo = t),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.sports_score),
+                            tooltip: 'Fine partita',
+                            onPressed: () => _confermaFinePartita(context),
+                          ),
+                        ],
                       ),
                     ),
-                    FasciaCalottinePartita(
-                      partita: widget.partita,
-                      casa: false,
-                      convocati: convocati,
-                      attiva: attiva,
-                      soloNostra: _interazione == _Interazione.sceltaGiocatoreTiro,
-                      disqualificati: disqualificati,
-                      conteggiRigore: conteggiRigore,
-                      onSelezionato: (id) => _onSelezionatoGiocatore(eventi, id),
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          FasciaCalottinePartita(
+                            partita: widget.partita,
+                            casa: true,
+                            convocati: convocati,
+                            attiva: attiva,
+                            soloNostra:
+                                _interazione ==
+                                _Interazione.sceltaGiocatoreTiro,
+                            disqualificati: disqualificati,
+                            conteggiRigore: conteggiRigore,
+                            onSelezionato: (id) =>
+                                _onSelezionatoGiocatore(eventi, id),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.s12,
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CampoTiro(
+                                    onTocca: convocati.isEmpty
+                                        ? null
+                                        : (x, y) {
+                                            setState(() {
+                                              _posX = x;
+                                              _posY = y;
+                                              _interazione = _Interazione
+                                                  .sceltaGiocatoreTiro;
+                                            });
+                                          },
+                                  ),
+                                  if (attiva)
+                                    Positioned.fill(
+                                      child: GestureDetector(
+                                        onTap: _annullaInterazione,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(
+                                              AppSpacing.raggioPannello,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          FasciaCalottinePartita(
+                            partita: widget.partita,
+                            casa: false,
+                            convocati: convocati,
+                            attiva: attiva,
+                            soloNostra:
+                                _interazione ==
+                                _Interazione.sceltaGiocatoreTiro,
+                            disqualificati: disqualificati,
+                            conteggiRigore: conteggiRigore,
+                            onSelezionato: (id) =>
+                                _onSelezionatoGiocatore(eventi, id),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpacing.s16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: AppSpacing.altezzaMinimaBersaglioVasca,
+                              child: SecondaryButton(
+                                label: 'Espulsione',
+                                icon: Icons.warning_amber_outlined,
+                                onPressed: () => setState(() {
+                                  _interazione =
+                                      _Interazione.sceltaGiocatoreSanzione;
+                                  _rigorePendente = false;
+                                }),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.s8),
+                          Expanded(
+                            child: SizedBox(
+                              height: AppSpacing.altezzaMinimaBersaglioVasca,
+                              child: SecondaryButton(
+                                label: 'Rigore',
+                                onPressed: () => setState(() {
+                                  _interazione =
+                                      _Interazione.sceltaGiocatoreSanzione;
+                                  _rigorePendente = true;
+                                }),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.s16),
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: AppSpacing.altezzaMinimaBersaglioVasca,
+                              child: SecondaryButton(
+                                label: 'Tiro avversario',
+                                icon: Icons.sports_handball_outlined,
+                                onPressed: () =>
+                                    _scegliEsitoTiroAvversario(eventi),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: SizedBox(
-                        height: AppSpacing.altezzaMinimaBersaglioVasca,
-                        child: SecondaryButton(
-                          label: 'Espulsione',
-                          icon: Icons.warning_amber_outlined,
-                          onPressed: () => setState(() {
-                            _interazione = _Interazione.sceltaGiocatoreSanzione;
-                            _rigorePendente = false;
-                          }),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s8),
-                    Expanded(
-                      child: SizedBox(
-                        height: AppSpacing.altezzaMinimaBersaglioVasca,
-                        child: SecondaryButton(
-                          label: 'Rigore',
-                          onPressed: () => setState(() {
-                            _interazione = _Interazione.sceltaGiocatoreSanzione;
-                            _rigorePendente = true;
-                          }),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s16),
-                    Expanded(
-                      flex: 2,
-                      child: SizedBox(
-                        height: AppSpacing.altezzaMinimaBersaglioVasca,
-                        child: SecondaryButton(
-                          label: 'Tiro avversario',
-                          icon: Icons.sports_handball_outlined,
-                          onPressed: () => _scegliEsitoTiroAvversario(eventi),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -536,9 +576,10 @@ class _ChipTempo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = SuperficiTema.of(context);
     return Material(
-      color: selezionato ? AppColors.blu : AppColors.superficie,
-      shape: const CircleBorder(side: BorderSide(color: AppColors.linea)),
+      color: selezionato ? AppColors.blu : tema.superficie,
+      shape: CircleBorder(side: BorderSide(color: tema.linea)),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -549,7 +590,7 @@ class _ChipTempo extends StatelessWidget {
             child: Text(
               'T$tempo',
               style: AppTypography.corpoForte.copyWith(
-                color: selezionato ? Colors.white : AppColors.testo,
+                color: selezionato ? Colors.white : tema.testo,
               ),
             ),
           ),

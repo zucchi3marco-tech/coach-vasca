@@ -107,12 +107,9 @@ class DistintaScreen extends ConsumerWidget {
                   final convocati = distintaAsync.value;
                   final atleti = atletiAsync.value;
                   if (convocati == null || atleti == null) return;
-                  _esporta(
-                    context,
-                    ref,
-                    convocati,
-                    {for (final a in atleti) a.id: a},
-                  );
+                  _esporta(context, ref, convocati, {
+                    for (final a in atleti) a.id: a,
+                  });
                 },
                 child: const _VoceMenu(
                   icona: Icons.ios_share,
@@ -159,7 +156,8 @@ class DistintaScreen extends ConsumerWidget {
                     partita.coloreCalottina!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s4),
                   Text(
-                    'Calottina: ${partita.coloreCalottina}',
+                    'Calottina: '
+                    '${partita.coloreCalottina == 'blu' ? 'Blu' : 'Bianca'}',
                     style: AppTypography.piccolo,
                   ),
                 ],
@@ -207,6 +205,7 @@ class DistintaScreen extends ConsumerWidget {
                           _RigaConvocato(
                             giocatore: g,
                             atleta: atletiPerId[g.atletaId],
+                            coloreCalottina: partita.coloreCalottina,
                             onTap: () => showDialog<void>(
                               context: context,
                               builder: (_) => _DialogModificaConvocato(
@@ -298,11 +297,13 @@ class _RigaConvocato extends StatelessWidget {
   const _RigaConvocato({
     required this.giocatore,
     required this.atleta,
+    required this.coloreCalottina,
     required this.onTap,
   });
 
   final DistintaGiocatore giocatore;
   final Atleta? atleta;
+  final String? coloreCalottina;
   final VoidCallback onTap;
 
   @override
@@ -332,6 +333,8 @@ class _RigaConvocato extends StatelessWidget {
                 numero: giocatore.numeroCalottina,
                 colore: giocatore.portiere
                     ? CapColore.rossaPortiere
+                    : coloreCalottina == 'blu'
+                    ? CapColore.blu
                     : CapColore.bianca,
               ),
               const SizedBox(width: AppSpacing.s12),

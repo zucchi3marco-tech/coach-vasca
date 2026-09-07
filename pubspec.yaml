@@ -49,6 +49,7 @@ dependencies:
   camera: ^0.12.1
   google_mlkit_pose_detection: ^0.16.1
   google_fonts: ^8.2.1
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -104,3 +105,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  #
+  # IBM Plex Sans Condensed come font-asset locale (scaricato da
+  # github.com/IBM/plex) è stato provato e rimosso: instabilità di
+  # rendering diffusa sul web. Vedi DESIGN.md sezione 4 e ROADMAP.md.
