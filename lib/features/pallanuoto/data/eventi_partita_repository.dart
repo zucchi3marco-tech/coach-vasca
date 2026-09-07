@@ -304,11 +304,11 @@ class EventiPartitaRepository {
     );
   }
 
-  Future<EventoPartita> concludiSuperiorita({
-    required String id,
-    required String esito,
-  }) async {
-    final payload = {'esito': esito};
+  Future<EventoPartita> _aggiornaEvento(
+    String id,
+    Map<String, dynamic> payload,
+    EventiPartitaTableCompanion companionLocale,
+  ) async {
     try {
       final row = await _client
           .from('eventi_partita')
@@ -323,9 +323,7 @@ class EventiPartitaRepository {
       if (!isNetworkFailure(e)) rethrow;
       await (_db.update(
         _db.eventiPartitaTable,
-      )..where((t) => t.id.equals(id))).write(
-        EventiPartitaTableCompanion(esito: Value(esito)),
-      );
+      )..where((t) => t.id.equals(id))).write(companionLocale);
       await enqueueOperation(
         _db,
         tabella: 'eventi_partita',
@@ -337,6 +335,29 @@ class EventiPartitaRepository {
     }
     return _rileggiLocale(id);
   }
+
+  Future<EventoPartita> concludiSuperiorita({
+    required String id,
+    required String esito,
+  }) => modificaEsito(id: id, esito: esito);
+
+  /// Corregge l'esito di un tiro (o di una superiorità già conclusa) già
+  /// registrato, senza dover eliminare e ricreare l'evento.
+  Future<EventoPartita> modificaEsito({
+    required String id,
+    required String esito,
+  }) => _aggiornaEvento(id, {
+    'esito': esito,
+  }, EventiPartitaTableCompanion(esito: Value(esito)));
+
+  /// Aggiunge/toglie l'attribuzione "fallo da rigore" a un'espulsione già
+  /// registrata.
+  Future<EventoPartita> modificaEspulsioneDaRigore({
+    required String id,
+    required bool daRigore,
+  }) => _aggiornaEvento(id, {
+    'espulsione_da_rigore': daRigore,
+  }, EventiPartitaTableCompanion(espulsioneDaRigore: Value(daRigore)));
 
   Future<void> eliminaEvento(String id) async {
     try {

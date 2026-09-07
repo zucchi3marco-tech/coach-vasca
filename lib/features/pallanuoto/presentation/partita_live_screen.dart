@@ -85,12 +85,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   }
 
   Future<void> _salvaTiro(
-    List<EventoPartita> eventi,
     String atletaId,
     String esito,
+    String contesto,
   ) async {
-    final contesto =
-        contestoAutomatico(eventi, 'nostra', DateTime.now()) ?? 'azione';
     try {
       final evento = await ref
           .read(eventiPartitaRepositoryProvider)
@@ -165,11 +163,44 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
     }
   }
 
+  Future<void> _scegliEsitoTiroAvversario(List<EventoPartita> eventi) async {
+    final esito = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (valore, etichetta) in esitiTiroSemplice) ...[
+                SizedBox(
+                  height: AppSpacing.altezzaMinimaBersaglioVasca,
+                  child: PrimaryButton(
+                    label: etichetta,
+                    onPressed: () => Navigator.of(context).pop(valore),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s12),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (esito == null) return;
+    await _salvaTiroAvversario(eventi, esito);
+  }
+
   Future<void> _scegliEsitoTiro(
     List<EventoPartita> eventi,
     String atletaId,
   ) async {
-    final opzioni = widget.partita.dettaglioTiro == 'dettagliato'
+    // Un tiro da rigore va sempre distinto fra parato e palo/fuori, anche
+    // se la partita è impostata su "semplice" per il gioco normale.
+    final contesto =
+        contestoAutomatico(eventi, 'nostra', DateTime.now()) ?? 'azione';
+    final opzioni =
+        contesto == 'rigore' || widget.partita.dettaglioTiro == 'dettagliato'
         ? esitiTiroDettagliato
         : esitiTiroSemplice;
     final esito = await showModalBottomSheet<String>(
@@ -199,7 +230,35 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       _annullaInterazione();
       return;
     }
-    await _salvaTiro(eventi, atletaId, esito);
+    await _salvaTiro(atletaId, esito, contesto);
+  }
+
+  Future<void> _confermaFinePartita(BuildContext context) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Concludere la partita?'),
+        content: const Text(
+          'Punteggio ed eventi restano salvati. Potrai riaprire questa '
+          'partita in un secondo momento da Distinta.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Fine partita'),
+          ),
+        ],
+      ),
+    );
+    if (conferma == true && context.mounted) {
+      Navigator.of(context)
+        ..pop()
+        ..pop();
+    }
   }
 
   void _onSelezionatoGiocatore(
@@ -337,6 +396,11 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             ),
                         ],
                       ),
+                    IconButton(
+                      icon: const Icon(Icons.sports_score),
+                      tooltip: 'Fine partita',
+                      onPressed: () => _confermaFinePartita(context),
+                    ),
                   ],
                 ),
               ),
@@ -439,9 +503,13 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                     const SizedBox(width: AppSpacing.s16),
                     Expanded(
                       flex: 2,
-                      child: _BottoneTiroAvversario(
-                        onGol: () => _salvaTiroAvversario(eventi, 'gol'),
-                        onNonGol: () => _salvaTiroAvversario(eventi, 'non_gol'),
+                      child: SizedBox(
+                        height: AppSpacing.altezzaMinimaBersaglioVasca,
+                        child: SecondaryButton(
+                          label: 'Tiro avversario',
+                          icon: Icons.sports_handball_outlined,
+                          onPressed: () => _scegliEsitoTiroAvversario(eventi),
+                        ),
                       ),
                     ),
                   ],
@@ -483,41 +551,6 @@ class _ChipTempo extends StatelessWidget {
               style: AppTypography.corpoForte.copyWith(
                 color: selezionato ? Colors.white : AppColors.testo,
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottoneTiroAvversario extends StatelessWidget {
-  const _BottoneTiroAvversario({required this.onGol, required this.onNonGol});
-
-  final VoidCallback onGol;
-  final VoidCallback onNonGol;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: AppSpacing.altezzaMinimaBersaglioVasca,
-      child: Material(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-        child: InkWell(
-          onTap: onGol,
-          onDoubleTap: onNonGol,
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-              border: Border.all(color: AppColors.linea),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'Tiro avversario',
-              style: AppTypography.corpoForte,
-              textAlign: TextAlign.center,
             ),
           ),
         ),

@@ -11,6 +11,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/lane_rule.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
+import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -79,35 +80,10 @@ class EventiPartitaScreen extends ConsumerWidget {
       );
       return;
     }
-    final conferma = await showDialog<bool>(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminare l\'evento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
+      builder: (_) => _AzioniEvento(evento: evento, partita: partita),
     );
-    if (conferma == true) {
-      try {
-        await ref
-            .read(eventiPartitaRepositoryProvider)
-            .eliminaEvento(evento.id);
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-        }
-      }
-    }
   }
 
   @override
@@ -463,6 +439,145 @@ class _DialogConcludiSuperioritaState
           child: const Text('Salva'),
         ),
       ],
+    );
+  }
+}
+
+/// Bottom sheet aperto toccando un evento già registrato: correggere
+/// l'esito di un tiro/superiorità, attribuire/togliere il fallo da rigore
+/// a un'espulsione, o eliminare l'evento — le uniche modifiche possibili
+/// a un evento già salvato.
+class _AzioniEvento extends ConsumerWidget {
+  const _AzioniEvento({required this.evento, required this.partita});
+
+  final EventoPartita evento;
+  final Partita partita;
+
+  Future<void> _modificaEsito(
+    BuildContext context,
+    WidgetRef ref,
+    String esito,
+  ) async {
+    try {
+      await ref
+          .read(eventiPartitaRepositoryProvider)
+          .modificaEsito(id: evento.id, esito: esito);
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
+  Future<void> _toggleRigore(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref
+          .read(eventiPartitaRepositoryProvider)
+          .modificaEspulsioneDaRigore(
+            id: evento.id,
+            daRigore: !evento.espulsioneDaRigore,
+          );
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
+  Future<void> _elimina(BuildContext context, WidgetRef ref) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminare l\'evento?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (conferma != true) return;
+    try {
+      await ref.read(eventiPartitaRepositoryProvider).eliminaEvento(evento.id);
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final opzioniEsito = switch (evento.tipo) {
+      'tiro' when evento.squadra == 'nostra' =>
+        evento.contestoTiro == 'rigore' ||
+                partita.dettaglioTiro == 'dettagliato'
+            ? esitiTiroDettagliato
+            : esitiTiroSemplice,
+      'tiro' => esitiTiroSemplice,
+      'superiorita' => esitiSuperiorita,
+      _ => const <(String, String)>[],
+    };
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (opzioniEsito.isNotEmpty) ...[
+              Text('Modifica esito', style: AppTypography.etichetta),
+              const SizedBox(height: AppSpacing.s8),
+              for (final (valore, etichetta) in opzioniEsito) ...[
+                SizedBox(
+                  height: AppSpacing.altezzaMinimaBersaglioVasca,
+                  child: PrimaryButton(
+                    label: etichetta,
+                    onPressed: valore == evento.esito
+                        ? null
+                        : () => _modificaEsito(context, ref, valore),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s8),
+              ],
+              const SizedBox(height: AppSpacing.s8),
+            ],
+            if (evento.tipo == 'espulsione') ...[
+              SizedBox(
+                height: AppSpacing.altezzaMinimaBersaglioVasca,
+                child: SecondaryButton(
+                  label: evento.espulsioneDaRigore
+                      ? 'Togli fallo da rigore'
+                      : 'Segna come fallo da rigore',
+                  onPressed: () => _toggleRigore(context, ref),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+            ],
+            TextButton(
+              onPressed: () => _elimina(context, ref),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Elimina evento'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

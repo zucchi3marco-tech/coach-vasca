@@ -104,6 +104,12 @@ class _CampoPainter extends CustomPainter {
 
     final centroX = size.width / 2;
     final larghezzaPorta = size.width * 0.24;
+    final yFondoCampo = size.height * 0.035;
+    canvas.drawLine(
+      Offset(0, yFondoCampo),
+      Offset(size.width, yFondoCampo),
+      trattoPorta,
+    );
     canvas.drawRect(
       Rect.fromLTWH(
         centroX - larghezzaPorta / 2,
@@ -149,14 +155,13 @@ class _CampoPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     final offsetPalo = size.width * 0.12;
-    final yPorta = size.height * 0.035;
     final yDue = size.height * y2m;
     for (final lato in [-1, 1]) {
       final x = centroX + lato * (larghezzaPorta / 2 + offsetPalo);
       _disegnaLineaTratteggiata(
         canvas,
         trattoDash,
-        Offset(x, yPorta),
+        Offset(x, yFondoCampo),
         Offset(x, yDue),
       );
     }
