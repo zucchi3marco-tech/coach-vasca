@@ -98,8 +98,8 @@ class _CampoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final trattoPorta = Paint()
-      ..color = AppColors.linea
-      ..strokeWidth = 1.5
+      ..color = AppColors.testo
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     final centroX = size.width / 2;
@@ -115,18 +115,24 @@ class _CampoPainter extends CustomPainter {
         centroX - larghezzaPorta / 2,
         0,
         larghezzaPorta,
-        size.height * 0.035,
+        yFondoCampo,
       ),
       trattoPorta,
     );
 
+    // Profondita' rappresentata dal disegno, dalla linea di porta in giu':
+    // le linee dei 2/5/6 m restano fra loro nelle proporzioni reali.
+    const profonditaMetri = 8.0;
+    double yPerMetri(double metri) =>
+        yFondoCampo + (size.height - yFondoCampo) * metri / profonditaMetri;
+
     void lineaOrizzontale(
-      double frazioneY,
+      double metri,
       String etichetta,
       Color colore,
       double spessore,
     ) {
-      final y = size.height * frazioneY;
+      final y = yPerMetri(metri);
       final tratto = Paint()
         ..color = colore
         ..strokeWidth = spessore
@@ -142,11 +148,18 @@ class _CampoPainter extends CustomPainter {
       tp.paint(canvas, Offset(AppSpacing.s4, y + AppSpacing.s4));
     }
 
-    // Linee reali della vasca: 2m e 5m rosse (5m piu' sottile), 6m gialla.
-    const y2m = 0.18;
-    lineaOrizzontale(y2m, '2 m', AppColors.rosso, 1.5);
-    lineaOrizzontale(0.30, '6 m', AppColors.giallo, 1.5);
-    lineaOrizzontale(0.42, '5 m', AppColors.rosso, 1.0);
+    // Linee reali della vasca, in ordine di distanza dalla porta: 2m e 5m
+    // rosse (5m piu' sottile), 6m gialla. Distanze "visive" (non quelle
+    // reali) su richiesta esplicita, per una resa piu' leggibile a bordo
+    // vasca: la linea dei 2m e' a meta' della sua distanza reale, e lo
+    // spazio fra 2m e 5m e' ridotto del 20% (il gap fra 5m e 6m resta
+    // quello reale, 1m).
+    const distanza2mVisiva = 1.0;
+    final distanza5mVisiva = distanza2mVisiva + (5.0 - 2.0) * 0.8;
+    final distanza6mVisiva = distanza5mVisiva + (6.0 - 5.0);
+    lineaOrizzontale(distanza2mVisiva, '2 m', AppColors.rosso, 1.5);
+    lineaOrizzontale(distanza5mVisiva, '5 m', AppColors.rosso, 1.0);
+    lineaOrizzontale(distanza6mVisiva, '6 m', AppColors.giallo, 1.5);
 
     // Area tratteggiata dai pali verso l'esterno per 2m, ricongiunta alla
     // linea dei 2m: semplificazione grafica, non una misura regolamentare.
@@ -155,7 +168,7 @@ class _CampoPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     final offsetPalo = size.width * 0.12;
-    final yDue = size.height * y2m;
+    final yDue = yPerMetri(distanza2mVisiva);
     for (final lato in [-1, 1]) {
       final x = centroX + lato * (larghezzaPorta / 2 + offsetPalo);
       _disegnaLineaTratteggiata(
