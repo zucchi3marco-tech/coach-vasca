@@ -117,11 +117,19 @@ final riepilogoEventiProvider =
       var golSuperioritaTot = 0;
       var golRigoreTot = 0;
       var espTot = 0;
+      var tiriSubitiTot = 0;
+      var golSubitiTot = 0;
       final partiteConEventi = <String>{};
       final perAtleta =
           <String, (int tiri, int gol, int golSup, int golRig, int esp)>{};
 
       for (final e in eventi) {
+        if (e.tipo == 'tiro' && e.squadra == 'avversaria') {
+          partiteConEventi.add(e.partitaId);
+          tiriSubitiTot++;
+          if (e.esito == 'gol') golSubitiTot++;
+          continue;
+        }
         final atletaId = e.atletaId;
         if (e.squadra != 'nostra' || atletaId == null) continue;
         if (e.tipo == 'tiro') {
@@ -162,6 +170,8 @@ final riepilogoEventiProvider =
         golSuperiorita: golSuperioritaTot,
         golRigore: golRigoreTot,
         espulsioni: espTot,
+        tiriSubiti: tiriSubitiTot,
+        golSubiti: golSubitiTot,
         perAtleta: [
           for (final e in perAtleta.entries)
             RigaAtletaEventi(

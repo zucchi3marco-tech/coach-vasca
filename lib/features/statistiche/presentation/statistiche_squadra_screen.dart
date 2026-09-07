@@ -253,6 +253,20 @@ class _SezioneEventi extends ConsumerWidget {
                   StatPanel(etichetta: 'Gol rigore', valore: '${r.golRigore}'),
                 ],
               ),
+              const SizedBox(height: AppSpacing.s16),
+              Wrap(
+                spacing: AppSpacing.s24,
+                runSpacing: AppSpacing.s16,
+                children: [
+                  StatPanel(
+                    etichetta: 'Gol subiti',
+                    valore: '${r.golSubiti}/${r.tiriSubiti}',
+                    confronto: r.tiriSubiti > 0
+                        ? '${r.percentualeGolSubiti.round()}%'
+                        : null,
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.s8),
               Text(
                 '${r.partite} partite seguite dal vivo con "Eventi partita".',

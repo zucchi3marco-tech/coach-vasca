@@ -63,6 +63,8 @@ class RiepilogoSquadraEventi {
     required this.golSuperiorita,
     required this.golRigore,
     required this.espulsioni,
+    required this.tiriSubiti,
+    required this.golSubiti,
     required this.perAtleta,
   });
 
@@ -73,6 +75,8 @@ class RiepilogoSquadraEventi {
     golSuperiorita: 0,
     golRigore: 0,
     espulsioni: 0,
+    tiriSubiti: 0,
+    golSubiti: 0,
     perAtleta: [],
   );
 
@@ -82,10 +86,17 @@ class RiepilogoSquadraEventi {
   final int golSuperiorita;
   final int golRigore;
   final int espulsioni;
+
+  /// Tiri e gol dell'avversario contro di noi ("tiro avversario", nessuna
+  /// posizione né identità del tiratore: solo l'esito).
+  final int tiriSubiti;
+  final int golSubiti;
   final List<RigaAtletaEventi> perAtleta;
 
   int get golAzione => gol - golSuperiorita - golRigore;
   double get mediaGolPartita => partite > 0 ? gol / partite : 0.0;
+  double get percentualeGolSubiti =>
+      tiriSubiti > 0 ? golSubiti / tiriSubiti * 100 : 0.0;
 }
 
 class RigaAtletaEventi {

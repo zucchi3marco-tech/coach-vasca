@@ -99,6 +99,13 @@ class StatistichePartitaScreen extends ConsumerWidget {
                 0,
                 (s, r) => s + r.espulsioni,
               );
+              final tiriSubiti = eventi
+                  .where((e) => e.tipo == 'tiro' && e.squadra == 'avversaria')
+                  .toList();
+              final golSubiti = tiriSubiti
+                  .where((e) => e.esito == 'gol')
+                  .length;
+              final haPortiere = convocati.any((g) => g.portiere);
               return ListView(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 children: [
@@ -117,6 +124,14 @@ class StatistichePartitaScreen extends ConsumerWidget {
                         etichetta: 'Espulsioni',
                         valore: '$espulsioniTotali',
                       ),
+                      if (haPortiere)
+                        StatPanel(
+                          etichetta: 'Gol subiti',
+                          valore: '$golSubiti/${tiriSubiti.length}',
+                          confronto: tiriSubiti.isNotEmpty
+                              ? '${(golSubiti / tiriSubiti.length * 100).round()}%'
+                              : null,
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s24),

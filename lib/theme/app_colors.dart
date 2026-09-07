@@ -23,6 +23,11 @@ abstract final class AppColors {
   static const ok = Color(0xFF157F4C);
   static const attenzione = Color(0xFFB4690E);
 
+  // Colori reali delle linee del campo disegnato (eventi partita
+  // pallanuoto) — vedi DESIGN.md sezione 9: uso rappresentativo, non uno
+  // stato "in corso".
+  static const giallo = Color(0xFFE0B400);
+
   // Zone di intensita'
   static const zonaA1 = Color(0xFF4FA3D1);
   static const zonaA2 = Color(0xFF2E8B8B);

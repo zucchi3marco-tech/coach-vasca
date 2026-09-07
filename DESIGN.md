@@ -302,6 +302,9 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
 - Tipografia `display` per l'informazione centrale (la serie in corso, il punteggio, il tempo). Deve leggersi a mezzo metro senza avvicinare il tablet.
 - Layout pensato per **orizzontale su tablet**, con le azioni sui lati raggiungibili col pollice.
 - Il rosso `rosso` compare qui, e solo qui, come indicatore di "in corso": un punto pulsante accanto al cronometro o un filetto sul blocco attivo.
+  **Eccezione:** il campo disegnato degli eventi partita pallanuoto usa
+  rosso e giallo per le linee reali della vasca (2m, 5m, 6m) — un uso
+  rappresentativo dei colori del regolamento, non uno stato "in corso".
 - **Nessun form.** Se serve inserire un dato, si fa con bottoni grandi o un bottom sheet con al massimo tre scelte.
 - Nessuna azione distruttiva raggiungibile con un tap solo.
 - Lo schermo non si spegne mentre una sessione è attiva.

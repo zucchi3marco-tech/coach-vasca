@@ -243,6 +243,24 @@ class EventiPartitaRepository {
     );
   }
 
+  /// Tiro subito da un giocatore avversario: non sappiamo chi ha tirato
+  /// (il pulsante rapido non chiede il numero di calottina), solo l'esito.
+  Future<EventoPartita> registraTiroAvversario({
+    required String partitaId,
+    required String esito,
+    int? periodo,
+    String contestoTiro = 'azione',
+  }) {
+    return _creaEvento(
+      partitaId: partitaId,
+      tipo: 'tiro',
+      squadra: 'avversaria',
+      esito: esito,
+      periodo: periodo,
+      contestoTiro: contestoTiro,
+    );
+  }
+
   /// Un'espulsione e' o di un nostro convocato ([atletaId]) o di un
   /// giocatore avversario identificato solo dal numero di calottina
   /// ([numeroCalottinaAvversario]): mai entrambi, mai nessuno dei due.

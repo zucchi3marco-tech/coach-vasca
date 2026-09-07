@@ -97,7 +97,7 @@ class CampoTiro extends StatelessWidget {
 class _CampoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final tratto = Paint()
+    final trattoPorta = Paint()
       ..color = AppColors.linea
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
@@ -111,21 +111,74 @@ class _CampoPainter extends CustomPainter {
         larghezzaPorta,
         size.height * 0.035,
       ),
-      tratto,
+      trattoPorta,
     );
 
-    void lineaOrizzontale(double frazioneY, String etichetta) {
+    void lineaOrizzontale(
+      double frazioneY,
+      String etichetta,
+      Color colore,
+      double spessore,
+    ) {
       final y = size.height * frazioneY;
+      final tratto = Paint()
+        ..color = colore
+        ..strokeWidth = spessore
+        ..style = PaintingStyle.stroke;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), tratto);
       final tp = TextPainter(
-        text: TextSpan(text: etichetta, style: AppTypography.etichetta),
+        text: TextSpan(
+          text: etichetta,
+          style: AppTypography.etichetta.copyWith(color: colore),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(AppSpacing.s4, y + AppSpacing.s4));
     }
 
-    lineaOrizzontale(0.18, '2 m');
-    lineaOrizzontale(0.42, '5 m');
+    // Linee reali della vasca: 2m e 5m rosse (5m piu' sottile), 6m gialla.
+    const y2m = 0.18;
+    lineaOrizzontale(y2m, '2 m', AppColors.rosso, 1.5);
+    lineaOrizzontale(0.30, '6 m', AppColors.giallo, 1.5);
+    lineaOrizzontale(0.42, '5 m', AppColors.rosso, 1.0);
+
+    // Area tratteggiata dai pali verso l'esterno per 2m, ricongiunta alla
+    // linea dei 2m: semplificazione grafica, non una misura regolamentare.
+    final trattoDash = Paint()
+      ..color = AppColors.rosso
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    final offsetPalo = size.width * 0.12;
+    final yPorta = size.height * 0.035;
+    final yDue = size.height * y2m;
+    for (final lato in [-1, 1]) {
+      final x = centroX + lato * (larghezzaPorta / 2 + offsetPalo);
+      _disegnaLineaTratteggiata(
+        canvas,
+        trattoDash,
+        Offset(x, yPorta),
+        Offset(x, yDue),
+      );
+    }
+  }
+
+  void _disegnaLineaTratteggiata(
+    Canvas canvas,
+    Paint tratto,
+    Offset da,
+    Offset a,
+  ) {
+    const lunghezzaTratto = 4.0;
+    const lunghezzaSpazio = 3.0;
+    final distanza = (a - da).distance;
+    if (distanza == 0) return;
+    final direzione = (a - da) / distanza;
+    var percorsa = 0.0;
+    while (percorsa < distanza) {
+      final fine = (percorsa + lunghezzaTratto).clamp(0.0, distanza);
+      canvas.drawLine(da + direzione * percorsa, da + direzione * fine, tratto);
+      percorsa += lunghezzaTratto + lunghezzaSpazio;
+    }
   }
 
   @override

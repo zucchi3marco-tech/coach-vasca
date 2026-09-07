@@ -11,7 +11,6 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/lane_rule.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
-import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -20,15 +19,12 @@ import '../data/eventi_partita_repository.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
 import 'eventi_labels.dart';
-import 'registra_espulsione_screen.dart';
-import 'registra_tiro_screen.dart';
-import 'selettore_giocatore_partita.dart';
 
-/// Schermata da bordo vasca (DESIGN.md sezione 9): usata durante la
-/// partita per registrare tiri, espulsioni e superiorità in tempo reale.
-/// "Tiro" ed "Espulsione" aprono schermate a tutto schermo con bersagli
-/// grandi (`RegistraTiroScreen`/`RegistraEspulsioneScreen`), non più un
-/// dialog con menu a tendina.
+/// Cronologia degli eventi partita: sola lettura (con modifica/cancellazione
+/// di un evento tramite tocco) e registrazione delle superiorità a inizio/
+/// fine. La registrazione di tiri ed espulsioni avviene nella schermata
+/// "campo live" (`PartitaLiveScreen`), da cui questa si raggiunge col
+/// pulsante "Cronologia".
 class EventiPartitaScreen extends ConsumerWidget {
   const EventiPartitaScreen({required this.partita, super.key});
 
@@ -117,7 +113,6 @@ class EventiPartitaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(partita.id));
-    final convocatiAsync = ref.watch(distintaListProvider(partita.id));
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: partita.clubId, includeInactive: false)),
     );
@@ -125,34 +120,6 @@ class EventiPartitaScreen extends ConsumerWidget {
     final atletiPerId = {
       for (final a in atletiAsync.value ?? const <Atleta>[]) a.id: a,
     };
-    final convocatiConAtleta = <ConvocatoConAtleta>[
-      for (final g in convocatiAsync.value ?? const [])
-        if (atletiPerId[g.atletaId] != null)
-          (giocatore: g, atleta: atletiPerId[g.atletaId]!),
-    ]..sort(
-      (a, b) => a.atleta.cognome.compareTo(b.atleta.cognome),
-    );
-    final eventi = eventiAsync.value ?? const <EventoPartita>[];
-
-    void apriRegistraTiro() => Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => RegistraTiroScreen(
-          partita: partita,
-          convocati: convocatiConAtleta,
-          eventi: eventi,
-        ),
-      ),
-    );
-
-    void apriRegistraEspulsione() => Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => RegistraEspulsioneScreen(
-          partita: partita,
-          convocati: convocatiConAtleta,
-          eventi: eventi,
-        ),
-      ),
-    );
 
     return AppScaffold(
       appBar: AppBar(
@@ -169,12 +136,11 @@ class EventiPartitaScreen extends ConsumerWidget {
                       icona: Icons.sports_handball_outlined,
                       titolo: 'Nessun evento registrato',
                       descrizione:
-                          'Usa i pulsanti qui sotto per registrare tiri, '
-                          'espulsioni e superiorità numeriche.',
-                      azionePrincipale: 'Registra un tiro',
-                      onAzionePrincipale: convocatiConAtleta.isEmpty
-                          ? null
-                          : apriRegistraTiro,
+                          'Tiri, espulsioni e rigori si registrano nel campo '
+                          'live; qui trovi solo la superiorità e la '
+                          'cronologia.',
+                      azionePrincipale: 'Torna al campo',
+                      onAzionePrincipale: () => Navigator.of(context).pop(),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(AppSpacing.s16),
@@ -253,26 +219,6 @@ class EventiPartitaScreen extends ConsumerWidget {
                 spacing: AppSpacing.s12,
                 runSpacing: AppSpacing.s12,
                 children: [
-                  SizedBox(
-                    height: AppSpacing.altezzaMinimaBersaglioVasca,
-                    child: PrimaryButton(
-                      label: 'Tiro',
-                      icon: Icons.sports_handball_outlined,
-                      expanded: false,
-                      onPressed: convocatiConAtleta.isEmpty
-                          ? null
-                          : apriRegistraTiro,
-                    ),
-                  ),
-                  SizedBox(
-                    height: AppSpacing.altezzaMinimaBersaglioVasca,
-                    child: SecondaryButton(
-                      label: 'Espulsione',
-                      icon: Icons.warning_amber_outlined,
-                      expanded: false,
-                      onPressed: apriRegistraEspulsione,
-                    ),
-                  ),
                   SizedBox(
                     height: AppSpacing.altezzaMinimaBersaglioVasca,
                     child: SecondaryButton(

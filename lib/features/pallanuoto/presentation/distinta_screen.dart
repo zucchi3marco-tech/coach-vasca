@@ -20,8 +20,8 @@ import '../data/distinta_repository.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/partita.dart';
 import '../pdf/distinta_pdf.dart';
-import 'eventi_partita_screen.dart';
 import 'partita_form_screen.dart';
+import 'partita_live_screen.dart';
 import 'statistiche_partita_screen.dart';
 
 class DistintaScreen extends ConsumerWidget {
@@ -72,7 +72,7 @@ class DistintaScreen extends ConsumerWidget {
               PopupMenuItem(
                 value: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => EventiPartitaScreen(partita: partita),
+                    builder: (_) => PartitaLiveScreen(partita: partita),
                   ),
                 ),
                 child: const _VoceMenu(
