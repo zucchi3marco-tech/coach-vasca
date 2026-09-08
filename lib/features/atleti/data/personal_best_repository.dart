@@ -14,8 +14,8 @@ import '../domain/personal_best.dart';
 
 const _uuid = Uuid();
 
-/// I PB li inserisce e li modifica solo l'atleta a cui appartengono (RLS
-/// lato server); il coach ha solo lettura.
+/// I PB li può inserire/modificare/eliminare sia l'atleta a cui
+/// appartengono sia l'allenatore del suo club (RLS lato server, FASE 10).
 class PersonalBestRepository {
   PersonalBestRepository(this._client, this._db, this._syncEngine);
 
@@ -194,9 +194,7 @@ class PersonalBestRepository {
   }
 }
 
-final personalBestRepositoryProvider = Provider<PersonalBestRepository>((
-  ref,
-) {
+final personalBestRepositoryProvider = Provider<PersonalBestRepository>((ref) {
   return PersonalBestRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),

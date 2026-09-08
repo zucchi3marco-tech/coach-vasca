@@ -44,7 +44,7 @@ class PbListScreen extends ConsumerWidget {
     );
 
     return AppScaffold(
-      appBar: AppBar(title: const Text('I miei personal best')),
+      appBar: AppBar(title: Text('Personal best — ${atleta.nomeCompleto}')),
       body: pbAsync.when(
         data: (righe) {
           // Il piu' veloce, se per qualche motivo ci fosse piu' di un

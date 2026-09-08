@@ -22,6 +22,7 @@ import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
 import 'codici_gruppo_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
+import 'pb_list_screen.dart';
 
 enum _Ordinamento { cognome, dataNascita }
 
@@ -116,6 +117,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                       builder: (_) => StrokeRateScreen(atleta: atleta),
                     ),
                   ),
+                  onTapPb: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PbListScreen(atleta: atleta),
+                    ),
+                  ),
                 ),
                 loading: () => ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -192,6 +198,7 @@ class _AtletiList extends StatelessWidget {
     required this.onTapCarico,
     required this.onTapStatistiche,
     required this.onTapBracciate,
+    required this.onTapPb,
   });
 
   final List<Atleta> atleti;
@@ -203,6 +210,7 @@ class _AtletiList extends StatelessWidget {
   final ValueChanged<Atleta> onTapCarico;
   final ValueChanged<Atleta> onTapStatistiche;
   final ValueChanged<Atleta> onTapBracciate;
+  final ValueChanged<Atleta> onTapPb;
 
   /// Il rilevamento bracciate usa la fotocamera + Google ML Kit: disponibile
   /// solo nell'app nativa Android/iOS, non nella versione web.
@@ -322,6 +330,13 @@ class _AtletiList extends StatelessWidget {
                         child: const _VoceMenu(
                           icona: Icons.speed_outlined,
                           etichetta: 'Test',
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: () => onTapPb(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.emoji_events_outlined,
+                          etichetta: 'Personal best',
                         ),
                       ),
                       if (_bracciateDisponibili)
