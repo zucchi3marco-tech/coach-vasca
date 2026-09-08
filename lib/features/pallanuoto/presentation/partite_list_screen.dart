@@ -66,7 +66,24 @@ class PartiteListScreen extends ConsumerWidget {
                               '${_formattaData(p.data)}'
                               '${p.ora != null && p.ora!.isNotEmpty ? ' · ${p.ora}' : ''}'
                               '${p.campionato != null && p.campionato!.isNotEmpty ? ' · ${p.campionato}' : ''}',
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Modifica partita',
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PartitaFormScreen(
+                                      clubId: clubId,
+                                      partita: p,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right),
+                            ],
+                          ),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => DistintaScreen(partita: p),
@@ -74,10 +91,8 @@ class PartiteListScreen extends ConsumerWidget {
                           ),
                           onLongPress: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => PartitaFormScreen(
-                                clubId: clubId,
-                                partita: p,
-                              ),
+                              builder: (_) =>
+                                  PartitaFormScreen(clubId: clubId, partita: p),
                             ),
                           ),
                         ),

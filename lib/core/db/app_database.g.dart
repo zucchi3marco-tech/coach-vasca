@@ -2876,6 +2876,17 @@ class $StagioniTableTable extends StagioniTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _campionatoMeta = const VerificationMeta(
+    'campionato',
+  );
+  @override
+  late final GeneratedColumn<String> campionato = GeneratedColumn<String>(
+    'campionato',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2885,6 +2896,7 @@ class $StagioniTableTable extends StagioniTable
     dataFine,
     obiettivo,
     gruppo,
+    campionato,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2947,6 +2959,12 @@ class $StagioniTableTable extends StagioniTable
         gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
       );
     }
+    if (data.containsKey('campionato')) {
+      context.handle(
+        _campionatoMeta,
+        campionato.isAcceptableOrUnknown(data['campionato']!, _campionatoMeta),
+      );
+    }
     return context;
   }
 
@@ -2984,6 +3002,10 @@ class $StagioniTableTable extends StagioniTable
         DriftSqlType.string,
         data['${effectivePrefix}gruppo'],
       ),
+      campionato: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}campionato'],
+      ),
     );
   }
 
@@ -3002,6 +3024,7 @@ class StagioniTableData extends DataClass
   final DateTime dataFine;
   final String? obiettivo;
   final String? gruppo;
+  final String? campionato;
   const StagioniTableData({
     required this.id,
     required this.clubId,
@@ -3010,6 +3033,7 @@ class StagioniTableData extends DataClass
     required this.dataFine,
     this.obiettivo,
     this.gruppo,
+    this.campionato,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3024,6 +3048,9 @@ class StagioniTableData extends DataClass
     }
     if (!nullToAbsent || gruppo != null) {
       map['gruppo'] = Variable<String>(gruppo);
+    }
+    if (!nullToAbsent || campionato != null) {
+      map['campionato'] = Variable<String>(campionato);
     }
     return map;
   }
@@ -3041,6 +3068,9 @@ class StagioniTableData extends DataClass
       gruppo: gruppo == null && nullToAbsent
           ? const Value.absent()
           : Value(gruppo),
+      campionato: campionato == null && nullToAbsent
+          ? const Value.absent()
+          : Value(campionato),
     );
   }
 
@@ -3057,6 +3087,7 @@ class StagioniTableData extends DataClass
       dataFine: serializer.fromJson<DateTime>(json['dataFine']),
       obiettivo: serializer.fromJson<String?>(json['obiettivo']),
       gruppo: serializer.fromJson<String?>(json['gruppo']),
+      campionato: serializer.fromJson<String?>(json['campionato']),
     );
   }
   @override
@@ -3070,6 +3101,7 @@ class StagioniTableData extends DataClass
       'dataFine': serializer.toJson<DateTime>(dataFine),
       'obiettivo': serializer.toJson<String?>(obiettivo),
       'gruppo': serializer.toJson<String?>(gruppo),
+      'campionato': serializer.toJson<String?>(campionato),
     };
   }
 
@@ -3081,6 +3113,7 @@ class StagioniTableData extends DataClass
     DateTime? dataFine,
     Value<String?> obiettivo = const Value.absent(),
     Value<String?> gruppo = const Value.absent(),
+    Value<String?> campionato = const Value.absent(),
   }) => StagioniTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -3089,6 +3122,7 @@ class StagioniTableData extends DataClass
     dataFine: dataFine ?? this.dataFine,
     obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
     gruppo: gruppo.present ? gruppo.value : this.gruppo,
+    campionato: campionato.present ? campionato.value : this.campionato,
   );
   StagioniTableData copyWithCompanion(StagioniTableCompanion data) {
     return StagioniTableData(
@@ -3101,6 +3135,9 @@ class StagioniTableData extends DataClass
       dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
       obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
       gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+      campionato: data.campionato.present
+          ? data.campionato.value
+          : this.campionato,
     );
   }
 
@@ -3113,14 +3150,23 @@ class StagioniTableData extends DataClass
           ..write('dataInizio: $dataInizio, ')
           ..write('dataFine: $dataFine, ')
           ..write('obiettivo: $obiettivo, ')
-          ..write('gruppo: $gruppo')
+          ..write('gruppo: $gruppo, ')
+          ..write('campionato: $campionato')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, clubId, nome, dataInizio, dataFine, obiettivo, gruppo);
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    nome,
+    dataInizio,
+    dataFine,
+    obiettivo,
+    gruppo,
+    campionato,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3131,7 +3177,8 @@ class StagioniTableData extends DataClass
           other.dataInizio == this.dataInizio &&
           other.dataFine == this.dataFine &&
           other.obiettivo == this.obiettivo &&
-          other.gruppo == this.gruppo);
+          other.gruppo == this.gruppo &&
+          other.campionato == this.campionato);
 }
 
 class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
@@ -3142,6 +3189,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
   final Value<DateTime> dataFine;
   final Value<String?> obiettivo;
   final Value<String?> gruppo;
+  final Value<String?> campionato;
   final Value<int> rowid;
   const StagioniTableCompanion({
     this.id = const Value.absent(),
@@ -3151,6 +3199,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     this.dataFine = const Value.absent(),
     this.obiettivo = const Value.absent(),
     this.gruppo = const Value.absent(),
+    this.campionato = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   StagioniTableCompanion.insert({
@@ -3161,6 +3210,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     required DateTime dataFine,
     this.obiettivo = const Value.absent(),
     this.gruppo = const Value.absent(),
+    this.campionato = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -3175,6 +3225,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Expression<DateTime>? dataFine,
     Expression<String>? obiettivo,
     Expression<String>? gruppo,
+    Expression<String>? campionato,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3185,6 +3236,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       if (dataFine != null) 'data_fine': dataFine,
       if (obiettivo != null) 'obiettivo': obiettivo,
       if (gruppo != null) 'gruppo': gruppo,
+      if (campionato != null) 'campionato': campionato,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3197,6 +3249,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Value<DateTime>? dataFine,
     Value<String?>? obiettivo,
     Value<String?>? gruppo,
+    Value<String?>? campionato,
     Value<int>? rowid,
   }) {
     return StagioniTableCompanion(
@@ -3207,6 +3260,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       dataFine: dataFine ?? this.dataFine,
       obiettivo: obiettivo ?? this.obiettivo,
       gruppo: gruppo ?? this.gruppo,
+      campionato: campionato ?? this.campionato,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3235,6 +3289,9 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     if (gruppo.present) {
       map['gruppo'] = Variable<String>(gruppo.value);
     }
+    if (campionato.present) {
+      map['campionato'] = Variable<String>(campionato.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3251,6 +3308,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
           ..write('dataFine: $dataFine, ')
           ..write('obiettivo: $obiettivo, ')
           ..write('gruppo: $gruppo, ')
+          ..write('campionato: $campionato, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11397,6 +11455,7 @@ typedef $$StagioniTableTableCreateCompanionBuilder =
       required DateTime dataFine,
       Value<String?> obiettivo,
       Value<String?> gruppo,
+      Value<String?> campionato,
       Value<int> rowid,
     });
 typedef $$StagioniTableTableUpdateCompanionBuilder =
@@ -11408,6 +11467,7 @@ typedef $$StagioniTableTableUpdateCompanionBuilder =
       Value<DateTime> dataFine,
       Value<String?> obiettivo,
       Value<String?> gruppo,
+      Value<String?> campionato,
       Value<int> rowid,
     });
 
@@ -11452,6 +11512,11 @@ class $$StagioniTableTableFilterComposer
 
   ColumnFilters<String> get gruppo => $composableBuilder(
     column: $table.gruppo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get campionato => $composableBuilder(
+    column: $table.campionato,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11499,6 +11564,11 @@ class $$StagioniTableTableOrderingComposer
     column: $table.gruppo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get campionato => $composableBuilder(
+    column: $table.campionato,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$StagioniTableTableAnnotationComposer
@@ -11532,6 +11602,11 @@ class $$StagioniTableTableAnnotationComposer
 
   GeneratedColumn<String> get gruppo =>
       $composableBuilder(column: $table.gruppo, builder: (column) => column);
+
+  GeneratedColumn<String> get campionato => $composableBuilder(
+    column: $table.campionato,
+    builder: (column) => column,
+  );
 }
 
 class $$StagioniTableTableTableManager
@@ -11576,6 +11651,7 @@ class $$StagioniTableTableTableManager
                 Value<DateTime> dataFine = const Value.absent(),
                 Value<String?> obiettivo = const Value.absent(),
                 Value<String?> gruppo = const Value.absent(),
+                Value<String?> campionato = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion(
                 id: id,
@@ -11585,6 +11661,7 @@ class $$StagioniTableTableTableManager
                 dataFine: dataFine,
                 obiettivo: obiettivo,
                 gruppo: gruppo,
+                campionato: campionato,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11596,6 +11673,7 @@ class $$StagioniTableTableTableManager
                 required DateTime dataFine,
                 Value<String?> obiettivo = const Value.absent(),
                 Value<String?> gruppo = const Value.absent(),
+                Value<String?> campionato = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion.insert(
                 id: id,
@@ -11605,6 +11683,7 @@ class $$StagioniTableTableTableManager
                 dataFine: dataFine,
                 obiettivo: obiettivo,
                 gruppo: gruppo,
+                campionato: campionato,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

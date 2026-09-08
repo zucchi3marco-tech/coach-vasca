@@ -42,7 +42,7 @@ class Atleta {
   /// Scadenza del certificato medico sportivo (facoltativa).
   final DateTime? visitaMedicaScadenza;
 
-  String get nomeCompleto => '$nome $cognome';
+  String get nomeCompleto => '$cognome $nome';
 
   bool get haAccountCollegato => userId != null;
 

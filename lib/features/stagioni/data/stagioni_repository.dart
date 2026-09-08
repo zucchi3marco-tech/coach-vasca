@@ -30,6 +30,7 @@ class StagioniRepository {
       dataFine: row.dataFine,
       obiettivo: row.obiettivo,
       gruppo: row.gruppo,
+      campionato: row.campionato,
     );
   }
 
@@ -42,6 +43,7 @@ class StagioniRepository {
       dataFine: DateTime.parse(map['data_fine'] as String),
       obiettivo: Value(map['obiettivo'] as String?),
       gruppo: Value(map['gruppo'] as String?),
+      campionato: Value(map['campionato'] as String?),
     );
   }
 
@@ -56,10 +58,7 @@ class StagioniRepository {
   /// stagione eliminata fuori dall'app resterebbe altrimenti in cache a
   /// tempo indeterminato.
   Future<void> refreshFromRemote(String clubId) async {
-    final rows = await _client
-        .from('stagioni')
-        .select()
-        .eq('club_id', clubId);
+    final rows = await _client.from('stagioni').select().eq('club_id', clubId);
     await _db.transaction(() async {
       await (_db.delete(
         _db.stagioniTable,
@@ -87,6 +86,7 @@ class StagioniRepository {
     required DateTime dataFine,
     String? obiettivo,
     String? gruppo,
+    String? campionato,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -97,6 +97,7 @@ class StagioniRepository {
       'data_fine': formatDateOnly(dataFine),
       if (obiettivo != null && obiettivo.isNotEmpty) 'obiettivo': obiettivo,
       if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
+      if (campionato != null && campionato.isNotEmpty) 'campionato': campionato,
     };
     try {
       final row = await _client
@@ -131,6 +132,7 @@ class StagioniRepository {
     required DateTime dataFine,
     String? obiettivo,
     String? gruppo,
+    String? campionato,
   }) async {
     final payload = {
       'nome': nome,
@@ -138,6 +140,7 @@ class StagioniRepository {
       'data_fine': formatDateOnly(dataFine),
       'obiettivo': obiettivo,
       'gruppo': gruppo,
+      'campionato': campionato,
     };
     try {
       final row = await _client
@@ -160,6 +163,7 @@ class StagioniRepository {
           dataFine: Value(dataFine),
           obiettivo: Value(obiettivo),
           gruppo: Value(gruppo),
+          campionato: Value(campionato),
         ),
       );
       await enqueueOperation(

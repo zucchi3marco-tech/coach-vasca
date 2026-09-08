@@ -19,8 +19,7 @@ class StagioneFormScreen extends ConsumerStatefulWidget {
   final Stagione? stagione;
 
   @override
-  ConsumerState<StagioneFormScreen> createState() =>
-      _StagioneFormScreenState();
+  ConsumerState<StagioneFormScreen> createState() => _StagioneFormScreenState();
 }
 
 class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
@@ -28,6 +27,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   late final TextEditingController _nomeController;
   late final TextEditingController _obiettivoController;
   late final TextEditingController _gruppoController;
+  late final TextEditingController _campionatoController;
   late final TextEditingController _dataInizioController;
   late final TextEditingController _dataFineController;
   late DateTime _dataInizio;
@@ -45,15 +45,14 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
     _nomeController = TextEditingController(text: s?.nome ?? '');
     _obiettivoController = TextEditingController(text: s?.obiettivo ?? '');
     _gruppoController = TextEditingController(text: s?.gruppo ?? '');
+    _campionatoController = TextEditingController(text: s?.campionato ?? '');
     final oggi = DateTime.now();
     _dataInizio = s?.dataInizio ?? DateTime(oggi.year, 9);
     _dataFine = s?.dataFine ?? DateTime(oggi.year + 1, 6, 30);
     _dataInizioController = TextEditingController(
       text: _formattaData(_dataInizio),
     );
-    _dataFineController = TextEditingController(
-      text: _formattaData(_dataFine),
-    );
+    _dataFineController = TextEditingController(text: _formattaData(_dataFine));
   }
 
   @override
@@ -61,6 +60,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
     _nomeController.dispose();
     _obiettivoController.dispose();
     _gruppoController.dispose();
+    _campionatoController.dispose();
     _dataInizioController.dispose();
     _dataFineController.dispose();
     super.dispose();
@@ -126,6 +126,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
           gruppo: _gruppoController.text.trim(),
+          campionato: _campionatoController.text.trim(),
         );
       } else {
         await repository.createStagione(
@@ -135,6 +136,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
           gruppo: _gruppoController.text.trim(),
+          campionato: _campionatoController.text.trim(),
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -232,6 +234,11 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
             AppTextField(
               etichetta: 'Gruppo (facoltativo)',
               controller: _gruppoController,
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              etichetta: 'Campionato (facoltativo)',
+              controller: _campionatoController,
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s12),

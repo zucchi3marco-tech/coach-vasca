@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -14,6 +16,9 @@ import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
+import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/application/personal_best_providers.dart';
+import '../../atleti/domain/atleta.dart';
 import '../../stagioni/application/microcicli_providers.dart';
 import '../../stagioni/domain/microciclo.dart';
 import '../data/generazione_ai_repository.dart';
@@ -52,10 +57,10 @@ class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
 class _GeneraAllenamentoFormScreenState
     extends ConsumerState<GeneraAllenamentoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _gruppoController = TextEditingController();
-  final _volumeController = TextEditingController();
   final _vincoliController = TextEditingController();
 
+  String? _gruppo;
+  double _volumeMetri = 3000;
   String _livello = _livelli.first;
   String _focusSelezionato = _focus.first;
   final Set<String> _regimiSelezionati = {};
@@ -63,14 +68,95 @@ class _GeneraAllenamentoFormScreenState
 
   @override
   void dispose() {
-    _gruppoController.dispose();
-    _volumeController.dispose();
     _vincoliController.dispose();
     super.dispose();
   }
 
+  /// Media dei personal best sui 100 stile libero (e il differenziale di
+  /// gara T200-T100, dove disponibile) degli atleti indicati — vedi FASE
+  /// 10 punto 4. Ignora chi non ha almeno il PB sui 100.
+  Future<List<CorsiaGenerazione>> _calcolaCorsie(List<Atleta> atleti) async {
+    final dati = <({double passo100S, double? differenzialeS})>[];
+    for (final atleta in atleti) {
+      final pb = await ref.read(personalBestListProvider(atleta.id).future);
+      double? tempo100;
+      double? tempo200;
+      for (final p in pb) {
+        if (p.stile != 'libero') continue;
+        if (p.distanzaM == 100) tempo100 = p.tempoS;
+        if (p.distanzaM == 200) tempo200 = p.tempoS;
+      }
+      if (tempo100 != null) {
+        dati.add((
+          passo100S: tempo100,
+          differenzialeS: tempo200 != null ? tempo200 - tempo100 : null,
+        ));
+      }
+    }
+    if (dati.isEmpty) return const [];
+
+    double media(Iterable<double> valori) =>
+        valori.reduce((a, b) => a + b) / valori.length;
+    double? mediaDifferenziali(
+      Iterable<({double passo100S, double? differenzialeS})> voci,
+    ) {
+      final valori = voci
+          .map((v) => v.differenzialeS)
+          .whereType<double>()
+          .toList();
+      return valori.isEmpty ? null : media(valori);
+    }
+
+    final passi = dati.map((d) => d.passo100S).toList();
+    final passoMedio = media(passi);
+    final scarto =
+        passi.reduce((a, b) => a > b ? a : b) -
+        passi.reduce((a, b) => a < b ? a : b);
+
+    // Scarto oltre il 10% del passo medio: PB troppo eterogenei per un'unica
+    // ripartenza, si dividono gli atleti in due corsie per passo.
+    if (dati.length > 1 && scarto / passoMedio > 0.10) {
+      final ordinati = [...dati]
+        ..sort((a, b) => a.passo100S.compareTo(b.passo100S));
+      final meta = (ordinati.length / 2).ceil();
+      final veloci = ordinati.sublist(0, meta);
+      final lenti = ordinati.sublist(meta);
+      return [
+        CorsiaGenerazione(
+          nome: 'Veloci',
+          passo100S: media(veloci.map((v) => v.passo100S)),
+          differenzialeS: mediaDifferenziali(veloci),
+        ),
+        CorsiaGenerazione(
+          nome: 'Lenti',
+          passo100S: media(lenti.map((v) => v.passo100S)),
+          differenzialeS: mediaDifferenziali(lenti),
+        ),
+      ];
+    }
+
+    return [
+      CorsiaGenerazione(
+        nome: 'Gruppo',
+        passo100S: passoMedio,
+        differenzialeS: mediaDifferenziali(dati),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final atletiAsync = ref.watch(
+      atletiListProvider((clubId: widget.clubId, includeInactive: false)),
+    );
+    final gruppi =
+        atletiAsync.value
+            ?.map((a) => a.gruppo)
+            .whereType<String>()
+            .where((g) => g.isNotEmpty)
+            .toSet()
+            .toList()
+          ?..sort();
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -79,8 +165,7 @@ class _GeneraAllenamentoFormScreenState
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) =>
-                    StoricoGenerazioniScreen(clubId: widget.clubId),
+                builder: (_) => StoricoGenerazioniScreen(clubId: widget.clubId),
               ),
             ),
             icon: const Icon(Icons.history, size: 20),
@@ -96,12 +181,19 @@ class _GeneraAllenamentoFormScreenState
             FormGroup(
               titolo: 'Parametri',
               campi: [
-                AppTextField(
-                  etichetta: 'Gruppo/livello (es. Juniores)',
-                  controller: _gruppoController,
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Campo obbligatorio'
-                      : null,
+                AppSelect<String?>(
+                  etichetta: 'Gruppo',
+                  value: _gruppo,
+                  hint: 'Tutti gli atleti',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Tutti gli atleti'),
+                    ),
+                    for (final g in gruppi ?? const <String>[])
+                      DropdownMenuItem(value: g, child: Text(g)),
+                  ],
+                  onChanged: (value) => setState(() => _gruppo = value),
                 ),
                 AppSelect<String>(
                   etichetta: 'Livello',
@@ -113,17 +205,23 @@ class _GeneraAllenamentoFormScreenState
                   onChanged: (value) =>
                       setState(() => _livello = value ?? _livelli.first),
                 ),
-                AppTextField(
-                  etichetta: 'Volume totale (metri)',
-                  controller: _volumeController,
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    final n = int.tryParse(value ?? '');
-                    if (n == null || n <= 0) {
-                      return 'Inserisci un numero valido';
-                    }
-                    return null;
-                  },
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Volume totale: ${_volumeMetri.round()} m',
+                      style: AppTypography.etichetta,
+                    ),
+                    Slider(
+                      value: _volumeMetri,
+                      min: 500,
+                      max: 6000,
+                      divisions: 55,
+                      label: '${_volumeMetri.round()} m',
+                      onChanged: (value) =>
+                          setState(() => _volumeMetri = value),
+                    ),
+                  ],
                 ),
                 AppSelect<String>(
                   etichetta: 'Focus',
@@ -132,9 +230,8 @@ class _GeneraAllenamentoFormScreenState
                     for (final f in _focus)
                       DropdownMenuItem(value: f, child: Text(_capitalizza(f))),
                   ],
-                  onChanged: (value) => setState(
-                    () => _focusSelezionato = value ?? _focus.first,
-                  ),
+                  onChanged: (value) =>
+                      setState(() => _focusSelezionato = value ?? _focus.first),
                 ),
               ],
             ),
@@ -194,18 +291,36 @@ class _GeneraAllenamentoFormScreenState
       return;
     }
 
+    setState(() => _generazioneInCorso = true);
+
+    var corsie = const <CorsiaGenerazione>[];
+    try {
+      final tuttiGliAtleti = await ref.read(
+        atletiListProvider((clubId: widget.clubId, includeInactive: false))
+            .future,
+      );
+      final atletiDelGruppo = _gruppo == null
+          ? tuttiGliAtleti
+          : tuttiGliAtleti.where((a) => a.gruppo == _gruppo).toList();
+      corsie = await _calcolaCorsie(atletiDelGruppo);
+    } catch (_) {
+      // Le corsie migliorano la generazione (ripartenze sui passi reali),
+      // ma non sono indispensabili: se il calcolo fallisce si procede
+      // comunque, senza passi di riferimento.
+    }
+
     final parametri = ParametriGenerazione(
-      gruppo: _gruppoController.text.trim(),
+      gruppo: _gruppo ?? 'Tutti gli atleti',
       livello: _livello,
-      volumeMetri: int.parse(_volumeController.text),
+      volumeMetri: _volumeMetri.round(),
       focus: _focusSelezionato,
       regimiAmmessi: _regimiSelezionati.toList(),
       vincoli: _vincoliController.text.trim().isEmpty
           ? null
           : _vincoliController.text.trim(),
+      corsie: corsie,
     );
 
-    setState(() => _generazioneInCorso = true);
     try {
       final scheda = await ref
           .read(generazioneAiRepositoryProvider)
@@ -294,8 +409,7 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
       _DialogSchedaGeneratedState();
 }
 
-class _DialogSchedaGeneratedState
-    extends ConsumerState<_DialogSchedaGenerata> {
+class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
   late DateTime _data = widget.dataIniziale ?? DateTime.now();
   late String? _microcicloId = widget.microcicloIniziale;
   bool _salvataggioInCorso = false;
@@ -315,6 +429,16 @@ class _DialogSchedaGeneratedState
     return parti.join(' · ');
   }
 
+  /// Es. "Veloci: rip 1:25 · Lenti: rip 1:40" — vuoto se la serie non ha
+  /// ripartenze calcolate (niente passi di riferimento, o zona a bassa
+  /// intensità che non ne prevede una).
+  String _ripartenzeSerie(SerieGenerata s) {
+    if (s.ripartenzePerCorsia.isEmpty) return '';
+    return s.ripartenzePerCorsia
+        .map((r) => '${r.nome}: rip ${formatPaceSeconds(r.ripartenzaS)}')
+        .join(' · ');
+  }
+
   String _etichettaMicrociclo(Microciclo m) {
     if (m.nome != null && m.nome!.isNotEmpty) return m.nome!;
     if (m.numeroSettimana != null) return 'Settimana ${m.numeroSettimana}';
@@ -324,9 +448,7 @@ class _DialogSchedaGeneratedState
   @override
   Widget build(BuildContext context) {
     final scheda = widget.scheda;
-    final microcicliAsync = ref.watch(
-      microcicliDelClubProvider(widget.clubId),
-    );
+    final microcicliAsync = ref.watch(microcicliDelClubProvider(widget.clubId));
     return AlertDialog(
       title: Text(scheda.titolo),
       content: SizedBox(
@@ -385,9 +507,7 @@ class _DialogSchedaGeneratedState
               const Divider(height: AppSpacing.s24),
               for (final s in scheda.serie)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.s4,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -396,10 +516,14 @@ class _DialogSchedaGeneratedState
                         '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
                         style: AppTypography.corpoForte,
                       ),
-                      Text(
-                        _sottotitoloSerie(s),
-                        style: AppTypography.piccolo,
-                      ),
+                      Text(_sottotitoloSerie(s), style: AppTypography.piccolo),
+                      if (s.ripartenzePerCorsia.isNotEmpty)
+                        Text(
+                          _ripartenzeSerie(s),
+                          style: AppTypography.piccolo.copyWith(
+                            color: AppColors.blu,
+                          ),
+                        ),
                       if (s.note != null && s.note!.isNotEmpty)
                         Text(s.note!, style: AppTypography.piccolo),
                     ],
@@ -456,6 +580,20 @@ class _DialogSchedaGeneratedState
           );
       final serieRepository = ref.read(serieRepositoryProvider);
       for (final s in scheda.serie) {
+        // Con più corsie si tiene come riferimento la più veloce (la
+        // ripartenza più stretta): il dettaglio di tutte resta in nota,
+        // perché il campo ripartenza della serie ne ammette una sola.
+        double? ripartenzaS;
+        var note = s.note;
+        if (s.ripartenzePerCorsia.isNotEmpty) {
+          ripartenzaS = s.ripartenzePerCorsia
+              .map((r) => r.ripartenzaS)
+              .reduce((a, b) => a < b ? a : b);
+          final dettaglio = _ripartenzeSerie(s);
+          note = note == null || note.isEmpty
+              ? dettaglio
+              : '$note — $dettaglio';
+        }
         await serieRepository.createSerie(
           allenamentoId: allenamento.id,
           ordine: s.ordine,
@@ -466,8 +604,9 @@ class _DialogSchedaGeneratedState
           esecuzione: s.esecuzione,
           zona: s.zona,
           recuperoS: s.recuperoS,
+          ripartenzaS: ripartenzaS,
           attrezzatura: s.attrezzatura,
-          note: s.note,
+          note: note,
         );
       }
       if (widget.generazioneId != null) {

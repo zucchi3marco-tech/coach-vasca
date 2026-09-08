@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_select.dart';
+import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
@@ -98,10 +98,12 @@ class _SelettoreStagioneState extends ConsumerState<SelettoreStagione> {
           },
         );
       },
-      loading: () => const LoadingSkeleton(height: AppSpacing.altezzaMinimaBersaglio),
-      error: (e, _) => Text(
-        'Errore nel caricamento stagioni: ${messaggioErrore(e)}',
-        style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
+      loading: () =>
+          const LoadingSkeleton(height: AppSpacing.altezzaMinimaBersaglio),
+      error: (e, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare le stagioni.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(e),
       ),
     );
   }

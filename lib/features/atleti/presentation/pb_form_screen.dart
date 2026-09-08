@@ -4,24 +4,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/personal_best_repository.dart';
+import '../domain/atleta.dart';
+import '../domain/pb_slots.dart';
 import '../domain/personal_best.dart';
 
-const _stili = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
-
-String _capitalizza(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
+/// Inserisce (o modifica) il tempo per uno slot stile+distanza già scelto
+/// dalla lista (FASE 10, punto 3): qui non si sceglie più né lo stile né
+/// la distanza, solo il tempo — sono fissati dallo slot su cui si è
+/// toccato in [PbListScreen].
 class PbFormScreen extends ConsumerStatefulWidget {
-  const PbFormScreen({required this.atletaId, this.personalBest, super.key});
+  const PbFormScreen({
+    required this.atleta,
+    required this.stile,
+    required this.distanzaM,
+    this.personalBest,
+    super.key,
+  });
 
-  final String atletaId;
+  final Atleta atleta;
+  final String stile;
+  final int distanzaM;
   final PersonalBest? personalBest;
 
   @override
@@ -30,13 +38,11 @@ class PbFormScreen extends ConsumerStatefulWidget {
 
 class _PbFormScreenState extends ConsumerState<PbFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _distanzaController;
   late final TextEditingController _minutiController;
   late final TextEditingController _secondiController;
   late final TextEditingController _dataController;
   late final TextEditingController _noteController;
 
-  late String _stile;
   DateTime? _data;
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -47,16 +53,14 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
   void initState() {
     super.initState();
     final pb = widget.personalBest;
-    _stile = pb?.stile ?? _stili.first;
-    _distanzaController = TextEditingController(
-      text: pb?.distanzaM.toString() ?? '',
-    );
     final tempo = pb?.tempoS;
     _minutiController = TextEditingController(
       text: tempo == null ? '0' : (tempo ~/ 60).toString(),
     );
     _secondiController = TextEditingController(
-      text: tempo == null ? '' : (tempo - (tempo ~/ 60) * 60).toStringAsFixed(2),
+      text: tempo == null
+          ? ''
+          : (tempo - (tempo ~/ 60) * 60).toStringAsFixed(2),
     );
     _data = pb?.data;
     _dataController = TextEditingController(text: _formattaData(_data));
@@ -65,7 +69,6 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
 
   @override
   void dispose() {
-    _distanzaController.dispose();
     _minutiController.dispose();
     _secondiController.dispose();
     _dataController.dispose();
@@ -113,17 +116,17 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
       if (_isEditing) {
         await repository.aggiornaPersonalBest(
           id: widget.personalBest!.id,
-          stile: _stile,
-          distanzaM: int.parse(_distanzaController.text.trim()),
+          stile: widget.stile,
+          distanzaM: widget.distanzaM,
           tempoS: tempoS,
           data: _data,
           note: _noteController.text.trim(),
         );
       } else {
         await repository.creaPersonalBest(
-          atletaId: widget.atletaId,
-          stile: _stile,
-          distanzaM: int.parse(_distanzaController.text.trim()),
+          atletaId: widget.atleta.id,
+          stile: widget.stile,
+          distanzaM: widget.distanzaM,
           tempoS: tempoS,
           data: _data,
           note: _noteController.text.trim(),
@@ -168,7 +171,7 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Modifica personal best' : 'Nuovo personal best'),
+        title: Text('${widget.distanzaM}m ${capitalizzaParola(widget.stile)}'),
       ),
       body: Form(
         key: _formKey,
@@ -178,25 +181,6 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
             FormGroup(
               titolo: 'Prestazione',
               campi: [
-                AppSelect<String>(
-                  etichetta: 'Stile',
-                  value: _stile,
-                  items: [
-                    for (final s in _stili)
-                      DropdownMenuItem(value: s, child: Text(_capitalizza(s))),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _stile = value ?? _stili.first),
-                ),
-                AppTextField(
-                  etichetta: 'Distanza (m)',
-                  controller: _distanzaController,
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    final n = int.tryParse(v?.trim() ?? '');
-                    return (n == null || n <= 0) ? '> 0' : null;
-                  },
-                ),
                 Row(
                   children: [
                     Expanded(
@@ -216,8 +200,7 @@ class _PbFormScreenState extends ConsumerState<PbFormScreen> {
                         ),
                         validator: (v) {
                           final minuti =
-                              int.tryParse(_minutiController.text.trim()) ??
-                              0;
+                              int.tryParse(_minutiController.text.trim()) ?? 0;
                           final secondi = double.tryParse(v?.trim() ?? '');
                           if (minuti == 0 &&
                               (secondi == null || secondi <= 0)) {

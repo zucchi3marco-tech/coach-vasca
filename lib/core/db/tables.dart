@@ -92,6 +92,7 @@ class StagioniTable extends Table {
   DateTimeColumn get dataFine => dateTime()();
   TextColumn get obiettivo => text().nullable()();
   TextColumn get gruppo => text().nullable()();
+  TextColumn get campionato => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -201,8 +202,7 @@ class PartiteTable extends Table {
   TextColumn get note => text().nullable()();
   TextColumn get dettaglioTiro =>
       text().withDefault(const Constant('semplice'))();
-  BoolColumn get tracciaTempo =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get tracciaTempo => boolean().withDefault(const Constant(true))();
   TextColumn get modalitaSuperiorita =>
       text().withDefault(const Constant('singolo'))();
   TextColumn get nostraSquadra =>
@@ -219,8 +219,7 @@ class DistintaGiocatoriTable extends Table {
   TextColumn get clubId => text()();
   IntColumn get numeroCalottina => integer()();
   BoolColumn get capitano => boolean().withDefault(const Constant(false))();
-  BoolColumn get viceCapitano =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get viceCapitano => boolean().withDefault(const Constant(false))();
   BoolColumn get portiere => boolean().withDefault(const Constant(false))();
   BoolColumn get fuoriquota => boolean().withDefault(const Constant(false))();
 
@@ -244,8 +243,9 @@ class EventiPartitaTable extends Table {
   IntColumn get periodo => integer().nullable()();
   TextColumn get esito =>
       text().nullable()(); // gol | non_gol | parato | palo_fuori
-  TextColumn get contestoTiro =>
-      text().withDefault(const Constant('azione'))(); // azione | superiorita | rigore
+  TextColumn get contestoTiro => text().withDefault(
+    const Constant('azione'),
+  )(); // azione | superiorita | rigore
   RealColumn get posX => real().nullable()();
   RealColumn get posY => real().nullable()();
   IntColumn get numeroCalottinaAvversario => integer().nullable()();
@@ -293,6 +293,5 @@ class PendingOperationsTable extends Table {
   TextColumn get operazione => text()(); // insert | update | delete
   TextColumn get rigaId => text()();
   TextColumn get payloadJson => text().nullable()();
-  DateTimeColumn get creatoIl =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get creatoIl => dateTime().withDefault(currentDateAndTime)();
 }

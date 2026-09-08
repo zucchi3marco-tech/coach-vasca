@@ -7,17 +7,18 @@ import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
 import '../application/personal_best_providers.dart';
 import '../domain/atleta.dart';
+import '../domain/pb_slots.dart';
 import '../domain/personal_best.dart';
 import 'pb_form_screen.dart';
 
-String _capitalizza(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
+/// Tabella di tutti i personal best possibili per lo sport dell'atleta
+/// (FASE 10, punto 3): ogni combinazione stile+distanza è sempre
+/// visibile, registrata o no, così si vede a colpo d'occhio cosa manca.
 class PbListScreen extends ConsumerWidget {
   const PbListScreen({required this.atleta, super.key});
 
@@ -27,10 +28,16 @@ class PbListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pbAsync = ref.watch(personalBestListProvider(atleta.id));
 
-    void apriForm({PersonalBest? personalBest}) => Navigator.of(context).push(
+    void apriForm({
+      required String stile,
+      required int distanzaM,
+      PersonalBest? personalBest,
+    }) => Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PbFormScreen(
-          atletaId: atleta.id,
+          atleta: atleta,
+          stile: stile,
+          distanzaM: distanzaM,
           personalBest: personalBest,
         ),
       ),
@@ -39,30 +46,56 @@ class PbListScreen extends ConsumerWidget {
     return AppScaffold(
       appBar: AppBar(title: const Text('I miei personal best')),
       body: pbAsync.when(
-        data: (righe) => righe.isEmpty
-            ? EmptyState(
-                icona: Icons.emoji_events_outlined,
-                titolo: 'Nessun personal best registrato',
-                descrizione:
-                    'Aggiungi il tuo primo tempo per iniziare a tenerne '
-                    'traccia.',
-                azionePrincipale: 'Nuovo personal best',
-                onAzionePrincipale: () => apriForm(),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: AppListPanel(
-                  righe: [
-                    for (final pb in righe)
-                      AppListRow(
-                        titolo: '${pb.distanzaM}m ${_capitalizza(pb.stile)}',
-                        sottotitolo: formatPaceSeconds(pb.tempoS),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => apriForm(personalBest: pb),
-                      ),
+        data: (righe) {
+          // Il piu' veloce, se per qualche motivo ci fosse piu' di un
+          // tempo salvato per la stessa combinazione stile+distanza.
+          final migliorePerSlot = <String, PersonalBest>{};
+          for (final pb in righe) {
+            final chiave = '${pb.stile}_${pb.distanzaM}';
+            final attuale = migliorePerSlot[chiave];
+            if (attuale == null || pb.tempoS < attuale.tempoS) {
+              migliorePerSlot[chiave] = pb;
+            }
+          }
+
+          final slots = slotsPerSport(atleta.sport);
+          final stiliOrdinati = <String>[];
+          for (final s in slots) {
+            if (!stiliOrdinati.contains(s.stile)) stiliOrdinati.add(s.stile);
+          }
+          final mostraIntestazioni = stiliOrdinati.length > 1;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final stile in stiliOrdinati) ...[
+                  if (mostraIntestazioni) ...[
+                    SectionHeader(capitalizzaParola(stile)),
+                    const SizedBox(height: AppSpacing.s8),
                   ],
-                ),
-              ),
+                  AppListPanel(
+                    righe: [
+                      for (final slot in slots.where((s) => s.stile == stile))
+                        _rigaSlot(
+                          slot: slot,
+                          pb: migliorePerSlot['${slot.stile}_${slot.distanzaM}'],
+                          onTap: () => apriForm(
+                            stile: slot.stile,
+                            distanzaM: slot.distanzaM,
+                            personalBest:
+                                migliorePerSlot['${slot.stile}_${slot.distanzaM}'],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                ],
+              ],
+            ),
+          );
+        },
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),
           child: LoadingSkeletonList(righe: 5),
@@ -77,12 +110,19 @@ class PbListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-pb',
-        onPressed: () => apriForm(),
-        tooltip: 'Nuovo personal best',
-        child: const Icon(Icons.add),
-      ),
+    );
+  }
+
+  AppListRow _rigaSlot({
+    required SlotPersonalBest slot,
+    required PersonalBest? pb,
+    required VoidCallback onTap,
+  }) {
+    return AppListRow(
+      titolo: '${slot.distanzaM}m ${capitalizzaParola(slot.stile)}',
+      sottotitolo: pb != null ? formatPaceSeconds(pb.tempoS) : 'Non registrato',
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }

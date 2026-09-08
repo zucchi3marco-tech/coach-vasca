@@ -7,6 +7,7 @@ class Stagione {
     required this.dataFine,
     this.obiettivo,
     this.gruppo,
+    this.campionato,
   });
 
   final String id;
@@ -16,4 +17,9 @@ class Stagione {
   final DateTime dataFine;
   final String? obiettivo;
   final String? gruppo;
+
+  /// Campionato disputato in questa stagione: le partite create con una
+  /// data compresa fra [dataInizio] e [dataFine] lo ereditano
+  /// automaticamente, non si sceglie più partita per partita.
+  final String? campionato;
 }

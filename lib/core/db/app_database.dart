@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,7 +89,10 @@ class AppDatabase extends _$AppDatabase {
       // statistiche stagionali "da eventi live" (Fase 8).
       if (from < 8) {
         if (!await _hasColumn(m, 'eventi_partita_table', 'contesto_tiro')) {
-          await m.addColumn(eventiPartitaTable, eventiPartitaTable.contestoTiro);
+          await m.addColumn(
+            eventiPartitaTable,
+            eventiPartitaTable.contestoTiro,
+          );
         }
       }
       // v8 -> v9: account atleta (user_id su atleti) e personal best
@@ -135,6 +138,14 @@ class AppDatabase extends _$AppDatabase {
             eventiPartitaTable,
             eventiPartitaTable.espulsioneDaRigore,
           );
+        }
+      }
+      // v11 -> v12: campionato sulla stagione, non piu' sulla singola
+      // partita (FASE 10, punto 1) — ereditato automaticamente in base
+      // alla data della partita.
+      if (from < 12) {
+        if (!await _hasColumn(m, 'stagioni_table', 'campionato')) {
+          await m.addColumn(stagioniTable, stagioniTable.campionato);
         }
       }
     },

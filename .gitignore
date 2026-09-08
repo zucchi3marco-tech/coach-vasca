@@ -50,3 +50,7 @@ doc/api/
 
 # Backup manuali del DB (dati personali di atleti/genitori): mai in git
 backups/
+
+# Stato locale della Supabase CLI (project ref, versioni, pooler url):
+# rigenerato da `supabase link`/`functions deploy`, non e' codice.
+supabase/.temp/

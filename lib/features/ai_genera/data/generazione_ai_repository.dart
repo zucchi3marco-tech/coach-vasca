@@ -28,6 +28,7 @@ class GenerazioneAiRepository {
           'focus': parametri.focus,
           'regimiAmmessi': parametri.regimiAmmessi,
           'vincoli': parametri.vincoli,
+          'corsie': parametri.corsie.map((c) => c.toMap()).toList(),
         },
       );
       final dati = risposta.data;

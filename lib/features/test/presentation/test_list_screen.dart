@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -94,9 +95,10 @@ class TestListScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),

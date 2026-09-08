@@ -31,6 +31,26 @@ class SchedaGenerata {
   }
 }
 
+/// Ripartenza proposta per una singola corsia (vedi [CorsiaGenerazione]),
+/// per una serie della scheda generata.
+class RipartenzaCorsia {
+  const RipartenzaCorsia({required this.nome, required this.ripartenzaS});
+
+  final String nome;
+  final double ripartenzaS;
+
+  factory RipartenzaCorsia.fromMap(Map<String, dynamic> map) {
+    return RipartenzaCorsia(
+      nome: map['nome'] as String,
+      ripartenzaS: (map['ripartenzaS'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {'nome': nome, 'ripartenzaS': ripartenzaS};
+  }
+}
+
 class SerieGenerata {
   const SerieGenerata({
     required this.ordine,
@@ -43,6 +63,7 @@ class SerieGenerata {
     this.recuperoS,
     this.attrezzatura,
     this.note,
+    this.ripartenzePerCorsia = const [],
   });
 
   final int ordine;
@@ -55,6 +76,11 @@ class SerieGenerata {
   final int? recuperoS;
   final String? attrezzatura;
   final String? note;
+
+  /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
+  /// la generazione non aveva passi di riferimento da usare, o se questo
+  /// tipo di serie (es. riscaldamento) non ha una ripartenza sensata.
+  final List<RipartenzaCorsia> ripartenzePerCorsia;
 
   int get distanzaTotaleM => ripetute * distanzaM;
 
@@ -70,6 +96,11 @@ class SerieGenerata {
       recuperoS: map['recuperoS'] as int?,
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
+      ripartenzePerCorsia:
+          (map['ripartenzePerCorsia'] as List<dynamic>?)
+              ?.map((v) => RipartenzaCorsia.fromMap(v as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -85,6 +116,7 @@ class SerieGenerata {
       'recuperoS': recuperoS,
       'attrezzatura': attrezzatura,
       'note': note,
+      'ripartenzePerCorsia': ripartenzePerCorsia.map((r) => r.toMap()).toList(),
     };
   }
 }

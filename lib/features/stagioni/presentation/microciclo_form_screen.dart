@@ -5,6 +5,7 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
@@ -12,6 +13,13 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/microcicli_repository.dart';
 import '../domain/microciclo.dart';
+
+/// Tipi di microciclo proposti nel menu a tendina (FASE 10): il campo era
+/// testo libero con solo un suggerimento in etichetta, ora è una scelta
+/// vincolata a un lessico comune di periodizzazione.
+const _tipiMicrociclo = ['carico', 'scarico', 'gara', 'recupero', 'test'];
+
+String _labelTipo(String tipo) => tipo[0].toUpperCase() + tipo.substring(1);
 
 class MicrocicloFormScreen extends ConsumerStatefulWidget {
   const MicrocicloFormScreen({
@@ -35,7 +43,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
   late final TextEditingController _nomeController;
   late final TextEditingController _numeroSettimanaController;
   late final TextEditingController _ordineController;
-  late final TextEditingController _tipoController;
+  late String? _tipo;
   late final TextEditingController _dataInizioController;
   late final TextEditingController _dataFineController;
   late DateTime _dataInizio;
@@ -57,16 +65,14 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     _ordineController = TextEditingController(
       text: (m?.ordine ?? widget.ordineSuccessivo).toString(),
     );
-    _tipoController = TextEditingController(text: m?.tipo ?? '');
+    _tipo = m?.tipo;
     final oggi = DateTime.now();
     _dataInizio = m?.dataInizio ?? oggi;
     _dataFine = m?.dataFine ?? oggi.add(const Duration(days: 6));
     _dataInizioController = TextEditingController(
       text: _formattaData(_dataInizio),
     );
-    _dataFineController = TextEditingController(
-      text: _formattaData(_dataFine),
-    );
+    _dataFineController = TextEditingController(text: _formattaData(_dataFine));
   }
 
   @override
@@ -74,7 +80,6 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     _nomeController.dispose();
     _numeroSettimanaController.dispose();
     _ordineController.dispose();
-    _tipoController.dispose();
     _dataInizioController.dispose();
     _dataFineController.dispose();
     super.dispose();
@@ -144,7 +149,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
           ordine: ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
-          tipo: _tipoController.text.trim(),
+          tipo: _tipo,
         );
       } else {
         await repository.createMicrociclo(
@@ -154,7 +159,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
           ordine: ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
-          tipo: _tipoController.text.trim(),
+          tipo: _tipo,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -243,9 +248,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
                         controller: _ordineController,
                         keyboardType: TextInputType.number,
                         validator: (v) =>
-                            int.tryParse(v?.trim() ?? '') == null
-                            ? 'N.'
-                            : null,
+                            int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
                       ),
                     ),
                   ],
@@ -270,9 +273,23 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
                   onTap: _pickDataFine,
                   suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                AppTextField(
-                  etichetta: 'Tipo (facoltativo, es. carico/scarico)',
-                  controller: _tipoController,
+                AppSelect<String?>(
+                  etichetta: 'Tipo (facoltativo)',
+                  value: _tipo,
+                  hint: 'Non specificato',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Non specificato'),
+                    ),
+                    for (final t in _tipiMicrociclo)
+                      DropdownMenuItem(value: t, child: Text(_labelTipo(t))),
+                    // Un valore gia' salvato prima che il campo diventasse
+                    // un menu chiuso deve restare rappresentabile.
+                    if (_tipo != null && !_tipiMicrociclo.contains(_tipo))
+                      DropdownMenuItem(value: _tipo, child: Text(_tipo!)),
+                  ],
+                  onChanged: (value) => setState(() => _tipo = value),
                 ),
               ],
             ),

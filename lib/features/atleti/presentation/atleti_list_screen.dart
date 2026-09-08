@@ -53,7 +53,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
               Expanded(
                 child: TextField(
                   decoration: const InputDecoration(
-                    hintText: 'Cerca per nome o cognome',
+                    hintText: 'Cerca per cognome o nome',
                     prefixIcon: Icon(Icons.search),
                   ),
                   onChanged: (value) => setState(() => _ricerca = value),
@@ -61,13 +61,9 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
               ),
               const SizedBox(width: AppSpacing.s8),
               PopupMenuButton<_Ordinamento>(
-                icon: const Icon(
-                  Icons.sort,
-                  color: AppColors.testoSecondario,
-                ),
+                icon: const Icon(Icons.sort, color: AppColors.testoSecondario),
                 tooltip: 'Ordina',
-                onSelected: (valore) =>
-                    setState(() => _ordinamento = valore),
+                onSelected: (valore) => setState(() => _ordinamento = valore),
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: _Ordinamento.cognome,
@@ -179,8 +175,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   Future<void> _apriForm(BuildContext context, {Atleta? atleta}) async {
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            AtletaFormScreen(clubId: widget.clubId, atleta: atleta),
+        builder: (_) => AtletaFormScreen(clubId: widget.clubId, atleta: atleta),
       ),
     );
   }
@@ -221,9 +216,7 @@ class _AtletiList extends StatelessWidget {
     final filtrati = query.isEmpty
         ? [...atleti]
         : atleti
-              .where(
-                (a) => a.nomeCompleto.toLowerCase().contains(query),
-              )
+              .where((a) => a.nomeCompleto.toLowerCase().contains(query))
               .toList();
     filtrati.sort((a, b) {
       if (ordinamento == _Ordinamento.dataNascita) {
@@ -277,11 +270,13 @@ class _AtletiList extends StatelessWidget {
             AppListRow(
               leading: _AvatarAtleta(atleta: atleta),
               titolo: atleta.nomeCompleto,
-              sottotitolo: [
-                atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
-                if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
-                  atleta.gruppo!,
-              ].join(' · ') + (atleta.attivo ? '' : ' · inattivo'),
+              sottotitolo:
+                  [
+                    atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
+                    if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
+                      atleta.gruppo!,
+                  ].join(' · ') +
+                  (atleta.attivo ? '' : ' · inattivo'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -308,49 +303,49 @@ class _AtletiList extends StatelessWidget {
                     ),
                     onSelected: (azione) => azione(),
                     itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: () => onTapCarico(atleta),
-                    child: const _VoceMenu(
-                      icona: Icons.show_chart,
-                      etichetta: 'Carico',
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: () => onTapStatistiche(atleta),
-                    child: const _VoceMenu(
-                      icona: Icons.query_stats,
-                      etichetta: 'Statistiche',
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: () => onTapTest(atleta),
-                    child: const _VoceMenu(
-                      icona: Icons.speed_outlined,
-                      etichetta: 'Test',
-                    ),
-                  ),
-                  if (_bracciateDisponibili)
-                    PopupMenuItem(
-                      value: () => onTapBracciate(atleta),
-                      child: const _VoceMenu(
-                        icona: Icons.camera_alt_outlined,
-                        etichetta: 'Bracciate',
+                      PopupMenuItem(
+                        value: () => onTapCarico(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.show_chart,
+                          etichetta: 'Carico',
+                        ),
                       ),
-                    ),
-                  PopupMenuItem(
-                    value: () => showDialog<void>(
-                      context: context,
-                      builder: (_) =>
-                          GestisciAccountAtletaDialog(atleta: atleta),
-                    ),
-                    child: _VoceMenu(
-                      icona: atleta.haAccountCollegato
-                          ? Icons.verified_user_outlined
-                          : Icons.person_add_alt_outlined,
-                      etichetta: 'Account atleta',
-                    ),
-                  ),
-                ],
+                      PopupMenuItem(
+                        value: () => onTapStatistiche(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.query_stats,
+                          etichetta: 'Statistiche',
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: () => onTapTest(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.speed_outlined,
+                          etichetta: 'Test',
+                        ),
+                      ),
+                      if (_bracciateDisponibili)
+                        PopupMenuItem(
+                          value: () => onTapBracciate(atleta),
+                          child: const _VoceMenu(
+                            icona: Icons.camera_alt_outlined,
+                            etichetta: 'Bracciate',
+                          ),
+                        ),
+                      PopupMenuItem(
+                        value: () => showDialog<void>(
+                          context: context,
+                          builder: (_) =>
+                              GestisciAccountAtletaDialog(atleta: atleta),
+                        ),
+                        child: _VoceMenu(
+                          icona: atleta.haAccountCollegato
+                              ? Icons.verified_user_outlined
+                              : Icons.person_add_alt_outlined,
+                          etichetta: 'Account atleta',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -387,8 +382,8 @@ class _AvatarAtleta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iniziale = atleta.nome.isNotEmpty
-        ? atleta.nome[0].toUpperCase()
+    final iniziale = atleta.cognome.isNotEmpty
+        ? atleta.cognome[0].toUpperCase()
         : '?';
     return Container(
       width: 40,

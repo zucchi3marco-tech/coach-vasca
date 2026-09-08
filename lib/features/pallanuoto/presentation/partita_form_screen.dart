@@ -12,6 +12,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../stagioni/application/stagioni_providers.dart';
 import '../data/partite_repository.dart';
 import '../domain/partita.dart';
 
@@ -30,7 +31,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late final TextEditingController _dataController;
   late final TextEditingController _oraController;
   late final TextEditingController _luogoController;
-  late final TextEditingController _campionatoController;
   late String _coloreCalottina;
   late final TextEditingController _squadraCasaController;
   late final TextEditingController _squadraTrasfertaController;
@@ -46,6 +46,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   String? _errorMessage;
   bool _clubPrefillFatto = false;
 
+  /// Anteprima di sola lettura: il campionato non si sceglie qui, si
+  /// eredita dalla Stagione la cui data comprende quella della partita.
+  String? _campionatoAnteprima;
+
   bool get _isEditing => widget.partita != null;
 
   @override
@@ -54,7 +58,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     final p = widget.partita;
     _oraController = TextEditingController(text: p?.ora ?? '');
     _luogoController = TextEditingController(text: p?.luogo ?? '');
-    _campionatoController = TextEditingController(text: p?.campionato ?? '');
     _coloreCalottina = p?.coloreCalottina == 'blu' ? 'blu' : 'bianca';
     _squadraCasaController = TextEditingController(text: p?.squadraCasa ?? '');
     _squadraTrasfertaController = TextEditingController(
@@ -68,6 +71,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _tracciaTempo = p?.tracciaTempo ?? true;
     _modalitaSuperiorita = p?.modalitaSuperiorita ?? 'singolo';
     _nostraSquadra = p?.nostraSquadra ?? 'casa';
+    _aggiornaCampionatoAnteprima();
     if (!_isEditing) {
       ref.read(currentClubProvider.future).then((club) {
         if (mounted) _prefillClubSeVuoto(club?.nome);
@@ -94,7 +98,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _dataController.dispose();
     _oraController.dispose();
     _luogoController.dispose();
-    _campionatoController.dispose();
     _squadraCasaController.dispose();
     _squadraTrasfertaController.dispose();
     _noteController.dispose();
@@ -126,7 +129,13 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
         _data = selected;
         _dataController.text = _formattaData(selected);
       });
+      _aggiornaCampionatoAnteprima();
     }
+  }
+
+  Future<void> _aggiornaCampionatoAnteprima() async {
+    final campionato = await _campionatoPerData(_data);
+    if (mounted) setState(() => _campionatoAnteprima = campionato);
   }
 
   Future<void> _pickOra() async {
@@ -143,6 +152,20 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     }
   }
 
+  /// Il campionato non si sceglie più partita per partita: si eredita
+  /// dalla Stagione la cui data_inizio/data_fine comprende la data della
+  /// partita (FASE 10, punto 1). Nessuna corrispondenza -> null, come
+  /// prima quando il campo restava vuoto.
+  Future<String?> _campionatoPerData(DateTime data) async {
+    final stagioni = await ref.read(stagioniListProvider(widget.clubId).future);
+    for (final s in stagioni) {
+      if (!data.isBefore(s.dataInizio) && !data.isAfter(s.dataFine)) {
+        return s.campionato;
+      }
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -153,13 +176,14 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
 
     final repository = ref.read(partiteRepositoryProvider);
     try {
+      final campionato = await _campionatoPerData(_data);
       if (_isEditing) {
         await repository.updatePartita(
           id: widget.partita!.id,
           data: _data,
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
-          campionato: _campionatoController.text.trim(),
+          campionato: campionato,
           coloreCalottina: _coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
@@ -176,7 +200,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           data: _data,
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
-          campionato: _campionatoController.text.trim(),
+          campionato: campionato,
           coloreCalottina: _coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
@@ -305,9 +329,14 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   etichetta: 'Luogo (facoltativo)',
                   controller: _luogoController,
                 ),
-                AppTextField(
-                  etichetta: 'Campionato (facoltativo)',
-                  controller: _campionatoController,
+                Text(
+                  _campionatoAnteprima != null &&
+                          _campionatoAnteprima!.isNotEmpty
+                      ? 'Campionato: $_campionatoAnteprima (dalla stagione '
+                            'in corso a questa data)'
+                      : 'Nessun campionato: questa data non rientra in una '
+                            'stagione con campionato impostato.',
+                  style: AppTypography.piccolo,
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

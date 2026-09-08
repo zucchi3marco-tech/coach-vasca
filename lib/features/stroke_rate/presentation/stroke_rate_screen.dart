@@ -10,6 +10,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../atleti/domain/atleta.dart';
 
@@ -191,9 +192,7 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
   double? _calcolaBracciatePerMinuto(List<_CampionePolso> campioni) {
     if (campioni.length < 6) return null;
 
-    final conteggioSinistro = campioni
-        .where((c) => c.ySinistro != null)
-        .length;
+    final conteggioSinistro = campioni.where((c) => c.ySinistro != null).length;
     final conteggioDestro = campioni.where((c) => c.yDestro != null).length;
     final usaSinistro = conteggioSinistro >= conteggioDestro;
 
@@ -285,7 +284,16 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
     }
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const LoadingSkeleton(width: 280, height: 200),
+            const SizedBox(height: AppSpacing.s12),
+            Text('Avvio fotocamera...', style: AppTypography.corpo),
+          ],
+        ),
+      );
     }
 
     switch (_fase) {
@@ -338,7 +346,7 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(),
+              const LoadingSkeleton(width: 200, height: 16),
               const SizedBox(height: AppSpacing.s12),
               Text('Elaborazione...', style: AppTypography.corpo),
             ],

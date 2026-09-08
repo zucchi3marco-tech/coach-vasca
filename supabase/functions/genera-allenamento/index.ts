@@ -17,6 +17,12 @@ const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
 const ESECUZIONI = ["nuoto", "gambe", "braccia", "pull", "tecnica"];
 const ZONE = ["A1", "A2", "B1", "B2", "C", "D"];
 
+interface CorsiaGenerazione {
+  nome: string;
+  passo100S: number;
+  differenzialeS?: number | null;
+}
+
 interface ParametriGenerazione {
   gruppo?: string;
   livello?: string;
@@ -24,6 +30,12 @@ interface ParametriGenerazione {
   focus?: string;
   regimiAmmessi?: string[];
   vincoli?: string | null;
+  corsie?: CorsiaGenerazione[];
+}
+
+interface RipartenzaCorsia {
+  nome: string;
+  ripartenzaS: number;
 }
 
 interface SerieGenerata {
@@ -37,6 +49,7 @@ interface SerieGenerata {
   recuperoS?: number | null;
   attrezzatura?: string | null;
   note?: string | null;
+  ripartenzePerCorsia?: RipartenzaCorsia[];
 }
 
 interface SchedaGenerata {
@@ -63,8 +76,47 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+// Distillato della metodologia di periodizzazione del coach (documento
+// fornito, FASE 10 punto 4): parametri per zona (durata, volume, distanze,
+// recupero) e come usare il differenziale di gara T200-T100 per calcolare
+// ripartenze realistiche invece di un numero indicativo generico.
+const METODOLOGIA_ZONE = `
+Metodologia per zona, da usare per calcolare le ripartenze (tempi di
+partenza) quando sono forniti i passi di riferimento delle corsie:
+- A1/A2 (aerobico, smaltimento/costruzione): distanze 100-400m (fino a 400
+  per fondisti), recupero 5-30s (più lungo quanto più lunga la distanza).
+  Passo più lento del passo di riferimento sui 100 (A1 il più lento, A2 un
+  po' meno).
+- B1 (soglia anaerobica): distanze 100-300m, recupero 10-30s. Passo vicino
+  al passo di riferimento sui 100 (soglia).
+- B2 (potenza aerobica/VO2max): distanze 200-400m (anche frazionate in
+  50/100/200 con recuperi brevi 3-10s), recupero pieno 30s-2min fra le
+  ripetute intere. Usa ESPLICITAMENTE il differenziale T200-T100 fornito:
+  la ripartenza per una distanza intera vicina ai 200m è approssimabile a
+  passo100S*(distanza/100) + differenzialeS; per distanze frazionate più
+  corte usa un passo più vicino al passo100S puro (più veloce).
+- C1 (tolleranza al lattato): distanze 50-100m, recupero 30s-2min passivi.
+  Ripartenza vicina o leggermente sotto il passo100S (quasi massimale).
+- C2 (picco di lattato): distanze 50-75m, recupero ampio 1'30-5' passivi.
+  Ripartenza massimale.
+- C3 (velocità/alattacido): distanze 10-50m, durata 8-10s per ripetuta,
+  recupero elevato (fino a 2') per il recupero neuromuscolare. Non è una
+  ripartenza basata sul passo100S: è velocità pura.
+- D (ritmo gara): ripartenza il più vicina possibile al ritmo di gara reale
+  alla distanza della serie, stimato da passo100S e differenzialeS.
+Arrotonda ogni ripartenza a un valore realistico da usare a bordo vasca
+(es. multiplo di 5 secondi).
+`.trim();
+
 function costruisciPrompt(p: ParametriGenerazione): string {
   const regimi = Array.isArray(p.regimiAmmessi) ? p.regimiAmmessi.join(", ") : "";
+  const corsie = Array.isArray(p.corsie) ? p.corsie : [];
+  const righeCorsie = corsie.map((c) => {
+    const diff = c.differenzialeS != null
+      ? `, differenziale di gara T200-T100 = ${c.differenzialeS}s`
+      : "";
+    return `- Corsia "${c.nome}": passo di riferimento sui 100 stile libero = ${c.passo100S}s${diff}`;
+  });
   return [
     "Sei un allenatore di nuoto esperto. Genera una scheda di allenamento " +
       "per la seguente sessione, come elenco di serie.",
@@ -78,6 +130,24 @@ function costruisciPrompt(p: ParametriGenerazione): string {
       "La somma di ripetute*distanza di tutte le serie deve avvicinarsi il " +
       "più possibile al volume totale richiesto. Usa solo zone tra quelle " +
       "ammesse indicate sopra.",
+    righeCorsie.length > 0
+      ? [
+          "",
+          "Passi di riferimento calcolati dai personal best degli atleti " +
+            "del gruppo:",
+          ...righeCorsie,
+          "",
+          METODOLOGIA_ZONE,
+          "",
+          "Per ogni serie della parte principale (e del defaticamento se " +
+            "in zona A2 o superiore), calcola in ripartenzePerCorsia una " +
+            "ripartenza per OGNUNA delle corsie elencate sopra, usando il " +
+            "loro passo/differenziale secondo la metodologia della zona " +
+            "assegnata a quella serie. Non è richiesta per il " +
+            "riscaldamento a bassa intensità (A1) o per serie tecniche " +
+            "senza zona.",
+        ].join("\n")
+      : "",
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
@@ -103,6 +173,17 @@ const responseSchema = {
           recuperoS: { type: "INTEGER" },
           attrezzatura: { type: "STRING" },
           note: { type: "STRING" },
+          ripartenzePerCorsia: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                nome: { type: "STRING" },
+                ripartenzaS: { type: "NUMBER" },
+              },
+              required: ["nome", "ripartenzaS"],
+            },
+          },
         },
         required: ["ordine", "blocco", "ripetute", "distanzaM", "stile", "esecuzione"],
       },
@@ -173,6 +254,33 @@ function validaScheda(dati: unknown): SchedaGenerata {
       recuperoS = valore;
     }
 
+    let ripartenzePerCorsia: RipartenzaCorsia[] = [];
+    if (s.ripartenzePerCorsia !== undefined && s.ripartenzePerCorsia !== null) {
+      if (!Array.isArray(s.ripartenzePerCorsia)) {
+        throw new Error(`serie #${indice + 1}: ripartenzePerCorsia non valido`);
+      }
+      ripartenzePerCorsia = s.ripartenzePerCorsia.map((voceRip, indiceRip) => {
+        if (typeof voceRip !== "object" || voceRip === null) {
+          throw new Error(
+            `serie #${indice + 1}: ripartenza #${indiceRip + 1} non valida`,
+          );
+        }
+        const r = voceRip as Record<string, unknown>;
+        if (typeof r.nome !== "string" || r.nome.trim() === "") {
+          throw new Error(
+            `serie #${indice + 1}: nome corsia mancante nella ripartenza #${indiceRip + 1}`,
+          );
+        }
+        const ripartenzaS = Number(r.ripartenzaS);
+        if (!Number.isFinite(ripartenzaS) || ripartenzaS <= 0) {
+          throw new Error(
+            `serie #${indice + 1}: ripartenzaS non valida per la corsia "${r.nome}"`,
+          );
+        }
+        return { nome: r.nome, ripartenzaS };
+      });
+    }
+
     return {
       ordine,
       blocco: s.blocco,
@@ -184,6 +292,7 @@ function validaScheda(dati: unknown): SchedaGenerata {
       recuperoS,
       attrezzatura: typeof s.attrezzatura === "string" ? s.attrezzatura : null,
       note: typeof s.note === "string" ? s.note : null,
+      ripartenzePerCorsia,
     };
   });
 

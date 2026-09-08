@@ -6,6 +6,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/lane_rule.dart';
@@ -60,9 +62,7 @@ class EventiPartitaScreen extends ConsumerWidget {
       case 'espulsione':
         return Icons.warning_amber_outlined;
       case 'superiorita':
-        return e.squadra == 'nostra'
-            ? Icons.trending_up
-            : Icons.trending_down;
+        return e.squadra == 'nostra' ? Icons.trending_up : Icons.trending_down;
       default:
         return Icons.circle_outlined;
     }
@@ -128,9 +128,7 @@ class EventiPartitaScreen extends ConsumerWidget {
                         final inCorso =
                             e.tipo == 'superiorita' && e.esito == null;
                         return LaneRule(
-                          colore: inCorso
-                              ? AppColors.rosso
-                              : AppColors.linea,
+                          colore: inCorso ? AppColors.rosso : AppColors.linea,
                           child: PoolCard(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.s16,
@@ -149,8 +147,9 @@ class EventiPartitaScreen extends ConsumerWidget {
                                   Expanded(
                                     child: Text(
                                       _descrizione(e, atletiPerId),
-                                      style: AppTypography.corpoForte
-                                          .copyWith(color: AppColors.testo),
+                                      style: AppTypography.corpoForte.copyWith(
+                                        color: AppColors.testo,
+                                      ),
                                     ),
                                   ),
                                   if (inCorso) ...[
@@ -244,9 +243,9 @@ class _SelettorePeriodo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<int>(
-      initialValue: value,
-      decoration: const InputDecoration(labelText: 'Tempo'),
+    return AppSelect<int>(
+      etichetta: 'Tempo',
+      value: value,
       items: [
         for (var t = 1; t <= 4; t++)
           DropdownMenuItem(value: t, child: Text('Tempo $t')),
@@ -343,10 +342,7 @@ class _DialogRegistraSuperioritaState
             ],
             if (_errore != null) ...[
               const SizedBox(height: 8),
-              Text(
-                _errore!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+              ErrorBanner(messaggio: _errore!),
             ],
           ],
         ),
@@ -465,9 +461,8 @@ class _AzioniEvento extends ConsumerWidget {
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }
@@ -483,9 +478,8 @@ class _AzioniEvento extends ConsumerWidget {
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }
@@ -500,9 +494,10 @@ class _AzioniEvento extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annulla'),
           ),
-          FilledButton(
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -513,9 +508,8 @@ class _AzioniEvento extends ConsumerWidget {
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }

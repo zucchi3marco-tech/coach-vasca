@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/text_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
@@ -143,7 +144,9 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
       _errore = null;
     });
     try {
-      final response = await ref.read(authRepositoryProvider).signUp(
+      final response = await ref
+          .read(authRepositoryProvider)
+          .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
@@ -166,8 +169,8 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
             .read(codiciGruppoRepositoryProvider)
             .registraConCodice(
               codice: _codice,
-              nome: _nomeController.text.trim(),
-              cognome: _cognomeController.text.trim(),
+              nome: capitalizzaNome(_nomeController.text),
+              cognome: capitalizzaNome(_cognomeController.text),
               dataNascita: _dataNascita!,
               sesso: _sesso,
               sport: _sport,
@@ -206,7 +209,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                 _Passo.confermaAtleta => _PassoConferma(
                   testo:
                       'Stai per registrarti come '
-                      '${_invitato!.nome} ${_invitato!.cognome}.',
+                      '${_invitato!.cognome} ${_invitato!.nome}.',
                   onContinua: () => setState(() => _passo = _Passo.account),
                   onAnnulla: () => setState(() {
                     _passo = _Passo.codice;
@@ -218,8 +221,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                       'Stai per registrarti nel gruppo '
                       '${_gruppoInvitato!.gruppo} di '
                       '${_gruppoInvitato!.clubNome}.',
-                  onContinua: () =>
-                      setState(() => _passo = _Passo.anagrafica),
+                  onContinua: () => setState(() => _passo = _Passo.anagrafica),
                   onAnnulla: () => setState(() {
                     _passo = _Passo.codice;
                     _errore = null;
@@ -352,9 +354,9 @@ class _PassoAnagrafica extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppTextField(etichetta: 'Nome', controller: nomeController),
-        const SizedBox(height: AppSpacing.s16),
         AppTextField(etichetta: 'Cognome', controller: cognomeController),
+        const SizedBox(height: AppSpacing.s16),
+        AppTextField(etichetta: 'Nome', controller: nomeController),
         const SizedBox(height: AppSpacing.s16),
         AppTextField(
           etichetta: 'Data di nascita',

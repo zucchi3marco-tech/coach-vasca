@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/text_format.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -146,8 +147,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       if (_isEditing) {
         await repository.updateAtleta(
           id: widget.atleta!.id,
-          nome: _nomeController.text.trim(),
-          cognome: _cognomeController.text.trim(),
+          nome: capitalizzaNome(_nomeController.text),
+          cognome: capitalizzaNome(_cognomeController.text),
           dataNascita: _dataNascita!,
           sesso: _sesso,
           sport: _sport,
@@ -163,8 +164,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       } else {
         await repository.createAtleta(
           clubId: widget.clubId,
-          nome: _nomeController.text.trim(),
-          cognome: _cognomeController.text.trim(),
+          nome: capitalizzaNome(_nomeController.text),
+          cognome: capitalizzaNome(_cognomeController.text),
           dataNascita: _dataNascita!,
           sesso: _sesso,
           sport: _sport,
@@ -248,18 +249,16 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
               titolo: 'Anagrafica',
               campi: [
                 AppTextField(
-                  etichetta: 'Nome',
-                  controller: _nomeController,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Obbligatorio'
-                      : null,
-                ),
-                AppTextField(
                   etichetta: 'Cognome',
                   controller: _cognomeController,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Obbligatorio'
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                ),
+                AppTextField(
+                  etichetta: 'Nome',
+                  controller: _nomeController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
                 AppTextField(
                   etichetta: 'Data di nascita',
@@ -394,9 +393,8 @@ class _ConsensoPrivacyRow extends StatelessWidget {
               children: [
                 Text(
                   'Consenso privacy firmato',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
