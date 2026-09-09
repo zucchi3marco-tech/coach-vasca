@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -17,10 +16,9 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
-import '../../atleti/application/personal_best_providers.dart';
-import '../../atleti/domain/atleta.dart';
 import '../../stagioni/application/microcicli_providers.dart';
 import '../../stagioni/domain/microciclo.dart';
+import '../application/corsie_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
@@ -70,78 +68,6 @@ class _GeneraAllenamentoFormScreenState
   void dispose() {
     _vincoliController.dispose();
     super.dispose();
-  }
-
-  /// Media dei personal best sui 100 stile libero (e il differenziale di
-  /// gara T200-T100, dove disponibile) degli atleti indicati — vedi FASE
-  /// 10 punto 4. Ignora chi non ha almeno il PB sui 100.
-  Future<List<CorsiaGenerazione>> _calcolaCorsie(List<Atleta> atleti) async {
-    final dati = <({double passo100S, double? differenzialeS})>[];
-    for (final atleta in atleti) {
-      final pb = await ref.read(personalBestListProvider(atleta.id).future);
-      double? tempo100;
-      double? tempo200;
-      for (final p in pb) {
-        if (p.stile != 'libero') continue;
-        if (p.distanzaM == 100) tempo100 = p.tempoS;
-        if (p.distanzaM == 200) tempo200 = p.tempoS;
-      }
-      if (tempo100 != null) {
-        dati.add((
-          passo100S: tempo100,
-          differenzialeS: tempo200 != null ? tempo200 - tempo100 : null,
-        ));
-      }
-    }
-    if (dati.isEmpty) return const [];
-
-    double media(Iterable<double> valori) =>
-        valori.reduce((a, b) => a + b) / valori.length;
-    double? mediaDifferenziali(
-      Iterable<({double passo100S, double? differenzialeS})> voci,
-    ) {
-      final valori = voci
-          .map((v) => v.differenzialeS)
-          .whereType<double>()
-          .toList();
-      return valori.isEmpty ? null : media(valori);
-    }
-
-    final passi = dati.map((d) => d.passo100S).toList();
-    final passoMedio = media(passi);
-    final scarto =
-        passi.reduce((a, b) => a > b ? a : b) -
-        passi.reduce((a, b) => a < b ? a : b);
-
-    // Scarto oltre il 10% del passo medio: PB troppo eterogenei per un'unica
-    // ripartenza, si dividono gli atleti in due corsie per passo.
-    if (dati.length > 1 && scarto / passoMedio > 0.10) {
-      final ordinati = [...dati]
-        ..sort((a, b) => a.passo100S.compareTo(b.passo100S));
-      final meta = (ordinati.length / 2).ceil();
-      final veloci = ordinati.sublist(0, meta);
-      final lenti = ordinati.sublist(meta);
-      return [
-        CorsiaGenerazione(
-          nome: 'Veloci',
-          passo100S: media(veloci.map((v) => v.passo100S)),
-          differenzialeS: mediaDifferenziali(veloci),
-        ),
-        CorsiaGenerazione(
-          nome: 'Lenti',
-          passo100S: media(lenti.map((v) => v.passo100S)),
-          differenzialeS: mediaDifferenziali(lenti),
-        ),
-      ];
-    }
-
-    return [
-      CorsiaGenerazione(
-        nome: 'Gruppo',
-        passo100S: passoMedio,
-        differenzialeS: mediaDifferenziali(dati),
-      ),
-    ];
   }
 
   @override
@@ -302,7 +228,7 @@ class _GeneraAllenamentoFormScreenState
       final atletiDelGruppo = _gruppo == null
           ? tuttiGliAtleti
           : tuttiGliAtleti.where((a) => a.gruppo == _gruppo).toList();
-      corsie = await _calcolaCorsie(atletiDelGruppo);
+      corsie = await calcolaCorsie(ref, atletiDelGruppo);
     } catch (_) {
       // Le corsie migliorano la generazione (ripartenze sui passi reali),
       // ma non sono indispensabili: se il calcolo fallisce si procede
@@ -429,15 +355,8 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
     return parti.join(' · ');
   }
 
-  /// Es. "Veloci: rip 1:25 · Lenti: rip 1:40" — vuoto se la serie non ha
-  /// ripartenze calcolate (niente passi di riferimento, o zona a bassa
-  /// intensità che non ne prevede una).
-  String _ripartenzeSerie(SerieGenerata s) {
-    if (s.ripartenzePerCorsia.isEmpty) return '';
-    return s.ripartenzePerCorsia
-        .map((r) => '${r.nome}: rip ${formatPaceSeconds(r.ripartenzaS)}')
-        .join(' · ');
-  }
+  String _ripartenzeSerie(SerieGenerata s) =>
+      formattaRipartenzeCorsia(s.ripartenzePerCorsia);
 
   String _etichettaMicrociclo(Microciclo m) {
     if (m.nome != null && m.nome!.isNotEmpty) return m.nome!;
@@ -580,20 +499,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
           );
       final serieRepository = ref.read(serieRepositoryProvider);
       for (final s in scheda.serie) {
-        // Con più corsie si tiene come riferimento la più veloce (la
-        // ripartenza più stretta): il dettaglio di tutte resta in nota,
-        // perché il campo ripartenza della serie ne ammette una sola.
-        double? ripartenzaS;
-        var note = s.note;
-        if (s.ripartenzePerCorsia.isNotEmpty) {
-          ripartenzaS = s.ripartenzePerCorsia
-              .map((r) => r.ripartenzaS)
-              .reduce((a, b) => a < b ? a : b);
-          final dettaglio = _ripartenzeSerie(s);
-          note = note == null || note.isEmpty
-              ? dettaglio
-              : '$note — $dettaglio';
-        }
+        final risolto = risolviRipartenza(s.ripartenzePerCorsia, s.note);
         await serieRepository.createSerie(
           allenamentoId: allenamento.id,
           ordine: s.ordine,
@@ -604,9 +510,9 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
           esecuzione: s.esecuzione,
           zona: s.zona,
           recuperoS: s.recuperoS,
-          ripartenzaS: ripartenzaS,
+          ripartenzaS: risolto.ripartenzaS,
           attrezzatura: s.attrezzatura,
-          note: note,
+          note: risolto.note,
         );
       }
       if (widget.generazioneId != null) {

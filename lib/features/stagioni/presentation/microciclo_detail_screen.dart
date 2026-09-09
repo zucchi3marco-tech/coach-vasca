@@ -12,6 +12,7 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
+import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
 import '../../allenamenti/application/allenamenti_per_microciclo_provider.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
@@ -213,7 +214,8 @@ class MicrocicloDetailScreen extends ConsumerWidget {
               error: (error, _) => Padding(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 child: ErrorBanner(
-                  messaggio: 'Non è stato possibile caricare gli '
+                  messaggio:
+                      'Non è stato possibile caricare gli '
                       'allenamenti.',
                   suggerimento:
                       'Riprova. Se l\'errore continua, chiudi e riapri '
@@ -241,6 +243,19 @@ class MicrocicloDetailScreen extends ConsumerWidget {
             ),
             tooltip: 'Genera con AI',
             child: const Icon(Icons.auto_awesome),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          FloatingActionButton(
+            heroTag: 'fab-genera-settimana-microciclo',
+            mini: true,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    GeneraSettimanaFormScreen(microciclo: microciclo),
+              ),
+            ),
+            tooltip: 'Genera settimana con AI',
+            child: const Icon(Icons.view_week_outlined),
           ),
           const SizedBox(height: AppSpacing.s12),
           FloatingActionButton(
