@@ -42,7 +42,7 @@ class DuplicazioneSettimanaService {
         data: nuovoMicrociclo.dataInizio.add(Duration(days: offsetGiorni)),
         microcicloId: nuovoMicrociclo.id,
         titolo: a.titolo,
-        gruppo: a.gruppo,
+        gruppoId: a.gruppoId,
         note: a.note,
       );
 

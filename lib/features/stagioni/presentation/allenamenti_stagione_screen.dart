@@ -12,6 +12,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_stagione_provider.dart';
 import '../domain/microciclo.dart';
 import '../domain/stagione.dart';
@@ -37,6 +38,10 @@ class AllenamentiStagioneScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(allenamentiStagioneProvider(stagione.id));
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(stagione.clubId)).value ?? [])
+        g.id: g.nome,
+    };
 
     return AppScaffold(
       appBar: AppBar(title: const Text('Tutti gli allenamenti')),
@@ -83,7 +88,7 @@ class AllenamentiStagioneScreen extends ConsumerWidget {
                               : 'Allenamento',
                           sottotitolo:
                               '${_formattaData(a.data)}'
-                              '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
+                              '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(

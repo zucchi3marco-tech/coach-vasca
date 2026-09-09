@@ -24,13 +24,14 @@ part 'app_database.g.dart';
     DistintaGiocatoriTable,
     EventiPartitaTable,
     RefertiPartitaTable,
+    GruppiTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -146,6 +147,38 @@ class AppDatabase extends _$AppDatabase {
       if (from < 12) {
         if (!await _hasColumn(m, 'stagioni_table', 'campionato')) {
           await m.addColumn(stagioniTable, stagioniTable.campionato);
+        }
+      }
+      // v12 -> v13: gruppi di allenamento formali (FASE 10, ultimo punto)
+      // al posto del campo "gruppo" testo libero su atleti/allenamenti/
+      // stagioni.
+      if (from < 13) {
+        if (!await _hasTable(m, 'gruppi_table')) {
+          await m.createTable(gruppiTable);
+        }
+        if (!await _hasColumn(m, 'atleti_table', 'gruppo_id')) {
+          await m.addColumn(atletiTable, atletiTable.gruppoId);
+        }
+        if (await _hasColumn(m, 'atleti_table', 'gruppo')) {
+          await m.database.customStatement(
+            'ALTER TABLE atleti_table DROP COLUMN gruppo',
+          );
+        }
+        if (!await _hasColumn(m, 'allenamenti_table', 'gruppo_id')) {
+          await m.addColumn(allenamentiTable, allenamentiTable.gruppoId);
+        }
+        if (await _hasColumn(m, 'allenamenti_table', 'gruppo')) {
+          await m.database.customStatement(
+            'ALTER TABLE allenamenti_table DROP COLUMN gruppo',
+          );
+        }
+        if (!await _hasColumn(m, 'stagioni_table', 'gruppo_id')) {
+          await m.addColumn(stagioniTable, stagioniTable.gruppoId);
+        }
+        if (await _hasColumn(m, 'stagioni_table', 'gruppo')) {
+          await m.database.customStatement(
+            'ALTER TABLE stagioni_table DROP COLUMN gruppo',
+          );
         }
       }
     },

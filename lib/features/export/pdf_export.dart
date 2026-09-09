@@ -13,10 +13,15 @@ String _formattaData(DateTime data) =>
 
 /// Un PDF con una pagina per allenamento (scheda singola o intera
 /// settimana), ciascuna con l'elenco delle sue serie in tabella.
-Future<Uint8List> generaPdf(List<AllenamentoConSerie> allenamenti) async {
+/// [nomiGruppi] risolve l'id del gruppo dell'allenamento nel suo nome.
+Future<Uint8List> generaPdf(
+  List<AllenamentoConSerie> allenamenti, {
+  Map<String, String> nomiGruppi = const {},
+}) async {
   final doc = pw.Document();
 
   for (final (allenamento, serie) in allenamenti) {
+    final nomeGruppo = nomiGruppi[allenamento.gruppoId];
     doc.addPage(
       pw.MultiPage(
         build: (context) => [
@@ -28,7 +33,7 @@ Future<Uint8List> generaPdf(List<AllenamentoConSerie> allenamenti) async {
           ),
           pw.Text(
             '${_formattaData(allenamento.data)}'
-            '${allenamento.gruppo != null && allenamento.gruppo!.isNotEmpty ? ' · ${allenamento.gruppo}' : ''}',
+            '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
           ),
           if (allenamento.note != null && allenamento.note!.isNotEmpty) ...[
             pw.SizedBox(height: 8),

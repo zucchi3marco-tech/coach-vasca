@@ -5,9 +5,11 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 
@@ -41,7 +43,7 @@ class AllenamentoFormScreen extends ConsumerStatefulWidget {
 class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titoloController;
-  late final TextEditingController _gruppoController;
+  String? _gruppoId;
   late final TextEditingController _noteController;
   late final TextEditingController _dataController;
   late DateTime _data;
@@ -56,7 +58,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     super.initState();
     final a = widget.allenamento;
     _titoloController = TextEditingController(text: a?.titolo ?? '');
-    _gruppoController = TextEditingController(text: a?.gruppo ?? '');
+    _gruppoId = a?.gruppoId;
     _noteController = TextEditingController(text: a?.note ?? '');
     _data = a?.data ?? widget.dataPredefinita ?? DateTime.now();
     _dataController = TextEditingController(text: _formattaData(_data));
@@ -65,7 +67,6 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
   @override
   void dispose() {
     _titoloController.dispose();
-    _gruppoController.dispose();
     _noteController.dispose();
     _dataController.dispose();
     super.dispose();
@@ -102,7 +103,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
           data: _data,
           microcicloId: widget.allenamento!.microcicloId,
           titolo: _titoloController.text.trim(),
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           note: _noteController.text.trim(),
         );
       } else {
@@ -111,7 +112,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
           data: _data,
           microcicloId: widget.microcicloId,
           titolo: _titoloController.text.trim(),
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           note: _noteController.text.trim(),
         );
       }
@@ -132,6 +133,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -162,9 +164,24 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
               controller: _titoloController,
             ),
             const SizedBox(height: AppSpacing.s16),
-            AppTextField(
+            AppSelect<String?>(
               etichetta: 'Gruppo (facoltativo)',
-              controller: _gruppoController,
+              value: _gruppoId,
+              hint: 'Nessun gruppo',
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Nessun gruppo'),
+                ),
+                for (final g in gruppi)
+                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                if (_gruppoId != null && !gruppi.any((g) => g.id == _gruppoId))
+                  DropdownMenuItem(
+                    value: _gruppoId,
+                    child: const Text('Gruppo non trovato'),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _gruppoId = value),
             ),
             const SizedBox(height: AppSpacing.s16),
             AppTextField(

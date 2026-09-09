@@ -49,9 +49,9 @@ class PresenzeScreen extends ConsumerWidget {
         ),
         body: atletiAsync.when(
           data: (atleti) {
-            // Nessun filtro per gruppo: e' un campo testo libero (vedi
-            // supabase/README.md), un confronto esatto rischia di
-            // nascondere atleti per un semplice refuso o campo vuoto.
+            // Nessun filtro per gruppo: si segnano le presenze di tutto il
+            // club in un colpo, un atleta senza gruppo assegnato non deve
+            // sparire dall'elenco.
             return presenzeAsync.when(
               data: (presenze) {
                 if (atleti.isEmpty) {

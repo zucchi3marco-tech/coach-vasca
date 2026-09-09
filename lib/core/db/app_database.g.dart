@@ -333,10 +333,12 @@ class $AtletiTableTable extends AtletiTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _gruppoMeta = const VerificationMeta('gruppo');
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
   @override
-  late final GeneratedColumn<String> gruppo = GeneratedColumn<String>(
-    'gruppo',
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -452,7 +454,7 @@ class $AtletiTableTable extends AtletiTable
     dataNascita,
     sesso,
     sport,
-    gruppo,
+    gruppoId,
     emailGenitore,
     telefonoGenitore,
     consensoPrivacyFirmato,
@@ -529,10 +531,10 @@ class $AtletiTableTable extends AtletiTable
     } else if (isInserting) {
       context.missing(_sportMeta);
     }
-    if (data.containsKey('gruppo')) {
+    if (data.containsKey('gruppo_id')) {
       context.handle(
-        _gruppoMeta,
-        gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
       );
     }
     if (data.containsKey('email_genitore')) {
@@ -644,9 +646,9 @@ class $AtletiTableTable extends AtletiTable
         DriftSqlType.string,
         data['${effectivePrefix}sport'],
       )!,
-      gruppo: attachedDatabase.typeMapping.read(
+      gruppoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}gruppo'],
+        data['${effectivePrefix}gruppo_id'],
       ),
       emailGenitore: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -701,7 +703,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
   final DateTime dataNascita;
   final String? sesso;
   final String sport;
-  final String? gruppo;
+  final String? gruppoId;
   final String? emailGenitore;
   final String? telefonoGenitore;
   final bool consensoPrivacyFirmato;
@@ -719,7 +721,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     required this.dataNascita,
     this.sesso,
     required this.sport,
-    this.gruppo,
+    this.gruppoId,
     this.emailGenitore,
     this.telefonoGenitore,
     required this.consensoPrivacyFirmato,
@@ -742,8 +744,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       map['sesso'] = Variable<String>(sesso);
     }
     map['sport'] = Variable<String>(sport);
-    if (!nullToAbsent || gruppo != null) {
-      map['gruppo'] = Variable<String>(gruppo);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
     }
     if (!nullToAbsent || emailGenitore != null) {
       map['email_genitore'] = Variable<String>(emailGenitore);
@@ -782,9 +784,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ? const Value.absent()
           : Value(sesso),
       sport: Value(sport),
-      gruppo: gruppo == null && nullToAbsent
+      gruppoId: gruppoId == null && nullToAbsent
           ? const Value.absent()
-          : Value(gruppo),
+          : Value(gruppoId),
       emailGenitore: emailGenitore == null && nullToAbsent
           ? const Value.absent()
           : Value(emailGenitore),
@@ -822,7 +824,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       dataNascita: serializer.fromJson<DateTime>(json['dataNascita']),
       sesso: serializer.fromJson<String?>(json['sesso']),
       sport: serializer.fromJson<String>(json['sport']),
-      gruppo: serializer.fromJson<String?>(json['gruppo']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       emailGenitore: serializer.fromJson<String?>(json['emailGenitore']),
       telefonoGenitore: serializer.fromJson<String?>(json['telefonoGenitore']),
       consensoPrivacyFirmato: serializer.fromJson<bool>(
@@ -851,7 +853,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       'dataNascita': serializer.toJson<DateTime>(dataNascita),
       'sesso': serializer.toJson<String?>(sesso),
       'sport': serializer.toJson<String>(sport),
-      'gruppo': serializer.toJson<String?>(gruppo),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
       'emailGenitore': serializer.toJson<String?>(emailGenitore),
       'telefonoGenitore': serializer.toJson<String?>(telefonoGenitore),
       'consensoPrivacyFirmato': serializer.toJson<bool>(consensoPrivacyFirmato),
@@ -874,7 +876,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     DateTime? dataNascita,
     Value<String?> sesso = const Value.absent(),
     String? sport,
-    Value<String?> gruppo = const Value.absent(),
+    Value<String?> gruppoId = const Value.absent(),
     Value<String?> emailGenitore = const Value.absent(),
     Value<String?> telefonoGenitore = const Value.absent(),
     bool? consensoPrivacyFirmato,
@@ -892,7 +894,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     dataNascita: dataNascita ?? this.dataNascita,
     sesso: sesso.present ? sesso.value : this.sesso,
     sport: sport ?? this.sport,
-    gruppo: gruppo.present ? gruppo.value : this.gruppo,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     emailGenitore: emailGenitore.present
         ? emailGenitore.value
         : this.emailGenitore,
@@ -925,7 +927,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           : this.dataNascita,
       sesso: data.sesso.present ? data.sesso.value : this.sesso,
       sport: data.sport.present ? data.sport.value : this.sport,
-      gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
       emailGenitore: data.emailGenitore.present
           ? data.emailGenitore.value
           : this.emailGenitore,
@@ -960,7 +962,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ..write('dataNascita: $dataNascita, ')
           ..write('sesso: $sesso, ')
           ..write('sport: $sport, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('emailGenitore: $emailGenitore, ')
           ..write('telefonoGenitore: $telefonoGenitore, ')
           ..write('consensoPrivacyFirmato: $consensoPrivacyFirmato, ')
@@ -983,7 +985,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     dataNascita,
     sesso,
     sport,
-    gruppo,
+    gruppoId,
     emailGenitore,
     telefonoGenitore,
     consensoPrivacyFirmato,
@@ -1005,7 +1007,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           other.dataNascita == this.dataNascita &&
           other.sesso == this.sesso &&
           other.sport == this.sport &&
-          other.gruppo == this.gruppo &&
+          other.gruppoId == this.gruppoId &&
           other.emailGenitore == this.emailGenitore &&
           other.telefonoGenitore == this.telefonoGenitore &&
           other.consensoPrivacyFirmato == this.consensoPrivacyFirmato &&
@@ -1025,7 +1027,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
   final Value<DateTime> dataNascita;
   final Value<String?> sesso;
   final Value<String> sport;
-  final Value<String?> gruppo;
+  final Value<String?> gruppoId;
   final Value<String?> emailGenitore;
   final Value<String?> telefonoGenitore;
   final Value<bool> consensoPrivacyFirmato;
@@ -1044,7 +1046,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.dataNascita = const Value.absent(),
     this.sesso = const Value.absent(),
     this.sport = const Value.absent(),
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.emailGenitore = const Value.absent(),
     this.telefonoGenitore = const Value.absent(),
     this.consensoPrivacyFirmato = const Value.absent(),
@@ -1064,7 +1066,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     required DateTime dataNascita,
     this.sesso = const Value.absent(),
     required String sport,
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.emailGenitore = const Value.absent(),
     this.telefonoGenitore = const Value.absent(),
     this.consensoPrivacyFirmato = const Value.absent(),
@@ -1089,7 +1091,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Expression<DateTime>? dataNascita,
     Expression<String>? sesso,
     Expression<String>? sport,
-    Expression<String>? gruppo,
+    Expression<String>? gruppoId,
     Expression<String>? emailGenitore,
     Expression<String>? telefonoGenitore,
     Expression<bool>? consensoPrivacyFirmato,
@@ -1109,7 +1111,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       if (dataNascita != null) 'data_nascita': dataNascita,
       if (sesso != null) 'sesso': sesso,
       if (sport != null) 'sport': sport,
-      if (gruppo != null) 'gruppo': gruppo,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
       if (emailGenitore != null) 'email_genitore': emailGenitore,
       if (telefonoGenitore != null) 'telefono_genitore': telefonoGenitore,
       if (consensoPrivacyFirmato != null)
@@ -1134,7 +1136,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Value<DateTime>? dataNascita,
     Value<String?>? sesso,
     Value<String>? sport,
-    Value<String?>? gruppo,
+    Value<String?>? gruppoId,
     Value<String?>? emailGenitore,
     Value<String?>? telefonoGenitore,
     Value<bool>? consensoPrivacyFirmato,
@@ -1154,7 +1156,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       dataNascita: dataNascita ?? this.dataNascita,
       sesso: sesso ?? this.sesso,
       sport: sport ?? this.sport,
-      gruppo: gruppo ?? this.gruppo,
+      gruppoId: gruppoId ?? this.gruppoId,
       emailGenitore: emailGenitore ?? this.emailGenitore,
       telefonoGenitore: telefonoGenitore ?? this.telefonoGenitore,
       consensoPrivacyFirmato:
@@ -1193,8 +1195,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     if (sport.present) {
       map['sport'] = Variable<String>(sport.value);
     }
-    if (gruppo.present) {
-      map['gruppo'] = Variable<String>(gruppo.value);
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
     }
     if (emailGenitore.present) {
       map['email_genitore'] = Variable<String>(emailGenitore.value);
@@ -1245,7 +1247,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
           ..write('dataNascita: $dataNascita, ')
           ..write('sesso: $sesso, ')
           ..write('sport: $sport, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('emailGenitore: $emailGenitore, ')
           ..write('telefonoGenitore: $telefonoGenitore, ')
           ..write('consensoPrivacyFirmato: $consensoPrivacyFirmato, ')
@@ -2867,10 +2869,12 @@ class $StagioniTableTable extends StagioniTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _gruppoMeta = const VerificationMeta('gruppo');
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
   @override
-  late final GeneratedColumn<String> gruppo = GeneratedColumn<String>(
-    'gruppo',
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -2895,7 +2899,7 @@ class $StagioniTableTable extends StagioniTable
     dataInizio,
     dataFine,
     obiettivo,
-    gruppo,
+    gruppoId,
     campionato,
   ];
   @override
@@ -2953,10 +2957,10 @@ class $StagioniTableTable extends StagioniTable
         obiettivo.isAcceptableOrUnknown(data['obiettivo']!, _obiettivoMeta),
       );
     }
-    if (data.containsKey('gruppo')) {
+    if (data.containsKey('gruppo_id')) {
       context.handle(
-        _gruppoMeta,
-        gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
       );
     }
     if (data.containsKey('campionato')) {
@@ -2998,9 +3002,9 @@ class $StagioniTableTable extends StagioniTable
         DriftSqlType.string,
         data['${effectivePrefix}obiettivo'],
       ),
-      gruppo: attachedDatabase.typeMapping.read(
+      gruppoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}gruppo'],
+        data['${effectivePrefix}gruppo_id'],
       ),
       campionato: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -3023,7 +3027,7 @@ class StagioniTableData extends DataClass
   final DateTime dataInizio;
   final DateTime dataFine;
   final String? obiettivo;
-  final String? gruppo;
+  final String? gruppoId;
   final String? campionato;
   const StagioniTableData({
     required this.id,
@@ -3032,7 +3036,7 @@ class StagioniTableData extends DataClass
     required this.dataInizio,
     required this.dataFine,
     this.obiettivo,
-    this.gruppo,
+    this.gruppoId,
     this.campionato,
   });
   @override
@@ -3046,8 +3050,8 @@ class StagioniTableData extends DataClass
     if (!nullToAbsent || obiettivo != null) {
       map['obiettivo'] = Variable<String>(obiettivo);
     }
-    if (!nullToAbsent || gruppo != null) {
-      map['gruppo'] = Variable<String>(gruppo);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
     }
     if (!nullToAbsent || campionato != null) {
       map['campionato'] = Variable<String>(campionato);
@@ -3065,9 +3069,9 @@ class StagioniTableData extends DataClass
       obiettivo: obiettivo == null && nullToAbsent
           ? const Value.absent()
           : Value(obiettivo),
-      gruppo: gruppo == null && nullToAbsent
+      gruppoId: gruppoId == null && nullToAbsent
           ? const Value.absent()
-          : Value(gruppo),
+          : Value(gruppoId),
       campionato: campionato == null && nullToAbsent
           ? const Value.absent()
           : Value(campionato),
@@ -3086,7 +3090,7 @@ class StagioniTableData extends DataClass
       dataInizio: serializer.fromJson<DateTime>(json['dataInizio']),
       dataFine: serializer.fromJson<DateTime>(json['dataFine']),
       obiettivo: serializer.fromJson<String?>(json['obiettivo']),
-      gruppo: serializer.fromJson<String?>(json['gruppo']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       campionato: serializer.fromJson<String?>(json['campionato']),
     );
   }
@@ -3100,7 +3104,7 @@ class StagioniTableData extends DataClass
       'dataInizio': serializer.toJson<DateTime>(dataInizio),
       'dataFine': serializer.toJson<DateTime>(dataFine),
       'obiettivo': serializer.toJson<String?>(obiettivo),
-      'gruppo': serializer.toJson<String?>(gruppo),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
       'campionato': serializer.toJson<String?>(campionato),
     };
   }
@@ -3112,7 +3116,7 @@ class StagioniTableData extends DataClass
     DateTime? dataInizio,
     DateTime? dataFine,
     Value<String?> obiettivo = const Value.absent(),
-    Value<String?> gruppo = const Value.absent(),
+    Value<String?> gruppoId = const Value.absent(),
     Value<String?> campionato = const Value.absent(),
   }) => StagioniTableData(
     id: id ?? this.id,
@@ -3121,7 +3125,7 @@ class StagioniTableData extends DataClass
     dataInizio: dataInizio ?? this.dataInizio,
     dataFine: dataFine ?? this.dataFine,
     obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
-    gruppo: gruppo.present ? gruppo.value : this.gruppo,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     campionato: campionato.present ? campionato.value : this.campionato,
   );
   StagioniTableData copyWithCompanion(StagioniTableCompanion data) {
@@ -3134,7 +3138,7 @@ class StagioniTableData extends DataClass
           : this.dataInizio,
       dataFine: data.dataFine.present ? data.dataFine.value : this.dataFine,
       obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
-      gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
       campionato: data.campionato.present
           ? data.campionato.value
           : this.campionato,
@@ -3150,7 +3154,7 @@ class StagioniTableData extends DataClass
           ..write('dataInizio: $dataInizio, ')
           ..write('dataFine: $dataFine, ')
           ..write('obiettivo: $obiettivo, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('campionato: $campionato')
           ..write(')'))
         .toString();
@@ -3164,7 +3168,7 @@ class StagioniTableData extends DataClass
     dataInizio,
     dataFine,
     obiettivo,
-    gruppo,
+    gruppoId,
     campionato,
   );
   @override
@@ -3177,7 +3181,7 @@ class StagioniTableData extends DataClass
           other.dataInizio == this.dataInizio &&
           other.dataFine == this.dataFine &&
           other.obiettivo == this.obiettivo &&
-          other.gruppo == this.gruppo &&
+          other.gruppoId == this.gruppoId &&
           other.campionato == this.campionato);
 }
 
@@ -3188,7 +3192,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
   final Value<DateTime> dataInizio;
   final Value<DateTime> dataFine;
   final Value<String?> obiettivo;
-  final Value<String?> gruppo;
+  final Value<String?> gruppoId;
   final Value<String?> campionato;
   final Value<int> rowid;
   const StagioniTableCompanion({
@@ -3198,7 +3202,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     this.dataInizio = const Value.absent(),
     this.dataFine = const Value.absent(),
     this.obiettivo = const Value.absent(),
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.campionato = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3209,7 +3213,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     required DateTime dataInizio,
     required DateTime dataFine,
     this.obiettivo = const Value.absent(),
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.campionato = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -3224,7 +3228,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Expression<DateTime>? dataInizio,
     Expression<DateTime>? dataFine,
     Expression<String>? obiettivo,
-    Expression<String>? gruppo,
+    Expression<String>? gruppoId,
     Expression<String>? campionato,
     Expression<int>? rowid,
   }) {
@@ -3235,7 +3239,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       if (dataInizio != null) 'data_inizio': dataInizio,
       if (dataFine != null) 'data_fine': dataFine,
       if (obiettivo != null) 'obiettivo': obiettivo,
-      if (gruppo != null) 'gruppo': gruppo,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
       if (campionato != null) 'campionato': campionato,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3248,7 +3252,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Value<DateTime>? dataInizio,
     Value<DateTime>? dataFine,
     Value<String?>? obiettivo,
-    Value<String?>? gruppo,
+    Value<String?>? gruppoId,
     Value<String?>? campionato,
     Value<int>? rowid,
   }) {
@@ -3259,7 +3263,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       dataInizio: dataInizio ?? this.dataInizio,
       dataFine: dataFine ?? this.dataFine,
       obiettivo: obiettivo ?? this.obiettivo,
-      gruppo: gruppo ?? this.gruppo,
+      gruppoId: gruppoId ?? this.gruppoId,
       campionato: campionato ?? this.campionato,
       rowid: rowid ?? this.rowid,
     );
@@ -3286,8 +3290,8 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     if (obiettivo.present) {
       map['obiettivo'] = Variable<String>(obiettivo.value);
     }
-    if (gruppo.present) {
-      map['gruppo'] = Variable<String>(gruppo.value);
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
     }
     if (campionato.present) {
       map['campionato'] = Variable<String>(campionato.value);
@@ -3307,7 +3311,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
           ..write('dataInizio: $dataInizio, ')
           ..write('dataFine: $dataFine, ')
           ..write('obiettivo: $obiettivo, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('campionato: $campionato, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4955,10 +4959,12 @@ class $AllenamentiTableTable extends AllenamentiTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _gruppoMeta = const VerificationMeta('gruppo');
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
   @override
-  late final GeneratedColumn<String> gruppo = GeneratedColumn<String>(
-    'gruppo',
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -4980,7 +4986,7 @@ class $AllenamentiTableTable extends AllenamentiTable
     microcicloId,
     data,
     titolo,
-    gruppo,
+    gruppoId,
     note,
   ];
   @override
@@ -5031,10 +5037,10 @@ class $AllenamentiTableTable extends AllenamentiTable
         titolo.isAcceptableOrUnknown(data['titolo']!, _titoloMeta),
       );
     }
-    if (data.containsKey('gruppo')) {
+    if (data.containsKey('gruppo_id')) {
       context.handle(
-        _gruppoMeta,
-        gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
       );
     }
     if (data.containsKey('note')) {
@@ -5072,9 +5078,9 @@ class $AllenamentiTableTable extends AllenamentiTable
         DriftSqlType.string,
         data['${effectivePrefix}titolo'],
       ),
-      gruppo: attachedDatabase.typeMapping.read(
+      gruppoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}gruppo'],
+        data['${effectivePrefix}gruppo_id'],
       ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -5096,7 +5102,7 @@ class AllenamentiTableData extends DataClass
   final String? microcicloId;
   final DateTime data;
   final String? titolo;
-  final String? gruppo;
+  final String? gruppoId;
   final String? note;
   const AllenamentiTableData({
     required this.id,
@@ -5104,7 +5110,7 @@ class AllenamentiTableData extends DataClass
     this.microcicloId,
     required this.data,
     this.titolo,
-    this.gruppo,
+    this.gruppoId,
     this.note,
   });
   @override
@@ -5119,8 +5125,8 @@ class AllenamentiTableData extends DataClass
     if (!nullToAbsent || titolo != null) {
       map['titolo'] = Variable<String>(titolo);
     }
-    if (!nullToAbsent || gruppo != null) {
-      map['gruppo'] = Variable<String>(gruppo);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
     }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -5139,9 +5145,9 @@ class AllenamentiTableData extends DataClass
       titolo: titolo == null && nullToAbsent
           ? const Value.absent()
           : Value(titolo),
-      gruppo: gruppo == null && nullToAbsent
+      gruppoId: gruppoId == null && nullToAbsent
           ? const Value.absent()
-          : Value(gruppo),
+          : Value(gruppoId),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
     );
   }
@@ -5157,7 +5163,7 @@ class AllenamentiTableData extends DataClass
       microcicloId: serializer.fromJson<String?>(json['microcicloId']),
       data: serializer.fromJson<DateTime>(json['data']),
       titolo: serializer.fromJson<String?>(json['titolo']),
-      gruppo: serializer.fromJson<String?>(json['gruppo']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       note: serializer.fromJson<String?>(json['note']),
     );
   }
@@ -5170,7 +5176,7 @@ class AllenamentiTableData extends DataClass
       'microcicloId': serializer.toJson<String?>(microcicloId),
       'data': serializer.toJson<DateTime>(data),
       'titolo': serializer.toJson<String?>(titolo),
-      'gruppo': serializer.toJson<String?>(gruppo),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
       'note': serializer.toJson<String?>(note),
     };
   }
@@ -5181,7 +5187,7 @@ class AllenamentiTableData extends DataClass
     Value<String?> microcicloId = const Value.absent(),
     DateTime? data,
     Value<String?> titolo = const Value.absent(),
-    Value<String?> gruppo = const Value.absent(),
+    Value<String?> gruppoId = const Value.absent(),
     Value<String?> note = const Value.absent(),
   }) => AllenamentiTableData(
     id: id ?? this.id,
@@ -5189,7 +5195,7 @@ class AllenamentiTableData extends DataClass
     microcicloId: microcicloId.present ? microcicloId.value : this.microcicloId,
     data: data ?? this.data,
     titolo: titolo.present ? titolo.value : this.titolo,
-    gruppo: gruppo.present ? gruppo.value : this.gruppo,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     note: note.present ? note.value : this.note,
   );
   AllenamentiTableData copyWithCompanion(AllenamentiTableCompanion data) {
@@ -5201,7 +5207,7 @@ class AllenamentiTableData extends DataClass
           : this.microcicloId,
       data: data.data.present ? data.data.value : this.data,
       titolo: data.titolo.present ? data.titolo.value : this.titolo,
-      gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
       note: data.note.present ? data.note.value : this.note,
     );
   }
@@ -5214,7 +5220,7 @@ class AllenamentiTableData extends DataClass
           ..write('microcicloId: $microcicloId, ')
           ..write('data: $data, ')
           ..write('titolo: $titolo, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('note: $note')
           ..write(')'))
         .toString();
@@ -5222,7 +5228,7 @@ class AllenamentiTableData extends DataClass
 
   @override
   int get hashCode =>
-      Object.hash(id, clubId, microcicloId, data, titolo, gruppo, note);
+      Object.hash(id, clubId, microcicloId, data, titolo, gruppoId, note);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5232,7 +5238,7 @@ class AllenamentiTableData extends DataClass
           other.microcicloId == this.microcicloId &&
           other.data == this.data &&
           other.titolo == this.titolo &&
-          other.gruppo == this.gruppo &&
+          other.gruppoId == this.gruppoId &&
           other.note == this.note);
 }
 
@@ -5242,7 +5248,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
   final Value<String?> microcicloId;
   final Value<DateTime> data;
   final Value<String?> titolo;
-  final Value<String?> gruppo;
+  final Value<String?> gruppoId;
   final Value<String?> note;
   final Value<int> rowid;
   const AllenamentiTableCompanion({
@@ -5251,7 +5257,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     this.microcicloId = const Value.absent(),
     this.data = const Value.absent(),
     this.titolo = const Value.absent(),
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.note = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5261,7 +5267,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     this.microcicloId = const Value.absent(),
     required DateTime data,
     this.titolo = const Value.absent(),
-    this.gruppo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.note = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -5273,7 +5279,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     Expression<String>? microcicloId,
     Expression<DateTime>? data,
     Expression<String>? titolo,
-    Expression<String>? gruppo,
+    Expression<String>? gruppoId,
     Expression<String>? note,
     Expression<int>? rowid,
   }) {
@@ -5283,7 +5289,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
       if (microcicloId != null) 'microciclo_id': microcicloId,
       if (data != null) 'data': data,
       if (titolo != null) 'titolo': titolo,
-      if (gruppo != null) 'gruppo': gruppo,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
       if (note != null) 'note': note,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5295,7 +5301,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     Value<String?>? microcicloId,
     Value<DateTime>? data,
     Value<String?>? titolo,
-    Value<String?>? gruppo,
+    Value<String?>? gruppoId,
     Value<String?>? note,
     Value<int>? rowid,
   }) {
@@ -5305,7 +5311,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
       microcicloId: microcicloId ?? this.microcicloId,
       data: data ?? this.data,
       titolo: titolo ?? this.titolo,
-      gruppo: gruppo ?? this.gruppo,
+      gruppoId: gruppoId ?? this.gruppoId,
       note: note ?? this.note,
       rowid: rowid ?? this.rowid,
     );
@@ -5329,8 +5335,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     if (titolo.present) {
       map['titolo'] = Variable<String>(titolo.value);
     }
-    if (gruppo.present) {
-      map['gruppo'] = Variable<String>(gruppo.value);
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -5349,7 +5355,7 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
           ..write('microcicloId: $microcicloId, ')
           ..write('data: $data, ')
           ..write('titolo: $titolo, ')
-          ..write('gruppo: $gruppo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('note: $note, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9968,6 +9974,308 @@ class RefertiPartitaTableCompanion
   }
 }
 
+class $GruppiTableTable extends GruppiTable
+    with TableInfo<$GruppiTableTable, GruppiTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GruppiTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, clubId, nome, ordine];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gruppi_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GruppiTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GruppiTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GruppiTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+    );
+  }
+
+  @override
+  $GruppiTableTable createAlias(String alias) {
+    return $GruppiTableTable(attachedDatabase, alias);
+  }
+}
+
+class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
+  final String id;
+  final String clubId;
+  final String nome;
+  final int ordine;
+  const GruppiTableData({
+    required this.id,
+    required this.clubId,
+    required this.nome,
+    required this.ordine,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    map['ordine'] = Variable<int>(ordine);
+    return map;
+  }
+
+  GruppiTableCompanion toCompanion(bool nullToAbsent) {
+    return GruppiTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      ordine: Value(ordine),
+    );
+  }
+
+  factory GruppiTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GruppiTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'ordine': serializer.toJson<int>(ordine),
+    };
+  }
+
+  GruppiTableData copyWith({
+    String? id,
+    String? clubId,
+    String? nome,
+    int? ordine,
+  }) => GruppiTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    ordine: ordine ?? this.ordine,
+  );
+  GruppiTableData copyWithCompanion(GruppiTableCompanion data) {
+    return GruppiTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GruppiTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, clubId, nome, ordine);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GruppiTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.ordine == this.ordine);
+}
+
+class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<int> ordine;
+  final Value<int> rowid;
+  const GruppiTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GruppiTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String nome,
+    this.ordine = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       nome = Value(nome);
+  static Insertable<GruppiTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<int>? ordine,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (ordine != null) 'ordine': ordine,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GruppiTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<int>? ordine,
+    Value<int>? rowid,
+  }) {
+    return GruppiTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      ordine: ordine ?? this.ordine,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GruppiTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('ordine: $ordine, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10001,6 +10309,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $EventiPartitaTableTable(this);
   late final $RefertiPartitaTableTable refertiPartitaTable =
       $RefertiPartitaTableTable(this);
+  late final $GruppiTableTable gruppiTable = $GruppiTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10023,6 +10332,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     distintaGiocatoriTable,
     eventiPartitaTable,
     refertiPartitaTable,
+    gruppiTable,
   ];
 }
 
@@ -10195,7 +10505,7 @@ typedef $$AtletiTableTableCreateCompanionBuilder =
       required DateTime dataNascita,
       Value<String?> sesso,
       required String sport,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> emailGenitore,
       Value<String?> telefonoGenitore,
       Value<bool> consensoPrivacyFirmato,
@@ -10216,7 +10526,7 @@ typedef $$AtletiTableTableUpdateCompanionBuilder =
       Value<DateTime> dataNascita,
       Value<String?> sesso,
       Value<String> sport,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> emailGenitore,
       Value<String?> telefonoGenitore,
       Value<bool> consensoPrivacyFirmato,
@@ -10273,8 +10583,8 @@ class $$AtletiTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10368,8 +10678,8 @@ class $$AtletiTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -10451,8 +10761,8 @@ class $$AtletiTableTableAnnotationComposer
   GeneratedColumn<String> get sport =>
       $composableBuilder(column: $table.sport, builder: (column) => column);
 
-  GeneratedColumn<String> get gruppo =>
-      $composableBuilder(column: $table.gruppo, builder: (column) => column);
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
 
   GeneratedColumn<String> get emailGenitore => $composableBuilder(
     column: $table.emailGenitore,
@@ -10532,7 +10842,7 @@ class $$AtletiTableTableTableManager
                 Value<DateTime> dataNascita = const Value.absent(),
                 Value<String?> sesso = const Value.absent(),
                 Value<String> sport = const Value.absent(),
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> emailGenitore = const Value.absent(),
                 Value<String?> telefonoGenitore = const Value.absent(),
                 Value<bool> consensoPrivacyFirmato = const Value.absent(),
@@ -10551,7 +10861,7 @@ class $$AtletiTableTableTableManager
                 dataNascita: dataNascita,
                 sesso: sesso,
                 sport: sport,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 emailGenitore: emailGenitore,
                 telefonoGenitore: telefonoGenitore,
                 consensoPrivacyFirmato: consensoPrivacyFirmato,
@@ -10572,7 +10882,7 @@ class $$AtletiTableTableTableManager
                 required DateTime dataNascita,
                 Value<String?> sesso = const Value.absent(),
                 required String sport,
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> emailGenitore = const Value.absent(),
                 Value<String?> telefonoGenitore = const Value.absent(),
                 Value<bool> consensoPrivacyFirmato = const Value.absent(),
@@ -10591,7 +10901,7 @@ class $$AtletiTableTableTableManager
                 dataNascita: dataNascita,
                 sesso: sesso,
                 sport: sport,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 emailGenitore: emailGenitore,
                 telefonoGenitore: telefonoGenitore,
                 consensoPrivacyFirmato: consensoPrivacyFirmato,
@@ -11454,7 +11764,7 @@ typedef $$StagioniTableTableCreateCompanionBuilder =
       required DateTime dataInizio,
       required DateTime dataFine,
       Value<String?> obiettivo,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> campionato,
       Value<int> rowid,
     });
@@ -11466,7 +11776,7 @@ typedef $$StagioniTableTableUpdateCompanionBuilder =
       Value<DateTime> dataInizio,
       Value<DateTime> dataFine,
       Value<String?> obiettivo,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> campionato,
       Value<int> rowid,
     });
@@ -11510,8 +11820,8 @@ class $$StagioniTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11560,8 +11870,8 @@ class $$StagioniTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11600,8 +11910,8 @@ class $$StagioniTableTableAnnotationComposer
   GeneratedColumn<String> get obiettivo =>
       $composableBuilder(column: $table.obiettivo, builder: (column) => column);
 
-  GeneratedColumn<String> get gruppo =>
-      $composableBuilder(column: $table.gruppo, builder: (column) => column);
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
 
   GeneratedColumn<String> get campionato => $composableBuilder(
     column: $table.campionato,
@@ -11650,7 +11960,7 @@ class $$StagioniTableTableTableManager
                 Value<DateTime> dataInizio = const Value.absent(),
                 Value<DateTime> dataFine = const Value.absent(),
                 Value<String?> obiettivo = const Value.absent(),
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> campionato = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion(
@@ -11660,7 +11970,7 @@ class $$StagioniTableTableTableManager
                 dataInizio: dataInizio,
                 dataFine: dataFine,
                 obiettivo: obiettivo,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 campionato: campionato,
                 rowid: rowid,
               ),
@@ -11672,7 +11982,7 @@ class $$StagioniTableTableTableManager
                 required DateTime dataInizio,
                 required DateTime dataFine,
                 Value<String?> obiettivo = const Value.absent(),
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> campionato = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion.insert(
@@ -11682,7 +11992,7 @@ class $$StagioniTableTableTableManager
                 dataInizio: dataInizio,
                 dataFine: dataFine,
                 obiettivo: obiettivo,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 campionato: campionato,
                 rowid: rowid,
               ),
@@ -12548,7 +12858,7 @@ typedef $$AllenamentiTableTableCreateCompanionBuilder =
       Value<String?> microcicloId,
       required DateTime data,
       Value<String?> titolo,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> note,
       Value<int> rowid,
     });
@@ -12559,7 +12869,7 @@ typedef $$AllenamentiTableTableUpdateCompanionBuilder =
       Value<String?> microcicloId,
       Value<DateTime> data,
       Value<String?> titolo,
-      Value<String?> gruppo,
+      Value<String?> gruppoId,
       Value<String?> note,
       Value<int> rowid,
     });
@@ -12598,8 +12908,8 @@ class $$AllenamentiTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12643,8 +12953,8 @@ class $$AllenamentiTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get gruppo => $composableBuilder(
-    column: $table.gruppo,
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12680,8 +12990,8 @@ class $$AllenamentiTableTableAnnotationComposer
   GeneratedColumn<String> get titolo =>
       $composableBuilder(column: $table.titolo, builder: (column) => column);
 
-  GeneratedColumn<String> get gruppo =>
-      $composableBuilder(column: $table.gruppo, builder: (column) => column);
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
@@ -12729,7 +13039,7 @@ class $$AllenamentiTableTableTableManager
                 Value<String?> microcicloId = const Value.absent(),
                 Value<DateTime> data = const Value.absent(),
                 Value<String?> titolo = const Value.absent(),
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AllenamentiTableCompanion(
@@ -12738,7 +13048,7 @@ class $$AllenamentiTableTableTableManager
                 microcicloId: microcicloId,
                 data: data,
                 titolo: titolo,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 note: note,
                 rowid: rowid,
               ),
@@ -12749,7 +13059,7 @@ class $$AllenamentiTableTableTableManager
                 Value<String?> microcicloId = const Value.absent(),
                 required DateTime data,
                 Value<String?> titolo = const Value.absent(),
-                Value<String?> gruppo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AllenamentiTableCompanion.insert(
@@ -12758,7 +13068,7 @@ class $$AllenamentiTableTableTableManager
                 microcicloId: microcicloId,
                 data: data,
                 titolo: titolo,
-                gruppo: gruppo,
+                gruppoId: gruppoId,
                 note: note,
                 rowid: rowid,
               ),
@@ -15074,6 +15384,187 @@ typedef $$RefertiPartitaTableTableProcessedTableManager =
       RefertiPartitaTableData,
       PrefetchHooks Function()
     >;
+typedef $$GruppiTableTableCreateCompanionBuilder =
+    GruppiTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String nome,
+      Value<int> ordine,
+      Value<int> rowid,
+    });
+typedef $$GruppiTableTableUpdateCompanionBuilder =
+    GruppiTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<int> ordine,
+      Value<int> rowid,
+    });
+
+class $$GruppiTableTableFilterComposer
+    extends Composer<_$AppDatabase, $GruppiTableTable> {
+  $$GruppiTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GruppiTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $GruppiTableTable> {
+  $$GruppiTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GruppiTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GruppiTableTable> {
+  $$GruppiTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+}
+
+class $$GruppiTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GruppiTableTable,
+          GruppiTableData,
+          $$GruppiTableTableFilterComposer,
+          $$GruppiTableTableOrderingComposer,
+          $$GruppiTableTableAnnotationComposer,
+          $$GruppiTableTableCreateCompanionBuilder,
+          $$GruppiTableTableUpdateCompanionBuilder,
+          (
+            GruppiTableData,
+            BaseReferences<_$AppDatabase, $GruppiTableTable, GruppiTableData>,
+          ),
+          GruppiTableData,
+          PrefetchHooks Function()
+        > {
+  $$GruppiTableTableTableManager(_$AppDatabase db, $GruppiTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GruppiTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GruppiTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GruppiTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GruppiTableCompanion(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String nome,
+                Value<int> ordine = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GruppiTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                ordine: ordine,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GruppiTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GruppiTableTable,
+      GruppiTableData,
+      $$GruppiTableTableFilterComposer,
+      $$GruppiTableTableOrderingComposer,
+      $$GruppiTableTableAnnotationComposer,
+      $$GruppiTableTableCreateCompanionBuilder,
+      $$GruppiTableTableUpdateCompanionBuilder,
+      (
+        GruppiTableData,
+        BaseReferences<_$AppDatabase, $GruppiTableTable, GruppiTableData>,
+      ),
+      GruppiTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15118,4 +15609,6 @@ class $AppDatabaseManager {
       $$EventiPartitaTableTableTableManager(_db, _db.eventiPartitaTable);
   $$RefertiPartitaTableTableTableManager get refertiPartitaTable =>
       $$RefertiPartitaTableTableTableManager(_db, _db.refertiPartitaTable);
+  $$GruppiTableTableTableManager get gruppiTable =>
+      $$GruppiTableTableTableManager(_db, _db.gruppiTable);
 }

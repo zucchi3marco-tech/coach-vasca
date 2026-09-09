@@ -10,6 +10,7 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
@@ -38,6 +39,10 @@ class _AllenamentiListScreenState
   @override
   Widget build(BuildContext context) {
     final allenamentiAsync = ref.watch(allenamentiListProvider(widget.clubId));
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(widget.clubId)).value ?? [])
+        g.id: g.nome,
+    };
 
     return AppScaffold(
       body: Column(
@@ -61,7 +66,7 @@ class _AllenamentiListScreenState
           Expanded(
             child: allenamentiAsync.when(
               data: (allenamenti) => switch (_vista) {
-                _Vista.elenco => _buildElenco(allenamenti),
+                _Vista.elenco => _buildElenco(allenamenti, nomiGruppi),
                 _Vista.settimana => CalendarioSettimanaleView(
                   allenamenti: allenamenti,
                   onGiornoSelezionato: (data) => _apriGiorno(data),
@@ -115,7 +120,10 @@ class _AllenamentiListScreenState
     );
   }
 
-  Widget _buildElenco(List<Allenamento> allenamenti) {
+  Widget _buildElenco(
+    List<Allenamento> allenamenti,
+    Map<String, String> nomiGruppi,
+  ) {
     return RefreshIndicator(
       onRefresh: () => ref
           .read(allenamentiRepositoryProvider)
@@ -149,7 +157,7 @@ class _AllenamentiListScreenState
                           '${a.data.day.toString().padLeft(2, '0')}/'
                           '${a.data.month.toString().padLeft(2, '0')}/'
                           '${a.data.year}'
-                          '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
+                          '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(

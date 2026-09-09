@@ -13,6 +13,11 @@ import '../auth/data/auth_repository.dart';
 import '../club/application/current_club_provider.dart';
 import '../club/domain/club.dart';
 import '../club/presentation/club_setup_screen.dart';
+import '../gruppi/application/gruppi_providers.dart';
+import '../gruppi/application/selezione_gruppo_provider.dart';
+import '../gruppi/domain/gruppo.dart';
+import '../gruppi/presentation/gruppi_chooser_screen.dart';
+import '../gruppi/presentation/gruppi_onboarding_screen.dart';
 import '../pallanuoto/presentation/partite_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
 import 'area_atleta_home_screen.dart';
@@ -27,19 +32,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _tabIndex = 0;
 
-  Widget _corpoDaCoach(AsyncValue<Club?> clubAsync) {
+  Widget _corpoClub(AsyncValue<Club?> clubAsync) {
     return clubAsync.when(
-      data: (club) => club == null
-          ? const ClubSetupScreen()
-          : IndexedStack(
-              index: _tabIndex,
-              children: [
-                AtletiListScreen(clubId: club.id),
-                AllenamentiListScreen(clubId: club.id),
-                StagioniListScreen(clubId: club.id),
-                PartiteListScreen(clubId: club.id),
-              ],
-            ),
+      data: (club) =>
+          club == null ? const ClubSetupScreen() : _corpoDaCoach(club),
       loading: () => const Padding(
         padding: EdgeInsets.all(AppSpacing.s16),
         child: LoadingSkeletonList(righe: 4),
@@ -48,6 +44,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         padding: const EdgeInsets.all(AppSpacing.s16),
         child: ErrorBanner(
           messaggio: 'Non è stato possibile caricare il club.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
+        ),
+      ),
+    );
+  }
+
+  Widget _corpoDaCoach(Club club) {
+    final gruppiAsync = ref.watch(gruppiListProvider(club.id));
+    return gruppiAsync.when(
+      data: (gruppi) {
+        if (gruppi.isEmpty) {
+          return GruppiOnboardingScreen(clubId: club.id);
+        }
+        final selezione = ref.watch(selezioneGruppoProvider);
+        if (selezione == null) {
+          return GruppiChooserScreen(clubId: club.id);
+        }
+        return IndexedStack(
+          index: _tabIndex,
+          children: [
+            AtletiListScreen(
+              clubId: club.id,
+              filtroGruppoId: selezione.gruppoId,
+            ),
+            AllenamentiListScreen(clubId: club.id),
+            StagioniListScreen(clubId: club.id),
+            PartiteListScreen(clubId: club.id),
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(AppSpacing.s16),
+        child: LoadingSkeletonList(righe: 4),
+      ),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: ErrorBanner(
+          messaggio: 'Non è stato possibile caricare i gruppi.',
           suggerimento:
               'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
           dettaglioTecnico: messaggioErrore(error),
@@ -65,12 +101,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // in quel caso si aspetta prima di scegliere corpo/bottomNavigationBar,
     // per non mostrare per un istante le tab da coach (vedi _corpoDaCoach).
     final areaAtleta = atletaAsync.value != null;
+    final List<Gruppo> gruppi = club == null
+        ? const []
+        : ref.watch(gruppiListProvider(club.id)).value ?? const [];
+    final selezione = ref.watch(selezioneGruppoProvider);
+    final mostraTab =
+        !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(club?.nome ?? 'SwimCoach FIN'),
         actions: [
           const _SyncStatusIndicator(),
+          if (mostraTab)
+            IconButton(
+              icon: const Icon(Icons.groups_outlined),
+              tooltip: 'Cambia gruppo',
+              onPressed: () =>
+                  ref.read(selezioneGruppoProvider.notifier).scegli(null),
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',
@@ -81,14 +130,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: atletaAsync.when(
         data: (atleta) => atleta != null
             ? AreaAtletaHomeScreen(atleta: atleta)
-            : _corpoDaCoach(clubAsync),
+            : _corpoClub(clubAsync),
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),
           child: LoadingSkeletonList(righe: 4),
         ),
-        error: (_, _) => _corpoDaCoach(clubAsync),
+        error: (_, _) => _corpoClub(clubAsync),
       ),
-      bottomNavigationBar: !areaAtleta && club != null
+      bottomNavigationBar: mostraTab
           ? NavigationBar(
               selectedIndex: _tabIndex,
               onDestinationSelected: (index) =>

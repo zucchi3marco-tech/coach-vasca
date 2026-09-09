@@ -120,9 +120,9 @@ class _Contenuto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final haGruppo = atleta.gruppo != null && atleta.gruppo!.isNotEmpty;
+    final haGruppo = atleta.gruppoId != null;
     final delGruppo = haGruppo
-        ? allenamenti.where((a) => a.gruppo == atleta.gruppo).toList()
+        ? allenamenti.where((a) => a.gruppoId == atleta.gruppoId).toList()
         : allenamenti;
     final rilevanti = delGruppo.isEmpty ? allenamenti : delGruppo;
 

@@ -5,7 +5,7 @@ class Allenamento {
     this.microcicloId,
     required this.data,
     this.titolo,
-    this.gruppo,
+    this.gruppoId,
     this.note,
   });
 
@@ -14,7 +14,7 @@ class Allenamento {
   final String? microcicloId;
   final DateTime data;
   final String? titolo;
-  final String? gruppo;
+  final String? gruppoId;
   final String? note;
 
   factory Allenamento.fromMap(Map<String, dynamic> map) {
@@ -24,7 +24,7 @@ class Allenamento {
       microcicloId: map['microciclo_id'] as String?,
       data: DateTime.parse(map['data'] as String),
       titolo: map['titolo'] as String?,
-      gruppo: map['gruppo'] as String?,
+      gruppoId: map['gruppo_id'] as String?,
       note: map['note'] as String?,
     );
   }

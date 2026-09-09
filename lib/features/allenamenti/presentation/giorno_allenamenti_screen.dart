@@ -9,6 +9,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
 import 'allenamento_detail_screen.dart';
 import 'allenamento_form_screen.dart';
@@ -32,6 +33,10 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allenamentiAsync = ref.watch(allenamentiListProvider(clubId));
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(clubId)).value ?? [])
+        g.id: g.nome,
+    };
 
     void apriNuovo() => Navigator.of(context).push(
       MaterialPageRoute(
@@ -65,9 +70,7 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
                     titolo: a.titolo != null && a.titolo!.isNotEmpty
                         ? a.titolo!
                         : 'Allenamento',
-                    sottotitolo: a.gruppo != null && a.gruppo!.isNotEmpty
-                        ? a.gruppo!
-                        : null,
+                    sottotitolo: nomiGruppi[a.gruppoId],
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(

@@ -15,6 +15,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/zone_chip.dart';
 import '../../export/export_actions.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/serie_repository.dart';
@@ -33,6 +34,11 @@ class AllenamentoDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [])
+        g.id: g.nome,
+    };
+    final nomeGruppo = nomiGruppi[allenamento.gruppoId];
 
     void apriNuovaSerie() {
       final serieAttuale =
@@ -102,6 +108,7 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                           allenamento.titolo!.isNotEmpty
                       ? allenamento.titolo!
                       : 'Allenamento',
+                  nomiGruppi: nomiGruppi,
                   caricaDati: () async => [
                     (
                       allenamento,
@@ -145,7 +152,7 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                   '${allenamento.data.day.toString().padLeft(2, '0')}/'
                   '${allenamento.data.month.toString().padLeft(2, '0')}/'
                   '${allenamento.data.year}'
-                  '${allenamento.gruppo != null && allenamento.gruppo!.isNotEmpty ? ' · ${allenamento.gruppo}' : ''}',
+                  '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
                   style: AppTypography.sezione,
                 ),
                 if (allenamento.note != null &&

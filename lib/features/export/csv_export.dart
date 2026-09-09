@@ -38,11 +38,15 @@ String _cella(Object? valore) {
   return testo;
 }
 
-List<String> _riga(Allenamento allenamento, Serie s) {
+List<String> _riga(
+  Allenamento allenamento,
+  Serie s,
+  Map<String, String> nomiGruppi,
+) {
   return [
     _formattaData(allenamento.data),
     allenamento.titolo ?? '',
-    allenamento.gruppo ?? '',
+    nomiGruppi[allenamento.gruppoId] ?? '',
     '${s.ordine}',
     labelBlocco(s.blocco),
     '${s.ripetute}',
@@ -59,12 +63,16 @@ List<String> _riga(Allenamento allenamento, Serie s) {
 }
 
 /// Un CSV con una riga per serie, per uno o più allenamenti (scheda singola
-/// o intera settimana).
-String generaCsv(List<AllenamentoConSerie> allenamenti) {
+/// o intera settimana). [nomiGruppi] risolve l'id del gruppo dell'allenamento
+/// nel suo nome, per mostrarlo nella colonna "Gruppo".
+String generaCsv(
+  List<AllenamentoConSerie> allenamenti, {
+  Map<String, String> nomiGruppi = const {},
+}) {
   final righe = [_intestazione.map(_cella).join(',')];
   for (final (allenamento, serie) in allenamenti) {
     for (final s in serie) {
-      righe.add(_riga(allenamento, s).map(_cella).join(','));
+      righe.add(_riga(allenamento, s, nomiGruppi).map(_cella).join(','));
     }
   }
   return righe.join('\r\n');

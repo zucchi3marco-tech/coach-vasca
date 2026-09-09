@@ -9,10 +9,11 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_text_field.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../data/codici_gruppo_repository.dart';
 import '../domain/codice_gruppo.dart';
 
@@ -30,7 +31,7 @@ class CodiciGruppoScreen extends ConsumerStatefulWidget {
 }
 
 class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
-  final _gruppoController = TextEditingController();
+  String? _gruppoId;
   List<CodiceGruppo>? _codici;
   bool _isLoading = false;
   String? _errore;
@@ -39,12 +40,6 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   void initState() {
     super.initState();
     _carica();
-  }
-
-  @override
-  void dispose() {
-    _gruppoController.dispose();
-    super.dispose();
   }
 
   Future<void> _carica() async {
@@ -60,9 +55,9 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   }
 
   Future<void> _generaCodice() async {
-    final gruppo = _gruppoController.text.trim();
-    if (gruppo.isEmpty) {
-      setState(() => _errore = 'Indica il nome del gruppo');
+    final gruppoId = _gruppoId;
+    if (gruppoId == null) {
+      setState(() => _errore = 'Scegli il gruppo');
       return;
     }
     setState(() {
@@ -72,8 +67,8 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
     try {
       await ref
           .read(codiciGruppoRepositoryProvider)
-          .generaCodice(clubId: widget.clubId, gruppo: gruppo);
-      _gruppoController.clear();
+          .generaCodice(clubId: widget.clubId, gruppoId: gruppoId);
+      setState(() => _gruppoId = null);
       await _carica();
     } catch (e) {
       if (mounted) setState(() => _errore = messaggioErrore(e));
@@ -99,6 +94,7 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   @override
   Widget build(BuildContext context) {
     final codici = _codici;
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: const Text('Codici di gruppo')),
@@ -106,14 +102,23 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Genera un codice per un intero gruppo (es. "U14"): condividilo '
-            'una sola volta, ogni atleta che lo usa compila da solo la '
-            'propria anagrafica e resta già assegnato a quel gruppo. '
-            'Controlla i dati dopo la registrazione.',
+            'Genera un codice per un intero gruppo: condividilo una sola '
+            'volta, ogni atleta che lo usa compila da solo la propria '
+            'anagrafica e resta già assegnato a quel gruppo. Controlla i '
+            'dati dopo la registrazione.',
             style: AppTypography.piccolo,
           ),
           const SizedBox(height: AppSpacing.s16),
-          AppTextField(etichetta: 'Nome gruppo', controller: _gruppoController),
+          AppSelect<String?>(
+            etichetta: 'Gruppo',
+            value: _gruppoId,
+            hint: 'Scegli il gruppo',
+            items: [
+              for (final g in gruppi)
+                DropdownMenuItem(value: g.id, child: Text(g.nome)),
+            ],
+            onChanged: (value) => setState(() => _gruppoId = value),
+          ),
           const SizedBox(height: AppSpacing.s16),
           PrimaryButton(
             label: 'Genera codice',
@@ -141,7 +146,7 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
               righe: [
                 for (final c in codici)
                   AppListRow(
-                    titolo: c.gruppo,
+                    titolo: c.gruppoNome,
                     sottotitolo: c.scaduto
                         ? 'Scaduto il ${_formattaData(c.scadeIl)}'
                         : 'Codice ${c.codice} · valido fino al '

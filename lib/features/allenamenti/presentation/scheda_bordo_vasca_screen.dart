@@ -19,6 +19,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/zone_chip.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
@@ -74,6 +75,10 @@ class _SchedaBordoVascaScreenState
     final allenamento = widget.allenamento;
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
     final scuro = ref.watch(temaBordoVascaScuroProvider);
+    final gruppi = ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [];
+    final nomeGruppo = {
+      for (final g in gruppi) g.id: g.nome,
+    }[allenamento.gruppoId];
 
     return Theme(
       data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
@@ -83,7 +88,7 @@ class _SchedaBordoVascaScreenState
             '${allenamento.data.day.toString().padLeft(2, '0')}/'
             '${allenamento.data.month.toString().padLeft(2, '0')}/'
             '${allenamento.data.year}'
-            '${allenamento.gruppo != null && allenamento.gruppo!.isNotEmpty ? ' · ${allenamento.gruppo}' : ''}',
+            '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
           ),
           actions: const [BottoneTemaBordoVasca()],
         ),

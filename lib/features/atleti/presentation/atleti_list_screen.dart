@@ -13,6 +13,8 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
+import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../../stroke_rate/presentation/stroke_rate_screen.dart';
 import '../../test/presentation/test_list_screen.dart';
@@ -27,9 +29,12 @@ import 'pb_list_screen.dart';
 enum _Ordinamento { cognome, dataNascita }
 
 class AtletiListScreen extends ConsumerStatefulWidget {
-  const AtletiListScreen({required this.clubId, super.key});
+  const AtletiListScreen({required this.clubId, this.filtroGruppoId, super.key});
 
   final String clubId;
+
+  /// null = nessun filtro (mostra tutti gli atleti).
+  final String? filtroGruppoId;
 
   @override
   ConsumerState<AtletiListScreen> createState() => _AtletiListScreenState();
@@ -44,6 +49,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   Widget build(BuildContext context) {
     final filter = (clubId: widget.clubId, includeInactive: _mostraInattivi);
     final atletiAsync = ref.watch(atletiListProvider(filter));
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
 
     return AppScaffold(
       body: Column(
@@ -93,6 +99,8 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
               child: atletiAsync.when(
                 data: (atleti) => _AtletiList(
                   atleti: atleti,
+                  gruppi: gruppi,
+                  filtroGruppoId: widget.filtroGruppoId,
                   ricerca: _ricerca,
                   ordinamento: _ordinamento,
                   onTap: (atleta) => _apriForm(context, atleta: atleta),
@@ -190,6 +198,8 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
 class _AtletiList extends StatelessWidget {
   const _AtletiList({
     required this.atleti,
+    required this.gruppi,
+    required this.filtroGruppoId,
     required this.ricerca,
     required this.ordinamento,
     required this.onTap,
@@ -202,6 +212,8 @@ class _AtletiList extends StatelessWidget {
   });
 
   final List<Atleta> atleti;
+  final List<Gruppo> gruppi;
+  final String? filtroGruppoId;
   final String ricerca;
   final _Ordinamento ordinamento;
   final ValueChanged<Atleta> onTap;
@@ -221,11 +233,14 @@ class _AtletiList extends StatelessWidget {
 
   List<Atleta> _filtrati() {
     final query = ricerca.trim().toLowerCase();
-    final filtrati = query.isEmpty
+    var filtrati = filtroGruppoId == null
         ? [...atleti]
-        : atleti
-              .where((a) => a.nomeCompleto.toLowerCase().contains(query))
-              .toList();
+        : atleti.where((a) => a.gruppoId == filtroGruppoId).toList();
+    if (query.isNotEmpty) {
+      filtrati = filtrati
+          .where((a) => a.nomeCompleto.toLowerCase().contains(query))
+          .toList();
+    }
     filtrati.sort((a, b) {
       if (ordinamento == _Ordinamento.dataNascita) {
         return a.dataNascita.compareTo(b.dataNascita);
@@ -238,6 +253,7 @@ class _AtletiList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nomeGruppo = {for (final g in gruppi) g.id: g.nome};
     if (atleti.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -281,8 +297,7 @@ class _AtletiList extends StatelessWidget {
               sottotitolo:
                   [
                     atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
-                    if (atleta.gruppo != null && atleta.gruppo!.isNotEmpty)
-                      atleta.gruppo!,
+                    ?nomeGruppo[atleta.gruppoId],
                   ].join(' · ') +
                   (atleta.attivo ? '' : ' · inattivo'),
               trailing: Row(

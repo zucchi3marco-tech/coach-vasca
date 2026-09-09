@@ -7,7 +7,7 @@ class Atleta {
     required this.dataNascita,
     this.sesso,
     required this.sport,
-    this.gruppo,
+    this.gruppoId,
     this.emailGenitore,
     this.telefonoGenitore,
     required this.consensoPrivacyFirmato,
@@ -26,7 +26,7 @@ class Atleta {
   final DateTime dataNascita;
   final String? sesso; // 'M' | 'F'
   final String sport; // 'nuoto' | 'pallanuoto'
-  final String? gruppo;
+  final String? gruppoId;
   final String? emailGenitore;
   final String? telefonoGenitore;
   final bool consensoPrivacyFirmato;
@@ -66,7 +66,7 @@ class Atleta {
       dataNascita: DateTime.parse(map['data_nascita'] as String),
       sesso: map['sesso'] as String?,
       sport: map['sport'] as String,
-      gruppo: map['gruppo'] as String?,
+      gruppoId: map['gruppo_id'] as String?,
       emailGenitore: map['email_genitore'] as String?,
       telefonoGenitore: map['telefono_genitore'] as String?,
       consensoPrivacyFirmato: map['consenso_privacy_firmato'] as bool,

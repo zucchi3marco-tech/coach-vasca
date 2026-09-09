@@ -5,9 +5,11 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/stagione.dart';
 import 'elimina_dialogs.dart';
@@ -26,7 +28,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _obiettivoController;
-  late final TextEditingController _gruppoController;
+  String? _gruppoId;
   late final TextEditingController _campionatoController;
   late final TextEditingController _dataInizioController;
   late final TextEditingController _dataFineController;
@@ -44,7 +46,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
     final s = widget.stagione;
     _nomeController = TextEditingController(text: s?.nome ?? '');
     _obiettivoController = TextEditingController(text: s?.obiettivo ?? '');
-    _gruppoController = TextEditingController(text: s?.gruppo ?? '');
+    _gruppoId = s?.gruppoId;
     _campionatoController = TextEditingController(text: s?.campionato ?? '');
     final oggi = DateTime.now();
     _dataInizio = s?.dataInizio ?? DateTime(oggi.year, 9);
@@ -59,7 +61,6 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   void dispose() {
     _nomeController.dispose();
     _obiettivoController.dispose();
-    _gruppoController.dispose();
     _campionatoController.dispose();
     _dataInizioController.dispose();
     _dataFineController.dispose();
@@ -125,7 +126,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           campionato: _campionatoController.text.trim(),
         );
       } else {
@@ -135,7 +136,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           campionato: _campionatoController.text.trim(),
         );
       }
@@ -165,6 +166,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -215,9 +217,24 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
               maxLines: 2,
             ),
             const SizedBox(height: AppSpacing.s16),
-            AppTextField(
+            AppSelect<String?>(
               etichetta: 'Gruppo (facoltativo)',
-              controller: _gruppoController,
+              value: _gruppoId,
+              hint: 'Nessun gruppo',
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Nessun gruppo'),
+                ),
+                for (final g in gruppi)
+                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                if (_gruppoId != null && !gruppi.any((g) => g.id == _gruppoId))
+                  DropdownMenuItem(
+                    value: _gruppoId,
+                    child: const Text('Gruppo non trovato'),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _gruppoId = value),
             ),
             const SizedBox(height: AppSpacing.s16),
             AppTextField(

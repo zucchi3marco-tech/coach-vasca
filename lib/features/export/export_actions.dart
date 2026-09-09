@@ -16,6 +16,7 @@ Future<void> mostraMenuExport(
   BuildContext context, {
   required String titoloDocumento,
   required Future<List<AllenamentoConSerie>> Function() caricaDati,
+  Map<String, String> nomiGruppi = const {},
 }) async {
   final scelta = await showModalBottomSheet<String>(
     context: context,
@@ -51,9 +52,11 @@ Future<void> mostraMenuExport(
   }
 
   if (scelta == 'pdf') {
-    await Printing.layoutPdf(onLayout: (_) => generaPdf(dati));
+    await Printing.layoutPdf(
+      onLayout: (_) => generaPdf(dati, nomiGruppi: nomiGruppi),
+    );
   } else {
-    final csv = generaCsv(dati);
+    final csv = generaCsv(dati, nomiGruppi: nomiGruppi);
     if (!context.mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(

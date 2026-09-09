@@ -10,6 +10,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/macrocicli_providers.dart';
 import '../data/duplicazione_stagione_service.dart';
 import '../data/macrocicli_repository.dart';
@@ -53,6 +54,10 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
   Widget build(BuildContext context) {
     final stagione = widget.stagione;
     final macrocicliAsync = ref.watch(macrocicliListProvider(stagione.id));
+    final nomeGruppo = {
+      for (final g in ref.watch(gruppiListProvider(stagione.clubId)).value ?? [])
+        g.id: g.nome,
+    }[stagione.gruppoId];
 
     void apriNuovo() {
       final macrocicliAttuali =
@@ -205,7 +210,7 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
                 Text(
                   '${_formattaData(stagione.dataInizio)} — '
                   '${_formattaData(stagione.dataFine)}'
-                  '${stagione.gruppo != null && stagione.gruppo!.isNotEmpty ? ' · ${stagione.gruppo}' : ''}'
+                  '${nomeGruppo != null ? ' · $nomeGruppo' : ''}'
                   '${stagione.campionato != null && stagione.campionato!.isNotEmpty ? ' · ${stagione.campionato}' : ''}',
                   style: AppTypography.sezione,
                 ),

@@ -29,7 +29,7 @@ class StagioniRepository {
       dataInizio: row.dataInizio,
       dataFine: row.dataFine,
       obiettivo: row.obiettivo,
-      gruppo: row.gruppo,
+      gruppoId: row.gruppoId,
       campionato: row.campionato,
     );
   }
@@ -42,7 +42,7 @@ class StagioniRepository {
       dataInizio: DateTime.parse(map['data_inizio'] as String),
       dataFine: DateTime.parse(map['data_fine'] as String),
       obiettivo: Value(map['obiettivo'] as String?),
-      gruppo: Value(map['gruppo'] as String?),
+      gruppoId: Value(map['gruppo_id'] as String?),
       campionato: Value(map['campionato'] as String?),
     );
   }
@@ -85,7 +85,7 @@ class StagioniRepository {
     required DateTime dataInizio,
     required DateTime dataFine,
     String? obiettivo,
-    String? gruppo,
+    String? gruppoId,
     String? campionato,
   }) async {
     final id = _uuid.v4();
@@ -96,7 +96,7 @@ class StagioniRepository {
       'data_inizio': formatDateOnly(dataInizio),
       'data_fine': formatDateOnly(dataFine),
       if (obiettivo != null && obiettivo.isNotEmpty) 'obiettivo': obiettivo,
-      if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
+      'gruppo_id': ?gruppoId,
       if (campionato != null && campionato.isNotEmpty) 'campionato': campionato,
     };
     try {
@@ -131,7 +131,7 @@ class StagioniRepository {
     required DateTime dataInizio,
     required DateTime dataFine,
     String? obiettivo,
-    String? gruppo,
+    String? gruppoId,
     String? campionato,
   }) async {
     final payload = {
@@ -139,7 +139,7 @@ class StagioniRepository {
       'data_inizio': formatDateOnly(dataInizio),
       'data_fine': formatDateOnly(dataFine),
       'obiettivo': obiettivo,
-      'gruppo': gruppo,
+      'gruppo_id': gruppoId,
       'campionato': campionato,
     };
     try {
@@ -162,7 +162,7 @@ class StagioniRepository {
           dataInizio: Value(dataInizio),
           dataFine: Value(dataFine),
           obiettivo: Value(obiettivo),
-          gruppo: Value(gruppo),
+          gruppoId: Value(gruppoId),
           campionato: Value(campionato),
         ),
       );

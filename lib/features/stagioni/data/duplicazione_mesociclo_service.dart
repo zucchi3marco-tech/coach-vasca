@@ -72,7 +72,7 @@ class DuplicazioneMesocicloService {
           data: nuovoMicrociclo.dataInizio.add(Duration(days: offsetA)),
           microcicloId: nuovoMicrociclo.id,
           titolo: a.titolo,
-          gruppo: a.gruppo,
+          gruppoId: a.gruppoId,
           note: a.note,
         );
         final serie = await _serie.fetchPerAllenamento(a.id);

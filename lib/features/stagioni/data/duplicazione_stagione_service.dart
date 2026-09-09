@@ -40,7 +40,7 @@ class DuplicazioneStagioneService {
       dataInizio: nuovaDataInizio,
       dataFine: sorgente.dataFine.add(delta),
       obiettivo: sorgente.obiettivo,
-      gruppo: sorgente.gruppo,
+      gruppoId: sorgente.gruppoId,
       campionato: sorgente.campionato,
     );
 
@@ -85,7 +85,7 @@ class DuplicazioneStagioneService {
               data: a.data.add(delta),
               microcicloId: nuovoMicrociclo.id,
               titolo: a.titolo,
-              gruppo: a.gruppo,
+              gruppoId: a.gruppoId,
               note: a.note,
             );
             final serie = await _serie.fetchPerAllenamento(a.id);

@@ -16,6 +16,7 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/microcicli_providers.dart';
 import '../../stagioni/domain/microciclo.dart';
 import '../application/corsie_service.dart';
@@ -57,7 +58,7 @@ class _GeneraAllenamentoFormScreenState
   final _formKey = GlobalKey<FormState>();
   final _vincoliController = TextEditingController();
 
-  String? _gruppo;
+  String? _gruppoId;
   double _volumeMetri = 3000;
   String _livello = _livelli.first;
   String _focusSelezionato = _focus.first;
@@ -72,17 +73,7 @@ class _GeneraAllenamentoFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    final atletiAsync = ref.watch(
-      atletiListProvider((clubId: widget.clubId, includeInactive: false)),
-    );
-    final gruppi =
-        atletiAsync.value
-            ?.map((a) => a.gruppo)
-            .whereType<String>()
-            .where((g) => g.isNotEmpty)
-            .toSet()
-            .toList()
-          ?..sort();
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -109,17 +100,17 @@ class _GeneraAllenamentoFormScreenState
               campi: [
                 AppSelect<String?>(
                   etichetta: 'Gruppo',
-                  value: _gruppo,
+                  value: _gruppoId,
                   hint: 'Tutti gli atleti',
                   items: [
                     const DropdownMenuItem(
                       value: null,
                       child: Text('Tutti gli atleti'),
                     ),
-                    for (final g in gruppi ?? const <String>[])
-                      DropdownMenuItem(value: g, child: Text(g)),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
                   ],
-                  onChanged: (value) => setState(() => _gruppo = value),
+                  onChanged: (value) => setState(() => _gruppoId = value),
                 ),
                 AppSelect<String>(
                   etichetta: 'Livello',
@@ -225,9 +216,9 @@ class _GeneraAllenamentoFormScreenState
         atletiListProvider((clubId: widget.clubId, includeInactive: false))
             .future,
       );
-      final atletiDelGruppo = _gruppo == null
+      final atletiDelGruppo = _gruppoId == null
           ? tuttiGliAtleti
-          : tuttiGliAtleti.where((a) => a.gruppo == _gruppo).toList();
+          : tuttiGliAtleti.where((a) => a.gruppoId == _gruppoId).toList();
       corsie = await calcolaCorsie(ref, atletiDelGruppo);
     } catch (_) {
       // Le corsie migliorano la generazione (ripartenze sui passi reali),
@@ -235,8 +226,13 @@ class _GeneraAllenamentoFormScreenState
       // comunque, senza passi di riferimento.
     }
 
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.read(gruppiListProvider(widget.clubId)).value ?? [])
+        g.id: g.nome,
+    };
+
     final parametri = ParametriGenerazione(
-      gruppo: _gruppo ?? 'Tutti gli atleti',
+      gruppo: nomiGruppi[_gruppoId] ?? 'Tutti gli atleti',
       livello: _livello,
       volumeMetri: _volumeMetri.round(),
       focus: _focusSelezionato,
@@ -272,7 +268,7 @@ class _GeneraAllenamentoFormScreenState
         builder: (context) => _DialogSchedaGenerata(
           scheda: scheda,
           clubId: widget.clubId,
-          gruppo: parametri.gruppo,
+          gruppoId: _gruppoId,
           microcicloIniziale: widget.microcicloId,
           dataIniziale: widget.dataPredefinita,
           generazioneId: generazioneId,
@@ -313,7 +309,7 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
   const _DialogSchedaGenerata({
     required this.scheda,
     required this.clubId,
-    required this.gruppo,
+    required this.gruppoId,
     this.microcicloIniziale,
     this.dataIniziale,
     this.generazioneId,
@@ -321,7 +317,7 @@ class _DialogSchedaGenerata extends ConsumerStatefulWidget {
 
   final SchedaGenerata scheda;
   final String clubId;
-  final String gruppo;
+  final String? gruppoId;
   final String? microcicloIniziale;
   final DateTime? dataIniziale;
 
@@ -494,7 +490,7 @@ class _DialogSchedaGeneratedState extends ConsumerState<_DialogSchedaGenerata> {
             data: _data,
             microcicloId: _microcicloId,
             titolo: scheda.titolo,
-            gruppo: widget.gruppo,
+            gruppoId: widget.gruppoId,
             note: scheda.note,
           );
       final serieRepository = ref.read(serieRepositoryProvider);

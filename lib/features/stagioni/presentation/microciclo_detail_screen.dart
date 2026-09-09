@@ -20,6 +20,7 @@ import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../export/csv_export.dart' show AllenamentoConSerie;
 import '../../export/export_actions.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/microcicli_providers.dart';
 import '../data/duplicazione_settimana_service.dart';
 import '../data/microcicli_repository.dart';
@@ -106,11 +107,16 @@ class MicrocicloDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _esportaSettimana(BuildContext context, WidgetRef ref) async {
+  Future<void> _esportaSettimana(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, String> nomiGruppi,
+  ) async {
     final filter = (clubId: microciclo.clubId, microcicloId: microciclo.id);
     await mostraMenuExport(
       context,
       titoloDocumento: _titolo,
+      nomiGruppi: nomiGruppi,
       caricaDati: () async {
         final allenamenti =
             ref.read(allenamentiPerMicrocicloProvider(filter)).value ?? [];
@@ -151,6 +157,10 @@ class MicrocicloDetailScreen extends ConsumerWidget {
     final allenamentiAsync = ref.watch(
       allenamentiPerMicrocicloProvider(filter),
     );
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(microciclo.clubId)).value ?? [])
+        g.id: g.nome,
+    };
     final fratelli =
         ref.watch(microcicliListProvider(microciclo.mesocicloId)).value ?? [];
     final indiceAttuale = fratelli.indexWhere((m) => m.id == microciclo.id);
@@ -191,7 +201,7 @@ class MicrocicloDetailScreen extends ConsumerWidget {
                 ),
               ),
               PopupMenuItem(
-                value: () => _esportaSettimana(context, ref),
+                value: () => _esportaSettimana(context, ref, nomiGruppi),
                 child: const _VoceMenu(
                   icona: Icons.ios_share,
                   etichetta: 'Esporta settimana',
@@ -288,7 +298,7 @@ class MicrocicloDetailScreen extends ConsumerWidget {
                                   : 'Allenamento',
                               sottotitolo:
                                   '${_formattaData(a.data)}'
-                                  '${a.gruppo != null && a.gruppo!.isNotEmpty ? ' · ${a.gruppo}' : ''}',
+                                  '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute(

@@ -7,7 +7,7 @@ import '../domain/codice_gruppo.dart';
 
 /// Gruppo e nome del club a cui appartiene un codice di gruppo, per la
 /// conferma prima della registrazione.
-typedef GruppoInvitato = ({String gruppo, String clubNome});
+typedef GruppoInvitato = ({String gruppoNome, String clubNome});
 
 /// Codici riutilizzabili per registrare più atleti dello stesso gruppo
 /// in una volta sola (FASE 9). Online-only, come InvitiAtletaRepository:
@@ -20,11 +20,11 @@ class CodiciGruppoRepository {
 
   Future<String> generaCodice({
     required String clubId,
-    required String gruppo,
+    required String gruppoId,
   }) async {
     final risultato = await _client.rpc(
       'genera_codice_gruppo',
-      params: {'p_club_id': clubId, 'p_gruppo': gruppo},
+      params: {'p_club_id': clubId, 'p_gruppo_id': gruppoId},
     );
     return risultato as String;
   }
@@ -32,7 +32,7 @@ class CodiciGruppoRepository {
   Future<List<CodiceGruppo>> elencoPerClub(String clubId) async {
     final righe = await _client
         .from('codici_gruppo')
-        .select()
+        .select('*, gruppi(nome)')
         .eq('club_id', clubId)
         .order('creato_il', ascending: false);
     return righe.map(CodiceGruppo.fromMap).toList();
@@ -50,7 +50,10 @@ class CodiciGruppoRepository {
             as List;
     if (righe.isEmpty) return null;
     final riga = righe.first as Map<String, dynamic>;
-    return (gruppo: riga['gruppo'] as String, clubNome: riga['club_nome'] as String);
+    return (
+      gruppoNome: riga['gruppo_nome'] as String,
+      clubNome: riga['club_nome'] as String,
+    );
   }
 
   /// Da chiamare subito dopo la signUp(): crea il record atleti (non

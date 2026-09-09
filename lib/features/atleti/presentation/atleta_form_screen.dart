@@ -10,6 +10,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 
@@ -28,7 +29,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   late final TextEditingController _nomeController;
   late final TextEditingController _cognomeController;
   late final TextEditingController _dataNascitaController;
-  late final TextEditingController _gruppoController;
+  String? _gruppoId;
   late final TextEditingController _emailGenitoreController;
   late final TextEditingController _telefonoGenitoreController;
   late final TextEditingController _noteController;
@@ -56,7 +57,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _dataNascitaController = TextEditingController(
       text: _formattaData(_dataNascita),
     );
-    _gruppoController = TextEditingController(text: atleta?.gruppo ?? '');
+    _gruppoId = atleta?.gruppoId;
     _emailGenitoreController = TextEditingController(
       text: atleta?.emailGenitore ?? '',
     );
@@ -81,7 +82,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _nomeController.dispose();
     _cognomeController.dispose();
     _dataNascitaController.dispose();
-    _gruppoController.dispose();
     _emailGenitoreController.dispose();
     _telefonoGenitoreController.dispose();
     _noteController.dispose();
@@ -152,7 +152,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           dataNascita: _dataNascita!,
           sesso: _sesso,
           sport: _sport,
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           emailGenitore: _emailGenitoreController.text.trim(),
           telefonoGenitore: _telefonoGenitoreController.text.trim(),
           consensoPrivacyFirmato: _consensoPrivacy,
@@ -169,7 +169,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           dataNascita: _dataNascita!,
           sesso: _sesso,
           sport: _sport,
-          gruppo: _gruppoController.text.trim(),
+          gruppoId: _gruppoId,
           emailGenitore: _emailGenitoreController.text.trim(),
           telefonoGenitore: _telefonoGenitoreController.text.trim(),
           consensoPrivacyFirmato: _consensoPrivacy,
@@ -235,6 +235,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -302,9 +303,27 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                     etichetta: 'N. tessera FIN (facoltativo)',
                     controller: _numeroTesseraFinController,
                   ),
-                AppTextField(
+                AppSelect<String?>(
                   etichetta: 'Gruppo (facoltativo)',
-                  controller: _gruppoController,
+                  value: _gruppoId,
+                  hint: 'Nessun gruppo',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Nessun gruppo'),
+                    ),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    // Un gruppo assegnato ma non (ancora) nell'elenco
+                    // caricato deve restare rappresentabile.
+                    if (_gruppoId != null &&
+                        !gruppi.any((g) => g.id == _gruppoId))
+                      DropdownMenuItem(
+                        value: _gruppoId,
+                        child: const Text('Gruppo non trovato'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _gruppoId = value),
                 ),
                 AppTextField(
                   etichetta: 'Scadenza visita medica (facoltativo)',

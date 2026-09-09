@@ -24,7 +24,7 @@ class AtletiTable extends Table {
   DateTimeColumn get dataNascita => dateTime()();
   TextColumn get sesso => text().nullable()();
   TextColumn get sport => text()();
-  TextColumn get gruppo => text().nullable()();
+  TextColumn get gruppoId => text().nullable()();
   TextColumn get emailGenitore => text().nullable()();
   TextColumn get telefonoGenitore => text().nullable()();
   BoolColumn get consensoPrivacyFirmato =>
@@ -91,8 +91,18 @@ class StagioniTable extends Table {
   DateTimeColumn get dataInizio => dateTime()();
   DateTimeColumn get dataFine => dateTime()();
   TextColumn get obiettivo => text().nullable()();
-  TextColumn get gruppo => text().nullable()();
+  TextColumn get gruppoId => text().nullable()();
   TextColumn get campionato => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class GruppiTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  IntColumn get ordine => integer().withDefault(const Constant(1))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -147,7 +157,7 @@ class AllenamentiTable extends Table {
   TextColumn get microcicloId => text().nullable()();
   DateTimeColumn get data => dateTime()();
   TextColumn get titolo => text().nullable()();
-  TextColumn get gruppo => text().nullable()();
+  TextColumn get gruppoId => text().nullable()();
   TextColumn get note => text().nullable()();
 
   @override

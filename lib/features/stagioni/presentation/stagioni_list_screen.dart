@@ -9,6 +9,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/stagioni_providers.dart';
 import '../data/stagioni_repository.dart';
 import 'stagione_detail_screen.dart';
@@ -27,6 +28,10 @@ class StagioniListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stagioniAsync = ref.watch(stagioniListProvider(clubId));
+    final Map<String, String> nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(clubId)).value ?? [])
+        g.id: g.nome,
+    };
 
     return AppScaffold(
       body: RefreshIndicator(
@@ -63,7 +68,7 @@ class StagioniListScreen extends ConsumerWidget {
                           sottotitolo:
                               '${_formattaData(s.dataInizio)} — '
                               '${_formattaData(s.dataFine)}'
-                              '${s.gruppo != null && s.gruppo!.isNotEmpty ? ' · ${s.gruppo}' : ''}'
+                              '${nomiGruppi[s.gruppoId] != null ? ' · ${nomiGruppi[s.gruppoId]}' : ''}'
                               '${s.campionato != null && s.campionato!.isNotEmpty ? ' · ${s.campionato}' : ''}',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(

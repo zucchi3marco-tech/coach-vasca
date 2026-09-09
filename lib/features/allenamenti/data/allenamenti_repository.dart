@@ -28,7 +28,7 @@ class AllenamentiRepository {
       microcicloId: row.microcicloId,
       data: row.data,
       titolo: row.titolo,
-      gruppo: row.gruppo,
+      gruppoId: row.gruppoId,
       note: row.note,
     );
   }
@@ -40,7 +40,7 @@ class AllenamentiRepository {
       microcicloId: Value(map['microciclo_id'] as String?),
       data: DateTime.parse(map['data'] as String),
       titolo: Value(map['titolo'] as String?),
-      gruppo: Value(map['gruppo'] as String?),
+      gruppoId: Value(map['gruppo_id'] as String?),
       note: Value(map['note'] as String?),
     );
   }
@@ -112,7 +112,7 @@ class AllenamentiRepository {
     required DateTime data,
     String? microcicloId,
     String? titolo,
-    String? gruppo,
+    String? gruppoId,
     String? note,
   }) async {
     final id = _uuid.v4();
@@ -122,7 +122,7 @@ class AllenamentiRepository {
       'data': formatDateOnly(data),
       'microciclo_id': ?microcicloId,
       if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
-      if (gruppo != null && gruppo.isNotEmpty) 'gruppo': gruppo,
+      'gruppo_id': ?gruppoId,
       if (note != null && note.isNotEmpty) 'note': note,
     };
     try {
@@ -156,14 +156,14 @@ class AllenamentiRepository {
     required DateTime data,
     String? microcicloId,
     String? titolo,
-    String? gruppo,
+    String? gruppoId,
     String? note,
   }) async {
     final payload = {
       'data': formatDateOnly(data),
       'microciclo_id': microcicloId,
       'titolo': titolo,
-      'gruppo': gruppo,
+      'gruppo_id': gruppoId,
       'note': note,
     };
     try {
@@ -185,7 +185,7 @@ class AllenamentiRepository {
           data: Value(data),
           microcicloId: Value(microcicloId),
           titolo: Value(titolo),
-          gruppo: Value(gruppo),
+          gruppoId: Value(gruppoId),
           note: Value(note),
         ),
       );

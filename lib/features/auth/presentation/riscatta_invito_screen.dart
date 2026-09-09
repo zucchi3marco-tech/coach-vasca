@@ -219,7 +219,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                 _Passo.confermaGruppo => _PassoConferma(
                   testo:
                       'Stai per registrarti nel gruppo '
-                      '${_gruppoInvitato!.gruppo} di '
+                      '${_gruppoInvitato!.gruppoNome} di '
                       '${_gruppoInvitato!.clubNome}.',
                   onContinua: () => setState(() => _passo = _Passo.anagrafica),
                   onAnnulla: () => setState(() {

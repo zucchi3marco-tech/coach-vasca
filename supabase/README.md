@@ -22,6 +22,8 @@ o per essere incollate in ordine nel SQL Editor del progetto Supabase.
   ne diventa automaticamente `owner`.
 - `atleti` — anagrafica atleti, con campi di consenso privacy (dato che sono
   spesso minorenni).
+- `gruppi` — gruppi di allenamento del club, referenziati da `atleti`,
+  `allenamenti`, `stagioni` e `codici_gruppo` (`gruppo_id`).
 - `test_ingresso`, `tabelle_passi` — test BVS/T30 e le zone di passo (A1, A2,
   B1, B2, C, D) derivate da ciascun test.
 - `stagioni` → `macrocicli` → `mesocicli` → `microcicli` — gerarchia di
@@ -53,5 +55,3 @@ solo dalla RLS.
 - Vincoli di coerenza date tra stagione/macro/meso/micro (es. un microciclo
   interamente contenuto nel suo mesociclo) — lasciati alla validazione
   applicativa in V1.
-- Tabella `gruppi` dedicata: per ora `gruppo` e' un campo testo libero su
-  `atleti`, `stagioni` e `allenamenti`.
