@@ -63,7 +63,8 @@ class StagioniListScreen extends ConsumerWidget {
                           sottotitolo:
                               '${_formattaData(s.dataInizio)} — '
                               '${_formattaData(s.dataFine)}'
-                              '${s.gruppo != null && s.gruppo!.isNotEmpty ? ' · ${s.gruppo}' : ''}',
+                              '${s.gruppo != null && s.gruppo!.isNotEmpty ? ' · ${s.gruppo}' : ''}'
+                              '${s.campionato != null && s.campionato!.isNotEmpty ? ' · ${s.campionato}' : ''}',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(

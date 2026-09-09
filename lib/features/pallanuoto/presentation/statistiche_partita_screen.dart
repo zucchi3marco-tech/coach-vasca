@@ -153,7 +153,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
                         e.tipo == 'tiro' && e.posX != null && e.posY != null,
                   )) ...[
                     const SizedBox(height: AppSpacing.s24),
-                    SectionHeader('Mappa di calore dei tiri'),
+                    SectionHeader('Shot chart dei tiri'),
                     const SizedBox(height: AppSpacing.s16),
                     CampoTiro(
                       punti: [

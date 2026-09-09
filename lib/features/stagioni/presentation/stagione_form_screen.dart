@@ -6,11 +6,11 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
-import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/stagione.dart';
+import 'elimina_dialogs.dart';
 
 class StagioneFormScreen extends ConsumerStatefulWidget {
   const StagioneFormScreen({required this.clubId, this.stagione, super.key});
@@ -150,28 +150,12 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   }
 
   Future<void> _elimina() async {
-    final conferma = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminare la stagione?'),
-        content: const Text(
-          'Verranno eliminati anche macrocicli, mesocicli e microcicli '
-          'collegati.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          DangerButton(
-            label: 'Elimina',
-            expanded: false,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+    final conferma = await confermaEliminaStagione(
+      context,
+      ref,
+      widget.stagione!,
     );
-    if (conferma == true) {
+    if (conferma) {
       await ref
           .read(stagioniRepositoryProvider)
           .deleteStagione(widget.stagione!.id);

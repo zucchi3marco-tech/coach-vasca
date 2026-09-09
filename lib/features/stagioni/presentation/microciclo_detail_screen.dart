@@ -8,6 +8,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/breadcrumb_bar.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -19,14 +20,28 @@ import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../export/csv_export.dart' show AllenamentoConSerie;
 import '../../export/export_actions.dart';
+import '../application/microcicli_providers.dart';
 import '../data/duplicazione_settimana_service.dart';
+import '../data/microcicli_repository.dart';
 import '../domain/microciclo.dart';
+import 'elimina_dialogs.dart';
 import 'microciclo_form_screen.dart';
 
 class MicrocicloDetailScreen extends ConsumerWidget {
-  const MicrocicloDetailScreen({required this.microciclo, super.key});
+  const MicrocicloDetailScreen({
+    required this.microciclo,
+    required this.nomeStagione,
+    required this.nomeMacrociclo,
+    required this.nomeMesociclo,
+    super.key,
+  });
 
   final Microciclo microciclo;
+
+  /// Solo per la breadcrumb — vedi `MacrocicloDetailScreen.nomeStagione`.
+  final String nomeStagione;
+  final String nomeMacrociclo;
+  final String nomeMesociclo;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -74,7 +89,12 @@ class MicrocicloDetailScreen extends ConsumerWidget {
       if (!context.mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => MicrocicloDetailScreen(microciclo: nuovoMicrociclo),
+          builder: (_) => MicrocicloDetailScreen(
+            microciclo: nuovoMicrociclo,
+            nomeStagione: nomeStagione,
+            nomeMacrociclo: nomeMacrociclo,
+            nomeMesociclo: nomeMesociclo,
+          ),
         ),
       );
     } catch (e) {
@@ -104,12 +124,56 @@ class MicrocicloDetailScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _elimina(BuildContext context, WidgetRef ref) async {
+    final allenamenti =
+        ref.read(
+          allenamentiPerMicrocicloProvider((
+            clubId: microciclo.clubId,
+            microcicloId: microciclo.id,
+          )),
+        ).value ??
+        const [];
+    final conferma = await confermaEliminaMicrociclo(
+      context,
+      allenamenti.length,
+    );
+    if (conferma) {
+      await ref
+          .read(microcicliRepositoryProvider)
+          .deleteMicrociclo(microciclo.id);
+      if (context.mounted) Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = (clubId: microciclo.clubId, microcicloId: microciclo.id);
     final allenamentiAsync = ref.watch(
       allenamentiPerMicrocicloProvider(filter),
     );
+    final fratelli =
+        ref.watch(microcicliListProvider(microciclo.mesocicloId)).value ?? [];
+    final indiceAttuale = fratelli.indexWhere((m) => m.id == microciclo.id);
+    final precedente = indiceAttuale > 0
+        ? fratelli[indiceAttuale - 1]
+        : null;
+    final successivo =
+        indiceAttuale >= 0 && indiceAttuale < fratelli.length - 1
+        ? fratelli[indiceAttuale + 1]
+        : null;
+
+    void vaiAlFratello(Microciclo m) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => MicrocicloDetailScreen(
+            microciclo: m,
+            nomeStagione: nomeStagione,
+            nomeMacrociclo: nomeMacrociclo,
+            nomeMesociclo: nomeMesociclo,
+          ),
+        ),
+      );
+    }
 
     return AppScaffold(
       appBar: AppBar(
@@ -148,12 +212,41 @@ class MicrocicloDetailScreen extends ConsumerWidget {
                   etichetta: 'Modifica',
                 ),
               ),
+              PopupMenuItem(
+                value: () => _elimina(context, ref),
+                child: const _VoceMenu(
+                  icona: Icons.delete_outline,
+                  etichetta: 'Elimina',
+                  colore: AppColors.rosso,
+                ),
+              ),
             ],
           ),
         ],
       ),
       body: Column(
         children: [
+          BreadcrumbBar(
+            tappe: [nomeStagione, nomeMacrociclo, nomeMesociclo, _titolo],
+            trailing: Row(
+              children: [
+                IconButton(
+                  onPressed: precedente == null
+                      ? null
+                      : () => vaiAlFratello(precedente),
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: 'Settimana precedente',
+                ),
+                IconButton(
+                  onPressed: successivo == null
+                      ? null
+                      : () => vaiAlFratello(successivo),
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: 'Settimana successiva',
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.s16),
             child: Text(
@@ -279,18 +372,20 @@ class MicrocicloDetailScreen extends ConsumerWidget {
 }
 
 class _VoceMenu extends StatelessWidget {
-  const _VoceMenu({required this.icona, required this.etichetta});
+  const _VoceMenu({required this.icona, required this.etichetta, this.colore});
 
   final IconData icona;
   final String etichetta;
+  final Color? colore;
 
   @override
   Widget build(BuildContext context) {
+    final effettivo = colore ?? AppColors.testoSecondario;
     return Row(
       children: [
-        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        Icon(icona, size: 20, color: effettivo),
         const SizedBox(width: AppSpacing.s12),
-        Text(etichetta, style: AppTypography.corpo),
+        Text(etichetta, style: AppTypography.corpo.copyWith(color: colore)),
       ],
     );
   }

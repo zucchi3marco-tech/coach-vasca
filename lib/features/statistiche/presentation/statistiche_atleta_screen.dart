@@ -217,7 +217,7 @@ class _SezioneMappaTiri extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader('Mappa di calore dei tiri'),
+        SectionHeader('Shot chart dei tiri'),
         const SizedBox(height: AppSpacing.s16),
         tiriAsync.when(
           data: (tiri) {

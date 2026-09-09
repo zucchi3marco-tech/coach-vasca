@@ -6,11 +6,11 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
-import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/mesocicli_repository.dart';
 import '../domain/mesociclo.dart';
+import 'elimina_dialogs.dart';
 
 class MesocicloFormScreen extends ConsumerStatefulWidget {
   const MesocicloFormScreen({
@@ -32,7 +32,7 @@ class MesocicloFormScreen extends ConsumerStatefulWidget {
 class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
-  late final TextEditingController _ordineController;
+  late final int _ordine;
   late final TextEditingController _obiettivoController;
   late final TextEditingController _dataInizioController;
   late final TextEditingController _dataFineController;
@@ -49,9 +49,7 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
     super.initState();
     final m = widget.mesociclo;
     _nomeController = TextEditingController(text: m?.nome ?? '');
-    _ordineController = TextEditingController(
-      text: (m?.ordine ?? widget.ordineSuccessivo).toString(),
-    );
+    _ordine = m?.ordine ?? widget.ordineSuccessivo;
     _obiettivoController = TextEditingController(text: m?.obiettivo ?? '');
     final oggi = DateTime.now();
     _dataInizio = m?.dataInizio ?? oggi;
@@ -67,7 +65,6 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
   @override
   void dispose() {
     _nomeController.dispose();
-    _ordineController.dispose();
     _obiettivoController.dispose();
     _dataInizioController.dispose();
     _dataFineController.dispose();
@@ -125,13 +122,12 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
     });
 
     final repository = ref.read(mesocicliRepositoryProvider);
-    final ordine = int.parse(_ordineController.text.trim());
     try {
       if (_isEditing) {
         await repository.updateMesociclo(
           id: widget.mesociclo!.id,
           nome: _nomeController.text.trim(),
-          ordine: ordine,
+          ordine: _ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
@@ -140,7 +136,7 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
         await repository.createMesociclo(
           macrocicloId: widget.macrocicloId,
           nome: _nomeController.text.trim(),
-          ordine: ordine,
+          ordine: _ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
@@ -157,25 +153,12 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
   }
 
   Future<void> _elimina() async {
-    final conferma = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminare il mesociclo?'),
-        content: const Text('Verranno eliminati anche i microcicli collegati.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          DangerButton(
-            label: 'Elimina',
-            expanded: false,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+    final conferma = await confermaEliminaMesociclo(
+      context,
+      ref,
+      widget.mesociclo!,
     );
-    if (conferma == true) {
+    if (conferma) {
       await ref
           .read(mesocicliRepositoryProvider)
           .deleteMesociclo(widget.mesociclo!.id);
@@ -211,14 +194,6 @@ class _MesocicloFormScreenState extends ConsumerState<MesocicloFormScreen> {
               controller: _nomeController,
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Ordine',
-              controller: _ordineController,
-              keyboardType: TextInputType.number,
-              validator: (v) =>
-                  int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
             ),
             const SizedBox(height: AppSpacing.s16),
             AppTextField(

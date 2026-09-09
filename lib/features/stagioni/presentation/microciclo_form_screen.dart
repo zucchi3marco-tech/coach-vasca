@@ -7,12 +7,13 @@ import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
-import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../allenamenti/data/allenamenti_repository.dart';
 import '../data/microcicli_repository.dart';
 import '../domain/microciclo.dart';
+import 'elimina_dialogs.dart';
 
 /// Tipi di microciclo proposti nel menu a tendina (FASE 10): il campo era
 /// testo libero con solo un suggerimento in etichetta, ora è una scelta
@@ -42,7 +43,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _numeroSettimanaController;
-  late final TextEditingController _ordineController;
+  late final int _ordine;
   late String? _tipo;
   late final TextEditingController _dataInizioController;
   late final TextEditingController _dataFineController;
@@ -62,9 +63,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     _numeroSettimanaController = TextEditingController(
       text: m?.numeroSettimana?.toString() ?? '',
     );
-    _ordineController = TextEditingController(
-      text: (m?.ordine ?? widget.ordineSuccessivo).toString(),
-    );
+    _ordine = m?.ordine ?? widget.ordineSuccessivo;
     _tipo = m?.tipo;
     final oggi = DateTime.now();
     _dataInizio = m?.dataInizio ?? oggi;
@@ -79,7 +78,6 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
   void dispose() {
     _nomeController.dispose();
     _numeroSettimanaController.dispose();
-    _ordineController.dispose();
     _dataInizioController.dispose();
     _dataFineController.dispose();
     super.dispose();
@@ -136,7 +134,6 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
     });
 
     final repository = ref.read(microcicliRepositoryProvider);
-    final ordine = int.parse(_ordineController.text.trim());
     final numeroSettimana = int.tryParse(
       _numeroSettimanaController.text.trim(),
     );
@@ -146,7 +143,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
           id: widget.microciclo!.id,
           nome: _nomeController.text.trim(),
           numeroSettimana: numeroSettimana,
-          ordine: ordine,
+          ordine: _ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           tipo: _tipo,
@@ -156,7 +153,7 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
           mesocicloId: widget.mesocicloId,
           nome: _nomeController.text.trim(),
           numeroSettimana: numeroSettimana,
-          ordine: ordine,
+          ordine: _ordine,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           tipo: _tipo,
@@ -173,28 +170,15 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
   }
 
   Future<void> _elimina() async {
-    final conferma = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminare il microciclo?'),
-        content: const Text(
-          'Gli eventuali allenamenti collegati non verranno eliminati, '
-          'resteranno solo senza microciclo.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          DangerButton(
-            label: 'Elimina',
-            expanded: false,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+    final allenamenti = await ref
+        .read(allenamentiRepositoryProvider)
+        .fetchPerMicrociclo(widget.microciclo!.id);
+    if (!mounted) return;
+    final conferma = await confermaEliminaMicrociclo(
+      context,
+      allenamenti.length,
     );
-    if (conferma == true) {
+    if (conferma) {
       await ref
           .read(microcicliRepositoryProvider)
           .deleteMicrociclo(widget.microciclo!.id);
@@ -232,26 +216,10 @@ class _MicrocicloFormScreenState extends ConsumerState<MicrocicloFormScreen> {
                   etichetta: 'Nome (facoltativo)',
                   controller: _nomeController,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'N. settimana (facoltativo)',
-                        controller: _numeroSettimanaController,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Ordine',
-                        controller: _ordineController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) =>
-                            int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
-                      ),
-                    ),
-                  ],
+                AppTextField(
+                  etichetta: 'N. settimana (facoltativo)',
+                  controller: _numeroSettimanaController,
+                  keyboardType: TextInputType.number,
                 ),
               ],
             ),

@@ -298,7 +298,7 @@ class _SezioneEventi extends ConsumerWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.s24),
-              SectionHeader('Mappa di calore dei tiri'),
+              SectionHeader('Shot chart dei tiri'),
               const SizedBox(height: AppSpacing.s16),
               tiriMappaAsync.when(
                 data: (tiri) => tiri.isEmpty

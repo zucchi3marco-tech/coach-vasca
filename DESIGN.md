@@ -434,7 +434,9 @@ I token di dominio (zone, calottine, "in corso") non stanno in `ColorScheme`: va
 
 Vivono in `lib/widgets/`. Una schermata nuova si compone con questi, non ricostruisce nulla da zero:
 
-`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`.
+`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`.
+
+`ReorderableAppListPanel` (in `app_list_panel.dart`) è la variante di `AppListPanel` con le righe trascinabili — usata dove l'ordine lo decide il coach (macrocicli/mesocicli/microcicli di una stagione) invece di un campo "Ordine" digitato a mano. `BreadcrumbBar` mostra la catena di livelli di una gerarchia annidata (es. Stagione › Macrociclo › Mesociclo) con ogni tappa cliccabile per risalire di più livelli in un colpo, senza introdurre nuove route.
 
 Se serve un componente nuovo, si aggiunge qui e si documenta in questo file. Non si scrive un widget su misura dentro una singola schermata.
 
