@@ -21,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.obscureText = false,
     this.autofillHints,
     this.onFieldSubmitted,
+    this.onChanged,
     super.key,
   });
 
@@ -40,6 +41,7 @@ class AppTextField extends StatelessWidget {
   final bool obscureText;
   final Iterable<String>? autofillHints;
   final ValueChanged<String>? onFieldSubmitted;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,7 @@ class AppTextField extends StatelessWidget {
           obscureText: obscureText,
           autofillHints: autofillHints,
           onFieldSubmitted: onFieldSubmitted,
+          onChanged: onChanged,
           style: AppTypography.corpo.copyWith(color: AppColors.testo),
           decoration: InputDecoration(
             helperText: aiuto,

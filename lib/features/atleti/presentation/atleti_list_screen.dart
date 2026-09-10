@@ -9,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -58,11 +59,9 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Cerca per cognome o nome',
-                    prefixIcon: Icon(Icons.search),
-                  ),
+                child: AppTextField(
+                  etichetta: 'Cerca per cognome o nome',
+                  suffixIcon: const Icon(Icons.search),
                   onChanged: (value) => setState(() => _ricerca = value),
                 ),
               ),

@@ -7,6 +7,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -284,13 +285,10 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
             AppSpacing.s16,
             0,
           ),
-          child: TextField(
+          child: AppTextField(
+            etichetta: 'Cerca macrociclo per nome',
             controller: _ricercaController,
-            decoration: const InputDecoration(
-              hintText: 'Cerca macrociclo per nome',
-              prefixIcon: Icon(Icons.search),
-              isDense: true,
-            ),
+            suffixIcon: const Icon(Icons.search),
             onChanged: (value) => setState(() => _ricerca = value),
           ),
         ),
