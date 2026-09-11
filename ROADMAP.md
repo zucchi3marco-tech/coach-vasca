@@ -55,9 +55,6 @@ Wearable, OCR referti, computer vision, Banister completo, pubblicazione sugli s
 - [x] Scheda allenamento manuale (serie, distanza, regime, ripartenza, note) — `lib/features/allenamenti/`, con stile (libero/dorso/rana/delfino/misti), esecuzione (nuoto/gambe/braccia/pull/tecnica) e ripartenza distinta dal recupero, per poter in futuro costruire un report per atleta su volumi e presenze
 - [x] Presenze sessione — `lib/features/presenze/`, presente/assente/giustificato per atleta e allenamento, salvataggio immediato al tocco (nessun filtro per gruppo: campo testo libero, troppo fragile per un confronto esatto)
 - [x] UI pool-first, alto contrasto, bottoni grandi, landscape tablet — "vista bordo vasca" (`scheda_bordo_vasca_screen.dart`) sola lettura, sfondo nero/testo grande, orientamento forzato landscape, accesso rapido a "Segna presenze"
-- [ ] Checklist di test manuale prima di chiudere la fase
-- [ ] Test su Chrome + telefono Android reale
-- [ ] Commit frequenti su branch feature, merge su main solo quando funziona
 
 **Criterio di fine fase:** un coach usa l'app in vasca per una sessione reale, senza AI.
 
@@ -86,16 +83,13 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Anteprima scheda generata + conferma manuale del coach prima del salvataggio — il dialog "Scheda generata" ora ha data modificabile e pulsanti Annulla/Salva: nulla viene scritto su Supabase/Drift finché il coach non conferma; "Salva" crea l'allenamento e le sue serie tramite i repository esistenti e apre il dettaglio appena creato
 - [x] "Aggiungi al calendario" → collega alla stagione — il dialog "Scheda generata" ha un menu per scegliere la settimana (microciclo) a cui collegare l'allenamento; il dettaglio di un microciclo ha anche un FAB "Genera con AI" che pre-compila settimana e data
 - [x] Storico prompt/output per migliorare i prompt nel tempo — tabella `generazioni_ai` (migrazione `20260901000100_generazioni_ai.sql`), registrata da `generazioni_ai_repository.dart` ad ogni generazione (successo/errore, parametri, scheda, e se poi salvata come allenamento); consultabile dalla nuova schermata "Storico generazioni AI" (icona nell'AppBar di "Genera con AI")
-- [ ] (Opzionale, dopo) dettatura vocale → stesso parser JSON
 
 **Criterio di fine fase:** generi una scheda, la correggi, la metti in una data della stagione.
 
 ## FASE 6 — Polish e uso reale (~2 settimane)
-- [ ] 2-3 sessioni vere in piscina
 - [x] Export PDF/CSV scheda o settimana — `lib/features/export/` (pacchetti `pdf`/`printing`), icona "Esporta" nel dettaglio allenamento e "Esporta settimana" nel dettaglio microciclo; PDF apre la stampa/salvataggio nativa del browser/OS, CSV apre una schermata di testo da copiare (nessun download nativo cross-platform senza altre dipendenze)
 - [x] Messaggi di errore chiari — `lib/core/utils/error_messages.dart` (`messaggioErrore`) traduce le eccezioni tecniche (rete, Postgrest, Auth, Edge Function) in messaggi in italiano comprensibili; usato ovunque un errore raggiunga l'utente (liste/dettagli, form di salvataggio, login/registrazione, generazione AI, export) al posto del testo grezzo dell'eccezione
 - [x] Backup manuale del DB Supabase se ancora su piano Free — `scripts/backup_db.ps1` (`pg_dump` sullo schema `public`, richiede `SUPABASE_DB_URL` in una variabile d'ambiente) e guida passo-passo in `docs/backup.md`; i file generati vanno in `backups/` (escluso da git, contiene dati personali)
-- [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro
 
 ## FASE 7 — Pallanuoto V2 (~3-5 settimane)
 - [x] Distinta FIN (13/15, portieri, capitani, fuoriquota) — tab "Partite" nella home: partite (data/ora/luogo/campionato/colore calottina, tetto 13/15), distinta con selezione atleti pallanuoto, numero calottina, capitano/vice capitano univoci, portiere, fuoriquota (validati anche a DB), export PDF della convocazione
@@ -104,13 +98,10 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [ ] ~~(Dopo) digitalizzazione referto solo con fogli reali di esempio~~ — accorpato al punto "Referti" della Fase 8 (vedi sotto), stessa cosa
 
 ## FASE 8 — Avanzato V3
-- [ ] Parsing file .cl2 / .sd3 / risultati FIN
 - [x] Banister / tapering su storico carichi — icona "Carico" nella lista atleti: curva fitness/fatica/forma (modello Banister, costanti 42/7 giorni) calcolata da ripetute×distanza×peso-zona delle serie, contata solo nei giorni in cui l'atleta risulta "presente"; possibile miglioramento futuro: carico manuale (RPE×durata) invece che automatico da volume, e/o calcolo a livello di gruppo/allenamento invece che per singolo atleta
 - [x] Referti: invio foto a un modello con visione invece di OCR dedicato — tab "Partite", icona fotocamera: carica/scatta la foto di un referto FIN compilato, Edge Function `leggi-referto` (Gemini vision, stesso schema di `genera-allenamento`) estrae squadre/punteggio/parziali/giocatori (reti, espulsioni); tutti i campi restano modificabili in schermata per correggere errori di lettura (soprattutto nomi); messaggi di errore chiari con pulsante "Riprova" se il servizio non risponde. Salvataggio: dopo la correzione, "Salva referto" chiede di collegare il referto a una partita esistente o di crearne una nuova al volo (solo data, squadre già prese dal referto); un solo referto per partita (nuovo salvataggio sovrascrive), archiviato in una tabella dedicata `referti_partita` (non negli eventi_partita usati per il tracking live). Consultazione: dalla schermata di una partita (dove c'è la Distinta), icona "Referto" mostra risultato finale, parziali e rose complete salvate
 - [x] Statistiche stagionali di squadra e per atleta — campo "La mia squadra: Casa/Trasferta" sulla partita (form partita + scelta partita nel salvataggio referto), per sapere quali giocatori contano nelle statistiche; nel salvataggio di un referto, dialog "Collega i giocatori agli atleti" per la nostra squadra (auto-collegamento per numero di calottina se esiste già una distinta per quella partita, poi per cognome se corrisponde a un solo atleta, altrimenti scelta manuale; avviso non bloccante se qualcuno resta senza collegamento, le sue reti/espulsioni non verrebbero conteggiate per nessun atleta). Due statistiche stagionali separate (filtrate per Stagione, date inizio/fine) più una terza di confronto: icona "Statistiche stagione" nella tab Partite per la squadra e icona "Statistiche" nella lista atleti per il singolo atleta — sezione "Da referti" (partite/V-P-S/gol, media gol/partita, reti/espulsioni/media per atleta; non conta i tiri sbagliati), sezione "Da eventi live" (gol/tiri/percentuale/media gol partita, scomposti per contesto azione/superiorità/rigore — nuovo campo `contesto_tiro` sull'evento tiro; solo per le partite seguite dal vivo) e sezione "Confronto" che affianca (senza sommarle) le due fonti per ogni atleta
 - [x] Computer vision stroke rate (elaborazione locale sul device) [da testare su un device reale] — icona fotocamera nella lista atleti (solo app nativa Android/iOS, nascosta sul web): registra 15s di fotogrammi dalla fotocamera ed elabora localmente (Google ML Kit Pose Detection, nessun video salvato/caricato), traccia il polso e conta i picchi del movimento verticale per stimare le bracciate/min; nessun salvataggio dati, stima sperimentale non ancora validata in acqua
-- [ ] Supabase Pro (backup automatici)
-- [ ] Pubblicazione store (Play/App Store) se necessario
 
 ## FASE 9 — Area atleta e raffinamenti allenamento
 - [x] Account atleta — pagina personale in cui l'atleta inserisce i propri PB, condivisi con l'account allenatore. Collegamento tramite invito: per singolo atleta (codice monouso dalla sua scheda) o per gruppo intero (codice riutilizzabile, l'atleta compila da solo la propria anagrafica ed entra già nel gruppo giusto — pensato per onboarding di tante persone insieme, es. una squadra U14/U16)
@@ -139,6 +130,20 @@ Modulo indipendente, ispirato a funzionalità pubbliche viste online, non al cod
 - [x] Spostato il pulsante "Genera settimana con AI" dalla scheda del microciclo (eliminata) alla sezione Allenamenti, accanto ai FAB "Genera con AI" e "Nuovo allenamento"
 - [x] Generatore di allenamenti (singola seduta e settimana intera): tolto il campo "Livello" da form/parametri/prompt AI in entrambi i generatori — la scelta del gruppo resta com'è. La generazione di una settimana ora chiede il focus di ciascuna singola seduta (una selezione per seduta, ridimensionata insieme al numero di sedute) invece di un unico focus condiviso, e chiede esplicitamente data di inizio e tipo di settimana (prima letti dal microciclo, ora eliminato). Le impostazioni viste in un'altra app restano rimandate: da chiedere al coach quando le mostra
 - [x] Sezione Stagioni, revisione profonda: creazione ridotta a nome + periodo (obiettivo/gruppo/campionato restano, non facevano parte della gerarchia). **Eliminati macrocicli, mesocicli e microcicli** e tutta la programmazione/albero/duplicazione costruita in FASE 4 e FASE 10 punto 6 (migrazione `20260911000200_rimuovi_gerarchia_stagione.sql`, schema locale Drift v14→v15) — gli Allenamenti non si collegano più a un microciclo. Al posto della programmazione, nella scheda di una stagione: per il nuoto, "Record" (nuova `RecordClubScreen`) con il tempo migliore del club per distanza e stile e l'atleta che lo detiene; per la pallanuoto, "Statistiche di stagione" (schermata già esistente da FASE 8); per i club con sport non ancora compilato, entrambe le voci
+
+## Punti in sospeso (raccolti dalle fasi precedenti)
+
+Punti non ancora chiusi, spostati qui dalle rispettive fasi (già completate per il resto) per non lasciarli sparsi. Nessuna dipendenza tra loro: da riprendere quando serve, non necessariamente in ordine.
+
+- [ ] Checklist di test manuale prima di chiudere una fase (FASE 2)
+- [ ] Test su Chrome + telefono Android reale (FASE 2)
+- [ ] Commit frequenti su branch feature, merge su main solo quando funziona (FASE 2)
+- [ ] (Opzionale) Dettatura vocale → stesso parser JSON del generatore AI (FASE 5)
+- [ ] 2-3 sessioni vere in piscina (FASE 6)
+- [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro (FASE 6)
+- [ ] Parsing file .cl2 / .sd3 / risultati FIN (FASE 8)
+- [ ] Supabase Pro (backup automatici) (FASE 8)
+- [ ] Pubblicazione store (Play/App Store) se necessario (FASE 8)
 
 ## Restyling DESIGN.md (2026-09-06)
 
