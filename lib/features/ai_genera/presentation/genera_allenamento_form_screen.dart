@@ -20,7 +20,6 @@ import '../domain/parametri_generazione.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
-const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
 const _regimi = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D'];
 
@@ -30,16 +29,11 @@ String _capitalizza(String s) =>
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({
     required this.clubId,
-    this.microcicloId,
     this.dataPredefinita,
     super.key,
   });
 
   final String clubId;
-
-  /// Se valorizzato (es. aperto dal dettaglio di una settimana), la scheda
-  /// generata viene proposta già collegata a quel microciclo.
-  final String? microcicloId;
   final DateTime? dataPredefinita;
 
   @override
@@ -54,7 +48,6 @@ class _GeneraAllenamentoFormScreenState
 
   String? _gruppoId;
   double _volumeMetri = 3000;
-  String _livello = _livelli.first;
   String _focusSelezionato = _focus.first;
   final Set<String> _regimiSelezionati = {};
   bool _generazioneInCorso = false;
@@ -105,16 +98,6 @@ class _GeneraAllenamentoFormScreenState
                       DropdownMenuItem(value: g.id, child: Text(g.nome)),
                   ],
                   onChanged: (value) => setState(() => _gruppoId = value),
-                ),
-                AppSelect<String>(
-                  etichetta: 'Livello',
-                  value: _livello,
-                  items: [
-                    for (final l in _livelli)
-                      DropdownMenuItem(value: l, child: Text(_capitalizza(l))),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _livello = value ?? _livelli.first),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +210,6 @@ class _GeneraAllenamentoFormScreenState
 
     final parametri = ParametriGenerazione(
       gruppo: nomiGruppi[_gruppoId] ?? 'Tutti gli atleti',
-      livello: _livello,
       volumeMetri: _volumeMetri.round(),
       focus: _focusSelezionato,
       regimiAmmessi: _regimiSelezionati.toList(),
@@ -263,7 +245,6 @@ class _GeneraAllenamentoFormScreenState
             scheda: scheda,
             clubId: widget.clubId,
             gruppoId: _gruppoId,
-            microcicloIniziale: widget.microcicloId,
             dataIniziale: widget.dataPredefinita,
             generazioneId: generazioneId,
           ),

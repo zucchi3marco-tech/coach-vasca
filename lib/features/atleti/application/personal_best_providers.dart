@@ -12,3 +12,13 @@ final personalBestListProvider =
         watch: () => repository.watchPerAtleta(atletaId),
       );
     });
+
+/// Tutti i PB del club (record di club, FASE 11).
+final personalBestClubProvider =
+    StreamProvider.family<List<PersonalBest>, String>((ref, clubId) {
+      final repository = ref.watch(personalBestRepositoryProvider);
+      return streamConRefreshIniziale(
+        refresh: () => repository.refreshFromRemoteClub(clubId),
+        watch: () => repository.watchPerClub(clubId),
+      );
+    });

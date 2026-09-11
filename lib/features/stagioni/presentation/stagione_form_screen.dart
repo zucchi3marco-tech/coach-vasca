@@ -151,11 +151,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   }
 
   Future<void> _elimina() async {
-    final conferma = await confermaEliminaStagione(
-      context,
-      ref,
-      widget.stagione!,
-    );
+    final conferma = await confermaEliminaStagione(context);
     if (conferma) {
       await ref
           .read(stagioniRepositoryProvider)

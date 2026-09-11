@@ -25,7 +25,6 @@ interface CorsiaGenerazione {
 
 interface ParametriGenerazione {
   gruppo?: string;
-  livello?: string;
   volumeMetri?: number;
   focus?: string;
   regimiAmmessi?: string[];
@@ -121,7 +120,6 @@ function costruisciPrompt(p: ParametriGenerazione): string {
     "Sei un allenatore di nuoto esperto. Genera una scheda di allenamento " +
       "per la seguente sessione, come elenco di serie.",
     `Gruppo: ${p.gruppo ?? ""}`,
-    `Livello: ${p.livello ?? ""}`,
     `Volume totale: ${p.volumeMetri ?? ""} metri`,
     `Focus: ${p.focus ?? ""}`,
     `Regimi di allenamento ammessi: ${regimi}`,

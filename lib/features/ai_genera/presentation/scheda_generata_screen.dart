@@ -6,30 +6,26 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
-import '../../stagioni/application/microcicli_providers.dart';
-import '../../stagioni/domain/microciclo.dart';
 import '../application/corsie_service.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/scheda_generata.dart';
 
-/// Anteprima della scheda proposta dall'AI, prima del salvataggio: data e
-/// settimana modificabili, elenco delle serie generate in sola lettura.
-/// Schermata intera invece di un dialog (FASE 10, punto 1): contiene un
-/// form vero e proprio più un elenco potenzialmente lungo di serie, non
-/// una semplice conferma.
+/// Anteprima della scheda proposta dall'AI, prima del salvataggio: data
+/// modificabile, elenco delle serie generate in sola lettura. Schermata
+/// intera invece di un dialog (FASE 10, punto 1): contiene un form vero e
+/// proprio più un elenco potenzialmente lungo di serie, non una semplice
+/// conferma.
 class SchedaGenerataScreen extends ConsumerStatefulWidget {
   const SchedaGenerataScreen({
     required this.scheda,
     required this.clubId,
     required this.gruppoId,
-    this.microcicloIniziale,
     this.dataIniziale,
     this.generazioneId,
     super.key,
@@ -38,7 +34,6 @@ class SchedaGenerataScreen extends ConsumerStatefulWidget {
   final SchedaGenerata scheda;
   final String clubId;
   final String? gruppoId;
-  final String? microcicloIniziale;
   final DateTime? dataIniziale;
 
   /// Id della voce di storico creata per questa generazione (nullo se la
@@ -53,7 +48,6 @@ class SchedaGenerataScreen extends ConsumerStatefulWidget {
 
 class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   late DateTime _data = widget.dataIniziale ?? DateTime.now();
-  late String? _microcicloId = widget.microcicloIniziale;
   late final TextEditingController _dataController = TextEditingController(
     text: _formattaData(_data),
   );
@@ -83,12 +77,6 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   String _ripartenzeSerie(SerieGenerata s) =>
       formattaRipartenzeCorsia(s.ripartenzePerCorsia);
 
-  String _etichettaMicrociclo(Microciclo m) {
-    if (m.nome != null && m.nome!.isNotEmpty) return m.nome!;
-    if (m.numeroSettimana != null) return 'Settimana ${m.numeroSettimana}';
-    return 'Microciclo';
-  }
-
   Future<void> _scegliData() async {
     final scelta = await showDatePicker(
       context: context,
@@ -113,7 +101,6 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
           .createAllenamento(
             clubId: widget.clubId,
             data: _data,
-            microcicloId: _microcicloId,
             titolo: scheda.titolo,
             gruppoId: widget.gruppoId,
             note: scheda.note,
@@ -151,7 +138,9 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore nel salvataggio: ${messaggioErrore(e)}')),
+        SnackBar(
+          content: Text('Errore nel salvataggio: ${messaggioErrore(e)}'),
+        ),
       );
       setState(() => _salvataggioInCorso = false);
     }
@@ -160,7 +149,6 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   @override
   Widget build(BuildContext context) {
     final scheda = widget.scheda;
-    final microcicliAsync = ref.watch(microcicliDelClubProvider(widget.clubId));
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: Text(scheda.titolo)),
@@ -186,38 +174,6 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
                 readOnly: true,
                 onTap: _salvataggioInCorso ? null : _scegliData,
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
-              ),
-              microcicliAsync.when(
-                data: (microcicli) => AppSelect<String?>(
-                  etichetta: 'Settimana (facoltativo)',
-                  value: _microcicloId,
-                  hint: 'Nessun microciclo',
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Nessun microciclo'),
-                    ),
-                    for (final m in microcicli)
-                      DropdownMenuItem(
-                        value: m.id,
-                        child: Text(_etichettaMicrociclo(m)),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (!_salvataggioInCorso) {
-                      setState(() => _microcicloId = value);
-                    }
-                  },
-                ),
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.s8),
-                  child: LinearProgressIndicator(),
-                ),
-                error: (error, _) => Text(
-                  'Errore nel caricamento settimane: '
-                  '${messaggioErrore(error)}',
-                  style: AppTypography.piccolo,
-                ),
               ),
             ],
           ),

@@ -25,7 +25,6 @@ class AllenamentiRepository {
     return Allenamento(
       id: row.id,
       clubId: row.clubId,
-      microcicloId: row.microcicloId,
       data: row.data,
       titolo: row.titolo,
       gruppoId: row.gruppoId,
@@ -37,7 +36,6 @@ class AllenamentiRepository {
     return AllenamentiTableCompanion.insert(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
-      microcicloId: Value(map['microciclo_id'] as String?),
       data: DateTime.parse(map['data'] as String),
       titolo: Value(map['titolo'] as String?),
       gruppoId: Value(map['gruppo_id'] as String?),
@@ -49,13 +47,6 @@ class AllenamentiRepository {
     final query = _db.select(_db.allenamentiTable)
       ..where((t) => t.clubId.equals(clubId))
       ..orderBy([(t) => OrderingTerm.desc(t.data)]);
-    return query.watch().map((rows) => rows.map(_fromRow).toList());
-  }
-
-  Stream<List<Allenamento>> watchPerMicrociclo(String microcicloId) {
-    final query = _db.select(_db.allenamentiTable)
-      ..where((t) => t.microcicloId.equals(microcicloId))
-      ..orderBy([(t) => OrderingTerm.asc(t.data)]);
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
@@ -79,26 +70,6 @@ class AllenamentiRepository {
     });
   }
 
-  /// Letto da remoto quando possibile (dati sempre freschi per la
-  /// duplicazione settimana), con fallback sulla cache locale se offline.
-  Future<List<Allenamento>> fetchPerMicrociclo(String microcicloId) async {
-    try {
-      final rows = await _client
-          .from('allenamenti')
-          .select()
-          .eq('microciclo_id', microcicloId)
-          .order('data');
-      return rows.map(Allenamento.fromMap).toList();
-    } catch (e) {
-      if (!isNetworkFailure(e)) rethrow;
-      final rows = await (_db.select(_db.allenamentiTable)
-            ..where((t) => t.microcicloId.equals(microcicloId))
-            ..orderBy([(t) => OrderingTerm.asc(t.data)]))
-          .get();
-      return rows.map(_fromRow).toList();
-    }
-  }
-
   Future<Allenamento> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -110,7 +81,6 @@ class AllenamentiRepository {
   Future<Allenamento> createAllenamento({
     required String clubId,
     required DateTime data,
-    String? microcicloId,
     String? titolo,
     String? gruppoId,
     String? note,
@@ -120,7 +90,6 @@ class AllenamentiRepository {
       'id': id,
       'club_id': clubId,
       'data': formatDateOnly(data),
-      'microciclo_id': ?microcicloId,
       if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
       'gruppo_id': ?gruppoId,
       if (note != null && note.isNotEmpty) 'note': note,
@@ -154,14 +123,12 @@ class AllenamentiRepository {
   Future<Allenamento> updateAllenamento({
     required String id,
     required DateTime data,
-    String? microcicloId,
     String? titolo,
     String? gruppoId,
     String? note,
   }) async {
     final payload = {
       'data': formatDateOnly(data),
-      'microciclo_id': microcicloId,
       'titolo': titolo,
       'gruppo_id': gruppoId,
       'note': note,
@@ -183,7 +150,6 @@ class AllenamentiRepository {
       )..where((t) => t.id.equals(id))).write(
         AllenamentiTableCompanion(
           data: Value(data),
-          microcicloId: Value(microcicloId),
           titolo: Value(titolo),
           gruppoId: Value(gruppoId),
           note: Value(note),
@@ -199,31 +165,6 @@ class AllenamentiRepository {
       _syncEngine.processQueue();
     }
     return _rileggiLocale(id);
-  }
-
-  /// Sposta la scheda su un altro microciclo (o la scollega, se
-  /// `microcicloId` e' null), senza toccare gli altri campi.
-  Future<void> setMicrociclo({
-    required String id,
-    required String? microcicloId,
-  }) async {
-    final payload = {'microciclo_id': microcicloId};
-    try {
-      await _client.from('allenamenti').update(payload).eq('id', id);
-    } catch (e) {
-      if (!isNetworkFailure(e)) rethrow;
-      await enqueueOperation(
-        _db,
-        tabella: 'allenamenti',
-        operazione: 'update',
-        rigaId: id,
-        payload: payload,
-      );
-      _syncEngine.processQueue();
-    }
-    await (_db.update(_db.allenamentiTable)..where((t) => t.id.equals(id))).write(
-      AllenamentiTableCompanion(microcicloId: Value(microcicloId)),
-    );
   }
 
   Future<void> deleteAllenamento(String id) async {

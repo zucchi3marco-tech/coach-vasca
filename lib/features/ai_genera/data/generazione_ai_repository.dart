@@ -24,7 +24,6 @@ class GenerazioneAiRepository {
         'genera-allenamento',
         body: {
           'gruppo': parametri.gruppo,
-          'livello': parametri.livello,
           'volumeMetri': parametri.volumeMetri,
           'focus': parametri.focus,
           'regimiAmmessi': parametri.regimiAmmessi,

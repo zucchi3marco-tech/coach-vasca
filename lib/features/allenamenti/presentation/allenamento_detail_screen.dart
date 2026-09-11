@@ -24,7 +24,6 @@ import 'allenamento_form_screen.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
-import 'sposta_allenamento_screen.dart';
 
 class AllenamentoDetailScreen extends ConsumerWidget {
   const AllenamentoDetailScreen({required this.allenamento, super.key});
@@ -35,7 +34,8 @@ class AllenamentoDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
     final Map<String, String> nomiGruppi = {
-      for (final g in ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [])
+      for (final g
+          in ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [])
         g.id: g.nome,
     };
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
@@ -86,18 +86,6 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                 child: const _VoceMenu(
                   icona: Icons.how_to_reg_outlined,
                   etichetta: 'Presenze',
-                ),
-              ),
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        SpostaAllenamentoScreen(allenamento: allenamento),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.drive_file_move_outline,
-                  etichetta: 'Sposta',
                 ),
               ),
               PopupMenuItem(
@@ -182,14 +170,12 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                 // scritta sulla singola serie (vedi SerieFormScreen), qui
                 // si mostra solo l'elenco senza doppioni di quanto già
                 // compilato, per prepararsi prima di andare in vasca.
-                final materiale =
-                    {
-                      for (final s in serie)
-                        if (s.attrezzatura != null &&
-                            s.attrezzatura!.trim().isNotEmpty)
-                          s.attrezzatura!.trim(),
-                    }.toList()
-                      ..sort();
+                final materiale = {
+                  for (final s in serie)
+                    if (s.attrezzatura != null &&
+                        s.attrezzatura!.trim().isNotEmpty)
+                      s.attrezzatura!.trim(),
+                }.toList()..sort();
                 return Column(
                   children: [
                     if (materiale.isNotEmpty)
@@ -212,8 +198,7 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                               spacing: AppSpacing.s8,
                               runSpacing: AppSpacing.s8,
                               children: [
-                                for (final m in materiale)
-                                  Chip(label: Text(m)),
+                                for (final m in materiale) Chip(label: Text(m)),
                               ],
                             ),
                           ],
@@ -224,123 +209,121 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(AppSpacing.s16),
                         itemCount: serie.length,
                         itemBuilder: (context, index) {
-                        final s = serie[index];
-                        final tokens =
-                            Theme.of(context).extension<DomainTokens>() ??
-                            DomainTokens.standard;
-                        final coloreZona = s.zona != null
-                            ? tokens.colorePerZona(s.zona)
-                            : AppColors.linea;
-                        final meta = <String>[];
-                        if (s.passoObiettivoS != null) {
-                          meta.add(
-                            '${formatPaceSeconds(s.passoObiettivoS!)}/100m',
-                          );
-                        }
-                        if (s.recuperoS != null) {
-                          meta.add("rec ${s.recuperoS}''");
-                        }
-                        if (s.ripartenzaS != null) {
-                          meta.add(
-                            'rip ${formatPaceSeconds(s.ripartenzaS!)}',
-                          );
-                        }
-                        if (s.attrezzatura != null &&
-                            s.attrezzatura!.isNotEmpty) {
-                          meta.add(s.attrezzatura!);
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.s12,
-                          ),
-                          child: LaneRule(
-                            colore: coloreZona,
-                            child: InkWell(
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => SerieFormScreen(
-                                    allenamentoId: allenamento.id,
-                                    ordineSuccessivo: serie.length + 1,
-                                    serie: s,
+                          final s = serie[index];
+                          final tokens =
+                              Theme.of(context).extension<DomainTokens>() ??
+                              DomainTokens.standard;
+                          final coloreZona = s.zona != null
+                              ? tokens.colorePerZona(s.zona)
+                              : AppColors.linea;
+                          final meta = <String>[];
+                          if (s.passoObiettivoS != null) {
+                            meta.add(
+                              '${formatPaceSeconds(s.passoObiettivoS!)}/100m',
+                            );
+                          }
+                          if (s.recuperoS != null) {
+                            meta.add("rec ${s.recuperoS}''");
+                          }
+                          if (s.ripartenzaS != null) {
+                            meta.add(
+                              'rip ${formatPaceSeconds(s.ripartenzaS!)}',
+                            );
+                          }
+                          if (s.attrezzatura != null &&
+                              s.attrezzatura!.isNotEmpty) {
+                            meta.add(s.attrezzatura!);
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.s12,
+                            ),
+                            child: LaneRule(
+                              colore: coloreZona,
+                              child: InkWell(
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => SerieFormScreen(
+                                      allenamentoId: allenamento.id,
+                                      ordineSuccessivo: serie.length + 1,
+                                      serie: s,
+                                    ),
+                                  ),
+                                ),
+                                child: PoolCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 28,
+                                            height: 28,
+                                            alignment: Alignment.center,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.bluTenue,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              '${s.ordine}',
+                                              style: AppTypography.piccolo
+                                                  .copyWith(
+                                                    color: AppColors.blu,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSpacing.s12),
+                                          Expanded(
+                                            child: Text(
+                                              '${s.ripetute}×${s.distanzaM}m '
+                                              '${labelStile(s.stile)} '
+                                              '${labelEsecuzione(s.esecuzione)}',
+                                              style: AppTypography.corpoForte
+                                                  .copyWith(
+                                                    color: AppColors.testo,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: AppSpacing.s8),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            labelBlocco(s.blocco),
+                                            style: AppTypography.etichetta,
+                                          ),
+                                          if (s.zona != null) ...[
+                                            const SizedBox(
+                                              width: AppSpacing.s8,
+                                            ),
+                                            ZoneChip(sigla: s.zona!),
+                                          ],
+                                        ],
+                                      ),
+                                      if (meta.isNotEmpty) ...[
+                                        const SizedBox(height: AppSpacing.s8),
+                                        Wrap(
+                                          spacing: AppSpacing.s16,
+                                          runSpacing: AppSpacing.s4,
+                                          children: [
+                                            for (final m in meta)
+                                              Text(
+                                                m,
+                                                style: AppTypography.piccolo,
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ),
-                              child: PoolCard(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 28,
-                                          height: 28,
-                                          alignment: Alignment.center,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.bluTenue,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Text(
-                                            '${s.ordine}',
-                                            style: AppTypography.piccolo
-                                                .copyWith(
-                                                  color: AppColors.blu,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                          width: AppSpacing.s12,
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            '${s.ripetute}×${s.distanzaM}m '
-                                            '${labelStile(s.stile)} '
-                                            '${labelEsecuzione(s.esecuzione)}',
-                                            style: AppTypography.corpoForte
-                                                .copyWith(
-                                                  color: AppColors.testo,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: AppSpacing.s8),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          labelBlocco(s.blocco),
-                                          style: AppTypography.etichetta,
-                                        ),
-                                        if (s.zona != null) ...[
-                                          const SizedBox(
-                                            width: AppSpacing.s8,
-                                          ),
-                                          ZoneChip(sigla: s.zona!),
-                                        ],
-                                      ],
-                                    ),
-                                    if (meta.isNotEmpty) ...[
-                                      const SizedBox(height: AppSpacing.s8),
-                                      Wrap(
-                                        spacing: AppSpacing.s16,
-                                        runSpacing: AppSpacing.s4,
-                                        children: [
-                                          for (final m in meta)
-                                            Text(
-                                              m,
-                                              style: AppTypography.piccolo,
-                                            ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
                       ),
                     ),
                   ],

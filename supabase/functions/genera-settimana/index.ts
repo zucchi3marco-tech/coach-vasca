@@ -23,8 +23,8 @@ interface ParametriSettimana {
   gruppo?: string;
   numeroSedute?: number;
   volumeSettimanaleMetri?: number;
-  focus?: string;
-  tipoMicrociclo?: string | null;
+  focusPerSeduta?: string[];
+  tipoSettimana?: string | null;
   vincoli?: string | null;
   corsie?: CorsiaGenerazione[];
 }
@@ -61,16 +61,16 @@ function costruisciPrompt(p: ParametriSettimana): string {
       : "";
     return `- Corsia "${c.nome}": passo di riferimento sui 100 stile libero = ${c.passo100S}s${diff}`;
   });
+  const focusPerSeduta = Array.isArray(p.focusPerSeduta) ? p.focusPerSeduta : [];
+  const righeFocus = focusPerSeduta.map((f, i) => `- Seduta ${i + 1}: focus "${f}"`);
   return [
     "Sei un allenatore di nuoto esperto. Pianifica una settimana di " +
       "allenamento come elenco di sedute (non il dettaglio delle serie, " +
       "solo lo scheletro della settimana).",
     `Gruppo: ${p.gruppo ?? ""}`,
-    `Numero di sedute nella settimana: ${p.numeroSedute ?? ""}`,
     `Volume settimanale totale: ${p.volumeSettimanaleMetri ?? ""} metri`,
-    `Focus generale: ${p.focus ?? ""}`,
-    p.tipoMicrociclo
-      ? `Tipo di settimana: ${p.tipoMicrociclo} (adatta volume/intensità di ` +
+    p.tipoSettimana
+      ? `Tipo di settimana: ${p.tipoSettimana} (adatta volume/intensità di ` +
         "conseguenza: una settimana di scarico ha volumi e intensità più " +
         "bassi di una di carico, una settimana gara punta su freschezza e " +
         "ritmo gara)"
@@ -83,14 +83,21 @@ function costruisciPrompt(p: ParametriSettimana): string {
           ...righeCorsie,
         ].join("\n")
       : "",
+    righeFocus.length > 0
+      ? [
+          `Genera esattamente ${righeFocus.length} sedute, in questo ` +
+            "ordine, una per ciascun focus richiesto:",
+          ...righeFocus,
+        ].join("\n")
+      : "",
     "Per ogni seduta indica: giorno (numero da 1 a 7, 1 = primo giorno " +
       "della settimana; distribuisci le sedute in modo sensato, non tutte " +
       "consecutive se sono più di 4 e non due sedute di alta intensità di " +
-      "fila), un codice breve che descriva l'enfasi della seduta (es. " +
-      "\"Aerobico A2\", \"Soglia B1 + tecnica\", \"Velocità C1/C2\", " +
-      "\"Ritmo gara D\"), e il volume in metri di quella seduta. La somma " +
-      "dei volumi di tutte le sedute deve avvicinarsi il più possibile al " +
-      "volume settimanale richiesto.",
+      "fila), un codice breve che descriva l'enfasi della seduta coerente " +
+      "col focus richiesto (es. \"Aerobico A2\", \"Soglia B1 + tecnica\", " +
+      "\"Velocità C1/C2\", \"Ritmo gara D\"), e il volume in metri di " +
+      "quella seduta. La somma dei volumi di tutte le sedute deve " +
+      "avvicinarsi il più possibile al volume settimanale richiesto.",
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
@@ -115,13 +122,22 @@ const responseSchema = {
   required: ["sedute"],
 };
 
-function validaSettimana(dati: unknown): SettimanaGenerata {
+function validaSettimana(dati: unknown, numeroSeduteAtteso?: number): SettimanaGenerata {
   if (typeof dati !== "object" || dati === null) {
     throw new Error("la settimana generata non è un oggetto JSON valido");
   }
   const settimana = dati as Record<string, unknown>;
   if (!Array.isArray(settimana.sedute) || settimana.sedute.length === 0) {
     throw new Error("nessuna seduta generata");
+  }
+  if (
+    numeroSeduteAtteso != null &&
+    settimana.sedute.length !== numeroSeduteAtteso
+  ) {
+    throw new Error(
+      `attese ${numeroSeduteAtteso} sedute (una per ogni focus richiesto), ` +
+        `ricevute ${settimana.sedute.length}`,
+    );
   }
 
   const sedute: SedutaGenerata[] = settimana.sedute.map((voce, indice) => {
@@ -218,7 +234,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const settimana = validaSettimana(settimanaGrezza);
+    const settimana = validaSettimana(
+      settimanaGrezza,
+      Array.isArray(parametri.focusPerSeduta)
+        ? parametri.focusPerSeduta.length
+        : undefined,
+    );
     return jsonResponse({ settimana });
   } catch (errore) {
     return jsonResponse(

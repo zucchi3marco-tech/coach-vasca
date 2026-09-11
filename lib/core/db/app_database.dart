@@ -13,9 +13,6 @@ part 'app_database.g.dart';
     TestIngressoTable,
     TabellePassiTable,
     StagioniTable,
-    MacrocicliTable,
-    MesocicliTable,
-    MicrocicliTable,
     AllenamentiTable,
     SerieTable,
     PresenzeTable,
@@ -31,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,12 +38,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.createTable(pendingOperationsTable);
       }
-      // v2 -> v3: aggiunta la gerarchia di stagione (Fase 4).
+      // v2 -> v3: aggiunta la gerarchia di stagione (Fase 4). La
+      // gerarchia macrociclo/mesociclo/microciclo creata qui e' stata poi
+      // rimossa in FASE 11 (v14 -> v15): non piu' nello schema, quindi
+      // non piu' creata qui (verrebbe comunque droppata subito dopo).
       if (from < 3) {
         await m.createTable(stagioniTable);
-        await m.createTable(macrocicliTable);
-        await m.createTable(mesocicliTable);
-        await m.createTable(microcicliTable);
       }
       // v3 -> v4: pallanuoto V2, partite e distinta (Fase 7).
       if (from < 4) {
@@ -189,6 +186,25 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'club_table', 'categorie_json')) {
           await m.addColumn(clubTable, clubTable.categorieJson);
+        }
+      }
+      // v14 -> v15: eliminata la gerarchia macrociclo/mesociclo/microciclo
+      // (FASE 11, punto 6) — la stagione resta solo nome + periodo, gli
+      // allenamenti non si collegano piu' a un microciclo.
+      if (from < 15) {
+        if (await _hasColumn(m, 'allenamenti_table', 'microciclo_id')) {
+          await m.database.customStatement(
+            'ALTER TABLE allenamenti_table DROP COLUMN microciclo_id',
+          );
+        }
+        for (final tabella in [
+          'microcicli_table',
+          'mesocicli_table',
+          'macrocicli_table',
+        ]) {
+          if (await _hasTable(m, tabella)) {
+            await m.database.customStatement('DROP TABLE $tabella');
+          }
         }
       }
     },

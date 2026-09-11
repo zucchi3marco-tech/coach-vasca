@@ -15,15 +15,14 @@ import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
-import '../../stagioni/domain/microciclo.dart';
 import '../application/corsie_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
 
-const _livelli = ['principiante', 'intermedio', 'avanzato', 'agonista'];
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
+const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
@@ -35,9 +34,9 @@ String _capitalizza(String s) =>
 /// ancora conto delle settimane precedenti né del calendario gare
 /// (rimandato, vedi ROADMAP.md).
 class GeneraSettimanaFormScreen extends ConsumerStatefulWidget {
-  const GeneraSettimanaFormScreen({required this.microciclo, super.key});
+  const GeneraSettimanaFormScreen({required this.clubId, super.key});
 
-  final Microciclo microciclo;
+  final String clubId;
 
   @override
   ConsumerState<GeneraSettimanaFormScreen> createState() =>
@@ -50,26 +49,55 @@ class _GeneraSettimanaFormScreenState
   final _vincoliController = TextEditingController();
 
   String? _gruppoId;
-  String _livello = _livelli.first;
-  String _focusSelezionato = _focus.first;
+  late DateTime _dataInizio = DateTime.now();
+  late final TextEditingController _dataInizioController =
+      TextEditingController(text: _formattaData(_dataInizio));
+  String? _tipoSettimana;
   double _numeroSedute = 4;
   double _volumeSettimanale = 12000;
+  List<String> _focusPerSeduta = List.filled(4, _focus.first);
   bool _generazioneInCorso = false;
   String? _fasePassaggio;
 
   @override
   void dispose() {
     _vincoliController.dispose();
+    _dataInizioController.dispose();
     super.dispose();
   }
 
-  DateTime _dataPerGiorno(int giorno) {
-    final data = widget.microciclo.dataInizio.add(Duration(days: giorno - 1));
-    if (data.isAfter(widget.microciclo.dataFine)) {
-      return widget.microciclo.dataFine;
-    }
-    return data;
+  void _aggiornaNumeroSedute(double valore) {
+    final numero = valore.round();
+    setState(() {
+      _numeroSedute = valore;
+      if (numero > _focusPerSeduta.length) {
+        _focusPerSeduta = [
+          ..._focusPerSeduta,
+          for (var i = _focusPerSeduta.length; i < numero; i++) _focus.first,
+        ];
+      } else if (numero < _focusPerSeduta.length) {
+        _focusPerSeduta = _focusPerSeduta.sublist(0, numero);
+      }
+    });
   }
+
+  Future<void> _pickDataInizio() async {
+    final selezionata = await showDatePicker(
+      context: context,
+      initialDate: _dataInizio,
+      firstDate: DateTime(DateTime.now().year - 2),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (selezionata != null) {
+      setState(() {
+        _dataInizio = selezionata;
+        _dataInizioController.text = _formattaData(selezionata);
+      });
+    }
+  }
+
+  DateTime _dataPerGiorno(int giorno) =>
+      _dataInizio.add(Duration(days: giorno - 1));
 
   Future<void> _conferma() async {
     if (!_formKey.currentState!.validate()) return;
@@ -82,10 +110,8 @@ class _GeneraSettimanaFormScreenState
     var corsie = const <CorsiaGenerazione>[];
     try {
       final tuttiGliAtleti = await ref.read(
-        atletiListProvider((
-          clubId: widget.microciclo.clubId,
-          includeInactive: false,
-        )).future,
+        atletiListProvider((clubId: widget.clubId, includeInactive: false))
+            .future,
       );
       final atletiDelGruppo = _gruppoId == null
           ? tuttiGliAtleti
@@ -96,9 +122,7 @@ class _GeneraSettimanaFormScreenState
     }
 
     final Map<String, String> nomiGruppi = {
-      for (final g
-          in ref.read(gruppiListProvider(widget.microciclo.clubId)).value ??
-              [])
+      for (final g in ref.read(gruppiListProvider(widget.clubId)).value ?? [])
         g.id: g.nome,
     };
     final gruppoLabel = nomiGruppi[_gruppoId] ?? 'Tutti gli atleti';
@@ -112,8 +136,8 @@ class _GeneraSettimanaFormScreenState
               gruppo: gruppoLabel,
               numeroSedute: _numeroSedute.round(),
               volumeSettimanaleMetri: _volumeSettimanale.round(),
-              focus: _focusSelezionato,
-              tipoMicrociclo: widget.microciclo.tipo,
+              focusPerSeduta: _focusPerSeduta,
+              tipoSettimana: _tipoSettimana,
               vincoli: vincoliUtente.isEmpty ? null : vincoliUtente,
               corsie: corsie,
             ),
@@ -122,6 +146,9 @@ class _GeneraSettimanaFormScreenState
       final sedute = <SedutaConScheda>[];
       for (var i = 0; i < settimana.sedute.length; i++) {
         final seduta = settimana.sedute[i];
+        final focusSeduta = i < _focusPerSeduta.length
+            ? _focusPerSeduta[i]
+            : _focusPerSeduta.last;
         if (mounted) {
           setState(
             () => _fasePassaggio =
@@ -137,9 +164,8 @@ class _GeneraSettimanaFormScreenState
             .generaAllenamento(
               ParametriGenerazione(
                 gruppo: gruppoLabel,
-                livello: _livello,
                 volumeMetri: seduta.volumeMetri,
-                focus: _focusSelezionato,
+                focus: focusSeduta,
                 regimiAmmessi: const [
                   'A1',
                   'A2',
@@ -167,8 +193,7 @@ class _GeneraSettimanaFormScreenState
       final salvata = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => _RevisioneSettimanaScreen(
-            clubId: widget.microciclo.clubId,
-            microcicloId: widget.microciclo.id,
+            clubId: widget.clubId,
             gruppoId: _gruppoId,
             sedute: sedute,
           ),
@@ -194,8 +219,7 @@ class _GeneraSettimanaFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    final gruppi =
-        ref.watch(gruppiListProvider(widget.microciclo.clubId)).value ?? [];
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
 
     return AppScaffold(
       scrollabile: true,
@@ -206,18 +230,22 @@ class _GeneraSettimanaFormScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Pianifica le sedute di questa settimana '
-              '(${_formattaData(widget.microciclo.dataInizio)} - '
-              '${_formattaData(widget.microciclo.dataFine)}). Il dettaglio '
-              'di ogni seduta si genera subito dopo lo scheletro: la '
-              'revisione richiede qualche secondo in più di una singola '
-              'generazione.',
+              'Pianifica le sedute della settimana. Il dettaglio di ogni '
+              'seduta si genera subito dopo lo scheletro: la revisione '
+              'richiede qualche secondo in più di una singola generazione.',
               style: AppTypography.piccolo,
             ),
             const SizedBox(height: AppSpacing.s16),
             FormGroup(
               titolo: 'Parametri',
               campi: [
+                AppTextField(
+                  etichetta: 'Data di inizio',
+                  controller: _dataInizioController,
+                  readOnly: true,
+                  onTap: _pickDataInizio,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
                 AppSelect<String?>(
                   etichetta: 'Gruppo',
                   value: _gruppoId,
@@ -232,15 +260,16 @@ class _GeneraSettimanaFormScreenState
                   ],
                   onChanged: (value) => setState(() => _gruppoId = value),
                 ),
-                AppSelect<String>(
-                  etichetta: 'Livello',
-                  value: _livello,
+                AppSelect<String?>(
+                  etichetta: 'Tipo di settimana (facoltativo)',
+                  value: _tipoSettimana,
+                  hint: 'Nessuno',
                   items: [
-                    for (final l in _livelli)
-                      DropdownMenuItem(value: l, child: Text(_capitalizza(l))),
+                    const DropdownMenuItem(value: null, child: Text('Nessuno')),
+                    for (final t in _tipiSettimana)
+                      DropdownMenuItem(value: t, child: Text(_capitalizza(t))),
                   ],
-                  onChanged: (value) =>
-                      setState(() => _livello = value ?? _livelli.first),
+                  onChanged: (value) => setState(() => _tipoSettimana = value),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,8 +284,7 @@ class _GeneraSettimanaFormScreenState
                       max: 7,
                       divisions: 5,
                       label: '${_numeroSedute.round()}',
-                      onChanged: (value) =>
-                          setState(() => _numeroSedute = value),
+                      onChanged: _aggiornaNumeroSedute,
                     ),
                   ],
                 ),
@@ -278,15 +306,33 @@ class _GeneraSettimanaFormScreenState
                     ),
                   ],
                 ),
-                AppSelect<String>(
-                  etichetta: 'Focus',
-                  value: _focusSelezionato,
-                  items: [
-                    for (final f in _focus)
-                      DropdownMenuItem(value: f, child: Text(_capitalizza(f))),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Focus di ogni seduta',
+                      style: AppTypography.etichetta,
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    for (var i = 0; i < _focusPerSeduta.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                        child: AppSelect<String>(
+                          etichetta: 'Seduta ${i + 1}',
+                          value: _focusPerSeduta[i],
+                          items: [
+                            for (final f in _focus)
+                              DropdownMenuItem(
+                                value: f,
+                                child: Text(_capitalizza(f)),
+                              ),
+                          ],
+                          onChanged: (value) => setState(
+                            () => _focusPerSeduta[i] = value ?? _focus.first,
+                          ),
+                        ),
+                      ),
                   ],
-                  onChanged: (value) =>
-                      setState(() => _focusSelezionato = value ?? _focus.first),
                 ),
                 AppTextField(
                   etichetta: 'Vincoli (facoltativo)',
@@ -334,13 +380,11 @@ class SedutaConScheda {
 class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   const _RevisioneSettimanaScreen({
     required this.clubId,
-    required this.microcicloId,
     required this.gruppoId,
     required this.sedute,
   });
 
   final String clubId;
-  final String microcicloId;
   final String? gruppoId;
   final List<SedutaConScheda> sedute;
 
@@ -397,7 +441,6 @@ class _RevisioneSettimanaScreenState
         final allenamento = await allenamentiRepository.createAllenamento(
           clubId: widget.clubId,
           data: voce.data,
-          microcicloId: widget.microcicloId,
           titolo: voce.scheda.titolo,
           gruppoId: widget.gruppoId,
           note: voce.scheda.note,

@@ -6,153 +6,97 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_text_field.dart';
-import '../../../widgets/empty_state.dart';
-import '../../../widgets/error_banner.dart';
-import '../../../widgets/loading_skeleton.dart';
+import '../../atleti/presentation/record_club_screen.dart';
+import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
-import '../application/macrocicli_providers.dart';
+import '../../statistiche/presentation/statistiche_squadra_screen.dart';
 import '../data/duplicazione_stagione_service.dart';
-import '../data/macrocicli_repository.dart';
 import '../data/stagioni_repository.dart';
-import '../domain/macrociclo.dart';
 import '../domain/stagione.dart';
-import 'albero_stagione.dart';
-import 'allenamenti_stagione_screen.dart';
 import 'elimina_dialogs.dart';
-import 'macrociclo_form_screen.dart';
 import 'stagione_form_screen.dart';
 
 enum _AzioneStagione { duplica, modifica, elimina }
 
-class StagioneDetailScreen extends ConsumerStatefulWidget {
+/// Scheda di una stagione: solo intestazione (periodo, gruppo, campionato,
+/// obiettivo) e, al posto della programmazione a settimane eliminata in
+/// FASE 11, un collegamento alle statistiche di stagione (pallanuoto) o ai
+/// record di club (nuoto), secondo lo sport del club.
+class StagioneDetailScreen extends ConsumerWidget {
   const StagioneDetailScreen({required this.stagione, super.key});
 
   final Stagione stagione;
-
-  @override
-  ConsumerState<StagioneDetailScreen> createState() =>
-      _StagioneDetailScreenState();
-}
-
-class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
-  final _ricercaController = TextEditingController();
-  String _ricerca = '';
-
-  @override
-  void dispose() {
-    _ricercaController.dispose();
-    super.dispose();
-  }
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
       '${data.month.toString().padLeft(2, '0')}/'
       '${data.year}';
 
-  @override
-  Widget build(BuildContext context) {
-    final stagione = widget.stagione;
-    final macrocicliAsync = ref.watch(macrocicliListProvider(stagione.id));
-    final nomeGruppo = {
-      for (final g in ref.watch(gruppiListProvider(stagione.clubId)).value ?? [])
-        g.id: g.nome,
-    }[stagione.gruppoId];
+  Future<void> _elimina(BuildContext context, WidgetRef ref) async {
+    final conferma = await confermaEliminaStagione(context);
+    if (conferma && context.mounted) {
+      await ref.read(stagioniRepositoryProvider).deleteStagione(stagione.id);
+      if (context.mounted) Navigator.of(context).pop();
+    }
+  }
 
-    void apriNuovo() {
-      final macrocicliAttuali =
-          ref.read(macrocicliListProvider(stagione.id)).value ?? [];
-      Navigator.of(context).push(
+  Future<void> _duplicaStagione(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nuovaDataInizio = await showDatePicker(
+      context: context,
+      initialDate: stagione.dataInizio,
+      firstDate: DateTime(DateTime.now().year - 2),
+      lastDate: DateTime(DateTime.now().year + 5),
+      helpText: 'Data di inizio della nuova stagione',
+    );
+    if (nuovaDataInizio == null) return;
+    try {
+      final nuovaStagione = await ref
+          .read(duplicazioneStagioneServiceProvider)
+          .duplica(stagione, nuovaDataInizio);
+      if (!context.mounted) return;
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => MacrocicloFormScreen(
-            stagioneId: stagione.id,
-            ordineSuccessivo: macrocicliAttuali.length + 1,
-          ),
+          builder: (_) => StagioneDetailScreen(stagione: nuovaStagione),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Errore nella duplicazione: ${messaggioErrore(e)}'),
         ),
       );
     }
+  }
 
-    Future<void> riordina(
-      List<Macrociclo> macrocicli,
-      int oldIndex,
-      int newIndex,
-    ) async {
-      final aggiornati = List<Macrociclo>.from(macrocicli);
-      final spostato = aggiornati.removeAt(oldIndex);
-      aggiornati.insert(newIndex, spostato);
-      final repository = ref.read(macrocicliRepositoryProvider);
-      for (var i = 0; i < aggiornati.length; i++) {
-        final m = aggiornati[i];
-        if (m.ordine != i + 1) {
-          await repository.updateMacrociclo(
-            id: m.id,
-            nome: m.nome,
-            ordine: i + 1,
-            dataInizio: m.dataInizio,
-            dataFine: m.dataFine,
-            obiettivo: m.obiettivo,
-          );
-        }
-      }
-    }
-
-    Future<void> elimina() async {
-      final conferma = await confermaEliminaStagione(context, ref, stagione);
-      if (conferma && context.mounted) {
-        await ref.read(stagioniRepositoryProvider).deleteStagione(stagione.id);
-        if (context.mounted) Navigator.of(context).pop();
-      }
-    }
-
-    Future<void> duplicaStagione() async {
-      final messenger = ScaffoldMessenger.of(context);
-      final nuovaDataInizio = await showDatePicker(
-        context: context,
-        initialDate: stagione.dataInizio,
-        firstDate: DateTime(DateTime.now().year - 2),
-        lastDate: DateTime(DateTime.now().year + 5),
-        helpText: 'Data di inizio della nuova stagione',
-      );
-      if (nuovaDataInizio == null) return;
-      try {
-        final nuovaStagione = await ref
-            .read(duplicazioneStagioneServiceProvider)
-            .duplica(stagione, nuovaDataInizio);
-        if (!context.mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => StagioneDetailScreen(stagione: nuovaStagione),
-          ),
-        );
-      } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Errore nella duplicazione: ${messaggioErrore(e)}'),
-          ),
-        );
-      }
-    }
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nomeGruppo = {
+      for (final g
+          in ref.watch(gruppiListProvider(stagione.clubId)).value ?? [])
+        g.id: g.nome,
+    }[stagione.gruppoId];
+    // null finche' il club non ha ancora compilato lo sport (o durante il
+    // caricamento): in quel caso si mostrano entrambe le sezioni, non si
+    // nasconde contenuto per un dato mancante.
+    final sport = ref.watch(currentClubProvider).value?.sport;
+    final mostraPallanuoto =
+        sport == null || sport == 'pallanuoto' || sport == 'nuoto_pallanuoto';
+    final mostraNuoto =
+        sport == null || sport == 'nuoto' || sport == 'nuoto_pallanuoto';
 
     return AppScaffold(
       appBar: AppBar(
         title: Text(stagione.nome),
         actions: [
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => AllenamentiStagioneScreen(stagione: stagione),
-              ),
-            ),
-            icon: const Icon(Icons.calendar_view_day_outlined),
-            tooltip: 'Tutti gli allenamenti',
-          ),
           PopupMenuButton<_AzioneStagione>(
             icon: const Icon(Icons.more_vert),
             onSelected: (azione) {
               switch (azione) {
                 case _AzioneStagione.duplica:
-                  duplicaStagione();
+                  _duplicaStagione(context, ref);
                 case _AzioneStagione.modifica:
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -163,7 +107,7 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
                     ),
                   );
                 case _AzioneStagione.elimina:
-                  elimina();
+                  _elimina(context, ref);
               }
             },
             itemBuilder: (context) => const [
@@ -191,7 +135,11 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
                 value: _AzioneStagione.elimina,
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, size: 20, color: AppColors.rosso),
+                    Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: AppColors.rosso,
+                    ),
                     SizedBox(width: AppSpacing.s12),
                     Text('Elimina', style: TextStyle(color: AppColors.rosso)),
                   ],
@@ -202,6 +150,7 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.all(AppSpacing.s16),
@@ -224,114 +173,39 @@ class _StagioneDetailScreenState extends ConsumerState<StagioneDetailScreen> {
             ),
           ),
           const Divider(height: 1),
-          Expanded(
-            child: macrocicliAsync.when(
-              data: (macrocicli) => macrocicli.isEmpty
-                  ? EmptyState(
-                      icona: Icons.timeline_outlined,
-                      titolo: 'Nessun macrociclo',
-                      descrizione:
-                          'Aggiungi il primo macrociclo per suddividere la '
-                          'stagione.',
-                      azionePrincipale: 'Nuovo macrociclo',
-                      onAzionePrincipale: apriNuovo,
-                    )
-                  : _elencoMacrocicli(macrocicli, stagione, riordina),
-              loading: () => const Padding(
-                padding: EdgeInsets.all(AppSpacing.s16),
-                child: LoadingSkeletonList(righe: 4),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: ErrorBanner(
-                  messaggio: 'Non è stato possibile caricare i macrocicli.',
-                  suggerimento:
-                      'Riprova. Se l\'errore continua, chiudi e riapri '
-                      'l\'app.',
-                  dettaglioTecnico: messaggioErrore(error),
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: AppListPanel(
+              righe: [
+                if (mostraPallanuoto)
+                  AppListRow(
+                    leading: const Icon(Icons.query_stats),
+                    titolo: 'Statistiche di stagione',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            StatisticheSquadraScreen(clubId: stagione.clubId),
+                      ),
+                    ),
+                  ),
+                if (mostraNuoto)
+                  AppListRow(
+                    leading: const Icon(Icons.emoji_events_outlined),
+                    titolo: 'Record',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            RecordClubScreen(clubId: stagione.clubId),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-macrocicli',
-        onPressed: apriNuovo,
-        tooltip: 'Nuovo macrociclo',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _elencoMacrocicli(
-    List<Macrociclo> macrocicli,
-    Stagione stagione,
-    Future<void> Function(List<Macrociclo> macrocicli, int oldIndex, int newIndex)
-    riordina,
-  ) {
-    final query = _ricerca.trim().toLowerCase();
-    final filtrati = query.isEmpty
-        ? macrocicli
-        : macrocicli.where((m) => m.nome.toLowerCase().contains(query)).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s16,
-            AppSpacing.s16,
-            AppSpacing.s16,
-            0,
-          ),
-          child: AppTextField(
-            etichetta: 'Cerca macrociclo per nome',
-            controller: _ricercaController,
-            suffixIcon: const Icon(Icons.search),
-            onChanged: (value) => setState(() => _ricerca = value),
-          ),
-        ),
-        Expanded(
-          child: filtrati.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  child: Text(
-                    'Nessun macrociclo corrisponde alla ricerca.',
-                    style: AppTypography.corpo,
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  child: query.isEmpty
-                      ? ReorderableAppListPanel(
-                          onReorderItem: (oldIndex, newIndex) =>
-                              riordina(macrocicli, oldIndex, newIndex),
-                          righe: [
-                            for (final m in filtrati)
-                              (
-                                chiave: ValueKey(m.id),
-                                riga: RigaAlberoMacrociclo(
-                                  macrociclo: m,
-                                  nomeStagione: stagione.nome,
-                                  formattaData: _formattaData,
-                                ),
-                              ),
-                          ],
-                        )
-                      : AppListPanel(
-                          righe: [
-                            for (final m in filtrati)
-                              RigaAlberoMacrociclo(
-                                macrociclo: m,
-                                nomeStagione: stagione.nome,
-                                formattaData: _formattaData,
-                              ),
-                          ],
-                        ),
-                ),
-        ),
-      ],
     );
   }
 }

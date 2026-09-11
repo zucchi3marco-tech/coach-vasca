@@ -9,8 +9,8 @@ class ParametriSettimana {
     required this.gruppo,
     required this.numeroSedute,
     required this.volumeSettimanaleMetri,
-    required this.focus,
-    this.tipoMicrociclo,
+    required this.focusPerSeduta,
+    this.tipoSettimana,
     this.vincoli,
     this.corsie = const [],
   });
@@ -18,8 +18,12 @@ class ParametriSettimana {
   final String gruppo;
   final int numeroSedute;
   final int volumeSettimanaleMetri;
-  final String focus;
-  final String? tipoMicrociclo;
+
+  /// Un focus per ciascuna seduta, nello stesso ordine in cui verranno
+  /// restituite: l'AI resta libera di scegliere giorno/volume/codice ma
+  /// deve rispettare l'ordine e il conteggio.
+  final List<String> focusPerSeduta;
+  final String? tipoSettimana;
   final String? vincoli;
   final List<CorsiaGenerazione> corsie;
 
@@ -28,8 +32,8 @@ class ParametriSettimana {
       'gruppo': gruppo,
       'numeroSedute': numeroSedute,
       'volumeSettimanaleMetri': volumeSettimanaleMetri,
-      'focus': focus,
-      'tipoMicrociclo': tipoMicrociclo,
+      'focusPerSeduta': focusPerSeduta,
+      'tipoSettimana': tipoSettimana,
       'vincoli': vincoli,
       'corsie': corsie.map((c) => c.toMap()).toList(),
     };
@@ -45,7 +49,7 @@ class SedutaGenerata {
     required this.volumeMetri,
   });
 
-  /// 1 = primo giorno della settimana (data_inizio del microciclo).
+  /// 1 = primo giorno della settimana (data di inizio scelta nel form).
   final int giorno;
   final String codice;
   final int volumeMetri;

@@ -2,7 +2,6 @@ class Allenamento {
   const Allenamento({
     required this.id,
     required this.clubId,
-    this.microcicloId,
     required this.data,
     this.titolo,
     this.gruppoId,
@@ -11,7 +10,6 @@ class Allenamento {
 
   final String id;
   final String clubId;
-  final String? microcicloId;
   final DateTime data;
   final String? titolo;
   final String? gruppoId;
@@ -21,7 +19,6 @@ class Allenamento {
     return Allenamento(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
-      microcicloId: map['microciclo_id'] as String?,
       data: DateTime.parse(map['data'] as String),
       titolo: map['titolo'] as String?,
       gruppoId: map['gruppo_id'] as String?,

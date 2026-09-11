@@ -28,7 +28,6 @@ class CorsiaGenerazione {
 class ParametriGenerazione {
   const ParametriGenerazione({
     required this.gruppo,
-    required this.livello,
     required this.volumeMetri,
     required this.focus,
     required this.regimiAmmessi,
@@ -37,7 +36,6 @@ class ParametriGenerazione {
   });
 
   final String gruppo;
-  final String livello;
   final int volumeMetri;
   final String focus;
   final List<String> regimiAmmessi;
@@ -51,7 +49,6 @@ class ParametriGenerazione {
   Map<String, dynamic> toMap() {
     return {
       'gruppo': gruppo,
-      'livello': livello,
       'volumeMetri': volumeMetri,
       'focus': focus,
       'regimiAmmessi': regimiAmmessi,

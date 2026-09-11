@@ -64,6 +64,33 @@ class PersonalBestRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Tutti i PB del club (record di club, FASE 11).
+  Stream<List<PersonalBest>> watchPerClub(String clubId) {
+    final query = _db.select(_db.personalBestTable)
+      ..where((t) => t.clubId.equals(clubId))
+      ..orderBy([(t) => OrderingTerm.asc(t.distanzaM)]);
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Sostituzione totale per il club (non insertOrReplace): un PB
+  /// eliminato fuori dall'app resterebbe altrimenti "fantasma" in cache.
+  Future<void> refreshFromRemoteClub(String clubId) async {
+    final rows = await _client
+        .from('personal_best')
+        .select()
+        .eq('club_id', clubId);
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.personalBestTable,
+      )..where((t) => t.clubId.equals(clubId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.personalBestTable, _companionFromMap(row));
+        }
+      });
+    });
+  }
+
   /// Sostituzione totale per questo atleta (non insertOrReplace): un PB
   /// eliminato fuori dall'app resterebbe altrimenti "fantasma" in cache.
   Future<void> refreshFromRemote(String atletaId) async {
