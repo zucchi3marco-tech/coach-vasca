@@ -11,6 +11,12 @@ class ClubTable extends Table {
   TextColumn get id => text()();
   TextColumn get nome => text()();
   TextColumn get citta => text().nullable()();
+  TextColumn get sport => text().nullable()();
+
+  /// Categorie allenate, codificate come lista JSON (es. `["U14","U16"]`):
+  /// SQLite non ha un tipo array nativo, stesso schema gia' usato per i
+  /// campi lista di `RefertiPartitaTable`.
+  TextColumn get categorieJson => text().withDefault(const Constant('[]'))();
 
   @override
   Set<Column> get primaryKey => {id};

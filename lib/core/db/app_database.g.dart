@@ -36,8 +36,29 @@ class $ClubTableTable extends ClubTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sportMeta = const VerificationMeta('sport');
   @override
-  List<GeneratedColumn> get $columns => [id, nome, citta];
+  late final GeneratedColumn<String> sport = GeneratedColumn<String>(
+    'sport',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categorieJsonMeta = const VerificationMeta(
+    'categorieJson',
+  );
+  @override
+  late final GeneratedColumn<String> categorieJson = GeneratedColumn<String>(
+    'categorie_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nome, citta, sport, categorieJson];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -69,6 +90,21 @@ class $ClubTableTable extends ClubTable
         citta.isAcceptableOrUnknown(data['citta']!, _cittaMeta),
       );
     }
+    if (data.containsKey('sport')) {
+      context.handle(
+        _sportMeta,
+        sport.isAcceptableOrUnknown(data['sport']!, _sportMeta),
+      );
+    }
+    if (data.containsKey('categorie_json')) {
+      context.handle(
+        _categorieJsonMeta,
+        categorieJson.isAcceptableOrUnknown(
+          data['categorie_json']!,
+          _categorieJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -90,6 +126,14 @@ class $ClubTableTable extends ClubTable
         DriftSqlType.string,
         data['${effectivePrefix}citta'],
       ),
+      sport: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sport'],
+      ),
+      categorieJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categorie_json'],
+      )!,
     );
   }
 
@@ -103,7 +147,19 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
   final String id;
   final String nome;
   final String? citta;
-  const ClubTableData({required this.id, required this.nome, this.citta});
+  final String? sport;
+
+  /// Categorie allenate, codificate come lista JSON (es. `["U14","U16"]`):
+  /// SQLite non ha un tipo array nativo, stesso schema gia' usato per i
+  /// campi lista di `RefertiPartitaTable`.
+  final String categorieJson;
+  const ClubTableData({
+    required this.id,
+    required this.nome,
+    this.citta,
+    this.sport,
+    required this.categorieJson,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -112,6 +168,10 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
     if (!nullToAbsent || citta != null) {
       map['citta'] = Variable<String>(citta);
     }
+    if (!nullToAbsent || sport != null) {
+      map['sport'] = Variable<String>(sport);
+    }
+    map['categorie_json'] = Variable<String>(categorieJson);
     return map;
   }
 
@@ -122,6 +182,10 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
       citta: citta == null && nullToAbsent
           ? const Value.absent()
           : Value(citta),
+      sport: sport == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sport),
+      categorieJson: Value(categorieJson),
     );
   }
 
@@ -134,6 +198,8 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
       id: serializer.fromJson<String>(json['id']),
       nome: serializer.fromJson<String>(json['nome']),
       citta: serializer.fromJson<String?>(json['citta']),
+      sport: serializer.fromJson<String?>(json['sport']),
+      categorieJson: serializer.fromJson<String>(json['categorieJson']),
     );
   }
   @override
@@ -143,6 +209,8 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
       'id': serializer.toJson<String>(id),
       'nome': serializer.toJson<String>(nome),
       'citta': serializer.toJson<String?>(citta),
+      'sport': serializer.toJson<String?>(sport),
+      'categorieJson': serializer.toJson<String>(categorieJson),
     };
   }
 
@@ -150,16 +218,24 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
     String? id,
     String? nome,
     Value<String?> citta = const Value.absent(),
+    Value<String?> sport = const Value.absent(),
+    String? categorieJson,
   }) => ClubTableData(
     id: id ?? this.id,
     nome: nome ?? this.nome,
     citta: citta.present ? citta.value : this.citta,
+    sport: sport.present ? sport.value : this.sport,
+    categorieJson: categorieJson ?? this.categorieJson,
   );
   ClubTableData copyWithCompanion(ClubTableCompanion data) {
     return ClubTableData(
       id: data.id.present ? data.id.value : this.id,
       nome: data.nome.present ? data.nome.value : this.nome,
       citta: data.citta.present ? data.citta.value : this.citta,
+      sport: data.sport.present ? data.sport.value : this.sport,
+      categorieJson: data.categorieJson.present
+          ? data.categorieJson.value
+          : this.categorieJson,
     );
   }
 
@@ -168,37 +244,47 @@ class ClubTableData extends DataClass implements Insertable<ClubTableData> {
     return (StringBuffer('ClubTableData(')
           ..write('id: $id, ')
           ..write('nome: $nome, ')
-          ..write('citta: $citta')
+          ..write('citta: $citta, ')
+          ..write('sport: $sport, ')
+          ..write('categorieJson: $categorieJson')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, nome, citta);
+  int get hashCode => Object.hash(id, nome, citta, sport, categorieJson);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ClubTableData &&
           other.id == this.id &&
           other.nome == this.nome &&
-          other.citta == this.citta);
+          other.citta == this.citta &&
+          other.sport == this.sport &&
+          other.categorieJson == this.categorieJson);
 }
 
 class ClubTableCompanion extends UpdateCompanion<ClubTableData> {
   final Value<String> id;
   final Value<String> nome;
   final Value<String?> citta;
+  final Value<String?> sport;
+  final Value<String> categorieJson;
   final Value<int> rowid;
   const ClubTableCompanion({
     this.id = const Value.absent(),
     this.nome = const Value.absent(),
     this.citta = const Value.absent(),
+    this.sport = const Value.absent(),
+    this.categorieJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ClubTableCompanion.insert({
     required String id,
     required String nome,
     this.citta = const Value.absent(),
+    this.sport = const Value.absent(),
+    this.categorieJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        nome = Value(nome);
@@ -206,12 +292,16 @@ class ClubTableCompanion extends UpdateCompanion<ClubTableData> {
     Expression<String>? id,
     Expression<String>? nome,
     Expression<String>? citta,
+    Expression<String>? sport,
+    Expression<String>? categorieJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (nome != null) 'nome': nome,
       if (citta != null) 'citta': citta,
+      if (sport != null) 'sport': sport,
+      if (categorieJson != null) 'categorie_json': categorieJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -220,12 +310,16 @@ class ClubTableCompanion extends UpdateCompanion<ClubTableData> {
     Value<String>? id,
     Value<String>? nome,
     Value<String?>? citta,
+    Value<String?>? sport,
+    Value<String>? categorieJson,
     Value<int>? rowid,
   }) {
     return ClubTableCompanion(
       id: id ?? this.id,
       nome: nome ?? this.nome,
       citta: citta ?? this.citta,
+      sport: sport ?? this.sport,
+      categorieJson: categorieJson ?? this.categorieJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -242,6 +336,12 @@ class ClubTableCompanion extends UpdateCompanion<ClubTableData> {
     if (citta.present) {
       map['citta'] = Variable<String>(citta.value);
     }
+    if (sport.present) {
+      map['sport'] = Variable<String>(sport.value);
+    }
+    if (categorieJson.present) {
+      map['categorie_json'] = Variable<String>(categorieJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -254,6 +354,8 @@ class ClubTableCompanion extends UpdateCompanion<ClubTableData> {
           ..write('id: $id, ')
           ..write('nome: $nome, ')
           ..write('citta: $citta, ')
+          ..write('sport: $sport, ')
+          ..write('categorieJson: $categorieJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10340,12 +10442,16 @@ typedef $$ClubTableTableCreateCompanionBuilder = ClubTableCompanion Function({
   required String id,
   required String nome,
   Value<String?> citta,
+  Value<String?> sport,
+  Value<String> categorieJson,
   Value<int> rowid,
 });
 typedef $$ClubTableTableUpdateCompanionBuilder = ClubTableCompanion Function({
   Value<String> id,
   Value<String> nome,
   Value<String?> citta,
+  Value<String?> sport,
+  Value<String> categorieJson,
   Value<int> rowid,
 });
 
@@ -10370,6 +10476,16 @@ class $$ClubTableTableFilterComposer
 
   ColumnFilters<String> get citta => $composableBuilder(
     column: $table.citta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sport => $composableBuilder(
+    column: $table.sport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categorieJson => $composableBuilder(
+    column: $table.categorieJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10397,6 +10513,16 @@ class $$ClubTableTableOrderingComposer
     column: $table.citta,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sport => $composableBuilder(
+    column: $table.sport,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categorieJson => $composableBuilder(
+    column: $table.categorieJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ClubTableTableAnnotationComposer
@@ -10416,6 +10542,14 @@ class $$ClubTableTableAnnotationComposer
 
   GeneratedColumn<String> get citta =>
       $composableBuilder(column: $table.citta, builder: (column) => column);
+
+  GeneratedColumn<String> get sport =>
+      $composableBuilder(column: $table.sport, builder: (column) => column);
+
+  GeneratedColumn<String> get categorieJson => $composableBuilder(
+    column: $table.categorieJson,
+    builder: (column) => column,
+  );
 }
 
 class $$ClubTableTableTableManager
@@ -10452,11 +10586,15 @@ class $$ClubTableTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> nome = const Value.absent(),
                 Value<String?> citta = const Value.absent(),
+                Value<String?> sport = const Value.absent(),
+                Value<String> categorieJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClubTableCompanion(
                 id: id,
                 nome: nome,
                 citta: citta,
+                sport: sport,
+                categorieJson: categorieJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10464,15 +10602,28 @@ class $$ClubTableTableTableManager
                 required String id,
                 required String nome,
                 Value<String?> citta = const Value.absent(),
+                Value<String?> sport = const Value.absent(),
+                Value<String> categorieJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClubTableCompanion.insert(
                 id: id,
                 nome: nome,
                 citta: citta,
+                sport: sport,
+                categorieJson: categorieJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ClubTableTable, ClubTableData>(table),
+                  BaseReferences<_$AppDatabase, $ClubTableTable, ClubTableData>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -10914,7 +11065,16 @@ class $$AtletiTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AtletiTableTable, AtletiTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AtletiTableTable,
+                    AtletiTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -11180,7 +11340,18 @@ class $$PersonalBestTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PersonalBestTableTable, PersonalBestTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PersonalBestTableTable,
+                    PersonalBestTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -11475,7 +11646,18 @@ class $$TestIngressoTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$TestIngressoTableTable, TestIngressoTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TestIngressoTableTable,
+                    TestIngressoTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -11728,7 +11910,18 @@ class $$TabellePassiTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$TabellePassiTableTable, TabellePassiTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TabellePassiTableTable,
+                    TabellePassiTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -11997,7 +12190,16 @@ class $$StagioniTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$StagioniTableTable, StagioniTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $StagioniTableTable,
+                    StagioniTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -12264,7 +12466,18 @@ class $$MacrocicliTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$MacrocicliTableTable, MacrocicliTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MacrocicliTableTable,
+                    MacrocicliTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -12535,7 +12748,16 @@ class $$MesocicliTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$MesocicliTableTable, MesocicliTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MesocicliTableTable,
+                    MesocicliTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -12823,7 +13045,18 @@ class $$MicrocicliTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$MicrocicliTableTable, MicrocicliTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MicrocicliTableTable,
+                    MicrocicliTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -13073,7 +13306,18 @@ class $$AllenamentiTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AllenamentiTableTable, AllenamentiTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AllenamentiTableTable,
+                    AllenamentiTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -13475,7 +13719,16 @@ class $$SerieTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$SerieTableTable, SerieTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SerieTableTable,
+                    SerieTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -13700,7 +13953,16 @@ class $$PresenzeTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PresenzeTableTable, PresenzeTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PresenzeTableTable,
+                    PresenzeTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -13932,7 +14194,19 @@ class $$PendingOperationsTableTableTableManager
                 creatoIl: creatoIl,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $PendingOperationsTableTable,
+                    PendingOperationsTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PendingOperationsTableTable,
+                    PendingOperationsTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -14344,7 +14618,16 @@ class $$PartiteTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PartiteTableTable, PartiteTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PartiteTableTable,
+                    PartiteTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -14641,7 +14924,19 @@ class $$DistintaGiocatoriTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $DistintaGiocatoriTableTable,
+                    DistintaGiocatoriTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $DistintaGiocatoriTableTable,
+                    DistintaGiocatoriTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -15031,7 +15326,18 @@ class $$EventiPartitaTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$EventiPartitaTableTable, EventiPartitaTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $EventiPartitaTableTable,
+                    EventiPartitaTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -15356,7 +15662,19 @@ class $$RefertiPartitaTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $RefertiPartitaTableTable,
+                    RefertiPartitaTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RefertiPartitaTableTable,
+                    RefertiPartitaTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -15541,7 +15859,16 @@ class $$GruppiTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$GruppiTableTable, GruppiTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $GruppiTableTable,
+                    GruppiTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

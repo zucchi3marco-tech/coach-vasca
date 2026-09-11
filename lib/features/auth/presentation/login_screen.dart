@@ -8,6 +8,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/secondary_button.dart';
 import '../data/auth_repository.dart';
 import 'riscatta_invito_screen.dart';
 import 'signup_screen.dart';
@@ -25,6 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isSubmitting = false;
+  bool _passwordVisibile = false;
   String? _errorMessage;
 
   @override
@@ -121,8 +123,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   AppTextField(
                     etichetta: 'Password',
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_passwordVisibile,
                     autofillHints: const [AutofillHints.password],
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _passwordVisibile
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                      tooltip: _passwordVisibile
+                          ? 'Nascondi password'
+                          : 'Mostra password',
+                      onPressed: () =>
+                          setState(() => _passwordVisibile = !_passwordVisibile),
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Inserisci la tua password';
@@ -135,27 +149,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: AppSpacing.s12),
                     ErrorBanner(messaggio: _errorMessage!),
                   ],
-                  const SizedBox(height: AppSpacing.s24),
-                  PrimaryButton(
-                    label: 'Accedi',
-                    isLoading: _isSubmitting,
-                    onPressed: _isSubmitting ? null : _submit,
-                  ),
-                  const SizedBox(height: AppSpacing.s12),
+                  const SizedBox(height: AppSpacing.s16),
                   TextButton(
                     onPressed: _isSubmitting ? null : _resetPassword,
                     child: const Text('Password dimenticata?'),
                   ),
-                  TextButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const SignUpScreen(),
-                            ),
-                          ),
-                    child: const Text('Non hai un account? Registrati'),
+                  const SizedBox(height: AppSpacing.s12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PrimaryButton(
+                          label: 'Accedi',
+                          isLoading: _isSubmitting,
+                          onPressed: _isSubmitting ? null : _submit,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.s12),
+                      Expanded(
+                        child: SecondaryButton(
+                          label: 'Registrati',
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const SignUpScreen(),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: AppSpacing.s16),
                   TextButton(
                     onPressed: _isSubmitting
                         ? null

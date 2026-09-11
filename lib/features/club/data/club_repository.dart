@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,8 +15,15 @@ class ClubRepository {
   final SupabaseClient _client;
   final AppDatabase _db;
 
-  Club _fromRow(ClubTableData row) =>
-      Club(id: row.id, nome: row.nome, citta: row.citta);
+  Club _fromRow(ClubTableData row) => Club(
+    id: row.id,
+    nome: row.nome,
+    citta: row.citta,
+    sport: row.sport,
+    categorie: (jsonDecode(row.categorieJson) as List)
+        .map((c) => c as String)
+        .toList(),
+  );
 
   /// Legge dalla cache locale: disponibile anche offline.
   Future<List<Club>> fetchMyClubsLocal() async {
@@ -34,7 +43,7 @@ class ClubRepository {
   Future<void> refreshFromRemote() async {
     final rows = await _client
         .from('club')
-        .select('id, nome, citta')
+        .select('id, nome, citta, sport, categorie')
         .order('nome');
     await _db.transaction(() async {
       await _db.delete(_db.clubTable).go();
@@ -46,6 +55,8 @@ class ClubRepository {
               id: row['id'] as String,
               nome: row['nome'] as String,
               citta: Value(row['citta'] as String?),
+              sport: Value(row['sport'] as String?),
+              categorieJson: Value(jsonEncode(row['categorie'] ?? const [])),
             ),
           );
         }
@@ -58,21 +69,24 @@ class ClubRepository {
   /// creare un club offline e farlo comparire come "esistente" prima che il
   /// server lo confermi non avrebbe senso, dato che l'ownership dipende dal
   /// trigger lato DB.
-  Future<Club> createClub({required String nome, String? citta}) async {
+  Future<Club> createClub({
+    required String nome,
+    String? citta,
+    String? sport,
+    List<String> categorie = const [],
+  }) async {
     final row =
         await _client.rpc(
               'create_club',
               params: {
                 'p_nome': nome,
                 if (citta != null && citta.isNotEmpty) 'p_citta': citta,
+                'p_sport': ?sport,
+                'p_categorie': categorie,
               },
             )
             as Map<String, dynamic>;
-    final club = Club(
-      id: row['id'] as String,
-      nome: row['nome'] as String,
-      citta: row['citta'] as String?,
-    );
+    final club = Club.fromMap(row);
     await _db
         .into(_db.clubTable)
         .insertOnConflictUpdate(
@@ -80,6 +94,8 @@ class ClubRepository {
             id: club.id,
             nome: club.nome,
             citta: Value(club.citta),
+            sport: Value(club.sport),
+            categorieJson: Value(jsonEncode(club.categorie)),
           ),
         );
     return club;

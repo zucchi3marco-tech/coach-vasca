@@ -29,7 +29,6 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
   final _noteController = TextEditingController();
   late final TextEditingController _dataController;
 
-  String _tipo = 'BVS';
   DateTime _dataTest = DateTime.now();
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -87,7 +86,7 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
           .read(testRepositoryProvider)
           .createTest(
             atletaId: widget.atleta.id,
-            tipo: _tipo,
+            tipo: 'BVS',
             dataTest: _dataTest,
             distanzaTotaleM: int.parse(_distanzaController.text.trim()),
             tempoTotaleS: tempoTotaleS,
@@ -116,24 +115,17 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: Text('Nuovo test — ${widget.atleta.nomeCompleto}')),
+      appBar: AppBar(
+        title: Text('Nuovo test BVS — ${widget.atleta.nomeCompleto}'),
+      ),
       body: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormGroup(
-              titolo: 'Tipo di test',
+              titolo: 'Quando',
               campi: [
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'BVS', label: Text('BVS')),
-                    ButtonSegment(value: 'T30', label: Text('T30')),
-                  ],
-                  selected: {_tipo},
-                  onSelectionChanged: (selection) =>
-                      setState(() => _tipo = selection.first),
-                ),
                 AppTextField(
                   etichetta: 'Data del test',
                   controller: _dataController,

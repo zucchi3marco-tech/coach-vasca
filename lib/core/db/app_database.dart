@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -179,6 +179,16 @@ class AppDatabase extends _$AppDatabase {
           await m.database.customStatement(
             'ALTER TABLE stagioni_table DROP COLUMN gruppo',
           );
+        }
+      }
+      // v13 -> v14: sport e categorie allenate sul club (FASE 11), chiesti
+      // alla prima registrazione insieme a nome e citta'.
+      if (from < 14) {
+        if (!await _hasColumn(m, 'club_table', 'sport')) {
+          await m.addColumn(clubTable, clubTable.sport);
+        }
+        if (!await _hasColumn(m, 'club_table', 'categorie_json')) {
+          await m.addColumn(clubTable, clubTable.categorieJson);
         }
       }
     },

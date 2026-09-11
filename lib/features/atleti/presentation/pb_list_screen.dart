@@ -3,13 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
+import '../../tabelle_passi/application/tabelle_passi_providers.dart';
+import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
+import '../../test/application/test_providers.dart';
+import '../../test/data/test_repository.dart';
+import '../../test/domain/test_ingresso.dart';
+import '../../test/presentation/test_form_screen.dart';
 import '../application/personal_best_providers.dart';
 import '../domain/atleta.dart';
 import '../domain/pb_slots.dart';
@@ -24,9 +32,45 @@ class PbListScreen extends ConsumerWidget {
 
   final Atleta atleta;
 
+  Future<void> _confermaEliminazioneTest(
+    BuildContext context,
+    WidgetRef ref,
+    TestIngresso test,
+  ) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminare il test?'),
+        content: Text(
+          'Verranno eliminate anche le eventuali tabelle passi collegate a '
+          'questo test (${test.tipo} del '
+          '${test.dataTest.day.toString().padLeft(2, '0')}/'
+          '${test.dataTest.month.toString().padLeft(2, '0')}/'
+          '${test.dataTest.year}).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (conferma == true) {
+      await ref.read(testRepositoryProvider).deleteTest(test.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pbAsync = ref.watch(personalBestListProvider(atleta.id));
+    final testAsync = ref.watch(testListProvider(atleta.id));
 
     void apriForm({
       required String stile,
@@ -41,6 +85,10 @@ class PbListScreen extends ConsumerWidget {
           personalBest: personalBest,
         ),
       ),
+    );
+
+    void apriFormTest() => Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)),
     );
 
     return AppScaffold(
@@ -92,6 +140,40 @@ class PbListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.s16),
                 ],
+                SectionHeader('Test BVS'),
+                const SizedBox(height: AppSpacing.s8),
+                testAsync.when(
+                  data: (test) => AppListPanel(
+                    righe: test.isEmpty
+                        ? [
+                            AppListRow(
+                              leading: const Icon(Icons.add_circle_outline),
+                              titolo: 'Aggiungi il primo test BVS',
+                              onTap: apriFormTest,
+                            ),
+                          ]
+                        : [
+                            for (final t in test)
+                              _TestTile(
+                                test: t,
+                                atleta: atleta,
+                                onDelete: () => _confermaEliminazioneTest(
+                                  context,
+                                  ref,
+                                  t,
+                                ),
+                              ),
+                          ],
+                  ),
+                  loading: () => const LoadingSkeletonList(righe: 2),
+                  error: (error, _) => ErrorBanner(
+                    messaggio: 'Non è stato possibile caricare i test.',
+                    suggerimento:
+                        'Riprova. Se l\'errore continua, chiudi e riapri '
+                        'l\'app.',
+                    dettaglioTecnico: messaggioErrore(error),
+                  ),
+                ),
               ],
             ),
           );
@@ -110,6 +192,12 @@ class PbListScreen extends ConsumerWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-nuovo-test-bvs',
+        onPressed: apriFormTest,
+        tooltip: 'Nuovo test BVS',
+        child: const Icon(Icons.speed_outlined),
+      ),
     );
   }
 
@@ -123,6 +211,47 @@ class PbListScreen extends ConsumerWidget {
       sottotitolo: pb != null ? formatPaceSeconds(pb.tempoS) : 'Non registrato',
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+}
+
+class _TestTile extends ConsumerWidget {
+  const _TestTile({
+    required this.test,
+    required this.atleta,
+    required this.onDelete,
+  });
+
+  final TestIngresso test;
+  final Atleta atleta;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tabellaGenerata =
+        ref.watch(tabellePassiProvider(test.id)).value?.isNotEmpty ?? false;
+
+    return AppListRow(
+      leading: Icon(
+        tabellaGenerata ? Icons.table_chart : Icons.table_chart_outlined,
+        color: tabellaGenerata ? AppColors.ok : AppColors.testoSecondario,
+      ),
+      titolo: '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
+      sottotitolo:
+          '${test.dataTest.day.toString().padLeft(2, '0')}/'
+          '${test.dataTest.month.toString().padLeft(2, '0')}/'
+          '${test.dataTest.year} · '
+          '${test.distanzaTotaleM} m in ${formatPaceSeconds(test.tempoTotaleS)}',
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Elimina test',
+        onPressed: onDelete,
+      ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TabellePassiScreen(test: test, atleta: atleta),
+        ),
+      ),
     );
   }
 }

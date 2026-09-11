@@ -18,7 +18,6 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../../stroke_rate/presentation/stroke_rate_screen.dart';
-import '../../test/presentation/test_list_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
@@ -104,11 +103,6 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   ordinamento: _ordinamento,
                   onTap: (atleta) => _apriForm(context, atleta: atleta),
                   onTapNuovo: () => _apriForm(context),
-                  onTapTest: (atleta) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => TestListScreen(atleta: atleta),
-                    ),
-                  ),
                   onTapCarico: (atleta) => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CaricoAtletaScreen(atleta: atleta),
@@ -203,7 +197,6 @@ class _AtletiList extends StatelessWidget {
     required this.ordinamento,
     required this.onTap,
     required this.onTapNuovo,
-    required this.onTapTest,
     required this.onTapCarico,
     required this.onTapStatistiche,
     required this.onTapBracciate,
@@ -217,7 +210,6 @@ class _AtletiList extends StatelessWidget {
   final _Ordinamento ordinamento;
   final ValueChanged<Atleta> onTap;
   final VoidCallback onTapNuovo;
-  final ValueChanged<Atleta> onTapTest;
   final ValueChanged<Atleta> onTapCarico;
   final ValueChanged<Atleta> onTapStatistiche;
   final ValueChanged<Atleta> onTapBracciate;
@@ -337,13 +329,6 @@ class _AtletiList extends StatelessWidget {
                         child: const _VoceMenu(
                           icona: Icons.query_stats,
                           etichetta: 'Statistiche',
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: () => onTapTest(atleta),
-                        child: const _VoceMenu(
-                          icona: Icons.speed_outlined,
-                          etichetta: 'Test',
                         ),
                       ),
                       PopupMenuItem(

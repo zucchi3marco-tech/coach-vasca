@@ -7,12 +7,14 @@ import '../../../widgets/cap_badge.dart';
 import '../domain/partita.dart';
 import 'selettore_giocatore_partita.dart';
 
-/// Fascia verticale di calottine ai bordi dello schermo (sostituisce, nella
-/// schermata live, la vecchia griglia centrale a due colonne): sinistra =
-/// squadra di casa (badge bianchi), destra = squadra fuori casa (badge
-/// blu), sempre visibili. In stato di riposo ([attiva] false) i numeri si
-/// vedono ma non sono toccabili; [attiva] true li evidenzia e li rende
-/// bersagli (per il tiro, solo il lato nostro tramite [soloNostra]).
+/// Fascia di calottine ai bordi dello schermo: sinistra = squadra di casa
+/// (badge bianchi), destra = squadra fuori casa (badge blu), sempre
+/// visibili. In stato di riposo ([attiva] false) i numeri si vedono ma non
+/// sono toccabili; [attiva] true li evidenzia e li rende bersagli (per il
+/// tiro, solo il lato nostro tramite [soloNostra]). Due colonne leggermente
+/// sfalsate (non una sola colonna verticale) perché con rose fino a 15
+/// giocatori una singola colonna non ci sta nell'altezza dello schermo in
+/// orizzontale, a bordo vasca, senza dover scorrere durante l'azione.
 class FasciaCalottinePartita extends StatelessWidget {
   const FasciaCalottinePartita({
     required this.partita,
@@ -42,48 +44,69 @@ class FasciaCalottinePartita extends StatelessWidget {
 
   bool get _eNostra => (partita.nostraSquadra == 'casa') == casa;
 
-  @override
-  Widget build(BuildContext context) {
+  _BadgeCalottina _badge(int n, bool toccabile) {
     final atletaPerNumero = {
       for (final c in convocati) c.giocatore.numeroCalottina: c.atleta,
     };
-    final colore = casa ? CapColore.bianca : CapColore.blu;
+    return _BadgeCalottina(
+      numero: n,
+      colore: casa ? CapColore.bianca : CapColore.blu,
+      attivo: toccabile && (_eNostra ? atletaPerNumero[n] != null : true),
+      squalificato: disqualificati.contains(
+        _eNostra
+            ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
+            : AvversarioGiocatoreId(n),
+      ),
+      conteggioRigore:
+          conteggiRigore[_eNostra
+              ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
+              : AvversarioGiocatoreId(n)] ??
+          0,
+      onTap: () {
+        if (_eNostra) {
+          final atleta = atletaPerNumero[n];
+          if (atleta != null) onSelezionato(NostroGiocatoreId(atleta.id));
+        } else {
+          onSelezionato(AvversarioGiocatoreId(n));
+        }
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final toccabile = attiva && (!soloNostra || _eNostra);
+    final colonnaA = <int>[];
+    final colonnaB = <int>[];
+    for (var n = 1; n <= partita.numeroMaxConvocati; n++) {
+      (n.isOdd ? colonnaA : colonnaB).add(n);
+    }
+
+    Widget colonna(List<int> numeri) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final n in numeri) ...[
+          _badge(n, toccabile),
+          if (n != numeri.last) const SizedBox(height: AppSpacing.s8),
+        ],
+      ],
+    );
 
     return SingleChildScrollView(
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          for (var n = 1; n <= partita.numeroMaxConvocati; n++) ...[
-            _BadgeCalottina(
-              numero: n,
-              colore: colore,
-              attivo:
-                  toccabile && (_eNostra ? atletaPerNumero[n] != null : true),
-              squalificato: disqualificati.contains(
-                _eNostra
-                    ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
-                    : AvversarioGiocatoreId(n),
-              ),
-              conteggioRigore:
-                  conteggiRigore[_eNostra
-                      ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
-                      : AvversarioGiocatoreId(n)] ??
-                  0,
-              onTap: () {
-                if (_eNostra) {
-                  final atleta = atletaPerNumero[n];
-                  if (atleta != null) {
-                    onSelezionato(NostroGiocatoreId(atleta.id));
-                  }
-                } else {
-                  onSelezionato(AvversarioGiocatoreId(n));
-                }
-              },
+          colonna(colonnaA),
+          const SizedBox(width: AppSpacing.s4),
+          Padding(
+            // Sfalsata di mezza riga rispetto alla prima colonna.
+            padding: const EdgeInsets.only(
+              top:
+                  (AppSpacing.altezzaMinimaBersaglioVasca + AppSpacing.s8) / 2,
             ),
-            if (n != partita.numeroMaxConvocati)
-              const SizedBox(height: AppSpacing.s8),
-          ],
+            child: colonna(colonnaB),
+          ),
         ],
       ),
     );
