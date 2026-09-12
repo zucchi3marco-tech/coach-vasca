@@ -97,13 +97,35 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
         '${data.year}';
   }
 
+  /// Anno di nascita "tipico" da cui far partire il calendario: se il
+  /// gruppo già scelto si chiama "U14"/"U16"/ecc. (convenzione pallanuoto),
+  /// lo deduce da lì; altrimenti un default generico (dodici anni fa).
+  int _annoNascitaSuggerito() {
+    final now = DateTime.now();
+    if (_gruppoId != null) {
+      final gruppi = ref.read(gruppiListProvider(widget.clubId)).value ?? [];
+      for (final g in gruppi) {
+        if (g.id != _gruppoId) continue;
+        final match = RegExp(
+          r'^U(\d{1,2})$',
+          caseSensitive: false,
+        ).firstMatch(g.nome.trim());
+        final eta = match != null ? int.tryParse(match.group(1)!) : null;
+        if (eta != null) return now.year - eta;
+        break;
+      }
+    }
+    return now.year - 12;
+  }
+
   Future<void> _pickDataNascita() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
       context: context,
-      initialDate: _dataNascita ?? DateTime(now.year - 12),
+      initialDate: _dataNascita ?? DateTime(_annoNascitaSuggerito()),
       firstDate: DateTime(now.year - 100),
       lastDate: now,
+      initialDatePickerMode: DatePickerMode.year,
     );
     if (selected != null) {
       setState(() {

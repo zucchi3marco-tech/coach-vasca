@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/supabase/supabase_providers.dart';
@@ -19,6 +20,13 @@ class CoachVascaApp extends ConsumerWidget {
       title: 'SwimCoach FIN',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.chiaro,
+      locale: const Locale('it'),
+      supportedLocales: const [Locale('it')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: authState.when(
         data: (state) =>
             state.session != null ? const HomeScreen() : const LoginScreen(),

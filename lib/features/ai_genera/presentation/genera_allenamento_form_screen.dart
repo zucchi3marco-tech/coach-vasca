@@ -26,6 +26,11 @@ const _regimi = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D'];
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
+/// "velocita" resta senza accento come valore interno (identico a quanto
+/// manda l'Edge Function): solo l'etichetta mostrata va accentata.
+String _etichettaFocus(String f) =>
+    f == 'velocita' ? 'Velocità' : _capitalizza(f);
+
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({
     required this.clubId,
@@ -122,7 +127,10 @@ class _GeneraAllenamentoFormScreenState
                   value: _focusSelezionato,
                   items: [
                     for (final f in _focus)
-                      DropdownMenuItem(value: f, child: Text(_capitalizza(f))),
+                      DropdownMenuItem(
+                        value: f,
+                        child: Text(_etichettaFocus(f)),
+                      ),
                   ],
                   onChanged: (value) =>
                       setState(() => _focusSelezionato = value ?? _focus.first),

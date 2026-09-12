@@ -27,6 +27,11 @@ const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
+/// "velocita" resta senza accento come valore interno (identico a quanto
+/// manda l'Edge Function): solo l'etichetta mostrata va accentata.
+String _etichettaFocus(String f) =>
+    f == 'velocita' ? 'Velocità' : _capitalizza(f);
+
 /// Pianifica una settimana intera (FASE 10, punto 5): prima uno scheletro
 /// leggero (numero di sedute, codice, volume) via `genera-settimana`, poi
 /// il dettaglio delle serie di ogni seduta via `genera-allenamento` —
@@ -324,7 +329,7 @@ class _GeneraSettimanaFormScreenState
                             for (final f in _focus)
                               DropdownMenuItem(
                                 value: f,
-                                child: Text(_capitalizza(f)),
+                                child: Text(_etichettaFocus(f)),
                               ),
                           ],
                           onChanged: (value) => setState(
