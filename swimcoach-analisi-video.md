@@ -59,10 +59,12 @@ Nella vista Settimana i giorni erano "Lunedi", "Martedi", "Mercoledi", "Venerdi"
 
 **Fix.** Sono stringhe hardcoded. Vale la pena centralizzarle ora in un unico file di costanti: se domani vuoi l'app anche in inglese, il lavoro è già impostato.
 
-### 2.6 Percorso interno del repository visibile all'utente
+### 2.6 Percorso interno del repository visibile all'utente — ✅ risolto (2026-09-12)
 Nella schermata Nuovo atleta, sotto "Consenso privacy firmato", si legge "Vedi docs/privacy/ per il modulo da far firmare al genitore". È il percorso di una cartella del progetto, non qualcosa che un allenatore possa aprire.
 
 **Fix.** Sostituire con un pulsante "Scarica il modulo di consenso" che apre il PDF, oppure togliere la riga.
+
+*Come risolto:* nessun PDF del modulo esiste ancora nel progetto (solo markdown in `docs/privacy/`), quindi niente pulsante di download per ora — la riga tecnica è stata sostituita con un promemoria neutro ("Fai firmare il modulo di consenso al genitore prima di attivare questo interruttore"), senza riferimenti a percorsi interni. Costruire il download del PDF resta un'opzione per dopo, se si genera un PDF vero dal markdown esistente.
 
 ### 2.7 Generazione AI senza esito visibile
 Compili il form "Genera con AI" (gruppo U16, volume 3000 m, focus Aerobico, regimi A1 e A2) e subito dopo l'elenco allenamenti contiene ancora solo "Aerobicone". Stessa cosa con "Genera settimana con AI": imposti 4 sedute, 14000 m, focus Aerobico/Soglia/Tecnica/Velocità, e la vista Settimana resta con sei giorni su sette a "Nessun allenamento".
@@ -87,20 +89,26 @@ Il 28% del video è login, registrazione, password sbagliate, creazione club. Pa
 
 **Fix.** Riportare l'email già digitata nella schermata di registrazione, e nel messaggio di errore aggiungere l'azione "Non hai un account? Registrati".
 
-### 3.2 Lo skeleton loader sembra una lista vuota
+### 3.2 Lo skeleton loader sembra una lista vuota — ✅ risolto (2026-09-12)
 A 1:12 la lista atleti mostra sei rettangoli grigi vuoti per circa due secondi. Senza animazione di shimmer sembrano schede di atleti rotte, non un caricamento.
 
 **Fix.** Aggiungere l'effetto shimmer, oppure mostrare direttamente lo stato vuoto se il caricamento dura meno di 300 ms.
 
-### 3.3 Tre pulsanti flottanti impilati senza etichette
+*Come risolto:* `LoadingSkeleton` (usato ovunque nell'app) ora pulsa continuamente tra il 50% e il 100% di opacità finché il caricamento dura — una pulsazione invece di un vero shimmer a gradiente in movimento, più semplice da implementare in modo affidabile e sufficiente a comunicare "sta caricando" invece di "lista vuota o rotta".
+
+### 3.3 Tre pulsanti flottanti impilati senza etichette — ✅ risolto (2026-09-12)
 Nella sezione Allenamenti ci sono tre FAB uno sopra l'altro: un'icona libro, una stella AI, un più. Il tooltip esiste ("Genera settimana con AI") ma appare solo al passaggio del mouse, quindi su tablet non lo vedi mai. Stessa cosa nella sezione Partite con tre FAB diversi.
 
 **Fix.** Un solo FAB primario "+" e le altre azioni in un menu che si apre, con etichette testuali sempre visibili. Tre bersagli identici in colonna sono anche facili da sbagliare con le dita bagnate.
 
-### 3.4 Il campo "Ordine" è compilato a mano
+*Come risolto:* nuovo componente condiviso `FabAzioni` (documentato in DESIGN.md sezione 14): con una sola azione si comporta come un FAB normale, con più azioni il tocco apre un elenco a comparsa dal basso con icona ed etichetta sempre visibili per ciascuna. Sostituiti i FAB impilati sia in Allenamenti (Nuovo allenamento/Genera con AI/Genera settimana con AI) sia in Partite (Nuova partita/Leggi referto/Statistiche stagione).
+
+### 3.4 Il campo "Ordine" è compilato a mano — ✅ risolto (2026-09-12)
 In Nuova serie il primo campo di Volume è "Ordine", e nel video lo scrivi tu: 1 per la prima serie, 2 per la seconda.
 
 **Fix.** L'ordine è la posizione nella lista. Toglilo dal form e rendi la lista riordinabile con trascinamento (`ReorderableListView`). È il campo che non dovrebbe esistere.
+
+*Come risolto:* il campo "Ordine" è sparito dal form completo della serie (già non serviva più nemmeno nella riga rapida, che lo calcola da sola). L'elenco serie nel dettaglio allenamento è ora un `ReorderableListView` (tenendo premuto si trascina una serie in una nuova posizione), che rinumera automaticamente l'ordine di tutte le serie coinvolte.
 
 ### 3.5 L'app è a colonna unica anche su desktop — ✅ risolto (2026-09-12)
 Il video è registrato su Edge e i campi si allargano per tutta la larghezza della finestra. Su un monitor da 1920 px avrai caselle di testo lunghe un metro e la navigazione principale in fondo allo schermo, che su desktop è il posto più lontano dal mouse.
@@ -109,10 +117,12 @@ Il video è registrato su Edge e i campi si allargano per tutta la larghezza del
 
 *Come risolto:* `AppScaffold` (usato da ogni schermata) centra ora il contenuto in un `ConstrainedBox` largo al massimo 760px — sotto quella soglia (telefono/tablet) non cambia nulla. In `HomeScreen`, oltre 900px la barra inferiore (`NavigationBar`) è sostituita da una `NavigationRail` laterale con le stesse 4 destinazioni (Atleti/Allenamenti/Stagioni/Partite).
 
-### 3.6 Nessuna normalizzazione dei nomi
+### 3.6 Nessuna normalizzazione dei nomi — ✅ già risolto
 L'atleta viene salvato come Cognome "Genah", Nome "gabriel". In lista compare "Genah Gabriel", quindi la visualizzazione corregge, ma il dato salvato resta minuscolo.
 
 **Fix.** Normalizzare al salvataggio, non alla visualizzazione, altrimenti ricerca e ordinamento si comportano in modo imprevedibile.
+
+*Verificato (2026-09-12):* `capitalizzaNome` viene già chiamato al salvataggio (creazione e modifica) in `atleta_form_screen.dart`, non solo in visualizzazione — il video risulta registrato contro una build precedente a questo fix (fatto in FASE 10). Nessuna modifica necessaria.
 
 ### 3.7 "Tipo di settimana (facoltativo)" non si capisce
 Nel generatore settimanale c'è un menu "Tipo di settimana" impostato su "Nessuno". Non è chiaro cosa cambi scegliendo qualcos'altro.

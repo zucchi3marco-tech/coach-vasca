@@ -434,9 +434,9 @@ I token di dominio (zone, calottine, "in corso") non stanno in `ColorScheme`: va
 
 Vivono in `lib/widgets/`. Una schermata nuova si compone con questi, non ricostruisce nulla da zero:
 
-`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`.
+`AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`, `FabAzioni`.
 
-`ReorderableAppListPanel` (in `app_list_panel.dart`) è la variante di `AppListPanel` con le righe trascinabili — usata dove l'ordine lo decide il coach (macrocicli/mesocicli/microcicli di una stagione) invece di un campo "Ordine" digitato a mano. `BreadcrumbBar` mostra la catena di livelli di una gerarchia annidata (es. Stagione › Macrociclo › Mesociclo) con ogni tappa cliccabile per risalire di più livelli in un colpo, senza introdurre nuove route.
+`ReorderableAppListPanel` (in `app_list_panel.dart`) è la variante di `AppListPanel` con le righe trascinabili — usata dove l'ordine lo decide il coach (es. le serie di un allenamento, riordinabili a trascinamento) invece di un campo "Ordine" digitato a mano. `BreadcrumbBar` mostra la catena di livelli di una gerarchia annidata con ogni tappa cliccabile per risalire di più livelli in un colpo, senza introdurre nuove route — al momento non usata da nessuna schermata, resta disponibile per una futura gerarchia annidata. `FabAzioni` sostituisce più `FloatingActionButton` impilati con un unico pulsante: con un'azione sola si comporta come un FAB normale, con più azioni il tocco apre un elenco con etichette sempre visibili (mai più bersagli identici uno sopra l'altro).
 
 Se serve un componente nuovo, si aggiunge qui e si documenta in questo file. Non si scrive un widget su misura dentro una singola schermata.
 

@@ -4,9 +4,11 @@ import '../theme/app_spacing.dart';
 import '../theme/superfici_tema.dart';
 
 /// Scheletro di caricamento — vedi DESIGN.md sezione 8, "Caricamento".
-/// Un rettangolo `superficieTenue` della forma del contenuto in arrivo;
-/// mai una rotellina sola in mezzo allo schermo.
-class LoadingSkeleton extends StatelessWidget {
+/// Un rettangolo `superficieTenue` della forma del contenuto in arrivo,
+/// con una pulsazione di opacità continua: senza, un caricamento un po'
+/// più lungo del solito è indistinguibile da una lista vuota o rotta.
+/// Mai una rotellina sola in mezzo allo schermo.
+class LoadingSkeleton extends StatefulWidget {
   const LoadingSkeleton({
     this.width = double.infinity,
     this.height = AppSpacing.s16,
@@ -17,13 +19,37 @@ class LoadingSkeleton extends StatelessWidget {
   final double height;
 
   @override
+  State<LoadingSkeleton> createState() => _LoadingSkeletonState();
+}
+
+class _LoadingSkeletonState extends State<LoadingSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+  late final Animation<double> _opacita = Tween<double>(
+    begin: 0.5,
+    end: 1,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: SuperficiTema.of(context).superficieTenue,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+    return FadeTransition(
+      opacity: _opacita,
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: SuperficiTema.of(context).superficieTenue,
+          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+        ),
       ),
     );
   }

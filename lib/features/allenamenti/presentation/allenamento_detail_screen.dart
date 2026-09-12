@@ -105,6 +105,49 @@ class _AllenamentoDetailScreenState
     }
   }
 
+  /// Trascinare una serie nell'elenco la sposta e rinumera tutto l'ordine
+  /// di conseguenza (nessun campo "Ordine" da compilare a mano, vedi
+  /// SerieFormScreen). `serie` e' gia' ordinata come mostrata a schermo;
+  /// `newIndex` arriva gia' corretto da `onReorderItem` (a differenza del
+  /// vecchio `onReorder`, deprecato, non serve piu' aggiustarlo a mano).
+  Future<void> _riordinaSerie(
+    List<Serie> serie,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final riordinate = List<Serie>.of(serie);
+    final spostata = riordinate.removeAt(oldIndex);
+    riordinate.insert(newIndex, spostata);
+
+    final repository = ref.read(serieRepositoryProvider);
+    try {
+      for (var i = 0; i < riordinate.length; i++) {
+        final s = riordinate[i];
+        if (s.ordine == i + 1) continue;
+        await repository.updateSerie(
+          id: s.id,
+          ordine: i + 1,
+          blocco: s.blocco,
+          ripetute: s.ripetute,
+          distanzaM: s.distanzaM,
+          stile: s.stile,
+          esecuzione: s.esecuzione,
+          zona: s.zona,
+          passoObiettivoS: s.passoObiettivoS,
+          recuperoS: s.recuperoS,
+          ripartenzaS: s.ripartenzaS,
+          attrezzatura: s.attrezzatura,
+          note: s.note,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
   String _aiutoRapido(SerieRapida? parsed) {
     if (_quickController.text.trim().isEmpty) {
       return 'Es. 10x100 A2 1:25 r15 sl';
@@ -328,9 +371,11 @@ class _AllenamentoDetailScreenState
                         ),
                       ),
                     Expanded(
-                      child: ListView.builder(
+                      child: ReorderableListView.builder(
                         padding: const EdgeInsets.all(AppSpacing.s16),
                         itemCount: serie.length,
+                        onReorderItem: (oldIndex, newIndex) =>
+                            _riordinaSerie(serie, oldIndex, newIndex),
                         itemBuilder: (context, index) {
                           final s = serie[index];
                           final tokens =
@@ -358,6 +403,7 @@ class _AllenamentoDetailScreenState
                             meta.add(s.attrezzatura!);
                           }
                           return Padding(
+                            key: ValueKey(s.id),
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.s12,
                             ),

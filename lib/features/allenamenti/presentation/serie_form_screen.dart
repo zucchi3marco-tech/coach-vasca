@@ -41,7 +41,6 @@ class SerieFormScreen extends ConsumerStatefulWidget {
 
 class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _ordineController;
   late final TextEditingController _ripeteController;
   late final TextEditingController _distanzaController;
   late final TextEditingController _passoController;
@@ -64,9 +63,6 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   void initState() {
     super.initState();
     final s = widget.serie;
-    _ordineController = TextEditingController(
-      text: (s?.ordine ?? widget.ordineSuccessivo).toString(),
-    );
     _ripeteController = TextEditingController(
       text: (s?.ripetute ?? 1).toString(),
     );
@@ -96,7 +92,6 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
 
   @override
   void dispose() {
-    _ordineController.dispose();
     _ripeteController.dispose();
     _distanzaController.dispose();
     _passoController.dispose();
@@ -116,7 +111,10 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     });
 
     final repository = ref.read(serieRepositoryProvider);
-    final ordine = int.parse(_ordineController.text.trim());
+    // L'ordine non si compila piu' a mano: resta quello gia' assegnato in
+    // modifica, o si accoda in fondo in creazione (si riordina poi con
+    // il trascinamento nell'elenco).
+    final ordine = widget.serie?.ordine ?? widget.ordineSuccessivo;
     final ripetute = int.parse(_ripeteController.text.trim());
     final distanzaM = int.parse(_distanzaController.text.trim());
     final passoObiettivoS = parsePaceMmSs(_passoController.text);
@@ -314,16 +312,6 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Ordine',
-                        controller: _ordineController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) =>
-                            int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
                       child: AppTextField(
                         etichetta: 'Ripetute',

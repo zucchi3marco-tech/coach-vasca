@@ -8,6 +8,7 @@ import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/fab_azioni.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
@@ -100,28 +101,23 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'fab-genera-settimana-ai',
-            onPressed: _apriGeneraSettimanaAI,
-            tooltip: 'Genera settimana con AI',
-            child: const Icon(Icons.view_week_outlined),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          FloatingActionButton(
-            heroTag: 'fab-genera-ai',
-            onPressed: _apriGeneraAI,
-            tooltip: 'Genera con AI',
-            child: const Icon(Icons.auto_awesome),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          FloatingActionButton(
-            heroTag: 'fab-allenamenti',
+      floatingActionButton: FabAzioni(
+        heroTag: 'fab-allenamenti',
+        azioni: [
+          AzioneFab(
+            icona: Icons.add,
+            etichetta: 'Nuovo allenamento',
             onPressed: _apriForm,
-            tooltip: 'Nuovo allenamento',
-            child: const Icon(Icons.add),
+          ),
+          AzioneFab(
+            icona: Icons.auto_awesome,
+            etichetta: 'Genera con AI',
+            onPressed: _apriGeneraAI,
+          ),
+          AzioneFab(
+            icona: Icons.view_week_outlined,
+            etichetta: 'Genera settimana con AI',
+            onPressed: _apriGeneraSettimanaAI,
           ),
         ],
       ),

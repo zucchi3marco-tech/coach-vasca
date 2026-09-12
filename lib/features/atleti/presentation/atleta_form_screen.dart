@@ -439,7 +439,8 @@ class _ConsensoPrivacyRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Vedi docs/privacy/ per il modulo da far firmare al genitore',
+                  'Fai firmare il modulo di consenso al genitore prima di '
+                  'attivare questo interruttore.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

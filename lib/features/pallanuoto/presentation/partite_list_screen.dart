@@ -8,6 +8,7 @@ import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/fab_azioni.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../referti/presentation/leggi_referto_screen.dart';
 import '../../statistiche/presentation/statistiche_squadra_screen.dart';
@@ -118,42 +119,35 @@ class PartiteListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'fab-statistiche',
-            mini: true,
-            tooltip: 'Statistiche stagione',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => StatisticheSquadraScreen(clubId: clubId),
-              ),
-            ),
-            child: const Icon(Icons.bar_chart),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          FloatingActionButton(
-            heroTag: 'fab-leggi-referto',
-            mini: true,
-            tooltip: 'Leggi referto',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => LeggiRefertoScreen(clubId: clubId),
-              ),
-            ),
-            child: const Icon(Icons.document_scanner_outlined),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          FloatingActionButton(
-            heroTag: 'fab-partite',
+      floatingActionButton: FabAzioni(
+        heroTag: 'fab-partite',
+        azioni: [
+          AzioneFab(
+            icona: Icons.add,
+            etichetta: 'Nuova partita',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => PartitaFormScreen(clubId: clubId),
               ),
             ),
-            tooltip: 'Nuova partita',
-            child: const Icon(Icons.add),
+          ),
+          AzioneFab(
+            icona: Icons.document_scanner_outlined,
+            etichetta: 'Leggi referto',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => LeggiRefertoScreen(clubId: clubId),
+              ),
+            ),
+          ),
+          AzioneFab(
+            icona: Icons.bar_chart,
+            etichetta: 'Statistiche stagione',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StatisticheSquadraScreen(clubId: clubId),
+              ),
+            ),
           ),
         ],
       ),
