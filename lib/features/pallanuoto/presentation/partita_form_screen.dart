@@ -31,7 +31,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late final TextEditingController _dataController;
   late final TextEditingController _oraController;
   late final TextEditingController _luogoController;
-  late String _coloreCalottina;
   late final TextEditingController _squadraCasaController;
   late final TextEditingController _squadraTrasfertaController;
   late final TextEditingController _noteController;
@@ -58,7 +57,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     final p = widget.partita;
     _oraController = TextEditingController(text: p?.ora ?? '');
     _luogoController = TextEditingController(text: p?.luogo ?? '');
-    _coloreCalottina = p?.coloreCalottina == 'blu' ? 'blu' : 'bianca';
     _squadraCasaController = TextEditingController(text: p?.squadraCasa ?? '');
     _squadraTrasfertaController = TextEditingController(
       text: p?.squadraTrasferta ?? '',
@@ -104,12 +102,31 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     super.dispose();
   }
 
-  /// In creazione, precompila "Squadra Casa" col nome del club: puo' essere
-  /// cambiato a mano se la partita e' in trasferta.
+  /// In creazione, precompila col nome del club il campo del lato che in
+  /// quel momento e' "la mia squadra" (casa o trasferta) — se il coach
+  /// cambia lato prima che la risposta del club arrivi, si precompila
+  /// comunque quello giusto.
   void _prefillClubSeVuoto(String? nomeClub) {
     if (_clubPrefillFatto || _isEditing || nomeClub == null) return;
-    _squadraCasaController.text = nomeClub;
+    if (_nostraSquadra == 'casa') {
+      _squadraCasaController.text = nomeClub;
+    } else {
+      _squadraTrasfertaController.text = nomeClub;
+    }
     _clubPrefillFatto = true;
+  }
+
+  /// Cambiare "la mia squadra" scambia i due nomi gia' inseriti, invece di
+  /// svuotarli: se casa/trasferta erano gia' compilati, restano entrambi
+  /// corretti dopo lo scambio di lato.
+  void _cambiaNostraSquadra(String nuovo) {
+    if (nuovo == _nostraSquadra) return;
+    setState(() {
+      _nostraSquadra = nuovo;
+      final testoCasa = _squadraCasaController.text;
+      _squadraCasaController.text = _squadraTrasfertaController.text;
+      _squadraTrasfertaController.text = testoCasa;
+    });
   }
 
   String _formattaData(DateTime data) =>
@@ -175,6 +192,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     });
 
     final repository = ref.read(partiteRepositoryProvider);
+    // Regola FIN: la squadra di casa gioca in bianco, gli ospiti in blu —
+    // il colore della nostra calottina discende quindi da "la mia
+    // squadra", non e' piu' una scelta libera.
+    final coloreCalottina = _nostraSquadra == 'casa' ? 'bianca' : 'blu';
     try {
       final campionato = await _campionatoPerData(_data);
       if (_isEditing) {
@@ -184,7 +205,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
           campionato: campionato,
-          coloreCalottina: _coloreCalottina,
+          coloreCalottina: coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
@@ -201,7 +222,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
           campionato: campionato,
-          coloreCalottina: _coloreCalottina,
+          coloreCalottina: coloreCalottina,
           squadraCasa: _squadraCasaController.text.trim(),
           squadraTrasferta: _squadraTrasfertaController.text.trim(),
           numeroMaxConvocati: _numeroMaxConvocati,
@@ -289,18 +310,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   onTap: _pickOra,
                   suffixIcon: const Icon(Icons.access_time),
                 ),
-                AppTextField(
-                  etichetta: 'Squadra casa',
-                  controller: _squadraCasaController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-                ),
-                AppTextField(
-                  etichetta: 'Squadra trasferta',
-                  controller: _squadraTrasfertaController,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-                ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -315,10 +324,21 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                         ),
                       ],
                       selected: {_nostraSquadra},
-                      onSelectionChanged: (s) =>
-                          setState(() => _nostraSquadra = s.first),
+                      onSelectionChanged: (s) => _cambiaNostraSquadra(s.first),
                     ),
                   ],
+                ),
+                AppTextField(
+                  etichetta: 'Squadra casa · calottina bianca',
+                  controller: _squadraCasaController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                ),
+                AppTextField(
+                  etichetta: 'Squadra trasferta · calottina blu',
+                  controller: _squadraTrasfertaController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
               ],
             ),
@@ -337,22 +357,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       : 'Nessun campionato: questa data non rientra in una '
                             'stagione con campionato impostato.',
                   style: AppTypography.piccolo,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Colore calottina', style: AppTypography.etichetta),
-                    const SizedBox(height: AppSpacing.s8),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'bianca', label: Text('Bianca')),
-                        ButtonSegment(value: 'blu', label: Text('Blu')),
-                      ],
-                      selected: {_coloreCalottina},
-                      onSelectionChanged: (s) =>
-                          setState(() => _coloreCalottina = s.first),
-                    ),
-                  ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,6 +402,13 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       onSelectionChanged: (s) =>
                           setState(() => _dettaglioTiro = s.first),
                     ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      'Semplice: solo Gol/Non gol. Dettagliato: distingue '
+                      'anche un tiro parato da uno andato a vuoto (palo o '
+                      'fuori).',
+                      style: AppTypography.piccolo,
+                    ),
                   ],
                 ),
                 SwitchListTile(
@@ -431,6 +442,13 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       selected: {_modalitaSuperiorita},
                       onSelectionChanged: (s) =>
                           setState(() => _modalitaSuperiorita = s.first),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      'Esito subito: scegli Gol/Non gol appena la registri. '
+                      'Inizio/fine: la registri come "in corso" e la '
+                      'concludi più tardi toccandola nella lista eventi.',
+                      style: AppTypography.piccolo,
                     ),
                   ],
                 ),
