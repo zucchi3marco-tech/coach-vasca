@@ -8,6 +8,7 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gruppi/data/gruppi_repository.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
 
@@ -85,7 +86,7 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
     });
 
     try {
-      await ref
+      final club = await ref
           .read(clubRepositoryProvider)
           .createClub(
             nome: _nomeController.text.trim(),
@@ -93,6 +94,24 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
             sport: _sport,
             categorie: _categorieSelezionate.toList(),
           );
+      // Un gruppo di allenamento gia' pronto per ciascuna categoria scelta,
+      // cosi' l'allenatore salta l'onboarding gruppi se le ha gia'
+      // indicate qui (puo' comunque rinominarli/aggiungerne altri dopo).
+      // Un eventuale fallimento qui (la coda offline copre la rete) non
+      // deve bloccare la creazione del club appena riuscita.
+      try {
+        final gruppiRepository = ref.read(gruppiRepositoryProvider);
+        final categorieOrdinate = _categorieDisponibili
+            .where(_categorieSelezionate.contains)
+            .toList();
+        for (var i = 0; i < categorieOrdinate.length; i++) {
+          await gruppiRepository.createGruppo(
+            clubId: club.id,
+            nome: categorieOrdinate[i],
+            ordine: i + 1,
+          );
+        }
+      } catch (_) {}
       ref.invalidate(currentClubProvider);
     } catch (e) {
       if (mounted) {
