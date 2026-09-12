@@ -13,6 +13,7 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../stagioni/application/stagioni_providers.dart';
+import '../../stagioni/presentation/stagione_form_screen.dart';
 import '../data/partite_repository.dart';
 import '../domain/partita.dart';
 
@@ -349,15 +350,42 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   etichetta: 'Luogo (facoltativo)',
                   controller: _luogoController,
                 ),
-                Text(
-                  _campionatoAnteprima != null &&
-                          _campionatoAnteprima!.isNotEmpty
-                      ? 'Campionato: $_campionatoAnteprima (dalla stagione '
-                            'in corso a questa data)'
-                      : 'Nessun campionato: questa data non rientra in una '
-                            'stagione con campionato impostato.',
-                  style: AppTypography.piccolo,
-                ),
+                if (_campionatoAnteprima != null &&
+                    _campionatoAnteprima!.isNotEmpty)
+                  Text(
+                    'Campionato: $_campionatoAnteprima (dalla stagione in '
+                    'corso a questa data)',
+                    style: AppTypography.piccolo,
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Nessuna stagione copre questa data: il campionato '
+                        'non verrà compilato.',
+                        style: AppTypography.piccolo,
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  StagioneFormScreen(clubId: widget.clubId),
+                            ),
+                          );
+                          _aggiornaCampionatoAnteprima();
+                        },
+                        child: const Text('Crea una stagione per questa data'),
+                      ),
+                    ],
+                  ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

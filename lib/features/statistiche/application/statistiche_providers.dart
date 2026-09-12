@@ -14,8 +14,14 @@ typedef ChiaveStagioneStatistiche = ({
 
 /// Statistiche di squadra "da referti", per tutte le partite del club con
 /// data nel periodo indicato (tipicamente una Stagione).
-final riepilogoRefertiProvider =
-    FutureProvider.family<RiepilogoSquadraReferti, ChiaveStagioneStatistiche>((
+///
+/// `autoDispose`: senza, il risultato resta in cache per l'intera sessione
+/// una volta calcolato — se la schermata viene aperta prima che una
+/// partita/referto esista ancora, mostrerebbe per sempre lo stesso
+/// riepilogo vuoto anche dopo aver registrato dati veri, finché l'app non
+/// viene riavviata.
+final riepilogoRefertiProvider = FutureProvider.autoDispose
+    .family<RiepilogoSquadraReferti, ChiaveStagioneStatistiche>((
       ref,
       chiave,
     ) async {
@@ -93,9 +99,10 @@ final riepilogoRefertiProvider =
     });
 
 /// Statistiche di squadra "da eventi live", per tutte le partite del club
-/// con data nel periodo indicato (tipicamente una Stagione).
-final riepilogoEventiProvider =
-    FutureProvider.family<RiepilogoSquadraEventi, ChiaveStagioneStatistiche>((
+/// con data nel periodo indicato (tipicamente una Stagione). Vedi la nota
+/// su `autoDispose` di [riepilogoRefertiProvider]: stesso motivo.
+final riepilogoEventiProvider = FutureProvider.autoDispose
+    .family<RiepilogoSquadraEventi, ChiaveStagioneStatistiche>((
       ref,
       chiave,
     ) async {
@@ -188,9 +195,10 @@ final riepilogoEventiProvider =
 
 /// Tiri grezzi (con posizione) di tutte le partite del club nel periodo
 /// indicato, per la mappa di calore di squadra: stessa fonte dati di
-/// [riepilogoEventiProvider], solo senza l'aggregazione.
-final tiriStagionePerMappaProvider =
-    FutureProvider.family<List<EventoPartita>, ChiaveStagioneStatistiche>((
+/// [riepilogoEventiProvider], solo senza l'aggregazione. Stesso motivo di
+/// `autoDispose` delle altre due.
+final tiriStagionePerMappaProvider = FutureProvider.autoDispose
+    .family<List<EventoPartita>, ChiaveStagioneStatistiche>((
       ref,
       chiave,
     ) async {

@@ -62,6 +62,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
 
   @override
   void dispose() {
+    // Uno snackbar residuo (o una coda di snackbar accumulati da eventi
+    // registrati in rapida successione) non deve seguire l'utente fuori
+    // da questa schermata.
+    ScaffoldMessenger.of(context).clearSnackBars();
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
   }
@@ -76,17 +80,27 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   }
 
   void _mostraAnnulla(BuildContext context, EventoPartita evento) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Evento registrato'),
-        action: SnackBarAction(
-          label: 'Annulla',
-          onPressed: () {
-            ref.read(eventiPartitaRepositoryProvider).eliminaEvento(evento.id);
-          },
+    // clearSnackBars (non solo hideCurrentSnackBar) prima di ognuno:
+    // registrando più eventi in rapida successione altrimenti si
+    // accodano, e l'ultimo compare solo dopo che tutti i precedenti
+    // hanno esaurito i loro 4 secondi — con più eventi ravvicinati
+    // sembra uno snackbar "bloccato" per decine di secondi.
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Evento registrato'),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Annulla',
+            onPressed: () {
+              ref
+                  .read(eventiPartitaRepositoryProvider)
+                  .eliminaEvento(evento.id);
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 
   Future<void> _salvaTiro(
