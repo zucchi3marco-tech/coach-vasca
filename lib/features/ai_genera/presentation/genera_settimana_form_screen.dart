@@ -210,6 +210,8 @@ class _GeneraSettimanaFormScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore nella generazione: ${messaggioErrore(e)}'),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(label: 'Riprova', onPressed: _conferma),
         ),
       );
     } finally {

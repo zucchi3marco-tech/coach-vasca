@@ -174,7 +174,7 @@ class _GeneraAllenamentoFormScreenState
               ],
             ),
             PrimaryButton(
-              label: 'Genera',
+              label: _generazioneInCorso ? 'Sto generando...' : 'Genera',
               isLoading: _generazioneInCorso,
               onPressed: _generazioneInCorso ? null : _conferma,
             ),
@@ -281,6 +281,8 @@ class _GeneraAllenamentoFormScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore nella generazione: ${messaggioErrore(e)}'),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(label: 'Riprova', onPressed: _conferma),
         ),
       );
     } finally {

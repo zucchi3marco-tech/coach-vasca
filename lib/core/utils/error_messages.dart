@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../sync/network_failure.dart';
@@ -8,6 +10,10 @@ import '../sync/network_failure.dart';
 /// l'eccezione grezza (es. `'Errore: $e'`), che espone testo tecnico spesso
 /// in inglese (stack di Postgrest/GoTrue) e non dice cosa fare.
 String messaggioErrore(Object error) {
+  if (error is TimeoutException) {
+    return 'Il servizio AI non ha risposto in tempo. Riprova tra qualche '
+        'istante.';
+  }
   if (isNetworkFailure(error)) {
     return 'Connessione assente. Controlla la rete e riprova.';
   }

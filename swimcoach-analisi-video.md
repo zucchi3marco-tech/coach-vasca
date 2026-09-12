@@ -71,6 +71,8 @@ Dal video non si capisce se hai premuto "Genera" e non è successo niente, o se 
 
 **Fix.** Il pulsante deve entrare in stato di attesa con testo esplicito ("Sto generando la settimana…"), la chiamata deve avere un timeout, e in caso di fallimento serve un messaggio che dica cosa è andato storto e offra "Riprova". Se la generazione riesce, porta l'utente direttamente all'anteprima del risultato invece di tornare alla lista.
 
+*✅ risolto (2026-09-12):* verificato che la navigazione diretta all'anteprima e l'indicatore di caricamento sul pulsante esistevano già (probabilmente il video è stato registrato contro una build precedente, o l'attesa senza timeout dava l'impressione di nulla che succedesse); mancavano davvero timeout e "Riprova". Aggiunto un timeout di 60s su entrambe le chiamate AI (`GenerazioneAiRepository`, con messaggio dedicato in `messaggioErrore` per `TimeoutException`), un'azione "Riprova" sullo snackbar di errore in entrambi i generatori, e il testo del pulsante del generatore a seduta singola ora cambia in "Sto generando..." durante l'attesa (quello della settimana aveva già un testo di fase più dettagliato, "Pianificazione della settimana..."/"Dettaglio seduta X di Y...", lasciato invariato). **Non affrontati in questo passaggio** (sezione 5, elenco "cosa manca"): scelta dei giorni della settimana, rigenerazione di una singola seduta senza rifare tutta la settimana, "duplica settimana precedente" — sono funzionalità nuove, non fix di feedback, da valutare come punti separati.
+
 ### 2.8 Il pulsante resta attivo con il form non valido
 In "Crea account coach" appare "Le password non coincidono" ma "Crea account" resta scuro e premibile. Stessa logica altrove: la validazione avvisa ma non blocca.
 

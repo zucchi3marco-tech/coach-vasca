@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -5,6 +7,12 @@ import '../../../core/supabase/supabase_providers.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
+
+/// Oltre questo tempo una chiamata alla generazione AI viene considerata
+/// bloccata: senza un limite esplicito, un provider AI che non risponde
+/// resta indistinguibile da un tocco su "Genera" che non ha fatto nulla
+/// (il problema segnalato in analisi, FASE 11 punto 4/analisi video 2.7).
+const _timeoutGenerazione = Duration(seconds: 60);
 
 /// Chiama la Edge Function `genera-allenamento`, che tiene la chiave del
 /// provider AI lato server e la inoltra a Gemini. Così il provider si può
@@ -20,17 +28,19 @@ class GenerazioneAiRepository {
     ParametriGenerazione parametri,
   ) async {
     try {
-      final risposta = await _client.functions.invoke(
-        'genera-allenamento',
-        body: {
-          'gruppo': parametri.gruppo,
-          'volumeMetri': parametri.volumeMetri,
-          'focus': parametri.focus,
-          'regimiAmmessi': parametri.regimiAmmessi,
-          'vincoli': parametri.vincoli,
-          'corsie': parametri.corsie.map((c) => c.toMap()).toList(),
-        },
-      );
+      final risposta = await _client.functions
+          .invoke(
+            'genera-allenamento',
+            body: {
+              'gruppo': parametri.gruppo,
+              'volumeMetri': parametri.volumeMetri,
+              'focus': parametri.focus,
+              'regimiAmmessi': parametri.regimiAmmessi,
+              'vincoli': parametri.vincoli,
+              'corsie': parametri.corsie.map((c) => c.toMap()).toList(),
+            },
+          )
+          .timeout(_timeoutGenerazione);
       final dati = risposta.data;
       if (dati is Map && dati['scheda'] is Map) {
         return SchedaGenerata.fromMap(dati['scheda'] as Map<String, dynamic>);
@@ -52,10 +62,9 @@ class GenerazioneAiRepository {
     ParametriSettimana parametri,
   ) async {
     try {
-      final risposta = await _client.functions.invoke(
-        'genera-settimana',
-        body: parametri.toMap(),
-      );
+      final risposta = await _client.functions
+          .invoke('genera-settimana', body: parametri.toMap())
+          .timeout(_timeoutGenerazione);
       final dati = risposta.data;
       if (dati is Map && dati['settimana'] is Map) {
         return SettimanaGenerata.fromMap(
