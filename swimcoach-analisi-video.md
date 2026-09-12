@@ -25,32 +25,37 @@ Analisi ricostruita frame per frame. I riferimenti temporali servono a ritrovare
 
 ## 2. Bug veri e propri
 
-### 2.1 Snackbar "Evento registrato" bloccata — grave
+### 2.1 Snackbar "Evento registrato" bloccata — grave — ✅ risolto (2026-09-12)
+Causa reale diversa dall'ipotesi sotto: eventi registrati in rapida successione accodavano ciascuno un nuovo SnackBar (4s), dando l'impressione di uno bloccato per decine di secondi. Fix applicato: ogni nuovo evento svuota la coda (`clearSnackBars`) prima di mostrarsi, e uscendo dalla schermata partita si ripulisce ogni residuo.
+
 Dal minuto 6:22 fino alla fine del video (oltre 50 secondi) la barra verde "Evento registrato / Annulla" resta fissa in fondo allo schermo mentre navighi tra statistiche partita, menu contestuale, elenco partite, statistiche stagione e perfino la schermata "Con chi lavori oggi?". Non scompare mai e copre i controlli sottostanti.
 
 **Cosa succede.** Lo `SnackBar` viene mostrato su uno `ScaffoldMessenger` che sopravvive al cambio di rotta, e il timer di dismissione non parte o viene resettato a ogni rebuild. Il rischio peggiore è che l'azione "Annulla" resti agganciata a un evento ormai vecchio: se la tocchi dopo cinque schermate, cancelli qualcosa che non ti aspetti.
 
 **Fix.** Chiamare `ScaffoldMessenger.of(context).hideCurrentSnackBar()` nel `dispose` della pagina partita e impostare una `duration` esplicita (3–4 secondi). L'azione "Annulla" deve catturare l'id dell'evento al momento della creazione e disattivarsi allo scadere del timer.
 
-### 2.2 Le statistiche stagione non vedono gli eventi live — grave
+### 2.2 Le statistiche stagione non vedono gli eventi live — grave — ✅ risolto (2026-09-12)
+Causa reale diversa dall'ipotesi sotto: l'aggregazione per data era già corretta, ma i tre provider Riverpod erano senza `autoDispose` — il risultato (spesso vuoto) restava in cache per l'intera sessione se la schermata veniva aperta prima di registrare la partita. Aggiunto `autoDispose`. Aggiunto anche il secondo intervento suggerito: messaggio azionabile "Crea una stagione per questa data" nel form partita.
+
 Nel video registri una partita completa dal vivo: risultato 2‑2, due gol su tre tiri, un'espulsione, tiri posizionati sullo shot chart. Le statistiche della singola partita li mostrano correttamente (Gol 2/3, 67%, Espulsioni 1). Le statistiche stagione con il filtro "Da eventi live" invece riportano Gol 0/0, Espulsioni 0, "Nessun evento registrato in questa stagione" e in fondo la frase "0 partite seguite dal vivo con Eventi partita".
 
 **Cosa succede.** Le due query leggono da chiavi diverse. Molto probabilmente la partita creata non è associata a nessuna stagione: nella schermata Nuova partita compare l'avviso "Nessun campionato: questa data non rientra in una stagione con campionato impostato", e la stagione "U16 anno 2026‑27" è stata creata dopo la partita.
 
 **Fix.** Due interventi separati. Primo, all'aggregazione stagionale associa le partite per intervallo di date oltre che per chiave esplicita, così una partita dentro le date della stagione entra nel conteggio anche se creata prima. Secondo, quando crei una partita che non ricade in nessuna stagione, il messaggio deve essere un'azione ("Nessuna stagione copre questa data — creane una") e non una nota grigia.
 
-### 2.3 Date picker in inglese
+### 2.3 Date picker in inglese — ✅ risolto (2026-09-12)
 A 1:36, aprendo "Data di nascita", compare il calendario Material in inglese: "Select date", "Sat, Jan 1", "January 2011", intestazioni S M T W T F S, pulsanti "Cancel" e "OK", tooltip "Next month". Tutto il resto dell'app è in italiano.
 
 **Fix.** Aggiungere in `MaterialApp` le `localizationsDelegates` (`GlobalMaterialLocalizations.delegate`, `GlobalWidgetsLocalizations.delegate`, `GlobalCupertinoLocalizations.delegate`) e `supportedLocales: [Locale('it')]`, con `locale: Locale('it')` forzato. È una modifica di cinque righe che sistema tutti i picker dell'app in un colpo solo.
 
-### 2.4 Il date picker si apre su gennaio 2011
+### 2.4 Il date picker si apre su gennaio 2011 — ✅ risolto (2026-09-12)
+Parte in modalità anno (`initialDatePickerMode: DatePickerMode.year`); se l'atleta ha già un gruppo tipo "U14"/"U16" selezionato l'anno di partenza si deduce da lì.
 Sempre a 1:36 il calendario parte da gennaio 2011 e per arrivare alla data giusta devi navigare a mano. Per una data di nascita di un atleta U16 il punto di partenza sensato è l'anno di nascita tipico della categoria.
 
 **Fix.** Passare `initialDate` calcolata dalla categoria selezionata, e `initialDatePickerMode: DatePickerMode.year` così il primo tocco sceglie l'anno invece del giorno.
 
-### 2.5 Accenti mancanti in tutta l'app
-Nella vista Settimana i giorni sono "Lunedi", "Martedi", "Mercoledi", "Venerdi". Nel menu a tendina del focus seduta compare "Velocita". Mancano gli accenti su tutte le parole tronche.
+### 2.5 Accenti mancanti in tutta l'app — ✅ risolto (2026-09-12)
+Nella vista Settimana i giorni erano "Lunedi", "Martedi", "Mercoledi", "Venerdi" (risultavano già corretti nel codice attuale, probabilmente sistemati in una sessione precedente). Nel menu a tendina del focus seduta compariva "Velocita": corretto (valore interno invariato, solo l'etichetta mostrata ora è "Velocità"). Passata al setaccio l'intera codebase per altre parole tronche in testo utente: nessun altro caso trovato.
 
 **Fix.** Sono stringhe hardcoded. Vale la pena centralizzarle ora in un unico file di costanti: se domani vuoi l'app anche in inglese, il lavoro è già impostato.
 
@@ -136,6 +141,8 @@ Tutto su una schermata sola: Data, Titolo, chip delle categorie destinatarie, po
 *Come risolverlo.* Un campo unico con maschera `m:ss` per il passo e uno per la ripartenza, e il recupero accanto. Meglio ancora: **una riga di inserimento rapido**. L'allenatore scrive `10x100 A2 1:25 r15 sl` e tu lo interpreti in ripetute, distanza, zona, passo, recupero, stile. È l'intervento con il rapporto valore/fatica più alto di tutto l'elenco, perché è esattamente la notazione che già scrive sulla lavagna. Il form completo resta disponibile per i casi particolari.
 
 **Non si vede mai il totale metri.** Né durante la costruzione, né nel dettaglio dell'allenamento, né nella vista settimana. In Corsia Pro il totale della sezione è in alto a destra e il volume per specializzazione in fondo, entrambi aggiornati in tempo reale. Ed è un'incoerenza interna: il generatore AI ti fa impostare "Volume totale: 3000 m" e "Volume settimanale: 14000 m", ma poi non puoi verificare se il risultato rispetta quei numeri.
+
+*✅ risolto (2026-09-12), parzialmente:* aggiunto il totale (e il subtotale per blocco) in testata al dettaglio allenamento, il totale per giorno e il totale settimanale nella vista Settimana, e il totale settimanale nella schermata di revisione della settimana generata dall'AI. **Non ancora fatto:** totale live durante la costruzione di una serie (dipende dal punto 4.2, inserimento in linea) e totale nella vista Mese.
 
 *Come risolverlo.* Totale metri in testata all'allenamento, totale per blocco accanto al titolo del blocco, totale per giorno nella vista Settimana e totale settimanale in alto. È la cosa più importante da aggiungere dopo i due bug gravi.
 

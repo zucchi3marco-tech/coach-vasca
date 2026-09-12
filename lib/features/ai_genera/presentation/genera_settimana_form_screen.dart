@@ -483,6 +483,10 @@ class _RevisioneSettimanaScreenState
 
   @override
   Widget build(BuildContext context) {
+    final totaleMetri = _sedute.fold<int>(
+      0,
+      (tot, v) => tot + v.scheda.volumeTotaleM,
+    );
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -491,6 +495,11 @@ class _RevisioneSettimanaScreenState
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Totale settimanale: $totaleMetri m',
+            style: AppTypography.corpoForte,
+          ),
+          const SizedBox(height: AppSpacing.s16),
           for (var i = 0; i < _sedute.length; i++) ...[
             _CardSeduta(
               voce: _sedute[i],

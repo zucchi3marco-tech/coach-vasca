@@ -176,8 +176,48 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                         s.attrezzatura!.trim().isNotEmpty)
                       s.attrezzatura!.trim(),
                 }.toList()..sort();
+                final totaleMetri = serie.fold<int>(
+                  0,
+                  (tot, s) => tot + s.distanzaTotaleM,
+                );
+                final metriPerBlocco = <String, int>{};
+                for (final s in serie) {
+                  metriPerBlocco[s.blocco] =
+                      (metriPerBlocco[s.blocco] ?? 0) + s.distanzaTotaleM;
+                }
                 return Column(
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.s16,
+                        AppSpacing.s16,
+                        AppSpacing.s16,
+                        0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Totale: $totaleMetri m',
+                            style: AppTypography.corpoForte,
+                          ),
+                          const SizedBox(height: AppSpacing.s4),
+                          Wrap(
+                            spacing: AppSpacing.s12,
+                            runSpacing: AppSpacing.s4,
+                            children: [
+                              for (final blocco in ordineBlocchi)
+                                if (metriPerBlocco[blocco] != null)
+                                  Text(
+                                    '${labelBlocco(blocco)} '
+                                    '${metriPerBlocco[blocco]} m',
+                                    style: AppTypography.piccolo,
+                                  ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     if (materiale.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(

@@ -17,6 +17,10 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   _ => esecuzione,
 };
 
+/// Ordine canonico dei blocchi, per riepiloghi/totali per blocco (le serie
+/// stesse restano ordinate per `ordine`, non raggruppate per blocco).
+const ordineBlocchi = ['riscaldamento', 'principale', 'defaticamento', 'altro'];
+
 String labelBlocco(String blocco) => switch (blocco) {
   'riscaldamento' => 'Riscaldamento',
   'principale' => 'Principale',
