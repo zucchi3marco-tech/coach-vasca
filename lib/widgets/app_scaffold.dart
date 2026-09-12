@@ -26,6 +26,11 @@ class AppScaffold extends StatelessWidget {
   /// contenuto che può eccedere l'altezza dello schermo).
   final bool scrollabile;
 
+  /// Oltre questa larghezza il contenuto smette di allargarsi e resta
+  /// centrato — su un monitor desktop, campi di testo larghi quanto la
+  /// finestra intera sono scomodi da leggere (analisi video, punto 3.5).
+  static const _larghezzaMassimaContenuto = 760.0;
+
   @override
   Widget build(BuildContext context) {
     final larghezza = MediaQuery.sizeOf(context).width;
@@ -33,6 +38,9 @@ class AppScaffold extends StatelessWidget {
         ? AppSpacing.margineLateraleTablet
         : AppSpacing.margineLateraleTelefono;
     final contenuto = Padding(padding: EdgeInsets.all(margine), child: body);
+    final corpo = scrollabile
+        ? SingleChildScrollView(child: contenuto)
+        : contenuto;
 
     return Scaffold(
       appBar: appBar,
@@ -40,9 +48,15 @@ class AppScaffold extends StatelessWidget {
       persistentFooterButtons: persistentFooterButtons,
       bottomNavigationBar: bottomNavigationBar,
       body: SafeArea(
-        child: scrollabile
-            ? SingleChildScrollView(child: contenuto)
-            : contenuto,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: _larghezzaMassimaContenuto,
+            ),
+            child: corpo,
+          ),
+        ),
       ),
     );
   }

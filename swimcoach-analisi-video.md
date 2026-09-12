@@ -102,10 +102,12 @@ In Nuova serie il primo campo di Volume è "Ordine", e nel video lo scrivi tu: 1
 
 **Fix.** L'ordine è la posizione nella lista. Toglilo dal form e rendi la lista riordinabile con trascinamento (`ReorderableListView`). È il campo che non dovrebbe esistere.
 
-### 3.5 L'app è a colonna unica anche su desktop
+### 3.5 L'app è a colonna unica anche su desktop — ✅ risolto (2026-09-12)
 Il video è registrato su Edge e i campi si allargano per tutta la larghezza della finestra. Su un monitor da 1920 px avrai caselle di testo lunghe un metro e la navigazione principale in fondo allo schermo, che su desktop è il posto più lontano dal mouse.
 
 **Fix.** Mettere il contenuto in un contenitore con larghezza massima intorno ai 700–800 px e centrarlo. Sopra una certa larghezza, sostituire la barra inferiore con una `NavigationRail` laterale. È il cambiamento che da solo farà sembrare l'app più curata.
+
+*Come risolto:* `AppScaffold` (usato da ogni schermata) centra ora il contenuto in un `ConstrainedBox` largo al massimo 760px — sotto quella soglia (telefono/tablet) non cambia nulla. In `HomeScreen`, oltre 900px la barra inferiore (`NavigationBar`) è sostituita da una `NavigationRail` laterale con le stesse 4 destinazioni (Atleti/Allenamenti/Stagioni/Partite).
 
 ### 3.6 Nessuna normalizzazione dei nomi
 L'atleta viene salvato come Cognome "Genah", Nome "gabriel". In lista compare "Genah Gabriel", quindi la visualizzazione corregge, ma il dato salvato resta minuscolo.

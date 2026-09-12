@@ -22,6 +22,34 @@ import '../pallanuoto/presentation/partite_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
 import 'area_atleta_home_screen.dart';
 
+/// Oltre questa larghezza la barra di navigazione passa dal basso (per
+/// telefono/tablet) al lato, come su desktop (analisi video, punto 3.5):
+/// in fondo allo schermo la barra e' il punto piu' lontano dal mouse.
+const _larghezzaNavigazioneLaterale = 900.0;
+
+const _destinazioniTab = [
+  (
+    icona: Icons.groups_outlined,
+    iconaSelezionata: Icons.groups,
+    etichetta: 'Atleti',
+  ),
+  (
+    icona: Icons.calendar_month_outlined,
+    iconaSelezionata: Icons.calendar_month,
+    etichetta: 'Allenamenti',
+  ),
+  (
+    icona: Icons.event_note_outlined,
+    iconaSelezionata: Icons.event_note,
+    etichetta: 'Stagioni',
+  ),
+  (
+    icona: Icons.sports_outlined,
+    iconaSelezionata: Icons.sports,
+    etichetta: 'Partite',
+  ),
+];
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -107,6 +135,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selezione = ref.watch(selezioneGruppoProvider);
     final mostraTab =
         !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
+    final navigazioneLaterale =
+        MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
+
+    final corpoPrincipale = atletaAsync.when(
+      data: (atleta) => atleta != null
+          ? AreaAtletaHomeScreen(atleta: atleta)
+          : _corpoClub(clubAsync),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(AppSpacing.s16),
+        child: LoadingSkeletonList(righe: 4),
+      ),
+      error: (_, _) => _corpoClub(clubAsync),
+    );
+
+    final Widget corpo;
+    final Widget? barraInferiore;
+    if (mostraTab && navigazioneLaterale) {
+      corpo = Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          NavigationRail(
+            selectedIndex: _tabIndex,
+            onDestinationSelected: (index) => setState(() => _tabIndex = index),
+            labelType: NavigationRailLabelType.all,
+            destinations: [
+              for (final d in _destinazioniTab)
+                NavigationRailDestination(
+                  icon: Icon(d.icona),
+                  selectedIcon: Icon(d.iconaSelezionata),
+                  label: Text(d.etichetta),
+                ),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(child: corpoPrincipale),
+        ],
+      );
+      barraInferiore = null;
+    } else {
+      corpo = corpoPrincipale;
+      barraInferiore = mostraTab
+          ? NavigationBar(
+              selectedIndex: _tabIndex,
+              onDestinationSelected: (index) =>
+                  setState(() => _tabIndex = index),
+              destinations: [
+                for (final d in _destinazioniTab)
+                  NavigationDestination(
+                    icon: Icon(d.icona),
+                    selectedIcon: Icon(d.iconaSelezionata),
+                    label: d.etichetta,
+                  ),
+              ],
+            )
+          : null;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -127,45 +211,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: atletaAsync.when(
-        data: (atleta) => atleta != null
-            ? AreaAtletaHomeScreen(atleta: atleta)
-            : _corpoClub(clubAsync),
-        loading: () => const Padding(
-          padding: EdgeInsets.all(AppSpacing.s16),
-          child: LoadingSkeletonList(righe: 4),
-        ),
-        error: (_, _) => _corpoClub(clubAsync),
-      ),
-      bottomNavigationBar: mostraTab
-          ? NavigationBar(
-              selectedIndex: _tabIndex,
-              onDestinationSelected: (index) =>
-                  setState(() => _tabIndex = index),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.groups_outlined),
-                  selectedIcon: Icon(Icons.groups),
-                  label: 'Atleti',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.calendar_month_outlined),
-                  selectedIcon: Icon(Icons.calendar_month),
-                  label: 'Allenamenti',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.event_note_outlined),
-                  selectedIcon: Icon(Icons.event_note),
-                  label: 'Stagioni',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.sports_outlined),
-                  selectedIcon: Icon(Icons.sports),
-                  label: 'Partite',
-                ),
-              ],
-            )
-          : null,
+      body: corpo,
+      bottomNavigationBar: barraInferiore,
     );
   }
 }
