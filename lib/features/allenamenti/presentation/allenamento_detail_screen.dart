@@ -8,6 +8,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/domain_tokens.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/lane_rule.dart';
@@ -20,18 +21,111 @@ import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
+import '../domain/serie.dart';
+import '../domain/serie_rapida.dart';
 import 'allenamento_form_screen.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
 
-class AllenamentoDetailScreen extends ConsumerWidget {
+const _blocchiRapidi = [
+  ('riscaldamento', 'Risc.'),
+  ('principale', 'Princ.'),
+  ('defaticamento', 'Defat.'),
+  ('altro', 'Altro'),
+];
+
+class AllenamentoDetailScreen extends ConsumerStatefulWidget {
   const AllenamentoDetailScreen({required this.allenamento, super.key});
 
   final Allenamento allenamento;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AllenamentoDetailScreen> createState() =>
+      _AllenamentoDetailScreenState();
+}
+
+class _AllenamentoDetailScreenState
+    extends ConsumerState<AllenamentoDetailScreen> {
+  final _quickController = TextEditingController();
+  final _quickFocusNode = FocusNode();
+  String _bloccoRapido = 'principale';
+  bool _aggiuntaInCorso = false;
+
+  @override
+  void dispose() {
+    _quickController.dispose();
+    _quickFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _apriSerieCompleta({
+    required int ordineSuccessivo,
+    required Serie? serie,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SerieFormScreen(
+          allenamentoId: widget.allenamento.id,
+          ordineSuccessivo: ordineSuccessivo,
+          serie: serie,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _aggiungiRapida(int ordineSuccessivo) async {
+    final parsed = parseSerieRapida(_quickController.text);
+    if (parsed == null || _aggiuntaInCorso) return;
+
+    setState(() => _aggiuntaInCorso = true);
+    try {
+      await ref
+          .read(serieRepositoryProvider)
+          .createSerie(
+            allenamentoId: widget.allenamento.id,
+            ordine: ordineSuccessivo,
+            blocco: _bloccoRapido,
+            ripetute: parsed.ripetute,
+            distanzaM: parsed.distanzaM,
+            stile: parsed.stile,
+            esecuzione: 'nuoto',
+            zona: parsed.zona,
+            passoObiettivoS: parsed.passoObiettivoS,
+            recuperoS: parsed.recuperoS,
+          );
+      _quickController.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _aggiuntaInCorso = false);
+    }
+  }
+
+  String _aiutoRapido(SerieRapida? parsed) {
+    if (_quickController.text.trim().isEmpty) {
+      return 'Es. 10x100 A2 1:25 r15 sl';
+    }
+    if (parsed == null) {
+      return 'Scrivi almeno ripetute×distanza (es. 10x100)';
+    }
+    final parti = <String>[
+      '${parsed.ripetute} × ${parsed.distanzaM}m ${labelStile(parsed.stile)}',
+    ];
+    if (parsed.zona != null) parti.add('zona ${parsed.zona}');
+    if (parsed.passoObiettivoS != null) {
+      parti.add('passo ${formatPaceSeconds(parsed.passoObiettivoS!)}/100m');
+    }
+    if (parsed.recuperoS != null) parti.add("rec ${parsed.recuperoS}''");
+    return '→ ${parti.join(' · ')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final allenamento = widget.allenamento;
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
     final Map<String, String> nomiGruppi = {
       for (final g
@@ -39,19 +133,8 @@ class AllenamentoDetailScreen extends ConsumerWidget {
         g.id: g.nome,
     };
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
-
-    void apriNuovaSerie() {
-      final serieAttuale =
-          ref.read(serieListProvider(allenamento.id)).value ?? [];
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => SerieFormScreen(
-            allenamentoId: allenamento.id,
-            ordineSuccessivo: serieAttuale.length + 1,
-          ),
-        ),
-      );
-    }
+    final serieAttuale = serieAsync.value ?? const [];
+    final parsedRapida = parseSerieRapida(_quickController.text);
 
     return AppScaffold(
       appBar: AppBar(
@@ -160,10 +243,10 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                     icona: Icons.pool_outlined,
                     titolo: 'Nessuna serie',
                     descrizione:
-                        'Aggiungi la prima serie per costruire questo '
-                        'allenamento.',
-                    azionePrincipale: 'Nuova serie',
-                    onAzionePrincipale: apriNuovaSerie,
+                        'Scrivi la prima serie qui sotto per costruire '
+                        'questo allenamento.',
+                    azionePrincipale: 'Scrivi la prima serie',
+                    onAzionePrincipale: () => _quickFocusNode.requestFocus(),
                   );
                 }
                 // Riepilogo, non un campo a se': l'attrezzatura resta
@@ -281,14 +364,9 @@ class AllenamentoDetailScreen extends ConsumerWidget {
                             child: LaneRule(
                               colore: coloreZona,
                               child: InkWell(
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => SerieFormScreen(
-                                      allenamentoId: allenamento.id,
-                                      ordineSuccessivo: serie.length + 1,
-                                      serie: s,
-                                    ),
-                                  ),
+                                onTap: () => _apriSerieCompleta(
+                                  ordineSuccessivo: serie.length + 1,
+                                  serie: s,
                                 ),
                                 child: PoolCard(
                                   child: Column(
@@ -387,11 +465,66 @@ class AllenamentoDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-serie',
-        onPressed: apriNuovaSerie,
-        tooltip: 'Nuova serie',
-        child: const Icon(Icons.add),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s16,
+            AppSpacing.s8,
+            AppSpacing.s16,
+            AppSpacing.s8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.list_alt),
+                    tooltip: 'Serie completa',
+                    onPressed: () => _apriSerieCompleta(
+                      ordineSuccessivo: serieAttuale.length + 1,
+                      serie: null,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: SegmentedButton<String>(
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      segments: [
+                        for (final (valore, etichetta) in _blocchiRapidi)
+                          ButtonSegment(value: valore, label: Text(etichetta)),
+                      ],
+                      selected: {_bloccoRapido},
+                      onSelectionChanged: (s) =>
+                          setState(() => _bloccoRapido = s.first),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              AppTextField(
+                etichetta: 'Aggiungi serie',
+                controller: _quickController,
+                focusNode: _quickFocusNode,
+                aiuto: _aiutoRapido(parsedRapida),
+                onChanged: (_) => setState(() {}),
+                onFieldSubmitted: (_) =>
+                    _aggiungiRapida(serieAttuale.length + 1),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.add_circle),
+                  color: parsedRapida != null
+                      ? AppColors.blu
+                      : AppColors.testoTenue,
+                  onPressed: (parsedRapida != null && !_aggiuntaInCorso)
+                      ? () => _aggiungiRapida(serieAttuale.length + 1)
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

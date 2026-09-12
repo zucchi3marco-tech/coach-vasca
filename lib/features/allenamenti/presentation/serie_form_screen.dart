@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
 import '../../../theme/domain_tokens.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
@@ -44,11 +44,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   late final TextEditingController _ordineController;
   late final TextEditingController _ripeteController;
   late final TextEditingController _distanzaController;
-  late final TextEditingController _passoMinutiController;
-  late final TextEditingController _passoSecondiController;
+  late final TextEditingController _passoController;
   late final TextEditingController _recuperoController;
-  late final TextEditingController _ripartenzaMinutiController;
-  late final TextEditingController _ripartenzaSecondiController;
+  late final TextEditingController _ripartenzaController;
   late final TextEditingController _attrezzaturaController;
   late final TextEditingController _noteController;
 
@@ -76,25 +74,15 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
       text: s?.distanzaM.toString() ?? '',
     );
     final passo = s?.passoObiettivoS;
-    _passoMinutiController = TextEditingController(
-      text: passo == null ? '' : (passo ~/ 60).toString(),
-    );
-    _passoSecondiController = TextEditingController(
-      text: passo == null
-          ? ''
-          : (passo - (passo ~/ 60) * 60).toStringAsFixed(2),
+    _passoController = TextEditingController(
+      text: passo == null ? '' : formatPaceSeconds(passo),
     );
     _recuperoController = TextEditingController(
       text: s?.recuperoS?.toString() ?? '',
     );
     final ripartenza = s?.ripartenzaS;
-    _ripartenzaMinutiController = TextEditingController(
-      text: ripartenza == null ? '' : (ripartenza ~/ 60).toString(),
-    );
-    _ripartenzaSecondiController = TextEditingController(
-      text: ripartenza == null
-          ? ''
-          : (ripartenza - (ripartenza ~/ 60) * 60).toStringAsFixed(2),
+    _ripartenzaController = TextEditingController(
+      text: ripartenza == null ? '' : formatPaceSeconds(ripartenza),
     );
     _attrezzaturaController = TextEditingController(
       text: s?.attrezzatura ?? '',
@@ -111,24 +99,12 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     _ordineController.dispose();
     _ripeteController.dispose();
     _distanzaController.dispose();
-    _passoMinutiController.dispose();
-    _passoSecondiController.dispose();
+    _passoController.dispose();
     _recuperoController.dispose();
-    _ripartenzaMinutiController.dispose();
-    _ripartenzaSecondiController.dispose();
+    _ripartenzaController.dispose();
     _attrezzaturaController.dispose();
     _noteController.dispose();
     super.dispose();
-  }
-
-  double? _parseTempo(
-    TextEditingController minutiController,
-    TextEditingController secondiController,
-  ) {
-    final minuti = int.tryParse(minutiController.text.trim());
-    final secondi = double.tryParse(secondiController.text.trim());
-    if (minuti == null && secondi == null) return null;
-    return (minuti ?? 0) * 60 + (secondi ?? 0);
   }
 
   Future<void> _submit() async {
@@ -143,15 +119,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     final ordine = int.parse(_ordineController.text.trim());
     final ripetute = int.parse(_ripeteController.text.trim());
     final distanzaM = int.parse(_distanzaController.text.trim());
-    final passoObiettivoS = _parseTempo(
-      _passoMinutiController,
-      _passoSecondiController,
-    );
+    final passoObiettivoS = parsePaceMmSs(_passoController.text);
     final recuperoS = int.tryParse(_recuperoController.text.trim());
-    final ripartenzaS = _parseTempo(
-      _ripartenzaMinutiController,
-      _ripartenzaSecondiController,
-    );
+    final ripartenzaS = parsePaceMmSs(_ripartenzaController.text);
     final attrezzatura = _attrezzaturaController.text.trim();
     final note = _noteController.text.trim();
 
@@ -300,10 +270,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                     DropdownMenuItem(value: 'libero', child: Text('Libero')),
                     DropdownMenuItem(value: 'dorso', child: Text('Dorso')),
                     DropdownMenuItem(value: 'rana', child: Text('Rana')),
-                    DropdownMenuItem(
-                      value: 'delfino',
-                      child: Text('Delfino'),
-                    ),
+                    DropdownMenuItem(value: 'delfino', child: Text('Delfino')),
                     DropdownMenuItem(value: 'misti', child: Text('Misti')),
                   ],
                   onChanged: (value) =>
@@ -318,15 +285,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                       child: Text('Nuoto completo'),
                     ),
                     DropdownMenuItem(value: 'gambe', child: Text('Gambe')),
-                    DropdownMenuItem(
-                      value: 'braccia',
-                      child: Text('Braccia'),
-                    ),
+                    DropdownMenuItem(value: 'braccia', child: Text('Braccia')),
                     DropdownMenuItem(value: 'pull', child: Text('Pull')),
-                    DropdownMenuItem(
-                      value: 'tecnica',
-                      child: Text('Tecnica'),
-                    ),
+                    DropdownMenuItem(value: 'tecnica', child: Text('Tecnica')),
                     DropdownMenuItem(value: 'remate', child: Text('Remate')),
                   ],
                   onChanged: (value) =>
@@ -359,9 +320,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                         controller: _ordineController,
                         keyboardType: TextInputType.number,
                         validator: (v) =>
-                            int.tryParse(v?.trim() ?? '') == null
-                            ? 'N.'
-                            : null,
+                            int.tryParse(v?.trim() ?? '') == null ? 'N.' : null,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.s12),
@@ -395,57 +354,42 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
             FormGroup(
               titolo: 'Ritmo',
               campi: [
-                Text(
-                  'Passo obiettivo /100m (facoltativo)',
-                  style: AppTypography.etichetta,
-                ),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: AppTextField(
-                        etichetta: 'Minuti',
-                        controller: _passoMinutiController,
+                        etichetta: 'Passo /100m (facoltativo)',
+                        controller: _passoController,
+                        aiuto: 'm:ss',
+                        validator: (v) =>
+                            (v != null &&
+                                v.trim().isNotEmpty &&
+                                parsePaceMmSs(v) == null)
+                            ? 'Formato m:ss'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: AppTextField(
+                        etichetta: 'Recupero, s (facoltativo)',
+                        controller: _recuperoController,
                         keyboardType: TextInputType.number,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.s12),
                     Expanded(
                       child: AppTextField(
-                        etichetta: 'Secondi',
-                        controller: _passoSecondiController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                AppTextField(
-                  etichetta: 'Recupero, secondi (facoltativo)',
-                  controller: _recuperoController,
-                  keyboardType: TextInputType.number,
-                ),
-                Text(
-                  'Ripartenza / interval (facoltativo)',
-                  style: AppTypography.etichetta,
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Minuti',
-                        controller: _ripartenzaMinutiController,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Secondi',
-                        controller: _ripartenzaSecondiController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
+                        etichetta: 'Ripartenza (facoltativo)',
+                        controller: _ripartenzaController,
+                        aiuto: 'm:ss',
+                        validator: (v) =>
+                            (v != null &&
+                                v.trim().isNotEmpty &&
+                                parsePaceMmSs(v) == null)
+                            ? 'Formato m:ss'
+                            : null,
                       ),
                     ),
                   ],

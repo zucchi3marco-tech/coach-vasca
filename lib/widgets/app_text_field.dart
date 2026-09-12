@@ -22,11 +22,13 @@ class AppTextField extends StatelessWidget {
     this.autofillHints,
     this.onFieldSubmitted,
     this.onChanged,
+    this.focusNode,
     super.key,
   });
 
   final String etichetta;
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
@@ -52,6 +54,7 @@ class AppTextField extends StatelessWidget {
         const SizedBox(height: AppSpacing.s8),
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           validator: validator,
           keyboardType: keyboardType,
           maxLines: maxLines,
