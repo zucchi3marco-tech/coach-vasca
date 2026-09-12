@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/error_messages.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_typography.dart';
 import '../../../../widgets/app_list_panel.dart';
 import '../../../../widgets/app_list_row.dart';
 import '../../application/allenamenti_providers.dart';
+import '../../data/duplicazione_settimana_service.dart';
 import '../../domain/allenamento.dart';
 import 'allenamenti_per_giorno.dart';
 
 class CalendarioSettimanaleView extends ConsumerStatefulWidget {
   const CalendarioSettimanaleView({
+    required this.clubId,
     required this.allenamenti,
     required this.onGiornoSelezionato,
     super.key,
   });
 
+  final String clubId;
   final List<Allenamento> allenamenti;
   final ValueChanged<DateTime> onGiornoSelezionato;
 
@@ -58,6 +62,98 @@ class _CalendarioSettimanaleViewState
     return serie.fold<int>(0, (tot, s) => tot + s.distanzaTotaleM);
   }
 
+  Future<void> _duplicaSettimana(int numeroAllenamenti) async {
+    final fineSettimana = _inizioSettimana.add(const Duration(days: 6));
+    var nuovaDataInizio = _inizioSettimana.add(const Duration(days: 7));
+
+    final confermata = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Duplicare questa settimana?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$numeroAllenamenti allenamenti dal '
+                '${_formattaData(_inizioSettimana)} al '
+                '${_formattaData(fineSettimana)} (con le stesse serie) '
+                'verso la settimana che inizia:',
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              InkWell(
+                onTap: () async {
+                  final scelta = await showDatePicker(
+                    context: dialogContext,
+                    initialDate: nuovaDataInizio,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+                  if (scelta != null) {
+                    setDialogState(() => nuovaDataInizio = scelta);
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 16,
+                      color: AppColors.blu,
+                    ),
+                    const SizedBox(width: AppSpacing.s4),
+                    Text(
+                      _formattaData(nuovaDataInizio),
+                      style: AppTypography.corpoForte.copyWith(
+                        color: AppColors.blu,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Duplica'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confermata != true || !mounted) return;
+
+    try {
+      final numeroDuplicati = await ref
+          .read(duplicazioneSettimanaServiceProvider)
+          .duplica(
+            clubId: widget.clubId,
+            dataInizioSorgente: _inizioSettimana,
+            dataFineSorgente: fineSettimana,
+            nuovaDataInizio: nuovaDataInizio,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$numeroDuplicati allenamenti duplicati')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nella duplicazione: ${messaggioErrore(e)}'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final perGiorno = raggruppaPerGiorno(widget.allenamenti);
@@ -65,9 +161,11 @@ class _CalendarioSettimanaleViewState
     final oggi = DateTime.now();
 
     final metriPerGiorno = <DateTime, int>{};
+    var numeroAllenamentiSettimana = 0;
     for (var index = 0; index < 7; index++) {
       final data = _inizioSettimana.add(Duration(days: index));
       final sessioni = perGiorno[data] ?? const [];
+      numeroAllenamentiSettimana += sessioni.length;
       metriPerGiorno[data] = sessioni.fold<int>(
         0,
         (tot, a) => tot + _metriAllenamento(a),
@@ -88,7 +186,6 @@ class _CalendarioSettimanaleViewState
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     icon: const Icon(
@@ -101,9 +198,13 @@ class _CalendarioSettimanaleViewState
                       ),
                     ),
                   ),
-                  Text(
-                    '${_formattaData(_inizioSettimana)} — ${_formattaData(fineSettimana)}',
-                    style: AppTypography.sezione,
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '${_formattaData(_inizioSettimana)} — ${_formattaData(fineSettimana)}',
+                        style: AppTypography.sezione,
+                      ),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(
@@ -115,6 +216,13 @@ class _CalendarioSettimanaleViewState
                         const Duration(days: 7),
                       ),
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.content_copy),
+                    tooltip: 'Duplica questa settimana',
+                    onPressed: numeroAllenamentiSettimana == 0
+                        ? null
+                        : () => _duplicaSettimana(numeroAllenamentiSettimana),
                   ),
                 ],
               ),

@@ -50,6 +50,34 @@ class AllenamentiRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Letto da remoto quando possibile (dati sempre freschi per "Duplica
+  /// settimana"), con fallback sulla cache locale se offline — stesso
+  /// schema di `PartiteRepository.perClubEPeriodo`.
+  Future<List<Allenamento>> fetchPerClubEPeriodo({
+    required String clubId,
+    required DateTime dataInizio,
+    required DateTime dataFine,
+  }) async {
+    try {
+      final rows = await _client
+          .from('allenamenti')
+          .select()
+          .eq('club_id', clubId)
+          .gte('data', formatDateOnly(dataInizio))
+          .lte('data', formatDateOnly(dataFine));
+      return [for (final r in rows) Allenamento.fromMap(r)];
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe =
+          await (_db.select(_db.allenamentiTable)
+                ..where((t) => t.clubId.equals(clubId))
+                ..where((t) => t.data.isBiggerOrEqualValue(dataInizio))
+                ..where((t) => t.data.isSmallerOrEqualValue(dataFine)))
+              .get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   /// Sostituzione totale per questo club (non insertOrReplace): un
   /// allenamento eliminato fuori dall'app resterebbe altrimenti in cache
   /// a tempo indeterminato.

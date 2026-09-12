@@ -21,7 +21,7 @@ interface CorsiaGenerazione {
 
 interface ParametriSettimana {
   gruppo?: string;
-  numeroSedute?: number;
+  giorniSettimana?: string[];
   volumeSettimanaleMetri?: number;
   focusPerSeduta?: string[];
   tipoSettimana?: string | null;
@@ -30,7 +30,6 @@ interface ParametriSettimana {
 }
 
 interface SedutaGenerata {
-  giorno: number;
   codice: string;
   volumeMetri: number;
 }
@@ -61,8 +60,11 @@ function costruisciPrompt(p: ParametriSettimana): string {
       : "";
     return `- Corsia "${c.nome}": passo di riferimento sui 100 stile libero = ${c.passo100S}s${diff}`;
   });
+  const giorni = Array.isArray(p.giorniSettimana) ? p.giorniSettimana : [];
   const focusPerSeduta = Array.isArray(p.focusPerSeduta) ? p.focusPerSeduta : [];
-  const righeFocus = focusPerSeduta.map((f, i) => `- Seduta ${i + 1}: focus "${f}"`);
+  const righeSedute = giorni.map((g, i) =>
+    `- Seduta ${i + 1}, ${g}: focus "${focusPerSeduta[i] ?? ""}"`
+  );
   return [
     "Sei un allenatore di nuoto esperto. Pianifica una settimana di " +
       "allenamento come elenco di sedute (non il dettaglio delle serie, " +
@@ -83,21 +85,24 @@ function costruisciPrompt(p: ParametriSettimana): string {
           ...righeCorsie,
         ].join("\n")
       : "",
-    righeFocus.length > 0
+    righeSedute.length > 0
       ? [
-          `Genera esattamente ${righeFocus.length} sedute, in questo ` +
-            "ordine, una per ciascun focus richiesto:",
-          ...righeFocus,
+          "Il coach ha già scelto i giorni della settimana in cui si " +
+            `allena (le corsie in piscina sono spesso fisse per giorno): ` +
+            `genera esattamente ${righeSedute.length} sedute, in questo ` +
+            "ordine, una per ciascuna riga (non decidere tu il giorno, è " +
+            "già fissato):",
+          ...righeSedute,
         ].join("\n")
       : "",
-    "Per ogni seduta indica: giorno (numero da 1 a 7, 1 = primo giorno " +
-      "della settimana; distribuisci le sedute in modo sensato, non tutte " +
-      "consecutive se sono più di 4 e non due sedute di alta intensità di " +
-      "fila), un codice breve che descriva l'enfasi della seduta coerente " +
-      "col focus richiesto (es. \"Aerobico A2\", \"Soglia B1 + tecnica\", " +
-      "\"Velocità C1/C2\", \"Ritmo gara D\"), e il volume in metri di " +
-      "quella seduta. La somma dei volumi di tutte le sedute deve " +
-      "avvicinarsi il più possibile al volume settimanale richiesto.",
+    "Per ogni seduta indica: un codice breve che descriva l'enfasi della " +
+      "seduta coerente col focus richiesto (es. \"Aerobico A2\", " +
+      "\"Soglia B1 + tecnica\", \"Velocità C1/C2\", \"Ritmo gara D\"), e " +
+      "il volume in metri di quella seduta — tieni conto della vicinanza " +
+      "fra i giorni scelti (es. evita di mettere due sedute di alta " +
+      "intensità in giorni consecutivi, quando possibile). La somma dei " +
+      "volumi di tutte le sedute deve avvicinarsi il più possibile al " +
+      "volume settimanale richiesto.",
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
@@ -111,11 +116,10 @@ const responseSchema = {
       items: {
         type: "OBJECT",
         properties: {
-          giorno: { type: "INTEGER" },
           codice: { type: "STRING" },
           volumeMetri: { type: "INTEGER" },
         },
-        required: ["giorno", "codice", "volumeMetri"],
+        required: ["codice", "volumeMetri"],
       },
     },
   },
@@ -135,8 +139,8 @@ function validaSettimana(dati: unknown, numeroSeduteAtteso?: number): SettimanaG
     settimana.sedute.length !== numeroSeduteAtteso
   ) {
     throw new Error(
-      `attese ${numeroSeduteAtteso} sedute (una per ogni focus richiesto), ` +
-        `ricevute ${settimana.sedute.length}`,
+      `attesi ${numeroSeduteAtteso} giorni/focus richiesti, ` +
+        `ricevute ${settimana.sedute.length} sedute`,
     );
   }
 
@@ -146,10 +150,6 @@ function validaSettimana(dati: unknown, numeroSeduteAtteso?: number): SettimanaG
     }
     const s = voce as Record<string, unknown>;
 
-    const giorno = Number(s.giorno);
-    if (!Number.isInteger(giorno) || giorno < 1 || giorno > 7) {
-      throw new Error(`seduta #${indice + 1}: giorno non valido`);
-    }
     if (typeof s.codice !== "string" || s.codice.trim() === "") {
       throw new Error(`seduta #${indice + 1}: codice mancante`);
     }
@@ -158,7 +158,7 @@ function validaSettimana(dati: unknown, numeroSeduteAtteso?: number): SettimanaG
       throw new Error(`seduta #${indice + 1}: volume non valido`);
     }
 
-    return { giorno, codice: s.codice, volumeMetri };
+    return { codice: s.codice, volumeMetri };
   });
 
   return { sedute };
@@ -236,8 +236,8 @@ Deno.serve(async (req) => {
   try {
     const settimana = validaSettimana(
       settimanaGrezza,
-      Array.isArray(parametri.focusPerSeduta)
-        ? parametri.focusPerSeduta.length
+      Array.isArray(parametri.giorniSettimana)
+        ? parametri.giorniSettimana.length
         : undefined,
     );
     return jsonResponse({ settimana });

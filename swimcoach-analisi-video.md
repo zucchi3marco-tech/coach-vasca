@@ -183,7 +183,7 @@ Da segnare, perché in Corsia Pro non c'è:
 
 ---
 
-## 5. Generazione AI e settimana di allenamenti
+## 5. Generazione AI e settimana di allenamenti — ✅ risolto (2026-09-12)
 
 È la funzione che Corsia Pro non ha, quindi qui non c'è confronto possibile: o funziona bene e diventa il motivo per cui un allenatore sceglie la tua app, o resta un pulsante che nessuno preme due volte.
 
@@ -193,11 +193,19 @@ Da segnare, perché in Corsia Pro non c'è:
 
 *Non puoi scegliere i giorni.* Imposti "Numero di sedute: 4" e una data di inizio, ma non quali giorni. Le corsie in piscina sono assegnate in giorni fissi: se il generatore mette una seduta di mercoledì e tu il mercoledì non hai la vasca, il risultato è da rifare a mano. Aggiungi una fila di chip con i giorni della settimana.
 
+*Come risolto:* lo slider "Numero di sedute" è sparito, sostituito da 7 `FilterChip` (uno per giorno da "Data di inizio", con etichetta tipo "Mer 17/9") che il coach seleziona esplicitamente. Il campo "Focus di ogni seduta" ora mostra il giorno scelto invece di "Seduta N". L'AI non decide più il giorno (tolto dallo schema di risposta e dalla validazione dell'Edge Function `genera-settimana`): riceve i giorni scelti come contesto nel prompt (per ragionare sulla spaziatura fra sedute ad alta intensità) e il client associa ogni seduta restituita al giorno corrispondente per posizione. **Richiede la ridistribuzione della Edge Function** (`supabase functions deploy genera-settimana`).
+
 *Non c'è anteprima né modifica prima del salvataggio.* Una generazione AI va rivista prima di finire nel calendario. Serve una schermata di anteprima con le sedute proposte, i metri di ciascuna, il totale settimanale, e la possibilità di rigenerare una singola seduta senza rifare tutta la settimana.
+
+*Come risolto:* l'anteprima con date modificabili e il totale settimanale esistevano già da un passaggio precedente di questa stessa sessione. Aggiunta ora la parte mancante: ogni scheda seduta nella revisione ha un'icona "Rigenera" che richiama di nuovo `genera-allenamento` con lo stesso focus/volume/vincoli/corsie di quella seduta, sostituendo solo il suo dettaglio (le altre sedute restano intatte).
 
 *Non c'è verifica del risultato.* Chiedi 14000 m settimanali: da nessuna parte poi leggi se ne sono stati generati 14000 o 9000. Collegato al punto sui totali metri della sezione precedente.
 
+*Come risolto:* il totale settimanale in testata alla revisione (aggiunto in un passaggio precedente di questa sessione) copre già questo punto.
+
 *Manca la cosa che l'allenatore fa davvero ogni settimana:* duplicare la settimana precedente e modificarla. Non c'è né in SwimCoach né in Corsia Pro, ed è più utile di qualsiasi generazione da zero. "Duplica settimana" con spostamento automatico delle date è poco codice e molto valore.
+
+*Come risolto:* nuovo `DuplicazioneSettimanaService`, raggiungibile con una nuova icona "Duplica questa settimana" nella Vista Settimana della sezione Allenamenti (accanto al selettore di settimana, disabilitata se la settimana in vista non ha allenamenti). Un dialog conferma quanti allenamenti verranno copiati e permette di scegliere la data di inizio della settimana di destinazione (proposta di default la settimana successiva); copia allenamenti e relative serie con le date spostate dello stesso offset, senza passare dall'AI.
 
 ---
 

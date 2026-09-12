@@ -69,6 +69,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
               data: (allenamenti) => switch (_vista) {
                 _Vista.elenco => _buildElenco(allenamenti, nomiGruppi),
                 _Vista.settimana => CalendarioSettimanaleView(
+                  clubId: widget.clubId,
                   allenamenti: allenamenti,
                   onGiornoSelezionato: (data) => _apriGiorno(data),
                 ),

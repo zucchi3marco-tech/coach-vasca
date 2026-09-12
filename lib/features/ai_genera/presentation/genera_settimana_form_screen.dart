@@ -23,6 +23,16 @@ import '../domain/settimana_generata.dart';
 
 const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
 const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
+const _abbreviazioniGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const _nomiGiorni = [
+  'Lunedì',
+  'Martedì',
+  'Mercoledì',
+  'Giovedì',
+  'Venerdì',
+  'Sabato',
+  'Domenica',
+];
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
@@ -33,11 +43,11 @@ String _etichettaFocus(String f) =>
     f == 'velocita' ? 'Velocità' : _capitalizza(f);
 
 /// Pianifica una settimana intera (FASE 10, punto 5): prima uno scheletro
-/// leggero (numero di sedute, codice, volume) via `genera-settimana`, poi
-/// il dettaglio delle serie di ogni seduta via `genera-allenamento` —
-/// stessi passi/corsie calcolati una sola volta per il gruppo. Non tiene
-/// ancora conto delle settimane precedenti né del calendario gare
-/// (rimandato, vedi ROADMAP.md).
+/// leggero (codice, volume) via `genera-settimana`, poi il dettaglio delle
+/// serie di ogni seduta via `genera-allenamento` — stessi passi/corsie
+/// calcolati una sola volta per il gruppo. Non tiene ancora conto delle
+/// settimane precedenti né del calendario gare (rimandato, vedi
+/// ROADMAP.md).
 class GeneraSettimanaFormScreen extends ConsumerStatefulWidget {
   const GeneraSettimanaFormScreen({required this.clubId, super.key});
 
@@ -58,11 +68,15 @@ class _GeneraSettimanaFormScreenState
   late final TextEditingController _dataInizioController =
       TextEditingController(text: _formattaData(_dataInizio));
   String? _tipoSettimana;
-  double _numeroSedute = 4;
+  // Offset (0-6) da _dataInizio dei giorni scelti dal coach, invece di un
+  // numero di sedute lasciato decidere all'AI: le corsie in piscina sono
+  // spesso fisse per giorno, il coach sa già quando si allena.
+  final List<int> _giorniSelezionati = [0, 2, 4, 5];
   double _volumeSettimanale = 12000;
   List<String> _focusPerSeduta = List.filled(4, _focus.first);
   bool _generazioneInCorso = false;
   String? _fasePassaggio;
+  String? _erroreGiorni;
 
   @override
   void dispose() {
@@ -71,10 +85,15 @@ class _GeneraSettimanaFormScreenState
     super.dispose();
   }
 
-  void _aggiornaNumeroSedute(double valore) {
-    final numero = valore.round();
+  void _alternaGiorno(int offset, bool selezionato) {
     setState(() {
-      _numeroSedute = valore;
+      if (selezionato) {
+        _giorniSelezionati.add(offset);
+      } else {
+        _giorniSelezionati.remove(offset);
+      }
+      _giorniSelezionati.sort();
+      final numero = _giorniSelezionati.length;
       if (numero > _focusPerSeduta.length) {
         _focusPerSeduta = [
           ..._focusPerSeduta,
@@ -83,6 +102,7 @@ class _GeneraSettimanaFormScreenState
       } else if (numero < _focusPerSeduta.length) {
         _focusPerSeduta = _focusPerSeduta.sublist(0, numero);
       }
+      if (_giorniSelezionati.isNotEmpty) _erroreGiorni = null;
     });
   }
 
@@ -101,11 +121,26 @@ class _GeneraSettimanaFormScreenState
     }
   }
 
-  DateTime _dataPerGiorno(int giorno) =>
-      _dataInizio.add(Duration(days: giorno - 1));
+  String _etichettaGiornoBreve(int offset) {
+    final data = _dataInizio.add(Duration(days: offset));
+    return '${_abbreviazioniGiorni[data.weekday - 1]} '
+        '${data.day.toString().padLeft(2, '0')}/'
+        '${data.month.toString().padLeft(2, '0')}';
+  }
+
+  String _etichettaGiornoCompleta(int offset) {
+    final data = _dataInizio.add(Duration(days: offset));
+    return '${_nomiGiorni[data.weekday - 1]} '
+        '${data.day.toString().padLeft(2, '0')}/'
+        '${data.month.toString().padLeft(2, '0')}';
+  }
 
   Future<void> _conferma() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_giorniSelezionati.isEmpty) {
+      setState(() => _erroreGiorni = 'Scegli almeno un giorno');
+      return;
+    }
 
     setState(() {
       _generazioneInCorso = true;
@@ -132,6 +167,7 @@ class _GeneraSettimanaFormScreenState
     };
     final gruppoLabel = nomiGruppi[_gruppoId] ?? 'Tutti gli atleti';
     final vincoliUtente = _vincoliController.text.trim();
+    final giorniOrdinati = List<int>.of(_giorniSelezionati)..sort();
 
     try {
       final settimana = await ref
@@ -139,7 +175,9 @@ class _GeneraSettimanaFormScreenState
           .generaSettimana(
             ParametriSettimana(
               gruppo: gruppoLabel,
-              numeroSedute: _numeroSedute.round(),
+              giorniSettimana: [
+                for (final g in giorniOrdinati) _etichettaGiornoCompleta(g),
+              ],
               volumeSettimanaleMetri: _volumeSettimanale.round(),
               focusPerSeduta: _focusPerSeduta,
               tipoSettimana: _tipoSettimana,
@@ -185,11 +223,15 @@ class _GeneraSettimanaFormScreenState
                 corsie: corsie,
               ),
             );
+        final offset = i < giorniOrdinati.length
+            ? giorniOrdinati[i]
+            : giorniOrdinati.last;
         sedute.add(
           SedutaConScheda(
             seduta: seduta,
             scheda: scheda,
-            data: _dataPerGiorno(seduta.giorno),
+            data: _dataInizio.add(Duration(days: offset)),
+            focus: focusSeduta,
           ),
         );
       }
@@ -200,6 +242,9 @@ class _GeneraSettimanaFormScreenState
           builder: (_) => _RevisioneSettimanaScreen(
             clubId: widget.clubId,
             gruppoId: _gruppoId,
+            gruppoLabel: gruppoLabel,
+            corsie: corsie,
+            vincoliUtente: vincoliUtente,
             sedute: sedute,
           ),
         ),
@@ -302,17 +347,32 @@ class _GeneraSettimanaFormScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Numero di sedute: ${_numeroSedute.round()}',
+                      'Giorni della settimana',
                       style: AppTypography.etichetta,
                     ),
-                    Slider(
-                      value: _numeroSedute,
-                      min: 2,
-                      max: 7,
-                      divisions: 5,
-                      label: '${_numeroSedute.round()}',
-                      onChanged: _aggiornaNumeroSedute,
+                    const SizedBox(height: AppSpacing.s8),
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s8,
+                      children: [
+                        for (var offset = 0; offset < 7; offset++)
+                          FilterChip(
+                            label: Text(_etichettaGiornoBreve(offset)),
+                            selected: _giorniSelezionati.contains(offset),
+                            onSelected: (selezionato) =>
+                                _alternaGiorno(offset, selezionato),
+                          ),
+                      ],
                     ),
+                    if (_erroreGiorni != null) ...[
+                      const SizedBox(height: AppSpacing.s4),
+                      Text(
+                        _erroreGiorni!,
+                        style: AppTypography.piccolo.copyWith(
+                          color: AppColors.rosso,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 Column(
@@ -345,7 +405,9 @@ class _GeneraSettimanaFormScreenState
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.s8),
                         child: AppSelect<String>(
-                          etichetta: 'Seduta ${i + 1}',
+                          etichetta: i < _giorniSelezionati.length
+                              ? _etichettaGiornoBreve(_giorniSelezionati[i])
+                              : 'Seduta ${i + 1}',
                           value: _focusPerSeduta[i],
                           items: [
                             for (final f in _focus)
@@ -397,22 +459,33 @@ class SedutaConScheda {
     required this.seduta,
     required this.scheda,
     required this.data,
+    required this.focus,
   });
 
   final SedutaGenerata seduta;
   final SchedaGenerata scheda;
   final DateTime data;
+
+  /// Il focus usato per generare questa seduta — serve a poterla
+  /// rigenerare singolarmente nella revisione, con lo stesso focus.
+  final String focus;
 }
 
 class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   const _RevisioneSettimanaScreen({
     required this.clubId,
     required this.gruppoId,
+    required this.gruppoLabel,
+    required this.corsie,
+    required this.vincoliUtente,
     required this.sedute,
   });
 
   final String clubId;
   final String? gruppoId;
+  final String gruppoLabel;
+  final List<CorsiaGenerazione> corsie;
+  final String vincoliUtente;
   final List<SedutaConScheda> sedute;
 
   @override
@@ -424,6 +497,7 @@ class _RevisioneSettimanaScreenState
     extends ConsumerState<_RevisioneSettimanaScreen> {
   late final List<SedutaConScheda> _sedute = List.of(widget.sedute);
   bool _salvataggioInCorso = false;
+  int? _rigenerandoIndice;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -454,8 +528,59 @@ class _RevisioneSettimanaScreenState
           seduta: corrente.seduta,
           scheda: corrente.scheda,
           data: scelta,
+          focus: corrente.focus,
         );
       });
+    }
+  }
+
+  Future<void> _rigenera(int indice) async {
+    setState(() => _rigenerandoIndice = indice);
+    final voce = _sedute[indice];
+    try {
+      final vincoliGiorno = [
+        'Enfasi di questa seduta: ${voce.seduta.codice}.',
+        if (widget.vincoliUtente.isNotEmpty) widget.vincoliUtente,
+      ].join(' ');
+      final nuovaScheda = await ref
+          .read(generazioneAiRepositoryProvider)
+          .generaAllenamento(
+            ParametriGenerazione(
+              gruppo: widget.gruppoLabel,
+              volumeMetri: voce.seduta.volumeMetri,
+              focus: voce.focus,
+              regimiAmmessi: const [
+                'A1',
+                'A2',
+                'B1',
+                'B2',
+                'C1',
+                'C2',
+                'C3',
+                'D',
+              ],
+              vincoli: vincoliGiorno,
+              corsie: widget.corsie,
+            ),
+          );
+      if (!mounted) return;
+      setState(() {
+        _sedute[indice] = SedutaConScheda(
+          seduta: voce.seduta,
+          scheda: nuovaScheda,
+          data: voce.data,
+          focus: voce.focus,
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore nella rigenerazione: ${messaggioErrore(e)}'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _rigenerandoIndice = null);
     }
   }
 
@@ -528,6 +653,10 @@ class _RevisioneSettimanaScreenState
               formattaData: _formattaData,
               sottotitoloSerie: _sottotitoloSerie,
               onCambiaData: () => _cambiaData(i),
+              onRigenera: _rigenerandoIndice == null
+                  ? () => _rigenera(i)
+                  : null,
+              rigenerandoQuesta: _rigenerandoIndice == i,
               onRimuovi: _sedute.length > 1
                   ? () => setState(() => _sedute.removeAt(i))
                   : null,
@@ -551,6 +680,8 @@ class _CardSeduta extends StatelessWidget {
     required this.formattaData,
     required this.sottotitoloSerie,
     required this.onCambiaData,
+    required this.onRigenera,
+    required this.rigenerandoQuesta,
     required this.onRimuovi,
   });
 
@@ -558,6 +689,8 @@ class _CardSeduta extends StatelessWidget {
   final String Function(DateTime) formattaData;
   final String Function(SerieGenerata) sottotitoloSerie;
   final VoidCallback onCambiaData;
+  final VoidCallback? onRigenera;
+  final bool rigenerandoQuesta;
   final VoidCallback? onRimuovi;
 
   @override
@@ -569,75 +702,89 @@ class _CardSeduta extends StatelessWidget {
         border: Border.all(color: AppColors.linea),
       ),
       padding: const EdgeInsets.all(AppSpacing.paddingPannello),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(voce.scheda.titolo, style: AppTypography.titolo),
-              ),
-              if (onRimuovi != null)
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: AppColors.testoSecondario,
-                  ),
-                  tooltip: 'Rimuovi questa seduta dal piano',
-                  onPressed: onRimuovi,
-                ),
-            ],
-          ),
-          InkWell(
-            onTap: onCambiaData,
-            child: Row(
+      child: Opacity(
+        opacity: rigenerandoQuesta ? 0.5 : 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: AppColors.blu,
+                Expanded(
+                  child: Text(voce.scheda.titolo, style: AppTypography.titolo),
                 ),
-                const SizedBox(width: AppSpacing.s4),
-                Text(
-                  formattaData(voce.data),
-                  style: AppTypography.corpoForte.copyWith(
-                    color: AppColors.blu,
+                IconButton(
+                  icon: rigenerandoQuesta
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh, color: AppColors.blu),
+                  tooltip: 'Rigenera questa seduta',
+                  onPressed: onRigenera,
+                ),
+                if (onRimuovi != null)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.testoSecondario,
+                    ),
+                    tooltip: 'Rimuovi questa seduta dal piano',
+                    onPressed: rigenerandoQuesta ? null : onRimuovi,
                   ),
-                ),
               ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m',
-            style: AppTypography.piccolo,
-          ),
-          const Divider(height: AppSpacing.s24),
-          for (final s in voce.scheda.serie)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            InkWell(
+              onTap: rigenerandoQuesta ? null : onCambiaData,
+              child: Row(
                 children: [
-                  Text(
-                    '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
-                    '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                    style: AppTypography.corpoForte,
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 16,
+                    color: AppColors.blu,
                   ),
-                  Text(sottotitoloSerie(s), style: AppTypography.piccolo),
-                  if (s.ripartenzePerCorsia.isNotEmpty)
-                    Text(
-                      formattaRipartenzeCorsia(s.ripartenzePerCorsia),
-                      style: AppTypography.piccolo.copyWith(
-                        color: AppColors.blu,
-                      ),
+                  const SizedBox(width: AppSpacing.s4),
+                  Text(
+                    formattaData(voce.data),
+                    style: AppTypography.corpoForte.copyWith(
+                      color: AppColors.blu,
                     ),
-                  if (s.note != null && s.note!.isNotEmpty)
-                    Text(s.note!, style: AppTypography.piccolo),
+                  ),
                 ],
               ),
             ),
-        ],
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m',
+              style: AppTypography.piccolo,
+            ),
+            const Divider(height: AppSpacing.s24),
+            for (final s in voce.scheda.serie)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
+                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                      style: AppTypography.corpoForte,
+                    ),
+                    Text(sottotitoloSerie(s), style: AppTypography.piccolo),
+                    if (s.ripartenzePerCorsia.isNotEmpty)
+                      Text(
+                        formattaRipartenzeCorsia(s.ripartenzePerCorsia),
+                        style: AppTypography.piccolo.copyWith(
+                          color: AppColors.blu,
+                        ),
+                      ),
+                    if (s.note != null && s.note!.isNotEmpty)
+                      Text(s.note!, style: AppTypography.piccolo),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
