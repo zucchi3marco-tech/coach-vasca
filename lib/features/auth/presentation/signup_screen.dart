@@ -11,7 +11,11 @@ import '../../../widgets/primary_button.dart';
 import '../data/auth_repository.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
-  const SignUpScreen({super.key});
+  const SignUpScreen({this.emailIniziale, super.key});
+
+  /// L'email già digitata sulla schermata di login, se si arriva da lì:
+  /// non ha senso farla riscrivere da capo.
+  final String? emailIniziale;
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
@@ -19,7 +23,9 @@ class SignUpScreen extends ConsumerStatefulWidget {
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    text: widget.emailIniziale ?? '',
+  );
   final _passwordController = TextEditingController();
   final _confermaPasswordController = TextEditingController();
 
@@ -92,6 +98,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
+              // Senza, "Le password non coincidono" compare solo dopo aver
+              // gia' toccato "Crea account" una volta: il pulsante intanto
+              // resta scuro e premibile, dando l'impressione che il form
+              // vada bene. Con onUserInteraction l'errore compare non
+              // appena si scrive, prima ancora di provare a inviare.
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,6 +135,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       }
                       return null;
                     },
+                    // La validazione di "Conferma password" dipende da
+                    // questo campo ma si attiva da sola solo quando cambia
+                    // il proprio valore: senza rivalidare qui a mano, un
+                    // "Conferma" gia' scritto non si accorgerebbe che nel
+                    // frattempo la password e' cambiata sotto di lui.
+                    onChanged: (_) => _formKey.currentState?.validate(),
                   ),
                   const SizedBox(height: AppSpacing.s16),
                   AppTextField(

@@ -75,19 +75,23 @@ Dal video non si capisce se hai premuto "Genera" e non è successo niente, o se 
 
 *✅ risolto (2026-09-12):* verificato che la navigazione diretta all'anteprima e l'indicatore di caricamento sul pulsante esistevano già (probabilmente il video è stato registrato contro una build precedente, o l'attesa senza timeout dava l'impressione di nulla che succedesse); mancavano davvero timeout e "Riprova". Aggiunto un timeout di 60s su entrambe le chiamate AI (`GenerazioneAiRepository`, con messaggio dedicato in `messaggioErrore` per `TimeoutException`), un'azione "Riprova" sullo snackbar di errore in entrambi i generatori, e il testo del pulsante del generatore a seduta singola ora cambia in "Sto generando..." durante l'attesa (quello della settimana aveva già un testo di fase più dettagliato, "Pianificazione della settimana..."/"Dettaglio seduta X di Y...", lasciato invariato). **Non affrontati in questo passaggio** (sezione 5, elenco "cosa manca"): scelta dei giorni della settimana, rigenerazione di una singola seduta senza rifare tutta la settimana, "duplica settimana precedente" — sono funzionalità nuove, non fix di feedback, da valutare come punti separati.
 
-### 2.8 Il pulsante resta attivo con il form non valido
+### 2.8 Il pulsante resta attivo con il form non valido — ✅ risolto (2026-09-12)
 In "Crea account coach" appare "Le password non coincidono" ma "Crea account" resta scuro e premibile. Stessa logica altrove: la validazione avvisa ma non blocca.
 
 **Fix.** Disabilitare il pulsante finché il form non è valido, oppure lasciarlo attivo ma far comparire l'errore sul campo al tocco. La via di mezzo attuale è la peggiore delle due.
+
+*Come risolto:* scelta la seconda opzione (il documento stesso la indica come alternativa valida). `Form` in `signup_screen.dart` ora ha `autovalidateMode: AutovalidateMode.onUserInteraction`: "Le password non coincidono" compare non appena si scrive nel campo conferma, non solo dopo il primo tentativo di invio. Il campo Password rivalida anche il campo Conferma a ogni modifica (altrimenti un Conferma già scritto non si accorgerebbe che la Password è cambiata sotto di lui). Scope limitato al form di registrazione, l'unico con un controllo incrociato fra due campi.
 
 ---
 
 ## 3. Problemi di flusso e di interfaccia
 
-### 3.1 Due minuti su sette per entrare nell'app
+### 3.1 Due minuti su sette per entrare nell'app — ✅ risolto (2026-09-12)
 Il 28% del video è login, registrazione, password sbagliate, creazione club. Parte è dovuta a errori di battitura tuoi, ma il flusso non aiuta: l'errore "Email o password non corretti" non distingue tra utente inesistente e password sbagliata, e dopo aver fallito il login non c'è un collegamento diretto a "Crea un account con questa email".
 
 **Fix.** Riportare l'email già digitata nella schermata di registrazione, e nel messaggio di errore aggiungere l'azione "Non hai un account? Registrati".
+
+*Come risolto:* il pulsante "Registrati" (aggiunto in un passaggio precedente di FASE 11, affiancato ad "Accedi") ora porta con sé l'email già digitata sul login, precompilando il campo email della registrazione. Sul login, quando l'errore è "Email o password non corretti", compare anche un suggerimento sotto l'errore ("Non hai ancora un account? Tocca 'Registrati' qui sotto") invece di un'azione separata dentro il messaggio stesso — il pulsante "Registrati" è già sempre visibile appena sotto, quindi bastava indirizzarci esplicitamente.
 
 ### 3.2 Lo skeleton loader sembra una lista vuota — ✅ risolto (2026-09-12)
 A 1:12 la lista atleti mostra sei rettangoli grigi vuoti per circa due secondi. Senza animazione di shimmer sembrano schede di atleti rotte, non un caricamento.
@@ -124,10 +128,12 @@ L'atleta viene salvato come Cognome "Genah", Nome "gabriel". In lista compare "G
 
 *Verificato (2026-09-12):* `capitalizzaNome` viene già chiamato al salvataggio (creazione e modifica) in `atleta_form_screen.dart`, non solo in visualizzazione — il video risulta registrato contro una build precedente a questo fix (fatto in FASE 10). Nessuna modifica necessaria.
 
-### 3.7 "Tipo di settimana (facoltativo)" non si capisce
+### 3.7 "Tipo di settimana (facoltativo)" non si capisce — ✅ risolto (2026-09-12)
 Nel generatore settimanale c'è un menu "Tipo di settimana" impostato su "Nessuno". Non è chiaro cosa cambi scegliendo qualcos'altro.
 
 **Fix.** Una riga di spiegazione sotto il campo, o rinominarlo con qualcosa di autoesplicativo (per esempio "Fase del mesociclo: carico / scarico / gara").
+
+*Come risolto:* aggiunta una riga di spiegazione sotto il campo ("Regola volume e intensità della settimana generata: una settimana di scarico avrà volumi più bassi di una di carico, una di gara punterà su freschezza e ritmo gara"), riprendendo lo stesso testo già usato internamente nel prompt della Edge Function. Non rinominato (il riferimento a "mesociclo" suggerito nel documento non ha più senso: la gerarchia macrociclo/mesociclo/microciclo è stata eliminata in FASE 11).
 
 ---
 

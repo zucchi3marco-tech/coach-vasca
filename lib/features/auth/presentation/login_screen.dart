@@ -28,6 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isSubmitting = false;
   bool _passwordVisibile = false;
   String? _errorMessage;
+  String? _suggerimentoErrore;
 
   @override
   void dispose() {
@@ -42,6 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
+      _suggerimentoErrore = null;
     });
 
     try {
@@ -52,7 +54,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
     } on AuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = messaggioErrore(e));
+      if (mounted) {
+        setState(() {
+          _errorMessage = messaggioErrore(e);
+          // "Email o password non corretti" non distingue un account
+          // inesistente da una password sbagliata: in entrambi i casi
+          // vale la pena ricordare che si può anche registrarsi da capo.
+          _suggerimentoErrore = e.message.contains('Invalid login credentials')
+              ? 'Non hai ancora un account? Tocca "Registrati" qui sotto.'
+              : null;
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _errorMessage = 'Errore di connessione. Riprova.');
@@ -134,8 +146,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       tooltip: _passwordVisibile
                           ? 'Nascondi password'
                           : 'Mostra password',
-                      onPressed: () =>
-                          setState(() => _passwordVisibile = !_passwordVisibile),
+                      onPressed: () => setState(
+                        () => _passwordVisibile = !_passwordVisibile,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -147,7 +160,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   if (_errorMessage != null) ...[
                     const SizedBox(height: AppSpacing.s12),
-                    ErrorBanner(messaggio: _errorMessage!),
+                    ErrorBanner(
+                      messaggio: _errorMessage!,
+                      suggerimento: _suggerimentoErrore,
+                    ),
                   ],
                   const SizedBox(height: AppSpacing.s16),
                   TextButton(
@@ -172,7 +188,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ? null
                               : () => Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const SignUpScreen(),
+                                    builder: (_) => SignUpScreen(
+                                      emailIniziale: _emailController.text
+                                          .trim(),
+                                    ),
                                   ),
                                 ),
                         ),

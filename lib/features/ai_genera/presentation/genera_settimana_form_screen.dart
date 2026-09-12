@@ -267,16 +267,36 @@ class _GeneraSettimanaFormScreenState
                   ],
                   onChanged: (value) => setState(() => _gruppoId = value),
                 ),
-                AppSelect<String?>(
-                  etichetta: 'Tipo di settimana (facoltativo)',
-                  value: _tipoSettimana,
-                  hint: 'Nessuno',
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('Nessuno')),
-                    for (final t in _tipiSettimana)
-                      DropdownMenuItem(value: t, child: Text(_capitalizza(t))),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSelect<String?>(
+                      etichetta: 'Tipo di settimana (facoltativo)',
+                      value: _tipoSettimana,
+                      hint: 'Nessuno',
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Nessuno'),
+                        ),
+                        for (final t in _tipiSettimana)
+                          DropdownMenuItem(
+                            value: t,
+                            child: Text(_capitalizza(t)),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _tipoSettimana = value),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      'Regola volume e intensità della settimana generata: '
+                      'una settimana di scarico avrà volumi più bassi di '
+                      'una di carico, una di gara punterà su freschezza e '
+                      'ritmo gara.',
+                      style: AppTypography.piccolo,
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _tipoSettimana = value),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
