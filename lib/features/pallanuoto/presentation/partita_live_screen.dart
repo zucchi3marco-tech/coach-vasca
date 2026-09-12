@@ -25,6 +25,7 @@ import 'eventi_partita_screen.dart';
 import 'fascia_calottine_partita.dart';
 import 'selettore_giocatore_partita.dart';
 import 'squalifiche_partita.dart';
+import 'striscia_sanzionati_partita.dart';
 
 enum _Interazione { riposo, sceltaGiocatoreTiro, sceltaGiocatoreSanzione }
 
@@ -436,19 +437,20 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          FasciaCalottinePartita(
-                            partita: widget.partita,
-                            casa: true,
-                            convocati: convocati,
-                            attiva: attiva,
-                            soloNostra:
-                                _interazione ==
-                                _Interazione.sceltaGiocatoreTiro,
-                            disqualificati: disqualificati,
-                            conteggiRigore: conteggiRigore,
-                            onSelezionato: (id) =>
-                                _onSelezionatoGiocatore(eventi, id),
-                          ),
+                          if (attiva)
+                            FasciaCalottinePartita(
+                              partita: widget.partita,
+                              casa: true,
+                              convocati: convocati,
+                              attiva: attiva,
+                              soloNostra:
+                                  _interazione ==
+                                  _Interazione.sceltaGiocatoreTiro,
+                              disqualificati: disqualificati,
+                              conteggiRigore: conteggiRigore,
+                              onSelezionato: (id) =>
+                                  _onSelezionatoGiocatore(eventi, id),
+                            ),
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -487,22 +489,34 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                               ),
                             ),
                           ),
-                          FasciaCalottinePartita(
-                            partita: widget.partita,
-                            casa: false,
-                            convocati: convocati,
-                            attiva: attiva,
-                            soloNostra:
-                                _interazione ==
-                                _Interazione.sceltaGiocatoreTiro,
-                            disqualificati: disqualificati,
-                            conteggiRigore: conteggiRigore,
-                            onSelezionato: (id) =>
-                                _onSelezionatoGiocatore(eventi, id),
-                          ),
+                          if (attiva)
+                            FasciaCalottinePartita(
+                              partita: widget.partita,
+                              casa: false,
+                              convocati: convocati,
+                              attiva: attiva,
+                              soloNostra:
+                                  _interazione ==
+                                  _Interazione.sceltaGiocatoreTiro,
+                              disqualificati: disqualificati,
+                              conteggiRigore: conteggiRigore,
+                              onSelezionato: (id) =>
+                                  _onSelezionatoGiocatore(eventi, id),
+                            ),
                         ],
                       ),
                     ),
+                    if (!attiva)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.s16,
+                        ),
+                        child: StrisciaSanzionatiPartita(
+                          partita: widget.partita,
+                          convocati: convocati,
+                          conteggiRigore: conteggiRigore,
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.all(AppSpacing.s16),
                       child: Row(
