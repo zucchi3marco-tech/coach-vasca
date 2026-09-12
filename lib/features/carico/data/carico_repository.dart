@@ -40,13 +40,19 @@ class CaricoRepository {
 
   /// Mappa allenamentoId -> carico totale (somma delle serie pesate per
   /// zona) per tutti gli allenamenti del club.
+  ///
+  /// Legge da `serie_per_carico` (RPC, non dalla tabella `serie`
+  /// direttamente): un atleta collegato può calcolare il proprio carico
+  /// senza poter leggere note/attrezzatura delle serie di altri atleti
+  /// (audit 12/09) — vedi migrazione `20260912000100_carico_atleta_rpc.sql`.
   Future<Map<String, double>> _caricoPerAllenamento(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
-      righe = await _client
-          .from('serie')
-          .select('allenamento_id, ripetute, distanza_m, zona')
-          .eq('club_id', clubId);
+      final risposta = await _client.rpc(
+        'serie_per_carico',
+        params: {'p_club_id': clubId},
+      );
+      righe = (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       final locali = await (_db.select(
@@ -75,13 +81,16 @@ class CaricoRepository {
   }
 
   /// Mappa allenamentoId -> data, per tutti gli allenamenti del club.
+  /// Legge da `allenamenti_per_carico` (RPC), stesso motivo di
+  /// [_caricoPerAllenamento].
   Future<Map<String, DateTime>> _dataPerAllenamento(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
-      righe = await _client
-          .from('allenamenti')
-          .select('id, data')
-          .eq('club_id', clubId);
+      final risposta = await _client.rpc(
+        'allenamenti_per_carico',
+        params: {'p_club_id': clubId},
+      );
+      righe = (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       final locali = await (_db.select(
@@ -108,10 +117,11 @@ class CaricoRepository {
           .eq('stato', 'presente');
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final locali = await (_db.select(_db.presenzeTable)
-            ..where((t) => t.atletaId.equals(atletaId))
-            ..where((t) => t.stato.equals('presente')))
-          .get();
+      final locali =
+          await (_db.select(_db.presenzeTable)
+                ..where((t) => t.atletaId.equals(atletaId))
+                ..where((t) => t.stato.equals('presente')))
+              .get();
       righe = [
         for (final r in locali) {'allenamento_id': r.allenamentoId},
       ];
@@ -145,10 +155,11 @@ class CaricoRepository {
   /// stesso schema try/fallback-locale di [_caricoPerAllenamento].
   Future<List<Map<String, dynamic>>> _serieDelClub(String clubId) async {
     try {
-      return await _client
-          .from('serie')
-          .select('allenamento_id, ripetute, distanza_m, zona, esecuzione')
-          .eq('club_id', clubId);
+      final risposta = await _client.rpc(
+        'serie_per_carico',
+        params: {'p_club_id': clubId},
+      );
+      return (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       final locali = await (_db.select(

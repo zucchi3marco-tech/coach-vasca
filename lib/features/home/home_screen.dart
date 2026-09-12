@@ -60,6 +60,18 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _tabIndex = 0;
 
+  Future<void> _signOut() async {
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Uscita non riuscita: ${messaggioErrore(e)}')),
+        );
+      }
+    }
+  }
+
   Widget _corpoClub(AsyncValue<Club?> clubAsync) {
     return clubAsync.when(
       data: (club) =>
@@ -207,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+            onPressed: _signOut,
           ),
         ],
       ),

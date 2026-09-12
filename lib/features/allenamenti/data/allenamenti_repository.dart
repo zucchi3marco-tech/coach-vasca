@@ -148,19 +148,26 @@ class AllenamentiRepository {
     return _rileggiLocale(id);
   }
 
+  /// Manda solo i campi davvero cambiati rispetto a [originale] (sia
+  /// online sia nella coda offline): un aggiornamento "a tutto il modulo"
+  /// rischierebbe di riportare indietro un campo che un altro dispositivo
+  /// ha modificato nel frattempo, anche se qui non è mai stato toccato.
   Future<Allenamento> updateAllenamento({
-    required String id,
+    required Allenamento originale,
     required DateTime data,
     String? titolo,
     String? gruppoId,
     String? note,
   }) async {
-    final payload = {
-      'data': formatDateOnly(data),
-      'titolo': titolo,
-      'gruppo_id': gruppoId,
-      'note': note,
+    final id = originale.id;
+    final payload = <String, dynamic>{
+      if (data != originale.data) 'data': formatDateOnly(data),
+      if (titolo != originale.titolo) 'titolo': titolo,
+      if (gruppoId != originale.gruppoId) 'gruppo_id': gruppoId,
+      if (note != originale.note) 'note': note,
     };
+    if (payload.isEmpty) return originale;
+
     try {
       final row = await _client
           .from('allenamenti')
@@ -177,10 +184,18 @@ class AllenamentiRepository {
         _db.allenamentiTable,
       )..where((t) => t.id.equals(id))).write(
         AllenamentiTableCompanion(
-          data: Value(data),
-          titolo: Value(titolo),
-          gruppoId: Value(gruppoId),
-          note: Value(note),
+          data: payload.containsKey('data')
+              ? Value(data)
+              : const Value.absent(),
+          titolo: payload.containsKey('titolo')
+              ? Value(titolo)
+              : const Value.absent(),
+          gruppoId: payload.containsKey('gruppo_id')
+              ? Value(gruppoId)
+              : const Value.absent(),
+          note: payload.containsKey('note')
+              ? Value(note)
+              : const Value.absent(),
         ),
       );
       await enqueueOperation(

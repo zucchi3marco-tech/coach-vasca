@@ -204,8 +204,12 @@ class AtletiRepository {
     return _rileggiLocale(id);
   }
 
+  /// Manda solo i campi davvero cambiati rispetto a [originale] (sia
+  /// online sia nella coda offline): un aggiornamento "a tutto il modulo"
+  /// rischierebbe di riportare indietro un campo che un altro dispositivo
+  /// ha modificato nel frattempo, anche se qui non è mai stato toccato.
   Future<Atleta> updateAtleta({
-    required String id,
+    required Atleta originale,
     required String nome,
     required String cognome,
     required DateTime dataNascita,
@@ -220,25 +224,41 @@ class AtletiRepository {
     String? numeroTesseraFin,
     DateTime? visitaMedicaScadenza,
   }) async {
-    final payload = {
-      'nome': nome,
-      'cognome': cognome,
-      'data_nascita': formatDateOnly(dataNascita),
-      'sesso': sesso,
-      'sport': sport,
-      'gruppo_id': gruppoId,
-      'email_genitore': emailGenitore,
-      'telefono_genitore': telefonoGenitore,
-      'consenso_privacy_firmato': consensoPrivacyFirmato,
-      'consenso_privacy_data': consensoPrivacyFirmato
-          ? formatDateOnly(consensoPrivacyData ?? DateTime.now())
-          : null,
-      'note': note,
-      'numero_tessera_fin': numeroTesseraFin,
-      'visita_medica_scadenza': visitaMedicaScadenza == null
-          ? null
-          : formatDateOnly(visitaMedicaScadenza),
+    final id = originale.id;
+    final nuovaConsensoData = consensoPrivacyFirmato
+        ? (consensoPrivacyData ??
+              originale.consensoPrivacyData ??
+              DateTime.now())
+        : null;
+
+    final payload = <String, dynamic>{
+      if (nome != originale.nome) 'nome': nome,
+      if (cognome != originale.cognome) 'cognome': cognome,
+      if (dataNascita != originale.dataNascita)
+        'data_nascita': formatDateOnly(dataNascita),
+      if (sesso != originale.sesso) 'sesso': sesso,
+      if (sport != originale.sport) 'sport': sport,
+      if (gruppoId != originale.gruppoId) 'gruppo_id': gruppoId,
+      if (emailGenitore != originale.emailGenitore)
+        'email_genitore': emailGenitore,
+      if (telefonoGenitore != originale.telefonoGenitore)
+        'telefono_genitore': telefonoGenitore,
+      if (consensoPrivacyFirmato != originale.consensoPrivacyFirmato)
+        'consenso_privacy_firmato': consensoPrivacyFirmato,
+      if (nuovaConsensoData != originale.consensoPrivacyData)
+        'consenso_privacy_data': nuovaConsensoData == null
+            ? null
+            : formatDateOnly(nuovaConsensoData),
+      if (note != originale.note) 'note': note,
+      if (numeroTesseraFin != originale.numeroTesseraFin)
+        'numero_tessera_fin': numeroTesseraFin,
+      if (visitaMedicaScadenza != originale.visitaMedicaScadenza)
+        'visita_medica_scadenza': visitaMedicaScadenza == null
+            ? null
+            : formatDateOnly(visitaMedicaScadenza),
     };
+    if (payload.isEmpty) return originale;
+
     try {
       final row = await _client
           .from('atleti')
@@ -249,27 +269,48 @@ class AtletiRepository {
       await _salvaLocale(row);
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      await (_db.update(
-        _db.atletiTable,
-      )..where((t) => t.id.equals(id))).write(
+      await (_db.update(_db.atletiTable)..where((t) => t.id.equals(id))).write(
         AtletiTableCompanion(
-          nome: Value(nome),
-          cognome: Value(cognome),
-          dataNascita: Value(dataNascita),
-          sesso: Value(sesso),
-          sport: Value(sport),
-          gruppoId: Value(gruppoId),
-          emailGenitore: Value(emailGenitore),
-          telefonoGenitore: Value(telefonoGenitore),
-          consensoPrivacyFirmato: Value(consensoPrivacyFirmato),
-          consensoPrivacyData: Value(
-            consensoPrivacyFirmato
-                ? (consensoPrivacyData ?? DateTime.now())
-                : null,
-          ),
-          note: Value(note),
-          numeroTesseraFin: Value(numeroTesseraFin),
-          visitaMedicaScadenza: Value(visitaMedicaScadenza),
+          nome: payload.containsKey('nome')
+              ? Value(nome)
+              : const Value.absent(),
+          cognome: payload.containsKey('cognome')
+              ? Value(cognome)
+              : const Value.absent(),
+          dataNascita: payload.containsKey('data_nascita')
+              ? Value(dataNascita)
+              : const Value.absent(),
+          sesso: payload.containsKey('sesso')
+              ? Value(sesso)
+              : const Value.absent(),
+          sport: payload.containsKey('sport')
+              ? Value(sport)
+              : const Value.absent(),
+          gruppoId: payload.containsKey('gruppo_id')
+              ? Value(gruppoId)
+              : const Value.absent(),
+          emailGenitore: payload.containsKey('email_genitore')
+              ? Value(emailGenitore)
+              : const Value.absent(),
+          telefonoGenitore: payload.containsKey('telefono_genitore')
+              ? Value(telefonoGenitore)
+              : const Value.absent(),
+          consensoPrivacyFirmato:
+              payload.containsKey('consenso_privacy_firmato')
+              ? Value(consensoPrivacyFirmato)
+              : const Value.absent(),
+          consensoPrivacyData: payload.containsKey('consenso_privacy_data')
+              ? Value(nuovaConsensoData)
+              : const Value.absent(),
+          note: payload.containsKey('note')
+              ? Value(note)
+              : const Value.absent(),
+          numeroTesseraFin: payload.containsKey('numero_tessera_fin')
+              ? Value(numeroTesseraFin)
+              : const Value.absent(),
+          visitaMedicaScadenza: payload.containsKey('visita_medica_scadenza')
+              ? Value(visitaMedicaScadenza)
+              : const Value.absent(),
         ),
       );
       await enqueueOperation(

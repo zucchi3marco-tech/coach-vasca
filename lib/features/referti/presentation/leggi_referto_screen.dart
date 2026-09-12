@@ -43,6 +43,11 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
     final file = await ImagePicker().pickImage(
       source: source,
       imageQuality: 85,
+      // Una foto di un referto scritto a mano si legge bene anche
+      // ridotta: senza questo limite una foto scattata con un telefono
+      // recente (anche 4000px di lato) viene mandata all'AI a piena
+      // risoluzione, gonfiando inutilmente tempo di invio e costo.
+      maxWidth: 1600,
     );
     if (file == null) return;
     final bytes = await file.readAsBytes();

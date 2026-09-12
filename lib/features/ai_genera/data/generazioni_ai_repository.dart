@@ -81,12 +81,19 @@ class GenerazioniAiRepository {
     }
   }
 
-  Future<List<GenerazioneAiRegistrata>> fetchStorico(String clubId) async {
+  /// Una pagina di storico, dalla più recente: evita di scaricare tutto lo
+  /// storico in un colpo solo quando ha ormai centinaia di voci.
+  Future<List<GenerazioneAiRegistrata>> fetchStorico(
+    String clubId, {
+    int offset = 0,
+    int limite = 30,
+  }) async {
     final rows = await _client
         .from('generazioni_ai')
         .select()
         .eq('club_id', clubId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(offset, offset + limite - 1);
     return rows.map(GenerazioneAiRegistrata.fromMap).toList();
   }
 }
@@ -100,11 +107,3 @@ final generazioniAiRepositoryProvider = Provider<GenerazioniAiRepository>((
     ref.watch(syncEngineProvider),
   );
 });
-
-final storicoGenerazioniAiProvider =
-    FutureProvider.family<List<GenerazioneAiRegistrata>, String>((
-      ref,
-      clubId,
-    ) {
-      return ref.watch(generazioniAiRepositoryProvider).fetchStorico(clubId);
-    });

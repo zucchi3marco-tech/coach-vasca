@@ -168,7 +168,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     try {
       if (_isEditing) {
         await repository.updateAtleta(
-          id: widget.atleta!.id,
+          originale: widget.atleta!,
           nome: capitalizzaNome(_nomeController.text),
           cognome: capitalizzaNome(_cognomeController.text),
           dataNascita: _dataNascita!,

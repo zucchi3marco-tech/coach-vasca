@@ -90,7 +90,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     try {
       if (_isEditing) {
         await repository.updateAllenamento(
-          id: widget.allenamento!.id,
+          originale: widget.allenamento!,
           data: _data,
           titolo: _titoloController.text.trim(),
           gruppoId: _gruppoId,

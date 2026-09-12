@@ -144,21 +144,27 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
       _errore = null;
     });
     try {
-      final response = await ref
-          .read(authRepositoryProvider)
-          .signUp(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
-      if (response.session == null) {
-        if (mounted) {
-          setState(
-            () => _errore =
-                'Ti abbiamo inviato un\'email di conferma. Confermala, poi '
-                'torna qui e riprova con lo stesso codice.',
-          );
+      final authRepository = ref.read(authRepositoryProvider);
+      // Se un tentativo precedente ha gia' creato l'account ma si e'
+      // interrotto prima di collegarlo (es. rete caduta proprio in
+      // mezzo), la sessione e' gia' attiva: rifare signUp fallirebbe con
+      // "email gia' registrata" e bloccherebbe l'utente senza via
+      // d'uscita. Si salta signUp e si riprova solo il collegamento.
+      if (authRepository.currentUser == null) {
+        final response = await authRepository.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        if (response.session == null) {
+          if (mounted) {
+            setState(
+              () => _errore =
+                  'Ti abbiamo inviato un\'email di conferma. Confermala, poi '
+                  'torna qui e riprova con lo stesso codice.',
+            );
+          }
+          return;
         }
-        return;
       }
       if (_invitato != null) {
         await ref

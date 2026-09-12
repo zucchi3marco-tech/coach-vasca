@@ -93,10 +93,23 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
           duration: const Duration(seconds: 4),
           action: SnackBarAction(
             label: 'Annulla',
-            onPressed: () {
-              ref
-                  .read(eventiPartitaRepositoryProvider)
-                  .eliminaEvento(evento.id);
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ref
+                    .read(eventiPartitaRepositoryProvider)
+                    .eliminaEvento(evento.id);
+              } catch (e) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Annullamento non riuscito: ${messaggioErrore(e)}',
+                      ),
+                    ),
+                  );
+                }
+              }
             },
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/allenamento.dart';
 import 'allenamenti_repository.dart';
 import 'serie_repository.dart';
 
@@ -16,32 +17,25 @@ class DuplicazioneSettimanaService {
   final AllenamentiRepository _allenamenti;
   final SerieRepository _serie;
 
-  /// Torna il numero di allenamenti duplicati.
-  Future<int> duplica({
+  Future<void> _duplicaAllenamento(
+    Allenamento sorgente, {
     required String clubId,
     required DateTime dataInizioSorgente,
-    required DateTime dataFineSorgente,
     required DateTime nuovaDataInizio,
   }) async {
-    final sorgenti = await _allenamenti.fetchPerClubEPeriodo(
+    final offsetGiorni = sorgente.data.difference(dataInizioSorgente).inDays;
+    final nuovo = await _allenamenti.createAllenamento(
       clubId: clubId,
-      dataInizio: dataInizioSorgente,
-      dataFine: dataFineSorgente,
+      data: nuovaDataInizio.add(Duration(days: offsetGiorni)),
+      titolo: sorgente.titolo,
+      gruppoId: sorgente.gruppoId,
+      note: sorgente.note,
     );
 
-    for (final a in sorgenti) {
-      final offsetGiorni = a.data.difference(dataInizioSorgente).inDays;
-      final nuovo = await _allenamenti.createAllenamento(
-        clubId: clubId,
-        data: nuovaDataInizio.add(Duration(days: offsetGiorni)),
-        titolo: a.titolo,
-        gruppoId: a.gruppoId,
-        note: a.note,
-      );
-
-      final serie = await _serie.fetchPerAllenamento(a.id);
-      for (final s in serie) {
-        await _serie.createSerie(
+    final serie = await _serie.fetchPerAllenamento(sorgente.id);
+    await Future.wait([
+      for (final s in serie)
+        _serie.createSerie(
           allenamentoId: nuovo.id,
           ordine: s.ordine,
           blocco: s.blocco,
@@ -55,9 +49,35 @@ class DuplicazioneSettimanaService {
           ripartenzaS: s.ripartenzaS,
           attrezzatura: s.attrezzatura,
           note: s.note,
-        );
-      }
-    }
+        ),
+    ]);
+  }
+
+  /// Torna il numero di allenamenti duplicati.
+  Future<int> duplica({
+    required String clubId,
+    required DateTime dataInizioSorgente,
+    required DateTime dataFineSorgente,
+    required DateTime nuovaDataInizio,
+  }) async {
+    final sorgenti = await _allenamenti.fetchPerClubEPeriodo(
+      clubId: clubId,
+      dataInizio: dataInizioSorgente,
+      dataFine: dataFineSorgente,
+    );
+
+    // Un allenamento indipendente dall'altro: si duplicano tutti insieme
+    // invece che uno alla volta, per non far aspettare il coach un
+    // giro di rete per ogni singolo allenamento della settimana.
+    await Future.wait([
+      for (final a in sorgenti)
+        _duplicaAllenamento(
+          a,
+          clubId: clubId,
+          dataInizioSorgente: dataInizioSorgente,
+          nuovaDataInizio: nuovaDataInizio,
+        ),
+    ]);
 
     return sorgenti.length;
   }
