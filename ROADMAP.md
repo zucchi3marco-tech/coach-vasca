@@ -156,10 +156,19 @@ Bug corretto durante la stessa richiesta (non in questa lista, già chiuso): `re
 - [x] **Account atleta separato dal coach, con pagina personale**: `AreaAtletaHomeScreen` (già esistente dalla FASE 9) ora mostra data odierna e percentuale presenze, stagione in corso del proprio gruppo, allenamenti dei prossimi 7 giorni, prossimo evento/partita (solo pallanuoto) e "Le mie statistiche" (solo pallanuoto) accanto a PB/carico/presenze. Nuove policy RLS per l'atleta su partite/stagioni (dati di squadra, non individuali) e una funzione dedicata per allenamenti (che ha un campo note potenzialmente sensibile, esposto solo al coach). Corretta anche una regressione dell'audit del 12/09: "Le mie presenze" leggeva un elenco sempre vuoto per l'atleta da quando la policy diretta sugli allenamenti era stata ristretta
 - [x] **Pallanuoto, lista partite**: nuova `PartiteAtletaListScreen` (sola lettura, "Le mie partite" nella home atleta), risultato calcolato dagli eventi in riga per le partite già giocate; toccandola si sceglie fra Statistiche di squadra e Referto (se analizzato). Nuove policy select per l'atleta su eventi_partita/distinta_giocatori/referti_partita; i nomi dei convocati passano da una nuova funzione `nomi_atleti_squadra()` (solo id+nome) invece di allargare l'accesso alla tabella atleti — usata ora anche dal coach, stesso codice per entrambi. **FASE 13 chiusa.**
 
+## FASE 14 — Test del flusso atleta (2026-09-16)
+
+Il coach ha testato di persona la registrazione atleta appena chiusa in FASE 13.
+
+- [x] **Bug: dopo l'anagrafica, l'atleta si ritrovava la schermata "Crea i gruppi" del coach** invece della propria home, senza i permessi per proseguire. Causa: `currentClubProvider`/`currentAtletaProvider` non erano `autoDispose` — nello stesso avvio dell'app, il loro valore restava in cache anche dopo un logout (es. test come coach seguito, senza riavviare l'app, da una registrazione come atleta), e HomeScreen si ritrovava il club/atleta dell'account precedente. Corretto rendendoli `autoDispose`; aggiunta anche una seconda difesa più a fondo (`cache_utente_guard.dart`): la cache locale Drift, che sopravvive a un riavvio completo dell'app, si svuota quando l'utente autenticato risulta diverso da chi l'ha popolata l'ultima volta (al primo utilizzo del controllo non svuota nulla, per non perdere scritture offline non ancora sincronizzate di un utente già in uso)
+- [x] **"La mia stagione" resa navigabile**: prima era solo un accenno di testo in home, non cliccabile — nuova `StagioneAtletaScreen` di sola lettura (nome, periodo, campionato, obiettivo), aggiunta al menu della home atleta insieme a PB/carico/presenze/statistiche/partite
+- [x] **Confermato il flusso completo**: inserimento codice → accettazione club e gruppo → anagrafica → home personale, da cui si raggiungono PB (modificabili), carico, presenze, stagione e, solo per la pallanuoto, statistiche e partite
+
 ## Punti in sospeso (raccolti dalle fasi precedenti)
 
 Punti non ancora chiusi, spostati qui dalle rispettive fasi (già completate per il resto) per non lasciarli sparsi. Nessuna dipendenza tra loro: da riprendere quando serve, non necessariamente in ordine.
 
+- [ ] Pensare a "Le mie statistiche" per il nuoto (FASE 13/14): oggi visibile solo per la pallanuoto (tiri, gol, mappa dei tiri — dati senza senso per il nuoto); da decidere cosa mostrare a un atleta di nuoto (es. progressi sui PB nel tempo) prima di costruire qualcosa
 - [ ] Checklist di test manuale prima di chiudere una fase (FASE 2)
 - [ ] Test su Chrome + telefono Android reale (FASE 2)
 - [ ] Commit frequenti su branch feature, merge su main solo quando funziona (FASE 2)
