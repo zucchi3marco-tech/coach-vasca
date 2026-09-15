@@ -14,6 +14,7 @@ import '../carico/presentation/carico_atleta_screen.dart';
 import '../club/application/current_club_provider.dart';
 import '../pallanuoto/application/pallanuoto_providers.dart';
 import '../pallanuoto/domain/partita.dart';
+import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../presenze/application/presenze_providers.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
 import '../stagioni/application/stagioni_providers.dart';
@@ -82,6 +83,18 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => StatisticheAtletaScreen(atleta: atleta),
+                      ),
+                    ),
+                  ),
+                if (atleta.sport == 'pallanuoto')
+                  AppListRow(
+                    leading: const Icon(Icons.sports_outlined),
+                    titolo: 'Le mie partite',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PartiteAtletaListScreen(clubId: atleta.clubId),
                       ),
                     ),
                   ),

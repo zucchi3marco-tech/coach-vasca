@@ -12,9 +12,8 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
-import '../../atleti/application/atleti_providers.dart';
-import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
+import '../data/nomi_squadra_repository.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
@@ -22,7 +21,7 @@ import 'campo_tiro.dart';
 
 typedef _StatisticaGiocatore = ({
   DistintaGiocatore giocatore,
-  Atleta atleta,
+  String nome,
   int tiri,
   int gol,
   int espulsioni,
@@ -36,12 +35,12 @@ class StatistichePartitaScreen extends ConsumerWidget {
   List<_StatisticaGiocatore> _calcola(
     List<DistintaGiocatore> convocati,
     List<EventoPartita> eventi,
-    Map<String, Atleta> atletiPerId,
+    Map<String, String> nomiPerId,
   ) {
     final righe = <_StatisticaGiocatore>[];
     for (final g in convocati) {
-      final atleta = atletiPerId[g.atletaId];
-      if (atleta == null) continue;
+      final nome = nomiPerId[g.atletaId];
+      if (nome == null) continue;
       final tiriGiocatore = eventi.where(
         (e) => e.tipo == 'tiro' && e.atletaId == g.atletaId,
       );
@@ -50,7 +49,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
       );
       righe.add((
         giocatore: g,
-        atleta: atleta,
+        nome: nome,
         tiri: tiriGiocatore.length,
         gol: tiriGiocatore.where((e) => e.esito == 'gol').length,
         espulsioni: espulsioni.length,
@@ -67,9 +66,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(partita.id));
     final convocatiAsync = ref.watch(distintaListProvider(partita.id));
-    final atletiAsync = ref.watch(
-      atletiListProvider((clubId: partita.clubId, includeInactive: false)),
-    );
+    final nomiAsync = ref.watch(nomiSquadraProvider(partita.clubId));
 
     return AppScaffold(
       appBar: AppBar(
@@ -79,10 +76,9 @@ class StatistichePartitaScreen extends ConsumerWidget {
       ),
       body: eventiAsync.when(
         data: (eventi) => convocatiAsync.when(
-          data: (convocati) => atletiAsync.when(
-            data: (atleti) {
-              final atletiPerId = {for (final a in atleti) a.id: a};
-              final righe = _calcola(convocati, eventi, atletiPerId);
+          data: (convocati) => nomiAsync.when(
+            data: (nomiPerId) {
+              final righe = _calcola(convocati, eventi, nomiPerId);
               if (righe.isEmpty) {
                 return const EmptyState(
                   icona: Icons.bar_chart_outlined,
@@ -139,8 +135,10 @@ class StatistichePartitaScreen extends ConsumerWidget {
                     righe: [
                       for (final r in righe)
                         AppListRow(
-                          leading: CapBadge(numero: r.giocatore.numeroCalottina),
-                          titolo: r.atleta.nomeCompleto,
+                          leading: CapBadge(
+                            numero: r.giocatore.numeroCalottina,
+                          ),
+                          titolo: r.nome,
                           sottotitolo:
                               'Gol: ${r.gol}/${r.tiri} '
                               '(${r.tiri > 0 ? '${(r.gol / r.tiri * 100).round()}%' : '—'}) · '
@@ -149,8 +147,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
                     ],
                   ),
                   if (eventi.any(
-                    (e) =>
-                        e.tipo == 'tiro' && e.posX != null && e.posY != null,
+                    (e) => e.tipo == 'tiro' && e.posX != null && e.posY != null,
                   )) ...[
                     const SizedBox(height: AppSpacing.s24),
                     SectionHeader('Shot chart dei tiri'),
@@ -177,7 +174,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
             error: (error, _) => Padding(
               padding: const EdgeInsets.all(AppSpacing.s16),
               child: ErrorBanner(
-                messaggio: 'Non è stato possibile caricare gli atleti.',
+                messaggio: 'Non è stato possibile caricare i nomi.',
                 suggerimento:
                     'Riprova. Se l\'errore continua, chiudi e riapri '
                     'l\'app.',
