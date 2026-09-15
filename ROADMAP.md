@@ -169,6 +169,7 @@ Punti non ancora chiusi, spostati qui dalle rispettive fasi (già completate per
 - [ ] Parsing file .cl2 / .sd3 / risultati FIN (FASE 8)
 - [ ] Supabase Pro (backup automatici) (FASE 8)
 - [ ] Pubblicazione store (Play/App Store) se necessario (FASE 8)
+- [ ] Quasi tutte le query al database non hanno un limite di righe (audit 2026-09-12, punto 12): oggi l'app scarica sempre tutti i dati di un club in un colpo solo per poterli usare offline — non si nota con i volumi attuali, ma se un club crescesse molto i primi scaricamenti diventerebbero via via più lenti. Non è un fix isolato: tocca l'architettura di sincronizzazione offline, va deciso insieme prima di cambiare qualcosa
 
 ## Restyling DESIGN.md (2026-09-06)
 
