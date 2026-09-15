@@ -19,6 +19,13 @@ final partiteListProvider = StreamProvider.family<List<Partita>, String>((
   );
 });
 
+/// Per la home dell'atleta (FASE 13, punto 3) — vedi
+/// `PartiteRepository.prossimaPerClub`.
+final prossimaPartitaProvider = FutureProvider.autoDispose
+    .family<Partita?, String>((ref, clubId) {
+      return ref.read(partiteRepositoryProvider).prossimaPerClub(clubId);
+    });
+
 final distintaListProvider =
     StreamProvider.family<List<DistintaGiocatore>, String>((ref, partitaId) {
       final repository = ref.watch(distintaRepositoryProvider);

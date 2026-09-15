@@ -64,7 +64,9 @@ class MiePresenzeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final presenzeAsync = ref.watch(presenzePerAtletaProvider(atleta.id));
-    final allenamentiAsync = ref.watch(allenamentiListProvider(atleta.clubId));
+    final allenamentiAsync = ref.watch(
+      allenamentiAtletaProvider(atleta.clubId),
+    );
 
     return AppScaffold(
       appBar: AppBar(title: const Text('Le mie presenze')),
@@ -194,8 +196,13 @@ class _Contenuto extends StatelessWidget {
             righe: [
               for (final p in storico)
                 AppListRow(
-                  leading: Icon(_iconaStato(p.stato), color: _coloreStato(p.stato)),
-                  titolo: _formattaData(allenamentoPerId[p.allenamentoId]?.data),
+                  leading: Icon(
+                    _iconaStato(p.stato),
+                    color: _coloreStato(p.stato),
+                  ),
+                  titolo: _formattaData(
+                    allenamentoPerId[p.allenamentoId]?.data,
+                  ),
                   sottotitolo: _etichettaStato(p.stato),
                 ),
             ],

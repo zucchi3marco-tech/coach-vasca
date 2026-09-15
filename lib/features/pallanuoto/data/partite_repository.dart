@@ -127,6 +127,32 @@ class PartiteRepository {
     }
   }
 
+  /// Prossima partita in agenda per il club (FASE 13, punto 3, "prossimo
+  /// evento" nella home dell'atleta) — null se non ce ne sono di future.
+  Future<Partita?> prossimaPerClub(String clubId) async {
+    final oggi = formatDateOnly(DateTime.now());
+    try {
+      final rows = await _client
+          .from('partite')
+          .select()
+          .eq('club_id', clubId)
+          .gte('data', oggi)
+          .order('data')
+          .limit(1);
+      return rows.isEmpty ? null : Partita.fromMap(rows.first);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final rows =
+          await (_db.select(_db.partiteTable)
+                ..where((t) => t.clubId.equals(clubId))
+                ..where((t) => t.data.isBiggerOrEqualValue(DateTime.now()))
+                ..orderBy([(t) => OrderingTerm.asc(t.data)])
+                ..limit(1))
+              .get();
+      return rows.isEmpty ? null : _fromRow(rows.first);
+    }
+  }
+
   Future<Partita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(
@@ -239,24 +265,23 @@ class PartiteRepository {
           .insertOnConflictUpdate(_companionFromMap(row));
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      await (_db.update(_db.partiteTable)..where((t) => t.id.equals(id)))
-          .write(
-            PartiteTableCompanion(
-              data: Value(data),
-              ora: Value(ora),
-              luogo: Value(luogo),
-              campionato: Value(campionato),
-              coloreCalottina: Value(coloreCalottina),
-              squadraCasa: Value(squadraCasa),
-              squadraTrasferta: Value(squadraTrasferta),
-              numeroMaxConvocati: Value(numeroMaxConvocati),
-              note: Value(note),
-              dettaglioTiro: Value(dettaglioTiro),
-              tracciaTempo: Value(tracciaTempo),
-              modalitaSuperiorita: Value(modalitaSuperiorita),
-              nostraSquadra: Value(nostraSquadra),
-            ),
-          );
+      await (_db.update(_db.partiteTable)..where((t) => t.id.equals(id))).write(
+        PartiteTableCompanion(
+          data: Value(data),
+          ora: Value(ora),
+          luogo: Value(luogo),
+          campionato: Value(campionato),
+          coloreCalottina: Value(coloreCalottina),
+          squadraCasa: Value(squadraCasa),
+          squadraTrasferta: Value(squadraTrasferta),
+          numeroMaxConvocati: Value(numeroMaxConvocati),
+          note: Value(note),
+          dettaglioTiro: Value(dettaglioTiro),
+          tracciaTempo: Value(tracciaTempo),
+          modalitaSuperiorita: Value(modalitaSuperiorita),
+          nostraSquadra: Value(nostraSquadra),
+        ),
+      );
       await enqueueOperation(
         _db,
         tabella: 'partite',

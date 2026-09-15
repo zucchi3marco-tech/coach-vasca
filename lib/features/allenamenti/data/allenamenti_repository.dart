@@ -78,6 +78,25 @@ class AllenamentiRepository {
     }
   }
 
+  /// Per l'atleta collegato (FASE 13, punto 3): l'accesso diretto alla
+  /// tabella e' riservato al coach (l'atleta non ha una policy select
+  /// club-wide, per non esporre le note di sedute di altri gruppi — vedi
+  /// audit del 12/09), quindi si passa dalla funzione `allenamenti_atleta`
+  /// che espone solo id/data/titolo/gruppo, mai `note`.
+  Future<List<Allenamento>> fetchPerAtleta(String clubId) async {
+    try {
+      final risposta = await _client.rpc('allenamenti_atleta');
+      final righe = (risposta as List).cast<Map<String, dynamic>>();
+      return righe.map(Allenamento.fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(
+        _db.allenamentiTable,
+      )..where((t) => t.clubId.equals(clubId))).get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   /// Sostituzione totale per questo club (non insertOrReplace): un
   /// allenamento eliminato fuori dall'app resterebbe altrimenti in cache
   /// a tempo indeterminato.
