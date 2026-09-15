@@ -26,6 +26,7 @@ class GruppiRepository {
       clubId: row.clubId,
       nome: row.nome,
       ordine: row.ordine,
+      sport: row.sport,
     );
   }
 
@@ -35,6 +36,7 @@ class GruppiRepository {
       clubId: map['club_id'] as String,
       nome: map['nome'] as String,
       ordine: Value(map['ordine'] as int? ?? 1),
+      sport: Value(map['sport'] as String?),
     );
   }
 
@@ -64,8 +66,9 @@ class GruppiRepository {
 
   Future<Gruppo> _rileggiLocale(String id) async {
     return _fromRow(
-      await (_db.select(_db.gruppiTable)..where((t) => t.id.equals(id)))
-          .getSingle(),
+      await (_db.select(
+        _db.gruppiTable,
+      )..where((t) => t.id.equals(id))).getSingle(),
     );
   }
 
@@ -73,9 +76,16 @@ class GruppiRepository {
     required String clubId,
     required String nome,
     required int ordine,
+    String? sport,
   }) async {
     final id = _uuid.v4();
-    final payload = {'id': id, 'club_id': clubId, 'nome': nome, 'ordine': ordine};
+    final payload = {
+      'id': id,
+      'club_id': clubId,
+      'nome': nome,
+      'ordine': ordine,
+      'sport': sport,
+    };
     try {
       final row = await _client
           .from('gruppi')

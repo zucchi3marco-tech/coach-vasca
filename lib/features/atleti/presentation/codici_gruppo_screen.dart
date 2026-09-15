@@ -9,29 +9,27 @@ import '../../../theme/app_typography.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
-import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../data/codici_gruppo_repository.dart';
 import '../domain/codice_gruppo.dart';
 
 /// Codici riutilizzabili per far registrare da soli tutti gli atleti di
-/// un gruppo (FASE 9): il coach ne genera uno per "U14", uno per "U16",
-/// ecc., e lo condivide una volta sola con l'intera squadra.
+/// UN gruppo (FASE 9, ristretta al singolo gruppo dalla FASE 13 punto 2:
+/// generarne uno richiede di essere sulla pagina di quel gruppo, cosicche'
+/// lo sport da assegnare all'atleta sia sempre certo).
 class CodiciGruppoScreen extends ConsumerStatefulWidget {
-  const CodiciGruppoScreen({required this.clubId, super.key});
+  const CodiciGruppoScreen({required this.gruppo, super.key});
 
-  final String clubId;
+  final Gruppo gruppo;
 
   @override
-  ConsumerState<CodiciGruppoScreen> createState() =>
-      _CodiciGruppoScreenState();
+  ConsumerState<CodiciGruppoScreen> createState() => _CodiciGruppoScreenState();
 }
 
 class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
-  String? _gruppoId;
   List<CodiceGruppo>? _codici;
   bool _isLoading = false;
   String? _errore;
@@ -47,7 +45,7 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
     try {
       final codici = await ref
           .read(codiciGruppoRepositoryProvider)
-          .elencoPerClub(widget.clubId);
+          .elencoPerGruppo(widget.gruppo.id);
       if (mounted) setState(() => _codici = codici);
     } catch (e) {
       if (mounted) setState(() => _errore = messaggioErrore(e));
@@ -55,11 +53,6 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   }
 
   Future<void> _generaCodice() async {
-    final gruppoId = _gruppoId;
-    if (gruppoId == null) {
-      setState(() => _errore = 'Scegli il gruppo');
-      return;
-    }
     setState(() {
       _isLoading = true;
       _errore = null;
@@ -67,8 +60,10 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
     try {
       await ref
           .read(codiciGruppoRepositoryProvider)
-          .generaCodice(clubId: widget.clubId, gruppoId: gruppoId);
-      setState(() => _gruppoId = null);
+          .generaCodice(
+            clubId: widget.gruppo.clubId,
+            gruppoId: widget.gruppo.id,
+          );
       await _carica();
     } catch (e) {
       if (mounted) setState(() => _errore = messaggioErrore(e));
@@ -94,30 +89,18 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   @override
   Widget build(BuildContext context) {
     final codici = _codici;
-    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: const Text('Codici di gruppo')),
+      appBar: AppBar(title: Text('Codice — ${widget.gruppo.nome}')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Genera un codice per un intero gruppo: condividilo una sola '
-            'volta, ogni atleta che lo usa compila da solo la propria '
-            'anagrafica e resta già assegnato a quel gruppo. Controlla i '
-            'dati dopo la registrazione.',
+            'Genera un codice per il gruppo "${widget.gruppo.nome}": '
+            'condividilo una sola volta, ogni atleta che lo usa compila da '
+            'solo la propria anagrafica e resta già assegnato a questo '
+            'gruppo. Controlla i dati dopo la registrazione.',
             style: AppTypography.piccolo,
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          AppSelect<String?>(
-            etichetta: 'Gruppo',
-            value: _gruppoId,
-            hint: 'Scegli il gruppo',
-            items: [
-              for (final g in gruppi)
-                DropdownMenuItem(value: g.id, child: Text(g.nome)),
-            ],
-            onChanged: (value) => setState(() => _gruppoId = value),
           ),
           const SizedBox(height: AppSpacing.s16),
           PrimaryButton(
@@ -137,8 +120,8 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
               icona: Icons.qr_code_2_outlined,
               titolo: 'Nessun codice generato',
               descrizione:
-                  'I codici di gruppo che generi compariranno qui, per '
-                  'poterli ricondividere in un secondo momento.',
+                  'I codici che generi per questo gruppo compariranno qui, '
+                  'per poterli ricondividere in un secondo momento.',
               azionePrincipale: 'Genera il primo codice',
             )
           else

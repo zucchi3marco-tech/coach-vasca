@@ -109,6 +109,7 @@ class GruppiTable extends Table {
   TextColumn get clubId => text()();
   TextColumn get nome => text()();
   IntColumn get ordine => integer().withDefault(const Constant(1))();
+  TextColumn get sport => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

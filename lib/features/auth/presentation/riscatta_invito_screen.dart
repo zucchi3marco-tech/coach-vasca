@@ -93,6 +93,10 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
         if (mounted) {
           setState(() {
             _gruppoInvitato = gruppo;
+            // Lo sport si conosce gia' dal gruppo (mai ambiguo come
+            // club.sport per un club "nuoto e pallanuoto"): se e'
+            // valorizzato, l'anagrafica non lo richiede piu'.
+            if (gruppo.gruppoSport != null) _sport = gruppo.gruppoSport!;
             _passo = _Passo.confermaGruppo;
           });
         }
@@ -242,6 +246,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                   onSessoChanged: (v) => setState(() => _sesso = v),
                   sport: _sport,
                   onSportChanged: (v) => setState(() => _sport = v ?? 'nuoto'),
+                  sportGiaNoto: _gruppoInvitato?.gruppoSport != null,
                   onContinua: () {
                     if (_validaAnagrafica()) {
                       setState(() => _passo = _Passo.account);
@@ -342,6 +347,7 @@ class _PassoAnagrafica extends StatelessWidget {
     required this.onSessoChanged,
     required this.sport,
     required this.onSportChanged,
+    this.sportGiaNoto = false,
     required this.onContinua,
   });
 
@@ -353,6 +359,10 @@ class _PassoAnagrafica extends StatelessWidget {
   final ValueChanged<String?> onSessoChanged;
   final String sport;
   final ValueChanged<String?> onSportChanged;
+
+  /// true quando lo sport si e' gia' dedotto dal gruppo (codice di
+  /// gruppo di un club a sport unico): il menu non si mostra piu'.
+  final bool sportGiaNoto;
   final VoidCallback onContinua;
 
   @override
@@ -382,16 +392,18 @@ class _PassoAnagrafica extends StatelessWidget {
           ],
           onChanged: onSessoChanged,
         ),
-        const SizedBox(height: AppSpacing.s16),
-        AppSelect<String>(
-          etichetta: 'Sport',
-          value: sport,
-          items: [
-            for (final s in _sport)
-              DropdownMenuItem(value: s, child: Text(_capitalizza(s))),
-          ],
-          onChanged: onSportChanged,
-        ),
+        if (!sportGiaNoto) ...[
+          const SizedBox(height: AppSpacing.s16),
+          AppSelect<String>(
+            etichetta: 'Sport',
+            value: sport,
+            items: [
+              for (final s in _sport)
+                DropdownMenuItem(value: s, child: Text(_capitalizza(s))),
+            ],
+            onChanged: onSportChanged,
+          ),
+        ],
         const SizedBox(height: AppSpacing.s24),
         PrimaryButton(label: 'Continua', onPressed: onContinua),
       ],

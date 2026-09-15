@@ -28,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -205,6 +205,14 @@ class AppDatabase extends _$AppDatabase {
           if (await _hasTable(m, tabella)) {
             await m.database.customStatement('DROP TABLE $tabella');
           }
+        }
+      }
+      // v15 -> v16: sport per gruppo (FASE 13, punto 2) — la
+      // registrazione via codice di gruppo deduce lo sport dal gruppo
+      // invece di chiederlo sempre.
+      if (from < 16) {
+        if (!await _hasColumn(m, 'gruppi_table', 'sport')) {
+          await m.addColumn(gruppiTable, gruppiTable.sport);
         }
       }
     },

@@ -8478,8 +8478,17 @@ class $GruppiTableTable extends GruppiTable
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _sportMeta = const VerificationMeta('sport');
   @override
-  List<GeneratedColumn> get $columns => [id, clubId, nome, ordine];
+  late final GeneratedColumn<String> sport = GeneratedColumn<String>(
+    'sport',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, clubId, nome, ordine, sport];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -8519,6 +8528,12 @@ class $GruppiTableTable extends GruppiTable
         ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
       );
     }
+    if (data.containsKey('sport')) {
+      context.handle(
+        _sportMeta,
+        sport.isAcceptableOrUnknown(data['sport']!, _sportMeta),
+      );
+    }
     return context;
   }
 
@@ -8544,6 +8559,10 @@ class $GruppiTableTable extends GruppiTable
         DriftSqlType.int,
         data['${effectivePrefix}ordine'],
       )!,
+      sport: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sport'],
+      ),
     );
   }
 
@@ -8558,11 +8577,13 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
   final String clubId;
   final String nome;
   final int ordine;
+  final String? sport;
   const GruppiTableData({
     required this.id,
     required this.clubId,
     required this.nome,
     required this.ordine,
+    this.sport,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8571,6 +8592,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
     map['club_id'] = Variable<String>(clubId);
     map['nome'] = Variable<String>(nome);
     map['ordine'] = Variable<int>(ordine);
+    if (!nullToAbsent || sport != null) {
+      map['sport'] = Variable<String>(sport);
+    }
     return map;
   }
 
@@ -8580,6 +8604,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       clubId: Value(clubId),
       nome: Value(nome),
       ordine: Value(ordine),
+      sport: sport == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sport),
     );
   }
 
@@ -8593,6 +8620,7 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       clubId: serializer.fromJson<String>(json['clubId']),
       nome: serializer.fromJson<String>(json['nome']),
       ordine: serializer.fromJson<int>(json['ordine']),
+      sport: serializer.fromJson<String?>(json['sport']),
     );
   }
   @override
@@ -8603,6 +8631,7 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       'clubId': serializer.toJson<String>(clubId),
       'nome': serializer.toJson<String>(nome),
       'ordine': serializer.toJson<int>(ordine),
+      'sport': serializer.toJson<String?>(sport),
     };
   }
 
@@ -8611,11 +8640,13 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
     String? clubId,
     String? nome,
     int? ordine,
+    Value<String?> sport = const Value.absent(),
   }) => GruppiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
     nome: nome ?? this.nome,
     ordine: ordine ?? this.ordine,
+    sport: sport.present ? sport.value : this.sport,
   );
   GruppiTableData copyWithCompanion(GruppiTableCompanion data) {
     return GruppiTableData(
@@ -8623,6 +8654,7 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       clubId: data.clubId.present ? data.clubId.value : this.clubId,
       nome: data.nome.present ? data.nome.value : this.nome,
       ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      sport: data.sport.present ? data.sport.value : this.sport,
     );
   }
 
@@ -8632,13 +8664,14 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
           ..write('nome: $nome, ')
-          ..write('ordine: $ordine')
+          ..write('ordine: $ordine, ')
+          ..write('sport: $sport')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, clubId, nome, ordine);
+  int get hashCode => Object.hash(id, clubId, nome, ordine, sport);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8646,7 +8679,8 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
           other.id == this.id &&
           other.clubId == this.clubId &&
           other.nome == this.nome &&
-          other.ordine == this.ordine);
+          other.ordine == this.ordine &&
+          other.sport == this.sport);
 }
 
 class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
@@ -8654,12 +8688,14 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
   final Value<String> clubId;
   final Value<String> nome;
   final Value<int> ordine;
+  final Value<String?> sport;
   final Value<int> rowid;
   const GruppiTableCompanion({
     this.id = const Value.absent(),
     this.clubId = const Value.absent(),
     this.nome = const Value.absent(),
     this.ordine = const Value.absent(),
+    this.sport = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GruppiTableCompanion.insert({
@@ -8667,6 +8703,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     required String clubId,
     required String nome,
     this.ordine = const Value.absent(),
+    this.sport = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -8676,6 +8713,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     Expression<String>? clubId,
     Expression<String>? nome,
     Expression<int>? ordine,
+    Expression<String>? sport,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8683,6 +8721,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
       if (clubId != null) 'club_id': clubId,
       if (nome != null) 'nome': nome,
       if (ordine != null) 'ordine': ordine,
+      if (sport != null) 'sport': sport,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8692,6 +8731,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     Value<String>? clubId,
     Value<String>? nome,
     Value<int>? ordine,
+    Value<String?>? sport,
     Value<int>? rowid,
   }) {
     return GruppiTableCompanion(
@@ -8699,6 +8739,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
       clubId: clubId ?? this.clubId,
       nome: nome ?? this.nome,
       ordine: ordine ?? this.ordine,
+      sport: sport ?? this.sport,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8718,6 +8759,9 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     if (ordine.present) {
       map['ordine'] = Variable<int>(ordine.value);
     }
+    if (sport.present) {
+      map['sport'] = Variable<String>(sport.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8731,6 +8775,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
           ..write('clubId: $clubId, ')
           ..write('nome: $nome, ')
           ..write('ordine: $ordine, ')
+          ..write('sport: $sport, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13175,6 +13220,7 @@ typedef $$GruppiTableTableCreateCompanionBuilder =
       required String clubId,
       required String nome,
       Value<int> ordine,
+      Value<String?> sport,
       Value<int> rowid,
     });
 typedef $$GruppiTableTableUpdateCompanionBuilder =
@@ -13183,6 +13229,7 @@ typedef $$GruppiTableTableUpdateCompanionBuilder =
       Value<String> clubId,
       Value<String> nome,
       Value<int> ordine,
+      Value<String?> sport,
       Value<int> rowid,
     });
 
@@ -13212,6 +13259,11 @@ class $$GruppiTableTableFilterComposer
 
   ColumnFilters<int> get ordine => $composableBuilder(
     column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sport => $composableBuilder(
+    column: $table.sport,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13244,6 +13296,11 @@ class $$GruppiTableTableOrderingComposer
     column: $table.ordine,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sport => $composableBuilder(
+    column: $table.sport,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GruppiTableTableAnnotationComposer
@@ -13266,6 +13323,9 @@ class $$GruppiTableTableAnnotationComposer
 
   GeneratedColumn<int> get ordine =>
       $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<String> get sport =>
+      $composableBuilder(column: $table.sport, builder: (column) => column);
 }
 
 class $$GruppiTableTableTableManager
@@ -13303,12 +13363,14 @@ class $$GruppiTableTableTableManager
                 Value<String> clubId = const Value.absent(),
                 Value<String> nome = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
+                Value<String?> sport = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GruppiTableCompanion(
                 id: id,
                 clubId: clubId,
                 nome: nome,
                 ordine: ordine,
+                sport: sport,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13317,12 +13379,14 @@ class $$GruppiTableTableTableManager
                 required String clubId,
                 required String nome,
                 Value<int> ordine = const Value.absent(),
+                Value<String?> sport = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GruppiTableCompanion.insert(
                 id: id,
                 clubId: clubId,
                 nome: nome,
                 ordine: ordine,
+                sport: sport,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

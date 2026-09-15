@@ -20,7 +20,7 @@ class CodiceGruppo {
   bool get scaduto => scadeIl.isBefore(DateTime.now());
 
   /// `gruppi(nome)` e' l'embed PostgREST della riga collegata (vedi
-  /// `elencoPerClub`).
+  /// `elencoPerGruppo`).
   factory CodiceGruppo.fromMap(Map<String, dynamic> map) {
     return CodiceGruppo(
       id: map['id'] as String,

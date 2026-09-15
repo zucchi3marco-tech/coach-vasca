@@ -22,14 +22,17 @@ import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
-import 'codici_gruppo_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
 import 'pb_list_screen.dart';
 
 enum _Ordinamento { cognome, dataNascita }
 
 class AtletiListScreen extends ConsumerStatefulWidget {
-  const AtletiListScreen({required this.clubId, this.filtroGruppoId, super.key});
+  const AtletiListScreen({
+    required this.clubId,
+    this.filtroGruppoId,
+    super.key,
+  });
 
   final String clubId;
 
@@ -153,28 +156,10 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           onChanged: (value) => setState(() => _mostraInattivi = value),
         ),
       ],
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'fab-codici-gruppo',
-            mini: true,
-            tooltip: 'Codici di gruppo',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => CodiciGruppoScreen(clubId: widget.clubId),
-              ),
-            ),
-            child: const Icon(Icons.qr_code_2_outlined),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          FloatingActionButton(
-            heroTag: 'fab-atleti',
-            onPressed: () => _apriForm(context),
-            tooltip: 'Nuovo atleta',
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _apriForm(context),
+        tooltip: 'Nuovo atleta',
+        child: const Icon(Icons.add),
       ),
     );
   }

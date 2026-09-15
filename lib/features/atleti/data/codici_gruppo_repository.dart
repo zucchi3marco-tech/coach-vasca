@@ -6,8 +6,15 @@ import '../domain/atleta.dart';
 import '../domain/codice_gruppo.dart';
 
 /// Gruppo e nome del club a cui appartiene un codice di gruppo, per la
-/// conferma prima della registrazione.
-typedef GruppoInvitato = ({String gruppoNome, String clubNome});
+/// conferma prima della registrazione. `gruppoSport` e' 'nuoto' |
+/// 'pallanuoto' | null (gruppo di un club "nuoto e pallanuoto", o creato
+/// prima che i gruppi avessero uno sport): quando valorizzato, la
+/// registrazione non chiede piu' lo sport all'atleta.
+typedef GruppoInvitato = ({
+  String gruppoNome,
+  String clubNome,
+  String? gruppoSport,
+});
 
 /// Codici riutilizzabili per registrare più atleti dello stesso gruppo
 /// in una volta sola (FASE 9). Online-only, come InvitiAtletaRepository:
@@ -29,11 +36,14 @@ class CodiciGruppoRepository {
     return risultato as String;
   }
 
-  Future<List<CodiceGruppo>> elencoPerClub(String clubId) async {
+  /// Solo i codici di un gruppo specifico: la generazione e' ancorata
+  /// alla pagina di quel gruppo (FASE 13, punto 2), non a un menu a
+  /// tendina libero su tutti i gruppi del club.
+  Future<List<CodiceGruppo>> elencoPerGruppo(String gruppoId) async {
     final righe = await _client
         .from('codici_gruppo')
         .select('*, gruppi(nome)')
-        .eq('club_id', clubId)
+        .eq('gruppo_id', gruppoId)
         .order('creato_il', ascending: false);
     return righe.map(CodiceGruppo.fromMap).toList();
   }
@@ -42,17 +52,16 @@ class CodiciGruppoRepository {
   /// e ritorna gruppo/club per la conferma. Callable anche prima del
   /// login.
   Future<GruppoInvitato?> validaCodice(String codice) async {
-    final righe =
-        await _client.rpc(
-              'valida_codice_gruppo',
-              params: {'p_codice': codice},
-            )
-            as List;
+    final righe = await _client.rpc(
+      'valida_codice_gruppo',
+      params: {'p_codice': codice},
+    ) as List;
     if (righe.isEmpty) return null;
     final riga = righe.first as Map<String, dynamic>;
     return (
       gruppoNome: riga['gruppo_nome'] as String,
       clubNome: riga['club_nome'] as String,
+      gruppoSport: riga['gruppo_sport'] as String?,
     );
   }
 
@@ -66,25 +75,21 @@ class CodiciGruppoRepository {
     String? sesso,
     required String sport,
   }) async {
-    final row =
-        await _client.rpc(
-              'registra_atleta_da_codice_gruppo',
-              params: {
-                'p_codice': codice,
-                'p_nome': nome,
-                'p_cognome': cognome,
-                'p_data_nascita': dataNascita.toIso8601String().split('T').first,
-                'p_sesso': ?sesso,
-                'p_sport': sport,
-              },
-            )
-            as Map<String, dynamic>;
+    final row = await _client.rpc(
+      'registra_atleta_da_codice_gruppo',
+      params: {
+        'p_codice': codice,
+        'p_nome': nome,
+        'p_cognome': cognome,
+        'p_data_nascita': dataNascita.toIso8601String().split('T').first,
+        'p_sesso': ?sesso,
+        'p_sport': sport,
+      },
+    ) as Map<String, dynamic>;
     return Atleta.fromMap(row);
   }
 }
 
-final codiciGruppoRepositoryProvider = Provider<CodiciGruppoRepository>((
-  ref,
-) {
+final codiciGruppoRepositoryProvider = Provider<CodiciGruppoRepository>((ref) {
   return CodiciGruppoRepository(ref.watch(supabaseClientProvider));
 });

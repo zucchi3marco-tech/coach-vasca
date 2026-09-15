@@ -13,6 +13,8 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../atleti/presentation/codici_gruppo_screen.dart';
+import '../../club/application/current_club_provider.dart';
 import '../application/gruppi_providers.dart';
 import '../data/gruppi_repository.dart';
 import '../domain/gruppo.dart';
@@ -55,12 +57,17 @@ class _GruppiManagementScreenState
     try {
       final gruppiAttuali =
           ref.read(gruppiListProvider(widget.clubId)).value ?? [];
+      final clubSport = ref.read(currentClubProvider).value?.sport;
+      final gruppoSport = clubSport == 'nuoto' || clubSport == 'pallanuoto'
+          ? clubSport
+          : null;
       await ref
           .read(gruppiRepositoryProvider)
           .createGruppo(
             clubId: widget.clubId,
             nome: nome,
             ordine: gruppiAttuali.length + 1,
+            sport: gruppoSport,
           );
       _nuovoGruppoController.clear();
     } catch (e) {
@@ -99,9 +106,8 @@ class _GruppiManagementScreenState
           .updateGruppo(id: gruppo.id, nome: nuovoNome, ordine: gruppo.ordine);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messaggioErrore(e))),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }
@@ -133,9 +139,8 @@ class _GruppiManagementScreenState
       await ref.read(gruppiRepositoryProvider).deleteGruppo(gruppo.id);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messaggioErrore(e))),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
       }
     }
   }
@@ -190,6 +195,15 @@ class _GruppiManagementScreenState
                             ),
                             onSelected: (azione) => azione(),
                             itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        CodiciGruppoScreen(gruppo: g),
+                                  ),
+                                ),
+                                child: const Text('Codice di registrazione'),
+                              ),
                               PopupMenuItem(
                                 value: () => _rinomina(g),
                                 child: const Text('Rinomina'),

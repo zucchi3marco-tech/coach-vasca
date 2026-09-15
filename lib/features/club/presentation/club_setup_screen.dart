@@ -109,6 +109,9 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
             clubId: club.id,
             nome: categorieOrdinate[i],
             ordine: i + 1,
+            sport: _categorieNuoto.contains(categorieOrdinate[i])
+                ? 'nuoto'
+                : 'pallanuoto',
           );
         }
       } catch (_) {}
