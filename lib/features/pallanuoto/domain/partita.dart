@@ -26,7 +26,7 @@ class Partita {
   final String? coloreCalottina; // bianca | blu
   final String squadraCasa;
   final String squadraTrasferta;
-  final int numeroMaxConvocati; // 13 | 15
+  final int numeroMaxConvocati; // 14 | 15
   final String? note;
   final String dettaglioTiro; // semplice | dettagliato
   final bool tracciaTempo;

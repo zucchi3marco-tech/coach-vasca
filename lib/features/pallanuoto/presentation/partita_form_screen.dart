@@ -39,7 +39,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late int _numeroMaxConvocati;
   late String _dettaglioTiro;
   late bool _tracciaTempo;
-  late String _modalitaSuperiorita;
   late String _nostraSquadra;
 
   bool _isSubmitting = false;
@@ -68,7 +67,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
     _tracciaTempo = p?.tracciaTempo ?? true;
-    _modalitaSuperiorita = p?.modalitaSuperiorita ?? 'singolo';
     _nostraSquadra = p?.nostraSquadra ?? 'casa';
     _aggiornaCampionatoAnteprima();
     if (!_isEditing) {
@@ -85,7 +83,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           setState(() {
             _dettaglioTiro = ultima.dettaglioTiro;
             _tracciaTempo = ultima.tracciaTempo;
-            _modalitaSuperiorita = ultima.modalitaSuperiorita;
           });
         }
       });
@@ -213,7 +210,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           note: _noteController.text.trim(),
           dettaglioTiro: _dettaglioTiro,
           tracciaTempo: _tracciaTempo,
-          modalitaSuperiorita: _modalitaSuperiorita,
+          modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
         );
       } else {
@@ -230,7 +227,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           note: _noteController.text.trim(),
           dettaglioTiro: _dettaglioTiro,
           tracciaTempo: _tracciaTempo,
-          modalitaSuperiorita: _modalitaSuperiorita,
+          modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
         );
       }
@@ -396,7 +393,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
                       segments: const [
-                        ButtonSegment(value: 13, label: Text('13')),
+                        ButtonSegment(value: 14, label: Text('14')),
                         ButtonSegment(value: 15, label: Text('15')),
                       ],
                       selected: {_numeroMaxConvocati},
@@ -447,38 +444,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   ),
                   value: _tracciaTempo,
                   onChanged: (v) => setState(() => _tracciaTempo = v),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Superiorità numerica',
-                      style: AppTypography.etichetta,
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'singolo',
-                          label: Text('Esito subito'),
-                        ),
-                        ButtonSegment(
-                          value: 'inizio_fine',
-                          label: Text('Inizio/fine'),
-                        ),
-                      ],
-                      selected: {_modalitaSuperiorita},
-                      onSelectionChanged: (s) =>
-                          setState(() => _modalitaSuperiorita = s.first),
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
-                    Text(
-                      'Esito subito: scegli Gol/Non gol appena la registri. '
-                      'Inizio/fine: la registri come "in corso" e la '
-                      'concludi più tardi toccandola nella lista eventi.',
-                      style: AppTypography.piccolo,
-                    ),
-                  ],
                 ),
               ],
             ),
