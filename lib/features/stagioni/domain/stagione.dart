@@ -23,3 +23,21 @@ class Stagione {
   /// automaticamente, non si sceglie più partita per partita.
   final String? campionato;
 }
+
+/// La stagione che contiene la data odierna, preferendo quelle del
+/// gruppo indicato (fallback su tutte se nessuna stagione ha quel
+/// gruppo) — usata per la "stagione in corso" nella home dell'atleta.
+/// Torna null se nessuna stagione contiene oggi.
+Stagione? stagioneCorrenteDiGruppo(List<Stagione> stagioni, String? gruppoId) {
+  final delGruppo = gruppoId == null
+      ? stagioni
+      : stagioni.where((s) => s.gruppoId == gruppoId).toList();
+  final candidate = delGruppo.isEmpty ? stagioni : delGruppo;
+  final oggi = DateTime.now();
+  for (final s in candidate) {
+    if (!oggi.isBefore(s.dataInizio) && !oggi.isAfter(s.dataFine)) {
+      return s;
+    }
+  }
+  return null;
+}

@@ -218,6 +218,19 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
+  /// Svuota ogni tabella locale (chiamato quando cambia l'utente
+  /// autenticato su questo device — vedi `cache_utente_guard.dart`):
+  /// senza, i dati dell'utente precedente resterebbero in cache e
+  /// verrebbero mostrati al nuovo finche' un refresh online non
+  /// sovrascrive per caso ogni singola tabella.
+  Future<void> clearAll() async {
+    await transaction(() async {
+      for (final tabella in allTables) {
+        await customStatement('DELETE FROM ${tabella.actualTableName}');
+      }
+    });
+  }
+
   static Future<bool> _hasColumn(
     Migrator m,
     String table,

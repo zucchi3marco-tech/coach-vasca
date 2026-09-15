@@ -19,6 +19,7 @@ import '../presenze/application/presenze_providers.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
 import '../stagioni/application/stagioni_providers.dart';
 import '../stagioni/domain/stagione.dart';
+import '../stagioni/presentation/stagione_atleta_screen.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
 
 String _formattaData(DateTime data) =>
@@ -118,6 +119,16 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                AppListRow(
+                  leading: const Icon(Icons.event_note_outlined),
+                  titolo: 'La mia stagione',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StagioneAtletaScreen(atleta: atleta),
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -163,21 +174,9 @@ class _RiepilogoOggi extends ConsumerWidget {
       }
     }
 
-    Stagione? stagioneCorrente;
-    if (stagioniAsync.hasValue) {
-      final oggi = DateTime.now();
-      final stagioni = stagioniAsync.value!;
-      final delGruppo = atleta.gruppoId == null
-          ? stagioni
-          : stagioni.where((s) => s.gruppoId == atleta.gruppoId).toList();
-      final candidate = delGruppo.isEmpty ? stagioni : delGruppo;
-      for (final s in candidate) {
-        if (!oggi.isBefore(s.dataInizio) && !oggi.isAfter(s.dataFine)) {
-          stagioneCorrente = s;
-          break;
-        }
-      }
-    }
+    final stagioneCorrente = stagioniAsync.hasValue
+        ? stagioneCorrenteDiGruppo(stagioniAsync.value!, atleta.gruppoId)
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

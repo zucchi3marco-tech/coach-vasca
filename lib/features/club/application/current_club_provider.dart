@@ -14,7 +14,14 @@ import '../domain/club.dart';
 /// esiste gia' su Supabase — e per un FutureProvider (non reattivo come
 /// uno StreamProvider) l'errore resterebbe finche' qualcosa non lo
 /// invalida esplicitamente.
-final currentClubProvider = FutureProvider<Club?>((ref) async {
+///
+/// `autoDispose`: senza, il valore resterebbe in cache anche dopo un
+/// logout, e un secondo account che effettua il login sullo stesso
+/// device (stesso avvio dell'app, es. durante un test) si ritroverebbe
+/// il club dell'account precedente invece di uno ricalcolato — il bug
+/// per cui un atleta appena registrato si è visto proporre la
+/// schermata "crea gruppo" del coach.
+final currentClubProvider = FutureProvider.autoDispose<Club?>((ref) async {
   final repository = ref.watch(clubRepositoryProvider);
   try {
     await repository.refreshFromRemote();

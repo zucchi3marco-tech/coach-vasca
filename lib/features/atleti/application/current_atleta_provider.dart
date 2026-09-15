@@ -7,7 +7,12 @@ import '../domain/atleta.dart';
 /// null se questo login è un coach (o un account non ancora collegato a
 /// nessun atleta). Usato da HomeScreen per decidere quale area mostrare
 /// quando l'utente non è membro di nessun club.
-final currentAtletaProvider = FutureProvider<Atleta?>((ref) async {
+///
+/// `autoDispose`: senza, il valore resterebbe in cache anche dopo un
+/// logout, e un secondo account che effettua il login sullo stesso
+/// device (stesso avvio dell'app, es. durante un test) si ritroverebbe
+/// il risultato del login precedente invece di uno ricalcolato.
+final currentAtletaProvider = FutureProvider.autoDispose<Atleta?>((ref) async {
   final repository = ref.watch(atletiRepositoryProvider);
   try {
     return await repository.fetchAtletaCollegato();
