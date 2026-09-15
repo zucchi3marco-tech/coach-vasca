@@ -18,6 +18,8 @@ import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../gruppi/domain/gruppo.dart';
 import '../gruppi/presentation/gruppi_chooser_screen.dart';
 import '../gruppi/presentation/gruppi_onboarding_screen.dart';
+import '../notifiche/data/notifiche_repository.dart';
+import '../notifiche/presentation/notifiche_screen.dart';
 import '../pallanuoto/presentation/partite_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
 import 'area_atleta_home_screen.dart';
@@ -208,6 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Text(club?.nome ?? 'SwimCoach FIN'),
         actions: [
+          if (club != null && !areaAtleta) _NotificheIndicator(clubId: club.id),
           const _SyncStatusIndicator(),
           if (mostraTab)
             IconButton(
@@ -257,6 +260,47 @@ class _SyncStatusIndicator extends ConsumerWidget {
       tooltip:
           '$inCoda modifiche in coda, in attesa di rete. Tocca per riprovare.',
       onPressed: () => ref.read(syncEngineProvider).processQueue(),
+    );
+  }
+}
+
+/// Icona nell'AppBar: mostra quante notifiche non lette ha il coach (FASE
+/// 13, punto 1 — es. un atleta che si e' appena registrato). Nascosta
+/// quando non ce ne sono.
+class _NotificheIndicator extends ConsumerWidget {
+  const _NotificheIndicator({required this.clubId});
+
+  final String clubId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nonLette = ref.watch(notificheNonLetteProvider(clubId)).value ?? [];
+
+    if (nonLette.isEmpty) {
+      return IconButton(
+        icon: const Icon(Icons.notifications_none_outlined),
+        tooltip: 'Notifiche',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => NotificheScreen(clubId: clubId),
+          ),
+        ),
+      );
+    }
+
+    return IconButton(
+      icon: Badge(
+        label: Text('${nonLette.length}'),
+        child: const Icon(Icons.notifications_outlined),
+      ),
+      tooltip: '${nonLette.length} notifiche non lette',
+      onPressed: () => Navigator.of(context)
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) => NotificheScreen(clubId: clubId),
+            ),
+          )
+          .then((_) => ref.invalidate(notificheNonLetteProvider(clubId))),
     );
   }
 }
