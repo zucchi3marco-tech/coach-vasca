@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/domain_tokens.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -192,8 +192,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   }
 
   DropdownMenuItem<String> _voceZona(BuildContext context, String sigla) {
-    final tokens =
-        Theme.of(context).extension<DomainTokens>() ?? DomainTokens.standard;
+    final colori = context.colori;
     return DropdownMenuItem(
       value: sigla,
       child: Row(
@@ -203,7 +202,10 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
             width: 10,
             height: 10,
             decoration: BoxDecoration(
-              color: tokens.colorePerZona(sigla),
+              color: context.dominio.colorePerZona(
+                sigla,
+                rispetto: colori.linea,
+              ),
               shape: BoxShape.circle,
             ),
           ),
@@ -216,6 +218,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -224,11 +227,8 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           if (_isEditing)
             TextButton.icon(
               onPressed: _elimina,
-              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
-              label: const Text(
-                'Elimina',
-                style: TextStyle(color: AppColors.rosso),
-              ),
+              icon: Icon(Icons.delete_outline, color: colori.rosso),
+              label: Text('Elimina', style: TextStyle(color: colori.rosso)),
             ),
         ],
       ),
