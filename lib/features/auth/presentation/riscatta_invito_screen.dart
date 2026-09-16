@@ -35,9 +35,11 @@ class RiscattaInvitoScreen extends ConsumerStatefulWidget {
 }
 
 class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
+  final _formKeyAccount = GlobalKey<FormState>();
   final _codiceController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confermaPasswordController = TextEditingController();
   final _nomeController = TextEditingController();
   final _cognomeController = TextEditingController();
   final _dataNascitaController = TextEditingController();
@@ -56,6 +58,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
     _codiceController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confermaPasswordController.dispose();
     _nomeController.dispose();
     _cognomeController.dispose();
     _dataNascitaController.dispose();
@@ -143,6 +146,7 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
   }
 
   Future<void> _creaAccount() async {
+    if (!(_formKeyAccount.currentState?.validate() ?? false)) return;
     setState(() {
       _isSubmitting = true;
       _errore = null;
@@ -254,8 +258,10 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                   },
                 ),
                 _Passo.account => _PassoAccount(
+                  formKey: _formKeyAccount,
                   emailController: _emailController,
                   passwordController: _passwordController,
+                  confermaPasswordController: _confermaPasswordController,
                   isSubmitting: _isSubmitting,
                   onCrea: _creaAccount,
                 ),
@@ -413,42 +419,84 @@ class _PassoAnagrafica extends StatelessWidget {
 
 class _PassoAccount extends StatelessWidget {
   const _PassoAccount({
+    required this.formKey,
     required this.emailController,
     required this.passwordController,
+    required this.confermaPasswordController,
     required this.isSubmitting,
     required this.onCrea,
   });
 
+  final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final TextEditingController confermaPasswordController;
   final bool isSubmitting;
   final VoidCallback onCrea;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppTextField(
-          etichetta: 'Email',
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-        ),
-        const SizedBox(height: AppSpacing.s16),
-        AppTextField(
-          etichetta: 'Password',
-          controller: passwordController,
-          obscureText: true,
-          autofillHints: const [AutofillHints.newPassword],
-        ),
-        const SizedBox(height: AppSpacing.s24),
-        PrimaryButton(
-          label: 'Crea account',
-          isLoading: isSubmitting,
-          onPressed: isSubmitting ? null : onCrea,
-        ),
-      ],
+    return Form(
+      key: formKey,
+      // Senza, "Le password non coincidono" compare solo dopo aver gia'
+      // toccato "Crea account" una volta — stesso motivo di SignUpScreen.
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppTextField(
+            etichetta: 'Email',
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Inserisci la tua email';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          AppTextField(
+            etichetta: 'Password',
+            controller: passwordController,
+            obscureText: true,
+            autofillHints: const [AutofillHints.newPassword],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Inserisci una password';
+              }
+              if (value.length < 6) {
+                return 'Almeno 6 caratteri';
+              }
+              return null;
+            },
+            // La validazione di "Conferma password" dipende da questo
+            // campo ma si attiva da sola solo quando cambia il proprio
+            // valore — stesso motivo di SignUpScreen.
+            onChanged: (_) => formKey.currentState?.validate(),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          AppTextField(
+            etichetta: 'Conferma password',
+            controller: confermaPasswordController,
+            obscureText: true,
+            validator: (value) {
+              if (value != passwordController.text) {
+                return 'Le password non coincidono';
+              }
+              return null;
+            },
+            onFieldSubmitted: (_) => onCrea(),
+          ),
+          const SizedBox(height: AppSpacing.s24),
+          PrimaryButton(
+            label: 'Crea account',
+            isLoading: isSubmitting,
+            onPressed: isSubmitting ? null : onCrea,
+          ),
+        ],
+      ),
     );
   }
 }
