@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../theme/app_colors.dart';
+import '../../theme/colori_app.dart';
 import '../../widgets/app_scaffold.dart';
 
 /// Il CSV non ha un salvataggio nativo su file cross-platform senza
@@ -41,10 +41,10 @@ class CsvPreviewScreen extends StatelessWidget {
       ),
       body: SelectableText(
         csv,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'monospace',
           fontSize: 14,
-          color: AppColors.testo,
+          color: context.colori.testo,
         ),
       ),
     );

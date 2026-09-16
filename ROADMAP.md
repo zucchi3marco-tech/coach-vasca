@@ -174,7 +174,30 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
 - [x] **Punto 1 — Widget condivisi**: 18 dei 20 widget di `lib/widgets/` ora leggono i colori da `context.colori`/`context.dominio` (nuove estensioni di comodo) invece che da `AppColors`/`DomainTokens`/`SuperficiTema` fissi — `AppTextField`, `AppListPanel`, `AppListRow`, `PrimaryButton`, `AppSelect`, `DangerButton`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `StatPanel`, `ZoneChip`, `CapBadge`, `SectionHeader`, `FabAzioni`, ecc. `ZoneChip` è stato anche corretto nel funzionamento (prima fondo pieno con testo bianco sopra — vietato da DESIGN.md sezione 7, quattro delle otto zone non reggono il bianco — ora fondo del colore della zona a bassa opacità, come richiesto). Lasciati **deliberatamente** sul vecchio sistema `PoolCard` e `BottoneTemaBordoVasca`: sono usati anche dentro le tre schermate da bordo vasca, che hanno un proprio interruttore chiaro/scuro indipendente (`AppTheme.scuroBordoVasca`) non ancora collegato al tema nuovo — migrarli ora avrebbe rotto quell'interruttore, che oggi funziona. Migreranno insieme al punto 3. `SecondaryButton`, `LaneRule`, `FormGroup`, `AppScaffold` non leggevano `AppColors` e non hanno avuto bisogno di modifiche
 - [x] **Punto 2 — Schermata pilota**: la scheda atleta — `atleti_list_screen.dart` (elenco, ricerca, stato vuoto), `atleta_form_screen.dart` (form, gruppi, azione distruttiva "Archivia/Riattiva" — già puliti di suo, delegava tutto a widget già migrati al punto 1) e `gestisci_account_atleta_dialog.dart` (collega/scollega account). Ogni colore ora passa da `context.colori`. **Verifica visiva nei due temi ancora da fare** (richiede riattivare `ThemeMode` e guardare l'app vera — non verificabile da qui): fallo tu quando comodo, prima di considerarla davvero chiusa
 - [x] **Punto 3 — Le tre schermate da bordo vasca** (segna presenze, allenamento in corso, eventi partita), `PoolCard` e l'interruttore chiaro/scuro dedicato. `PresenzeScreen`, `SchedaBordoVascaScreen`, `PartitaLiveScreen` (con `CampoTiro`, `FasciaCalottinePartita`, `StrisciaSanzionatiPartita`) ora leggono `context.colori`/`context.dominio`; l'interruttore è diventato `TemaBordoVascaOverrideNotifier`, a tre stati (Segui l'app/Chiaro/Scuro) invece del vecchio booleano scuro/chiaro, scelto con un menu esplicito in `BottoneTemaBordoVasca` invece di un singolo tocco che cicla. `EventiPartitaScreen` ("Cronologia", raggiunta da un `Navigator.push` che non eredita mai il tema forzato della schermata vasca — comportamento preesistente, non toccato) migrata come schermata normale. Preservate le due eccezioni documentate: le linee rosse/gialle regolamentari (2m/5m/6m) nel campo disegnato di `CampoTiro` (`attenzione` usato come ambra più vicina, nessun token "giallo" dedicato nel nuovo sistema) e il nero puro (non un token) per un giocatore squalificato in `FasciaCalottinePartita`. Rimossi come ormai orfani `superfici_tema.dart`, `tema_bordo_vasca_provider.dart` e `AppTheme.scuroBordoVasca`. `domain_tokens.dart`/`app_colors.dart` restano: ancora in uso dalle schermate non-vasca non ancora migrate (punto 4). **Verifica visiva nei due temi ancora da fare** (richiede riattivare `ThemeMode` e guardare l'app vera — non verificabile da qui): fallo tu quando comodo
-- [ ] **Punto 4 — Tutte le altre schermate**, una alla volta
+- [ ] **Punto 4 — Tutte le altre schermate**, una alla volta. Migrate a `context.colori`/`context.dominio`, `flutter analyze` + `flutter test` dopo ognuna, un commit dedicato per schermata:
+  - [x] `CsvPreviewScreen`
+  - [ ] `PartiteAtletaListScreen`
+  - [ ] `GruppiOnboardingScreen`
+  - [ ] `CodiciGruppoScreen`
+  - [ ] `RefertoPartitaScreen`
+  - [ ] `CalendarioMensileView`
+  - [ ] `StagioneDetailScreen`
+  - [ ] `SchedaGeneratateScreen`
+  - [ ] `MiePresenzeScreen`
+  - [ ] `GruppiManagementScreen`
+  - [ ] `StoricoGenerazioniScreen`
+  - [ ] `StagioneFormScreen`
+  - [ ] `PbListScreen`
+  - [ ] `CalendarioSettimanaleView`
+  - [ ] `CaricoAtletaScreen`
+  - [ ] `StrokeRateScreen`
+  - [ ] `SerieFormScreen`
+  - [ ] `PartitaFormScreen`
+  - [ ] `StatisticheSquadraScreen`
+  - [ ] `AllenamentoDetailScreen`
+  - [ ] `DistintaScreen`
+  - [ ] `GeneraSettimanaFormScreen`
+  - [ ] `LeggiRefertoScreen`
 - [ ] **Punto 5 — Rimozione di `app_colors.dart`** e attivazione di un controllo (lint/ricerca in CI) che tiene onesta la migrazione
 - [ ] **Solo dopo il punto 3** (o comunque quando l'app è pronta a mostrare lo scuro senza rompersi): ricollegare `themeMode: ref.watch(temaAppProvider)` in `app.dart` (oggi forzato su `ThemeMode.light`) e costruire `ThemeToggle` (Sistema/Chiaro/Scuro nelle impostazioni, più l'interruttore a tre stati per le schermate vasca)
 
