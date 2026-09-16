@@ -26,6 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isSubmitting = false;
+  bool _isSubmittingGoogle = false;
   bool _passwordVisibile = false;
   String? _errorMessage;
   String? _suggerimentoErrore;
@@ -71,6 +72,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isSubmittingGoogle = true;
+      _errorMessage = null;
+      _suggerimentoErrore = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).signInWithGoogle();
+      // Nessuna navigazione da fare qui: il browser si apre per il
+      // login Google, e quando torna authStateChangesProvider (in
+      // app.dart) porta da solo alla Home appena la sessione è attiva.
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _errorMessage = messaggioErrore(e));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Errore di connessione. Riprova.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmittingGoogle = false);
     }
   }
 
@@ -197,6 +220,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.s12,
+                        ),
+                        child: Text(
+                          'oppure',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  SecondaryButton(
+                    label: 'Continua con Google',
+                    onPressed: _isSubmittingGoogle || _isSubmitting
+                        ? null
+                        : _signInWithGoogle,
                   ),
                   const SizedBox(height: AppSpacing.s16),
                   TextButton(

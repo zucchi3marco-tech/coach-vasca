@@ -28,6 +28,19 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Serve per rilevare il ritmo di bracciata inquadrando il nuotatore in corsia.</string>
+	<!-- Redirect del login Google (Supabase Auth) — vedi
+	     lib/features/auth/data/auth_repository.dart. Va anche aggiunto
+	     come "Redirect URL" nel dashboard Supabase prima che il login
+	     Google funzioni su iOS. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.coachvasca</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
