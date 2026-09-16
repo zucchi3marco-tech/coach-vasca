@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
@@ -102,6 +102,7 @@ class _GestisciAccountAtletaDialogState
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return AlertDialog(
       title: const Text('Account atleta'),
       content: SizedBox(
@@ -113,9 +114,14 @@ class _GestisciAccountAtletaDialogState
             if (widget.atleta.haAccountCollegato) ...[
               Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppColors.ok),
+                  Icon(Icons.check_circle, color: colori.ok),
                   const SizedBox(width: AppSpacing.s8),
-                  Text('Account collegato', style: AppTypography.corpoForte),
+                  Text(
+                    'Account collegato',
+                    style: AppTypography.corpoForte.copyWith(
+                      color: colori.testo,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.s16),
@@ -127,23 +133,23 @@ class _GestisciAccountAtletaDialogState
               Text(
                 'Condividi questo codice con ${widget.atleta.nomeCompleto}: '
                 'valido 7 giorni.',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 decoration: BoxDecoration(
-                  color: AppColors.superficieTenue,
-                  borderRadius: BorderRadius.circular(
-                    AppSpacing.raggioControllo,
-                  ),
+                  color: colori.superficieAlt,
+                  borderRadius: BorderRadius.circular(AppRadius.controllo),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   _codiceGenerato!,
-                  style: AppTypography.cifreTabulari(
-                    AppTypography.titoloXl,
+                  style: AppTypography.numerica(
+                    AppTypography.titoloXl.copyWith(color: colori.testo),
                   ),
                 ),
               ),
@@ -157,7 +163,9 @@ class _GestisciAccountAtletaDialogState
               Text(
                 'Nessun account collegato. Genera un invito da condividere '
                 'con l\'atleta.',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s16),
               PrimaryButton(

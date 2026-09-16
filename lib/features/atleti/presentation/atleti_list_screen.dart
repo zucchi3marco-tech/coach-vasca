@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -69,7 +69,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
               ),
               const SizedBox(width: AppSpacing.s8),
               PopupMenuButton<_Ordinamento>(
-                icon: const Icon(Icons.sort, color: AppColors.testoSecondario),
+                icon: Icon(Icons.sort, color: context.colori.testoSecondario),
                 tooltip: 'Ordina',
                 onSelected: (valore) => setState(() => _ordinamento = valore),
                 itemBuilder: (context) => const [
@@ -229,6 +229,7 @@ class _AtletiList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final nomeGruppo = {for (final g in gruppi) g.id: g.nome};
     if (atleti.isEmpty) {
       return ListView(
@@ -280,26 +281,23 @@ class _AtletiList extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (atleta.visitaMedicaScaduta)
-                    const Tooltip(
+                    Tooltip(
                       message: 'Visita medica scaduta',
                       child: Icon(
                         Icons.medical_information_outlined,
-                        color: AppColors.attenzione,
+                        color: colori.attenzione,
                       ),
                     )
                   else if (atleta.visitaMedicaInScadenza)
-                    const Tooltip(
+                    Tooltip(
                       message: 'Visita medica in scadenza',
                       child: Icon(
                         Icons.medical_information_outlined,
-                        color: AppColors.attenzione,
+                        color: colori.attenzione,
                       ),
                     ),
                   PopupMenuButton<VoidCallback>(
-                    icon: const Icon(
-                      Icons.more_vert,
-                      color: AppColors.testoSecondario,
-                    ),
+                    icon: Icon(Icons.more_vert, color: colori.testoSecondario),
                     onSelected: (azione) => azione(),
                     itemBuilder: (context) => [
                       PopupMenuItem(
@@ -364,11 +362,15 @@ class _VoceMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Row(
       children: [
-        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        Icon(icona, size: 20, color: colori.testoSecondario),
         const SizedBox(width: AppSpacing.s12),
-        Text(etichetta, style: AppTypography.corpo),
+        Text(
+          etichetta,
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+        ),
       ],
     );
   }
@@ -381,6 +383,7 @@ class _AvatarAtleta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final iniziale = atleta.cognome.isNotEmpty
         ? atleta.cognome[0].toUpperCase()
         : '?';
@@ -389,13 +392,13 @@ class _AvatarAtleta extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: atleta.attivo ? AppColors.bluTenue : AppColors.superficieTenue,
+        color: atleta.attivo ? colori.azioneTenue : colori.superficieAlt,
         shape: BoxShape.circle,
       ),
       child: Text(
         iniziale,
         style: AppTypography.corpoForte.copyWith(
-          color: atleta.attivo ? AppColors.blu : AppColors.testoTenue,
+          color: atleta.attivo ? colori.azione : colori.testoTenue,
         ),
       ),
     );
