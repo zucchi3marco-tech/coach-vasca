@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
-
 /// Scala tipografica — vedi DESIGN.md sezione 8. Un solo carattere
 /// (IBM Plex Sans), una condensata solo per colonne strette (distinta,
 /// tabella passi, referto), e le cifre tabulari + zero barrato
 /// obbligatori per ogni numero in colonna o che rappresenta un tempo.
 ///
-/// Nota di migrazione (fase "lib/theme/ completo", DESIGN.md sezione 20
-/// punto 1): i colori restano quelli di [AppColors] come oggi, non
-/// ancora [ColoriApp] — separare tipografia e colore token-per-token è
-/// un cambiamento più ampio, da fare schermata per schermata insieme
-/// alla migrazione a `Theme.of(context)`, non in questo passo invisibile
-/// che non deve alterare l'aspetto di nessuna schermata già esistente.
+/// Questi stili non portano un colore fisso: chi li usa applica sempre
+/// `.copyWith(color: context.colori.X)` (DESIGN.md sezione 20) — senza
+/// override, il colore resta `null` ed eredita dal `DefaultTextStyle`
+/// ambiente (a sua volta guidato da `AppTheme` tramite
+/// `textTheme.apply(bodyColor: ..., displayColor: ...)`), che segue già
+/// il tema chiaro/scuro invece di restare fisso.
 abstract final class AppTypography {
   static TextStyle _plex({
     required double dimensione,
     required double interlinea,
     required FontWeight peso,
     double spaziatura = 0,
-    Color colore = AppColors.testo,
+    Color? colore,
   }) {
     return GoogleFonts.ibmPlexSans(
       fontSize: dimensione,
@@ -83,14 +81,12 @@ abstract final class AppTypography {
     dimensione: 14,
     interlinea: 20,
     peso: FontWeight.w400,
-    colore: AppColors.testoSecondario,
   );
   static TextStyle etichetta = _plex(
     dimensione: 13,
     interlinea: 18,
     peso: FontWeight.w500,
     spaziatura: 0.1,
-    colore: AppColors.testoSecondario,
   );
   static TextStyle numeroGrande = _plex(
     dimensione: 34,
