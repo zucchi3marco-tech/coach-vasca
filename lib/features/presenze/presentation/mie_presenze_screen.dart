@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -40,14 +40,14 @@ IconData _iconaStato(String stato) {
   }
 }
 
-Color _coloreStato(String stato) {
+Color _coloreStato(String stato, ColoriApp colori) {
   switch (stato) {
     case 'presente':
-      return AppColors.ok;
+      return colori.ok;
     case 'giustificato':
-      return AppColors.attenzione;
+      return colori.attenzione;
     default:
-      return AppColors.testoSecondario;
+      return colori.testoSecondario;
   }
 }
 
@@ -122,6 +122,7 @@ class _Contenuto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final haGruppo = atleta.gruppoId != null;
     final delGruppo = haGruppo
         ? allenamenti.where((a) => a.gruppoId == atleta.gruppoId).toList()
@@ -189,7 +190,7 @@ class _Contenuto extends StatelessWidget {
         if (storico.isEmpty)
           Text(
             'Nessuna presenza registrata ancora.',
-            style: AppTypography.corpo,
+            style: AppTypography.corpo.copyWith(color: colori.testo),
           )
         else
           AppListPanel(
@@ -198,7 +199,7 @@ class _Contenuto extends StatelessWidget {
                 AppListRow(
                   leading: Icon(
                     _iconaStato(p.stato),
-                    color: _coloreStato(p.stato),
+                    color: _coloreStato(p.stato, colori),
                   ),
                   titolo: _formattaData(
                     allenamentoPerId[p.allenamentoId]?.data,
