@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
@@ -112,6 +112,7 @@ class _SezioneReferti extends ConsumerWidget {
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: clubId, includeInactive: true)),
     );
+    final colori = context.colori;
 
     return riepilogoAsync.when(
       data: (r) => atletiAsync.when(
@@ -143,7 +144,9 @@ class _SezioneReferti extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s8),
               Text(
                 'Non include i tiri sbagliati (non registrati nel referto).',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s24),
               SectionHeader('Per atleta'),
@@ -152,7 +155,7 @@ class _SezioneReferti extends ConsumerWidget {
                 Text(
                   'Nessun dato per atleta in questa stagione: collega i '
                   'giocatori agli atleti salvando i referti.',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else
                 AppListPanel(
@@ -183,8 +186,7 @@ class _SezioneReferti extends ConsumerWidget {
       loading: () => const LoadingSkeletonList(righe: 5),
       error: (e, _) => ErrorBanner(
         messaggio: 'Non è stato possibile caricare i referti.',
-        suggerimento:
-            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(e),
       ),
     );
@@ -209,6 +211,7 @@ class _SezioneEventi extends ConsumerWidget {
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: clubId, includeInactive: true)),
     );
+    final colori = context.colori;
 
     return riepilogoAsync.when(
       data: (r) => atletiAsync.when(
@@ -230,10 +233,7 @@ class _SezioneEventi extends ConsumerWidget {
                     valore: '${r.gol}/${r.tiri}',
                     confronto: percentuale,
                   ),
-                  StatPanel(
-                    etichetta: 'Espulsioni',
-                    valore: '${r.espulsioni}',
-                  ),
+                  StatPanel(etichetta: 'Espulsioni', valore: '${r.espulsioni}'),
                   StatPanel(
                     etichetta: 'Gol/partita',
                     valore: r.mediaGolPartita.toStringAsFixed(2),
@@ -270,7 +270,9 @@ class _SezioneEventi extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s8),
               Text(
                 '${r.partite} partite seguite dal vivo con "Eventi partita".',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s24),
               SectionHeader('Per atleta'),
@@ -278,7 +280,7 @@ class _SezioneEventi extends ConsumerWidget {
               if (righe.isEmpty)
                 Text(
                   'Nessun evento registrato in questa stagione.',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else
                 AppListPanel(
@@ -305,7 +307,9 @@ class _SezioneEventi extends ConsumerWidget {
                     ? Text(
                         'Nessun tiro con posizione registrata in questa '
                         'stagione.',
-                        style: AppTypography.corpo,
+                        style: AppTypography.corpo.copyWith(
+                          color: colori.testo,
+                        ),
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -340,8 +344,7 @@ class _SezioneEventi extends ConsumerWidget {
       loading: () => const LoadingSkeletonList(righe: 5),
       error: (e, _) => ErrorBanner(
         messaggio: 'Non è stato possibile caricare gli eventi.',
-        suggerimento:
-            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(e),
       ),
     );
@@ -370,6 +373,7 @@ class _SezioneConfronto extends ConsumerWidget {
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: clubId, includeInactive: true)),
     );
+    final colori = context.colori;
 
     return refertiAsync.when(
       data: (r) => eventiAsync.when(
@@ -384,8 +388,7 @@ class _SezioneConfronto extends ConsumerWidget {
             };
             final tuttiGliId =
                 {...refertiPerId.keys, ...eventiPerId.keys}.toList()..sort(
-                  (a, b) =>
-                      (nomiPerId[a] ?? '').compareTo(nomiPerId[b] ?? ''),
+                  (a, b) => (nomiPerId[a] ?? '').compareTo(nomiPerId[b] ?? ''),
                 );
 
             return ListView(
@@ -396,14 +399,16 @@ class _SezioneConfronto extends ConsumerWidget {
                   'partita) · da eventi live: ${e.gol} gol in ${e.partite} '
                   'partite tracciate (${e.mediaGolPartita.toStringAsFixed(2)}'
                   '/partita)',
-                  style: AppTypography.piccolo,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s24),
                 if (tuttiGliId.isEmpty)
                   Text(
                     'Nessun dato da nessuna delle due fonti in questa '
                     'stagione.',
-                    style: AppTypography.corpo,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
                   )
                 else
                   AppListPanel(
@@ -438,8 +443,7 @@ class _SezioneConfronto extends ConsumerWidget {
       loading: () => const LoadingSkeletonList(righe: 5),
       error: (err, _) => ErrorBanner(
         messaggio: 'Non è stato possibile caricare i referti.',
-        suggerimento:
-            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(err),
       ),
     );
@@ -457,6 +461,7 @@ class _RigaConMetriche extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
@@ -467,14 +472,20 @@ class _RigaConMetriche extends StatelessWidget {
         children: [
           Text(
             titolo,
-            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
           ),
           const SizedBox(height: AppSpacing.s4),
           Wrap(
             spacing: AppSpacing.s16,
             runSpacing: AppSpacing.s4,
             children: [
-              for (final m in metriche) Text(m, style: AppTypography.piccolo),
+              for (final m in metriche)
+                Text(
+                  m,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
             ],
           ),
         ],
@@ -496,6 +507,7 @@ class _RigaConfronto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
@@ -506,16 +518,20 @@ class _RigaConfronto extends StatelessWidget {
         children: [
           Text(
             titolo,
-            style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
             'Da referti: ${referti != null ? '${referti!.reti} reti in ${referti!.partite} partite' : 'nessun dato'}',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
           Text(
             'Da eventi live: ${eventi != null ? '${eventi!.gol} gol su ${eventi!.tiri} tiri' : 'nessun dato'}',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
         ],
       ),
