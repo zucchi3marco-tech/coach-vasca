@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
@@ -37,14 +38,13 @@ const _ordineEsecuzionePerVolume = [
   'remate',
 ];
 
-String _formattaVolume(int metri) => metri >= 1000
-    ? '${(metri / 1000).toStringAsFixed(1)} km'
-    : '$metri m';
+String _formattaVolume(int metri) =>
+    metri >= 1000 ? '${(metri / 1000).toStringAsFixed(1)} km' : '$metri m';
 
-/// Nota: DESIGN.md non definisce ancora una palette per i grafici a
-/// linee. In attesa di un token dedicato, questa schermata usa `blu`
-/// per Fitness, `attenzione` per Fatica e `ok` per Forma — non `rosso`,
-/// riservato esclusivamente a "in corso" ed errori (sezione 3).
+/// Palette dei grafici a linee — DESIGN.md sezione 7: Fitness `azione`,
+/// Fatica `attenzione`, Forma `ok` (via [TokenDominio.curvaFitness] e
+/// affini), mai `rosso`, riservato esclusivamente a "in corso" ed
+/// errori (sezione 3).
 class CaricoAtletaScreen extends ConsumerWidget {
   const CaricoAtletaScreen({required this.atleta, super.key});
 
@@ -55,6 +55,7 @@ class CaricoAtletaScreen extends ConsumerWidget {
     final puntiAsync = ref.watch(
       andamentoCaricoProvider((atletaId: atleta.id, clubId: atleta.clubId)),
     );
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(title: Text('Carico — ${atleta.nomeCompleto}')),
@@ -82,7 +83,9 @@ class CaricoAtletaScreen extends ConsumerWidget {
                       'era presente. È un indice relativo utile per '
                       'valutare l\'andamento nel tempo, non un valore '
                       'fisiologico assoluto.',
-                      style: AppTypography.piccolo,
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s16),
                     Row(
@@ -139,19 +142,20 @@ class _GraficoBanister extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
+    final dominio = context.dominio;
     List<FlSpot> spot(double Function(PuntoBanister) valore) => [
       for (var i = 0; i < punti.length; i++)
         FlSpot(i.toDouble(), valore(punti[i])),
     ];
 
-    LineChartBarData linea(List<FlSpot> dati, Color colore) =>
-        LineChartBarData(
-          spots: dati,
-          isCurved: false,
-          color: colore,
-          barWidth: 2,
-          dotData: const FlDotData(show: false),
-        );
+    LineChartBarData linea(List<FlSpot> dati, Color colore) => LineChartBarData(
+      spots: dati,
+      isCurved: false,
+      color: colore,
+      barWidth: 2,
+      dotData: const FlDotData(show: false),
+    );
 
     final intervalloEtichette = (punti.length / 5).ceil().clamp(
       1,
@@ -161,9 +165,9 @@ class _GraficoBanister extends StatelessWidget {
     return LineChart(
       LineChartData(
         lineBarsData: [
-          linea(spot((p) => p.fitness), AppColors.blu),
-          linea(spot((p) => p.fatica), AppColors.attenzione),
-          linea(spot((p) => p.forma), AppColors.ok),
+          linea(spot((p) => p.fitness), dominio.curvaFitness(colori)),
+          linea(spot((p) => p.fatica), dominio.curvaFatica(colori)),
+          linea(spot((p) => p.forma), dominio.curvaForma(colori)),
         ],
         titlesData: FlTitlesData(
           topTitles: const AxisTitles(
@@ -191,7 +195,9 @@ class _GraficoBanister extends StatelessWidget {
                   child: Text(
                     '${data.day.toString().padLeft(2, '0')}/'
                     '${data.month.toString().padLeft(2, '0')}',
-                    style: AppTypography.piccolo,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                   ),
                 );
               },
@@ -210,20 +216,25 @@ class _Legenda extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
+    final dominio = context.dominio;
     Widget voce(Color colore, String etichetta) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(width: AppSpacing.s12, height: AppSpacing.s12, color: colore),
         const SizedBox(width: AppSpacing.s4),
-        Text(etichetta, style: AppTypography.piccolo),
+        Text(
+          etichetta,
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+        ),
       ],
     );
     return Wrap(
       spacing: AppSpacing.s16,
       children: [
-        voce(AppColors.blu, 'Fitness'),
-        voce(AppColors.attenzione, 'Fatica'),
-        voce(AppColors.ok, 'Forma'),
+        voce(dominio.curvaFitness(colori), 'Fitness'),
+        voce(dominio.curvaFatica(colori), 'Fatica'),
+        voce(dominio.curvaForma(colori), 'Forma'),
       ],
     );
   }
@@ -243,6 +254,7 @@ class _SezioneVolumi extends ConsumerWidget {
     final volumiAsync = ref.watch(
       volumiAtletaProvider((atletaId: atletaId, clubId: clubId)),
     );
+    final colori = context.colori;
 
     return volumiAsync.when(
       data: (volumi) {
@@ -264,12 +276,19 @@ class _SezioneVolumi extends ConsumerWidget {
               valore: _formattaVolume(volumi.volumeTotaleM),
             ),
             const SizedBox(height: AppSpacing.s24),
-            Text('Per zona', style: AppTypography.etichetta),
+            Text(
+              'Per zona',
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
             const SizedBox(height: AppSpacing.s16),
             if (zoneOrdinate.isEmpty)
               Text(
                 'Nessuna serie con zona indicata.',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               )
             else
               Wrap(
@@ -284,10 +303,20 @@ class _SezioneVolumi extends ConsumerWidget {
                 ],
               ),
             const SizedBox(height: AppSpacing.s24),
-            Text('Per tipo di lavoro', style: AppTypography.etichetta),
+            Text(
+              'Per tipo di lavoro',
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
             const SizedBox(height: AppSpacing.s16),
             if (esecuzioniOrdinate.isEmpty)
-              Text('Nessuna serie registrata.', style: AppTypography.piccolo)
+              Text(
+                'Nessuna serie registrata.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              )
             else
               Wrap(
                 spacing: AppSpacing.s24,
@@ -306,8 +335,7 @@ class _SezioneVolumi extends ConsumerWidget {
       loading: () => const LoadingSkeleton(height: 120),
       error: (error, _) => ErrorBanner(
         messaggio: 'Non è stato possibile caricare i volumi.',
-        suggerimento:
-            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(error),
       ),
     );
