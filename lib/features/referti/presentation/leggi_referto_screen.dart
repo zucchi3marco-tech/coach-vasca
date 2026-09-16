@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
@@ -60,6 +60,7 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
   }
 
   Future<void> _mostraSceltaFonte() async {
+    final colori = context.colori;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
@@ -69,14 +70,17 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: Text('Scatta una foto', style: AppTypography.corpo),
+                title: Text(
+                  'Scatta una foto',
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                ),
                 onTap: () => Navigator.of(context).pop(ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
                 title: Text(
                   'Scegli dalla galleria',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 ),
                 onTap: () => Navigator.of(context).pop(ImageSource.gallery),
               ),
@@ -109,6 +113,7 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: const Text('Leggi referto')),
@@ -120,12 +125,14 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
             'AI proverà a leggere punteggio, parziali e giocatori. '
             'Controlla sempre i dati letti prima di salvarli: non vengono '
             'salvati automaticamente da nessuna parte.',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
           const SizedBox(height: AppSpacing.s16),
           if (_immagineBytes != null) ...[
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+              borderRadius: BorderRadius.circular(AppRadius.controllo),
               child: Image.memory(
                 _immagineBytes!,
                 height: 220,
@@ -162,7 +169,9 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
             Text(
               'Correggi qui sotto eventuali errori di lettura (soprattutto '
               'i nomi) prima di usare questi dati.',
-              style: AppTypography.piccolo,
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
             ),
             const SizedBox(height: AppSpacing.s12),
             _RefertoModificabile(
@@ -256,6 +265,11 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
+    final stileCifre = AppTypography.condensata(
+      AppTypography.numerica(AppTypography.corpo.copyWith(color: colori.testo)),
+    );
+    final stileCorpo = AppTypography.corpo.copyWith(color: colori.testo);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -274,21 +288,17 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
                 controller: _risultatoCasaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: AppTypography.condensata(
-                  AppTypography.cifreTabulari(AppTypography.corpo),
-                ),
+                style: stileCifre,
               ),
             ),
-            Text(' - ', style: AppTypography.corpo),
+            Text(' - ', style: stileCorpo),
             SizedBox(
               width: 48,
               child: TextFormField(
                 controller: _risultatoTrasfertaCtrl,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: AppTypography.condensata(
-                  AppTypography.cifreTabulari(AppTypography.corpo),
-                ),
+                style: stileCifre,
               ),
             ),
             const SizedBox(width: AppSpacing.s8),
@@ -310,28 +320,24 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
             child: Row(
               children: [
-                Text('Tempo ${i + 1}: ', style: AppTypography.corpo),
+                Text('Tempo ${i + 1}: ', style: stileCorpo),
                 SizedBox(
                   width: 48,
                   child: TextFormField(
                     controller: _parzialiCtrl[i].$1,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
-                    ),
+                    style: stileCifre,
                   ),
                 ),
-                Text(' - ', style: AppTypography.corpo),
+                Text(' - ', style: stileCorpo),
                 SizedBox(
                   width: 48,
                   child: TextFormField(
                     controller: _parzialiCtrl[i].$2,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
-                    ),
+                    style: stileCifre,
                   ),
                 ),
               ],
@@ -532,6 +538,7 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
   @override
   Widget build(BuildContext context) {
     final partiteAsync = ref.watch(partiteListProvider(widget.clubId));
+    final colori = context.colori;
 
     return AlertDialog(
       title: const Text('Collega il referto a una partita'),
@@ -558,7 +565,9 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                         padding: const EdgeInsets.only(left: AppSpacing.s16),
                         child: Text(
                           'Nessuna partita in agenda per il club.',
-                          style: AppTypography.corpo,
+                          style: AppTypography.corpo.copyWith(
+                            color: colori.testo,
+                          ),
                         ),
                       )
                     : Padding(
@@ -592,9 +601,7 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                   padding: const EdgeInsets.only(left: AppSpacing.s16),
                   child: Text(
                     messaggioErrore(e),
-                    style: AppTypography.piccolo.copyWith(
-                      color: AppColors.rosso,
-                    ),
+                    style: AppTypography.piccolo.copyWith(color: colori.rosso),
                   ),
                 ),
               ),
@@ -620,7 +627,12 @@ class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('La mia squadra', style: AppTypography.etichetta),
+                    Text(
+                      'La mia squadra',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
                       segments: const [
@@ -755,6 +767,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
     final nonCollegati = widget.giocatori
         .where((g) => g.atletaId == null)
         .length;
+    final colori = context.colori;
 
     return AlertDialog(
       title: const Text('Collega i giocatori agli atleti'),
@@ -783,7 +796,9 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                           'o il cui cognome corrisponde a un solo atleta. '
                           'Se due atleti hanno lo stesso cognome vanno '
                           'scelti a mano qui sotto.',
-                          style: AppTypography.piccolo,
+                          style: AppTypography.piccolo.copyWith(
+                            color: colori.testoSecondario,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.s12),
                         for (final g in widget.giocatori)
@@ -798,7 +813,9 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                                   child: Text(
                                     '${g.numero.text}  ${g.nome.text}',
                                     overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.corpo,
+                                    style: AppTypography.corpo.copyWith(
+                                      color: colori.testo,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.s8),
@@ -837,7 +854,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                             'conteggiate nelle statistiche per singolo '
                             'atleta (restano comunque salvate nel referto).',
                             style: AppTypography.piccolo.copyWith(
-                              color: AppColors.rosso,
+                              color: colori.rosso,
                             ),
                           ),
                         ],
@@ -848,7 +865,7 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text(
                   messaggioErrore(e),
-                  style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
+                  style: AppTypography.piccolo.copyWith(color: colori.rosso),
                 ),
               ),
       ),
@@ -901,6 +918,10 @@ class _TabellaSquadraModificabile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
+    final stileCifre = AppTypography.condensata(
+      AppTypography.numerica(AppTypography.corpo.copyWith(color: colori.testo)),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -917,9 +938,7 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.numero,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
-                    ),
+                    style: stileCifre,
                     decoration: const InputDecoration(isDense: true),
                   ),
                 ),
@@ -927,7 +946,7 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: g.nome,
-                    style: AppTypography.corpo,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
                     decoration: const InputDecoration(isDense: true),
                   ),
                 ),
@@ -938,9 +957,7 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.reti,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
-                    ),
+                    style: stileCifre,
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Reti',
@@ -954,9 +971,7 @@ class _TabellaSquadraModificabile extends StatelessWidget {
                     controller: g.espulsioni,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
-                    ),
+                    style: stileCifre,
                     decoration: const InputDecoration(
                       isDense: true,
                       labelText: 'Esp.',
