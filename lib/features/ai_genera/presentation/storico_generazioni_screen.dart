@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -90,6 +90,7 @@ class _StoricoGenerazioniScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final Widget corpo;
     if (_caricamentoIniziale) {
       corpo = const Padding(
@@ -131,10 +132,10 @@ class _StoricoGenerazioniScreenState
                           ? Icons.check_circle
                           : Icons.check_circle_outline,
                       color: !voce.successo
-                          ? AppColors.rosso
+                          ? colori.rosso
                           : voce.allenamentoId != null
-                          ? AppColors.ok
-                          : AppColors.testoTenue,
+                          ? colori.ok
+                          : colori.testoTenue,
                     ),
                     titolo: _riassuntoParametri(voce.parametri),
                     sottotitolo:
@@ -160,7 +161,7 @@ class _StoricoGenerazioniScreenState
                   Text(
                     'Non è stato possibile caricare altre voci: '
                     '${messaggioErrore(_errore!)}',
-                    style: const TextStyle(color: AppColors.rosso),
+                    style: TextStyle(color: colori.rosso),
                   ),
                   const SizedBox(height: AppSpacing.s4),
                   TextButton(
@@ -195,6 +196,7 @@ class _DialogDettaglioVoce extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheda = voce.scheda;
     final salvata = voce.allenamentoId != null;
+    final colori = context.colori;
     return AlertDialog(
       title: Text(
         !voce.successo
@@ -210,26 +212,38 @@ class _DialogDettaglioVoce extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Parametri', style: AppTypography.etichetta),
+              Text(
+                'Parametri',
+                style: AppTypography.etichetta.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
               const SizedBox(height: AppSpacing.s4),
               for (final voceParam in voce.parametri.entries)
                 Text(
                   '${voceParam.key}: ${voceParam.value}',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 ),
               const SizedBox(height: AppSpacing.s16),
               if (voce.messaggioErrore != null) ...[
-                Text('Errore', style: AppTypography.etichetta),
+                Text(
+                  'Errore',
+                  style: AppTypography.etichetta.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.s4),
                 Text(
                   voce.messaggioErrore!,
-                  style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
+                  style: AppTypography.piccolo.copyWith(color: colori.rosso),
                 ),
               ],
               if (scheda != null) ...[
                 Text(
                   scheda['titolo'] as String? ?? 'Scheda generata',
-                  style: AppTypography.etichetta,
+                  style: AppTypography.etichetta.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 for (final s in (scheda['serie'] as List? ?? []))
@@ -237,7 +251,7 @@ class _DialogDettaglioVoce extends StatelessWidget {
                     '${s['ordine']}. ${s['ripetute']}×${s['distanzaM']}m '
                     '${labelStile(s['stile'] as String)} '
                     '${labelEsecuzione(s['esecuzione'] as String)}',
-                    style: AppTypography.corpo,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
                   ),
               ],
             ],
