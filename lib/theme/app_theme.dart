@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 import 'colori_app.dart';
-import 'domain_tokens.dart';
-import 'superfici_tema.dart';
 import 'tokens_dominio.dart';
 
 /// ThemeData completo dell'app — [chiaro] e [scuro] sono la coppia della
 /// versione 2 di DESIGN.md (sezioni 3-20): `colorScheme` mappato dai
 /// token uno per uno (sezione 20), `extensions: [ColoriApp, TokenDominio]`
 /// per tutto quello che Material non sa già gestire.
-///
-/// [scuroBordoVasca] resta invariato: è la variante che solo le tre
-/// schermate da bordo vasca possono scegliere di applicare (era già così
-/// prima della versione 2 del design system, vedi `partita_live_screen`),
-/// e non fa parte di questa fase.
 abstract final class AppTheme {
   static ThemeData _costruisci({
     required Brightness brightness,
@@ -318,109 +310,5 @@ abstract final class AppTheme {
     brightness: Brightness.dark,
     colori: ColoriApp.scuro,
     dominio: TokenDominio.scuro,
-  );
-
-  /// Variante scura, solo per le tre schermate da bordo vasca — invariata
-  /// rispetto a prima della versione 2 di DESIGN.md: non fa parte di
-  /// questa fase (resta legata ad `AppColors`/`SuperficiTema`/
-  /// `DomainTokens`, il sistema di token precedente), la userà ancora
-  /// `partita_live_screen.dart` finché quella schermata non migra.
-  static ThemeData scuroBordoVasca = ThemeData(
-    useMaterial3: true,
-    scaffoldBackgroundColor: SuperficiTema.scuro.sfondo,
-    colorScheme: ColorScheme.dark(
-      primary: AppColors.blu,
-      onPrimary: Colors.white,
-      secondary: AppColors.blu,
-      onSecondary: Colors.white,
-      error: AppColors.rosso,
-      onError: Colors.white,
-      surface: SuperficiTema.scuro.superficie,
-      onSurface: SuperficiTema.scuro.testo,
-    ),
-    fontFamily: AppTypography.corpo.fontFamily,
-    extensions: [DomainTokens.standard, SuperficiTema.scuro],
-
-    appBarTheme: AppBarTheme(
-      backgroundColor: SuperficiTema.scuro.superficie,
-      foregroundColor: SuperficiTema.scuro.testo,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: AppTypography.titolo.copyWith(
-        color: SuperficiTema.scuro.testo,
-      ),
-    ),
-
-    dividerTheme: DividerThemeData(
-      color: SuperficiTema.scuro.linea,
-      thickness: 1,
-      space: 1,
-    ),
-
-    filledButtonTheme: FilledButtonThemeData(
-      style:
-          FilledButton.styleFrom(
-            backgroundColor: AppColors.blu,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: SuperficiTema.scuro.testoTenue,
-            minimumSize: const Size.fromHeight(
-              AppSpacing.altezzaMinimaBersaglio,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-            ),
-            textStyle: AppTypography.corpoForte,
-          ).copyWith(
-            overlayColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.pressed)
-                  ? AppColors.bluPremuto
-                  : null,
-            ),
-          ),
-    ),
-
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: SuperficiTema.scuro.testo,
-        backgroundColor: SuperficiTema.scuro.superficie,
-        side: BorderSide(color: SuperficiTema.scuro.linea),
-        minimumSize: const Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-        ),
-        textStyle: AppTypography.corpoForte,
-      ),
-    ),
-
-    snackBarTheme: SnackBarThemeData(
-      backgroundColor: AppColors.ok,
-      contentTextStyle: AppTypography.corpo.copyWith(color: Colors.white),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-      ),
-    ),
-
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: SuperficiTema.scuro.superficie,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.raggioSheet),
-        ),
-      ),
-    ),
-
-    dialogTheme: DialogThemeData(
-      backgroundColor: SuperficiTema.scuro.superficie,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.raggioSheet),
-      ),
-      titleTextStyle: AppTypography.titolo.copyWith(
-        color: SuperficiTema.scuro.testo,
-      ),
-      contentTextStyle: AppTypography.corpo.copyWith(
-        color: SuperficiTema.scuro.testo,
-      ),
-    ),
   );
 }

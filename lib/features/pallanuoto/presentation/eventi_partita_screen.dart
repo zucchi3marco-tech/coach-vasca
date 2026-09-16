@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/danger_button.dart';
@@ -96,6 +96,7 @@ class EventiPartitaScreen extends ConsumerWidget {
     final atletiPerId = {
       for (final a in atletiAsync.value ?? const <Atleta>[]) a.id: a,
     };
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(
@@ -128,7 +129,7 @@ class EventiPartitaScreen extends ConsumerWidget {
                         final inCorso =
                             e.tipo == 'superiorita' && e.esito == null;
                         return LaneRule(
-                          colore: inCorso ? AppColors.rosso : AppColors.linea,
+                          colore: inCorso ? colori.rosso : colori.linea,
                           child: PoolCard(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.s16,
@@ -141,14 +142,14 @@ class EventiPartitaScreen extends ConsumerWidget {
                                   Icon(
                                     _icona(e),
                                     size: 20,
-                                    color: AppColors.testoSecondario,
+                                    color: colori.testoSecondario,
                                   ),
                                   const SizedBox(width: AppSpacing.s12),
                                   Expanded(
                                     child: Text(
                                       _descrizione(e, atletiPerId),
                                       style: AppTypography.corpoForte.copyWith(
-                                        color: AppColors.testo,
+                                        color: colori.testo,
                                       ),
                                     ),
                                   ),
@@ -157,7 +158,7 @@ class EventiPartitaScreen extends ConsumerWidget {
                                     Text(
                                       'Concludi',
                                       style: AppTypography.piccolo.copyWith(
-                                        color: AppColors.blu,
+                                        color: colori.azione,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),

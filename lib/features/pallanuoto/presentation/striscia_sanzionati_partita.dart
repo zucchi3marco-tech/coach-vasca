@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/superfici_tema.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/cap_badge.dart';
 import '../domain/partita.dart';
 import 'selettore_giocatore_partita.dart';
@@ -85,7 +84,7 @@ class _ChipSanzionato extends StatelessWidget {
     }
 
     final squalificato = conteggio >= 3;
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -93,9 +92,9 @@ class _ChipSanzionato extends StatelessWidget {
         vertical: AppSpacing.s4,
       ),
       decoration: BoxDecoration(
-        color: tema.superficieTenue,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioPillola),
-        border: Border.all(color: tema.linea),
+        color: colori.superficieAlt,
+        borderRadius: BorderRadius.circular(AppRadius.pillola),
+        border: Border.all(color: colori.linea),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -109,12 +108,12 @@ class _ChipSanzionato extends StatelessWidget {
               if (nome != null)
                 Text(
                   nome,
-                  style: AppTypography.piccolo.copyWith(color: tema.testo),
+                  style: AppTypography.piccolo.copyWith(color: colori.testo),
                 ),
               Text(
                 squalificato ? 'Squalificato' : 'Rigore ×$conteggio',
                 style: AppTypography.etichetta.copyWith(
-                  color: AppColors.rosso,
+                  color: colori.rosso,
                   fontWeight: FontWeight.w700,
                 ),
               ),

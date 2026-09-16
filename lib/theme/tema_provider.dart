@@ -89,15 +89,9 @@ final temaAppProvider = NotifierProvider<TemaAppNotifier, ThemeMode>(
   TemaAppNotifier.new,
 );
 
-/// Override bordo vasca — non ancora consumato da nessuna schermata in
-/// questa fase (arriverà con `ThemeToggle` e le tre schermate vasca,
-/// DESIGN.md sezione 20 "Ordine di lavoro" punto 4).
-///
-/// Nome distinto da `TemaBordoVascaNotifier` (in
-/// `tema_bordo_vasca_provider.dart`, ancora in uso da
-/// `partita_live_screen.dart`): due sistemi che coesistono finché le
-/// schermate vasca non migrano a questo, a tre stati invece che un solo
-/// booleano scuro/chiaro.
+/// Override bordo vasca (DESIGN.md sezione 15), usato dalle tre
+/// schermate da bordo vasca tramite [temaBordoVascaDa] e
+/// [BottoneTemaBordoVasca] nell'AppBar di ciascuna.
 class TemaBordoVascaOverrideNotifier extends Notifier<TemaBordoVasca> {
   @override
   TemaBordoVasca build() {
