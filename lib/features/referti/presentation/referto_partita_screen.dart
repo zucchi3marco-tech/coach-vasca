@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -69,6 +69,7 @@ class _RefertoSalvatoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.s16),
       child: Column(
@@ -82,7 +83,9 @@ class _RefertoSalvatoView extends StatelessWidget {
                   '${referto.risultatoCasa} - ${referto.risultatoTrasferta}'
                   '   ${referto.squadraTrasferta}',
                   style: AppTypography.condensata(
-                    AppTypography.cifreTabulari(AppTypography.titoloXl),
+                    AppTypography.numerica(
+                      AppTypography.titoloXl.copyWith(color: colori.testo),
+                    ),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -95,7 +98,9 @@ class _RefertoSalvatoView extends StatelessWidget {
                             '${referto.parziali[i].trasferta}',
                     ].join('   '),
                     style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
+                      AppTypography.numerica(
+                        AppTypography.corpo.copyWith(color: colori.testo),
+                      ),
                     ),
                   ),
                 ],
@@ -129,10 +134,14 @@ class _TabellaGiocatoriSalvata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titolo, style: AppTypography.sezione),
+        Text(
+          titolo,
+          style: AppTypography.sezione.copyWith(color: colori.testo),
+        ),
         const SizedBox(height: AppSpacing.s8),
         AppListPanel(
           righe: [
@@ -143,8 +152,8 @@ class _TabellaGiocatoriSalvata extends StatelessWidget {
                 trailing: Text(
                   '${g.reti} reti · ${g.espulsioni} esp.',
                   style: AppTypography.condensata(
-                    AppTypography.cifreTabulari(
-                      AppTypography.piccolo.copyWith(color: AppColors.testo),
+                    AppTypography.numerica(
+                      AppTypography.piccolo.copyWith(color: colori.testo),
                     ),
                   ),
                 ),
