@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/error_messages.dart';
-import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_typography.dart';
+import '../../../../theme/colori_app.dart';
 import '../../../../widgets/app_list_panel.dart';
 import '../../../../widgets/app_list_row.dart';
 import '../../application/allenamenti_providers.dart';
@@ -63,6 +63,7 @@ class _CalendarioSettimanaleViewState
   }
 
   Future<void> _duplicaSettimana(int numeroAllenamenti) async {
+    final colori = context.colori;
     final fineSettimana = _inizioSettimana.add(const Duration(days: 6));
     var nuovaDataInizio = _inizioSettimana.add(const Duration(days: 7));
 
@@ -97,16 +98,16 @@ class _CalendarioSettimanaleViewState
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_outlined,
                       size: 16,
-                      color: AppColors.blu,
+                      color: colori.azione,
                     ),
                     const SizedBox(width: AppSpacing.s4),
                     Text(
                       _formattaData(nuovaDataInizio),
                       style: AppTypography.corpoForte.copyWith(
-                        color: AppColors.blu,
+                        color: colori.azione,
                       ),
                     ),
                   ],
@@ -156,6 +157,7 @@ class _CalendarioSettimanaleViewState
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final perGiorno = raggruppaPerGiorno(widget.allenamenti);
     final fineSettimana = _inizioSettimana.add(const Duration(days: 6));
     final oggi = DateTime.now();
@@ -188,9 +190,9 @@ class _CalendarioSettimanaleViewState
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_left,
-                      color: AppColors.testoSecondario,
+                      color: colori.testoSecondario,
                     ),
                     onPressed: () => setState(
                       () => _inizioSettimana = _inizioSettimana.subtract(
@@ -202,14 +204,16 @@ class _CalendarioSettimanaleViewState
                     child: Center(
                       child: Text(
                         '${_formattaData(_inizioSettimana)} — ${_formattaData(fineSettimana)}',
-                        style: AppTypography.sezione,
+                        style: AppTypography.sezione.copyWith(
+                          color: colori.testo,
+                        ),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_right,
-                      color: AppColors.testoSecondario,
+                      color: colori.testoSecondario,
                     ),
                     onPressed: () => setState(
                       () => _inizioSettimana = _inizioSettimana.add(
@@ -229,7 +233,9 @@ class _CalendarioSettimanaleViewState
               if (metriSettimana > 0)
                 Text(
                   'Totale settimana: $metriSettimana m',
-                  style: AppTypography.piccolo,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                 ),
             ],
           ),
@@ -253,16 +259,16 @@ class _CalendarioSettimanaleViewState
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: oggiStesso
-                                ? AppColors.blu
-                                : AppColors.superficieTenue,
+                                ? colori.azione
+                                : colori.superficieAlt,
                             shape: BoxShape.circle,
                           ),
                           child: Text(
                             '${data.day}',
                             style: AppTypography.corpoForte.copyWith(
                               color: oggiStesso
-                                  ? Colors.white
-                                  : AppColors.testo,
+                                  ? colori.azioneInk
+                                  : colori.testo,
                             ),
                           ),
                         ),
