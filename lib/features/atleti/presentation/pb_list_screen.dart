@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -87,9 +87,9 @@ class PbListScreen extends ConsumerWidget {
       ),
     );
 
-    void apriFormTest() => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)),
-    );
+    void apriFormTest() => Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)));
 
     return AppScaffold(
       appBar: AppBar(title: Text('Personal best — ${atleta.nomeCompleto}')),
@@ -157,11 +157,8 @@ class PbListScreen extends ConsumerWidget {
                               _TestTile(
                                 test: t,
                                 atleta: atleta,
-                                onDelete: () => _confermaEliminazioneTest(
-                                  context,
-                                  ref,
-                                  t,
-                                ),
+                                onDelete: () =>
+                                    _confermaEliminazioneTest(context, ref, t),
                               ),
                           ],
                   ),
@@ -231,10 +228,11 @@ class _TestTile extends ConsumerWidget {
     final tabellaGenerata =
         ref.watch(tabellePassiProvider(test.id)).value?.isNotEmpty ?? false;
 
+    final colori = context.colori;
     return AppListRow(
       leading: Icon(
         tabellaGenerata ? Icons.table_chart : Icons.table_chart_outlined,
-        color: tabellaGenerata ? AppColors.ok : AppColors.testoSecondario,
+        color: tabellaGenerata ? colori.ok : colori.testoSecondario,
       ),
       titolo: '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
       sottotitolo:
