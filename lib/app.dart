@@ -8,6 +8,7 @@ import 'core/sync/connectivity_sync_trigger.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/home/home_screen.dart';
 import 'theme/app_theme.dart';
+import 'theme/tema_provider.dart';
 
 class CoachVascaApp extends ConsumerWidget {
   const CoachVascaApp({super.key});
@@ -17,11 +18,14 @@ class CoachVascaApp extends ConsumerWidget {
     ref.watch(connectivitySyncTriggerProvider);
     final authState = ref.watch(authStateChangesProvider);
     final cacheAllineata = ref.watch(cacheLocaleAllineataProvider);
+    final temaApp = ref.watch(temaAppProvider);
 
     return MaterialApp(
       title: 'SwimCoach FIN',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.chiaro,
+      darkTheme: AppTheme.scuro,
+      themeMode: temaApp,
       locale: const Locale('it'),
       supportedLocales: const [Locale('it')],
       localizationsDelegates: const [
