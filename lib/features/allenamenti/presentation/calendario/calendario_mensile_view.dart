@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_typography.dart';
+import '../../../../theme/colori_app.dart';
 import '../../domain/allenamento.dart';
 import 'allenamenti_per_giorno.dart';
 
@@ -48,6 +48,7 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final perGiorno = raggruppaPerGiorno(widget.allenamenti);
     final ultimoGiornoMese = DateTime(_mese.year, _mese.month + 1, 0).day;
     final offsetIniziale = _mese.weekday - 1;
@@ -82,23 +83,17 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(
-                  Icons.chevron_left,
-                  color: AppColors.testoSecondario,
-                ),
+                icon: Icon(Icons.chevron_left, color: colori.testoSecondario),
                 onPressed: () => setState(
                   () => _mese = DateTime(_mese.year, _mese.month - 1),
                 ),
               ),
               Text(
                 '${_nomiMesi[_mese.month - 1]} ${_mese.year}',
-                style: AppTypography.sezione,
+                style: AppTypography.sezione.copyWith(color: colori.testo),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.testoSecondario,
-                ),
+                icon: Icon(Icons.chevron_right, color: colori.testoSecondario),
                 onPressed: () => setState(
                   () => _mese = DateTime(_mese.year, _mese.month + 1),
                 ),
@@ -110,7 +105,14 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
           children: _nomiGiorni
               .map(
                 (g) => Expanded(
-                  child: Center(child: Text(g, style: AppTypography.etichetta)),
+                  child: Center(
+                    child: Text(
+                      g,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                  ),
                 ),
               )
               .toList(),
@@ -141,30 +143,31 @@ class _CellaGiorno extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+      borderRadius: BorderRadius.circular(AppRadius.controllo),
       child: Container(
         margin: const EdgeInsets.all(AppSpacing.s4),
         decoration: BoxDecoration(
-          border: evidenziato ? Border.all(color: AppColors.blu) : null,
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+          border: evidenziato ? Border.all(color: colori.azione) : null,
+          borderRadius: BorderRadius.circular(AppRadius.controllo),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               '$giorno',
-              style: AppTypography.corpo.copyWith(color: AppColors.testo),
+              style: AppTypography.corpo.copyWith(color: colori.testo),
             ),
             const SizedBox(height: 2),
             SizedBox(
               height: 6,
               width: 6,
               child: haAllenamenti
-                  ? const DecoratedBox(
+                  ? DecoratedBox(
                       decoration: BoxDecoration(
-                        color: AppColors.blu,
+                        color: colori.azione,
                         shape: BoxShape.circle,
                       ),
                     )
