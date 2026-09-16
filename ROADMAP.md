@@ -164,6 +164,20 @@ Il coach ha testato di persona la registrazione atleta appena chiusa in FASE 13.
 - [x] **"La mia stagione" resa navigabile**: prima era solo un accenno di testo in home, non cliccabile — nuova `StagioneAtletaScreen` di sola lettura (nome, periodo, campionato, obiettivo), aggiunta al menu della home atleta insieme a PB/carico/presenze/statistiche/partite
 - [x] **Confermato il flusso completo**: inserimento codice → accettazione club e gruppo → anagrafica → home personale, da cui si raggiungono PB (modificabili), carico, presenze, stagione e, solo per la pallanuoto, statistiche e partite
 
+## FASE 15 — DESIGN.md versione 2: tema chiaro/scuro su tutta l'app
+
+DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantici/dominio, layout esplicito con breakpoint). Si procede nell'ordine indicato dalla sua stessa sezione 20, un passo alla volta.
+
+- [x] **Fondamenta** (`lib/theme/`): primitivi, i due set di token (chiaro/scuro), `ColoriApp`/`TokenDominio` (`ThemeExtension`), `AppTheme.chiaro`/`AppTheme.scuro`, `tema_provider.dart`. Nessuna schermata toccata in questo passo — vedi `test/theme/app_theme_test.dart`
+- [x] **Login/registrazione con Google per il coach**: pulsante "Continua con Google" in `LoginScreen`, `AuthRepository.signInWithGoogle()`, schema di redirect nativo registrato per Android/iOS. Richiedeva configurazione esterna (Google Cloud Console + dashboard Supabase, Site URL su Vercel) — fatta e testata il 2026-09-17
+- [x] **Bug trovato testando il login Google su un dispositivo con preferenza di sistema scura**: `MaterialApp` passava davvero ad `AppTheme.scuro`, ma nessuna schermata legge ancora i colori dal tema nuovo (usano tutte `AppColors` fisso, pensato solo per il chiaro) — sfondo scuro corretto, testo illeggibile (es. nei campi di testo). Corretto forzando `ThemeMode.light` a prescindere dal sistema, finché il resto di questa fase non è chiuso
+- [ ] **Punto 1 — Widget condivisi**: `AppTextField`, `AppListPanel`, `AppListRow`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppScaffold`, `AppSelect`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, ecc. (elenco in DESIGN.md sezione 20) — leggono i colori da `context.colori`/`Theme.of(context)` invece che da `AppColors` fisso. Una volta fatto, ogni schermata che li usa migliora automaticamente. **In corso**
+- [ ] **Punto 2 — Schermata pilota**: la scheda atleta (form, gruppi, azione distruttiva, stato vuoto — proposta in DESIGN.md), portata a termine e controllata nei due temi prima di ripetere il lavoro altrove
+- [ ] **Punto 3 — Le tre schermate da bordo vasca** (segna presenze, allenamento in corso, eventi partita)
+- [ ] **Punto 4 — Tutte le altre schermate**, una alla volta
+- [ ] **Punto 5 — Rimozione di `app_colors.dart`** e attivazione di un controllo (lint/ricerca in CI) che tiene onesta la migrazione
+- [ ] **Solo dopo il punto 3** (o comunque quando l'app è pronta a mostrare lo scuro senza rompersi): ricollegare `themeMode: ref.watch(temaAppProvider)` in `app.dart` (oggi forzato su `ThemeMode.light`) e costruire `ThemeToggle` (Sistema/Chiaro/Scuro nelle impostazioni, più l'interruttore a tre stati per le schermate vasca)
+
 ## Punti in sospeso (raccolti dalle fasi precedenti)
 
 Punti non ancora chiusi, spostati qui dalle rispettive fasi (già completate per il resto) per non lasciarli sparsi. Nessuna dipendenza tra loro: da riprendere quando serve, non necessariamente in ordine.
