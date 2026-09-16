@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
@@ -92,19 +92,25 @@ class _GruppiOnboardingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Crea i gruppi di allenamento', style: AppTypography.titoloXl),
+            Text(
+              'Crea i gruppi di allenamento',
+              style: AppTypography.titoloXl.copyWith(color: colori.testo),
+            ),
             const SizedBox(height: AppSpacing.s8),
             Text(
               'Servono per organizzare atleti e allenamenti per gruppo (es. '
               '"U14", "Agonisti"). Ne puoi aggiungere altri in qualsiasi '
               'momento.',
-              style: AppTypography.piccolo,
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
             ),
             const SizedBox(height: AppSpacing.s24),
             for (var i = 0; i < _controller.length; i++) ...[
@@ -118,10 +124,7 @@ class _GruppiOnboardingScreenState
                   ),
                   if (_controller.length > 1)
                     IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: AppColors.testoSecondario,
-                      ),
+                      icon: Icon(Icons.close, color: colori.testoSecondario),
                       tooltip: 'Rimuovi',
                       onPressed: () => _rimuoviRiga(i),
                     ),

@@ -177,7 +177,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
 - [ ] **Punto 4 — Tutte le altre schermate**, una alla volta. Migrate a `context.colori`/`context.dominio`, `flutter analyze` + `flutter test` dopo ognuna, un commit dedicato per schermata:
   - [x] `CsvPreviewScreen`
   - [x] `PartiteAtletaListScreen`
-  - [ ] `GruppiOnboardingScreen`
+  - [x] `GruppiOnboardingScreen`
   - [ ] `CodiciGruppoScreen`
   - [ ] `RefertoPartitaScreen`
   - [ ] `CalendarioMensileView`
