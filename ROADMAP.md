@@ -196,7 +196,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
   - [x] `StatisticheSquadraScreen`
   - [x] `AllenamentoDetailScreen`
   - [x] `DistintaScreen`
-  - [ ] `GeneraSettimanaFormScreen`
+  - [x] `GeneraSettimanaFormScreen`
   - [ ] `LeggiRefertoScreen`
 - [ ] **Punto 5 — Rimozione di `app_colors.dart`** e attivazione di un controllo (lint/ricerca in CI) che tiene onesta la migrazione
 - [ ] **Solo dopo il punto 3** (o comunque quando l'app è pronta a mostrare lo scuro senza rompersi): ricollegare `themeMode: ref.watch(temaAppProvider)` in `app.dart` (oggi forzato su `ThemeMode.light`) e costruire `ThemeToggle` (Sistema/Chiaro/Scuro nelle impostazioni, più l'interruttore a tre stati per le schermate vasca)

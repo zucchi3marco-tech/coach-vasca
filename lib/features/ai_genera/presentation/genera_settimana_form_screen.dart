@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -272,6 +272,7 @@ class _GeneraSettimanaFormScreenState
   @override
   Widget build(BuildContext context) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
+    final colori = context.colori;
 
     return AppScaffold(
       scrollabile: true,
@@ -285,7 +286,9 @@ class _GeneraSettimanaFormScreenState
               'Pianifica le sedute della settimana. Il dettaglio di ogni '
               'seduta si genera subito dopo lo scheletro: la revisione '
               'richiede qualche secondo in più di una singola generazione.',
-              style: AppTypography.piccolo,
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
             ),
             const SizedBox(height: AppSpacing.s16),
             FormGroup(
@@ -339,7 +342,9 @@ class _GeneraSettimanaFormScreenState
                       'una settimana di scarico avrà volumi più bassi di '
                       'una di carico, una di gara punterà su freschezza e '
                       'ritmo gara.',
-                      style: AppTypography.piccolo,
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                   ],
                 ),
@@ -348,7 +353,9 @@ class _GeneraSettimanaFormScreenState
                   children: [
                     Text(
                       'Giorni della settimana',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     Wrap(
@@ -369,7 +376,7 @@ class _GeneraSettimanaFormScreenState
                       Text(
                         _erroreGiorni!,
                         style: AppTypography.piccolo.copyWith(
-                          color: AppColors.rosso,
+                          color: colori.rosso,
                         ),
                       ),
                     ],
@@ -380,7 +387,9 @@ class _GeneraSettimanaFormScreenState
                   children: [
                     Text(
                       'Volume settimanale: ${_volumeSettimanale.round()} m',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     Slider(
                       value: _volumeSettimanale,
@@ -398,7 +407,9 @@ class _GeneraSettimanaFormScreenState
                   children: [
                     Text(
                       'Focus di ogni seduta',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     for (var i = 0; i < _focusPerSeduta.length; i++)
@@ -433,7 +444,12 @@ class _GeneraSettimanaFormScreenState
             ),
             if (_fasePassaggio != null) ...[
               const SizedBox(height: AppSpacing.s12),
-              Text(_fasePassaggio!, style: AppTypography.piccolo),
+              Text(
+                _fasePassaggio!,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
             ],
             const SizedBox(height: AppSpacing.s16),
             PrimaryButton(
@@ -634,6 +650,7 @@ class _RevisioneSettimanaScreenState
       0,
       (tot, v) => tot + v.scheda.volumeTotaleM,
     );
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -644,7 +661,7 @@ class _RevisioneSettimanaScreenState
         children: [
           Text(
             'Totale settimanale: $totaleMetri m',
-            style: AppTypography.corpoForte,
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
           ),
           const SizedBox(height: AppSpacing.s16),
           for (var i = 0; i < _sedute.length; i++) ...[
@@ -695,11 +712,12 @@ class _CardSeduta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioPannello),
-        border: Border.all(color: AppColors.linea),
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border.all(color: colori.linea),
       ),
       padding: const EdgeInsets.all(AppSpacing.paddingPannello),
       child: Opacity(
@@ -710,7 +728,10 @@ class _CardSeduta extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(voce.scheda.titolo, style: AppTypography.titolo),
+                  child: Text(
+                    voce.scheda.titolo,
+                    style: AppTypography.titolo.copyWith(color: colori.testo),
+                  ),
                 ),
                 IconButton(
                   icon: rigenerandoQuesta
@@ -719,16 +740,13 @@ class _CardSeduta extends StatelessWidget {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh, color: AppColors.blu),
+                      : Icon(Icons.refresh, color: colori.azione),
                   tooltip: 'Rigenera questa seduta',
                   onPressed: onRigenera,
                 ),
                 if (onRimuovi != null)
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: AppColors.testoSecondario,
-                    ),
+                    icon: Icon(Icons.close, color: colori.testoSecondario),
                     tooltip: 'Rimuovi questa seduta dal piano',
                     onPressed: rigenerandoQuesta ? null : onRimuovi,
                   ),
@@ -738,16 +756,16 @@ class _CardSeduta extends StatelessWidget {
               onTap: rigenerandoQuesta ? null : onCambiaData,
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.calendar_today_outlined,
                     size: 16,
-                    color: AppColors.blu,
+                    color: colori.azione,
                   ),
                   const SizedBox(width: AppSpacing.s4),
                   Text(
                     formattaData(voce.data),
                     style: AppTypography.corpoForte.copyWith(
-                      color: AppColors.blu,
+                      color: colori.azione,
                     ),
                   ),
                 ],
@@ -756,7 +774,9 @@ class _CardSeduta extends StatelessWidget {
             const SizedBox(height: AppSpacing.s4),
             Text(
               '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m',
-              style: AppTypography.piccolo,
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
             ),
             const Divider(height: AppSpacing.s24),
             for (final s in voce.scheda.serie)
@@ -768,18 +788,30 @@ class _CardSeduta extends StatelessWidget {
                     Text(
                       '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
                       '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                      style: AppTypography.corpoForte,
+                      style: AppTypography.corpoForte.copyWith(
+                        color: colori.testo,
+                      ),
                     ),
-                    Text(sottotitoloSerie(s), style: AppTypography.piccolo),
+                    Text(
+                      sottotitoloSerie(s),
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                     if (s.ripartenzePerCorsia.isNotEmpty)
                       Text(
                         formattaRipartenzeCorsia(s.ripartenzePerCorsia),
                         style: AppTypography.piccolo.copyWith(
-                          color: AppColors.blu,
+                          color: colori.azione,
                         ),
                       ),
                     if (s.note != null && s.note!.isNotEmpty)
-                      Text(s.note!, style: AppTypography.piccolo),
+                      Text(
+                        s.note!,
+                        style: AppTypography.piccolo.copyWith(
+                          color: colori.testoSecondario,
+                        ),
+                      ),
                   ],
                 ),
               ),
