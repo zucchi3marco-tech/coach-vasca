@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -163,6 +163,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   @override
   Widget build(BuildContext context) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -171,11 +172,8 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           if (_isEditing)
             TextButton.icon(
               onPressed: _elimina,
-              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
-              label: const Text(
-                'Elimina',
-                style: TextStyle(color: AppColors.rosso),
-              ),
+              icon: Icon(Icons.delete_outline, color: colori.rosso),
+              label: Text('Elimina', style: TextStyle(color: colori.rosso)),
             ),
         ],
       ),
