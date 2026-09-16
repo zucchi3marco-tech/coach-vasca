@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -86,6 +86,7 @@ class StagioneDetailScreen extends ConsumerWidget {
         sport == null || sport == 'pallanuoto' || sport == 'nuoto_pallanuoto';
     final mostraNuoto =
         sport == null || sport == 'nuoto' || sport == 'nuoto_pallanuoto';
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(
@@ -110,8 +111,8 @@ class StagioneDetailScreen extends ConsumerWidget {
                   _elimina(context, ref);
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
                 value: _AzioneStagione.duplica,
                 child: Row(
                   children: [
@@ -121,7 +122,7 @@ class StagioneDetailScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: _AzioneStagione.modifica,
                 child: Row(
                   children: [
@@ -135,13 +136,9 @@ class StagioneDetailScreen extends ConsumerWidget {
                 value: _AzioneStagione.elimina,
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: AppColors.rosso,
-                    ),
-                    SizedBox(width: AppSpacing.s12),
-                    Text('Elimina', style: TextStyle(color: AppColors.rosso)),
+                    Icon(Icons.delete_outline, size: 20, color: colori.rosso),
+                    const SizedBox(width: AppSpacing.s12),
+                    Text('Elimina', style: TextStyle(color: colori.rosso)),
                   ],
                 ),
               ),
@@ -162,12 +159,15 @@ class StagioneDetailScreen extends ConsumerWidget {
                   '${_formattaData(stagione.dataFine)}'
                   '${nomeGruppo != null ? ' · $nomeGruppo' : ''}'
                   '${stagione.campionato != null && stagione.campionato!.isNotEmpty ? ' · ${stagione.campionato}' : ''}',
-                  style: AppTypography.sezione,
+                  style: AppTypography.sezione.copyWith(color: colori.testo),
                 ),
                 if (stagione.obiettivo != null &&
                     stagione.obiettivo!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s4),
-                  Text(stagione.obiettivo!, style: AppTypography.corpo),
+                  Text(
+                    stagione.obiettivo!,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
                 ],
               ],
             ),

@@ -181,7 +181,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
   - [x] `CodiciGruppoScreen`
   - [x] `RefertoPartitaScreen`
   - [x] `CalendarioMensileView`
-  - [ ] `StagioneDetailScreen`
+  - [x] `StagioneDetailScreen`
   - [ ] `SchedaGeneratateScreen`
   - [ ] `MiePresenzeScreen`
   - [ ] `GruppiManagementScreen`
