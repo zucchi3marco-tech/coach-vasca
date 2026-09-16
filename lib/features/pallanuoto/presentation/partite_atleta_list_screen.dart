@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -129,7 +129,9 @@ class _RigaPartita extends ConsumerWidget {
           ? null
           : Text(
               '${risultato.golCasa} - ${risultato.golTrasferta}',
-              style: AppTypography.corpoForte.copyWith(color: AppColors.testo),
+              style: AppTypography.corpoForte.copyWith(
+                color: context.colori.testo,
+              ),
             ),
       onTap: risultato == null ? null : () => _apriAzioni(context),
     );
