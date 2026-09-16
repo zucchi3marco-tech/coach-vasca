@@ -190,7 +190,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
   - [x] `PbListScreen`
   - [x] `CalendarioSettimanaleView`
   - [x] `CaricoAtletaScreen`
-  - [ ] `StrokeRateScreen`
+  - [x] `StrokeRateScreen`
   - [ ] `SerieFormScreen`
   - [ ] `PartitaFormScreen`
   - [ ] `StatisticheSquadraScreen`

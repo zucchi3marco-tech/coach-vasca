@@ -5,9 +5,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -274,6 +274,7 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
   }
 
   Widget _buildBody(BuildContext context) {
+    final colori = context.colori;
     if (_errore != null) {
       return Center(
         child: Padding(
@@ -290,7 +291,10 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
           children: [
             const LoadingSkeleton(width: 280, height: 200),
             const SizedBox(height: AppSpacing.s12),
-            Text('Avvio fotocamera...', style: AppTypography.corpo),
+            Text(
+              'Avvio fotocamera...',
+              style: AppTypography.corpo.copyWith(color: colori.testo),
+            ),
           ],
         ),
       );
@@ -310,7 +314,9 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
                     '"Registra": la clip dura 15 secondi. Stima '
                     'sperimentale: verificala sempre con un conteggio '
                     'manuale.',
-                    style: AppTypography.piccolo,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.s12),
@@ -333,9 +339,12 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.circle, size: 12, color: AppColors.rosso),
+                  Icon(Icons.circle, size: 12, color: colori.rosso),
                   const SizedBox(width: AppSpacing.s8),
-                  Text('$_secondiRimasti s', style: AppTypography.display),
+                  Text(
+                    '$_secondiRimasti s',
+                    style: AppTypography.display.copyWith(color: colori.testo),
+                  ),
                 ],
               ),
             ),
@@ -348,7 +357,10 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
             children: [
               const LoadingSkeleton(width: 200, height: 16),
               const SizedBox(height: AppSpacing.s12),
-              Text('Elaborazione...', style: AppTypography.corpo),
+              Text(
+                'Elaborazione...',
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
             ],
           ),
         );
@@ -367,9 +379,11 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
                             'nuotatore, possibilmente da bordo vasca a '
                             'livello dell\'acqua.'
                       : '${valore.round()} bracciate/min',
-                  style: valore == null
-                      ? AppTypography.titolo
-                      : AppTypography.display,
+                  style:
+                      (valore == null
+                              ? AppTypography.titolo
+                              : AppTypography.display)
+                          .copyWith(color: colori.testo),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.s8),
@@ -377,7 +391,9 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
                   'Stima sperimentale dal movimento del polso: verifica '
                   'sempre con un conteggio manuale prima di fidartene. '
                   'Il risultato non viene salvato.',
-                  style: AppTypography.piccolo,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.s16),
