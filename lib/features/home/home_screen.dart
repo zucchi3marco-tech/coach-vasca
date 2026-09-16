@@ -6,6 +6,7 @@ import '../../core/utils/error_messages.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_skeleton.dart';
+import '../../widgets/theme_toggle.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/application/current_atleta_provider.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
@@ -219,6 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () =>
                   ref.read(selezioneGruppoProvider.notifier).scegli(null),
             ),
+          const ThemeToggle(),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',

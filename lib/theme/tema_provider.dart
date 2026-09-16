@@ -89,6 +89,22 @@ final temaAppProvider = NotifierProvider<TemaAppNotifier, ThemeMode>(
   TemaAppNotifier.new,
 );
 
+/// Etichetta/icona per [ThemeToggle] (Impostazioni → Aspetto, DESIGN.md
+/// sezione 15) — stesso pattern di [TemaBordoVasca.etichetta]/`.icona`.
+extension EtichettaThemeMode on ThemeMode {
+  String get etichetta => switch (this) {
+    ThemeMode.system => 'Sistema',
+    ThemeMode.light => 'Chiaro',
+    ThemeMode.dark => 'Scuro',
+  };
+
+  IconData get icona => switch (this) {
+    ThemeMode.system => Icons.brightness_auto_outlined,
+    ThemeMode.light => Icons.light_mode_outlined,
+    ThemeMode.dark => Icons.dark_mode_outlined,
+  };
+}
+
 /// Override bordo vasca (DESIGN.md sezione 15), usato dalle tre
 /// schermate da bordo vasca tramite [temaBordoVascaDa] e
 /// [BottoneTemaBordoVasca] nell'AppBar di ciascuna.
