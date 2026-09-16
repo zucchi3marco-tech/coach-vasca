@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/cap_badge.dart';
@@ -60,6 +60,7 @@ class DistintaScreen extends ConsumerWidget {
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: partita.clubId, includeInactive: false)),
     );
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(
@@ -145,12 +146,15 @@ class DistintaScreen extends ConsumerWidget {
                   '${_formattaData(partita.data)}'
                   '${partita.ora != null && partita.ora!.isNotEmpty ? ' · ${partita.ora}' : ''}'
                   '${partita.luogo != null && partita.luogo!.isNotEmpty ? ' · ${partita.luogo}' : ''}',
-                  style: AppTypography.sezione,
+                  style: AppTypography.sezione.copyWith(color: colori.testo),
                 ),
                 if (partita.campionato != null &&
                     partita.campionato!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s4),
-                  Text(partita.campionato!, style: AppTypography.corpo),
+                  Text(
+                    partita.campionato!,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
                 ],
                 if (partita.coloreCalottina != null &&
                     partita.coloreCalottina!.isNotEmpty) ...[
@@ -158,7 +162,9 @@ class DistintaScreen extends ConsumerWidget {
                   Text(
                     'Calottina: '
                     '${partita.coloreCalottina == 'blu' ? 'Blu' : 'Bianca'}',
-                    style: AppTypography.piccolo,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.s8),
@@ -166,7 +172,9 @@ class DistintaScreen extends ConsumerWidget {
                   data: (convocati) => Text(
                     '${convocati.length}/${partita.numeroMaxConvocati} '
                     'convocati',
-                    style: AppTypography.piccolo,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                   ),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
@@ -280,11 +288,15 @@ class _VoceMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Row(
       children: [
-        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        Icon(icona, size: 20, color: colori.testoSecondario),
         const SizedBox(width: AppSpacing.s12),
-        Text(etichetta, style: AppTypography.corpo),
+        Text(
+          etichetta,
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+        ),
       ],
     );
   }
@@ -308,6 +320,7 @@ class _RigaConvocato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     final ruoli = <String>[
       if (giocatore.capitano) 'Capitano',
       if (giocatore.viceCapitano) 'Vice capitano',
@@ -346,12 +359,17 @@ class _RigaConvocato extends StatelessWidget {
                     Text(
                       atleta?.nomeCompleto ?? 'Atleta rimosso',
                       style: AppTypography.corpoForte.copyWith(
-                        color: AppColors.testo,
+                        color: colori.testo,
                       ),
                     ),
                     if (tessera != null && tessera.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text('Tessera $tessera', style: AppTypography.piccolo),
+                      Text(
+                        'Tessera $tessera',
+                        style: AppTypography.piccolo.copyWith(
+                          color: colori.testoSecondario,
+                        ),
+                      ),
                     ],
                     if (ruoli.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.s4),
@@ -363,7 +381,7 @@ class _RigaConvocato extends StatelessWidget {
                             Text(
                               r,
                               style: AppTypography.piccolo.copyWith(
-                                color: AppColors.blu,
+                                color: colori.azione,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -426,7 +444,9 @@ class _DialogSelezionaAtleta extends ConsumerWidget {
             if (disponibili.isEmpty) {
               return Text(
                 'Nessun atleta di pallanuoto disponibile da convocare.',
-                style: AppTypography.corpo,
+                style: AppTypography.corpo.copyWith(
+                  color: context.colori.testo,
+                ),
               );
             }
             return SizedBox(
@@ -570,6 +590,7 @@ class _DialogModificaConvocatoState
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return AlertDialog(
       title: const Text('Convocato'),
       content: SingleChildScrollView(
@@ -617,7 +638,7 @@ class _DialogModificaConvocatoState
               const SizedBox(height: AppSpacing.s8),
               Text(
                 _errore!,
-                style: AppTypography.piccolo.copyWith(color: AppColors.rosso),
+                style: AppTypography.piccolo.copyWith(color: colori.rosso),
               ),
             ],
           ],
@@ -626,7 +647,7 @@ class _DialogModificaConvocatoState
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : _rimuovi,
-          style: TextButton.styleFrom(foregroundColor: AppColors.rosso),
+          style: TextButton.styleFrom(foregroundColor: colori.rosso),
           child: const Text('Rimuovi'),
         ),
         TextButton(

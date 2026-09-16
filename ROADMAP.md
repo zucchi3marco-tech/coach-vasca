@@ -195,7 +195,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
   - [x] `PartitaFormScreen`
   - [x] `StatisticheSquadraScreen`
   - [x] `AllenamentoDetailScreen`
-  - [ ] `DistintaScreen`
+  - [x] `DistintaScreen`
   - [ ] `GeneraSettimanaFormScreen`
   - [ ] `LeggiRefertoScreen`
 - [ ] **Punto 5 — Rimozione di `app_colors.dart`** e attivazione di un controllo (lint/ricerca in CI) che tiene onesta la migrazione
