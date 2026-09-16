@@ -5,28 +5,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:coach_vasca/features/auth/presentation/login_screen.dart';
 
 void main() {
-  testWidgets('LoginScreen mostra i campi email, password e il bottone Accedi', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: LoginScreen()),
-      ),
-    );
+  testWidgets(
+    'LoginScreen mostra i campi email, password e il bottone Accedi',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: LoginScreen())),
+      );
 
-    expect(find.text('SwimCoach FIN'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Accedi'), findsOneWidget);
-  });
+      expect(find.text('SwimCoach FIN'), findsOneWidget);
+      // AppTextField mostra l'etichetta come Text separato sopra il campo,
+      // mai come InputDecoration.labelText flottante (DESIGN.md sezione 8):
+      // "Email"/"Password" sono quindi fratelli del TextFormField, non suoi
+      // discendenti — vedi lib/widgets/app_text_field.dart.
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.byType(TextFormField), findsNWidgets(2));
+      expect(find.widgetWithText(FilledButton, 'Accedi'), findsOneWidget);
+    },
+  );
 
   testWidgets('mostra un errore se si tenta il login senza compilare i campi', (
     tester,
   ) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: LoginScreen()),
-      ),
+      const ProviderScope(child: MaterialApp(home: LoginScreen())),
     );
 
     await tester.tap(find.widgetWithText(FilledButton, 'Accedi'));
