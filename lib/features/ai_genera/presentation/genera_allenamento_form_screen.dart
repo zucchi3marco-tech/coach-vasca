@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -66,6 +67,7 @@ class _GeneraAllenamentoFormScreenState
   @override
   Widget build(BuildContext context) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -109,7 +111,9 @@ class _GeneraAllenamentoFormScreenState
                   children: [
                     Text(
                       'Volume totale: ${_volumeMetri.round()} m',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     Slider(
                       value: _volumeMetri,
@@ -144,7 +148,12 @@ class _GeneraAllenamentoFormScreenState
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Regimi ammessi', style: AppTypography.etichetta),
+                    Text(
+                      'Regimi ammessi',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.s8),
                     Wrap(
                       spacing: AppSpacing.s8,

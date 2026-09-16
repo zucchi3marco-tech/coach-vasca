@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
@@ -28,6 +29,7 @@ class StagioneAtletaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stagioniAsync = ref.watch(stagioniListProvider(atleta.clubId));
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(title: const Text('La mia stagione')),
@@ -47,24 +49,45 @@ class StagioneAtletaScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(corrente.nome, style: AppTypography.titoloXl),
+                Text(
+                  corrente.nome,
+                  style: AppTypography.titoloXl.copyWith(color: colori.testo),
+                ),
                 const SizedBox(height: AppSpacing.s4),
                 Text(
                   '${_formattaData(corrente.dataInizio)} - '
                   '${_formattaData(corrente.dataFine)}',
-                  style: AppTypography.piccolo,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                 ),
                 if (corrente.campionato != null) ...[
                   const SizedBox(height: AppSpacing.s24),
-                  Text('Campionato', style: AppTypography.etichetta),
+                  Text(
+                    'Campionato',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.s4),
-                  Text(corrente.campionato!, style: AppTypography.corpo),
+                  Text(
+                    corrente.campionato!,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
                 ],
                 if (corrente.obiettivo != null) ...[
                   const SizedBox(height: AppSpacing.s24),
-                  Text('Obiettivo', style: AppTypography.etichetta),
+                  Text(
+                    'Obiettivo',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.s4),
-                  Text(corrente.obiettivo!, style: AppTypography.corpo),
+                  Text(
+                    corrente.obiettivo!,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
                 ],
               ],
             ),

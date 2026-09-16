@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -42,7 +43,9 @@ class _SelettoreStagioneState extends ConsumerState<SelettoreStagione> {
           return Text(
             'Nessuna stagione creata: creane una (tab "Stagioni") per '
             'vedere le statistiche stagionali.',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: context.colori.testoSecondario,
+            ),
           );
         }
         final ordinate = [...stagioni]

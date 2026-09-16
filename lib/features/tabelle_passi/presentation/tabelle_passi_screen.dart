@@ -5,6 +5,7 @@ import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
@@ -106,6 +107,7 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
   @override
   Widget build(BuildContext context) {
     final esistentiAsync = ref.watch(tabellePassiProvider(widget.test.id));
+    final colori = context.colori;
 
     esistentiAsync.whenData(_prefillDaEsistenti);
 
@@ -120,13 +122,17 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
           Text(
             '${widget.test.tipo} · passo medio '
             '${formatPaceSeconds(widget.test.passoMedio100S)}/100m',
-            style: AppTypography.cifreTabulari(AppTypography.corpo),
+            style: AppTypography.numerica(
+              AppTypography.corpo.copyWith(color: colori.testo),
+            ),
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
             'Percentuali di partenza generiche: modificale liberamente in '
             'base alla tua metodologia prima di generare.',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
           const SizedBox(height: AppSpacing.s16),
           for (final zona in ordineZone) ...[
@@ -141,7 +147,9 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
                       decimal: true,
                     ),
                     style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpo),
+                      AppTypography.numerica(
+                        AppTypography.corpo.copyWith(color: colori.testo),
+                      ),
                     ),
                     decoration: const InputDecoration(
                       labelText: '% del passo medio',
@@ -156,7 +164,9 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
                     '${formatPaceSeconds(_passoPerZona(zona))}/100m',
                     textAlign: TextAlign.end,
                     style: AppTypography.condensata(
-                      AppTypography.cifreTabulari(AppTypography.corpoForte),
+                      AppTypography.numerica(
+                        AppTypography.corpoForte.copyWith(color: colori.testo),
+                      ),
                     ),
                   ),
                 ),

@@ -244,7 +244,10 @@ class LegendaCampoTiro extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.s4),
-        Text(etichetta, style: AppTypography.piccolo),
+        Text(
+          etichetta,
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+        ),
       ],
     );
     return Wrap(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../application/gruppi_providers.dart';
@@ -37,7 +38,9 @@ class GruppiChooserScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'Con chi lavori oggi?',
-                    style: AppTypography.titoloXl,
+                    style: AppTypography.titoloXl.copyWith(
+                      color: context.colori.testo,
+                    ),
                   ),
                 ),
                 IconButton(

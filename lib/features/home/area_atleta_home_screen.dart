@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../theme/colori_app.dart';
 import '../../widgets/app_list_panel.dart';
 import '../../widgets/app_list_row.dart';
 import '../../widgets/stat_panel.dart';
@@ -40,6 +41,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final clubAsync = ref.watch(currentClubProvider);
+    final colori = context.colori;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -47,11 +49,18 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(atleta.nomeCompleto, style: AppTypography.titoloXl),
+            Text(
+              atleta.nomeCompleto,
+              style: AppTypography.titoloXl.copyWith(color: colori.testo),
+            ),
             const SizedBox(height: AppSpacing.s4),
             clubAsync.when(
-              data: (club) =>
-                  Text(club?.nome ?? '', style: AppTypography.piccolo),
+              data: (club) => Text(
+                club?.nome ?? '',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
             ),
@@ -177,6 +186,7 @@ class _RiepilogoOggi extends ConsumerWidget {
     final stagioneCorrente = stagioniAsync.hasValue
         ? stagioneCorrenteDiGruppo(stagioniAsync.value!, atleta.gruppoId)
         : null;
+    final colori = context.colori;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +205,9 @@ class _RiepilogoOggi extends ConsumerWidget {
             'Stagione in corso: ${stagioneCorrente.nome} '
             '(${_formattaData(stagioneCorrente.dataInizio)} - '
             '${_formattaData(stagioneCorrente.dataFine)})',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
         ],
       ],
@@ -215,6 +227,7 @@ class _ProssimiAllenamenti extends ConsumerWidget {
     final allenamentiAsync = ref.watch(
       allenamentiAtletaProvider(atleta.clubId),
     );
+    final colori = context.colori;
 
     return allenamentiAsync.when(
       data: (allenamenti) {
@@ -238,11 +251,18 @@ class _ProssimiAllenamenti extends ConsumerWidget {
           children: [
             Text(
               'Allenamenti dei prossimi 7 giorni',
-              style: AppTypography.etichetta,
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
             ),
             const SizedBox(height: AppSpacing.s8),
             if (prossimi.isEmpty)
-              Text('Nessuno in programma.', style: AppTypography.piccolo)
+              Text(
+                'Nessuno in programma.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              )
             else
               AppListPanel(
                 righe: [
@@ -279,7 +299,12 @@ class _ProssimoEvento extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Prossimo evento', style: AppTypography.etichetta),
+            Text(
+              'Prossimo evento',
+              style: AppTypography.etichetta.copyWith(
+                color: context.colori.testoSecondario,
+              ),
+            ),
             const SizedBox(height: AppSpacing.s8),
             AppListPanel(
               righe: [

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -85,6 +86,7 @@ class _DatiAtleta extends ConsumerWidget {
     );
     final refertiAsync = ref.watch(riepilogoRefertiProvider(chiave));
     final eventiAsync = ref.watch(riepilogoEventiProvider(chiave));
+    final colori = context.colori;
 
     return refertiAsync.when(
       data: (r) => eventiAsync.when(
@@ -97,13 +99,15 @@ class _DatiAtleta extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s8),
               Text(
                 'Non include i tiri sbagliati (non registrati nel referto).',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s16),
               if (rigaReferti == null)
                 Text(
                   'Nessun dato da referto in questa stagione.',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else
                 Wrap(
@@ -130,13 +134,15 @@ class _DatiAtleta extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s8),
               Text(
                 'Solo dalle partite seguite dal vivo con "Eventi partita".',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               const SizedBox(height: AppSpacing.s16),
               if (rigaEventi == null)
                 Text(
                   'Nessun evento registrato in questa stagione.',
-                  style: AppTypography.corpo,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else ...[
                 Wrap(
@@ -194,8 +200,7 @@ class _DatiAtleta extends ConsumerWidget {
       loading: () => const LoadingSkeletonList(righe: 4),
       error: (err, _) => ErrorBanner(
         messaggio: 'Non è stato possibile caricare i referti.',
-        suggerimento:
-            'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(err),
       ),
     );
@@ -228,7 +233,9 @@ class _SezioneMappaTiri extends ConsumerWidget {
             if (conPosizione.isEmpty) {
               return Text(
                 'Nessun tiro con posizione registrato per questo atleta.',
-                style: AppTypography.piccolo,
+                style: AppTypography.piccolo.copyWith(
+                  color: context.colori.testoSecondario,
+                ),
               );
             }
             return Column(

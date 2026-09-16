@@ -527,6 +527,7 @@ class _AzioniEvento extends ConsumerWidget {
       'superiorita' => esitiSuperiorita,
       _ => const <(String, String)>[],
     };
+    final colori = context.colori;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s16),
@@ -535,7 +536,12 @@ class _AzioniEvento extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (opzioniEsito.isNotEmpty) ...[
-              Text('Modifica esito', style: AppTypography.etichetta),
+              Text(
+                'Modifica esito',
+                style: AppTypography.etichetta.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
               const SizedBox(height: AppSpacing.s8),
               for (final (valore, etichetta) in opzioniEsito) ...[
                 SizedBox(

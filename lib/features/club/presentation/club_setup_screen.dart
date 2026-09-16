@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
@@ -189,7 +190,9 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                     const SizedBox(height: AppSpacing.s16),
                     Text(
                       'Categorie allenate (facoltativo)',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: context.colori.testoSecondario,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     Wrap(
