@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
@@ -270,6 +270,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -278,11 +279,8 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           if (_isEditing)
             TextButton.icon(
               onPressed: _elimina,
-              icon: const Icon(Icons.delete_outline, color: AppColors.rosso),
-              label: const Text(
-                'Elimina',
-                style: TextStyle(color: AppColors.rosso),
-              ),
+              icon: Icon(Icons.delete_outline, color: colori.rosso),
+              label: Text('Elimina', style: TextStyle(color: colori.rosso)),
             ),
         ],
       ),
@@ -311,7 +309,12 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('La mia squadra', style: AppTypography.etichetta),
+                    Text(
+                      'La mia squadra',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
                       segments: const [
@@ -352,7 +355,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   Text(
                     'Campionato: $_campionatoAnteprima (dalla stagione in '
                     'corso a questa data)',
-                    style: AppTypography.piccolo,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                   )
                 else
                   Column(
@@ -362,7 +367,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       Text(
                         'Nessuna stagione copre questa data: il campionato '
                         'non verrà compilato.',
-                        style: AppTypography.piccolo,
+                        style: AppTypography.piccolo.copyWith(
+                          color: colori.testoSecondario,
+                        ),
                       ),
                       TextButton(
                         style: TextButton.styleFrom(
@@ -388,7 +395,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   children: [
                     Text(
                       'Numero massimo convocati',
-                      style: AppTypography.etichetta,
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
@@ -410,7 +419,12 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Dettaglio tiro', style: AppTypography.etichetta),
+                    Text(
+                      'Dettaglio tiro',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
                       segments: const [
@@ -432,7 +446,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       'Semplice: solo Gol/Non gol. Dettagliato: distingue '
                       'anche un tiro parato da uno andato a vuoto (palo o '
                       'fuori).',
-                      style: AppTypography.piccolo,
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
                   ],
                 ),
