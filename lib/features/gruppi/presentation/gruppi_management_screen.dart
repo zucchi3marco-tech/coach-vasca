@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -148,6 +148,7 @@ class _GruppiManagementScreenState
   @override
   Widget build(BuildContext context) {
     final gruppiAsync = ref.watch(gruppiListProvider(widget.clubId));
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: const Text('Gestisci gruppi')),
@@ -189,9 +190,9 @@ class _GruppiManagementScreenState
                         AppListRow(
                           titolo: g.nome,
                           trailing: PopupMenuButton<VoidCallback>(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.more_vert,
-                              color: AppColors.testoSecondario,
+                              color: colori.testoSecondario,
                             ),
                             onSelected: (azione) => azione(),
                             itemBuilder: (context) => [
@@ -210,9 +211,9 @@ class _GruppiManagementScreenState
                               ),
                               PopupMenuItem(
                                 value: () => _elimina(g),
-                                child: const Text(
+                                child: Text(
                                   'Elimina',
-                                  style: TextStyle(color: AppColors.rosso),
+                                  style: TextStyle(color: colori.rosso),
                                 ),
                               ),
                             ],
