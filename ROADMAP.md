@@ -194,7 +194,7 @@ DESIGN.md riscritto (tema chiaro e scuro, token a tre livelli primitivi/semantic
   - [x] `SerieFormScreen`
   - [x] `PartitaFormScreen`
   - [x] `StatisticheSquadraScreen`
-  - [ ] `AllenamentoDetailScreen`
+  - [x] `AllenamentoDetailScreen`
   - [ ] `DistintaScreen`
   - [ ] `GeneraSettimanaFormScreen`
   - [ ] `LeggiRefertoScreen`

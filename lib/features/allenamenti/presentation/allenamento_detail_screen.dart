@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/domain_tokens.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
@@ -178,6 +178,7 @@ class _AllenamentoDetailScreenState
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
     final serieAttuale = serieAsync.value ?? const [];
     final parsedRapida = parseSerieRapida(_quickController.text);
+    final colori = context.colori;
 
     return AppScaffold(
       appBar: AppBar(
@@ -267,12 +268,15 @@ class _AllenamentoDetailScreenState
                   '${allenamento.data.month.toString().padLeft(2, '0')}/'
                   '${allenamento.data.year}'
                   '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
-                  style: AppTypography.sezione,
+                  style: AppTypography.sezione.copyWith(color: colori.testo),
                 ),
                 if (allenamento.note != null &&
                     allenamento.note!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s4),
-                  Text(allenamento.note!, style: AppTypography.corpo),
+                  Text(
+                    allenamento.note!,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
                 ],
               ],
             ),
@@ -325,7 +329,9 @@ class _AllenamentoDetailScreenState
                         children: [
                           Text(
                             'Totale: $totaleMetri m',
-                            style: AppTypography.corpoForte,
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.s4),
                           Wrap(
@@ -337,7 +343,9 @@ class _AllenamentoDetailScreenState
                                   Text(
                                     '${labelBlocco(blocco)} '
                                     '${metriPerBlocco[blocco]} m',
-                                    style: AppTypography.piccolo,
+                                    style: AppTypography.piccolo.copyWith(
+                                      color: colori.testoSecondario,
+                                    ),
                                   ),
                             ],
                           ),
@@ -357,7 +365,9 @@ class _AllenamentoDetailScreenState
                           children: [
                             Text(
                               'Materiale utilizzato',
-                              style: AppTypography.etichetta,
+                              style: AppTypography.etichetta.copyWith(
+                                color: colori.testoSecondario,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.s8),
                             Wrap(
@@ -378,12 +388,10 @@ class _AllenamentoDetailScreenState
                             _riordinaSerie(serie, oldIndex, newIndex),
                         itemBuilder: (context, index) {
                           final s = serie[index];
-                          final tokens =
-                              Theme.of(context).extension<DomainTokens>() ??
-                              DomainTokens.standard;
-                          final coloreZona = s.zona != null
-                              ? tokens.colorePerZona(s.zona)
-                              : AppColors.linea;
+                          final coloreZona = context.dominio.colorePerZona(
+                            s.zona,
+                            rispetto: colori.linea,
+                          );
                           final meta = <String>[];
                           if (s.passoObiettivoS != null) {
                             meta.add(
@@ -425,15 +433,15 @@ class _AllenamentoDetailScreenState
                                             width: 28,
                                             height: 28,
                                             alignment: Alignment.center,
-                                            decoration: const BoxDecoration(
-                                              color: AppColors.bluTenue,
+                                            decoration: BoxDecoration(
+                                              color: colori.azioneTenue,
                                               shape: BoxShape.circle,
                                             ),
                                             child: Text(
                                               '${s.ordine}',
                                               style: AppTypography.piccolo
                                                   .copyWith(
-                                                    color: AppColors.blu,
+                                                    color: colori.azione,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                             ),
@@ -446,7 +454,7 @@ class _AllenamentoDetailScreenState
                                               '${labelEsecuzione(s.esecuzione)}',
                                               style: AppTypography.corpoForte
                                                   .copyWith(
-                                                    color: AppColors.testo,
+                                                    color: colori.testo,
                                                   ),
                                             ),
                                           ),
@@ -457,7 +465,10 @@ class _AllenamentoDetailScreenState
                                         children: [
                                           Text(
                                             labelBlocco(s.blocco),
-                                            style: AppTypography.etichetta,
+                                            style: AppTypography.etichetta
+                                                .copyWith(
+                                                  color: colori.testoSecondario,
+                                                ),
                                           ),
                                           if (s.zona != null) ...[
                                             const SizedBox(
@@ -476,7 +487,11 @@ class _AllenamentoDetailScreenState
                                             for (final m in meta)
                                               Text(
                                                 m,
-                                                style: AppTypography.piccolo,
+                                                style: AppTypography.piccolo
+                                                    .copyWith(
+                                                      color: colori
+                                                          .testoSecondario,
+                                                    ),
                                               ),
                                           ],
                                         ),
@@ -561,8 +576,8 @@ class _AllenamentoDetailScreenState
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.add_circle),
                   color: parsedRapida != null
-                      ? AppColors.blu
-                      : AppColors.testoTenue,
+                      ? colori.azione
+                      : colori.testoTenue,
                   onPressed: (parsedRapida != null && !_aggiuntaInCorso)
                       ? () => _aggiungiRapida(serieAttuale.length + 1)
                       : null,
@@ -584,11 +599,15 @@ class _VoceMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Row(
       children: [
-        Icon(icona, size: 20, color: AppColors.testoSecondario),
+        Icon(icona, size: 20, color: colori.testoSecondario),
         const SizedBox(width: AppSpacing.s12),
-        Text(etichetta, style: AppTypography.corpo),
+        Text(
+          etichetta,
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+        ),
       ],
     );
   }
