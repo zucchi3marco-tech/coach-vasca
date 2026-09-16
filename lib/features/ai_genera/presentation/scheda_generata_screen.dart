@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/form_group.dart';
@@ -149,6 +149,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   @override
   Widget build(BuildContext context) {
     final scheda = widget.scheda;
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: Text(scheda.titolo)),
@@ -157,11 +158,16 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
         children: [
           Text(
             'Volume totale: ${scheda.volumeTotaleM} m',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
           if (scheda.note != null && scheda.note!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.s4),
-            Text(scheda.note!, style: AppTypography.corpo),
+            Text(
+              scheda.note!,
+              style: AppTypography.corpo.copyWith(color: colori.testo),
+            ),
           ],
           const SizedBox(height: AppSpacing.s16),
           FormGroup(
@@ -187,18 +193,30 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
                   Text(
                     '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
                     '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                    style: AppTypography.corpoForte,
+                    style: AppTypography.corpoForte.copyWith(
+                      color: colori.testo,
+                    ),
                   ),
-                  Text(_sottotitoloSerie(s), style: AppTypography.piccolo),
+                  Text(
+                    _sottotitoloSerie(s),
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
                   if (s.ripartenzePerCorsia.isNotEmpty)
                     Text(
                       _ripartenzeSerie(s),
                       style: AppTypography.piccolo.copyWith(
-                        color: AppColors.blu,
+                        color: colori.azione,
                       ),
                     ),
                   if (s.note != null && s.note!.isNotEmpty)
-                    Text(s.note!, style: AppTypography.piccolo),
+                    Text(
+                      s.note!,
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
                 ],
               ),
             ),
