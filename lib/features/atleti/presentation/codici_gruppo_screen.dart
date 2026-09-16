@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -89,6 +89,7 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
   @override
   Widget build(BuildContext context) {
     final codici = _codici;
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: Text('Codice — ${widget.gruppo.nome}')),
@@ -100,7 +101,9 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
             'condividilo una sola volta, ogni atleta che lo usa compila da '
             'solo la propria anagrafica e resta già assegnato a questo '
             'gruppo. Controlla i dati dopo la registrazione.',
-            style: AppTypography.piccolo,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
           const SizedBox(height: AppSpacing.s16),
           PrimaryButton(
@@ -137,9 +140,9 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
                     trailing: c.scaduto
                         ? null
                         : IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.copy_outlined,
-                              color: AppColors.testoSecondario,
+                              color: colori.testoSecondario,
                             ),
                             tooltip: 'Copia codice',
                             onPressed: () => _copia(c.codice),
