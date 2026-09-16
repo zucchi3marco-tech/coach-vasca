@@ -1,20 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../theme/tema_bordo_vasca_provider.dart';
+import '../theme/tema_provider.dart';
 
-/// Interruttore chiaro/scuro per le tre schermate da bordo vasca — vedi
-/// DESIGN.md sezione 9. Va nell'AppBar di ciascuna delle tre.
+/// Selettore del tema per le tre schermate da bordo vasca — DESIGN.md
+/// sezione 15. Va nell'AppBar di ciascuna delle tre. Tre scelte esplicite
+/// (Segui l'app / Chiaro / Scuro) invece di un singolo tap che cicla,
+/// perché la scelta va compresa a colpo d'occhio da chi non conosce
+/// il gergo tecnico.
 class BottoneTemaBordoVasca extends ConsumerWidget {
   const BottoneTemaBordoVasca({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scuro = ref.watch(temaBordoVascaScuroProvider);
-    return IconButton(
-      icon: Icon(scuro ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-      tooltip: scuro ? 'Passa al chiaro' : 'Passa allo scuro',
-      onPressed: () => ref.read(temaBordoVascaScuroProvider.notifier).commuta(),
+    final scelta = ref.watch(temaBordoVascaOverrideProvider);
+    return PopupMenuButton<TemaBordoVasca>(
+      icon: Icon(scelta.icona),
+      tooltip: 'Tema di questa schermata',
+      initialValue: scelta,
+      onSelected: (nuova) =>
+          ref.read(temaBordoVascaOverrideProvider.notifier).imposta(nuova),
+      itemBuilder: (context) => [
+        for (final opzione in TemaBordoVasca.values)
+          PopupMenuItem(
+            value: opzione,
+            child: Row(
+              children: [
+                Icon(opzione.icona, size: 20),
+                const SizedBox(width: 12),
+                Text(opzione.etichetta),
+                if (opzione == scelta) ...[
+                  const Spacer(),
+                  const Icon(Icons.check, size: 20),
+                ],
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/superfici_tema.dart';
-import '../../../theme/tema_bordo_vasca_provider.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tema_provider.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/bottone_tema_bordo_vasca.dart';
@@ -22,7 +20,7 @@ import '../data/presenze_repository.dart';
 
 /// Schermata da bordo vasca (DESIGN.md sezione 9): bersagli grandi, niente
 /// form, e — a scelta dell'allenatore — sfondo scuro (vedi
-/// [temaBordoVascaScuroProvider]).
+/// [temaBordoVascaOverrideProvider]).
 class PresenzeScreen extends ConsumerWidget {
   const PresenzeScreen({required this.allenamento, super.key});
 
@@ -33,79 +31,80 @@ class PresenzeScreen extends ConsumerWidget {
     final filter = (clubId: allenamento.clubId, includeInactive: false);
     final atletiAsync = ref.watch(atletiListProvider(filter));
     final presenzeAsync = ref.watch(presenzeListProvider(allenamento.id));
-    final scuro = ref.watch(temaBordoVascaScuroProvider);
+    final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
+    final temaVasca = temaBordoVascaDa(overrideVasca);
 
-    return Theme(
-      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
-      child: AppScaffold(
-        scrollabile: true,
-        appBar: AppBar(
-          title: Text(
-            'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
-            '${allenamento.data.month.toString().padLeft(2, '0')}/'
-            '${allenamento.data.year}',
-          ),
-          actions: const [BottoneTemaBordoVasca()],
+    final scaffold = AppScaffold(
+      scrollabile: true,
+      appBar: AppBar(
+        title: Text(
+          'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
+          '${allenamento.data.month.toString().padLeft(2, '0')}/'
+          '${allenamento.data.year}',
         ),
-        body: atletiAsync.when(
-          data: (atleti) {
-            // Nessun filtro per gruppo: si segnano le presenze di tutto il
-            // club in un colpo, un atleta senza gruppo assegnato non deve
-            // sparire dall'elenco.
-            return presenzeAsync.when(
-              data: (presenze) {
-                if (atleti.isEmpty) {
-                  return EmptyState(
-                    icona: Icons.groups_outlined,
-                    titolo: 'Nessun atleta attivo in questo club',
-                    descrizione:
-                        'Aggiungi gli atleti dalla schermata Atleti per poter '
-                        'segnare le presenze.',
-                    azionePrincipale: 'Torna indietro',
-                    onAzionePrincipale: () => Navigator.of(context).pop(),
-                  );
-                }
-
-                final statoPerAtleta = {
-                  for (final p in presenze) p.atletaId: p.stato,
-                };
-
-                return AppListPanel(
-                  righe: [
-                    for (final atleta in atleti)
-                      _RigaPresenza(
-                        atleta: atleta,
-                        statoAttuale: statoPerAtleta[atleta.id],
-                        onSelect: (nuovoStato) => ref
-                            .read(presenzeRepositoryProvider)
-                            .segnaPresenza(
-                              allenamentoId: allenamento.id,
-                              atletaId: atleta.id,
-                              stato: nuovoStato,
-                            ),
-                      ),
-                  ],
+        actions: const [BottoneTemaBordoVasca()],
+      ),
+      body: atletiAsync.when(
+        data: (atleti) {
+          // Nessun filtro per gruppo: si segnano le presenze di tutto il
+          // club in un colpo, un atleta senza gruppo assegnato non deve
+          // sparire dall'elenco.
+          return presenzeAsync.when(
+            data: (presenze) {
+              if (atleti.isEmpty) {
+                return EmptyState(
+                  icona: Icons.groups_outlined,
+                  titolo: 'Nessun atleta attivo in questo club',
+                  descrizione:
+                      'Aggiungi gli atleti dalla schermata Atleti per poter '
+                      'segnare le presenze.',
+                  azionePrincipale: 'Torna indietro',
+                  onAzionePrincipale: () => Navigator.of(context).pop(),
                 );
-              },
-              loading: () => const LoadingSkeletonList(righe: 6),
-              error: (error, _) => ErrorBanner(
-                messaggio: 'Non è stato possibile caricare le presenze.',
-                suggerimento:
-                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-                dettaglioTecnico: messaggioErrore(error),
-              ),
-            );
-          },
-          loading: () => const LoadingSkeletonList(righe: 6),
-          error: (error, _) => ErrorBanner(
-            messaggio: 'Non è stato possibile caricare gli atleti.',
-            suggerimento:
-                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-            dettaglioTecnico: messaggioErrore(error),
-          ),
+              }
+
+              final statoPerAtleta = {
+                for (final p in presenze) p.atletaId: p.stato,
+              };
+
+              return AppListPanel(
+                righe: [
+                  for (final atleta in atleti)
+                    _RigaPresenza(
+                      atleta: atleta,
+                      statoAttuale: statoPerAtleta[atleta.id],
+                      onSelect: (nuovoStato) => ref
+                          .read(presenzeRepositoryProvider)
+                          .segnaPresenza(
+                            allenamentoId: allenamento.id,
+                            atletaId: atleta.id,
+                            stato: nuovoStato,
+                          ),
+                    ),
+                ],
+              );
+            },
+            loading: () => const LoadingSkeletonList(righe: 6),
+            error: (error, _) => ErrorBanner(
+              messaggio: 'Non è stato possibile caricare le presenze.',
+              suggerimento:
+                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+              dettaglioTecnico: messaggioErrore(error),
+            ),
+          );
+        },
+        loading: () => const LoadingSkeletonList(righe: 6),
+        error: (error, _) => ErrorBanner(
+          messaggio: 'Non è stato possibile caricare gli atleti.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
         ),
       ),
     );
+
+    if (temaVasca == null) return scaffold;
+    return Theme(data: temaVasca, child: scaffold);
   }
 }
 
@@ -125,7 +124,7 @@ class _RigaPresenza extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
@@ -136,7 +135,7 @@ class _RigaPresenza extends StatelessWidget {
         children: [
           Text(
             atleta.nomeCompleto,
-            style: AppTypography.corpoForte.copyWith(color: tema.testo),
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
           ),
           const SizedBox(height: AppSpacing.s12),
           Row(
@@ -145,7 +144,7 @@ class _RigaPresenza extends StatelessWidget {
                 child: _BottoneStato(
                   etichetta: 'Presente',
                   icona: Icons.check,
-                  colore: AppColors.ok,
+                  colore: colori.ok,
                   selezionato: statoAttuale == 'presente',
                   onTap: () => onSelect('presente'),
                 ),
@@ -155,7 +154,7 @@ class _RigaPresenza extends StatelessWidget {
                 child: _BottoneStato(
                   etichetta: 'Assente',
                   icona: Icons.close,
-                  colore: AppColors.testoSecondario,
+                  colore: colori.testoSecondario,
                   selezionato: statoAttuale == 'assente',
                   onTap: () => onSelect('assente'),
                 ),
@@ -165,7 +164,7 @@ class _RigaPresenza extends StatelessWidget {
                 child: _BottoneStato(
                   etichetta: 'Giustificato',
                   icona: Icons.event_note_outlined,
-                  colore: AppColors.attenzione,
+                  colore: colori.attenzione,
                   selezionato: statoAttuale == 'giustificato',
                   onTap: () => onSelect('giustificato'),
                 ),
@@ -195,18 +194,18 @@ class _BottoneStato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+      borderRadius: BorderRadius.circular(AppRadius.controllo),
       child: Container(
         constraints: const BoxConstraints(
           minHeight: AppSpacing.altezzaMinimaBersaglioVasca,
         ),
         decoration: BoxDecoration(
-          color: selezionato ? colore : tema.superficie,
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-          border: Border.all(color: selezionato ? colore : tema.linea),
+          color: selezionato ? colore : colori.superficie,
+          borderRadius: BorderRadius.circular(AppRadius.controllo),
+          border: Border.all(color: selezionato ? colore : colori.linea),
         ),
         alignment: Alignment.center,
         child: Column(
@@ -215,13 +214,13 @@ class _BottoneStato extends StatelessWidget {
             Icon(
               icona,
               size: 24,
-              color: selezionato ? Colors.white : tema.testoSecondario,
+              color: selezionato ? colori.azioneInk : colori.testoSecondario,
             ),
             const SizedBox(height: 4),
             Text(
               etichetta,
               style: AppTypography.piccolo.copyWith(
-                color: selezionato ? Colors.white : tema.testoSecondario,
+                color: selezionato ? colori.azioneInk : colori.testoSecondario,
                 fontWeight: FontWeight.w600,
               ),
             ),

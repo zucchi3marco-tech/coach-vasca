@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_theme.dart';
+
 const _chiaveTemaApp = 'tema_app';
 const _chiaveTemaBordoVasca = 'tema_bordo_vasca';
 
@@ -15,6 +17,18 @@ enum TemaBordoVasca {
   chiaro,
   scuro;
 
+  String get etichetta => switch (this) {
+    TemaBordoVasca.seguiApp => 'Segui l\'app',
+    TemaBordoVasca.chiaro => 'Chiaro',
+    TemaBordoVasca.scuro => 'Scuro',
+  };
+
+  IconData get icona => switch (this) {
+    TemaBordoVasca.seguiApp => Icons.brightness_auto_outlined,
+    TemaBordoVasca.chiaro => Icons.light_mode_outlined,
+    TemaBordoVasca.scuro => Icons.dark_mode_outlined,
+  };
+
   String get _chiave => switch (this) {
     TemaBordoVasca.seguiApp => 'segui_app',
     TemaBordoVasca.chiaro => 'chiaro',
@@ -27,6 +41,16 @@ enum TemaBordoVasca {
     _ => TemaBordoVasca.seguiApp,
   };
 }
+
+/// Il `ThemeData` da applicare a una delle tre schermate da bordo vasca
+/// per questa scelta — null per "segui l'app" (nessun override: resta
+/// quello ambiente, oggi sempre `AppTheme.chiaro` finché il resto della
+/// migrazione non è chiuso — vedi `app.dart`).
+ThemeData? temaBordoVascaDa(TemaBordoVasca scelta) => switch (scelta) {
+  TemaBordoVasca.seguiApp => null,
+  TemaBordoVasca.chiaro => AppTheme.chiaro,
+  TemaBordoVasca.scuro => AppTheme.scuro,
+};
 
 /// `ThemeMode` per l'app intera — DESIGN.md sezione 15: Sistema (di
 /// default) · Chiaro · Scuro, persistito con `shared_preferences` sul

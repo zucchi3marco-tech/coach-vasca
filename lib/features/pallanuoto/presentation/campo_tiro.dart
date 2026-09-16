@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/superfici_tema.dart';
+import '../../../theme/colori_app.dart';
 
 /// Un tiro gia' registrato, per la mappa di calore in sola lettura:
 /// posizione (percentuale 0-100 su entrambi gli assi) ed esito.
@@ -26,24 +25,24 @@ class CampoTiro extends StatelessWidget {
   final void Function(double x, double y)? onTocca;
   final List<PuntoTiro> punti;
 
-  static Color _coloreEsito(String? esito) {
+  static Color _coloreEsito(String? esito, ColoriApp colori) {
     switch (esito) {
       case 'gol':
-        return AppColors.ok;
+        return colori.ok;
       case 'parato':
-        return AppColors.testoSecondario;
+        return colori.testoSecondario;
       default:
-        return AppColors.superficie;
+        return colori.superficie;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return AspectRatio(
       aspectRatio: 4 / 3,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.raggioPannello),
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final larghezza = constraints.maxWidth;
@@ -63,14 +62,17 @@ class CampoTiro extends StatelessWidget {
                   : (details) => gestisciTocco(details.localPosition),
               child: Container(
                 decoration: BoxDecoration(
-                  color: tema.campoTiro,
-                  border: Border.all(color: tema.linea),
+                  color: colori.azioneTenue,
+                  border: Border.all(color: colori.linea),
                 ),
                 child: Stack(
                   children: [
                     Positioned.fill(
                       child: CustomPaint(
-                        painter: _CampoPainter(coloreEvidenziato: tema.testo),
+                        painter: _CampoPainter(
+                          coloreEvidenziato: colori.testo,
+                          colori: colori,
+                        ),
                       ),
                     ),
                     for (final p in punti)
@@ -81,9 +83,9 @@ class CampoTiro extends StatelessWidget {
                           width: 14,
                           height: 14,
                           decoration: BoxDecoration(
-                            color: _coloreEsito(p.esito),
+                            color: _coloreEsito(p.esito, colori),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.testo),
+                            border: Border.all(color: colori.testo),
                           ),
                         ),
                       ),
@@ -99,11 +101,17 @@ class CampoTiro extends StatelessWidget {
 }
 
 class _CampoPainter extends CustomPainter {
-  _CampoPainter({required this.coloreEvidenziato});
+  _CampoPainter({required this.coloreEvidenziato, required this.colori});
 
   /// Nero in chiaro, quasi bianco in scuro: la porta deve restare
   /// leggibile sullo sfondo del campo in entrambi i temi.
   final Color coloreEvidenziato;
+
+  /// Per le linee reali della vasca (2m/5m/6m) — DESIGN.md sezione 14,
+  /// eccezione: rosso e giallo qui sono rappresentativi del regolamento,
+  /// non uno stato "in corso". Nessun token "giallo" dedicato nel nuovo
+  /// sistema: `attenzione` è l'ambra più vicina disponibile.
+  final ColoriApp colori;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -167,14 +175,14 @@ class _CampoPainter extends CustomPainter {
     const distanza2mVisiva = 1.0;
     final distanza5mVisiva = distanza2mVisiva + (5.0 - 2.0) * 0.8;
     final distanza6mVisiva = distanza5mVisiva + (6.0 - 5.0);
-    lineaOrizzontale(distanza2mVisiva, '2 m', AppColors.rosso, 1.5);
-    lineaOrizzontale(distanza5mVisiva, '5 m', AppColors.rosso, 1.0);
-    lineaOrizzontale(distanza6mVisiva, '6 m', AppColors.giallo, 1.5);
+    lineaOrizzontale(distanza2mVisiva, '2 m', colori.rosso, 1.5);
+    lineaOrizzontale(distanza5mVisiva, '5 m', colori.rosso, 1.0);
+    lineaOrizzontale(distanza6mVisiva, '6 m', colori.attenzione, 1.5);
 
     // Area tratteggiata dai pali verso l'esterno per 2m, ricongiunta alla
     // linea dei 2m: semplificazione grafica, non una misura regolamentare.
     final trattoDash = Paint()
-      ..color = AppColors.rosso
+      ..color = colori.rosso
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     final offsetPalo = size.width * 0.12;
@@ -211,7 +219,8 @@ class _CampoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CampoPainter oldDelegate) =>
-      oldDelegate.coloreEvidenziato != coloreEvidenziato;
+      oldDelegate.coloreEvidenziato != coloreEvidenziato ||
+      oldDelegate.colori != colori;
 }
 
 /// Legenda della mappa di calore, per la sola-lettura — stesso schema
@@ -221,6 +230,7 @@ class LegendaCampoTiro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     Widget voce(Color colore, String etichetta) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -230,7 +240,7 @@ class LegendaCampoTiro extends StatelessWidget {
           decoration: BoxDecoration(
             color: colore,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.testo),
+            border: Border.all(color: colori.testo),
           ),
         ),
         const SizedBox(width: AppSpacing.s4),
@@ -240,9 +250,9 @@ class LegendaCampoTiro extends StatelessWidget {
     return Wrap(
       spacing: AppSpacing.s16,
       children: [
-        voce(AppColors.ok, 'Gol'),
-        voce(AppColors.testoSecondario, 'Parato'),
-        voce(AppColors.superficie, 'Palo/fuori'),
+        voce(colori.ok, 'Gol'),
+        voce(colori.testoSecondario, 'Parato'),
+        voce(colori.superficie, 'Palo/fuori'),
       ],
     );
   }

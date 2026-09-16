@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/cap_badge.dart';
 import '../domain/partita.dart';
 import 'selettore_giocatore_partita.dart';
@@ -102,8 +102,7 @@ class FasciaCalottinePartita extends StatelessWidget {
           Padding(
             // Sfalsata di mezza riga rispetto alla prima colonna.
             padding: const EdgeInsets.only(
-              top:
-                  (AppSpacing.altezzaMinimaBersaglioVasca + AppSpacing.s8) / 2,
+              top: (AppSpacing.altezzaMinimaBersaglioVasca + AppSpacing.s8) / 2,
             ),
             child: colonna(colonnaB),
           ),
@@ -132,6 +131,7 @@ class _BadgeCalottina extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     if (squalificato) {
       // Nero puro, non il token "testo": deve restare la casella piu'
       // scura sullo schermo anche quando il resto passa al tema scuro.
@@ -169,7 +169,7 @@ class _BadgeCalottina extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: attivo
-                        ? Border.all(color: AppColors.blu, width: 2)
+                        ? Border.all(color: colori.azione, width: 2)
                         : null,
                   ),
                   child: badge,
@@ -183,7 +183,7 @@ class _BadgeCalottina extends StatelessWidget {
                 child: Text(
                   '$conteggioRigore',
                   style: AppTypography.etichetta.copyWith(
-                    color: AppColors.rosso,
+                    color: colori.rosso,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

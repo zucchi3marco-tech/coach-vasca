@@ -3,12 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/superfici_tema.dart';
-import '../../../theme/tema_bordo_vasca_provider.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tema_provider.dart';
 import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -388,219 +386,221 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         .length;
 
     final attiva = _interazione != _Interazione.riposo;
-    final scuro = ref.watch(temaBordoVascaScuroProvider);
+    final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
+    final temaVasca = temaBordoVascaDa(overrideVasca);
 
-    return Theme(
-      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
-      // Builder per un context che veda gia' il Theme appena impostato
-      // sopra (serve a SuperficiTema.of piu' sotto).
-      child: Builder(
-        builder: (context) {
-          final tema = SuperficiTema.of(context);
-          return PopScope(
-            canPop: !attiva,
-            onPopInvokedWithResult: (didPop, _) {
-              if (!didPop && attiva) _annullaInterazione();
-            },
-            child: Scaffold(
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.s16,
-                        vertical: AppSpacing.s8,
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.history),
-                            tooltip: 'Cronologia',
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => EventiPartitaScreen(
-                                  partita: widget.partita,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const BottoneTemaBordoVasca(),
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                '$golCasa - $golTrasferta',
-                                style: AppTypography.display.copyWith(
-                                  color: tema.testo,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (widget.partita.tracciaTempo)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (var t = 1; t <= 4; t++)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: AppSpacing.s4,
-                                    ),
-                                    child: _ChipTempo(
-                                      tempo: t,
-                                      selezionato: _periodo == t,
-                                      onTap: () => setState(() => _periodo = t),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.sports_score),
-                            tooltip: 'Fine partita',
-                            onPressed: () => _confermaFinePartita(context),
-                          ),
-                        ],
-                      ),
+    Widget content = Builder(
+      // Builder per un context che veda gia' l'eventuale Theme impostato
+      // sotto (serve a context.colori piu' sotto).
+      builder: (context) {
+        final colori = context.colori;
+        return PopScope(
+          canPop: !attiva,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && attiva) _annullaInterazione();
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s16,
+                      vertical: AppSpacing.s8,
                     ),
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (attiva)
-                            FasciaCalottinePartita(
-                              partita: widget.partita,
-                              casa: true,
-                              convocati: convocati,
-                              attiva: attiva,
-                              soloNostra:
-                                  _interazione ==
-                                  _Interazione.sceltaGiocatoreTiro,
-                              disqualificati: disqualificati,
-                              conteggiRigore: conteggiRigore,
-                              onSelezionato: (id) =>
-                                  _onSelezionatoGiocatore(eventi, id),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.history),
+                          tooltip: 'Cronologia',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  EventiPartitaScreen(partita: widget.partita),
                             ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.s12,
+                          ),
+                        ),
+                        const BottoneTemaBordoVasca(),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              '$golCasa - $golTrasferta',
+                              style: AppTypography.display.copyWith(
+                                color: colori.testo,
                               ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  CampoTiro(
-                                    onTocca: convocati.isEmpty
-                                        ? null
-                                        : (x, y) {
-                                            setState(() {
-                                              _posX = x;
-                                              _posY = y;
-                                              _interazione = _Interazione
-                                                  .sceltaGiocatoreTiro;
-                                            });
-                                          },
+                            ),
+                          ),
+                        ),
+                        if (widget.partita.tracciaTempo)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var t = 1; t <= 4; t++)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: AppSpacing.s4,
                                   ),
-                                  if (attiva)
-                                    Positioned.fill(
-                                      child: GestureDetector(
-                                        onTap: _annullaInterazione,
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            borderRadius: BorderRadius.circular(
-                                              AppSpacing.raggioPannello,
-                                            ),
+                                  child: _ChipTempo(
+                                    tempo: t,
+                                    selezionato: _periodo == t,
+                                    onTap: () => setState(() => _periodo = t),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.sports_score),
+                          tooltip: 'Fine partita',
+                          onPressed: () => _confermaFinePartita(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (attiva)
+                          FasciaCalottinePartita(
+                            partita: widget.partita,
+                            casa: true,
+                            convocati: convocati,
+                            attiva: attiva,
+                            soloNostra:
+                                _interazione ==
+                                _Interazione.sceltaGiocatoreTiro,
+                            disqualificati: disqualificati,
+                            conteggiRigore: conteggiRigore,
+                            onSelezionato: (id) =>
+                                _onSelezionatoGiocatore(eventi, id),
+                          ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.s12,
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CampoTiro(
+                                  onTocca: convocati.isEmpty
+                                      ? null
+                                      : (x, y) {
+                                          setState(() {
+                                            _posX = x;
+                                            _posY = y;
+                                            _interazione = _Interazione
+                                                .sceltaGiocatoreTiro;
+                                          });
+                                        },
+                                ),
+                                if (attiva)
+                                  Positioned.fill(
+                                    child: GestureDetector(
+                                      onTap: _annullaInterazione,
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.pannello,
                                           ),
                                         ),
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           ),
-                          if (attiva)
-                            FasciaCalottinePartita(
-                              partita: widget.partita,
-                              casa: false,
-                              convocati: convocati,
-                              attiva: attiva,
-                              soloNostra:
-                                  _interazione ==
-                                  _Interazione.sceltaGiocatoreTiro,
-                              disqualificati: disqualificati,
-                              conteggiRigore: conteggiRigore,
-                              onSelezionato: (id) =>
-                                  _onSelezionatoGiocatore(eventi, id),
-                            ),
-                        ],
-                      ),
+                        ),
+                        if (attiva)
+                          FasciaCalottinePartita(
+                            partita: widget.partita,
+                            casa: false,
+                            convocati: convocati,
+                            attiva: attiva,
+                            soloNostra:
+                                _interazione ==
+                                _Interazione.sceltaGiocatoreTiro,
+                            disqualificati: disqualificati,
+                            conteggiRigore: conteggiRigore,
+                            onSelezionato: (id) =>
+                                _onSelezionatoGiocatore(eventi, id),
+                          ),
+                      ],
                     ),
-                    if (!attiva)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.s16,
-                        ),
-                        child: StrisciaSanzionatiPartita(
-                          partita: widget.partita,
-                          convocati: convocati,
-                          conteggiRigore: conteggiRigore,
-                        ),
-                      ),
+                  ),
+                  if (!attiva)
                     Padding(
-                      padding: const EdgeInsets.all(AppSpacing.s16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: SizedBox(
-                              height: AppSpacing.altezzaMinimaBersaglioVasca,
-                              child: SecondaryButton(
-                                label: 'Espulsione',
-                                icon: Icons.warning_amber_outlined,
-                                onPressed: () => setState(() {
-                                  _interazione =
-                                      _Interazione.sceltaGiocatoreSanzione;
-                                  _rigorePendente = false;
-                                }),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.s8),
-                          Expanded(
-                            child: SizedBox(
-                              height: AppSpacing.altezzaMinimaBersaglioVasca,
-                              child: SecondaryButton(
-                                label: 'Rigore',
-                                onPressed: () => setState(() {
-                                  _interazione =
-                                      _Interazione.sceltaGiocatoreSanzione;
-                                  _rigorePendente = true;
-                                }),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.s16),
-                          Expanded(
-                            flex: 2,
-                            child: SizedBox(
-                              height: AppSpacing.altezzaMinimaBersaglioVasca,
-                              child: SecondaryButton(
-                                label: 'Tiro avversario',
-                                icon: Icons.sports_handball_outlined,
-                                onPressed: () =>
-                                    _scegliEsitoTiroAvversario(eventi),
-                              ),
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s16,
+                      ),
+                      child: StrisciaSanzionatiPartita(
+                        partita: widget.partita,
+                        convocati: convocati,
+                        conteggiRigore: conteggiRigore,
                       ),
                     ),
-                  ],
-                ),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.s16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: AppSpacing.altezzaMinimaBersaglioVasca,
+                            child: SecondaryButton(
+                              label: 'Espulsione',
+                              icon: Icons.warning_amber_outlined,
+                              onPressed: () => setState(() {
+                                _interazione =
+                                    _Interazione.sceltaGiocatoreSanzione;
+                                _rigorePendente = false;
+                              }),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.s8),
+                        Expanded(
+                          child: SizedBox(
+                            height: AppSpacing.altezzaMinimaBersaglioVasca,
+                            child: SecondaryButton(
+                              label: 'Rigore',
+                              onPressed: () => setState(() {
+                                _interazione =
+                                    _Interazione.sceltaGiocatoreSanzione;
+                                _rigorePendente = true;
+                              }),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.s16),
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: AppSpacing.altezzaMinimaBersaglioVasca,
+                            child: SecondaryButton(
+                              label: 'Tiro avversario',
+                              icon: Icons.sports_handball_outlined,
+                              onPressed: () =>
+                                  _scegliEsitoTiroAvversario(eventi),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+
+    if (temaVasca != null) {
+      content = Theme(data: temaVasca, child: content);
+    }
+    return content;
   }
 }
 
@@ -617,10 +617,10 @@ class _ChipTempo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return Material(
-      color: selezionato ? AppColors.blu : tema.superficie,
-      shape: CircleBorder(side: BorderSide(color: tema.linea)),
+      color: selezionato ? colori.azione : colori.superficie,
+      shape: CircleBorder(side: BorderSide(color: colori.linea)),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -631,7 +631,7 @@ class _ChipTempo extends StatelessWidget {
             child: Text(
               'T$tempo',
               style: AppTypography.corpoForte.copyWith(
-                color: selezionato ? Colors.white : tema.testo,
+                color: selezionato ? colori.azioneInk : colori.testo,
               ),
             ),
           ),

@@ -5,11 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
-import '../../../theme/domain_tokens.dart';
-import '../../../theme/superfici_tema.dart';
-import '../../../theme/tema_bordo_vasca_provider.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tema_provider.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/empty_state.dart';
@@ -74,127 +73,124 @@ class _SchedaBordoVascaScreenState
   Widget build(BuildContext context) {
     final allenamento = widget.allenamento;
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
-    final scuro = ref.watch(temaBordoVascaScuroProvider);
-    final gruppi = ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [];
+    final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
+    final temaVasca = temaBordoVascaDa(overrideVasca);
+    final gruppi =
+        ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [];
     final nomeGruppo = {
       for (final g in gruppi) g.id: g.nome,
     }[allenamento.gruppoId];
 
-    return Theme(
-      data: scuro ? AppTheme.scuroBordoVasca : AppTheme.chiaro,
-      child: AppScaffold(
-        appBar: AppBar(
-          title: Text(
-            '${allenamento.data.day.toString().padLeft(2, '0')}/'
-            '${allenamento.data.month.toString().padLeft(2, '0')}/'
-            '${allenamento.data.year}'
-            '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
-          ),
-          actions: const [BottoneTemaBordoVasca()],
+    Widget content = AppScaffold(
+      appBar: AppBar(
+        title: Text(
+          '${allenamento.data.day.toString().padLeft(2, '0')}/'
+          '${allenamento.data.month.toString().padLeft(2, '0')}/'
+          '${allenamento.data.year}'
+          '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
         ),
-        body: serieAsync.when(
-          data: (serie) => serie.isEmpty
-              ? EmptyState(
-                  icona: Icons.pool_outlined,
-                  titolo: 'Nessuna serie in questo allenamento',
-                  descrizione:
-                      'Aggiungi le serie dalla scheda allenamento per vederle '
-                      'qui a bordo vasca.',
-                  azionePrincipale: 'Torna indietro',
-                  onAzionePrincipale: () => Navigator.of(context).pop(),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  itemCount: serie.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.s12),
-                  itemBuilder: (context, index) {
-                    final s = serie[index];
-                    final tokens =
-                        Theme.of(context).extension<DomainTokens>() ??
-                        DomainTokens.standard;
-                    final tema = SuperficiTema.of(context);
-                    final coloreZona = s.zona != null
-                        ? tokens.colorePerZona(s.zona)
-                        : tema.linea;
-                    final meta = _metaSerie(s);
-                    return LaneRule(
-                      colore: coloreZona,
-                      child: PoolCard(
-                        padding: const EdgeInsets.all(AppSpacing.s20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  labelBlocco(s.blocco),
-                                  style: AppTypography.etichetta.copyWith(
-                                    color: tema.testoSecondario,
-                                  ),
+        actions: const [BottoneTemaBordoVasca()],
+      ),
+      body: serieAsync.when(
+        data: (serie) => serie.isEmpty
+            ? EmptyState(
+                icona: Icons.pool_outlined,
+                titolo: 'Nessuna serie in questo allenamento',
+                descrizione:
+                    'Aggiungi le serie dalla scheda allenamento per vederle '
+                    'qui a bordo vasca.',
+                azionePrincipale: 'Torna indietro',
+                onAzionePrincipale: () => Navigator.of(context).pop(),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                itemCount: serie.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.s12),
+                itemBuilder: (context, index) {
+                  final s = serie[index];
+                  final colori = context.colori;
+                  final coloreZona = context.dominio.colorePerZona(
+                    s.zona,
+                    rispetto: colori.linea,
+                  );
+                  final meta = _metaSerie(s);
+                  return LaneRule(
+                    colore: coloreZona,
+                    child: PoolCard(
+                      padding: const EdgeInsets.all(AppSpacing.s20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                labelBlocco(s.blocco),
+                                style: AppTypography.etichetta.copyWith(
+                                  color: colori.testoSecondario,
                                 ),
-                                if (s.zona != null) ...[
-                                  const SizedBox(width: AppSpacing.s8),
-                                  ZoneChip(sigla: s.zona!),
-                                ],
+                              ),
+                              if (s.zona != null) ...[
+                                const SizedBox(width: AppSpacing.s8),
+                                ZoneChip(sigla: s.zona!),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.s8),
+                          Text(
+                            '${s.ripetute}×${s.distanzaM}m '
+                            '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                            style: AppTypography.display.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                          if (meta.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.s8),
+                            Wrap(
+                              spacing: AppSpacing.s16,
+                              runSpacing: AppSpacing.s4,
+                              children: [
+                                for (final m in meta)
+                                  Text(
+                                    m,
+                                    style: AppTypography.piccolo.copyWith(
+                                      color: colori.testoSecondario,
+                                    ),
+                                  ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.s8),
-                            Text(
-                              '${s.ripetute}×${s.distanzaM}m '
-                              '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                              style: AppTypography.display.copyWith(
-                                color: tema.testo,
-                              ),
-                            ),
-                            if (meta.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.s8),
-                              Wrap(
-                                spacing: AppSpacing.s16,
-                                runSpacing: AppSpacing.s4,
-                                children: [
-                                  for (final m in meta)
-                                    Text(
-                                      m,
-                                      style: AppTypography.piccolo.copyWith(
-                                        color: tema.testoSecondario,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-          loading: () => const Padding(
-            padding: EdgeInsets.all(AppSpacing.s16),
-            child: LoadingSkeletonList(righe: 5),
-          ),
-          error: (error, _) => Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: ErrorBanner(
-              messaggio: 'Non è stato possibile caricare la scheda.',
-              suggerimento:
-                  'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-              dettaglioTecnico: messaggioErrore(error),
-            ),
+                    ),
+                  );
+                },
+              ),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 5),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare la scheda.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
           ),
         ),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: SizedBox(
-              height: AppSpacing.altezzaMinimaBersaglioVasca,
-              child: PrimaryButton(
-                label: 'Segna presenze',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PresenzeScreen(allenamento: allenamento),
-                  ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: SizedBox(
+            height: AppSpacing.altezzaMinimaBersaglioVasca,
+            child: PrimaryButton(
+              label: 'Segna presenze',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PresenzeScreen(allenamento: allenamento),
                 ),
               ),
             ),
@@ -202,5 +198,10 @@ class _SchedaBordoVascaScreenState
         ),
       ),
     );
+
+    if (temaVasca != null) {
+      content = Theme(data: temaVasca, child: content);
+    }
+    return content;
   }
 }
