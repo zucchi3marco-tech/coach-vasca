@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/colori_app.dart';
 
 /// Pannello che raggruppa più [AppListRow], separate da filetti da 1px —
-/// vedi DESIGN.md sezione 8, "Elenchi".
+/// vedi DESIGN.md sezione 13, "Elenchi".
 class AppListPanel extends StatelessWidget {
   const AppListPanel({required this.righe, super.key});
 
@@ -12,11 +12,12 @@ class AppListPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioPannello),
-        border: Border.all(color: AppColors.linea),
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border.all(color: colori.linea),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -24,8 +25,7 @@ class AppListPanel extends StatelessWidget {
         children: [
           for (var i = 0; i < righe.length; i++) ...[
             righe[i],
-            if (i != righe.length - 1)
-              const Divider(color: AppColors.linea, height: 1),
+            if (i != righe.length - 1) Divider(color: colori.linea, height: 1),
           ],
         ],
       ),

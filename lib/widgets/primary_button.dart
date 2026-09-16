@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Pulsante principale — vedi DESIGN.md sezione 8. Uno solo per
+import '../theme/colori_app.dart';
+
+/// Pulsante principale — vedi DESIGN.md sezione 13. Uno solo per
 /// schermata. L'etichetta dice cosa succede ("Salva atleta"), non
 /// "Invia".
 class PrimaryButton extends StatelessWidget {
@@ -21,14 +23,16 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // L'inchiostro sopra `azione` si inverte fra i due temi (DESIGN.md
+    // sezione 5): bianco nel chiaro (fondo blu scuro), scuro nello
+    // scuro (fondo azzurro chiaro) — un colore fisso sarebbe illeggibile
+    // in uno dei due.
+    final azioneInk = context.colori.azioneInk;
     final child = isLoading
-        ? const SizedBox(
+        ? SizedBox(
             height: 20,
             width: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: azioneInk),
           )
         : icon == null
         ? Text(label)

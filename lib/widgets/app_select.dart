@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
 /// Menu a tendina con la stessa etichetta fissa sopra dei campi di testo
-/// (mai flottante) — vedi DESIGN.md sezione 8.
+/// (mai flottante) — vedi DESIGN.md sezione 13.
 class AppSelect<T> extends StatelessWidget {
   const AppSelect({
     required this.etichetta,
@@ -24,24 +24,28 @@ class AppSelect<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(etichetta, style: AppTypography.etichetta),
+        Text(
+          etichetta,
+          style: AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          ),
+        ),
         const SizedBox(height: AppSpacing.s8),
         DropdownButtonFormField<T>(
           initialValue: value,
           isExpanded: true,
           items: items,
           onChanged: onChanged,
-          style: AppTypography.corpo.copyWith(color: AppColors.testo),
+          style: AppTypography.corpo.copyWith(color: colori.testo),
           hint: hint == null
               ? null
               : Text(
                   hint!,
-                  style: AppTypography.corpo.copyWith(
-                    color: AppColors.testoTenue,
-                  ),
+                  style: AppTypography.corpo.copyWith(color: colori.testoTenue),
                 ),
         ),
       ],

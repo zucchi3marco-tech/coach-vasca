@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
 /// Una singola azione proposta da [FabAzioni].
 class AzioneFab {
@@ -32,6 +32,7 @@ class FabAzioni extends StatelessWidget {
   final Object? heroTag;
 
   Future<void> _apriMenu(BuildContext context) async {
+    final colori = context.colori;
     final scelta = await showModalBottomSheet<VoidCallback>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -40,8 +41,11 @@ class FabAzioni extends StatelessWidget {
           children: [
             for (final azione in azioni)
               ListTile(
-                leading: Icon(azione.icona, color: AppColors.blu),
-                title: Text(azione.etichetta, style: AppTypography.corpo),
+                leading: Icon(azione.icona, color: colori.azione),
+                title: Text(
+                  azione.etichetta,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                ),
                 onTap: () => Navigator.of(sheetContext).pop(azione.onPressed),
               ),
             const SizedBox(height: AppSpacing.s8),

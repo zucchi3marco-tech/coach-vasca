@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
-/// Pulsante distruttivo — vedi DESIGN.md sezione 8: bordo 1px rosso,
+/// Pulsante distruttivo — vedi DESIGN.md sezione 13: bordo 1px rosso,
 /// testo rosso, fondo trasparente. Un pulsante rosso pieno non esiste in
 /// questa app. Va sempre chiamato dopo una conferma (dialog), non prima:
 /// questo widget non la mostra da solo.
@@ -24,12 +24,13 @@ class DangerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rosso = context.colori.rosso;
     final style = OutlinedButton.styleFrom(
-      foregroundColor: AppColors.rosso,
-      side: const BorderSide(color: AppColors.rosso),
+      foregroundColor: rosso,
+      side: BorderSide(color: rosso),
       minimumSize: const Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+        borderRadius: BorderRadius.circular(AppRadius.controllo),
       ),
       textStyle: AppTypography.corpoForte,
     );

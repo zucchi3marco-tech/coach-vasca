@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/superfici_tema.dart';
+import '../theme/colori_app.dart';
 import 'primary_button.dart';
 import 'secondary_button.dart';
 
-/// Schermata/sezione vuota — vedi DESIGN.md sezione 8, "Schermate
+/// Schermata/sezione vuota — vedi DESIGN.md sezione 13, "Schermate
 /// vuote". Regola non negoziabile: mai una riga di testo grigio da sola.
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -30,25 +30,25 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icona, size: 48, color: tema.testoTenue),
+            Icon(icona, size: 48, color: colori.testoTenue),
             const SizedBox(height: AppSpacing.s16),
             Text(
               titolo,
-              style: AppTypography.sezione.copyWith(color: tema.testo),
+              style: AppTypography.sezione.copyWith(color: colori.testo),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.s8),
             Text(
               descrizione,
               style: AppTypography.piccolo.copyWith(
-                color: tema.testoSecondario,
+                color: colori.testoSecondario,
               ),
               textAlign: TextAlign.center,
             ),

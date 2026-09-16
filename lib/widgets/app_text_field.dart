@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
 /// Campo di testo con etichetta fissa sopra (mai flottante) — vedi
-/// DESIGN.md sezione 8, "Campi di testo". I campi opzionali lo dicono
+/// DESIGN.md sezione 13, "Campi di testo". I campi opzionali lo dicono
 /// nell'etichetta ("facoltativo"), non con un asterisco sugli obbligatori.
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -37,7 +37,7 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? suffixIcon;
 
-  /// Per i campi password. Vedi DESIGN.md sezione 8: nessun widget su
+  /// Per i campi password. Vedi DESIGN.md sezione 13: nessun widget su
   /// misura dentro una schermata, quindi questi casi restano parametri
   /// opzionali del componente condiviso invece di un campo locale.
   final bool obscureText;
@@ -47,10 +47,16 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(etichetta, style: AppTypography.etichetta),
+        Text(
+          etichetta,
+          style: AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          ),
+        ),
         const SizedBox(height: AppSpacing.s8),
         TextFormField(
           controller: controller,
@@ -64,7 +70,7 @@ class AppTextField extends StatelessWidget {
           autofillHints: autofillHints,
           onFieldSubmitted: onFieldSubmitted,
           onChanged: onChanged,
-          style: AppTypography.corpo.copyWith(color: AppColors.testo),
+          style: AppTypography.corpo.copyWith(color: colori.testo),
           decoration: InputDecoration(
             helperText: aiuto,
             suffixIcon: suffixIcon,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
 /// Intestazione di un gruppo (form, elenco): stile `sezione` con un
-/// filetto sotto — vedi DESIGN.md sezione 8, "Form".
+/// filetto sotto — vedi DESIGN.md sezione 13, "Form".
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.titolo, {super.key});
 
@@ -13,12 +13,16 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titolo, style: AppTypography.sezione),
+        Text(
+          titolo,
+          style: AppTypography.sezione.copyWith(color: colori.testo),
+        ),
         const SizedBox(height: AppSpacing.s8),
-        const Divider(color: AppColors.linea, height: 1),
+        Divider(color: colori.linea, height: 1),
       ],
     );
   }

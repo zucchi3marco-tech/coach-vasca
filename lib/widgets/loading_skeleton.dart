@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
-import '../theme/superfici_tema.dart';
+import '../theme/colori_app.dart';
 
-/// Scheletro di caricamento — vedi DESIGN.md sezione 8, "Caricamento".
-/// Un rettangolo `superficieTenue` della forma del contenuto in arrivo,
+/// Scheletro di caricamento — vedi DESIGN.md sezione 13, "Caricamento".
+/// Un rettangolo `superficieAlt` della forma del contenuto in arrivo,
 /// con una pulsazione di opacità continua: senza, un caricamento un po'
 /// più lungo del solito è indistinguibile da una lista vuota o rotta.
 /// Mai una rotellina sola in mezzo allo schermo.
@@ -47,8 +47,8 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: SuperficiTema.of(context).superficieTenue,
-          borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
+          color: context.colori.superficieAlt,
+          borderRadius: BorderRadius.circular(AppRadius.controllo),
         ),
       ),
     );

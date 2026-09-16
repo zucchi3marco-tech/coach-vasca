@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/superfici_tema.dart';
+import '../theme/colori_app.dart';
 
-/// Fascia di errore — vedi DESIGN.md sezione 8, "Errori". Non deve mai
+/// Fascia di errore — vedi DESIGN.md sezione 13, "Errori". Non deve mai
 /// comparire un errore tecnico grezzo nell'interfaccia: [messaggio] è il
 /// testo in linguaggio umano (da `messaggioErrore`), [dettaglioTecnico]
 /// resta chiuso dietro "Mostra dettagli", solo per segnalare un problema.
@@ -30,14 +29,12 @@ class _ErrorBannerState extends State<ErrorBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final tema = SuperficiTema.of(context);
+    final colori = context.colori;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.rossoTenue,
-        borderRadius: BorderRadius.circular(AppSpacing.raggioControllo),
-        border: const Border(
-          left: BorderSide(color: AppColors.rosso, width: 3),
-        ),
+        color: colori.rossoTenue,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border(left: BorderSide(color: colori.rosso, width: 3)),
       ),
       padding: const EdgeInsets.all(AppSpacing.s16),
       child: Column(
@@ -46,7 +43,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.error_outline, color: AppColors.rosso, size: 20),
+              Icon(Icons.error_outline, color: colori.rosso, size: 20),
               const SizedBox(width: AppSpacing.s8),
               Expanded(
                 child: Column(
@@ -55,7 +52,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
                     Text(
                       widget.messaggio,
                       style: AppTypography.corpoForte.copyWith(
-                        color: tema.testo,
+                        color: colori.testo,
                       ),
                     ),
                     if (widget.suggerimento != null) ...[
@@ -63,7 +60,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
                       Text(
                         widget.suggerimento!,
                         style: AppTypography.piccolo.copyWith(
-                          color: tema.testoSecondario,
+                          color: colori.testoSecondario,
                         ),
                       ),
                     ],
@@ -79,7 +76,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
               child: Text(
                 _mostraDettagli ? 'Nascondi dettagli' : 'Mostra dettagli',
                 style: AppTypography.piccolo.copyWith(
-                  color: AppColors.blu,
+                  color: colori.azione,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -89,7 +86,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
               Text(
                 widget.dettaglioTecnico!,
                 style: AppTypography.piccolo.copyWith(
-                  color: tema.testoSecondario,
+                  color: colori.testoSecondario,
                 ),
               ),
             ],

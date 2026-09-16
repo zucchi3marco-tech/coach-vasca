@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
-import '../theme/domain_tokens.dart';
+import '../theme/tokens_dominio.dart';
 
 /// Numero di calottina dentro un cerchio del colore reale — vedi
-/// DESIGN.md sezione 3: unica eccezione ammessa alla regola sul rosso,
+/// DESIGN.md sezione 7: unica eccezione ammessa alla regola sul rosso,
 /// perché nel contesto (distinta, eventi partita) è inequivocabile.
 class CapBadge extends StatelessWidget {
   const CapBadge({
@@ -19,12 +18,23 @@ class CapBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens =
-        Theme.of(context).extension<DomainTokens>() ?? DomainTokens.standard;
-    final (sfondo, testo) = switch (colore) {
-      CapColore.bianca => (tokens.calottinaBianca, AppColors.testo),
-      CapColore.blu => (tokens.calottinaBlu, Colors.white),
-      CapColore.rossaPortiere => (tokens.calottinaRossaPortiere, Colors.white),
+    final dominio = context.dominio;
+    final (sfondo, bordo, testo) = switch (colore) {
+      CapColore.bianca => (
+        dominio.calottinaBiancaFondo,
+        dominio.calottinaBiancaBordo,
+        dominio.calottinaNumeroSuBianca,
+      ),
+      CapColore.blu => (
+        dominio.calottinaBluFondo,
+        null,
+        dominio.calottinaNumeroSuBlu,
+      ),
+      CapColore.rossaPortiere => (
+        dominio.calottinaRossaFondo,
+        null,
+        dominio.calottinaNumeroSuRossa,
+      ),
     };
     return Container(
       width: 40,
@@ -32,15 +42,13 @@ class CapBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: sfondo,
         shape: BoxShape.circle,
-        border: colore == CapColore.bianca
-            ? Border.all(color: AppColors.linea)
-            : null,
+        border: bordo == null ? null : Border.all(color: bordo),
       ),
       alignment: Alignment.center,
       child: Text(
         '$numero',
         style: AppTypography.condensata(
-          AppTypography.cifreTabulari(
+          AppTypography.numerica(
             AppTypography.corpoForte.copyWith(color: testo),
           ),
         ),

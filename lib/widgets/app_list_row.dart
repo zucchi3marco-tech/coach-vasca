@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
-/// Una riga di elenco — vedi DESIGN.md sezione 8, "Elenchi": titolo
+/// Una riga di elenco — vedi DESIGN.md sezione 13, "Elenchi": titolo
 /// `corpoForte`, riga di metadati sotto in `piccolo`/`testoSecondario`.
 /// Va dentro un [AppListPanel], mai appoggiata direttamente sul fondo.
 class AppListRow extends StatelessWidget {
@@ -27,6 +27,7 @@ class AppListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -53,12 +54,17 @@ class AppListRow extends StatelessWidget {
                     Text(
                       titolo,
                       style: AppTypography.corpoForte.copyWith(
-                        color: AppColors.testo,
+                        color: colori.testo,
                       ),
                     ),
                     if (sottotitolo != null) ...[
                       const SizedBox(height: 2),
-                      Text(sottotitolo!, style: AppTypography.piccolo),
+                      Text(
+                        sottotitolo!,
+                        style: AppTypography.piccolo.copyWith(
+                          color: colori.testoSecondario,
+                        ),
+                      ),
                     ],
                   ],
                 ),

@@ -92,3 +92,11 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
     return t < 0.5 ? this : other;
   }
 }
+
+/// Scorciatoia analoga a `context.colori` (vedi `colori_app.dart`):
+/// `context.dominio.coloriZona['A1']` invece di
+/// `Theme.of(context).extension<TokenDominio>()!.coloriZona['A1']`.
+extension TokenDominioContext on BuildContext {
+  TokenDominio get dominio =>
+      Theme.of(this).extension<TokenDominio>() ?? TokenDominio.chiaro;
+}

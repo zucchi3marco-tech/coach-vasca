@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../theme/colori_app.dart';
 
-/// Un valore statistico — vedi DESIGN.md sezione 8, "Pannelli
+/// Un valore statistico — vedi DESIGN.md sezione 13, "Pannelli
 /// statistica": etichetta sopra, valore `numeroGrande` con cifre
 /// tabulari, unità/confronto sotto. Per affiancarne più di uno, mettili
 /// in una Row/Wrap (massimo quattro, poi vanno a capo).
@@ -22,21 +22,32 @@ class StatPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(etichetta, style: AppTypography.etichetta),
+        Text(
+          etichetta,
+          style: AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          ),
+        ),
         const SizedBox(height: AppSpacing.s4),
         Text(
           valore,
-          style: AppTypography.cifreTabulari(
-            AppTypography.numeroGrande.copyWith(color: AppColors.testo),
+          style: AppTypography.numerica(
+            AppTypography.numeroGrande.copyWith(color: colori.testo),
           ),
         ),
         if (confronto != null) ...[
           const SizedBox(height: AppSpacing.s4),
-          Text(confronto!, style: AppTypography.piccolo),
+          Text(
+            confronto!,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
         ],
       ],
     );
