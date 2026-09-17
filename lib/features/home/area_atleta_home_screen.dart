@@ -22,9 +22,10 @@ import '../carico/presentation/carico_atleta_screen.dart';
 import '../carico/presentation/grafico_banister.dart';
 import '../club/application/current_club_provider.dart';
 import '../pallanuoto/application/pallanuoto_providers.dart';
+import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/domain/partita.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
-import '../pallanuoto/presentation/water_polo_tactics_board.dart';
+import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/application/presenze_providers.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
@@ -95,7 +96,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
           children: [
             fascia(
               _CardAndamento(atleta: atleta),
-              pallanuoto ? const _CardLavagnaTattica() : null,
+              pallanuoto ? _CardLavagnaTattica(clubId: atleta.clubId) : null,
             ),
             const SizedBox(height: AppSpacing.s16),
             fascia(
@@ -196,19 +197,66 @@ class _CardAndamento extends ConsumerWidget {
   }
 }
 
-class _CardLavagnaTattica extends StatelessWidget {
-  const _CardLavagnaTattica();
+/// Anteprima degli schemi tattici salvati dall'allenatore: a differenza
+/// della vecchia lavagna libera (locale, effimera), qui l'atleta
+/// sfoglia in sola lettura ciò che l'allenatore ha disegnato e salvato
+/// — il tocco sulla card apre l'elenco completo
+/// (`SchemiTatticiListScreen` con `soloLettura: true`).
+class _CardLavagnaTattica extends ConsumerWidget {
+  const _CardLavagnaTattica({required this.clubId});
+
+  final String clubId;
 
   @override
-  Widget build(BuildContext context) {
-    return const PoolCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader('Lavagna tattica'),
-          SizedBox(height: AppSpacing.s12),
-          WaterPoloTacticsBoard(),
-        ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final schemiAsync = ref.watch(schemiTatticiListProvider(clubId));
+    final colori = context.colori;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.pannello),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              SchemiTatticiListScreen(clubId: clubId, soloLettura: true),
+        ),
+      ),
+      child: PoolCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(child: SectionHeader('Schemi tattici')),
+                Icon(Icons.chevron_right, color: colori.testoSecondario),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            schemiAsync.when(
+              data: (schemi) => Text(
+                schemi.isEmpty
+                    ? 'L\'allenatore non ha ancora salvato nessuno schema.'
+                    : schemi.length == 1
+                    ? '1 schema salvato dall\'allenatore.'
+                    : '${schemi.length} schemi salvati dall\'allenatore.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+              loading: () => Text(
+                'Caricamento...',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+              error: (_, _) => Text(
+                'Non è stato possibile caricare gli schemi.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

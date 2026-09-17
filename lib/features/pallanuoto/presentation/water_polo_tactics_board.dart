@@ -8,20 +8,33 @@ import '../../../theme/colori_app.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
-/// Lavagna tattica interattiva per pallanuoto: campo disegnato (stesso
-/// stile grafico di `CampoTiro`, DESIGN.md sezione 9 — il tocco è
-/// l'input, non c'è un form), con due modalità:
+/// Lavagna tattica per pallanuoto: campo disegnato (stesso stile
+/// grafico di `CampoTiro`, DESIGN.md sezione 9 — il tocco è l'input,
+/// non c'è un form), con due modalità:
 /// - **Giocatori**: tocca per piazzare un pallino numerato, trascinalo
 ///   per spostarlo, doppio tocco per rimuoverlo;
 /// - **Frecce**: trascina per disegnare una freccia di movimento.
 ///
-/// Stato solo locale (`setState`): nessuno schema si salva su
-/// database in questa versione — è già pensata per restare
-/// un'estensione naturale in futuro (un pulsante "Salva schema" che
-/// scriva `_giocatori`/`_frecce` da qualche parte), non è richiesta
-/// ora.
+/// Con [modificabile] a `false` (schema salvato, sfogliato da un
+/// atleta) il campo mostra solo `giocatoriIniziali`/`frecceIniziali`,
+/// senza i controlli di modifica — stessa identica resa grafica, solo
+/// in sola lettura. Con [modificabile] a `true` (default, usato
+/// dall'allenatore per crearne/modificarne uno) ogni cambiamento
+/// richiama [onCambiato], così chi lo contiene può salvarlo.
 class WaterPoloTacticsBoard extends StatefulWidget {
-  const WaterPoloTacticsBoard({super.key});
+  const WaterPoloTacticsBoard({
+    this.giocatoriIniziali = const [],
+    this.frecceIniziali = const [],
+    this.modificabile = true,
+    this.onCambiato,
+    super.key,
+  });
+
+  final List<Offset> giocatoriIniziali;
+  final List<(Offset, Offset)> frecceIniziali;
+  final bool modificabile;
+  final void Function(List<Offset> giocatori, List<(Offset, Offset)> frecce)?
+  onCambiato;
 
   @override
   State<WaterPoloTacticsBoard> createState() => _WaterPoloTacticsBoardState();
@@ -32,17 +45,21 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
 
   /// Posizioni frazionarie (0-1 su entrambi gli assi) dei giocatori
   /// piazzati, così restano corrette a qualunque dimensione della card.
-  final List<Offset> _giocatori = [];
-  final List<(Offset, Offset)> _frecce = [];
+  late final List<Offset> _giocatori = List.of(widget.giocatoriIniziali);
+  late final List<(Offset, Offset)> _frecce = List.of(widget.frecceIniziali);
 
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
+
+  void _notifica() =>
+      widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
 
   void _cancellaTutto() {
     setState(() {
       _giocatori.clear();
       _frecce.clear();
     });
+    _notifica();
   }
 
   @override
@@ -53,36 +70,41 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: SegmentedButton<_ModalitaLavagna>(
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                segments: const [
-                  ButtonSegment(
-                    value: _ModalitaLavagna.giocatori,
-                    label: Text('Giocatori'),
-                    icon: Icon(Icons.circle_outlined, size: 18),
+        if (widget.modificabile) ...[
+          Row(
+            children: [
+              Expanded(
+                child: SegmentedButton<_ModalitaLavagna>(
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
                   ),
-                  ButtonSegment(
-                    value: _ModalitaLavagna.frecce,
-                    label: Text('Frecce'),
-                    icon: Icon(Icons.north_east, size: 18),
-                  ),
-                ],
-                selected: {_modalita},
-                onSelectionChanged: (s) => setState(() => _modalita = s.first),
+                  segments: const [
+                    ButtonSegment(
+                      value: _ModalitaLavagna.giocatori,
+                      label: Text('Giocatori'),
+                      icon: Icon(Icons.circle_outlined, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: _ModalitaLavagna.frecce,
+                      label: Text('Frecce'),
+                      icon: Icon(Icons.north_east, size: 18),
+                    ),
+                  ],
+                  selected: {_modalita},
+                  onSelectionChanged: (s) =>
+                      setState(() => _modalita = s.first),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.s8),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Cancella tutto',
-              onPressed: vuoto ? null : _cancellaTutto,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.s8),
+              const SizedBox(width: AppSpacing.s8),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Cancella tutto',
+                onPressed: vuoto ? null : _cancellaTutto,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s8),
+        ],
         AspectRatio(
           aspectRatio: 3 / 4,
           child: ClipRRect(
@@ -98,35 +120,49 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                 );
 
                 return GestureDetector(
-                  onTapDown: _modalita != _ModalitaLavagna.giocatori
+                  onTapDown:
+                      !widget.modificabile ||
+                          _modalita != _ModalitaLavagna.giocatori
                       ? null
-                      : (d) => setState(
-                          () => _giocatori.add(relativa(d.localPosition)),
-                        ),
-                  onPanStart: _modalita != _ModalitaLavagna.frecce
+                      : (d) {
+                          setState(
+                            () => _giocatori.add(relativa(d.localPosition)),
+                          );
+                          _notifica();
+                        },
+                  onPanStart:
+                      !widget.modificabile ||
+                          _modalita != _ModalitaLavagna.frecce
                       ? null
                       : (d) => setState(() {
                           _freccitaInizio = relativa(d.localPosition);
                           _freccitaAnteprima = _freccitaInizio;
                         }),
-                  onPanUpdate: _modalita != _ModalitaLavagna.frecce
+                  onPanUpdate:
+                      !widget.modificabile ||
+                          _modalita != _ModalitaLavagna.frecce
                       ? null
                       : (d) => setState(
                           () => _freccitaAnteprima = relativa(d.localPosition),
                         ),
-                  onPanEnd: _modalita != _ModalitaLavagna.frecce
+                  onPanEnd:
+                      !widget.modificabile ||
+                          _modalita != _ModalitaLavagna.frecce
                       ? null
-                      : (_) => setState(() {
-                          final inizio = _freccitaInizio;
-                          final fine = _freccitaAnteprima;
-                          if (inizio != null &&
-                              fine != null &&
-                              (inizio - fine).distance > 0.02) {
-                            _frecce.add((inizio, fine));
-                          }
-                          _freccitaInizio = null;
-                          _freccitaAnteprima = null;
-                        }),
+                      : (_) {
+                          setState(() {
+                            final inizio = _freccitaInizio;
+                            final fine = _freccitaAnteprima;
+                            if (inizio != null &&
+                                fine != null &&
+                                (inizio - fine).distance > 0.02) {
+                              _frecce.add((inizio, fine));
+                            }
+                            _freccitaInizio = null;
+                            _freccitaAnteprima = null;
+                          });
+                          _notifica();
+                        },
                   child: Container(
                     decoration: BoxDecoration(
                       color: colori.azioneTenue,
@@ -153,11 +189,17 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             numero: i + 1,
                             larghezza: larghezza,
                             altezza: altezza,
-                            attivo: _modalita == _ModalitaLavagna.giocatori,
-                            onSposta: (nuova) =>
-                                setState(() => _giocatori[i] = nuova),
-                            onRimuovi: () =>
-                                setState(() => _giocatori.removeAt(i)),
+                            attivo:
+                                widget.modificabile &&
+                                _modalita == _ModalitaLavagna.giocatori,
+                            onSposta: (nuova) {
+                              setState(() => _giocatori[i] = nuova);
+                              _notifica();
+                            },
+                            onRimuovi: () {
+                              setState(() => _giocatori.removeAt(i));
+                              _notifica();
+                            },
                           ),
                       ],
                     ),
@@ -167,14 +209,18 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.s4),
-        Text(
-          _modalita == _ModalitaLavagna.giocatori
-              ? 'Tocca per aggiungere un giocatore, trascina per spostarlo, '
-                    'doppio tocco per rimuoverlo.'
-              : 'Trascina per disegnare una freccia di movimento.',
-          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
-        ),
+        if (widget.modificabile) ...[
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            _modalita == _ModalitaLavagna.giocatori
+                ? 'Tocca per aggiungere un giocatore, trascina per spostarlo, '
+                      'doppio tocco per rimuoverlo.'
+                : 'Trascina per disegnare una freccia di movimento.',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+        ],
       ],
     );
   }

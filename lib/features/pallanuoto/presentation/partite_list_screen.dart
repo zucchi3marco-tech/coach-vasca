@@ -16,6 +16,7 @@ import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import 'distinta_screen.dart';
 import 'partita_form_screen.dart';
+import 'schemi_tattici_list_screen.dart';
 
 class PartiteListScreen extends ConsumerWidget {
   const PartiteListScreen({required this.clubId, super.key});
@@ -146,6 +147,15 @@ class PartiteListScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => StatisticheSquadraScreen(clubId: clubId),
+              ),
+            ),
+          ),
+          AzioneFab(
+            icona: Icons.sports_outlined,
+            etichetta: 'Schemi tattici',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SchemiTatticiListScreen(clubId: clubId),
               ),
             ),
           ),

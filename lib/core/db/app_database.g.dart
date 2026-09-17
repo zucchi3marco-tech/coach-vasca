@@ -2407,6 +2407,373 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
   }
 }
 
+class $SchemiTatticiTableTable extends SchemiTatticiTable
+    with TableInfo<$SchemiTatticiTableTable, SchemiTatticiTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchemiTatticiTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titoloMeta = const VerificationMeta('titolo');
+  @override
+  late final GeneratedColumn<String> titolo = GeneratedColumn<String>(
+    'titolo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _datiMeta = const VerificationMeta('dati');
+  @override
+  late final GeneratedColumn<String> dati = GeneratedColumn<String>(
+    'dati',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> aggiornatoIl = GeneratedColumn<DateTime>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    titolo,
+    dati,
+    aggiornatoIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schemi_tattici_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SchemiTatticiTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('titolo')) {
+      context.handle(
+        _titoloMeta,
+        titolo.isAcceptableOrUnknown(data['titolo']!, _titoloMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titoloMeta);
+    }
+    if (data.containsKey('dati')) {
+      context.handle(
+        _datiMeta,
+        dati.isAcceptableOrUnknown(data['dati']!, _datiMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_datiMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SchemiTatticiTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SchemiTatticiTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      titolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}titolo'],
+      )!,
+      dati: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dati'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+    );
+  }
+
+  @override
+  $SchemiTatticiTableTable createAlias(String alias) {
+    return $SchemiTatticiTableTable(attachedDatabase, alias);
+  }
+}
+
+class SchemiTatticiTableData extends DataClass
+    implements Insertable<SchemiTatticiTableData> {
+  final String id;
+  final String clubId;
+  final String titolo;
+
+  /// JSON con giocatori/frecce (vedi `SchemiTatticiRepository`), come
+  /// il campo `dati` jsonb lato Supabase: qui e' testo perche' Drift/
+  /// sqlite non ha un tipo json nativo.
+  final String dati;
+  final DateTime aggiornatoIl;
+  const SchemiTatticiTableData({
+    required this.id,
+    required this.clubId,
+    required this.titolo,
+    required this.dati,
+    required this.aggiornatoIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['titolo'] = Variable<String>(titolo);
+    map['dati'] = Variable<String>(dati);
+    map['aggiornato_il'] = Variable<DateTime>(aggiornatoIl);
+    return map;
+  }
+
+  SchemiTatticiTableCompanion toCompanion(bool nullToAbsent) {
+    return SchemiTatticiTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      titolo: Value(titolo),
+      dati: Value(dati),
+      aggiornatoIl: Value(aggiornatoIl),
+    );
+  }
+
+  factory SchemiTatticiTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SchemiTatticiTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      titolo: serializer.fromJson<String>(json['titolo']),
+      dati: serializer.fromJson<String>(json['dati']),
+      aggiornatoIl: serializer.fromJson<DateTime>(json['aggiornatoIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'titolo': serializer.toJson<String>(titolo),
+      'dati': serializer.toJson<String>(dati),
+      'aggiornatoIl': serializer.toJson<DateTime>(aggiornatoIl),
+    };
+  }
+
+  SchemiTatticiTableData copyWith({
+    String? id,
+    String? clubId,
+    String? titolo,
+    String? dati,
+    DateTime? aggiornatoIl,
+  }) => SchemiTatticiTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    titolo: titolo ?? this.titolo,
+    dati: dati ?? this.dati,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+  );
+  SchemiTatticiTableData copyWithCompanion(SchemiTatticiTableCompanion data) {
+    return SchemiTatticiTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      titolo: data.titolo.present ? data.titolo.value : this.titolo,
+      dati: data.dati.present ? data.dati.value : this.dati,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchemiTatticiTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('titolo: $titolo, ')
+          ..write('dati: $dati, ')
+          ..write('aggiornatoIl: $aggiornatoIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, clubId, titolo, dati, aggiornatoIl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SchemiTatticiTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.titolo == this.titolo &&
+          other.dati == this.dati &&
+          other.aggiornatoIl == this.aggiornatoIl);
+}
+
+class SchemiTatticiTableCompanion
+    extends UpdateCompanion<SchemiTatticiTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> titolo;
+  final Value<String> dati;
+  final Value<DateTime> aggiornatoIl;
+  final Value<int> rowid;
+  const SchemiTatticiTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.titolo = const Value.absent(),
+    this.dati = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchemiTatticiTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String titolo,
+    required String dati,
+    required DateTime aggiornatoIl,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       titolo = Value(titolo),
+       dati = Value(dati),
+       aggiornatoIl = Value(aggiornatoIl);
+  static Insertable<SchemiTatticiTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? titolo,
+    Expression<String>? dati,
+    Expression<DateTime>? aggiornatoIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (titolo != null) 'titolo': titolo,
+      if (dati != null) 'dati': dati,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchemiTatticiTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? titolo,
+    Value<String>? dati,
+    Value<DateTime>? aggiornatoIl,
+    Value<int>? rowid,
+  }) {
+    return SchemiTatticiTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      titolo: titolo ?? this.titolo,
+      dati: dati ?? this.dati,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (titolo.present) {
+      map['titolo'] = Variable<String>(titolo.value);
+    }
+    if (dati.present) {
+      map['dati'] = Variable<String>(dati.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<DateTime>(aggiornatoIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchemiTatticiTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('titolo: $titolo, ')
+          ..write('dati: $dati, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TestIngressoTableTable extends TestIngressoTable
     with TableInfo<$TestIngressoTableTable, TestIngressoTableData> {
   @override
@@ -9338,6 +9705,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PersonalBestTableTable personalBestTable =
       $PersonalBestTableTable(this);
   late final $TempiGaraTableTable tempiGaraTable = $TempiGaraTableTable(this);
+  late final $SchemiTatticiTableTable schemiTatticiTable =
+      $SchemiTatticiTableTable(this);
   late final $TestIngressoTableTable testIngressoTable =
       $TestIngressoTableTable(this);
   late final $TabellePassiTableTable tabellePassiTable =
@@ -9367,6 +9736,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     atletiTable,
     personalBestTable,
     tempiGaraTable,
+    schemiTatticiTable,
     testIngressoTable,
     tabellePassiTable,
     stagioniTable,
@@ -10612,6 +10982,232 @@ typedef $$TempiGaraTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $TempiGaraTableTable, TempiGaraTableData>,
       ),
       TempiGaraTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$SchemiTatticiTableTableCreateCompanionBuilder =
+    SchemiTatticiTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String titolo,
+      required String dati,
+      required DateTime aggiornatoIl,
+      Value<int> rowid,
+    });
+typedef $$SchemiTatticiTableTableUpdateCompanionBuilder =
+    SchemiTatticiTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> titolo,
+      Value<String> dati,
+      Value<DateTime> aggiornatoIl,
+      Value<int> rowid,
+    });
+
+class $$SchemiTatticiTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SchemiTatticiTableTable> {
+  $$SchemiTatticiTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get titolo => $composableBuilder(
+    column: $table.titolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dati => $composableBuilder(
+    column: $table.dati,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SchemiTatticiTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchemiTatticiTableTable> {
+  $$SchemiTatticiTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get titolo => $composableBuilder(
+    column: $table.titolo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dati => $composableBuilder(
+    column: $table.dati,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SchemiTatticiTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchemiTatticiTableTable> {
+  $$SchemiTatticiTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get titolo =>
+      $composableBuilder(column: $table.titolo, builder: (column) => column);
+
+  GeneratedColumn<String> get dati =>
+      $composableBuilder(column: $table.dati, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+}
+
+class $$SchemiTatticiTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SchemiTatticiTableTable,
+          SchemiTatticiTableData,
+          $$SchemiTatticiTableTableFilterComposer,
+          $$SchemiTatticiTableTableOrderingComposer,
+          $$SchemiTatticiTableTableAnnotationComposer,
+          $$SchemiTatticiTableTableCreateCompanionBuilder,
+          $$SchemiTatticiTableTableUpdateCompanionBuilder,
+          (
+            SchemiTatticiTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $SchemiTatticiTableTable,
+              SchemiTatticiTableData
+            >,
+          ),
+          SchemiTatticiTableData,
+          PrefetchHooks Function()
+        > {
+  $$SchemiTatticiTableTableTableManager(
+    _$AppDatabase db,
+    $SchemiTatticiTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SchemiTatticiTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchemiTatticiTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchemiTatticiTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> titolo = const Value.absent(),
+                Value<String> dati = const Value.absent(),
+                Value<DateTime> aggiornatoIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchemiTatticiTableCompanion(
+                id: id,
+                clubId: clubId,
+                titolo: titolo,
+                dati: dati,
+                aggiornatoIl: aggiornatoIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String titolo,
+                required String dati,
+                required DateTime aggiornatoIl,
+                Value<int> rowid = const Value.absent(),
+              }) => SchemiTatticiTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                titolo: titolo,
+                dati: dati,
+                aggiornatoIl: aggiornatoIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SchemiTatticiTableTable, SchemiTatticiTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SchemiTatticiTableTable,
+                    SchemiTatticiTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SchemiTatticiTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SchemiTatticiTableTable,
+      SchemiTatticiTableData,
+      $$SchemiTatticiTableTableFilterComposer,
+      $$SchemiTatticiTableTableOrderingComposer,
+      $$SchemiTatticiTableTableAnnotationComposer,
+      $$SchemiTatticiTableTableCreateCompanionBuilder,
+      $$SchemiTatticiTableTableUpdateCompanionBuilder,
+      (
+        SchemiTatticiTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $SchemiTatticiTableTable,
+          SchemiTatticiTableData
+        >,
+      ),
+      SchemiTatticiTableData,
       PrefetchHooks Function()
     >;
 typedef $$TestIngressoTableTableCreateCompanionBuilder =
@@ -14276,6 +14872,8 @@ class $AppDatabaseManager {
       $$PersonalBestTableTableTableManager(_db, _db.personalBestTable);
   $$TempiGaraTableTableTableManager get tempiGaraTable =>
       $$TempiGaraTableTableTableManager(_db, _db.tempiGaraTable);
+  $$SchemiTatticiTableTableTableManager get schemiTatticiTable =>
+      $$SchemiTatticiTableTableTableManager(_db, _db.schemiTatticiTable);
   $$TestIngressoTableTableTableManager get testIngressoTable =>
       $$TestIngressoTableTableTableManager(_db, _db.testIngressoTable);
   $$TabellePassiTableTableTableManager get tabellePassiTable =>

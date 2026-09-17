@@ -77,6 +77,21 @@ class TempiGaraTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class SchemiTatticiTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get titolo => text()();
+
+  /// JSON con giocatori/frecce (vedi `SchemiTatticiRepository`), come
+  /// il campo `dati` jsonb lato Supabase: qui e' testo perche' Drift/
+  /// sqlite non ha un tipo json nativo.
+  TextColumn get dati => text()();
+  DateTimeColumn get aggiornatoIl => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class TestIngressoTable extends Table {
   TextColumn get id => text()();
   TextColumn get atletaId => text()();

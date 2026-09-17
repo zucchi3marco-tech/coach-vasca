@@ -11,6 +11,7 @@ part 'app_database.g.dart';
     AtletiTable,
     PersonalBestTable,
     TempiGaraTable,
+    SchemiTatticiTable,
     TestIngressoTable,
     TabellePassiTable,
     StagioniTable,
@@ -29,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -223,6 +224,14 @@ class AppDatabase extends _$AppDatabase {
       if (from < 17) {
         if (!await _hasTable(m, 'tempi_gara_table')) {
           await m.createTable(tempiGaraTable);
+        }
+      }
+      // v17 -> v18: schemi tattici salvati (lavagnetta pallanuoto): prima
+      // era solo locale, ora l'allenatore li disegna e li salva, gli
+      // atleti li sfogliano.
+      if (from < 18) {
+        if (!await _hasTable(m, 'schemi_tattici_table')) {
+          await m.createTable(schemiTatticiTable);
         }
       }
     },
