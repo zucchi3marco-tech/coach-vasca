@@ -16,6 +16,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
+import '../../home/area_atleta_home_screen.dart';
 import '../../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../../stroke_rate/presentation/stroke_rate_screen.dart';
 import '../application/atleti_providers.dart';
@@ -106,6 +107,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   ordinamento: _ordinamento,
                   onTap: (atleta) => _apriForm(context, atleta: atleta),
                   onTapNuovo: () => _apriForm(context),
+                  onTapDashboard: (atleta) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AtletaDashboardScreen(atleta: atleta),
+                    ),
+                  ),
                   onTapCarico: (atleta) => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CaricoAtletaScreen(atleta: atleta),
@@ -182,6 +188,7 @@ class _AtletiList extends StatelessWidget {
     required this.ordinamento,
     required this.onTap,
     required this.onTapNuovo,
+    required this.onTapDashboard,
     required this.onTapCarico,
     required this.onTapStatistiche,
     required this.onTapBracciate,
@@ -195,6 +202,7 @@ class _AtletiList extends StatelessWidget {
   final _Ordinamento ordinamento;
   final ValueChanged<Atleta> onTap;
   final VoidCallback onTapNuovo;
+  final ValueChanged<Atleta> onTapDashboard;
   final ValueChanged<Atleta> onTapCarico;
   final ValueChanged<Atleta> onTapStatistiche;
   final ValueChanged<Atleta> onTapBracciate;
@@ -300,6 +308,13 @@ class _AtletiList extends StatelessWidget {
                     icon: Icon(Icons.more_vert, color: colori.testoSecondario),
                     onSelected: (azione) => azione(),
                     itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: () => onTapDashboard(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.space_dashboard_outlined,
+                          etichetta: 'Dashboard',
+                        ),
+                      ),
                       PopupMenuItem(
                         value: () => onTapCarico(atleta),
                         child: const _VoceMenu(

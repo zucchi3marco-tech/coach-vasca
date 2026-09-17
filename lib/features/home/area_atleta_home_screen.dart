@@ -45,7 +45,9 @@ String _etichettaSport(String? sport) => switch (sport) {
 /// mostrata da HomeScreen al posto delle tab da coach quando l'account
 /// autenticato non e' membro di nessun club ma e' collegato a un record
 /// atleti. Nessun Scaffold proprio: e' incorporata nel body di
-/// HomeScreen, che ha gia' AppBar e pulsante "Esci".
+/// HomeScreen, che ha gia' AppBar e pulsante "Esci". Vedi anche
+/// [AtletaDashboardScreen], che la incornicia con una AppBar propria
+/// per raggiungerla anche dall'account allenatore.
 ///
 /// Tre fasce (DESIGN.md sezione 10, `Breakpoint.of(context)` — mai
 /// `MediaQuery` a mano): affiancate da `medio` in su, impilate su
@@ -112,6 +114,26 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Incornicia [AreaAtletaHomeScreen] con una AppBar propria (titolo e
+/// pulsante indietro), per raggiungerla come schermata a parte —
+/// dall'account allenatore, toccando il nome di un atleta in
+/// `AtletiListScreen`. [AreaAtletaHomeScreen] da sola non ha Scaffold
+/// perché è pensata per stare già dentro quello di `HomeScreen`
+/// (usato invece quando è l'atleta stesso ad autenticarsi).
+class AtletaDashboardScreen extends StatelessWidget {
+  const AtletaDashboardScreen({required this.atleta, super.key});
+
+  final Atleta atleta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(atleta.nomeCompleto)),
+      body: AreaAtletaHomeScreen(atleta: atleta),
     );
   }
 }
