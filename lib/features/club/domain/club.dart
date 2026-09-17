@@ -11,8 +11,8 @@ class Club {
   final String nome;
   final String? citta;
 
-  /// 'nuoto' | 'pallanuoto' | 'nuoto_pallanuoto'. null per i club creati
-  /// prima che venisse chiesto (FASE 11).
+  /// 'nuoto' | 'pallanuoto' (un solo sport per club). null per i club
+  /// creati prima che venisse chiesto (FASE 11).
   final String? sport;
 
   /// Categorie allenate (es. "U14", "Assoluti"): libere nel contenuto, ma

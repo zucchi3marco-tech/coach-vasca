@@ -38,11 +38,7 @@ const _categoriePallanuoto = [
   'Prima squadra',
 ];
 
-const _sportOptions = [
-  ('nuoto', 'Nuoto'),
-  ('pallanuoto', 'Pallanuoto'),
-  ('nuoto_pallanuoto', 'Nuoto e Pallanuoto'),
-];
+const _sportOptions = [('nuoto', 'Nuoto'), ('pallanuoto', 'Pallanuoto')];
 
 /// Mostrato quando l'utente autenticato non e' ancora membro di nessun
 /// club: crea il primo club (diventandone owner tramite il trigger DB).
@@ -129,7 +125,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
   List<String> get _categorieDisponibili => switch (_sport) {
     'nuoto' => _categorieNuoto,
     'pallanuoto' => _categoriePallanuoto,
-    'nuoto_pallanuoto' => [..._categorieNuoto, ..._categoriePallanuoto],
     _ => const [],
   };
 

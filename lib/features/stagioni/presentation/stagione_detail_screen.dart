@@ -82,10 +82,8 @@ class StagioneDetailScreen extends ConsumerWidget {
     // caricamento): in quel caso si mostrano entrambe le sezioni, non si
     // nasconde contenuto per un dato mancante.
     final sport = ref.watch(currentClubProvider).value?.sport;
-    final mostraPallanuoto =
-        sport == null || sport == 'pallanuoto' || sport == 'nuoto_pallanuoto';
-    final mostraNuoto =
-        sport == null || sport == 'nuoto' || sport == 'nuoto_pallanuoto';
+    final mostraPallanuoto = sport == null || sport == 'pallanuoto';
+    final mostraNuoto = sport == null || sport == 'nuoto';
     final colori = context.colori;
 
     return AppScaffold(

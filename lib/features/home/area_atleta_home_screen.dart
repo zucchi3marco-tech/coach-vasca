@@ -37,7 +37,6 @@ String _formattaData(DateTime data) =>
 
 String _etichettaSport(String? sport) => switch (sport) {
   'pallanuoto' => 'Pallanuoto',
-  'nuoto_pallanuoto' => 'Nuoto e pallanuoto',
   _ => 'Nuoto',
 };
 
