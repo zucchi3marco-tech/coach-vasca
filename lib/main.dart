@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/pwa/installabilita_pwa.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  avviaOsservazioneInstallabilitaPwa();
   await dotenv.load();
 
   await Supabase.initialize(

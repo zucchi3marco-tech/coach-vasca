@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/pwa/installabilita_pwa.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
 import '../../theme/app_spacing.dart';
@@ -216,6 +217,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Text(club?.nome ?? 'WaterTactics'),
         actions: [
           if (club != null && !areaAtleta) _NotificheIndicator(clubId: club.id),
+          const _InstallaPwaButton(),
           const _SyncStatusIndicator(),
           if (mostraTab)
             IconButton(
@@ -234,6 +236,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: corpo,
       bottomNavigationBar: barraInferiore,
+    );
+  }
+}
+
+/// Icona nell'AppBar: visibile solo quando il browser (web) ha segnalato
+/// che l'installazione come PWA e' disponibile in questo momento — invece
+/// di affidarsi solo al popup automatico di Chrome, che compare secondo
+/// criteri suoi non richiamabili a comando (vedi `installabilita_pwa.dart`).
+/// No-op/sempre nascosta su Android/iOS/desktop nativi.
+class _InstallaPwaButton extends StatelessWidget {
+  const _InstallaPwaButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: installabilitaPwa,
+      builder: (context, disponibile, _) {
+        if (!disponibile) return const SizedBox.shrink();
+        return IconButton(
+          icon: const Icon(Icons.install_mobile),
+          tooltip: 'Installa l\'app',
+          onPressed: installaPwa,
+        );
+      },
     );
   }
 }

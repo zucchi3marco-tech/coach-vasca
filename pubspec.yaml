@@ -49,6 +49,7 @@ dependencies:
   google_mlkit_pose_detection: ^0.16.1
   google_fonts: ^8.2.1
   shared_preferences: ^2.5.5
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
