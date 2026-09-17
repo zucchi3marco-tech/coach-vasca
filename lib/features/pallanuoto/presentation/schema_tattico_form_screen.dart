@@ -33,8 +33,8 @@ class _SchemaTatticoFormScreenState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titoloController;
 
-  late List<PuntoSchema> _giocatori;
-  late List<(PuntoSchema, PuntoSchema)> _frecce;
+  late List<GiocatoreSchema> _giocatori;
+  late List<FrecciaSchema> _frecce;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -56,10 +56,21 @@ class _SchemaTatticoFormScreenState
     super.dispose();
   }
 
-  void _onCambiato(List<Offset> giocatori, List<(Offset, Offset)> frecce) {
-    _giocatori = [for (final o in giocatori) (o.dx, o.dy)];
+  void _onCambiato(
+    List<GiocatoreLavagna> giocatori,
+    List<FrecciaLavagna> frecce,
+  ) {
+    _giocatori = [
+      for (final g in giocatori)
+        (punto: (g.posizione.dx, g.posizione.dy), colore: g.colore.name),
+    ];
     _frecce = [
-      for (final f in frecce) ((f.$1.dx, f.$1.dy), (f.$2.dx, f.$2.dy)),
+      for (final f in frecce)
+        (
+          inizio: (f.inizio.dx, f.inizio.dy),
+          fine: (f.fine.dx, f.fine.dy),
+          colore: f.colore.name,
+        ),
     ];
   }
 
@@ -150,11 +161,19 @@ class _SchemaTatticoFormScreenState
             const SizedBox(height: AppSpacing.s16),
             WaterPoloTacticsBoard(
               giocatoriIniziali: [
-                for (final p in _giocatori) Offset(p.$1, p.$2),
+                for (final g in _giocatori)
+                  GiocatoreLavagna(
+                    posizione: Offset(g.punto.$1, g.punto.$2),
+                    colore: ColoreLavagna.values.byName(g.colore),
+                  ),
               ],
               frecceIniziali: [
                 for (final f in _frecce)
-                  (Offset(f.$1.$1, f.$1.$2), Offset(f.$2.$1, f.$2.$2)),
+                  FrecciaLavagna(
+                    inizio: Offset(f.inizio.$1, f.inizio.$2),
+                    fine: Offset(f.fine.$1, f.fine.$2),
+                    colore: ColoreLavagna.values.byName(f.colore),
+                  ),
               ],
               onCambiato: _onCambiato,
             ),

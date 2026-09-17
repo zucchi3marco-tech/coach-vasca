@@ -8,12 +8,82 @@ import '../../../theme/colori_app.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
+/// Colore scelto dall'allenatore per un giocatore o una freccia — una
+/// tavolozza fissa di 5 colori "da pennarello", non i colori del tema:
+/// qui è l'inchiostro scelto da chi disegna, non un token semantico
+/// dell'app (per questo sono valori letterali, non `context.colori`).
+enum ColoreLavagna {
+  blu,
+  bianco,
+  nero,
+  rosso,
+  giallo;
+
+  Color get colore => switch (this) {
+    ColoreLavagna.blu => const Color(0xFF1565C0),
+    ColoreLavagna.bianco => const Color(0xFFFFFFFF),
+    ColoreLavagna.nero => const Color(0xFF000000),
+    ColoreLavagna.rosso => const Color(0xFFD32F2F),
+    ColoreLavagna.giallo => const Color(0xFFFBC02D),
+  };
+
+  /// Testo/contorno leggibile sopra [colore]: nero sulle tinte chiare
+  /// (bianco, giallo), bianco su quelle scure.
+  Color get controcolore => switch (this) {
+    ColoreLavagna.bianco || ColoreLavagna.giallo => const Color(0xFF000000),
+    ColoreLavagna.blu ||
+    ColoreLavagna.nero ||
+    ColoreLavagna.rosso => const Color(0xFFFFFFFF),
+  };
+
+  String get nome => switch (this) {
+    ColoreLavagna.blu => 'Blu',
+    ColoreLavagna.bianco => 'Bianco',
+    ColoreLavagna.nero => 'Nero',
+    ColoreLavagna.rosso => 'Rosso',
+    ColoreLavagna.giallo => 'Giallo',
+  };
+}
+
+/// Un giocatore piazzato sulla lavagna: posizione frazionaria (0-1 su
+/// entrambi gli assi, così resta corretta a qualunque dimensione della
+/// card) e colore del pallino.
+class GiocatoreLavagna {
+  const GiocatoreLavagna({required this.posizione, required this.colore});
+
+  final Offset posizione;
+  final ColoreLavagna colore;
+
+  GiocatoreLavagna spostato(Offset nuovaPosizione) =>
+      GiocatoreLavagna(posizione: nuovaPosizione, colore: colore);
+}
+
+/// Una freccia di movimento disegnata sulla lavagna: inizio/fine
+/// frazionari e colore del tratto.
+class FrecciaLavagna {
+  const FrecciaLavagna({
+    required this.inizio,
+    required this.fine,
+    required this.colore,
+  });
+
+  final Offset inizio;
+  final Offset fine;
+  final ColoreLavagna colore;
+}
+
 /// Lavagna tattica per pallanuoto: campo disegnato (stesso stile
 /// grafico di `CampoTiro`, DESIGN.md sezione 9 — il tocco è l'input,
 /// non c'è un form), con due modalità:
-/// - **Giocatori**: tocca per piazzare un pallino numerato, trascinalo
-///   per spostarlo, doppio tocco per rimuoverlo;
-/// - **Frecce**: trascina per disegnare una freccia di movimento.
+/// - **Giocatori**: tocca per piazzare un pallino numerato (sempre
+///   della stessa dimensione), trascinalo per spostarlo, doppio tocco
+///   per rimuoverlo;
+/// - **Frecce**: trascina per disegnare una freccia di movimento
+///   (tratto dritto e punta calcolati, non un segno a mano libera: ogni
+///   freccia è sempre uguale e precisa).
+///
+/// Entrambi si disegnano nel colore scelto dalla tavolozza sopra il
+/// campo (blu/bianco/nero/rosso/giallo).
 ///
 /// Con [modificabile] a `false` (schema salvato, sfogliato da un
 /// atleta) il campo mostra solo `giocatoriIniziali`/`frecceIniziali`,
@@ -30,10 +100,13 @@ class WaterPoloTacticsBoard extends StatefulWidget {
     super.key,
   });
 
-  final List<Offset> giocatoriIniziali;
-  final List<(Offset, Offset)> frecceIniziali;
+  final List<GiocatoreLavagna> giocatoriIniziali;
+  final List<FrecciaLavagna> frecceIniziali;
   final bool modificabile;
-  final void Function(List<Offset> giocatori, List<(Offset, Offset)> frecce)?
+  final void Function(
+    List<GiocatoreLavagna> giocatori,
+    List<FrecciaLavagna> frecce,
+  )?
   onCambiato;
 
   @override
@@ -42,11 +115,12 @@ class WaterPoloTacticsBoard extends StatefulWidget {
 
 class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   _ModalitaLavagna _modalita = _ModalitaLavagna.giocatori;
+  ColoreLavagna _coloreSelezionato = ColoreLavagna.blu;
 
-  /// Posizioni frazionarie (0-1 su entrambi gli assi) dei giocatori
-  /// piazzati, così restano corrette a qualunque dimensione della card.
-  late final List<Offset> _giocatori = List.of(widget.giocatoriIniziali);
-  late final List<(Offset, Offset)> _frecce = List.of(widget.frecceIniziali);
+  late final List<GiocatoreLavagna> _giocatori = List.of(
+    widget.giocatoriIniziali,
+  );
+  late final List<FrecciaLavagna> _frecce = List.of(widget.frecceIniziali);
 
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
@@ -104,6 +178,25 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
             ],
           ),
           const SizedBox(height: AppSpacing.s8),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.s8,
+            children: [
+              Text(
+                'Colore:',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+              for (final c in ColoreLavagna.values)
+                _SwatchColore(
+                  colore: c,
+                  selezionato: c == _coloreSelezionato,
+                  onTap: () => setState(() => _coloreSelezionato = c),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s8),
         ],
         AspectRatio(
           aspectRatio: 3 / 4,
@@ -126,7 +219,12 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                       ? null
                       : (d) {
                           setState(
-                            () => _giocatori.add(relativa(d.localPosition)),
+                            () => _giocatori.add(
+                              GiocatoreLavagna(
+                                posizione: relativa(d.localPosition),
+                                colore: _coloreSelezionato,
+                              ),
+                            ),
                           );
                           _notifica();
                         },
@@ -156,7 +254,13 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             if (inizio != null &&
                                 fine != null &&
                                 (inizio - fine).distance > 0.02) {
-                              _frecce.add((inizio, fine));
+                              _frecce.add(
+                                FrecciaLavagna(
+                                  inizio: inizio,
+                                  fine: fine,
+                                  colore: _coloreSelezionato,
+                                ),
+                              );
                             }
                             _freccitaInizio = null;
                             _freccitaAnteprima = null;
@@ -178,14 +282,18 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                               anteprimaFreccia:
                                   _freccitaInizio != null &&
                                       _freccitaAnteprima != null
-                                  ? (_freccitaInizio!, _freccitaAnteprima!)
+                                  ? FrecciaLavagna(
+                                      inizio: _freccitaInizio!,
+                                      fine: _freccitaAnteprima!,
+                                      colore: _coloreSelezionato,
+                                    )
                                   : null,
                             ),
                           ),
                         ),
                         for (var i = 0; i < _giocatori.length; i++)
                           _TokenGiocatore(
-                            posizione: _giocatori[i],
+                            giocatore: _giocatori[i],
                             numero: i + 1,
                             larghezza: larghezza,
                             altezza: altezza,
@@ -193,7 +301,11 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                                 widget.modificabile &&
                                 _modalita == _ModalitaLavagna.giocatori,
                             onSposta: (nuova) {
-                              setState(() => _giocatori[i] = nuova);
+                              setState(
+                                () => _giocatori[i] = _giocatori[i].spostato(
+                                  nuova,
+                                ),
+                              );
                               _notifica();
                             },
                             onRimuovi: () {
@@ -226,9 +338,50 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   }
 }
 
+class _SwatchColore extends StatelessWidget {
+  const _SwatchColore({
+    required this.colore,
+    required this.selezionato,
+    required this.onTap,
+  });
+
+  final ColoreLavagna colore;
+  final bool selezionato;
+  final VoidCallback onTap;
+
+  static const _diametro = 28.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final coloriApp = context.colori;
+    return Tooltip(
+      message: colore.nome,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: _diametro,
+          height: _diametro,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: colore.colore,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selezionato ? coloriApp.azione : coloriApp.linea,
+              width: selezionato ? 3 : 1,
+            ),
+          ),
+          child: selezionato
+              ? Icon(Icons.check, size: 14, color: colore.controcolore)
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
 class _TokenGiocatore extends StatelessWidget {
   const _TokenGiocatore({
-    required this.posizione,
+    required this.giocatore,
     required this.numero,
     required this.larghezza,
     required this.altezza,
@@ -237,7 +390,7 @@ class _TokenGiocatore extends StatelessWidget {
     required this.onRimuovi,
   });
 
-  final Offset posizione;
+  final GiocatoreLavagna giocatore;
   final int numero;
   final double larghezza;
   final double altezza;
@@ -254,6 +407,7 @@ class _TokenGiocatore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    final posizione = giocatore.posizione;
     return Positioned(
       left: posizione.dx * larghezza - _diametro / 2,
       top: posizione.dy * altezza - _diametro / 2,
@@ -276,14 +430,14 @@ class _TokenGiocatore extends StatelessWidget {
             height: _diametro,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colori.azione,
+              color: giocatore.colore.colore,
               shape: BoxShape.circle,
               border: Border.all(color: colori.superficie, width: 2),
             ),
             child: Text(
               '$numero',
               style: AppTypography.piccolo.copyWith(
-                color: colori.azioneInk,
+                color: giocatore.colore.controcolore,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -302,8 +456,8 @@ class _CampoCompletoPainter extends CustomPainter {
   });
 
   final ColoriApp colori;
-  final List<(Offset, Offset)> frecce;
-  final (Offset, Offset)? anteprimaFreccia;
+  final List<FrecciaLavagna> frecce;
+  final FrecciaLavagna? anteprimaFreccia;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -347,31 +501,33 @@ class _CampoCompletoPainter extends CustomPainter {
     );
     canvas.drawCircle(Offset(centroX, centroY), size.width * 0.12, trattoCampo);
 
-    final trattoFreccia = Paint()
-      ..color = colori.azione
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    for (final (inizio, fine) in frecce) {
-      _disegnaFreccia(
-        canvas,
-        Offset(inizio.dx * size.width, inizio.dy * size.height),
-        Offset(fine.dx * size.width, fine.dy * size.height),
-        trattoFreccia,
-      );
-    }
-    final anteprima = anteprimaFreccia;
-    if (anteprima != null) {
-      final (inizio, fine) = anteprima;
-      final trattoAnteprima = Paint()
-        ..color = colori.azione.withValues(alpha: 0.5)
+    for (final f in frecce) {
+      final trattoFreccia = Paint()
+        ..color = f.colore.colore
         ..strokeWidth = 2.5
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
       _disegnaFreccia(
         canvas,
-        Offset(inizio.dx * size.width, inizio.dy * size.height),
-        Offset(fine.dx * size.width, fine.dy * size.height),
+        Offset(f.inizio.dx * size.width, f.inizio.dy * size.height),
+        Offset(f.fine.dx * size.width, f.fine.dy * size.height),
+        trattoFreccia,
+      );
+    }
+    final anteprima = anteprimaFreccia;
+    if (anteprima != null) {
+      final trattoAnteprima = Paint()
+        ..color = anteprima.colore.colore.withValues(alpha: 0.5)
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      _disegnaFreccia(
+        canvas,
+        Offset(
+          anteprima.inizio.dx * size.width,
+          anteprima.inizio.dy * size.height,
+        ),
+        Offset(anteprima.fine.dx * size.width, anteprima.fine.dy * size.height),
         trattoAnteprima,
       );
     }
@@ -400,9 +556,11 @@ class _CampoCompletoPainter extends CustomPainter {
     canvas.drawLine(a, p2, tratto);
   }
 
+  // Sempre true: la lista frecce e' lo stesso oggetto mutato in place tra
+  // una build e l'altra (mai riassegnato), quindi un confronto per
+  // identita' qui sarebbe sempre "invariato" anche quando il contenuto
+  // e' cambiato (es. dopo "Cancella tutto") — il campo e' comunque
+  // leggero da ridisegnare.
   @override
-  bool shouldRepaint(covariant _CampoCompletoPainter oldDelegate) =>
-      oldDelegate.colori != colori ||
-      oldDelegate.frecce != frecce ||
-      oldDelegate.anteprimaFreccia != anteprimaFreccia;
+  bool shouldRepaint(covariant _CampoCompletoPainter oldDelegate) => true;
 }

@@ -19,11 +19,19 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
       body: WaterPoloTacticsBoard(
         modificabile: false,
         giocatoriIniziali: [
-          for (final p in schema.giocatori) Offset(p.$1, p.$2),
+          for (final g in schema.giocatori)
+            GiocatoreLavagna(
+              posizione: Offset(g.punto.$1, g.punto.$2),
+              colore: ColoreLavagna.values.byName(g.colore),
+            ),
         ],
         frecceIniziali: [
           for (final f in schema.frecce)
-            (Offset(f.$1.$1, f.$1.$2), Offset(f.$2.$1, f.$2.$2)),
+            FrecciaLavagna(
+              inizio: Offset(f.inizio.$1, f.inizio.$2),
+              fine: Offset(f.fine.$1, f.fine.$2),
+              colore: ColoreLavagna.values.byName(f.colore),
+            ),
         ],
       ),
     );

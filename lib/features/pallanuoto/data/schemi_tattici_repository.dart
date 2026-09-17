@@ -16,37 +16,52 @@ import '../domain/schema_tattico.dart';
 const _uuid = Uuid();
 
 Map<String, dynamic> _datiToMap(
-  List<PuntoSchema> giocatori,
-  List<(PuntoSchema, PuntoSchema)> frecce,
+  List<GiocatoreSchema> giocatori,
+  List<FrecciaSchema> frecce,
 ) {
   return {
     'giocatori': [
-      for (final p in giocatori) [p.$1, p.$2],
+      for (final g in giocatori)
+        {
+          'punto': [g.punto.$1, g.punto.$2],
+          'colore': g.colore,
+        },
     ],
     'frecce': [
       for (final f in frecce)
-        [
-          [f.$1.$1, f.$1.$2],
-          [f.$2.$1, f.$2.$2],
-        ],
+        {
+          'inizio': [f.inizio.$1, f.inizio.$2],
+          'fine': [f.fine.$1, f.fine.$2],
+          'colore': f.colore,
+        },
     ],
   };
 }
 
-List<PuntoSchema> _giocatoriFromDati(Map<String, dynamic> dati) {
+PuntoSchema _puntoDaLista(List lista) =>
+    ((lista[0] as num).toDouble(), (lista[1] as num).toDouble());
+
+List<GiocatoreSchema> _giocatoriFromDati(Map<String, dynamic> dati) {
   final lista = dati['giocatori'] as List? ?? const [];
   return [
-    for (final p in lista) ((p[0] as num).toDouble(), (p[1] as num).toDouble()),
+    for (final g in lista)
+      (
+        punto: _puntoDaLista(g['punto'] as List),
+        // Fallback prudente: schemi salvati prima dell'introduzione dei
+        // colori (nessuno, in pratica) non hanno questo campo.
+        colore: g['colore'] as String? ?? 'blu',
+      ),
   ];
 }
 
-List<(PuntoSchema, PuntoSchema)> _frecceFromDati(Map<String, dynamic> dati) {
+List<FrecciaSchema> _frecceFromDati(Map<String, dynamic> dati) {
   final lista = dati['frecce'] as List? ?? const [];
   return [
     for (final f in lista)
       (
-        ((f[0][0] as num).toDouble(), (f[0][1] as num).toDouble()),
-        ((f[1][0] as num).toDouble(), (f[1][1] as num).toDouble()),
+        inizio: _puntoDaLista(f['inizio'] as List),
+        fine: _puntoDaLista(f['fine'] as List),
+        colore: f['colore'] as String? ?? 'blu',
       ),
   ];
 }
@@ -120,8 +135,8 @@ class SchemiTatticiRepository {
   Future<void> creaSchema({
     required String clubId,
     required String titolo,
-    required List<PuntoSchema> giocatori,
-    required List<(PuntoSchema, PuntoSchema)> frecce,
+    required List<GiocatoreSchema> giocatori,
+    required List<FrecciaSchema> frecce,
   }) async {
     final id = _uuid.v4();
     final ora = DateTime.now();
@@ -155,8 +170,8 @@ class SchemiTatticiRepository {
   Future<void> aggiornaSchema({
     required String id,
     required String titolo,
-    required List<PuntoSchema> giocatori,
-    required List<(PuntoSchema, PuntoSchema)> frecce,
+    required List<GiocatoreSchema> giocatori,
+    required List<FrecciaSchema> frecce,
   }) async {
     final ora = DateTime.now();
     final payload = {'titolo': titolo, 'dati': _datiToMap(giocatori, frecce)};

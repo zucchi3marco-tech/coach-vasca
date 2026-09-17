@@ -4,6 +4,12 @@
 /// coppia di double evita quella dipendenza.
 typedef PuntoSchema = (double x, double y);
 
+/// Colore: uno tra 'blu' | 'bianco' | 'nero' | 'rosso' | 'giallo' — vedi
+/// `ColoreLavagna` in `WaterPoloTacticsBoard`, qui solo il nome (stessa
+/// ragione di [PuntoSchema]: evitare la dipendenza da Flutter).
+typedef GiocatoreSchema = ({PuntoSchema punto, String colore});
+typedef FrecciaSchema = ({PuntoSchema inizio, PuntoSchema fine, String colore});
+
 /// Uno schema tattico salvato dall'allenatore (pallanuoto): giocatori
 /// piazzati + frecce di movimento, disegnati sulla lavagna
 /// (`WaterPoloTacticsBoard`) e salvati per poterli risfogliare — a
@@ -21,7 +27,7 @@ class SchemaTattico {
   final String id;
   final String clubId;
   final String titolo;
-  final List<PuntoSchema> giocatori;
-  final List<(PuntoSchema, PuntoSchema)> frecce;
+  final List<GiocatoreSchema> giocatori;
+  final List<FrecciaSchema> frecce;
   final DateTime aggiornatoIl;
 }
