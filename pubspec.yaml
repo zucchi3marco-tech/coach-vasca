@@ -78,6 +78,7 @@ flutter:
   # nella root del repository e supabase/README.md per come popolarlo.
   assets:
     - .env
+    - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

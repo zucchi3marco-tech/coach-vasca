@@ -12,7 +12,7 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
-      expect(find.text('SwimCoach FIN'), findsOneWidget);
+      expect(find.text('WaterTactics'), findsOneWidget);
       // AppTextField mostra l'etichetta come Text separato sopra il campo,
       // mai come InputDecoration.labelText flottante (DESIGN.md sezione 8):
       // "Email"/"Password" sono quindi fratelli del TextFormField, non suoi

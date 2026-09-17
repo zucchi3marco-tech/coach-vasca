@@ -1,0 +1,10 @@
+# Vercel scarica il repo e lo ricompila da zero (vedi vercel-build.sh):
+# tutto quello che e' output locale o cache va escluso esplicitamente,
+# perche' in alcuni casi la CLI non rispetta .gitignore in modo
+# affidabile e prova a caricare anche cartelle molto pesanti.
+build/
+.dart_tool/
+.pub-cache/
+.git/
+backups/
+.idea/

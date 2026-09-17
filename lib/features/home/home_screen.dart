@@ -209,7 +209,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(club?.nome ?? 'SwimCoach FIN'),
+        leading: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s8),
+          child: Image.asset('assets/images/logo.png'),
+        ),
+        title: Text(club?.nome ?? 'WaterTactics'),
         actions: [
           if (club != null && !areaAtleta) _NotificheIndicator(clubId: club.id),
           const _SyncStatusIndicator(),

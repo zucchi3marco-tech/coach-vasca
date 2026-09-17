@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +5,6 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
@@ -16,7 +14,7 @@ import '../../../widgets/stat_panel.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
-import '../domain/banister.dart';
+import 'grafico_banister.dart';
 
 const _ordineZonePerVolume = [
   'A1',
@@ -106,12 +104,9 @@ class CaricoAtletaScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.s16),
-                    SizedBox(
-                      height: 280,
-                      child: _GraficoBanister(punti: punti),
-                    ),
+                    SizedBox(height: 280, child: GraficoBanister(punti: punti)),
                     const SizedBox(height: AppSpacing.s12),
-                    const _Legenda(),
+                    const LegendaBanister(),
                     const SizedBox(height: AppSpacing.s28),
                     _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
                   ],
@@ -131,111 +126,6 @@ class CaricoAtletaScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _GraficoBanister extends StatelessWidget {
-  const _GraficoBanister({required this.punti});
-
-  final List<PuntoBanister> punti;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    final dominio = context.dominio;
-    List<FlSpot> spot(double Function(PuntoBanister) valore) => [
-      for (var i = 0; i < punti.length; i++)
-        FlSpot(i.toDouble(), valore(punti[i])),
-    ];
-
-    LineChartBarData linea(List<FlSpot> dati, Color colore) => LineChartBarData(
-      spots: dati,
-      isCurved: false,
-      color: colore,
-      barWidth: 2,
-      dotData: const FlDotData(show: false),
-    );
-
-    final intervalloEtichette = (punti.length / 5).ceil().clamp(
-      1,
-      punti.length,
-    );
-
-    return LineChart(
-      LineChartData(
-        lineBarsData: [
-          linea(spot((p) => p.fitness), dominio.curvaFitness(colori)),
-          linea(spot((p) => p.fatica), dominio.curvaFatica(colori)),
-          linea(spot((p) => p.forma), dominio.curvaForma(colori)),
-        ],
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 28,
-              interval: intervalloEtichette.toDouble(),
-              getTitlesWidget: (value, meta) {
-                final indice = value.round();
-                if (indice < 0 || indice >= punti.length) {
-                  return const SizedBox.shrink();
-                }
-                final data = punti[indice].data;
-                return Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.s4),
-                  child: Text(
-                    '${data.day.toString().padLeft(2, '0')}/'
-                    '${data.month.toString().padLeft(2, '0')}',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        gridData: const FlGridData(show: true),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-}
-
-class _Legenda extends StatelessWidget {
-  const _Legenda();
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    final dominio = context.dominio;
-    Widget voce(Color colore, String etichetta) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: AppSpacing.s12, height: AppSpacing.s12, color: colore),
-        const SizedBox(width: AppSpacing.s4),
-        Text(
-          etichetta,
-          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
-        ),
-      ],
-    );
-    return Wrap(
-      spacing: AppSpacing.s16,
-      children: [
-        voce(dominio.curvaFitness(colori), 'Fitness'),
-        voce(dominio.curvaFatica(colori), 'Fatica'),
-        voce(dominio.curvaForma(colori), 'Forma'),
-      ],
     );
   }
 }
