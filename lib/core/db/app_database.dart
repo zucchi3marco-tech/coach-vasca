@@ -10,6 +10,7 @@ part 'app_database.g.dart';
     ClubTable,
     AtletiTable,
     PersonalBestTable,
+    TempiGaraTable,
     TestIngressoTable,
     TabellePassiTable,
     StagioniTable,
@@ -28,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -213,6 +214,15 @@ class AppDatabase extends _$AppDatabase {
       if (from < 16) {
         if (!await _hasColumn(m, 'gruppi_table', 'sport')) {
           await m.addColumn(gruppiTable, gruppiTable.sport);
+        }
+      }
+      // v16 -> v17: storico tempi gara nuoto — a differenza di
+      // PersonalBestTable (un solo tempo, il migliore, per stile+
+      // distanza), qui ogni tempo inserito resta una voce separata,
+      // per la curva delle prestazioni nel tempo.
+      if (from < 17) {
+        if (!await _hasTable(m, 'tempi_gara_table')) {
+          await m.createTable(tempiGaraTable);
         }
       }
     },

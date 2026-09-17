@@ -1859,6 +1859,554 @@ class PersonalBestTableCompanion
   }
 }
 
+class $TempiGaraTableTable extends TempiGaraTable
+    with TableInfo<$TempiGaraTableTable, TempiGaraTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TempiGaraTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stileMeta = const VerificationMeta('stile');
+  @override
+  late final GeneratedColumn<String> stile = GeneratedColumn<String>(
+    'stile',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanzaMMeta = const VerificationMeta(
+    'distanzaM',
+  );
+  @override
+  late final GeneratedColumn<int> distanzaM = GeneratedColumn<int>(
+    'distanza_m',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vascaMMeta = const VerificationMeta('vascaM');
+  @override
+  late final GeneratedColumn<int> vascaM = GeneratedColumn<int>(
+    'vasca_m',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tempoSMeta = const VerificationMeta('tempoS');
+  @override
+  late final GeneratedColumn<double> tempoS = GeneratedColumn<double>(
+    'tempo_s',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    atletaId,
+    clubId,
+    stile,
+    distanzaM,
+    vascaM,
+    tempoS,
+    data,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tempi_gara_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TempiGaraTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('stile')) {
+      context.handle(
+        _stileMeta,
+        stile.isAcceptableOrUnknown(data['stile']!, _stileMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stileMeta);
+    }
+    if (data.containsKey('distanza_m')) {
+      context.handle(
+        _distanzaMMeta,
+        distanzaM.isAcceptableOrUnknown(data['distanza_m']!, _distanzaMMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_distanzaMMeta);
+    }
+    if (data.containsKey('vasca_m')) {
+      context.handle(
+        _vascaMMeta,
+        vascaM.isAcceptableOrUnknown(data['vasca_m']!, _vascaMMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vascaMMeta);
+    }
+    if (data.containsKey('tempo_s')) {
+      context.handle(
+        _tempoSMeta,
+        tempoS.isAcceptableOrUnknown(data['tempo_s']!, _tempoSMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tempoSMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TempiGaraTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TempiGaraTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      stile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stile'],
+      )!,
+      distanzaM: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distanza_m'],
+      )!,
+      vascaM: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vasca_m'],
+      )!,
+      tempoS: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tempo_s'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $TempiGaraTableTable createAlias(String alias) {
+    return $TempiGaraTableTable(attachedDatabase, alias);
+  }
+}
+
+class TempiGaraTableData extends DataClass
+    implements Insertable<TempiGaraTableData> {
+  final String id;
+  final String atletaId;
+  final String clubId;
+  final String stile;
+  final int distanzaM;
+  final int vascaM;
+  final double tempoS;
+  final DateTime data;
+  final String? note;
+  const TempiGaraTableData({
+    required this.id,
+    required this.atletaId,
+    required this.clubId,
+    required this.stile,
+    required this.distanzaM,
+    required this.vascaM,
+    required this.tempoS,
+    required this.data,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['stile'] = Variable<String>(stile);
+    map['distanza_m'] = Variable<int>(distanzaM);
+    map['vasca_m'] = Variable<int>(vascaM);
+    map['tempo_s'] = Variable<double>(tempoS);
+    map['data'] = Variable<DateTime>(data);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  TempiGaraTableCompanion toCompanion(bool nullToAbsent) {
+    return TempiGaraTableCompanion(
+      id: Value(id),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      stile: Value(stile),
+      distanzaM: Value(distanzaM),
+      vascaM: Value(vascaM),
+      tempoS: Value(tempoS),
+      data: Value(data),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory TempiGaraTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TempiGaraTableData(
+      id: serializer.fromJson<String>(json['id']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      stile: serializer.fromJson<String>(json['stile']),
+      distanzaM: serializer.fromJson<int>(json['distanzaM']),
+      vascaM: serializer.fromJson<int>(json['vascaM']),
+      tempoS: serializer.fromJson<double>(json['tempoS']),
+      data: serializer.fromJson<DateTime>(json['data']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'stile': serializer.toJson<String>(stile),
+      'distanzaM': serializer.toJson<int>(distanzaM),
+      'vascaM': serializer.toJson<int>(vascaM),
+      'tempoS': serializer.toJson<double>(tempoS),
+      'data': serializer.toJson<DateTime>(data),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  TempiGaraTableData copyWith({
+    String? id,
+    String? atletaId,
+    String? clubId,
+    String? stile,
+    int? distanzaM,
+    int? vascaM,
+    double? tempoS,
+    DateTime? data,
+    Value<String?> note = const Value.absent(),
+  }) => TempiGaraTableData(
+    id: id ?? this.id,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    stile: stile ?? this.stile,
+    distanzaM: distanzaM ?? this.distanzaM,
+    vascaM: vascaM ?? this.vascaM,
+    tempoS: tempoS ?? this.tempoS,
+    data: data ?? this.data,
+    note: note.present ? note.value : this.note,
+  );
+  TempiGaraTableData copyWithCompanion(TempiGaraTableCompanion data) {
+    return TempiGaraTableData(
+      id: data.id.present ? data.id.value : this.id,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      stile: data.stile.present ? data.stile.value : this.stile,
+      distanzaM: data.distanzaM.present ? data.distanzaM.value : this.distanzaM,
+      vascaM: data.vascaM.present ? data.vascaM.value : this.vascaM,
+      tempoS: data.tempoS.present ? data.tempoS.value : this.tempoS,
+      data: data.data.present ? data.data.value : this.data,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TempiGaraTableData(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('stile: $stile, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('vascaM: $vascaM, ')
+          ..write('tempoS: $tempoS, ')
+          ..write('data: $data, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    atletaId,
+    clubId,
+    stile,
+    distanzaM,
+    vascaM,
+    tempoS,
+    data,
+    note,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TempiGaraTableData &&
+          other.id == this.id &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.stile == this.stile &&
+          other.distanzaM == this.distanzaM &&
+          other.vascaM == this.vascaM &&
+          other.tempoS == this.tempoS &&
+          other.data == this.data &&
+          other.note == this.note);
+}
+
+class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
+  final Value<String> id;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<String> stile;
+  final Value<int> distanzaM;
+  final Value<int> vascaM;
+  final Value<double> tempoS;
+  final Value<DateTime> data;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const TempiGaraTableCompanion({
+    this.id = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.stile = const Value.absent(),
+    this.distanzaM = const Value.absent(),
+    this.vascaM = const Value.absent(),
+    this.tempoS = const Value.absent(),
+    this.data = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TempiGaraTableCompanion.insert({
+    required String id,
+    required String atletaId,
+    required String clubId,
+    required String stile,
+    required int distanzaM,
+    required int vascaM,
+    required double tempoS,
+    required DateTime data,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       stile = Value(stile),
+       distanzaM = Value(distanzaM),
+       vascaM = Value(vascaM),
+       tempoS = Value(tempoS),
+       data = Value(data);
+  static Insertable<TempiGaraTableData> custom({
+    Expression<String>? id,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<String>? stile,
+    Expression<int>? distanzaM,
+    Expression<int>? vascaM,
+    Expression<double>? tempoS,
+    Expression<DateTime>? data,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (stile != null) 'stile': stile,
+      if (distanzaM != null) 'distanza_m': distanzaM,
+      if (vascaM != null) 'vasca_m': vascaM,
+      if (tempoS != null) 'tempo_s': tempoS,
+      if (data != null) 'data': data,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TempiGaraTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<String>? stile,
+    Value<int>? distanzaM,
+    Value<int>? vascaM,
+    Value<double>? tempoS,
+    Value<DateTime>? data,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return TempiGaraTableCompanion(
+      id: id ?? this.id,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      stile: stile ?? this.stile,
+      distanzaM: distanzaM ?? this.distanzaM,
+      vascaM: vascaM ?? this.vascaM,
+      tempoS: tempoS ?? this.tempoS,
+      data: data ?? this.data,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (stile.present) {
+      map['stile'] = Variable<String>(stile.value);
+    }
+    if (distanzaM.present) {
+      map['distanza_m'] = Variable<int>(distanzaM.value);
+    }
+    if (vascaM.present) {
+      map['vasca_m'] = Variable<int>(vascaM.value);
+    }
+    if (tempoS.present) {
+      map['tempo_s'] = Variable<double>(tempoS.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TempiGaraTableCompanion(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('stile: $stile, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('vascaM: $vascaM, ')
+          ..write('tempoS: $tempoS, ')
+          ..write('data: $data, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TestIngressoTableTable extends TestIngressoTable
     with TableInfo<$TestIngressoTableTable, TestIngressoTableData> {
   @override
@@ -8789,6 +9337,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AtletiTableTable atletiTable = $AtletiTableTable(this);
   late final $PersonalBestTableTable personalBestTable =
       $PersonalBestTableTable(this);
+  late final $TempiGaraTableTable tempiGaraTable = $TempiGaraTableTable(this);
   late final $TestIngressoTableTable testIngressoTable =
       $TestIngressoTableTable(this);
   late final $TabellePassiTableTable tabellePassiTable =
@@ -8817,6 +9366,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     clubTable,
     atletiTable,
     personalBestTable,
+    tempiGaraTable,
     testIngressoTable,
     tabellePassiTable,
     stagioniTable,
@@ -9771,6 +10321,297 @@ typedef $$PersonalBestTableTableProcessedTableManager =
         >,
       ),
       PersonalBestTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$TempiGaraTableTableCreateCompanionBuilder =
+    TempiGaraTableCompanion Function({
+      required String id,
+      required String atletaId,
+      required String clubId,
+      required String stile,
+      required int distanzaM,
+      required int vascaM,
+      required double tempoS,
+      required DateTime data,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$TempiGaraTableTableUpdateCompanionBuilder =
+    TempiGaraTableCompanion Function({
+      Value<String> id,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<String> stile,
+      Value<int> distanzaM,
+      Value<int> vascaM,
+      Value<double> tempoS,
+      Value<DateTime> data,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$TempiGaraTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TempiGaraTableTable> {
+  $$TempiGaraTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vascaM => $composableBuilder(
+    column: $table.vascaM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tempoS => $composableBuilder(
+    column: $table.tempoS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TempiGaraTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TempiGaraTableTable> {
+  $$TempiGaraTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vascaM => $composableBuilder(
+    column: $table.vascaM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tempoS => $composableBuilder(
+    column: $table.tempoS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TempiGaraTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TempiGaraTableTable> {
+  $$TempiGaraTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get stile =>
+      $composableBuilder(column: $table.stile, builder: (column) => column);
+
+  GeneratedColumn<int> get distanzaM =>
+      $composableBuilder(column: $table.distanzaM, builder: (column) => column);
+
+  GeneratedColumn<int> get vascaM =>
+      $composableBuilder(column: $table.vascaM, builder: (column) => column);
+
+  GeneratedColumn<double> get tempoS =>
+      $composableBuilder(column: $table.tempoS, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$TempiGaraTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TempiGaraTableTable,
+          TempiGaraTableData,
+          $$TempiGaraTableTableFilterComposer,
+          $$TempiGaraTableTableOrderingComposer,
+          $$TempiGaraTableTableAnnotationComposer,
+          $$TempiGaraTableTableCreateCompanionBuilder,
+          $$TempiGaraTableTableUpdateCompanionBuilder,
+          (
+            TempiGaraTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TempiGaraTableTable,
+              TempiGaraTableData
+            >,
+          ),
+          TempiGaraTableData,
+          PrefetchHooks Function()
+        > {
+  $$TempiGaraTableTableTableManager(
+    _$AppDatabase db,
+    $TempiGaraTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TempiGaraTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TempiGaraTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TempiGaraTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> stile = const Value.absent(),
+                Value<int> distanzaM = const Value.absent(),
+                Value<int> vascaM = const Value.absent(),
+                Value<double> tempoS = const Value.absent(),
+                Value<DateTime> data = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TempiGaraTableCompanion(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                stile: stile,
+                distanzaM: distanzaM,
+                vascaM: vascaM,
+                tempoS: tempoS,
+                data: data,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String atletaId,
+                required String clubId,
+                required String stile,
+                required int distanzaM,
+                required int vascaM,
+                required double tempoS,
+                required DateTime data,
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TempiGaraTableCompanion.insert(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                stile: stile,
+                distanzaM: distanzaM,
+                vascaM: vascaM,
+                tempoS: tempoS,
+                data: data,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TempiGaraTableTable, TempiGaraTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TempiGaraTableTable,
+                    TempiGaraTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TempiGaraTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TempiGaraTableTable,
+      TempiGaraTableData,
+      $$TempiGaraTableTableFilterComposer,
+      $$TempiGaraTableTableOrderingComposer,
+      $$TempiGaraTableTableAnnotationComposer,
+      $$TempiGaraTableTableCreateCompanionBuilder,
+      $$TempiGaraTableTableUpdateCompanionBuilder,
+      (
+        TempiGaraTableData,
+        BaseReferences<_$AppDatabase, $TempiGaraTableTable, TempiGaraTableData>,
+      ),
+      TempiGaraTableData,
       PrefetchHooks Function()
     >;
 typedef $$TestIngressoTableTableCreateCompanionBuilder =
@@ -13433,6 +14274,8 @@ class $AppDatabaseManager {
       $$AtletiTableTableTableManager(_db, _db.atletiTable);
   $$PersonalBestTableTableTableManager get personalBestTable =>
       $$PersonalBestTableTableTableManager(_db, _db.personalBestTable);
+  $$TempiGaraTableTableTableManager get tempiGaraTable =>
+      $$TempiGaraTableTableTableManager(_db, _db.tempiGaraTable);
   $$TestIngressoTableTableTableManager get testIngressoTable =>
       $$TestIngressoTableTableTableManager(_db, _db.testIngressoTable);
   $$TabellePassiTableTableTableManager get tabellePassiTable =>

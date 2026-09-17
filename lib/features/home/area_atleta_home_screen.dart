@@ -656,17 +656,16 @@ class _AltriCollegamenti extends StatelessWidget {
             ),
           ),
         ),
-        if (pallanuoto)
-          AppListRow(
-            leading: const Icon(Icons.bar_chart_outlined),
-            titolo: 'Le mie statistiche',
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => StatisticheAtletaScreen(atleta: atleta),
-              ),
+        AppListRow(
+          leading: const Icon(Icons.bar_chart_outlined),
+          titolo: 'Le mie statistiche',
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => StatisticheAtletaScreen(atleta: atleta),
             ),
           ),
+        ),
         if (pallanuoto)
           AppListRow(
             leading: const Icon(Icons.sports_outlined),

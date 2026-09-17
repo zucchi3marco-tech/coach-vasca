@@ -1,16 +1,25 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
+import '../../atleti/application/tempi_gara_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/pb_slots.dart';
+import '../../atleti/domain/tempo_gara.dart';
+import '../../atleti/presentation/tempo_gara_form_screen.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/presentation/campo_tiro.dart';
 import '../../stagioni/domain/stagione.dart';
@@ -34,25 +43,31 @@ class _StatisticheAtletaScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isPallanuoto = widget.atleta.sport == 'pallanuoto';
     return AppScaffold(
       appBar: AppBar(
         title: Text('Statistiche — ${widget.atleta.nomeCompleto}'),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SelettoreStagione(
-            clubId: widget.atleta.clubId,
-            onCambiata: (s) => setState(() => _stagione = s),
-          ),
-          if (_stagione != null) ...[
-            const SizedBox(height: AppSpacing.s16),
-            Expanded(
-              child: _DatiAtleta(atleta: widget.atleta, stagione: _stagione!),
-            ),
-          ],
-        ],
-      ),
+      body: isPallanuoto
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SelettoreStagione(
+                  clubId: widget.atleta.clubId,
+                  onCambiata: (s) => setState(() => _stagione = s),
+                ),
+                if (_stagione != null) ...[
+                  const SizedBox(height: AppSpacing.s16),
+                  Expanded(
+                    child: _DatiAtleta(
+                      atleta: widget.atleta,
+                      stagione: _stagione!,
+                    ),
+                  ),
+                ],
+              ],
+            )
+          : _StoricoTempiNuoto(atleta: widget.atleta),
     );
   }
 }
@@ -261,6 +276,256 @@ class _SezioneMappaTiri extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Storico dei tempi nuoto per stile+distanza+vasca, con curva delle
+/// prestazioni nel tempo — equivalente, per il nuoto, di [_DatiAtleta]
+/// (pallanuoto). Non filtrato per stagione: una progressione ha senso
+/// solo guardando tutta la storia disponibile, non solo l'ultima
+/// stagione.
+class _StoricoTempiNuoto extends ConsumerStatefulWidget {
+  const _StoricoTempiNuoto({required this.atleta});
+
+  final Atleta atleta;
+
+  @override
+  ConsumerState<_StoricoTempiNuoto> createState() => _StoricoTempiNuotoState();
+}
+
+class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
+  late String _stile;
+  late int _distanzaM;
+  int _vascaM = 25;
+
+  @override
+  void initState() {
+    super.initState();
+    _stile = stiliNuoto.first;
+    _distanzaM = distanzePerStileNuoto[_stile]!.first;
+  }
+
+  void _cambiaStile(String? stile) {
+    if (stile == null) return;
+    setState(() {
+      _stile = stile;
+      final distanze = distanzePerStileNuoto[_stile]!;
+      if (!distanze.contains(_distanzaM)) _distanzaM = distanze.first;
+    });
+  }
+
+  void _apriForm({TempoGara? tempoGara}) => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => TempoGaraFormScreen(
+        atleta: widget.atleta,
+        tempoGara: tempoGara,
+        stileIniziale: _stile,
+        distanzaMIniziale: _distanzaM,
+        vascaMIniziale: _vascaM,
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final tempiAsync = ref.watch(tempiGaraListProvider(widget.atleta.id));
+    final colori = context.colori;
+    final distanze = distanzePerStileNuoto[_stile]!;
+
+    return tempiAsync.when(
+      data: (tutti) {
+        final filtrati = [
+          for (final t in tutti)
+            if (t.stile == _stile &&
+                t.distanzaM == _distanzaM &&
+                t.vascaM == _vascaM)
+              t,
+        ]..sort((a, b) => a.data.compareTo(b.data));
+
+        return ListView(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: AppSelect<String>(
+                    etichetta: 'Stile',
+                    value: _stile,
+                    items: [
+                      for (final s in stiliNuoto)
+                        DropdownMenuItem(
+                          value: s,
+                          child: Text(capitalizzaParola(s)),
+                        ),
+                    ],
+                    onChanged: _cambiaStile,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: AppSelect<int>(
+                    etichetta: 'Distanza',
+                    value: _distanzaM,
+                    items: [
+                      for (final d in distanze)
+                        DropdownMenuItem(value: d, child: Text('${d}m')),
+                    ],
+                    onChanged: (d) => setState(() => _distanzaM = d!),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Text(
+              'Vasca',
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            SegmentedButton<int>(
+              segments: const [
+                ButtonSegment(value: 25, label: Text('25m')),
+                ButtonSegment(value: 50, label: Text('50m')),
+              ],
+              selected: {_vascaM},
+              onSelectionChanged: (s) => setState(() => _vascaM = s.first),
+            ),
+            const SizedBox(height: AppSpacing.s28),
+            SectionHeader('Curva delle prestazioni'),
+            const SizedBox(height: AppSpacing.s16),
+            if (filtrati.length < 2)
+              Text(
+                'Servono almeno due tempi in questa combinazione per '
+                'disegnare la curva.',
+                style: AppTypography.corpo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              )
+            else
+              SizedBox(height: 220, child: _GraficoTempi(punti: filtrati)),
+            const SizedBox(height: AppSpacing.s28),
+            SectionHeader('Storico'),
+            const SizedBox(height: AppSpacing.s16),
+            AppListPanel(
+              righe: [
+                AppListRow(
+                  leading: Icon(Icons.add_circle_outline, color: colori.azione),
+                  titolo: 'Aggiungi tempo',
+                  onTap: _apriForm,
+                ),
+                for (final t in filtrati.reversed)
+                  AppListRow(
+                    titolo: formatPaceSeconds(t.tempoS),
+                    sottotitolo:
+                        '${t.data.day.toString().padLeft(2, '0')}/'
+                        '${t.data.month.toString().padLeft(2, '0')}/'
+                        '${t.data.year}'
+                        '${t.note != null && t.note!.isNotEmpty ? ' · ${t.note}' : ''}',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _apriForm(tempoGara: t),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(AppSpacing.s16),
+        child: LoadingSkeletonList(righe: 4),
+      ),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: ErrorBanner(
+          messaggio: 'Non è stato possibile caricare i tempi.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
+        ),
+      ),
+    );
+  }
+}
+
+/// Curva dei tempi (nuoto) nel tempo — stessa struttura di
+/// [GraficoBanister], una sola serie in `azione`.
+class _GraficoTempi extends StatelessWidget {
+  const _GraficoTempi({required this.punti});
+
+  final List<TempoGara> punti;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final spot = [
+      for (var i = 0; i < punti.length; i++)
+        FlSpot(i.toDouble(), punti[i].tempoS),
+    ];
+    final intervalloEtichette = (punti.length / 5).ceil().clamp(
+      1,
+      punti.length,
+    );
+
+    return LineChart(
+      LineChartData(
+        lineBarsData: [
+          LineChartBarData(
+            spots: spot,
+            isCurved: false,
+            color: colori.azione,
+            barWidth: 2,
+            dotData: const FlDotData(show: true),
+          ),
+        ],
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 48,
+              getTitlesWidget: (value, meta) => Text(
+                formatPaceSeconds(value),
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              interval: intervalloEtichette.toDouble(),
+              getTitlesWidget: (value, meta) {
+                final indice = value.round();
+                if (indice < 0 || indice >= punti.length) {
+                  return const SizedBox.shrink();
+                }
+                final data = punti[indice].data;
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.s4),
+                  child: Text(
+                    '${data.day.toString().padLeft(2, '0')}/'
+                    '${data.month.toString().padLeft(2, '0')}',
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        gridData: const FlGridData(show: true),
+        borderData: FlBorderData(show: false),
+      ),
     );
   }
 }

@@ -62,6 +62,21 @@ class PersonalBestTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class TempiGaraTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get stile => text()();
+  IntColumn get distanzaM => integer()();
+  IntColumn get vascaM => integer()();
+  RealColumn get tempoS => real()();
+  DateTimeColumn get data => dateTime()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class TestIngressoTable extends Table {
   TextColumn get id => text()();
   TextColumn get atletaId => text()();
