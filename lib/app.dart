@@ -21,7 +21,7 @@ class CoachVascaApp extends ConsumerWidget {
     final temaApp = ref.watch(temaAppProvider);
 
     return MaterialApp(
-      title: 'SwimCoach FIN',
+      title: 'WaterTactics',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.chiaro,
       darkTheme: AppTheme.scuro,

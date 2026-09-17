@@ -130,8 +130,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Image.asset('assets/images/logo.png', height: 72),
+                  const SizedBox(height: AppSpacing.s12),
                   Text(
-                    'SwimCoach FIN',
+                    'WaterTactics',
                     style: Theme.of(context).textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
