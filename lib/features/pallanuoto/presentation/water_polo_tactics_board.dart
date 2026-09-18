@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/danger_button.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
@@ -42,6 +43,19 @@ enum ColoreLavagna {
     ColoreLavagna.nero => 'Nero',
     ColoreLavagna.rosso => 'Rosso',
     ColoreLavagna.giallo => 'Giallo',
+  };
+}
+
+/// Campo intero (entrambe le porte, per schemi che coinvolgono tutta la
+/// vasca, es. transizioni) o solo metà campo (una porta, zona
+/// d'attacco, per schemi come superiorità/inferiorità numerica).
+enum CampoLavagna {
+  intero,
+  meta;
+
+  String get nome => switch (this) {
+    CampoLavagna.intero => 'Campo intero',
+    CampoLavagna.meta => 'Metà campo',
   };
 }
 
@@ -83,31 +97,39 @@ class FrecciaLavagna {
 ///   freccia è sempre uguale e precisa).
 ///
 /// Entrambi si disegnano nel colore scelto dalla tavolozza sopra il
-/// campo (blu/bianco/nero/rosso/giallo).
+/// campo (blu/bianco/nero/rosso/giallo), su campo intero o solo metà
+/// campo ([CampoLavagna]) a scelta.
 ///
 /// Con [modificabile] a `false` (schema salvato, sfogliato da un
-/// atleta) il campo mostra solo `giocatoriIniziali`/`frecceIniziali`,
-/// senza i controlli di modifica — stessa identica resa grafica, solo
-/// in sola lettura. Con [modificabile] a `true` (default, usato
-/// dall'allenatore per crearne/modificarne uno) ogni cambiamento
-/// richiama [onCambiato], così chi lo contiene può salvarlo.
+/// atleta) il campo mostra solo `giocatoriIniziali`/`frecceIniziali`
+/// sul [campo] scelto in fase di creazione, senza i controlli di
+/// modifica — stessa identica resa grafica, solo in sola lettura. Con
+/// [modificabile] a `true` (default, usato dall'allenatore per crearne/
+/// modificarne uno) ogni cambiamento richiama [onCambiato], così chi lo
+/// contiene può salvarlo; cambiare campo con [onCampoCambiato] cancella
+/// lo schema disegnato finora (le coordinate frazionarie non hanno più
+/// senso passando da un campo all'altro), previa conferma.
 class WaterPoloTacticsBoard extends StatefulWidget {
   const WaterPoloTacticsBoard({
     this.giocatoriIniziali = const [],
     this.frecceIniziali = const [],
+    this.campo = CampoLavagna.intero,
     this.modificabile = true,
     this.onCambiato,
+    this.onCampoCambiato,
     super.key,
   });
 
   final List<GiocatoreLavagna> giocatoriIniziali;
   final List<FrecciaLavagna> frecceIniziali;
+  final CampoLavagna campo;
   final bool modificabile;
   final void Function(
     List<GiocatoreLavagna> giocatori,
     List<FrecciaLavagna> frecce,
   )?
   onCambiato;
+  final ValueChanged<CampoLavagna>? onCampoCambiato;
 
   @override
   State<WaterPoloTacticsBoard> createState() => _WaterPoloTacticsBoardState();
@@ -134,6 +156,40 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       _frecce.clear();
     });
     _notifica();
+  }
+
+  Future<void> _cambiaCampo(CampoLavagna nuovo) async {
+    if (nuovo == widget.campo) return;
+    if (_giocatori.isNotEmpty || _frecce.isNotEmpty) {
+      final conferma = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cambiare campo?'),
+          content: const Text(
+            'Le posizioni disegnate finora hanno senso solo per il campo '
+            'attuale: cambiando, lo schema si svuota.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla'),
+            ),
+            DangerButton(
+              label: 'Cambia e svuota',
+              expanded: false,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        ),
+      );
+      if (conferma != true) return;
+      setState(() {
+        _giocatori.clear();
+        _frecce.clear();
+      });
+      _notifica();
+    }
+    widget.onCampoCambiato?.call(nuovo);
   }
 
   @override
@@ -178,6 +234,16 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
             ],
           ),
           const SizedBox(height: AppSpacing.s8),
+          SegmentedButton<CampoLavagna>(
+            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            segments: [
+              for (final c in CampoLavagna.values)
+                ButtonSegment(value: c, label: Text(c.nome)),
+            ],
+            selected: {widget.campo},
+            onSelectionChanged: (s) => _cambiaCampo(s.first),
+          ),
+          const SizedBox(height: AppSpacing.s8),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppSpacing.s8,
@@ -199,7 +265,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
           const SizedBox(height: AppSpacing.s8),
         ],
         AspectRatio(
-          aspectRatio: 3 / 4,
+          aspectRatio: widget.campo == CampoLavagna.intero ? 3 / 4 : 4 / 3,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pannello),
             child: LayoutBuilder(
@@ -278,6 +344,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           child: CustomPaint(
                             painter: _CampoCompletoPainter(
                               colori: colori,
+                              campo: widget.campo,
                               frecce: _frecce,
                               anteprimaFreccia:
                                   _freccitaInizio != null &&
@@ -451,29 +518,33 @@ class _TokenGiocatore extends StatelessWidget {
 class _CampoCompletoPainter extends CustomPainter {
   _CampoCompletoPainter({
     required this.colori,
+    required this.campo,
     required this.frecce,
     this.anteprimaFreccia,
   });
 
   final ColoriApp colori;
+  final CampoLavagna campo;
   final List<FrecciaLavagna> frecce;
   final FrecciaLavagna? anteprimaFreccia;
 
   @override
   void paint(Canvas canvas, Size size) {
+    // `colori.testo` (non `colori.linea`, pensato per bordi discreti fra
+    // superfici): il disegno del campo deve restare ben leggibile sopra
+    // `azioneTenue` in entrambi i temi, non essere un dettaglio sfumato.
     final trattoCampo = Paint()
-      ..color = colori.linea
-      ..strokeWidth = 1.5
+      ..color = colori.testo
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), trattoCampo);
 
-    // Porte, sopra e sotto: la lavagna mostra il campo per intero (non
-    // solo la zona d'attacco come CampoTiro), per poter schierare
-    // entrambe le squadre.
     final larghezzaPorta = size.width * 0.24;
-    final altezzaPorta = size.height * 0.03;
+    final altezzaPorta = size.height * 0.05;
     final centroX = size.width / 2;
+
+    // Porta in alto, sempre presente.
     canvas.drawRect(
       Rect.fromLTWH(
         centroX - larghezzaPorta / 2,
@@ -483,23 +554,32 @@ class _CampoCompletoPainter extends CustomPainter {
       ),
       trattoCampo,
     );
-    canvas.drawRect(
-      Rect.fromLTWH(
-        centroX - larghezzaPorta / 2,
-        size.height - altezzaPorta,
-        larghezzaPorta,
-        altezzaPorta,
-      ),
-      trattoCampo,
-    );
 
-    final centroY = size.height / 2;
-    canvas.drawLine(
-      Offset(0, centroY),
-      Offset(size.width, centroY),
-      trattoCampo,
-    );
-    canvas.drawCircle(Offset(centroX, centroY), size.width * 0.12, trattoCampo);
+    if (campo == CampoLavagna.intero) {
+      // Campo intero: anche la porta in basso, linea e cerchio di
+      // centrocampo — per schemi che coinvolgono tutta la vasca (es.
+      // transizioni).
+      canvas.drawRect(
+        Rect.fromLTWH(
+          centroX - larghezzaPorta / 2,
+          size.height - altezzaPorta,
+          larghezzaPorta,
+          altezzaPorta,
+        ),
+        trattoCampo,
+      );
+      final centroY = size.height / 2;
+      canvas.drawLine(
+        Offset(0, centroY),
+        Offset(size.width, centroY),
+        trattoCampo,
+      );
+      canvas.drawCircle(
+        Offset(centroX, centroY),
+        size.width * 0.12,
+        trattoCampo,
+      );
+    }
 
     for (final f in frecce) {
       final trattoFreccia = Paint()

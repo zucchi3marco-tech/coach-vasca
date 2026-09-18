@@ -19,6 +19,8 @@ class SchemaTattico {
     required this.id,
     required this.clubId,
     required this.titolo,
+    required this.categoria,
+    required this.campo,
     required this.giocatori,
     required this.frecce,
     required this.aggiornatoIl,
@@ -27,6 +29,16 @@ class SchemaTattico {
   final String id;
   final String clubId;
   final String titolo;
+
+  /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
+  /// "Superiorità", "Inferiorità", "Difesa", "Attacco"...): non un
+  /// elenco chiuso, se ne possono creare quanti se ne vogliono. Stringa
+  /// vuota per gli schemi senza categoria assegnata.
+  final String categoria;
+
+  /// 'intero' | 'meta' — vedi `CampoLavagna` in `WaterPoloTacticsBoard`.
+  final String campo;
+
   final List<GiocatoreSchema> giocatori;
   final List<FrecciaSchema> frecce;
   final DateTime aggiornatoIl;

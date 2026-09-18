@@ -18,6 +18,7 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
       appBar: AppBar(title: Text(schema.titolo)),
       body: WaterPoloTacticsBoard(
         modificabile: false,
+        campo: CampoLavagna.values.byName(schema.campo),
         giocatoriIniziali: [
           for (final g in schema.giocatori)
             GiocatoreLavagna(

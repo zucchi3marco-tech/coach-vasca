@@ -9,9 +9,14 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
 import '../application/schemi_tattici_providers.dart';
+import '../domain/schema_tattico.dart';
 import 'schema_tattico_form_screen.dart';
 import 'schema_tattico_viewer_screen.dart';
+
+String _etichettaCampo(String campo) =>
+    campo == 'meta' ? 'Metà campo' : 'Campo intero';
 
 /// Elenco degli schemi tattici del club: l'allenatore li crea/modifica
 /// (FAB "Nuovo schema", tocco apre l'editor), l'atleta li sfoglia in
@@ -66,26 +71,24 @@ class SchemiTatticiListScreen extends ConsumerWidget {
             : SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(AppSpacing.s16),
-                child: AppListPanel(
-                  righe: [
-                    for (final s in schemi)
-                      AppListRow(
-                        titolo: s.titolo,
-                        sottotitolo:
-                            'Aggiornato il '
-                            '${_formattaData(s.aggiornatoIl)}',
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => soloLettura
-                                ? SchemaTatticoViewerScreen(schema: s)
-                                : SchemaTatticoFormScreen(
-                                    clubId: clubId,
-                                    schema: s,
-                                  ),
-                          ),
-                        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final categoria in _categorieOrdinate(schemi)) ...[
+                      SectionHeader(
+                        categoria.isEmpty ? 'Senza categoria' : categoria,
                       ),
+                      const SizedBox(height: AppSpacing.s8),
+                      AppListPanel(
+                        righe: [
+                          for (final s in schemi.where(
+                            (s) => s.categoria == categoria,
+                          ))
+                            _rigaSchema(context, s),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.s16),
+                    ],
                   ],
                 ),
               ),
@@ -111,6 +114,34 @@ class SchemiTatticiListScreen extends ConsumerWidget {
               tooltip: 'Nuovo schema',
               child: const Icon(Icons.add),
             ),
+    );
+  }
+
+  /// Categorie presenti, in ordine alfabetico — quella vuota ("senza
+  /// categoria") sempre per ultima, non alfabeticamente prima di tutte.
+  List<String> _categorieOrdinate(List<SchemaTattico> schemi) {
+    final categorie = schemi.map((s) => s.categoria).toSet().toList()
+      ..sort((a, b) {
+        if (a.isEmpty != b.isEmpty) return a.isEmpty ? 1 : -1;
+        return a.compareTo(b);
+      });
+    return categorie;
+  }
+
+  AppListRow _rigaSchema(BuildContext context, SchemaTattico s) {
+    return AppListRow(
+      titolo: s.titolo,
+      sottotitolo:
+          '${_etichettaCampo(s.campo)} · '
+          'Aggiornato il ${_formattaData(s.aggiornatoIl)}',
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => soloLettura
+              ? SchemaTatticoViewerScreen(schema: s)
+              : SchemaTatticoFormScreen(clubId: clubId, schema: s),
+        ),
+      ),
     );
   }
 }

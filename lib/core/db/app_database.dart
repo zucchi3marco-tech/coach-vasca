@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -232,6 +232,16 @@ class AppDatabase extends _$AppDatabase {
       if (from < 18) {
         if (!await _hasTable(m, 'schemi_tattici_table')) {
           await m.createTable(schemiTatticiTable);
+        }
+      }
+      // v18 -> v19: categoria (gruppo libero) e campo (intero/meta) per
+      // gli schemi tattici, dopo il primo giro d'uso della lavagna.
+      if (from < 19) {
+        if (!await _hasColumn(m, 'schemi_tattici_table', 'categoria')) {
+          await m.addColumn(schemiTatticiTable, schemiTatticiTable.categoria);
+        }
+        if (!await _hasColumn(m, 'schemi_tattici_table', 'campo')) {
+          await m.addColumn(schemiTatticiTable, schemiTatticiTable.campo);
         }
       }
     },

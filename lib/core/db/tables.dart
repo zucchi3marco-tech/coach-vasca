@@ -82,6 +82,14 @@ class SchemiTatticiTable extends Table {
   TextColumn get clubId => text()();
   TextColumn get titolo => text()();
 
+  /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
+  /// "Superiorità"...): non un elenco chiuso, se ne possono creare
+  /// quanti se ne vogliono.
+  TextColumn get categoria => text().withDefault(const Constant(''))();
+
+  /// 'intero' | 'meta' — vedi `CampoLavagna` in `WaterPoloTacticsBoard`.
+  TextColumn get campo => text().withDefault(const Constant('intero'))();
+
   /// JSON con giocatori/frecce (vedi `SchemiTatticiRepository`), come
   /// il campo `dati` jsonb lato Supabase: qui e' testo perche' Drift/
   /// sqlite non ha un tipo json nativo.

@@ -9,6 +9,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
 import 'water_polo_tactics_board.dart';
@@ -32,9 +33,11 @@ class _SchemaTatticoFormScreenState
     extends ConsumerState<SchemaTatticoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titoloController;
+  late final TextEditingController _categoriaController;
 
   late List<GiocatoreSchema> _giocatori;
   late List<FrecciaSchema> _frecce;
+  late CampoLavagna _campo;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -46,13 +49,16 @@ class _SchemaTatticoFormScreenState
     super.initState();
     final s = widget.schema;
     _titoloController = TextEditingController(text: s?.titolo ?? '');
+    _categoriaController = TextEditingController(text: s?.categoria ?? '');
     _giocatori = List.of(s?.giocatori ?? const []);
     _frecce = List.of(s?.frecce ?? const []);
+    _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
   }
 
   @override
   void dispose() {
     _titoloController.dispose();
+    _categoriaController.dispose();
     super.dispose();
   }
 
@@ -74,6 +80,8 @@ class _SchemaTatticoFormScreenState
     ];
   }
 
+  void _cambiaCampo(CampoLavagna nuovo) => setState(() => _campo = nuovo);
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -88,6 +96,8 @@ class _SchemaTatticoFormScreenState
         await repository.aggiornaSchema(
           id: widget.schema!.id,
           titolo: _titoloController.text.trim(),
+          categoria: _categoriaController.text.trim(),
+          campo: _campo.name,
           giocatori: _giocatori,
           frecce: _frecce,
         );
@@ -95,6 +105,8 @@ class _SchemaTatticoFormScreenState
         await repository.creaSchema(
           clubId: widget.clubId,
           titolo: _titoloController.text.trim(),
+          categoria: _categoriaController.text.trim(),
+          campo: _campo.name,
           giocatori: _giocatori,
           frecce: _frecce,
         );
@@ -135,6 +147,14 @@ class _SchemaTatticoFormScreenState
 
   @override
   Widget build(BuildContext context) {
+    final categorieEsistenti =
+        (ref.watch(schemiTatticiListProvider(widget.clubId)).value ?? [])
+            .map((s) => s.categoria)
+            .where((c) => c.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -156,6 +176,28 @@ class _SchemaTatticoFormScreenState
                       ? 'Inserisci un titolo'
                       : null,
                 ),
+                AppTextField(
+                  etichetta: 'Categoria',
+                  controller: _categoriaController,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Inserisci una categoria (es. Transizioni, '
+                            'Superiorità, Difesa...)'
+                      : null,
+                ),
+                if (categorieEsistenti.isNotEmpty)
+                  Wrap(
+                    spacing: AppSpacing.s8,
+                    runSpacing: AppSpacing.s8,
+                    children: [
+                      for (final categoria in categorieEsistenti)
+                        ActionChip(
+                          label: Text(categoria),
+                          onPressed: () => setState(
+                            () => _categoriaController.text = categoria,
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.s16),
@@ -175,6 +217,8 @@ class _SchemaTatticoFormScreenState
                     colore: ColoreLavagna.values.byName(f.colore),
                   ),
               ],
+              campo: _campo,
+              onCampoCambiato: _cambiaCampo,
               onCambiato: _onCambiato,
             ),
             if (_errorMessage != null) ...[

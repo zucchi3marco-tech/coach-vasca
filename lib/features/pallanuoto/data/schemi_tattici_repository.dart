@@ -83,6 +83,8 @@ class SchemiTatticiRepository {
       id: row.id,
       clubId: row.clubId,
       titolo: row.titolo,
+      categoria: row.categoria,
+      campo: row.campo,
       giocatori: _giocatoriFromDati(dati),
       frecce: _frecceFromDati(dati),
       aggiornatoIl: row.aggiornatoIl,
@@ -95,6 +97,8 @@ class SchemiTatticiRepository {
       id: map['id'] as String,
       clubId: map['club_id'] as String,
       titolo: map['titolo'] as String,
+      categoria: Value(map['categoria'] as String? ?? ''),
+      campo: Value(map['campo'] as String? ?? 'intero'),
       dati: jsonEncode(dati),
       aggiornatoIl: DateTime.parse(map['updated_at'] as String),
     );
@@ -135,6 +139,8 @@ class SchemiTatticiRepository {
   Future<void> creaSchema({
     required String clubId,
     required String titolo,
+    required String categoria,
+    required String campo,
     required List<GiocatoreSchema> giocatori,
     required List<FrecciaSchema> frecce,
   }) async {
@@ -144,6 +150,8 @@ class SchemiTatticiRepository {
       'id': id,
       'club_id': clubId,
       'titolo': titolo,
+      'categoria': categoria,
+      'campo': campo,
       'dati': _datiToMap(giocatori, frecce),
     };
     try {
@@ -170,11 +178,18 @@ class SchemiTatticiRepository {
   Future<void> aggiornaSchema({
     required String id,
     required String titolo,
+    required String categoria,
+    required String campo,
     required List<GiocatoreSchema> giocatori,
     required List<FrecciaSchema> frecce,
   }) async {
     final ora = DateTime.now();
-    final payload = {'titolo': titolo, 'dati': _datiToMap(giocatori, frecce)};
+    final payload = {
+      'titolo': titolo,
+      'categoria': categoria,
+      'campo': campo,
+      'dati': _datiToMap(giocatori, frecce),
+    };
     try {
       final row = await _client
           .from('schemi_tattici')
@@ -190,6 +205,8 @@ class SchemiTatticiRepository {
       )..where((t) => t.id.equals(id))).write(
         SchemiTatticiTableCompanion(
           titolo: Value(titolo),
+          categoria: Value(categoria),
+          campo: Value(campo),
           dati: Value(jsonEncode(_datiToMap(giocatori, frecce))),
           aggiornatoIl: Value(ora),
         ),
