@@ -47,6 +47,8 @@ Questo è il motivo per cui i due temi non condividono un solo valore esadecimal
 
 **Dove spendere l'audacia:** una sola schermata deve essere memorabile, quella dell'**allenamento in corso a bordo vasca** — tipografia enorme, colori ridotti all'osso, zero decorazione. Tutto il resto (elenchi, form, impostazioni) sta zitto e fa il suo lavoro.
 
+**Seconda eccezione, la dashboard atleta.** È la schermata-vetrina dell'atleta — il primo (e spesso unico) punto su cui gira tutto il suo account, l'equivalente per lui della pagina bordo vasca per l'allenatore — quindi ha una sua tavolozza dedicata: `TokenDominio.evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra`, un colore diverso per l'icona di ogni scheda invece del solo `azione`, più lo stesso duo ciano/verde sul grafico Banister ovunque appaia (anche fuori dalla dashboard, es. `CaricoAtletaScreen`). Resta legata al tema chiaro/scuro dell'utente come tutto il resto dell'app — nessuna schermata "sempre scura" a parte. **Delimitata**: sfondi dei pannelli, titoli e i valori degli `StatPanel` restano neutri, il colore arriva solo dalle icone e dal grafico; la tavolozza `evidenza*` non si estende ad altre schermate senza deciderlo di nuovo esplicitamente qui.
+
 ---
 
 ## 3. Architettura dei token

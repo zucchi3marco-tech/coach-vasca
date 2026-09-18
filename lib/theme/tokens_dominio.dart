@@ -21,6 +21,9 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
     required this.calottinaNumeroSuBianca,
     required this.calottinaNumeroSuBlu,
     required this.calottinaNumeroSuRossa,
+    required this.evidenzaCiano,
+    required this.evidenzaVerde,
+    required this.evidenzaAmbra,
   });
 
   /// Colore per sigla di zona (A1, A2, B1, B2, C1, C2, C3, D). `C` senza
@@ -42,18 +45,29 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
   final Color calottinaNumeroSuBlu;
   final Color calottinaNumeroSuRossa;
 
+  /// Tavolozza "evidenza" — DESIGN.md sezione "Dove spendere l'audacia":
+  /// riservata alla dashboard atleta (icone delle sue schede) e al
+  /// grafico Banister ovunque appaia (vedi [curvaFitness]/[curvaForma]).
+  /// Non va riusata altrove senza deciderlo esplicitamente — resta
+  /// un'eccezione delimitata, non il nuovo colore d'azione dell'app.
+  final Color evidenzaCiano;
+  final Color evidenzaVerde;
+  final Color evidenzaAmbra;
+
   /// Colore della zona, o un neutro tenue se la sigla non è
   /// riconosciuta — non deve mai capitare, ma non deve nemmeno far
   /// crashare una schermata.
   Color colorePerZona(String? sigla, {required Color rispetto}) =>
       coloriZona[sigla] ?? rispetto;
 
-  /// Curve del grafico Banister — DESIGN.md sezione 7: sono già in
-  /// [ColoriApp] (fitness = azione, fatica = attenzione, forma = ok),
-  /// qui solo un getter di comodo che le richiama invece di duplicarle.
-  Color curvaFitness(ColoriApp colori) => colori.azione;
+  /// Curve del grafico Banister — DESIGN.md sezione 7. Fitness e forma
+  /// usano la tavolozza "evidenza" (più vivaci, vedi sopra); fatica resta
+  /// `colori.attenzione` (il significato "in corso/da tenere d'occhio" le
+  /// si addice già). Il parametro `colori` resta per compatibilità con i
+  /// chiamanti esistenti, anche se le prime due non lo usano più.
+  Color curvaFitness(ColoriApp colori) => evidenzaCiano;
   Color curvaFatica(ColoriApp colori) => colori.attenzione;
-  Color curvaForma(ColoriApp colori) => colori.ok;
+  Color curvaForma(ColoriApp colori) => evidenzaVerde;
 
   static const chiaro = tokenDominioChiaro;
   static const scuro = tokenDominioScuro;
@@ -68,6 +82,9 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
     Color? calottinaNumeroSuBianca,
     Color? calottinaNumeroSuBlu,
     Color? calottinaNumeroSuRossa,
+    Color? evidenzaCiano,
+    Color? evidenzaVerde,
+    Color? evidenzaAmbra,
   }) {
     return TokenDominio(
       coloriZona: coloriZona ?? this.coloriZona,
@@ -80,6 +97,9 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
       calottinaNumeroSuBlu: calottinaNumeroSuBlu ?? this.calottinaNumeroSuBlu,
       calottinaNumeroSuRossa:
           calottinaNumeroSuRossa ?? this.calottinaNumeroSuRossa,
+      evidenzaCiano: evidenzaCiano ?? this.evidenzaCiano,
+      evidenzaVerde: evidenzaVerde ?? this.evidenzaVerde,
+      evidenzaAmbra: evidenzaAmbra ?? this.evidenzaAmbra,
     );
   }
 

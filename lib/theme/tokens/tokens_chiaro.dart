@@ -61,4 +61,9 @@ const tokenDominioChiaro = TokenDominio(
   calottinaNumeroSuBianca: Palette.chiaro900,
   calottinaNumeroSuBlu: Palette.chiaro0,
   calottinaNumeroSuRossa: Palette.chiaro0,
+  // Tavolozza "evidenza" (dashboard atleta + grafico Banister) — vedi
+  // TokenDominio.evidenzaCiano e DESIGN.md "Dove spendere l'audacia".
+  evidenzaCiano: Color(0xFF00A9C7),
+  evidenzaVerde: Color(0xFF1FA35C),
+  evidenzaAmbra: Color(0xFFA8790A),
 );
