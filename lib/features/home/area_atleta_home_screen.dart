@@ -41,6 +41,32 @@ String _etichettaSport(String? sport) => switch (sport) {
   _ => 'Nuoto',
 };
 
+/// Icona a cerchio per l'intestazione di una scheda della dashboard —
+/// stesso aspetto per tutte (48px, `azioneTenue`/`azione`), solo il
+/// glifo cambia da scheda a scheda: dà un'identità riconoscibile a
+/// colpo d'occhio senza sparpagliare più colori (DESIGN.md vuole un
+/// solo accento per schermata).
+class _BadgeScheda extends StatelessWidget {
+  const _BadgeScheda(this.icona);
+
+  final IconData icona;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      width: 48,
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colori.azioneTenue,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icona, color: colori.azione),
+    );
+  }
+}
+
 /// Home/dashboard dell'atleta collegato (FASE 9, ridisegnata FASE 16):
 /// mostrata da HomeScreen al posto delle tab da coach quando l'account
 /// autenticato non e' membro di nessun club ma e' collegato a un record
@@ -164,6 +190,8 @@ class _CardAndamento extends ConsumerWidget {
           children: [
             Row(
               children: [
+                const _BadgeScheda(Icons.show_chart),
+                const SizedBox(width: AppSpacing.s12),
                 const Expanded(
                   child: SectionHeader(
                     'Andamento',
@@ -237,6 +265,8 @@ class _CardLavagnaTattica extends ConsumerWidget {
           children: [
             Row(
               children: [
+                const _BadgeScheda(Icons.route_outlined),
+                const SizedBox(width: AppSpacing.s12),
                 const Expanded(
                   child: SectionHeader(
                     'Schemi tattici',
@@ -454,6 +484,8 @@ class _CardTempiRecenti extends ConsumerWidget {
           children: [
             Row(
               children: [
+                const _BadgeScheda(Icons.timer_outlined),
+                const SizedBox(width: AppSpacing.s12),
                 const Expanded(
                   child: SectionHeader(
                     'I miei tempi',
@@ -582,16 +614,7 @@ class _CardRiepilogoClub extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colori.azioneTenue,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.pool_outlined, color: colori.azione),
-              ),
+              const _BadgeScheda(Icons.pool_outlined),
               const SizedBox(width: AppSpacing.s12),
               Expanded(
                 child: clubAsync.when(
