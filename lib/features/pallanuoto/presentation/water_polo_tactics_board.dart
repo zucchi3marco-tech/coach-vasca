@@ -9,6 +9,15 @@ import '../../../widgets/danger_button.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
+/// Numero (1-7) di un giocatore nel proprio colore: conta quanti
+/// giocatori dello stesso colore lo precedono (se stesso incluso)
+/// nell'ordine di piazzamento — condiviso fra la lavagna e
+/// `SchemaTatticoPlayer`, così la numerazione resta identica ovunque.
+int _numeroPerColore(List<GiocatoreLavagna> giocatori, int indice) => giocatori
+    .take(indice + 1)
+    .where((g) => g.colore == giocatori[indice].colore)
+    .length;
+
 /// Colore scelto dall'allenatore per un giocatore o una freccia — una
 /// tavolozza fissa di 5 colori "da pennarello", non i colori del tema:
 /// qui è l'inchiostro scelto da chi disegna, non un token semantico
@@ -85,6 +94,14 @@ class FrecciaLavagna {
   final Offset fine;
   final ColoreLavagna colore;
 }
+
+/// Un passo della sequenza (vedi `SchemaTatticoPlayer`): stessa forma
+/// di `PassoSchema` a livello di dominio, ma con i tipi Flutter usati
+/// da questo widget.
+typedef PassoLavagna = ({
+  List<GiocatoreLavagna> giocatori,
+  List<FrecciaLavagna> frecce,
+});
 
 /// Lavagna tattica per pallanuoto: campo disegnato (stesso stile
 /// grafico di `CampoTiro`, DESIGN.md sezione 9 — il tocco è l'input,
@@ -311,9 +328,18 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           _modalita != _ModalitaLavagna.giocatori
                       ? null
                       : (d) {
-                          final giaPresenti = _giocatori
-                              .where((g) => g.colore == _coloreSelezionato)
-                              .length;
+                          // Il giallo e' riservato alla palla (nessun
+                          // numero, vedi _TokenGiocatore): non e' un
+                          // "giocatore di movimento", quindi non conta
+                          // per il tetto dei 7.
+                          final giaPresenti =
+                              _coloreSelezionato == ColoreLavagna.giallo
+                              ? 0
+                              : _giocatori
+                                    .where(
+                                      (g) => g.colore == _coloreSelezionato,
+                                    )
+                                    .length;
                           if (giaPresenti >=
                               WaterPoloTacticsBoard.massimoGiocatoriPerColore) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -408,10 +434,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             // Numerato per colore (1-7), non in ordine
                             // assoluto di piazzamento: al cambio colore
                             // riparte da 1.
-                            numero: _giocatori
-                                .take(i + 1)
-                                .where((g) => g.colore == _giocatori[i].colore)
-                                .length,
+                            numero: _numeroPerColore(_giocatori, i),
                             larghezza: larghezza,
                             altezza: altezza,
                             attivo:
@@ -551,13 +574,18 @@ class _TokenGiocatore extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: colori.superficie, width: 2),
             ),
-            child: Text(
-              '$numero',
-              style: AppTypography.piccolo.copyWith(
-                color: giocatore.colore.controcolore,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            // Il giallo e' riservato alla palla: nessun numero sopra,
+            // cosi' si distingue a colpo d'occhio dai giocatori e si
+            // identificano i passaggi.
+            child: giocatore.colore == ColoreLavagna.giallo
+                ? null
+                : Text(
+                    '$numero',
+                    style: AppTypography.piccolo.copyWith(
+                      color: giocatore.colore.controcolore,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -693,4 +721,356 @@ class _CampoCompletoPainter extends CustomPainter {
   // leggero da ridisegnare.
   @override
   bool shouldRepaint(covariant _CampoCompletoPainter oldDelegate) => true;
+}
+
+/// Un giocatore abbinato fra due passi consecutivi, per l'animazione:
+/// abbinato per (colore, numero-nel-colore), non per posizione nella
+/// lista. Chi non ha corrispondenza nel passo di arrivo resta fermo e
+/// sfuma; chi compare solo nel passo di arrivo appare sfumando dentro,
+/// nella sua posizione finale.
+class _TokenSequenza {
+  const _TokenSequenza({
+    required this.colore,
+    required this.numero,
+    required this.posizioneIniziale,
+    required this.posizioneFinale,
+    required this.opacitaIniziale,
+    required this.opacitaFinale,
+  });
+
+  final ColoreLavagna colore;
+  final int numero;
+  final Offset posizioneIniziale;
+  final Offset posizioneFinale;
+  final double opacitaIniziale;
+  final double opacitaFinale;
+}
+
+List<_TokenSequenza> _abbinaGiocatori(
+  List<GiocatoreLavagna> da,
+  List<GiocatoreLavagna> a,
+) {
+  Map<(ColoreLavagna, int), GiocatoreLavagna> mappaPerChiave(
+    List<GiocatoreLavagna> giocatori,
+  ) {
+    final conteggio = <ColoreLavagna, int>{};
+    final mappa = <(ColoreLavagna, int), GiocatoreLavagna>{};
+    for (final g in giocatori) {
+      final n = (conteggio[g.colore] ?? 0) + 1;
+      conteggio[g.colore] = n;
+      mappa[(g.colore, n)] = g;
+    }
+    return mappa;
+  }
+
+  final mappaDa = mappaPerChiave(da);
+  final mappaA = mappaPerChiave(a);
+
+  return [
+    for (final chiave in {...mappaDa.keys, ...mappaA.keys})
+      if (mappaDa[chiave] != null && mappaA[chiave] != null)
+        _TokenSequenza(
+          colore: chiave.$1,
+          numero: chiave.$2,
+          posizioneIniziale: mappaDa[chiave]!.posizione,
+          posizioneFinale: mappaA[chiave]!.posizione,
+          opacitaIniziale: 1,
+          opacitaFinale: 1,
+        )
+      else if (mappaDa[chiave] != null)
+        _TokenSequenza(
+          colore: chiave.$1,
+          numero: chiave.$2,
+          posizioneIniziale: mappaDa[chiave]!.posizione,
+          posizioneFinale: mappaDa[chiave]!.posizione,
+          opacitaIniziale: 1,
+          opacitaFinale: 0,
+        )
+      else
+        _TokenSequenza(
+          colore: chiave.$1,
+          numero: chiave.$2,
+          posizioneIniziale: mappaA[chiave]!.posizione,
+          posizioneFinale: mappaA[chiave]!.posizione,
+          opacitaIniziale: 0,
+          opacitaFinale: 1,
+        ),
+  ];
+}
+
+class _TokenAnimato extends StatelessWidget {
+  const _TokenAnimato({
+    required this.token,
+    required this.t,
+    required this.larghezza,
+    required this.altezza,
+  });
+
+  final _TokenSequenza token;
+  final double t;
+  final double larghezza;
+  final double altezza;
+
+  static const _diametro = 32.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final posizione = Offset.lerp(
+      token.posizioneIniziale,
+      token.posizioneFinale,
+      t,
+    )!;
+    final opacita =
+        token.opacitaIniziale +
+        (token.opacitaFinale - token.opacitaIniziale) * t;
+    return Positioned(
+      left: posizione.dx * larghezza - _diametro / 2,
+      top: posizione.dy * altezza - _diametro / 2,
+      child: Opacity(
+        opacity: opacita,
+        child: Container(
+          width: _diametro,
+          height: _diametro,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: token.colore.colore,
+            shape: BoxShape.circle,
+            border: Border.all(color: colori.superficie, width: 2),
+          ),
+          child: token.colore == ColoreLavagna.giallo
+              ? null
+              : Text(
+                  '${token.numero}',
+                  style: AppTypography.piccolo.copyWith(
+                    color: token.colore.controcolore,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sfoglia e riproduce in animazione la sequenza di passi di uno
+/// schema tattico: fermo su un passo mostra i giocatori e le sue
+/// frecce (stessa resa di [WaterPoloTacticsBoard] in sola lettura); il
+/// tasto play anima lo spostamento verso il passo successivo —
+/// giocatori abbinati per colore+numero (vedi [_abbinaGiocatori]),
+/// frecce nascoste durante il movimento — in sequenza fino all'ultimo
+/// passo. Usato sia dal visualizzatore (schema salvato) sia
+/// dall'anteprima nell'editor (schema ancora in bozza, non salvato).
+class SchemaTatticoPlayer extends StatefulWidget {
+  const SchemaTatticoPlayer({
+    required this.passi,
+    required this.campo,
+    super.key,
+  });
+
+  final List<PassoLavagna> passi;
+  final CampoLavagna campo;
+
+  @override
+  State<SchemaTatticoPlayer> createState() => _SchemaTatticoPlayerState();
+}
+
+class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
+    with SingleTickerProviderStateMixin {
+  static const _durataMovimento = Duration(milliseconds: 900);
+  static const _durataPausa = Duration(milliseconds: 900);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _durataMovimento,
+  );
+
+  int _passoAttuale = 0;
+  int? _passoSuccessivo;
+  bool _inRiproduzione = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _play() async {
+    if (_inRiproduzione || widget.passi.length < 2) return;
+    setState(() => _inRiproduzione = true);
+    var i = _passoAttuale;
+    while (_inRiproduzione && i < widget.passi.length - 1) {
+      await Future.delayed(_durataPausa);
+      if (!_inRiproduzione || !mounted) return;
+      setState(() => _passoSuccessivo = i + 1);
+      await _controller.forward(from: 0);
+      if (!mounted) return;
+      i++;
+      setState(() {
+        _passoAttuale = i;
+        _passoSuccessivo = null;
+      });
+    }
+    if (mounted) setState(() => _inRiproduzione = false);
+  }
+
+  void _stop() {
+    _controller.stop();
+    setState(() {
+      _inRiproduzione = false;
+      _passoSuccessivo = null;
+    });
+  }
+
+  void _vaiAPasso(int indice) {
+    _stop();
+    setState(() => _passoAttuale = indice);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final passi = widget.passi;
+    final passoSuccessivo = _passoSuccessivo;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (passi.length > 1) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Passo precedente',
+                onPressed: _inRiproduzione || _passoAttuale == 0
+                    ? null
+                    : () => _vaiAPasso(_passoAttuale - 1),
+              ),
+              IconButton(
+                icon: Icon(_inRiproduzione ? Icons.stop : Icons.play_arrow),
+                tooltip: _inRiproduzione
+                    ? 'Ferma la riproduzione'
+                    : 'Riproduci la sequenza',
+                iconSize: 32,
+                onPressed: _inRiproduzione
+                    ? _stop
+                    : (_passoAttuale == passi.length - 1 ? null : _play),
+              ),
+              Text(
+                'Passo ${_passoAttuale + 1} di ${passi.length}',
+                style: AppTypography.corpoForte.copyWith(color: colori.testo),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Passo successivo',
+                onPressed: _inRiproduzione || _passoAttuale == passi.length - 1
+                    ? null
+                    : () => _vaiAPasso(_passoAttuale + 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.s8,
+            children: [
+              for (var i = 0; i < passi.length; i++)
+                ChoiceChip(
+                  label: Text('${i + 1}'),
+                  selected: i == _passoAttuale,
+                  onSelected: _inRiproduzione ? null : (_) => _vaiAPasso(i),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s16),
+        ],
+        AspectRatio(
+          aspectRatio: widget.campo == CampoLavagna.intero ? 3 / 4 : 4 / 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final larghezza = constraints.maxWidth;
+                final altezza = constraints.maxHeight;
+
+                if (passoSuccessivo == null) {
+                  final passo = passi[_passoAttuale];
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: colori.azioneTenue,
+                      border: Border.all(color: colori.linea),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _CampoCompletoPainter(
+                              colori: colori,
+                              campo: widget.campo,
+                              frecce: passo.frecce,
+                            ),
+                          ),
+                        ),
+                        for (var i = 0; i < passo.giocatori.length; i++)
+                          _TokenGiocatore(
+                            giocatore: passo.giocatori[i],
+                            numero: _numeroPerColore(passo.giocatori, i),
+                            larghezza: larghezza,
+                            altezza: altezza,
+                            attivo: false,
+                            onSposta: (_) {},
+                            onRimuovi: () {},
+                          ),
+                      ],
+                    ),
+                  );
+                }
+
+                // In movimento verso il passo successivo: nessuna
+                // freccia visibile (si rivedono ferme sul passo
+                // d'arrivo), solo i giocatori che scivolano da una
+                // posizione all'altra.
+                final tokenAnimati = _abbinaGiocatori(
+                  passi[_passoAttuale].giocatori,
+                  passi[passoSuccessivo].giocatori,
+                );
+                return AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: colori.azioneTenue,
+                        border: Border.all(color: colori.linea),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _CampoCompletoPainter(
+                                colori: colori,
+                                campo: widget.campo,
+                                frecce: const [],
+                              ),
+                            ),
+                          ),
+                          for (final token in tokenAnimati)
+                            _TokenAnimato(
+                              token: token,
+                              t: _controller.value,
+                              larghezza: larghezza,
+                              altezza: altezza,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

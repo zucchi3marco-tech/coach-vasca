@@ -89,6 +89,44 @@ class _SchemaTatticoFormScreenState
 
   void _vaiAPasso(int indice) => setState(() => _passoAttuale = indice);
 
+  void _apriAnteprima() {
+    final titolo = _titoloController.text.trim();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AppScaffold(
+          scrollabile: true,
+          appBar: AppBar(title: Text(titolo.isEmpty ? 'Anteprima' : titolo)),
+          body: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.s8),
+            child: SchemaTatticoPlayer(
+              campo: _campo,
+              passi: [
+                for (final p in _passi)
+                  (
+                    giocatori: [
+                      for (final g in p.giocatori)
+                        GiocatoreLavagna(
+                          posizione: Offset(g.punto.$1, g.punto.$2),
+                          colore: ColoreLavagna.values.byName(g.colore),
+                        ),
+                    ],
+                    frecce: [
+                      for (final f in p.frecce)
+                        FrecciaLavagna(
+                          inizio: Offset(f.inizio.$1, f.inizio.$2),
+                          fine: Offset(f.fine.$1, f.fine.$2),
+                          colore: ColoreLavagna.values.byName(f.colore),
+                        ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _aggiungiPasso() {
     if (_passi.length >= SchemaTattico.massimoPassi) return;
     setState(() {
@@ -247,9 +285,20 @@ class _SchemaTatticoFormScreenState
               ],
             ),
             const SizedBox(height: AppSpacing.s16),
-            Text(
-              'Passi (${_passi.length}/${SchemaTattico.massimoPassi})',
-              style: Theme.of(context).textTheme.titleSmall,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Passi (${_passi.length}/${SchemaTattico.massimoPassi})',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _apriAnteprima,
+                  icon: const Icon(Icons.play_circle_outline),
+                  label: const Text('Anteprima'),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.s8),
             Text(
