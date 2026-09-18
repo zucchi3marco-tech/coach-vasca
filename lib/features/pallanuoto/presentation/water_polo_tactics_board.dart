@@ -149,6 +149,7 @@ class WaterPoloTacticsBoard extends StatefulWidget {
   const WaterPoloTacticsBoard({
     this.giocatoriIniziali = const [],
     this.frecceIniziali = const [],
+    this.passoFantasma,
     this.campo = CampoLavagna.intero,
     this.modificabile = true,
     this.bloccata = false,
@@ -165,6 +166,13 @@ class WaterPoloTacticsBoard extends StatefulWidget {
 
   final List<GiocatoreLavagna> giocatoriIniziali;
   final List<FrecciaLavagna> frecceIniziali;
+
+  /// Passo precedente, mostrato in trasparenza dietro al disegno reale
+  /// (non interattivo) come riferimento — utile passando a un nuovo
+  /// passo, per non ritrovarsi la lavagna vuota e dover ricordare a
+  /// memoria da dove si era partiti.
+  final PassoLavagna? passoFantasma;
+
   final CampoLavagna campo;
   final bool modificabile;
 
@@ -196,13 +204,39 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   );
   late final List<FrecciaLavagna> _frecce = List.of(widget.frecceIniziali);
 
+  /// Uno stato precedente per ogni azione che modifica il disegno
+  /// (piazzare/spostare/rimuovere un giocatore, disegnare una freccia,
+  /// cancellare tutto): "Annulla" ripristina l'ultimo. Si svuota quando
+  /// cambia il campo, perché le posizioni salvate lì non varrebbero più.
+  final List<PassoLavagna> _cronologia = [];
+
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
 
   void _notifica() =>
       widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
 
+  void _registraCronologia() => _cronologia.add((
+    giocatori: List.of(_giocatori),
+    frecce: List.of(_frecce),
+  ));
+
+  void _annulla() {
+    if (_cronologia.isEmpty) return;
+    final precedente = _cronologia.removeLast();
+    setState(() {
+      _giocatori
+        ..clear()
+        ..addAll(precedente.giocatori);
+      _frecce
+        ..clear()
+        ..addAll(precedente.frecce);
+    });
+    _notifica();
+  }
+
   void _cancellaTutto() {
+    _registraCronologia();
     setState(() {
       _giocatori.clear();
       _frecce.clear();
@@ -238,6 +272,9 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       setState(() {
         _giocatori.clear();
         _frecce.clear();
+        // Le posizioni salvate nella cronologia erano per il campo
+        // precedente: non avrebbero più senso qui.
+        _cronologia.clear();
       });
       _notifica();
     }
@@ -281,6 +318,11 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
               const PulsanteSpiegazione(
                 titolo: 'Lavagna tattica',
                 spiegazione: _spiegazioneLavagna,
+              ),
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: 'Annulla l\'ultima modifica',
+                onPressed: _cronologia.isEmpty ? null : _annulla,
               ),
               IconButton(
                 icon: Icon(
@@ -377,6 +419,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             );
                             return;
                           }
+                          _registraCronologia();
                           setState(
                             () => _giocatori.add(
                               GiocatoreLavagna(
@@ -407,12 +450,15 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           _modalita != _ModalitaLavagna.frecce
                       ? null
                       : (_) {
+                          final inizio = _freccitaInizio;
+                          final fine = _freccitaAnteprima;
+                          final daAggiungere =
+                              inizio != null &&
+                              fine != null &&
+                              (inizio - fine).distance > 0.02;
+                          if (daAggiungere) _registraCronologia();
                           setState(() {
-                            final inizio = _freccitaInizio;
-                            final fine = _freccitaAnteprima;
-                            if (inizio != null &&
-                                fine != null &&
-                                (inizio - fine).distance > 0.02) {
+                            if (daAggiungere) {
                               _frecce.add(
                                 FrecciaLavagna(
                                   inizio: inizio,
@@ -451,6 +497,50 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             ),
                           ),
                         ),
+                        if (widget.passoFantasma != null)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Opacity(
+                                opacity: 0.3,
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: CustomPaint(
+                                        painter: _CampoCompletoPainter(
+                                          colori: colori,
+                                          campo: widget.campo,
+                                          frecce: widget.passoFantasma!.frecce,
+                                          disegnaCampo: false,
+                                        ),
+                                      ),
+                                    ),
+                                    for (
+                                      var i = 0;
+                                      i <
+                                          widget
+                                              .passoFantasma!
+                                              .giocatori
+                                              .length;
+                                      i++
+                                    )
+                                      _TokenGiocatore(
+                                        giocatore:
+                                            widget.passoFantasma!.giocatori[i],
+                                        numero: _numeroPerColore(
+                                          widget.passoFantasma!.giocatori,
+                                          i,
+                                        ),
+                                        larghezza: larghezza,
+                                        altezza: altezza,
+                                        attivo: false,
+                                        onSposta: (_) {},
+                                        onRimuovi: () {},
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         for (var i = 0; i < _giocatori.length; i++)
                           _TokenGiocatore(
                             giocatore: _giocatori[i],
@@ -463,6 +553,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             attivo:
                                 widget.modificabile &&
                                 _modalita == _ModalitaLavagna.giocatori,
+                            onInizioTrascinamento: _registraCronologia,
                             onSposta: (nuova) {
                               setState(
                                 () => _giocatori[i] = _giocatori[i].spostato(
@@ -472,6 +563,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                               _notifica();
                             },
                             onRimuovi: () {
+                              _registraCronologia();
                               setState(() => _giocatori.removeAt(i));
                               _notifica();
                             },
@@ -551,6 +643,7 @@ class _TokenGiocatore extends StatelessWidget {
     required this.attivo,
     required this.onSposta,
     required this.onRimuovi,
+    this.onInizioTrascinamento,
   });
 
   final GiocatoreLavagna giocatore;
@@ -565,6 +658,11 @@ class _TokenGiocatore extends StatelessWidget {
   final ValueChanged<Offset> onSposta;
   final VoidCallback onRimuovi;
 
+  /// Chiamato una sola volta all'inizio del trascinamento (non a ogni
+  /// pixel di movimento, a differenza di [onSposta]): usato per
+  /// registrare la posizione di partenza nella cronologia di "Annulla".
+  final VoidCallback? onInizioTrascinamento;
+
   static const _diametro = 32.0;
 
   @override
@@ -577,6 +675,7 @@ class _TokenGiocatore extends StatelessWidget {
       child: IgnorePointer(
         ignoring: !attivo,
         child: GestureDetector(
+          onPanStart: (_) => onInizioTrascinamento?.call(),
           onPanUpdate: (d) {
             final nuovaX =
                 (((posizione.dx * larghezza) + d.delta.dx) / larghezza).clamp(
@@ -622,6 +721,7 @@ class _CampoCompletoPainter extends CustomPainter {
     required this.campo,
     required this.frecce,
     this.anteprimaFreccia,
+    this.disegnaCampo = true,
   });
 
   final ColoriApp colori;
@@ -629,57 +729,85 @@ class _CampoCompletoPainter extends CustomPainter {
   final List<FrecciaLavagna> frecce;
   final FrecciaLavagna? anteprimaFreccia;
 
+  /// `false` per disegnare solo le frecce, senza le linee del campo —
+  /// usato per il fantasma del passo precedente (le linee del campo
+  /// sono già disegnate dal livello reale sotto, ridisegnarle due volte
+  /// non serve).
+  final bool disegnaCampo;
+
   @override
   void paint(Canvas canvas, Size size) {
-    // `colori.testo` (non `colori.linea`, pensato per bordi discreti fra
-    // superfici): il disegno del campo deve restare ben leggibile sopra
-    // `azioneTenue` in entrambi i temi, non essere un dettaglio sfumato.
-    final trattoCampo = Paint()
-      ..color = colori.testo
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), trattoCampo);
-
     final larghezzaPorta = size.width * 0.24;
     final altezzaPorta = size.height * 0.05;
     final centroX = size.width / 2;
 
-    // Porta in alto, sempre presente.
-    canvas.drawRect(
-      Rect.fromLTWH(
-        centroX - larghezzaPorta / 2,
-        0,
-        larghezzaPorta,
-        altezzaPorta,
-      ),
-      trattoCampo,
-    );
+    if (disegnaCampo) {
+      // `colori.testo` (non `colori.linea`, pensato per bordi discreti
+      // fra superfici): il disegno del campo deve restare ben
+      // leggibile sopra `azioneTenue` in entrambi i temi, non essere
+      // un dettaglio sfumato.
+      final trattoCampo = Paint()
+        ..color = colori.testo
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
 
-    if (campo == CampoLavagna.intero) {
-      // Campo intero: anche la porta in basso, linea e cerchio di
-      // centrocampo — per schemi che coinvolgono tutta la vasca (es.
-      // transizioni).
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        trattoCampo,
+      );
+
+      // Porta in alto, sempre presente.
       canvas.drawRect(
         Rect.fromLTWH(
           centroX - larghezzaPorta / 2,
-          size.height - altezzaPorta,
+          0,
           larghezzaPorta,
           altezzaPorta,
         ),
         trattoCampo,
       );
+
+      // Righe di regolamento 2m/6m (come in "eventi live partita",
+      // CampoTiro — 5m volutamente omessa), verso il centro campo a
+      // partire da ogni porta disegnata.
       final centroY = size.height / 2;
-      canvas.drawLine(
-        Offset(0, centroY),
-        Offset(size.width, centroY),
-        trattoCampo,
+      _disegnaLineeRegolamento(
+        canvas,
+        size,
+        yBaseGoal: altezzaPorta,
+        yLimite: campo == CampoLavagna.intero ? centroY : size.height,
       );
-      canvas.drawCircle(
-        Offset(centroX, centroY),
-        size.width * 0.12,
-        trattoCampo,
-      );
+
+      if (campo == CampoLavagna.intero) {
+        // Campo intero: anche la porta in basso, linea e cerchio di
+        // centrocampo — per schemi che coinvolgono tutta la vasca (es.
+        // transizioni).
+        canvas.drawRect(
+          Rect.fromLTWH(
+            centroX - larghezzaPorta / 2,
+            size.height - altezzaPorta,
+            larghezzaPorta,
+            altezzaPorta,
+          ),
+          trattoCampo,
+        );
+        _disegnaLineeRegolamento(
+          canvas,
+          size,
+          yBaseGoal: size.height - altezzaPorta,
+          yLimite: centroY,
+        );
+        canvas.drawLine(
+          Offset(0, centroY),
+          Offset(size.width, centroY),
+          trattoCampo,
+        );
+        canvas.drawCircle(
+          Offset(centroX, centroY),
+          size.width * 0.12,
+          trattoCampo,
+        );
+      }
     }
 
     for (final f in frecce) {
@@ -735,6 +863,37 @@ class _CampoCompletoPainter extends CustomPainter {
         );
     canvas.drawLine(a, p1, tratto);
     canvas.drawLine(a, p2, tratto);
+  }
+
+  /// Righe dei 2m e 6m dalla porta verso [yLimite] (il centro campo, o
+  /// il fondo/inizio opposto per il campo a metà) — stesse proporzioni
+  /// e colori di `CampoTiro` (`colori.rosso`/`colori.attenzione`), 5m
+  /// volutamente omessa qui.
+  void _disegnaLineeRegolamento(
+    Canvas canvas,
+    Size size, {
+    required double yBaseGoal,
+    required double yLimite,
+  }) {
+    final profondita = yLimite - yBaseGoal;
+    final tratto2m = Paint()
+      ..color = colori.rosso
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    final tratto6m = Paint()
+      ..color = colori.attenzione
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(0, yBaseGoal + profondita * (1.0 / 8.0)),
+      Offset(size.width, yBaseGoal + profondita * (1.0 / 8.0)),
+      tratto2m,
+    );
+    canvas.drawLine(
+      Offset(0, yBaseGoal + profondita * (4.4 / 8.0)),
+      Offset(size.width, yBaseGoal + profondita * (4.4 / 8.0)),
+      tratto6m,
+    );
   }
 
   // Sempre true: la lista frecce e' lo stesso oggetto mutato in place tra

@@ -89,6 +89,24 @@ class _SchemaTatticoFormScreenState
 
   void _vaiAPasso(int indice) => setState(() => _passoAttuale = indice);
 
+  PassoLavagna _passoAWidget(PassoSchema p) => (
+    giocatori: [
+      for (final g in p.giocatori)
+        GiocatoreLavagna(
+          posizione: Offset(g.punto.$1, g.punto.$2),
+          colore: ColoreLavagna.values.byName(g.colore),
+        ),
+    ],
+    frecce: [
+      for (final f in p.frecce)
+        FrecciaLavagna(
+          inizio: Offset(f.inizio.$1, f.inizio.$2),
+          fine: Offset(f.fine.$1, f.fine.$2),
+          colore: ColoreLavagna.values.byName(f.colore),
+        ),
+    ],
+  );
+
   void _apriAnteprima() {
     final titolo = _titoloController.text.trim();
     Navigator.of(context).push(
@@ -100,26 +118,7 @@ class _SchemaTatticoFormScreenState
             padding: const EdgeInsets.only(top: AppSpacing.s8),
             child: SchemaTatticoPlayer(
               campo: _campo,
-              passi: [
-                for (final p in _passi)
-                  (
-                    giocatori: [
-                      for (final g in p.giocatori)
-                        GiocatoreLavagna(
-                          posizione: Offset(g.punto.$1, g.punto.$2),
-                          colore: ColoreLavagna.values.byName(g.colore),
-                        ),
-                    ],
-                    frecce: [
-                      for (final f in p.frecce)
-                        FrecciaLavagna(
-                          inizio: Offset(f.inizio.$1, f.inizio.$2),
-                          fine: Offset(f.fine.$1, f.fine.$2),
-                          colore: ColoreLavagna.values.byName(f.colore),
-                        ),
-                    ],
-                  ),
-              ],
+              passi: [for (final p in _passi) _passoAWidget(p)],
             ),
           ),
         ),
@@ -236,7 +235,10 @@ class _SchemaTatticoFormScreenState
             .toSet()
             .toList()
           ..sort();
-    final passoAttuale = _passi[_passoAttuale];
+    final passoAttuale = _passoAWidget(_passi[_passoAttuale]);
+    final passoFantasma = _passoAttuale > 0
+        ? _passoAWidget(_passi[_passoAttuale - 1])
+        : null;
 
     return AppScaffold(
       scrollabile: true,
@@ -332,21 +334,9 @@ class _SchemaTatticoFormScreenState
             const SizedBox(height: AppSpacing.s16),
             WaterPoloTacticsBoard(
               key: ValueKey(_passoAttuale),
-              giocatoriIniziali: [
-                for (final g in passoAttuale.giocatori)
-                  GiocatoreLavagna(
-                    posizione: Offset(g.punto.$1, g.punto.$2),
-                    colore: ColoreLavagna.values.byName(g.colore),
-                  ),
-              ],
-              frecceIniziali: [
-                for (final f in passoAttuale.frecce)
-                  FrecciaLavagna(
-                    inizio: Offset(f.inizio.$1, f.inizio.$2),
-                    fine: Offset(f.fine.$1, f.fine.$2),
-                    colore: ColoreLavagna.values.byName(f.colore),
-                  ),
-              ],
+              giocatoriIniziali: passoAttuale.giocatori,
+              frecceIniziali: passoAttuale.frecce,
+              passoFantasma: passoFantasma,
               campo: _campo,
               bloccata: _bloccata,
               onCampoCambiato: _cambiaCampo,
