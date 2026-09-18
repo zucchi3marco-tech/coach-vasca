@@ -14,10 +14,13 @@ import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
 import 'water_polo_tactics_board.dart';
 
-/// Crea (o modifica) uno schema tattico: titolo + lavagna modificabile.
-/// Ogni tocco/trascinamento sulla lavagna aggiorna solo lo stato di
-/// questo form (in memoria); il salvataggio vero e proprio avviene al
-/// tocco di "Salva schema".
+/// Crea (o modifica) uno schema tattico: titolo + una sequenza di passi
+/// (al più [SchemaTattico.massimoPassi]), ciascuno con la propria
+/// lavagna modificabile — es. passo 1 le posizioni di partenza, passo 2
+/// le frecce di movimento, passo 3 le posizioni finali. Ogni
+/// tocco/trascinamento sulla lavagna aggiorna solo lo stato di questo
+/// form (in memoria); il salvataggio vero e proprio avviene al tocco di
+/// "Salva schema".
 class SchemaTatticoFormScreen extends ConsumerStatefulWidget {
   const SchemaTatticoFormScreen({required this.clubId, this.schema, super.key});
 
@@ -35,9 +38,10 @@ class _SchemaTatticoFormScreenState
   late final TextEditingController _titoloController;
   late final TextEditingController _categoriaController;
 
-  late List<GiocatoreSchema> _giocatori;
-  late List<FrecciaSchema> _frecce;
+  late List<PassoSchema> _passi;
+  int _passoAttuale = 0;
   late CampoLavagna _campo;
+  bool _bloccata = false;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -50,8 +54,7 @@ class _SchemaTatticoFormScreenState
     final s = widget.schema;
     _titoloController = TextEditingController(text: s?.titolo ?? '');
     _categoriaController = TextEditingController(text: s?.categoria ?? '');
-    _giocatori = List.of(s?.giocatori ?? const []);
-    _frecce = List.of(s?.frecce ?? const []);
+    _passi = List.of(s?.passi ?? const [(giocatori: [], frecce: [])]);
     _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
   }
 
@@ -66,21 +69,64 @@ class _SchemaTatticoFormScreenState
     List<GiocatoreLavagna> giocatori,
     List<FrecciaLavagna> frecce,
   ) {
-    _giocatori = [
-      for (final g in giocatori)
-        (punto: (g.posizione.dx, g.posizione.dy), colore: g.colore.name),
-    ];
-    _frecce = [
-      for (final f in frecce)
-        (
-          inizio: (f.inizio.dx, f.inizio.dy),
-          fine: (f.fine.dx, f.fine.dy),
-          colore: f.colore.name,
-        ),
-    ];
+    _passi[_passoAttuale] = (
+      giocatori: [
+        for (final g in giocatori)
+          (punto: (g.posizione.dx, g.posizione.dy), colore: g.colore.name),
+      ],
+      frecce: [
+        for (final f in frecce)
+          (
+            inizio: (f.inizio.dx, f.inizio.dy),
+            fine: (f.fine.dx, f.fine.dy),
+            colore: f.colore.name,
+          ),
+      ],
+    );
   }
 
   void _cambiaCampo(CampoLavagna nuovo) => setState(() => _campo = nuovo);
+
+  void _vaiAPasso(int indice) => setState(() => _passoAttuale = indice);
+
+  void _aggiungiPasso() {
+    if (_passi.length >= SchemaTattico.massimoPassi) return;
+    setState(() {
+      // Il nuovo passo parte da una copia dell'attuale: di solito il
+      // passo successivo (es. le posizioni finali) riparte da dove sta
+      // il precedente (es. le posizioni di partenza), non da zero.
+      _passi.add(_passi[_passoAttuale]);
+      _passoAttuale = _passi.length - 1;
+    });
+  }
+
+  Future<void> _eliminaPasso(int indice) async {
+    final passo = _passi[indice];
+    if (passo.giocatori.isNotEmpty || passo.frecce.isNotEmpty) {
+      final conferma = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Eliminare il passo ${indice + 1}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla'),
+            ),
+            DangerButton(
+              label: 'Elimina',
+              expanded: false,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        ),
+      );
+      if (conferma != true) return;
+    }
+    setState(() {
+      _passi.removeAt(indice);
+      if (_passoAttuale >= _passi.length) _passoAttuale = _passi.length - 1;
+    });
+  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -98,8 +144,7 @@ class _SchemaTatticoFormScreenState
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
-          giocatori: _giocatori,
-          frecce: _frecce,
+          passi: _passi,
         );
       } else {
         await repository.creaSchema(
@@ -107,8 +152,7 @@ class _SchemaTatticoFormScreenState
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
-          giocatori: _giocatori,
-          frecce: _frecce,
+          passi: _passi,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -154,9 +198,11 @@ class _SchemaTatticoFormScreenState
             .toSet()
             .toList()
           ..sort();
+    final passoAttuale = _passi[_passoAttuale];
 
     return AppScaffold(
       scrollabile: true,
+      physics: _bloccata ? const NeverScrollableScrollPhysics() : null,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica schema' : 'Nuovo schema'),
       ),
@@ -201,16 +247,51 @@ class _SchemaTatticoFormScreenState
               ],
             ),
             const SizedBox(height: AppSpacing.s16),
+            Text(
+              'Passi (${_passi.length}/${SchemaTattico.massimoPassi})',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Text(
+              'Ogni passo è una schermata a sé: es. passo 1 le posizioni '
+              'di partenza, passo 2 le frecce di movimento, passo 3 le '
+              'posizioni finali. Non serve usarli tutti.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (var i = 0; i < _passi.length; i++)
+                  InputChip(
+                    label: Text('${i + 1}'),
+                    selected: i == _passoAttuale,
+                    onSelected: (_) => _vaiAPasso(i),
+                    onDeleted: _passi.length > 1
+                        ? () => _eliminaPasso(i)
+                        : null,
+                  ),
+                if (_passi.length < SchemaTattico.massimoPassi)
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: const Text('Passo'),
+                    onPressed: _aggiungiPasso,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s16),
             WaterPoloTacticsBoard(
+              key: ValueKey(_passoAttuale),
               giocatoriIniziali: [
-                for (final g in _giocatori)
+                for (final g in passoAttuale.giocatori)
                   GiocatoreLavagna(
                     posizione: Offset(g.punto.$1, g.punto.$2),
                     colore: ColoreLavagna.values.byName(g.colore),
                   ),
               ],
               frecceIniziali: [
-                for (final f in _frecce)
+                for (final f in passoAttuale.frecce)
                   FrecciaLavagna(
                     inizio: Offset(f.inizio.$1, f.inizio.$2),
                     fine: Offset(f.fine.$1, f.fine.$2),
@@ -218,7 +299,9 @@ class _SchemaTatticoFormScreenState
                   ),
               ],
               campo: _campo,
+              bloccata: _bloccata,
               onCampoCambiato: _cambiaCampo,
+              onBloccataCambiato: (b) => setState(() => _bloccata = b),
               onCambiato: _onCambiato,
             ),
             if (_errorMessage != null) ...[

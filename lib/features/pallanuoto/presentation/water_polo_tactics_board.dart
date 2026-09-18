@@ -115,21 +115,37 @@ class WaterPoloTacticsBoard extends StatefulWidget {
     this.frecceIniziali = const [],
     this.campo = CampoLavagna.intero,
     this.modificabile = true,
+    this.bloccata = false,
     this.onCambiato,
     this.onCampoCambiato,
+    this.onBloccataCambiato,
     super.key,
   });
+
+  /// In acqua ci sono al più 7 giocatori di movimento per squadra: oltre
+  /// questo numero, per colore, un tocco per aggiungerne un altro non
+  /// fa nulla (con un avviso).
+  static const massimoGiocatoriPerColore = 7;
 
   final List<GiocatoreLavagna> giocatoriIniziali;
   final List<FrecciaLavagna> frecceIniziali;
   final CampoLavagna campo;
   final bool modificabile;
+
+  /// Blocca lo scroll della pagina che contiene la lavagna mentre e'
+  /// `true`: senza, trascinare per disegnare una freccia puo' far
+  /// scorrere la pagina invece di disegnare (il gesto di trascinamento
+  /// e' identico). Chi usa il widget deve applicarlo passando la stessa
+  /// fisica di scroll a `AppScaffold.physics` (vedi [onBloccataCambiato]).
+  final bool bloccata;
+
   final void Function(
     List<GiocatoreLavagna> giocatori,
     List<FrecciaLavagna> frecce,
   )?
   onCambiato;
   final ValueChanged<CampoLavagna>? onCampoCambiato;
+  final ValueChanged<bool>? onBloccataCambiato;
 
   @override
   State<WaterPoloTacticsBoard> createState() => _WaterPoloTacticsBoardState();
@@ -227,6 +243,17 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
               ),
               const SizedBox(width: AppSpacing.s8),
               IconButton(
+                icon: Icon(
+                  widget.bloccata ? Icons.lock : Icons.lock_open_outlined,
+                ),
+                tooltip: widget.bloccata
+                    ? 'Sblocca lo scorrimento della pagina'
+                    : 'Blocca lo scorrimento della pagina (utile mentre '
+                          'disegni una freccia)',
+                onPressed: () =>
+                    widget.onBloccataCambiato?.call(!widget.bloccata),
+              ),
+              IconButton(
                 icon: const Icon(Icons.delete_outline),
                 tooltip: 'Cancella tutto',
                 onPressed: vuoto ? null : _cancellaTutto,
@@ -284,6 +311,23 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           _modalita != _ModalitaLavagna.giocatori
                       ? null
                       : (d) {
+                          final giaPresenti = _giocatori
+                              .where((g) => g.colore == _coloreSelezionato)
+                              .length;
+                          if (giaPresenti >=
+                              WaterPoloTacticsBoard.massimoGiocatoriPerColore) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Massimo '
+                                  '${WaterPoloTacticsBoard.massimoGiocatoriPerColore} '
+                                  'giocatori ${_coloreSelezionato.nome.toLowerCase()}: '
+                                  'cambia colore per aggiungerne altri.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
                           setState(
                             () => _giocatori.add(
                               GiocatoreLavagna(
@@ -361,7 +405,13 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                         for (var i = 0; i < _giocatori.length; i++)
                           _TokenGiocatore(
                             giocatore: _giocatori[i],
-                            numero: i + 1,
+                            // Numerato per colore (1-7), non in ordine
+                            // assoluto di piazzamento: al cambio colore
+                            // riparte da 1.
+                            numero: _giocatori
+                                .take(i + 1)
+                                .where((g) => g.colore == _giocatori[i].colore)
+                                .length,
                             larghezza: larghezza,
                             altezza: altezza,
                             attivo:

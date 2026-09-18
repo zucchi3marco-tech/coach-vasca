@@ -10,10 +10,21 @@ typedef PuntoSchema = (double x, double y);
 typedef GiocatoreSchema = ({PuntoSchema punto, String colore});
 typedef FrecciaSchema = ({PuntoSchema inizio, PuntoSchema fine, String colore});
 
-/// Uno schema tattico salvato dall'allenatore (pallanuoto): giocatori
-/// piazzati + frecce di movimento, disegnati sulla lavagna
-/// (`WaterPoloTacticsBoard`) e salvati per poterli risfogliare — a
-/// differenza della versione precedente, puramente locale ed effimera.
+/// Un fotogramma dello schema: una disposizione di giocatori/frecce
+/// indipendente dagli altri passi — es. passo 1 "posizioni di
+/// partenza", passo 2 "frecce di movimento", passo 3 "posizioni
+/// finali". Ogni schema ne ha almeno uno, al massimo 10 (vedi
+/// [SchemaTattico.massimoPassi]).
+typedef PassoSchema = ({
+  List<GiocatoreSchema> giocatori,
+  List<FrecciaSchema> frecce,
+});
+
+/// Uno schema tattico salvato dall'allenatore (pallanuoto): una
+/// sequenza di passi (giocatori piazzati + frecce di movimento per
+/// ciascuno), disegnati sulla lavagna (`WaterPoloTacticsBoard`) e
+/// salvati per poterli risfogliare — a differenza della versione
+/// precedente, puramente locale ed effimera.
 class SchemaTattico {
   const SchemaTattico({
     required this.id,
@@ -21,10 +32,11 @@ class SchemaTattico {
     required this.titolo,
     required this.categoria,
     required this.campo,
-    required this.giocatori,
-    required this.frecce,
+    required this.passi,
     required this.aggiornatoIl,
   });
+
+  static const massimoPassi = 10;
 
   final String id;
   final String clubId;
@@ -39,7 +51,8 @@ class SchemaTattico {
   /// 'intero' | 'meta' — vedi `CampoLavagna` in `WaterPoloTacticsBoard`.
   final String campo;
 
-  final List<GiocatoreSchema> giocatori;
-  final List<FrecciaSchema> frecce;
+  /// Sempre almeno un passo, al più [massimoPassi].
+  final List<PassoSchema> passi;
+
   final DateTime aggiornatoIl;
 }

@@ -132,7 +132,8 @@ class SchemiTatticiListScreen extends ConsumerWidget {
     return AppListRow(
       titolo: s.titolo,
       sottotitolo:
-          '${_etichettaCampo(s.campo)} · '
+          '${_etichettaCampo(s.campo)}'
+          '${s.passi.length > 1 ? ' · ${s.passi.length} passi' : ''} · '
           'Aggiornato il ${_formattaData(s.aggiornatoIl)}',
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.of(context).push(

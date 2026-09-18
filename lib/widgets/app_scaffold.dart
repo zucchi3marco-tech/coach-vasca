@@ -13,6 +13,7 @@ class AppScaffold extends StatelessWidget {
     this.persistentFooterButtons,
     this.bottomNavigationBar,
     this.scrollabile = false,
+    this.physics,
     super.key,
   });
 
@@ -25,6 +26,12 @@ class AppScaffold extends StatelessWidget {
   /// Se true, avvolge il contenuto in uno scroll verticale (form lunghi,
   /// contenuto che può eccedere l'altezza dello schermo).
   final bool scrollabile;
+
+  /// Solo con [scrollabile]: es. `NeverScrollableScrollPhysics()` per
+  /// bloccare lo scroll della pagina mentre si trascina un contenuto
+  /// interno che userebbe altrimenti lo stesso gesto (es. la lavagna
+  /// tattica mentre si disegna una freccia). `null` = scroll normale.
+  final ScrollPhysics? physics;
 
   /// Oltre questa larghezza il contenuto smette di allargarsi e resta
   /// centrato — su un monitor desktop, campi di testo larghi quanto la
@@ -39,7 +46,7 @@ class AppScaffold extends StatelessWidget {
         : AppSpacing.margineLateraleTelefono;
     final contenuto = Padding(padding: EdgeInsets.all(margine), child: body);
     final corpo = scrollabile
-        ? SingleChildScrollView(child: contenuto)
+        ? SingleChildScrollView(physics: physics, child: contenuto)
         : contenuto;
 
     return Scaffold(

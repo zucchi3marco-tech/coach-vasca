@@ -15,29 +15,6 @@ import '../domain/schema_tattico.dart';
 
 const _uuid = Uuid();
 
-Map<String, dynamic> _datiToMap(
-  List<GiocatoreSchema> giocatori,
-  List<FrecciaSchema> frecce,
-) {
-  return {
-    'giocatori': [
-      for (final g in giocatori)
-        {
-          'punto': [g.punto.$1, g.punto.$2],
-          'colore': g.colore,
-        },
-    ],
-    'frecce': [
-      for (final f in frecce)
-        {
-          'inizio': [f.inizio.$1, f.inizio.$2],
-          'fine': [f.fine.$1, f.fine.$2],
-          'colore': f.colore,
-        },
-    ],
-  };
-}
-
 PuntoSchema _puntoDaLista(List lista) =>
     ((lista[0] as num).toDouble(), (lista[1] as num).toDouble());
 
@@ -66,6 +43,41 @@ List<FrecciaSchema> _frecceFromDati(Map<String, dynamic> dati) {
   ];
 }
 
+Map<String, dynamic> _passoToMap(PassoSchema passo) => {
+  'giocatori': [
+    for (final g in passo.giocatori)
+      {
+        'punto': [g.punto.$1, g.punto.$2],
+        'colore': g.colore,
+      },
+  ],
+  'frecce': [
+    for (final f in passo.frecce)
+      {
+        'inizio': [f.inizio.$1, f.inizio.$2],
+        'fine': [f.fine.$1, f.fine.$2],
+        'colore': f.colore,
+      },
+  ],
+};
+
+PassoSchema _passoFromMap(Map<String, dynamic> map) =>
+    (giocatori: _giocatoriFromDati(map), frecce: _frecceFromDati(map));
+
+Map<String, dynamic> _datiToMap(List<PassoSchema> passi) => {
+  'passi': [for (final p in passi) _passoToMap(p)],
+};
+
+List<PassoSchema> _passiFromDati(Map<String, dynamic> dati) {
+  final passiRaw = dati['passi'] as List?;
+  if (passiRaw == null) {
+    // Compatibilita' con gli schemi salvati prima dell'introduzione dei
+    // passi (un solo passo implicito, i dati stavano direttamente qui).
+    return [_passoFromMap(dati)];
+  }
+  return [for (final p in passiRaw) _passoFromMap(p as Map<String, dynamic>)];
+}
+
 /// Schemi tattici salvati dall'allenatore (pallanuoto): a differenza
 /// della lavagna libera di prima (solo locale), qui ogni schema si
 /// salva e diventa sfogliabile dagli atleti (RLS lato server: il coach
@@ -85,8 +97,7 @@ class SchemiTatticiRepository {
       titolo: row.titolo,
       categoria: row.categoria,
       campo: row.campo,
-      giocatori: _giocatoriFromDati(dati),
-      frecce: _frecceFromDati(dati),
+      passi: _passiFromDati(dati),
       aggiornatoIl: row.aggiornatoIl,
     );
   }
@@ -141,8 +152,7 @@ class SchemiTatticiRepository {
     required String titolo,
     required String categoria,
     required String campo,
-    required List<GiocatoreSchema> giocatori,
-    required List<FrecciaSchema> frecce,
+    required List<PassoSchema> passi,
   }) async {
     final id = _uuid.v4();
     final ora = DateTime.now();
@@ -152,7 +162,7 @@ class SchemiTatticiRepository {
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
-      'dati': _datiToMap(giocatori, frecce),
+      'dati': _datiToMap(passi),
     };
     try {
       final row = await _client
@@ -180,15 +190,14 @@ class SchemiTatticiRepository {
     required String titolo,
     required String categoria,
     required String campo,
-    required List<GiocatoreSchema> giocatori,
-    required List<FrecciaSchema> frecce,
+    required List<PassoSchema> passi,
   }) async {
     final ora = DateTime.now();
     final payload = {
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
-      'dati': _datiToMap(giocatori, frecce),
+      'dati': _datiToMap(passi),
     };
     try {
       final row = await _client
@@ -207,7 +216,7 @@ class SchemiTatticiRepository {
           titolo: Value(titolo),
           categoria: Value(categoria),
           campo: Value(campo),
-          dati: Value(jsonEncode(_datiToMap(giocatori, frecce))),
+          dati: Value(jsonEncode(_datiToMap(passi))),
           aggiornatoIl: Value(ora),
         ),
       );
