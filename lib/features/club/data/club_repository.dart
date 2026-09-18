@@ -33,6 +33,42 @@ class ClubRepository {
     return clubs;
   }
 
+  /// Legge un club specifico dalla cache locale, per id — usato
+  /// dall'atleta per il proprio club (gia' noto da `atleta.clubId`),
+  /// invece di [fetchMyClubsLocal] (pensato per "i club di cui il coach
+  /// e' membro": non ha senso per un atleta, che ne ha sempre esattamente
+  /// uno e non e' detto compaia lì).
+  Future<Club?> fetchByIdLocal(String clubId) async {
+    final row = await (_db.select(
+      _db.clubTable,
+    )..where((t) => t.id.equals(clubId))).getSingleOrNull();
+    return row == null ? null : _fromRow(row);
+  }
+
+  /// Aggiorna la cache locale per un solo club — non una sostituzione
+  /// totale come [refreshFromRemote]: un atleta non deve svuotare la
+  /// cache degli altri club che il coach di questo stesso device
+  /// potrebbe avere.
+  Future<void> refreshFromRemoteById(String clubId) async {
+    final row = await _client
+        .from('club')
+        .select('id, nome, citta, sport, categorie')
+        .eq('id', clubId)
+        .maybeSingle();
+    if (row == null) return;
+    await _db
+        .into(_db.clubTable)
+        .insertOnConflictUpdate(
+          ClubTableCompanion.insert(
+            id: row['id'] as String,
+            nome: row['nome'] as String,
+            citta: Value(row['citta'] as String?),
+            sport: Value(row['sport'] as String?),
+            categorieJson: Value(jsonEncode(row['categorie'] ?? const [])),
+          ),
+        );
+  }
+
   /// Aggiorna la cache locale con i club remoti di cui l'utente e' membro
   /// (la RLS su `club` filtra automaticamente in base a `club_membri`).
   /// Sostituzione totale (non insertOrReplace): se un club viene
@@ -75,17 +111,15 @@ class ClubRepository {
     String? sport,
     List<String> categorie = const [],
   }) async {
-    final row =
-        await _client.rpc(
-              'create_club',
-              params: {
-                'p_nome': nome,
-                if (citta != null && citta.isNotEmpty) 'p_citta': citta,
-                'p_sport': ?sport,
-                'p_categorie': categorie,
-              },
-            )
-            as Map<String, dynamic>;
+    final row = await _client.rpc(
+      'create_club',
+      params: {
+        'p_nome': nome,
+        if (citta != null && citta.isNotEmpty) 'p_citta': citta,
+        'p_sport': ?sport,
+        'p_categorie': categorie,
+      },
+    ) as Map<String, dynamic>;
     final club = Club.fromMap(row);
     await _db
         .into(_db.clubTable)

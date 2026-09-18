@@ -541,7 +541,7 @@ class _CardRiepilogoClub extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final clubAsync = ref.watch(currentClubProvider);
+    final clubAsync = ref.watch(clubAtletaProvider(atleta.clubId));
     final presenzeAsync = ref.watch(presenzePerAtletaProvider(atleta.id));
     final allenamentiAsync = ref.watch(
       allenamentiAtletaProvider(atleta.clubId),

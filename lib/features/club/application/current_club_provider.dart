@@ -31,3 +31,22 @@ final currentClubProvider = FutureProvider.autoDispose<Club?>((ref) async {
   final clubs = await repository.fetchMyClubsLocal();
   return clubs.isEmpty ? null : clubs.first;
 });
+
+/// Il club dell'atleta collegato, per id — a differenza di
+/// [currentClubProvider] (pensato per "i club di cui il coach e'
+/// membro", un solo club in V1: `.first` su un elenco che per un
+/// atleta puro può restare vuoto o contenere il club sbagliato se lo
+/// stesso device ha anche una cache da coach). Qui l'id è già noto
+/// (`atleta.clubId`), quindi si legge/aggiorna solo quella riga.
+final clubAtletaProvider = FutureProvider.autoDispose.family<Club?, String>((
+  ref,
+  clubId,
+) async {
+  final repository = ref.watch(clubRepositoryProvider);
+  try {
+    await repository.refreshFromRemoteById(clubId);
+  } catch (_) {
+    // offline: si procede con quel che c'e' in locale.
+  }
+  return repository.fetchByIdLocal(clubId);
+});
