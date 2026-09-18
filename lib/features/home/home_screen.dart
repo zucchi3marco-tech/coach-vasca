@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/onboarding/onboarding_coach.dart';
 import '../../core/pwa/installabilita_pwa.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
@@ -54,6 +55,38 @@ const _destinazioniTab = [
   ),
 ];
 
+/// Testo del tour mostrato una sola volta, al primo accesso da
+/// allenatore — stessi 4 elementi di [_destinazioniTab], con una
+/// spiegazione in più.
+const _guidaTab = [
+  (
+    icona: Icons.groups_outlined,
+    titolo: 'Atleti',
+    descrizione:
+        'L\'elenco dei tuoi atleti: profili, personal best, presenze e '
+        'carico di lavoro.',
+  ),
+  (
+    icona: Icons.calendar_month_outlined,
+    titolo: 'Allenamenti',
+    descrizione:
+        'Pianifica le sedute con le loro serie, e segna le presenze a '
+        'bordo vasca.',
+  ),
+  (
+    icona: Icons.event_note_outlined,
+    titolo: 'Stagioni',
+    descrizione: 'Organizza la stagione in macrocicli, mesocicli e microcicli.',
+  ),
+  (
+    icona: Icons.sports_outlined,
+    titolo: 'Partite',
+    descrizione:
+        'Pallanuoto: distinta, eventi dal vivo, referti e statistiche di '
+        'squadra.',
+  ),
+];
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -63,6 +96,76 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _tabIndex = 0;
+  bool _onboardingRichiesto = false;
+
+  /// Chiamato da `build()` quando le tab da coach diventano visibili:
+  /// controlla (una volta sola per istanza di questa schermata) se il
+  /// tour va mostrato, senza bloccare `build()` per il tempo della
+  /// lettura da `shared_preferences`.
+  void _controllaOnboarding() {
+    if (_onboardingRichiesto) return;
+    _onboardingRichiesto = true;
+    onboardingCoachGiaVisto().then((visto) {
+      if (visto || !mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _mostraOnboarding();
+      });
+    });
+  }
+
+  Future<void> _mostraOnboarding() async {
+    // Segnato come visto subito, prima del tocco su "Ho capito": anche
+    // chiudendo il dialogo toccando fuori o con "indietro" non deve
+    // ripresentarsi al prossimo avvio.
+    await segnaOnboardingCoachVisto();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Benvenuto su WaterTactics'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final voce in _guidaTab)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(voce.icona),
+                      const SizedBox(width: AppSpacing.s12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              voce.titolo,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            Text(
+                              voce.descrizione,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Ho capito, iniziamo'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _signOut() async {
     try {
@@ -151,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selezione = ref.watch(selezioneGruppoProvider);
     final mostraTab =
         !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
+    if (mostraTab) _controllaOnboarding();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
 

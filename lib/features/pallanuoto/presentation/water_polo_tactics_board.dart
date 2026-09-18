@@ -6,8 +6,27 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/danger_button.dart';
+import '../../../widgets/section_header.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
+
+const _spiegazioneLavagna =
+    'Modalità "Giocatori": tocca per piazzare un pallino, trascinalo per '
+    'spostarlo, doppio tocco per rimuoverlo. Modalità "Frecce": trascina '
+    'per disegnare una freccia di movimento.\n\n'
+    'Scegli il colore prima di disegnare: al massimo 7 pallini per '
+    'colore (i giocatori in acqua), numerati in ordine di piazzamento. '
+    'Il giallo è riservato alla palla: nessun numero e nessun limite, '
+    'così i passaggi si riconoscono a colpo d\'occhio.\n\n'
+    'Il lucchetto blocca lo scorrimento della pagina mentre disegni una '
+    'freccia (utile se trascinando ti si sposta lo schermo).';
+
+const _spiegazionePlayer =
+    'Uno schema può avere più passi: ogni passo è una disposizione a sé '
+    '(es. passo 1 le posizioni di partenza, passo 2 le frecce di '
+    'movimento, passo 3 le posizioni finali). Tocca un numero per '
+    'saltare a quel passo, oppure premi play per vedere i giocatori '
+    'muoversi in sequenza da un passo all\'altro.';
 
 /// Numero (1-7) di un giocatore nel proprio colore: conta quanti
 /// giocatori dello stesso colore lo precedono (se stesso incluso)
@@ -259,6 +278,10 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                 ),
               ),
               const SizedBox(width: AppSpacing.s8),
+              const PulsanteSpiegazione(
+                titolo: 'Lavagna tattica',
+                spiegazione: _spiegazioneLavagna,
+              ),
               IconButton(
                 icon: Icon(
                   widget.bloccata ? Icons.lock : Icons.lock_open_outlined,
@@ -967,6 +990,10 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
                 onPressed: _inRiproduzione || _passoAttuale == passi.length - 1
                     ? null
                     : () => _vaiAPasso(_passoAttuale + 1),
+              ),
+              const PulsanteSpiegazione(
+                titolo: 'Sequenza a passi',
+                spiegazione: _spiegazionePlayer,
               ),
             ],
           ),
