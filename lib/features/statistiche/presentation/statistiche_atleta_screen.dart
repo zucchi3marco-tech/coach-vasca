@@ -237,7 +237,13 @@ class _SezioneMappaTiri extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader('Shot chart dei tiri'),
+        SectionHeader(
+          'Shot chart dei tiri',
+          spiegazione:
+              'La mappa di tutti i tiri registrati, nella posizione da cui '
+              'sono stati tirati: verde un gol, grigio un tiro parato, '
+              'bianco palo o fuori.',
+        ),
         const SizedBox(height: AppSpacing.s16),
         tiriAsync.when(
           data: (tiri) {
@@ -394,7 +400,13 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
               onSelectionChanged: (s) => setState(() => _vascaM = s.first),
             ),
             const SizedBox(height: AppSpacing.s28),
-            SectionHeader('Curva delle prestazioni'),
+            SectionHeader(
+              'Curva delle prestazioni',
+              spiegazione:
+                  'Tutti i tempi registrati per lo stile, la distanza e la '
+                  'vasca scelti sopra, in ordine di data: una curva in '
+                  'discesa significa che stai migliorando.',
+            ),
             const SizedBox(height: AppSpacing.s16),
             if (filtrati.length < 2)
               Text(

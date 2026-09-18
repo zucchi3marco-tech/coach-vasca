@@ -164,7 +164,18 @@ class _CardAndamento extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: SectionHeader('Andamento')),
+                const Expanded(
+                  child: SectionHeader(
+                    'Andamento',
+                    spiegazione:
+                        'Il grafico Banister: tre curve calcolate dagli '
+                        'allenamenti a cui hai partecipato. Fitness cresce '
+                        'con il carico accumulato nel tempo, Fatica cresce '
+                        'più in fretta ma si scarica anche più in fretta, '
+                        'Forma è la differenza fra le due — più alta è, '
+                        'più sei pronto per una prestazione.',
+                  ),
+                ),
                 Icon(Icons.chevron_right, color: colori.testoSecondario),
               ],
             ),
@@ -226,7 +237,16 @@ class _CardLavagnaTattica extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: SectionHeader('Schemi tattici')),
+                const Expanded(
+                  child: SectionHeader(
+                    'Schemi tattici',
+                    spiegazione:
+                        'Gli schemi che il tuo allenatore ha disegnato e '
+                        'salvato sulla lavagna tattica: posizioni dei '
+                        'giocatori e frecce di movimento, anche in più '
+                        'passi in sequenza. Tocca per sfogliarli.',
+                  ),
+                ),
                 Icon(Icons.chevron_right, color: colori.testoSecondario),
               ],
             ),
@@ -434,7 +454,15 @@ class _CardTempiRecenti extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: SectionHeader('I miei tempi')),
+                const Expanded(
+                  child: SectionHeader(
+                    'I miei tempi',
+                    spiegazione:
+                        'I tuoi ultimi personal best registrati, per stile '
+                        'e distanza. Tocca per vedere l\'elenco completo e '
+                        'aggiungerne di nuovi.',
+                  ),
+                ),
                 Icon(Icons.chevron_right, color: colori.testoSecondario),
               ],
             ),
