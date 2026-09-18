@@ -320,22 +320,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         title: Text(club?.nome ?? 'WaterTactics'),
         actions: [
-          if (club != null && !areaAtleta) _NotificheIndicator(clubId: club.id),
-          const _InstallaPwaButton(),
-          const _SyncStatusIndicator(),
-          if (mostraTab)
-            IconButton(
-              icon: const Icon(Icons.groups_outlined),
-              tooltip: 'Cambia gruppo',
-              onPressed: () =>
-                  ref.read(selezioneGruppoProvider.notifier).scegli(null),
-            ),
-          const ThemeToggle(),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Esci',
-            onPressed: _signOut,
+          _MenuPrincipale(
+            club: club,
+            areaAtleta: areaAtleta,
+            mostraTab: mostraTab,
+            onCambiaGruppo: () =>
+                ref.read(selezioneGruppoProvider.notifier).scegli(null),
+            onRivediGuida: _mostraOnboarding,
+            onEsci: _signOut,
           ),
+          const ThemeToggle(),
         ],
       ),
       body: corpo,
@@ -344,99 +338,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Icona nell'AppBar: visibile solo quando il browser (web) ha segnalato
-/// che l'installazione come PWA e' disponibile in questo momento — invece
-/// di affidarsi solo al popup automatico di Chrome, che compare secondo
-/// criteri suoi non richiamabili a comando (vedi `installabilita_pwa.dart`).
-/// No-op/sempre nascosta su Android/iOS/desktop nativi.
-class _InstallaPwaButton extends StatelessWidget {
-  const _InstallaPwaButton();
+/// Un'unica icona nell'AppBar per tutte le azioni secondarie — prima
+/// erano fino a 6 icone separate (notifiche, installa PWA, stato sync,
+/// cambia gruppo, tema, esci). Il tema resta a parte (è già un
+/// popup-menu compatto a sé, non un'icona "in più"): tutto il resto sta
+/// qui, con il badge del numero di notifiche non lette sull'icona
+/// principale invece che su una singola voce.
+class _MenuPrincipale extends ConsumerWidget {
+  const _MenuPrincipale({
+    required this.club,
+    required this.areaAtleta,
+    required this.mostraTab,
+    required this.onCambiaGruppo,
+    required this.onRivediGuida,
+    required this.onEsci,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: installabilitaPwa,
-      builder: (context, disponibile, _) {
-        if (!disponibile) return const SizedBox.shrink();
-        return IconButton(
-          icon: const Icon(Icons.install_mobile),
-          tooltip: 'Installa l\'app',
-          onPressed: installaPwa,
-        );
-      },
-    );
-  }
-}
-
-/// Icona nell'AppBar: nascosta quando tutto e' sincronizzato, mostra il
-/// numero di modifiche in coda quando manca la connessione (o il server
-/// non ha ancora confermato). Un tocco ritenta subito la sincronizzazione.
-class _SyncStatusIndicator extends ConsumerWidget {
-  const _SyncStatusIndicator();
+  final Club? club;
+  final bool areaAtleta;
+  final bool mostraTab;
+  final VoidCallback onCambiaGruppo;
+  final VoidCallback onRivediGuida;
+  final VoidCallback onEsci;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mostraNotifiche = club != null && !areaAtleta;
+    final nonLette = mostraNotifiche
+        ? ref.watch(notificheNonLetteProvider(club!.id)).value ?? const []
+        : const [];
     final inCoda = ref.watch(pendingOperationsCountProvider).value ?? 0;
+    final installabile = installabilitaPwa.value;
 
-    if (inCoda == 0) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.s4),
-        child: Tooltip(
-          message: 'Tutto sincronizzato',
-          child: Icon(Icons.cloud_done_outlined),
-        ),
-      );
-    }
-
-    return IconButton(
-      icon: Badge(
-        label: Text('$inCoda'),
-        child: const Icon(Icons.cloud_upload_outlined),
-      ),
-      tooltip:
-          '$inCoda modifiche in coda, in attesa di rete. Tocca per riprovare.',
-      onPressed: () => ref.read(syncEngineProvider).processQueue(),
-    );
-  }
-}
-
-/// Icona nell'AppBar: mostra quante notifiche non lette ha il coach (FASE
-/// 13, punto 1 — es. un atleta che si e' appena registrato). Nascosta
-/// quando non ce ne sono.
-class _NotificheIndicator extends ConsumerWidget {
-  const _NotificheIndicator({required this.clubId});
-
-  final String clubId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final nonLette = ref.watch(notificheNonLetteProvider(clubId)).value ?? [];
-
-    if (nonLette.isEmpty) {
-      return IconButton(
-        icon: const Icon(Icons.notifications_none_outlined),
-        tooltip: 'Notifiche',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => NotificheScreen(clubId: clubId),
+    return PopupMenuButton<void>(
+      tooltip: 'Altro',
+      icon: nonLette.isEmpty
+          ? const Icon(Icons.menu)
+          : Badge(
+              label: Text('${nonLette.length}'),
+              child: const Icon(Icons.menu),
+            ),
+      itemBuilder: (context) => [
+        if (mostraNotifiche)
+          PopupMenuItem(
+            onTap: () => Navigator.of(context)
+                .push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => NotificheScreen(clubId: club!.id),
+                  ),
+                )
+                .then(
+                  (_) => ref.invalidate(notificheNonLetteProvider(club!.id)),
+                ),
+            child: ListTile(
+              leading: Icon(
+                nonLette.isEmpty
+                    ? Icons.notifications_none_outlined
+                    : Icons.notifications_outlined,
+              ),
+              title: const Text('Notifiche'),
+              trailing: nonLette.isEmpty ? null : Text('${nonLette.length}'),
+            ),
+          ),
+        PopupMenuItem(
+          enabled: inCoda > 0,
+          onTap: inCoda == 0
+              ? null
+              : () => ref.read(syncEngineProvider).processQueue(),
+          child: ListTile(
+            leading: Icon(
+              inCoda == 0
+                  ? Icons.cloud_done_outlined
+                  : Icons.cloud_upload_outlined,
+            ),
+            title: Text(inCoda == 0 ? 'Tutto sincronizzato' : 'Sincronizza'),
+            subtitle: inCoda == 0
+                ? null
+                : Text('$inCoda modifiche in coda, in attesa di rete'),
           ),
         ),
-      );
-    }
-
-    return IconButton(
-      icon: Badge(
-        label: Text('${nonLette.length}'),
-        child: const Icon(Icons.notifications_outlined),
-      ),
-      tooltip: '${nonLette.length} notifiche non lette',
-      onPressed: () => Navigator.of(context)
-          .push(
-            MaterialPageRoute<void>(
-              builder: (_) => NotificheScreen(clubId: clubId),
+        if (installabile)
+          PopupMenuItem(
+            onTap: installaPwa,
+            child: const ListTile(
+              leading: Icon(Icons.install_mobile),
+              title: Text('Installa l\'app'),
             ),
-          )
-          .then((_) => ref.invalidate(notificheNonLetteProvider(clubId))),
+          ),
+        if (mostraTab) ...[
+          PopupMenuItem(
+            onTap: onCambiaGruppo,
+            child: const ListTile(
+              leading: Icon(Icons.groups_outlined),
+              title: Text('Cambia gruppo'),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: onRivediGuida,
+            child: const ListTile(
+              leading: Icon(Icons.help_outline),
+              title: Text('Rivedi la guida'),
+            ),
+          ),
+        ],
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          onTap: onEsci,
+          child: const ListTile(
+            leading: Icon(Icons.logout),
+            title: Text('Esci'),
+          ),
+        ),
+      ],
     );
   }
 }
