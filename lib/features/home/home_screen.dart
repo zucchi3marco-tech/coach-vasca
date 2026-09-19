@@ -339,9 +339,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s8),
-          child: Image.asset('assets/images/logo.png'),
+        leading: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            // L'allenatore non ha una vera schermata "dashboard" a parte
+            // (la sua home sono le 4 tab): il tocco sul logo torna alla
+            // prima, Atleti. L'atleta ha già la dashboard come home:
+            // il tocco chiude eventuali schermate aperte sopra di essa.
+            if (areaAtleta) {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            } else {
+              setState(() => _tabIndex = 0);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s4),
+            child: Image.asset('assets/images/logo.png'),
+          ),
         ),
         title: Text(club?.nome ?? 'WaterTactics'),
         actions: [
