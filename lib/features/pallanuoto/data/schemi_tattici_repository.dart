@@ -94,6 +94,7 @@ class SchemiTatticiRepository {
     return SchemaTattico(
       id: row.id,
       clubId: row.clubId,
+      gruppoId: row.gruppoId,
       titolo: row.titolo,
       categoria: row.categoria,
       campo: row.campo,
@@ -107,6 +108,7 @@ class SchemiTatticiRepository {
     return SchemiTatticiTableCompanion.insert(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
+      gruppoId: Value(map['gruppo_id'] as String?),
       titolo: map['titolo'] as String,
       categoria: Value(map['categoria'] as String? ?? ''),
       campo: Value(map['campo'] as String? ?? 'intero'),
@@ -149,6 +151,7 @@ class SchemiTatticiRepository {
 
   Future<void> creaSchema({
     required String clubId,
+    String? gruppoId,
     required String titolo,
     required String categoria,
     required String campo,
@@ -159,6 +162,7 @@ class SchemiTatticiRepository {
     final payload = {
       'id': id,
       'club_id': clubId,
+      'gruppo_id': ?gruppoId,
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
@@ -187,6 +191,7 @@ class SchemiTatticiRepository {
 
   Future<void> aggiornaSchema({
     required String id,
+    String? gruppoId,
     required String titolo,
     required String categoria,
     required String campo,
@@ -194,6 +199,7 @@ class SchemiTatticiRepository {
   }) async {
     final ora = DateTime.now();
     final payload = {
+      'gruppo_id': gruppoId,
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
@@ -213,6 +219,7 @@ class SchemiTatticiRepository {
         _db.schemiTatticiTable,
       )..where((t) => t.id.equals(id))).write(
         SchemiTatticiTableCompanion(
+          gruppoId: Value(gruppoId),
           titolo: Value(titolo),
           categoria: Value(categoria),
           campo: Value(campo),

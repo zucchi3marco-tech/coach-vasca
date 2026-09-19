@@ -19,9 +19,16 @@ import 'partita_form_screen.dart';
 import 'schemi_tattici_list_screen.dart';
 
 class PartiteListScreen extends ConsumerWidget {
-  const PartiteListScreen({required this.clubId, super.key});
+  const PartiteListScreen({
+    required this.clubId,
+    this.filtroGruppoId,
+    super.key,
+  });
 
   final String clubId;
+
+  /// null = nessun filtro (mostra le partite di tutti i gruppi).
+  final String? filtroGruppoId;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -30,7 +37,19 @@ class PartiteListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final partiteAsync = ref.watch(partiteListProvider(clubId));
+    final tuttePartite = ref.watch(partiteListProvider(clubId));
+    // Una partita con gruppo assegnato è visibile solo a chi lavora con
+    // quel gruppo; una senza gruppo resta visibile a tutti (stessa
+    // regola di PresenzeScreen/AllenamentiListScreen).
+    final partiteAsync = filtroGruppoId == null
+        ? tuttePartite
+        : tuttePartite.whenData(
+            (partite) => partite
+                .where(
+                  (p) => p.gruppoId == filtroGruppoId || p.gruppoId == null,
+                )
+                .toList(),
+          );
 
     return AppScaffold(
       body: RefreshIndicator(
@@ -155,7 +174,10 @@ class PartiteListScreen extends ConsumerWidget {
             etichetta: 'Schemi tattici',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => SchemiTatticiListScreen(clubId: clubId),
+                builder: (_) => SchemiTatticiListScreen(
+                  clubId: clubId,
+                  filtroGruppoId: filtroGruppoId,
+                ),
               ),
             ),
           ),

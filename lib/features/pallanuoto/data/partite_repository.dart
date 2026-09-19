@@ -25,6 +25,7 @@ class PartiteRepository {
     return Partita(
       id: row.id,
       clubId: row.clubId,
+      gruppoId: row.gruppoId,
       data: row.data,
       ora: row.ora,
       luogo: row.luogo,
@@ -45,6 +46,7 @@ class PartiteRepository {
     return PartiteTableCompanion.insert(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
+      gruppoId: Value(map['gruppo_id'] as String?),
       data: DateTime.parse(map['data'] as String),
       ora: Value(map['ora'] as String?),
       luogo: Value(map['luogo'] as String?),
@@ -163,6 +165,7 @@ class PartiteRepository {
 
   Future<Partita> createPartita({
     required String clubId,
+    String? gruppoId,
     required DateTime data,
     String? ora,
     String? luogo,
@@ -181,6 +184,7 @@ class PartiteRepository {
     final payload = {
       'id': id,
       'club_id': clubId,
+      'gruppo_id': ?gruppoId,
       'data': formatDateOnly(data),
       if (ora != null && ora.isNotEmpty) 'ora': ora,
       if (luogo != null && luogo.isNotEmpty) 'luogo': luogo,
@@ -224,6 +228,7 @@ class PartiteRepository {
 
   Future<Partita> updatePartita({
     required String id,
+    String? gruppoId,
     required DateTime data,
     String? ora,
     String? luogo,
@@ -239,6 +244,7 @@ class PartiteRepository {
     required String nostraSquadra,
   }) async {
     final payload = {
+      'gruppo_id': gruppoId,
       'data': formatDateOnly(data),
       'ora': ora,
       'luogo': luogo,
@@ -267,6 +273,7 @@ class PartiteRepository {
       if (!isNetworkFailure(e)) rethrow;
       await (_db.update(_db.partiteTable)..where((t) => t.id.equals(id))).write(
         PartiteTableCompanion(
+          gruppoId: Value(gruppoId),
           data: Value(data),
           ora: Value(ora),
           luogo: Value(luogo),

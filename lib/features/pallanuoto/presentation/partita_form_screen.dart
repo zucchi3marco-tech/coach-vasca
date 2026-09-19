@@ -6,12 +6,14 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/presentation/stagione_form_screen.dart';
 import '../data/partite_repository.dart';
@@ -35,6 +37,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late final TextEditingController _squadraCasaController;
   late final TextEditingController _squadraTrasfertaController;
   late final TextEditingController _noteController;
+  String? _gruppoId;
   late DateTime _data;
   late int _numeroMaxConvocati;
   late String _dettaglioTiro;
@@ -62,6 +65,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
       text: p?.squadraTrasferta ?? '',
     );
     _noteController = TextEditingController(text: p?.note ?? '');
+    _gruppoId = p?.gruppoId;
     _data = p?.data ?? DateTime.now();
     _dataController = TextEditingController(text: _formattaData(_data));
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
@@ -199,6 +203,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
       if (_isEditing) {
         await repository.updatePartita(
           id: widget.partita!.id,
+          gruppoId: _gruppoId,
           data: _data,
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
@@ -216,6 +221,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
       } else {
         await repository.createPartita(
           clubId: widget.clubId,
+          gruppoId: _gruppoId,
           data: _data,
           ora: _oraController.text.trim(),
           luogo: _luogoController.text.trim(),
@@ -271,6 +277,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
@@ -340,6 +347,26 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   controller: _squadraTrasfertaController,
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                ),
+                AppSelect<String?>(
+                  etichetta: 'Gruppo (facoltativo)',
+                  value: _gruppoId,
+                  hint: 'Nessun gruppo',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Nessun gruppo'),
+                    ),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    if (_gruppoId != null &&
+                        !gruppi.any((g) => g.id == _gruppoId))
+                      DropdownMenuItem(
+                        value: _gruppoId,
+                        child: const Text('Gruppo non trovato'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _gruppoId = value),
                 ),
               ],
             ),

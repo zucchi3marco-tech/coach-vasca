@@ -26,11 +26,15 @@ class SchemiTatticiListScreen extends ConsumerWidget {
   const SchemiTatticiListScreen({
     required this.clubId,
     this.soloLettura = false,
+    this.filtroGruppoId,
     super.key,
   });
 
   final String clubId;
   final bool soloLettura;
+
+  /// null = nessun filtro (mostra gli schemi di tutti i gruppi).
+  final String? filtroGruppoId;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -39,7 +43,19 @@ class SchemiTatticiListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final schemiAsync = ref.watch(schemiTatticiListProvider(clubId));
+    final tuttiGliSchemi = ref.watch(schemiTatticiListProvider(clubId));
+    // Uno schema con gruppo assegnato è visibile solo a chi lavora con
+    // quel gruppo; uno senza gruppo resta visibile a tutti (stessa
+    // regola di PresenzeScreen/AllenamentiListScreen).
+    final schemiAsync = filtroGruppoId == null
+        ? tuttiGliSchemi
+        : tuttiGliSchemi.whenData(
+            (schemi) => schemi
+                .where(
+                  (s) => s.gruppoId == filtroGruppoId || s.gruppoId == null,
+                )
+                .toList(),
+          );
 
     void apriNuovo() => Navigator.of(context).push(
       MaterialPageRoute(

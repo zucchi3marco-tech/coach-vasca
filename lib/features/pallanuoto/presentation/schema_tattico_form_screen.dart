@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
@@ -38,6 +40,7 @@ class _SchemaTatticoFormScreenState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titoloController;
   late final TextEditingController _categoriaController;
+  String? _gruppoId;
 
   late List<PassoSchema> _passi;
   int _passoAttuale = 0;
@@ -55,6 +58,7 @@ class _SchemaTatticoFormScreenState
     final s = widget.schema;
     _titoloController = TextEditingController(text: s?.titolo ?? '');
     _categoriaController = TextEditingController(text: s?.categoria ?? '');
+    _gruppoId = s?.gruppoId;
     _passi = List.of(s?.passi ?? const [(giocatori: [], frecce: [])]);
     _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
   }
@@ -179,6 +183,7 @@ class _SchemaTatticoFormScreenState
       if (_isEditing) {
         await repository.aggiornaSchema(
           id: widget.schema!.id,
+          gruppoId: _gruppoId,
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
@@ -187,6 +192,7 @@ class _SchemaTatticoFormScreenState
       } else {
         await repository.creaSchema(
           clubId: widget.clubId,
+          gruppoId: _gruppoId,
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
@@ -236,6 +242,7 @@ class _SchemaTatticoFormScreenState
             .toSet()
             .toList()
           ..sort();
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     final passoAttuale = _passoAWidget(_passi[_passoAttuale]);
     final passoFantasma = _passoAttuale > 0
         ? _passoAWidget(_passi[_passoAttuale - 1])
@@ -285,6 +292,26 @@ class _SchemaTatticoFormScreenState
                         ),
                     ],
                   ),
+                AppSelect<String?>(
+                  etichetta: 'Gruppo (facoltativo)',
+                  value: _gruppoId,
+                  hint: 'Nessun gruppo',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Nessun gruppo'),
+                    ),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    if (_gruppoId != null &&
+                        !gruppi.any((g) => g.id == _gruppoId))
+                      DropdownMenuItem(
+                        value: _gruppoId,
+                        child: const Text('Gruppo non trovato'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _gruppoId = value),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.s16),

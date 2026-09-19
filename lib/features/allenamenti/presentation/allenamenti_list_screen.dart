@@ -25,9 +25,16 @@ import 'giorno_allenamenti_screen.dart';
 enum _Vista { elenco, settimana, mese }
 
 class AllenamentiListScreen extends ConsumerStatefulWidget {
-  const AllenamentiListScreen({required this.clubId, super.key});
+  const AllenamentiListScreen({
+    required this.clubId,
+    this.filtroGruppoId,
+    super.key,
+  });
 
   final String clubId;
+
+  /// null = nessun filtro (mostra gli allenamenti di tutti i gruppi).
+  final String? filtroGruppoId;
 
   @override
   ConsumerState<AllenamentiListScreen> createState() =>
@@ -66,17 +73,31 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
           ),
           Expanded(
             child: allenamentiAsync.when(
-              data: (allenamenti) => switch (_vista) {
-                _Vista.elenco => _buildElenco(allenamenti, nomiGruppi),
-                _Vista.settimana => CalendarioSettimanaleView(
-                  clubId: widget.clubId,
-                  allenamenti: allenamenti,
-                  onGiornoSelezionato: (data) => _apriGiorno(data),
-                ),
-                _Vista.mese => CalendarioMensileView(
-                  allenamenti: allenamenti,
-                  onGiornoSelezionato: (data) => _apriGiorno(data),
-                ),
+              data: (tuttiGliAllenamenti) {
+                // Un allenamento con gruppo assegnato è visibile solo a chi
+                // lavora con quel gruppo; uno senza gruppo resta visibile a
+                // tutti (stessa regola di PresenzeScreen).
+                final allenamenti = widget.filtroGruppoId == null
+                    ? tuttiGliAllenamenti
+                    : tuttiGliAllenamenti
+                          .where(
+                            (a) =>
+                                a.gruppoId == widget.filtroGruppoId ||
+                                a.gruppoId == null,
+                          )
+                          .toList();
+                return switch (_vista) {
+                  _Vista.elenco => _buildElenco(allenamenti, nomiGruppi),
+                  _Vista.settimana => CalendarioSettimanaleView(
+                    clubId: widget.clubId,
+                    allenamenti: allenamenti,
+                    onGiornoSelezionato: (data) => _apriGiorno(data),
+                  ),
+                  _Vista.mese => CalendarioMensileView(
+                    allenamenti: allenamenti,
+                    onGiornoSelezionato: (data) => _apriGiorno(data),
+                  ),
+                };
               },
               loading: () => ListView(
                 physics: const AlwaysScrollableScrollPhysics(),

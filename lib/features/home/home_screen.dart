@@ -219,9 +219,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               clubId: club.id,
               filtroGruppoId: selezione.gruppoId,
             ),
-            AllenamentiListScreen(clubId: club.id),
+            AllenamentiListScreen(
+              clubId: club.id,
+              filtroGruppoId: selezione.gruppoId,
+            ),
             StagioniListScreen(clubId: club.id),
-            PartiteListScreen(clubId: club.id),
+            PartiteListScreen(
+              clubId: club.id,
+              filtroGruppoId: selezione.gruppoId,
+            ),
           ],
         );
       },

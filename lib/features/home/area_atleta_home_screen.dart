@@ -98,7 +98,12 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
           children: [
             fascia(
               _CardAndamento(atleta: atleta),
-              pallanuoto ? _CardLavagnaTattica(clubId: atleta.clubId) : null,
+              pallanuoto
+                  ? _CardLavagnaTattica(
+                      clubId: atleta.clubId,
+                      gruppoId: atleta.gruppoId,
+                    )
+                  : null,
             ),
             const SizedBox(height: AppSpacing.s16),
             fascia(
@@ -221,21 +226,34 @@ class _CardAndamento extends ConsumerWidget {
 /// — il tocco sulla card apre l'elenco completo
 /// (`SchemiTatticiListScreen` con `soloLettura: true`).
 class _CardLavagnaTattica extends ConsumerWidget {
-  const _CardLavagnaTattica({required this.clubId});
+  const _CardLavagnaTattica({required this.clubId, this.gruppoId});
 
   final String clubId;
+  final String? gruppoId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final schemiAsync = ref.watch(schemiTatticiListProvider(clubId));
+    final tuttiGliSchemi = ref.watch(schemiTatticiListProvider(clubId));
+    // Stessa regola di isolamento per gruppo delle liste del coach: uno
+    // schema senza gruppo resta visibile a tutti.
+    final schemiAsync = gruppoId == null
+        ? tuttiGliSchemi
+        : tuttiGliSchemi.whenData(
+            (schemi) => schemi
+                .where((s) => s.gruppoId == gruppoId || s.gruppoId == null)
+                .toList(),
+          );
     final colori = context.colori;
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.pannello),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              SchemiTatticiListScreen(clubId: clubId, soloLettura: true),
+          builder: (_) => SchemiTatticiListScreen(
+            clubId: clubId,
+            soloLettura: true,
+            filtroGruppoId: gruppoId,
+          ),
         ),
       ),
       child: PoolCard(
@@ -756,7 +774,10 @@ class _AltriCollegamenti extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => PartiteAtletaListScreen(clubId: atleta.clubId),
+                builder: (_) => PartiteAtletaListScreen(
+                  clubId: atleta.clubId,
+                  filtroGruppoId: atleta.gruppoId,
+                ),
               ),
             ),
           ),

@@ -29,13 +29,31 @@ String _formattaData(DateTime data) =>
 /// schermata del coach, nessuna modifica (distinta/eventi/form) è
 /// possibile da qui.
 class PartiteAtletaListScreen extends ConsumerWidget {
-  const PartiteAtletaListScreen({required this.clubId, super.key});
+  const PartiteAtletaListScreen({
+    required this.clubId,
+    this.filtroGruppoId,
+    super.key,
+  });
 
   final String clubId;
 
+  /// null = nessun filtro (mostra le partite di tutti i gruppi).
+  final String? filtroGruppoId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final partiteAsync = ref.watch(partiteListProvider(clubId));
+    final tuttePartite = ref.watch(partiteListProvider(clubId));
+    // Stessa regola di isolamento per gruppo delle liste del coach: una
+    // partita senza gruppo resta visibile a tutti.
+    final partiteAsync = filtroGruppoId == null
+        ? tuttePartite
+        : tuttePartite.whenData(
+            (partite) => partite
+                .where(
+                  (p) => p.gruppoId == filtroGruppoId || p.gruppoId == null,
+                )
+                .toList(),
+          );
 
     return AppScaffold(
       appBar: AppBar(title: const Text('Le mie partite')),

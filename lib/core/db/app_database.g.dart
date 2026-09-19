@@ -2440,6 +2440,17 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
+  @override
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _categoriaMeta = const VerificationMeta(
     'categoria',
   );
@@ -2487,6 +2498,7 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
     id,
     clubId,
     titolo,
+    gruppoId,
     categoria,
     campo,
     dati,
@@ -2524,6 +2536,12 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
       );
     } else if (isInserting) {
       context.missing(_titoloMeta);
+    }
+    if (data.containsKey('gruppo_id')) {
+      context.handle(
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
+      );
     }
     if (data.containsKey('categoria')) {
       context.handle(
@@ -2577,6 +2595,10 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
         DriftSqlType.string,
         data['${effectivePrefix}titolo'],
       )!,
+      gruppoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo_id'],
+      ),
       categoria: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}categoria'],
@@ -2608,6 +2630,10 @@ class SchemiTatticiTableData extends DataClass
   final String clubId;
   final String titolo;
 
+  /// Gruppo di allenamento (squadra) a cui appartiene lo schema — null
+  /// se condiviso con tutto il club. Da non confondere con [categoria].
+  final String? gruppoId;
+
   /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
   /// "Superiorità"...): non un elenco chiuso, se ne possono creare
   /// quanti se ne vogliono.
@@ -2625,6 +2651,7 @@ class SchemiTatticiTableData extends DataClass
     required this.id,
     required this.clubId,
     required this.titolo,
+    this.gruppoId,
     required this.categoria,
     required this.campo,
     required this.dati,
@@ -2636,6 +2663,9 @@ class SchemiTatticiTableData extends DataClass
     map['id'] = Variable<String>(id);
     map['club_id'] = Variable<String>(clubId);
     map['titolo'] = Variable<String>(titolo);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
+    }
     map['categoria'] = Variable<String>(categoria);
     map['campo'] = Variable<String>(campo);
     map['dati'] = Variable<String>(dati);
@@ -2648,6 +2678,9 @@ class SchemiTatticiTableData extends DataClass
       id: Value(id),
       clubId: Value(clubId),
       titolo: Value(titolo),
+      gruppoId: gruppoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppoId),
       categoria: Value(categoria),
       campo: Value(campo),
       dati: Value(dati),
@@ -2664,6 +2697,7 @@ class SchemiTatticiTableData extends DataClass
       id: serializer.fromJson<String>(json['id']),
       clubId: serializer.fromJson<String>(json['clubId']),
       titolo: serializer.fromJson<String>(json['titolo']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       categoria: serializer.fromJson<String>(json['categoria']),
       campo: serializer.fromJson<String>(json['campo']),
       dati: serializer.fromJson<String>(json['dati']),
@@ -2677,6 +2711,7 @@ class SchemiTatticiTableData extends DataClass
       'id': serializer.toJson<String>(id),
       'clubId': serializer.toJson<String>(clubId),
       'titolo': serializer.toJson<String>(titolo),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
       'categoria': serializer.toJson<String>(categoria),
       'campo': serializer.toJson<String>(campo),
       'dati': serializer.toJson<String>(dati),
@@ -2688,6 +2723,7 @@ class SchemiTatticiTableData extends DataClass
     String? id,
     String? clubId,
     String? titolo,
+    Value<String?> gruppoId = const Value.absent(),
     String? categoria,
     String? campo,
     String? dati,
@@ -2696,6 +2732,7 @@ class SchemiTatticiTableData extends DataClass
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
     titolo: titolo ?? this.titolo,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     categoria: categoria ?? this.categoria,
     campo: campo ?? this.campo,
     dati: dati ?? this.dati,
@@ -2706,6 +2743,7 @@ class SchemiTatticiTableData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       clubId: data.clubId.present ? data.clubId.value : this.clubId,
       titolo: data.titolo.present ? data.titolo.value : this.titolo,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
       categoria: data.categoria.present ? data.categoria.value : this.categoria,
       campo: data.campo.present ? data.campo.value : this.campo,
       dati: data.dati.present ? data.dati.value : this.dati,
@@ -2721,6 +2759,7 @@ class SchemiTatticiTableData extends DataClass
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
           ..write('titolo: $titolo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('categoria: $categoria, ')
           ..write('campo: $campo, ')
           ..write('dati: $dati, ')
@@ -2730,8 +2769,16 @@ class SchemiTatticiTableData extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, clubId, titolo, categoria, campo, dati, aggiornatoIl);
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    titolo,
+    gruppoId,
+    categoria,
+    campo,
+    dati,
+    aggiornatoIl,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2739,6 +2786,7 @@ class SchemiTatticiTableData extends DataClass
           other.id == this.id &&
           other.clubId == this.clubId &&
           other.titolo == this.titolo &&
+          other.gruppoId == this.gruppoId &&
           other.categoria == this.categoria &&
           other.campo == this.campo &&
           other.dati == this.dati &&
@@ -2750,6 +2798,7 @@ class SchemiTatticiTableCompanion
   final Value<String> id;
   final Value<String> clubId;
   final Value<String> titolo;
+  final Value<String?> gruppoId;
   final Value<String> categoria;
   final Value<String> campo;
   final Value<String> dati;
@@ -2759,6 +2808,7 @@ class SchemiTatticiTableCompanion
     this.id = const Value.absent(),
     this.clubId = const Value.absent(),
     this.titolo = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.categoria = const Value.absent(),
     this.campo = const Value.absent(),
     this.dati = const Value.absent(),
@@ -2769,6 +2819,7 @@ class SchemiTatticiTableCompanion
     required String id,
     required String clubId,
     required String titolo,
+    this.gruppoId = const Value.absent(),
     this.categoria = const Value.absent(),
     this.campo = const Value.absent(),
     required String dati,
@@ -2783,6 +2834,7 @@ class SchemiTatticiTableCompanion
     Expression<String>? id,
     Expression<String>? clubId,
     Expression<String>? titolo,
+    Expression<String>? gruppoId,
     Expression<String>? categoria,
     Expression<String>? campo,
     Expression<String>? dati,
@@ -2793,6 +2845,7 @@ class SchemiTatticiTableCompanion
       if (id != null) 'id': id,
       if (clubId != null) 'club_id': clubId,
       if (titolo != null) 'titolo': titolo,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
       if (categoria != null) 'categoria': categoria,
       if (campo != null) 'campo': campo,
       if (dati != null) 'dati': dati,
@@ -2805,6 +2858,7 @@ class SchemiTatticiTableCompanion
     Value<String>? id,
     Value<String>? clubId,
     Value<String>? titolo,
+    Value<String?>? gruppoId,
     Value<String>? categoria,
     Value<String>? campo,
     Value<String>? dati,
@@ -2815,6 +2869,7 @@ class SchemiTatticiTableCompanion
       id: id ?? this.id,
       clubId: clubId ?? this.clubId,
       titolo: titolo ?? this.titolo,
+      gruppoId: gruppoId ?? this.gruppoId,
       categoria: categoria ?? this.categoria,
       campo: campo ?? this.campo,
       dati: dati ?? this.dati,
@@ -2834,6 +2889,9 @@ class SchemiTatticiTableCompanion
     }
     if (titolo.present) {
       map['titolo'] = Variable<String>(titolo.value);
+    }
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
     }
     if (categoria.present) {
       map['categoria'] = Variable<String>(categoria.value);
@@ -2859,6 +2917,7 @@ class SchemiTatticiTableCompanion
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
           ..write('titolo: $titolo, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('categoria: $categoria, ')
           ..write('campo: $campo, ')
           ..write('dati: $dati, ')
@@ -6540,6 +6599,17 @@ class $PartiteTableTable extends PartiteTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
+  @override
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dataMeta = const VerificationMeta('data');
   @override
   late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
@@ -6686,6 +6756,7 @@ class $PartiteTableTable extends PartiteTable
   List<GeneratedColumn> get $columns => [
     id,
     clubId,
+    gruppoId,
     data,
     ora,
     luogo,
@@ -6724,6 +6795,12 @@ class $PartiteTableTable extends PartiteTable
       );
     } else if (isInserting) {
       context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('gruppo_id')) {
+      context.handle(
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
+      );
     }
     if (data.containsKey('data')) {
       context.handle(
@@ -6850,6 +6927,10 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.string,
         data['${effectivePrefix}club_id'],
       )!,
+      gruppoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo_id'],
+      ),
       data: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}data'],
@@ -6915,6 +6996,10 @@ class PartiteTableData extends DataClass
     implements Insertable<PartiteTableData> {
   final String id;
   final String clubId;
+
+  /// Gruppo di allenamento (squadra) a cui appartiene la partita — null
+  /// se condivisa con tutto il club.
+  final String? gruppoId;
   final DateTime data;
   final String? ora;
   final String? luogo;
@@ -6931,6 +7016,7 @@ class PartiteTableData extends DataClass
   const PartiteTableData({
     required this.id,
     required this.clubId,
+    this.gruppoId,
     required this.data,
     this.ora,
     this.luogo,
@@ -6950,6 +7036,9 @@ class PartiteTableData extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['club_id'] = Variable<String>(clubId);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
+    }
     map['data'] = Variable<DateTime>(data);
     if (!nullToAbsent || ora != null) {
       map['ora'] = Variable<String>(ora);
@@ -6980,6 +7069,9 @@ class PartiteTableData extends DataClass
     return PartiteTableCompanion(
       id: Value(id),
       clubId: Value(clubId),
+      gruppoId: gruppoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppoId),
       data: Value(data),
       ora: ora == null && nullToAbsent ? const Value.absent() : Value(ora),
       luogo: luogo == null && nullToAbsent
@@ -7010,6 +7102,7 @@ class PartiteTableData extends DataClass
     return PartiteTableData(
       id: serializer.fromJson<String>(json['id']),
       clubId: serializer.fromJson<String>(json['clubId']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       data: serializer.fromJson<DateTime>(json['data']),
       ora: serializer.fromJson<String?>(json['ora']),
       luogo: serializer.fromJson<String?>(json['luogo']),
@@ -7033,6 +7126,7 @@ class PartiteTableData extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'clubId': serializer.toJson<String>(clubId),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
       'data': serializer.toJson<DateTime>(data),
       'ora': serializer.toJson<String?>(ora),
       'luogo': serializer.toJson<String?>(luogo),
@@ -7052,6 +7146,7 @@ class PartiteTableData extends DataClass
   PartiteTableData copyWith({
     String? id,
     String? clubId,
+    Value<String?> gruppoId = const Value.absent(),
     DateTime? data,
     Value<String?> ora = const Value.absent(),
     Value<String?> luogo = const Value.absent(),
@@ -7068,6 +7163,7 @@ class PartiteTableData extends DataClass
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     data: data ?? this.data,
     ora: ora.present ? ora.value : this.ora,
     luogo: luogo.present ? luogo.value : this.luogo,
@@ -7088,6 +7184,7 @@ class PartiteTableData extends DataClass
     return PartiteTableData(
       id: data.id.present ? data.id.value : this.id,
       clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
       data: data.data.present ? data.data.value : this.data,
       ora: data.ora.present ? data.ora.value : this.ora,
       luogo: data.luogo.present ? data.luogo.value : this.luogo,
@@ -7127,6 +7224,7 @@ class PartiteTableData extends DataClass
     return (StringBuffer('PartiteTableData(')
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('data: $data, ')
           ..write('ora: $ora, ')
           ..write('luogo: $luogo, ')
@@ -7148,6 +7246,7 @@ class PartiteTableData extends DataClass
   int get hashCode => Object.hash(
     id,
     clubId,
+    gruppoId,
     data,
     ora,
     luogo,
@@ -7168,6 +7267,7 @@ class PartiteTableData extends DataClass
       (other is PartiteTableData &&
           other.id == this.id &&
           other.clubId == this.clubId &&
+          other.gruppoId == this.gruppoId &&
           other.data == this.data &&
           other.ora == this.ora &&
           other.luogo == this.luogo &&
@@ -7186,6 +7286,7 @@ class PartiteTableData extends DataClass
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<String> id;
   final Value<String> clubId;
+  final Value<String?> gruppoId;
   final Value<DateTime> data;
   final Value<String?> ora;
   final Value<String?> luogo;
@@ -7203,6 +7304,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   const PartiteTableCompanion({
     this.id = const Value.absent(),
     this.clubId = const Value.absent(),
+    this.gruppoId = const Value.absent(),
     this.data = const Value.absent(),
     this.ora = const Value.absent(),
     this.luogo = const Value.absent(),
@@ -7221,6 +7323,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   PartiteTableCompanion.insert({
     required String id,
     required String clubId,
+    this.gruppoId = const Value.absent(),
     required DateTime data,
     this.ora = const Value.absent(),
     this.luogo = const Value.absent(),
@@ -7243,6 +7346,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   static Insertable<PartiteTableData> custom({
     Expression<String>? id,
     Expression<String>? clubId,
+    Expression<String>? gruppoId,
     Expression<DateTime>? data,
     Expression<String>? ora,
     Expression<String>? luogo,
@@ -7261,6 +7365,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (clubId != null) 'club_id': clubId,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
       if (data != null) 'data': data,
       if (ora != null) 'ora': ora,
       if (luogo != null) 'luogo': luogo,
@@ -7283,6 +7388,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   PartiteTableCompanion copyWith({
     Value<String>? id,
     Value<String>? clubId,
+    Value<String?>? gruppoId,
     Value<DateTime>? data,
     Value<String?>? ora,
     Value<String?>? luogo,
@@ -7301,6 +7407,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     return PartiteTableCompanion(
       id: id ?? this.id,
       clubId: clubId ?? this.clubId,
+      gruppoId: gruppoId ?? this.gruppoId,
       data: data ?? this.data,
       ora: ora ?? this.ora,
       luogo: luogo ?? this.luogo,
@@ -7326,6 +7433,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     }
     if (clubId.present) {
       map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
     }
     if (data.present) {
       map['data'] = Variable<DateTime>(data.value);
@@ -7377,6 +7487,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     return (StringBuffer('PartiteTableCompanion(')
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
           ..write('data: $data, ')
           ..write('ora: $ora, ')
           ..write('luogo: $luogo, ')
@@ -11084,6 +11195,7 @@ typedef $$SchemiTatticiTableTableCreateCompanionBuilder =
       required String id,
       required String clubId,
       required String titolo,
+      Value<String?> gruppoId,
       Value<String> categoria,
       Value<String> campo,
       required String dati,
@@ -11095,6 +11207,7 @@ typedef $$SchemiTatticiTableTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> clubId,
       Value<String> titolo,
+      Value<String?> gruppoId,
       Value<String> categoria,
       Value<String> campo,
       Value<String> dati,
@@ -11123,6 +11236,11 @@ class $$SchemiTatticiTableTableFilterComposer
 
   ColumnFilters<String> get titolo => $composableBuilder(
     column: $table.titolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11171,6 +11289,11 @@ class $$SchemiTatticiTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get categoria => $composableBuilder(
     column: $table.categoria,
     builder: (column) => ColumnOrderings(column),
@@ -11209,6 +11332,9 @@ class $$SchemiTatticiTableTableAnnotationComposer
 
   GeneratedColumn<String> get titolo =>
       $composableBuilder(column: $table.titolo, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
 
   GeneratedColumn<String> get categoria =>
       $composableBuilder(column: $table.categoria, builder: (column) => column);
@@ -11268,6 +11394,7 @@ class $$SchemiTatticiTableTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> clubId = const Value.absent(),
                 Value<String> titolo = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String> categoria = const Value.absent(),
                 Value<String> campo = const Value.absent(),
                 Value<String> dati = const Value.absent(),
@@ -11277,6 +11404,7 @@ class $$SchemiTatticiTableTableTableManager
                 id: id,
                 clubId: clubId,
                 titolo: titolo,
+                gruppoId: gruppoId,
                 categoria: categoria,
                 campo: campo,
                 dati: dati,
@@ -11288,6 +11416,7 @@ class $$SchemiTatticiTableTableTableManager
                 required String id,
                 required String clubId,
                 required String titolo,
+                Value<String?> gruppoId = const Value.absent(),
                 Value<String> categoria = const Value.absent(),
                 Value<String> campo = const Value.absent(),
                 required String dati,
@@ -11297,6 +11426,7 @@ class $$SchemiTatticiTableTableTableManager
                 id: id,
                 clubId: clubId,
                 titolo: titolo,
+                gruppoId: gruppoId,
                 categoria: categoria,
                 campo: campo,
                 dati: dati,
@@ -13320,6 +13450,7 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
     PartiteTableCompanion Function({
       required String id,
       required String clubId,
+      Value<String?> gruppoId,
       required DateTime data,
       Value<String?> ora,
       Value<String?> luogo,
@@ -13339,6 +13470,7 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
     PartiteTableCompanion Function({
       Value<String> id,
       Value<String> clubId,
+      Value<String?> gruppoId,
       Value<DateTime> data,
       Value<String?> ora,
       Value<String?> luogo,
@@ -13371,6 +13503,11 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<String> get clubId => $composableBuilder(
     column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13459,6 +13596,11 @@ class $$PartiteTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get data => $composableBuilder(
     column: $table.data,
     builder: (column) => ColumnOrderings(column),
@@ -13539,6 +13681,9 @@ class $$PartiteTableTableAnnotationComposer
 
   GeneratedColumn<String> get clubId =>
       $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
@@ -13631,6 +13776,7 @@ class $$PartiteTableTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> clubId = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
                 Value<DateTime> data = const Value.absent(),
                 Value<String?> ora = const Value.absent(),
                 Value<String?> luogo = const Value.absent(),
@@ -13648,6 +13794,7 @@ class $$PartiteTableTableTableManager
               }) => PartiteTableCompanion(
                 id: id,
                 clubId: clubId,
+                gruppoId: gruppoId,
                 data: data,
                 ora: ora,
                 luogo: luogo,
@@ -13667,6 +13814,7 @@ class $$PartiteTableTableTableManager
               ({
                 required String id,
                 required String clubId,
+                Value<String?> gruppoId = const Value.absent(),
                 required DateTime data,
                 Value<String?> ora = const Value.absent(),
                 Value<String?> luogo = const Value.absent(),
@@ -13684,6 +13832,7 @@ class $$PartiteTableTableTableManager
               }) => PartiteTableCompanion.insert(
                 id: id,
                 clubId: clubId,
+                gruppoId: gruppoId,
                 data: data,
                 ora: ora,
                 luogo: luogo,

@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -242,6 +242,16 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'schemi_tattici_table', 'campo')) {
           await m.addColumn(schemiTatticiTable, schemiTatticiTable.campo);
+        }
+      }
+      // v19 -> v20: isolamento per gruppo estesa a partite e schemi
+      // tattici (prima condivisi con tutto il club senza eccezioni).
+      if (from < 20) {
+        if (!await _hasColumn(m, 'partite_table', 'gruppo_id')) {
+          await m.addColumn(partiteTable, partiteTable.gruppoId);
+        }
+        if (!await _hasColumn(m, 'schemi_tattici_table', 'gruppo_id')) {
+          await m.addColumn(schemiTatticiTable, schemiTatticiTable.gruppoId);
         }
       }
     },

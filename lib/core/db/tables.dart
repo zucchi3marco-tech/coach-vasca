@@ -82,6 +82,10 @@ class SchemiTatticiTable extends Table {
   TextColumn get clubId => text()();
   TextColumn get titolo => text()();
 
+  /// Gruppo di allenamento (squadra) a cui appartiene lo schema — null
+  /// se condiviso con tutto il club. Da non confondere con [categoria].
+  TextColumn get gruppoId => text().nullable()();
+
   /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
   /// "Superiorità"...): non un elenco chiuso, se ne possono creare
   /// quanti se ne vogliono.
@@ -201,6 +205,10 @@ class PresenzeTable extends Table {
 class PartiteTable extends Table {
   TextColumn get id => text()();
   TextColumn get clubId => text()();
+
+  /// Gruppo di allenamento (squadra) a cui appartiene la partita — null
+  /// se condivisa con tutto il club.
+  TextColumn get gruppoId => text().nullable()();
   DateTimeColumn get data => dateTime()();
   TextColumn get ora => text().nullable()();
   TextColumn get luogo => text().nullable()();

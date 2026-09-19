@@ -45,10 +45,21 @@ class PresenzeScreen extends ConsumerWidget {
         actions: const [BottoneTemaBordoVasca()],
       ),
       body: atletiAsync.when(
-        data: (atleti) {
-          // Nessun filtro per gruppo: si segnano le presenze di tutto il
-          // club in un colpo, un atleta senza gruppo assegnato non deve
-          // sparire dall'elenco.
+        data: (tuttiGliAtleti) {
+          // Un allenamento con gruppo assegnato mostra solo gli atleti di
+          // quel gruppo (bug: prima si vedevano — e si potevano segnare —
+          // le presenze di tutto il club); un atleta senza gruppo
+          // assegnato resta comunque visibile, non deve sparire
+          // dall'elenco.
+          final atleti = allenamento.gruppoId == null
+              ? tuttiGliAtleti
+              : tuttiGliAtleti
+                    .where(
+                      (a) =>
+                          a.gruppoId == allenamento.gruppoId ||
+                          a.gruppoId == null,
+                    )
+                    .toList();
           return presenzeAsync.when(
             data: (presenze) {
               if (atleti.isEmpty) {

@@ -2,6 +2,7 @@ class Partita {
   const Partita({
     required this.id,
     required this.clubId,
+    this.gruppoId,
     required this.data,
     this.ora,
     this.luogo,
@@ -19,6 +20,10 @@ class Partita {
 
   final String id;
   final String clubId;
+
+  /// Gruppo di allenamento (squadra) a cui appartiene — null se
+  /// condivisa con tutto il club.
+  final String? gruppoId;
   final DateTime data;
   final String? ora;
   final String? luogo;
@@ -37,6 +42,7 @@ class Partita {
     return Partita(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
+      gruppoId: map['gruppo_id'] as String?,
       data: DateTime.parse(map['data'] as String),
       ora: map['ora'] as String?,
       luogo: map['luogo'] as String?,
