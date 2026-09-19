@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,18 +17,14 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
-import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../home/area_atleta_home_screen.dart';
-import '../../statistiche/presentation/statistiche_atleta_screen.dart';
-import '../../stroke_rate/presentation/stroke_rate_screen.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
-import 'pb_list_screen.dart';
 
 enum _Ordinamento { cognome, dataNascita }
 
@@ -119,33 +114,13 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   filtroGruppoId: widget.filtroGruppoId,
                   ricerca: _ricerca,
                   ordinamento: _ordinamento,
-                  onTap: (atleta) => _apriForm(context, atleta: atleta),
-                  onTapNuovo: () => _apriForm(context),
-                  onTapDashboard: (atleta) => Navigator.of(context).push(
+                  onTap: (atleta) => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => AtletaDashboardScreen(atleta: atleta),
                     ),
                   ),
-                  onTapCarico: (atleta) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CaricoAtletaScreen(atleta: atleta),
-                    ),
-                  ),
-                  onTapStatistiche: (atleta) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => StatisticheAtletaScreen(atleta: atleta),
-                    ),
-                  ),
-                  onTapBracciate: (atleta) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => StrokeRateScreen(atleta: atleta),
-                    ),
-                  ),
-                  onTapPb: (atleta) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PbListScreen(atleta: atleta),
-                    ),
-                  ),
+                  onTapNuovo: () => _apriForm(context),
+                  onTapModifica: (atleta) => _apriForm(context, atleta: atleta),
                 ),
                 loading: () => ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -298,11 +273,7 @@ class _AtletiList extends StatelessWidget {
     required this.ordinamento,
     required this.onTap,
     required this.onTapNuovo,
-    required this.onTapDashboard,
-    required this.onTapCarico,
-    required this.onTapStatistiche,
-    required this.onTapBracciate,
-    required this.onTapPb,
+    required this.onTapModifica,
   });
 
   final List<Atleta> atleti;
@@ -310,20 +281,13 @@ class _AtletiList extends StatelessWidget {
   final String? filtroGruppoId;
   final String ricerca;
   final _Ordinamento ordinamento;
+
+  /// Tocco sulla riga: apre la dashboard dell'atleta.
   final ValueChanged<Atleta> onTap;
   final VoidCallback onTapNuovo;
-  final ValueChanged<Atleta> onTapDashboard;
-  final ValueChanged<Atleta> onTapCarico;
-  final ValueChanged<Atleta> onTapStatistiche;
-  final ValueChanged<Atleta> onTapBracciate;
-  final ValueChanged<Atleta> onTapPb;
 
-  /// Il rilevamento bracciate usa la fotocamera + Google ML Kit: disponibile
-  /// solo nell'app nativa Android/iOS, non nella versione web.
-  static bool get _bracciateDisponibili =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS);
+  /// Menu `⋮`: "Modifica anagrafica" (prima era l'azione della riga).
+  final ValueChanged<Atleta> onTapModifica;
 
   List<Atleta> _filtrati() {
     final query = ricerca.trim().toLowerCase();
@@ -419,41 +383,12 @@ class _AtletiList extends StatelessWidget {
                     onSelected: (azione) => azione(),
                     itemBuilder: (context) => [
                       PopupMenuItem(
-                        value: () => onTapDashboard(atleta),
+                        value: () => onTapModifica(atleta),
                         child: const _VoceMenu(
-                          icona: Icons.space_dashboard_outlined,
-                          etichetta: 'Dashboard',
+                          icona: Icons.edit_outlined,
+                          etichetta: 'Modifica anagrafica',
                         ),
                       ),
-                      PopupMenuItem(
-                        value: () => onTapCarico(atleta),
-                        child: const _VoceMenu(
-                          icona: Icons.show_chart,
-                          etichetta: 'Carico',
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: () => onTapStatistiche(atleta),
-                        child: const _VoceMenu(
-                          icona: Icons.query_stats,
-                          etichetta: 'Statistiche',
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: () => onTapPb(atleta),
-                        child: const _VoceMenu(
-                          icona: Icons.emoji_events_outlined,
-                          etichetta: 'Personal best',
-                        ),
-                      ),
-                      if (_bracciateDisponibili)
-                        PopupMenuItem(
-                          value: () => onTapBracciate(atleta),
-                          child: const _VoceMenu(
-                            icona: Icons.camera_alt_outlined,
-                            etichetta: 'Bracciate',
-                          ),
-                        ),
                       PopupMenuItem(
                         value: () => showDialog<void>(
                           context: context,
