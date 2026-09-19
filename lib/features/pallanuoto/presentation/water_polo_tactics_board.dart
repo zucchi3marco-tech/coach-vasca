@@ -7,6 +7,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/tonal_chip.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
@@ -1162,10 +1163,10 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
             spacing: AppSpacing.s8,
             children: [
               for (var i = 0; i < passi.length; i++)
-                ChoiceChip(
-                  label: Text('${i + 1}'),
-                  selected: i == _passoAttuale,
-                  onSelected: _inRiproduzione ? null : (_) => _vaiAPasso(i),
+                TonalChip(
+                  etichetta: '${i + 1}',
+                  selezionato: i == _passoAttuale,
+                  onSelezionato: _inRiproduzione ? null : (_) => _vaiAPasso(i),
                 ),
             ],
           ),

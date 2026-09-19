@@ -10,6 +10,7 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../atleti/application/atleti_providers.dart';
@@ -159,10 +160,10 @@ class _GeneraAllenamentoFormScreenState
                       spacing: AppSpacing.s8,
                       children: [
                         for (final r in _regimi)
-                          FilterChip(
-                            label: Text(r),
-                            selected: _regimiSelezionati.contains(r),
-                            onSelected: (selezionato) => setState(() {
+                          TonalChip(
+                            etichetta: r,
+                            selezionato: _regimiSelezionati.contains(r),
+                            onSelezionato: (selezionato) => setState(() {
                               if (selezionato) {
                                 _regimiSelezionati.add(r);
                               } else {

@@ -15,6 +15,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
@@ -322,10 +323,10 @@ class _DialogRegistraSuperioritaState
                 spacing: 8,
                 children: [
                   for (final (valore, etichetta) in esitiSuperiorita)
-                    ChoiceChip(
-                      label: Text(etichetta),
-                      selected: _esito == valore,
-                      onSelected: (_) => setState(() => _esito = valore),
+                    TonalChip(
+                      etichetta: etichetta,
+                      selezionato: _esito == valore,
+                      onSelezionato: (_) => setState(() => _esito = valore),
                     ),
                 ],
               )
@@ -410,10 +411,10 @@ class _DialogConcludiSuperioritaState
             spacing: 8,
             children: [
               for (final (valore, etichetta) in esitiSuperiorita)
-                ChoiceChip(
-                  label: Text(etichetta),
-                  selected: _esito == valore,
-                  onSelected: (_) => setState(() => _esito = valore),
+                TonalChip(
+                  etichetta: etichetta,
+                  selezionato: _esito == valore,
+                  onSelezionato: (_) => setState(() => _esito = valore),
                 ),
             ],
           ),

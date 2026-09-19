@@ -9,6 +9,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
@@ -315,11 +316,11 @@ class _SchemaTatticoFormScreenState
               runSpacing: AppSpacing.s8,
               children: [
                 for (var i = 0; i < _passi.length; i++)
-                  InputChip(
-                    label: Text('${i + 1}'),
-                    selected: i == _passoAttuale,
-                    onSelected: (_) => _vaiAPasso(i),
-                    onDeleted: _passi.length > 1
+                  TonalChip(
+                    etichetta: '${i + 1}',
+                    selezionato: i == _passoAttuale,
+                    onSelezionato: (_) => _vaiAPasso(i),
+                    onEliminato: _passi.length > 1
                         ? () => _eliminaPasso(i)
                         : null,
                   ),

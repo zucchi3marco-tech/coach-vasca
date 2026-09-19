@@ -9,6 +9,7 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../gruppi/data/gruppi_repository.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
@@ -195,10 +196,12 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                       runSpacing: AppSpacing.s8,
                       children: [
                         for (final categoria in _categorieDisponibili)
-                          FilterChip(
-                            label: Text(categoria),
-                            selected: _categorieSelezionate.contains(categoria),
-                            onSelected: (selezionata) => setState(() {
+                          TonalChip(
+                            etichetta: categoria,
+                            selezionato: _categorieSelezionate.contains(
+                              categoria,
+                            ),
+                            onSelezionato: (selezionata) => setState(() {
                               if (selezionata) {
                                 _categorieSelezionate.add(categoria);
                               } else {

@@ -10,6 +10,7 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
@@ -363,10 +364,10 @@ class _GeneraSettimanaFormScreenState
                       runSpacing: AppSpacing.s8,
                       children: [
                         for (var offset = 0; offset < 7; offset++)
-                          FilterChip(
-                            label: Text(_etichettaGiornoBreve(offset)),
-                            selected: _giorniSelezionati.contains(offset),
-                            onSelected: (selezionato) =>
+                          TonalChip(
+                            etichetta: _etichettaGiornoBreve(offset),
+                            selezionato: _giorniSelezionati.contains(offset),
+                            onSelezionato: (selezionato) =>
                                 _alternaGiorno(offset, selezionato),
                           ),
                       ],
