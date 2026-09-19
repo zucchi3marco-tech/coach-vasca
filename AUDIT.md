@@ -1,83 +1,156 @@
-# Audit del codice — SwimCoach FIN (12/09/2026)
+# Controllo completo del codice — 2026-09-19
 
-Controllo completo in tre parti: bug, codice inutile, colli di bottiglia. Nessuna correzione applicata — solo un rapporto, da discutere insieme prima di decidere cosa sistemare.
+Rapporto di sola lettura: **nessuna correzione è stata applicata**. Ogni punto
+qui sotto è una cosa trovata, non ancora sistemata — decidiamo insieme cosa
+affrontare e quando.
 
-**Metodo**: `flutter analyze` e `dart fix --dry-run` (entrambi puliti, 0 segnalazioni automatiche), più una revisione manuale approfondita fatta leggendo il codice riga per riga in tre aree separate: sicurezza/database, bug a runtime, codice morto e prestazioni.
+> **Nota**: esisteva già un controllo precedente, del 12/09/2026
+> (`AUDIT_2026-09-12.md`) — quasi tutti i suoi punti sono già stati
+> sistemati (commit del 12/09, "Sistema i problemi dell'audit"). Ne resta
+> aperto solo uno, il limite di righe nelle query al database, che ritrovi
+> anche qui sotto (punto 1.2) perché riguarda ancora file nuovi aggiunti da
+> allora. Questo è un controllo da zero sullo stato attuale del codice, non
+> una correzione di quello vecchio.
 
-**Riassunto**: nessun problema bloccante. L'app è in buono stato — l'isolamento dei dati tra club (la cosa più delicata, dato che più allenatori/club condividono lo stesso database) risulta corretto ovunque. I problemi trovati sono per lo più cose da sistemare con calma o rifiniture, non urgenze.
+Metodo: `flutter analyze` e `dart fix --dry-run` (strumenti automatici che
+controllano tutto il codice in pochi secondi) più una lettura a occhio delle
+parti più delicate — gestione degli errori, chiamate al database (Supabase),
+regole di sicurezza dei dati (RLS), e punti che potrebbero rallentare l'app
+man mano che i dati crescono.
 
----
-
-## 🔴 Bloccante
-
-Nessuno. In particolare: **tutte le tabelle del database hanno l'isolamento per club correttamente attivo** — un allenatore di un club non può in nessun modo leggere o scrivere dati di un altro club, nemmeno forzando le richieste dell'app. Controllate una per una tutte le tabelle, tutte le funzioni che girano con permessi elevati, e tutti i punti del codice dell'app dove viene deciso "di quale club sono questi dati".
-
----
-
-## 🟡 Da sistemare presto
-
-### 1. Se due dispositivi modificano lo stesso allenamento (o atleta) mentre uno è senza rete, si può perdere una modifica dell'altro
-**Dove**: `lib/features/allenamenti/data/allenamenti_repository.dart` (metodo `updateAllenamento`), `lib/features/atleti/data/atleti_repository.dart` (metodo `updateAtleta`)
-**Cosa significa in pratica**: quando salvi una modifica mentre sei offline, l'app la mette in una coda e la rimanda al server quando torna la rete — ma la rimanda con **tutti** i campi del form, non solo quello che hai cambiato tu. Esempio concreto: sei offline e cambi solo la data di un allenamento; nel frattempo un collega online cambia solo il titolo dello stesso allenamento; quando torni online, la tua modifica arriva dopo e **riporta indietro anche il titolo che aveva cambiato il collega**, anche se tu non l'avevi mai toccato. Non è un crash né una perdita di dati eclatante, ma è un comportamento che nessuno si aspetterebbe vedendo l'app. Altre parti dell'app (presenze, eventi partita) già evitano questo problema mandando solo il campo davvero cambiato — andrebbe fatto lo stesso qui.
-
-### 2. Un atleta collegato al suo account vede gli allenamenti (e le note) di tutti i gruppi del club, non solo del proprio
-**Dove**: regole del database create in `supabase/migrations/20260906000200_atleta_account.sql` (righe 65-69)
-**Cosa significa in pratica**: è una scelta fatta apposta (serve per calcolare il carico di allenamento dell'atleta), ma ha un effetto collaterale: se scrivi appunti personali su un atleta nel campo "Note" di un allenamento o di una serie, **qualsiasi altro atleta con un account collegato nello stesso club può leggerli**, anche se l'appunto riguarda un compagno diverso. Non è una falla verso altri club — resta tutto isolato correttamente — ma è un'esposizione più ampia di quanto ci si aspetterebbe all'interno dello stesso club.
-
-### 3. Se la registrazione di un atleta con codice invito si interrompe a metà, l'account resta bloccato
-**Dove**: `lib/features/auth/presentation/riscatta_invito_screen.dart` (metodo `_creaAccount`, righe 141-190)
-**Cosa significa in pratica**: registrarsi con un codice invito richiede due passaggi di seguito (crea l'account, poi collegalo all'atleta). Se il primo passaggio riesce ma il secondo fallisce per un problema di rete proprio in quel momento, l'account resta creato ma "orfano" — e se la persona riprova, l'app dirà che quell'email è già registrata, senza un modo ovvio per sbloccarsi da sola. Caso raro, ma se capita serve il tuo intervento manuale.
-
-### 4. Il pulsante "Esci" non avvisa se il logout fallisce
-**Dove**: `lib/features/home/home_screen.dart` (riga 210)
-**Cosa significa in pratica**: se tocchi "Esci" proprio mentre manca la rete, l'app non ti dice che non è riuscita a disconnetterti — resta un'incertezza su se sei uscito davvero o no.
-
-### 5. "Annulla" su un evento partita live non avvisa se la cancellazione fallisce
-**Dove**: `lib/features/pallanuoto/presentation/partita_live_screen.dart` (righe 96-100)
-**Cosa significa in pratica**: dopo aver registrato un tiro o un'espulsione, compare un tasto "Annulla". Se in quel momento la cancellazione fallisce per un motivo diverso dalla rete assente, l'app non ti avvisa — credi di aver annullato l'evento ma in realtà è ancora lì, registrato.
-
-### 6. Lo "Storico generazioni AI" scarica tutta la cronologia in una volta, senza limite
-**Dove**: `lib/features/ai_genera/data/generazioni_ai_repository.dart` (metodo `fetchStorico`, righe 84-91)
-**Cosa significa in pratica**: ogni volta che apri questa schermata, l'app scarica tutte le generazioni AI mai fatte per il club, dall'inizio. Oggi con pochi mesi di utilizzo non si nota, ma più userai la generazione AI nel tempo, più questa schermata diventerà lenta ad aprirsi.
-
-### 7. "Duplica settimana" fa tutte le operazioni una alla volta, in fila
-**Dove**: `lib/features/allenamenti/data/duplicazione_settimana_service.dart` (righe 32-59)
-**Cosa significa in pratica**: quando duplichi una settimana, l'app crea un allenamento, legge le sue serie, poi crea ogni serie una per una — in sequenza, non tutte insieme. Con una settimana piena questo significa decine di operazioni in fila: più lento del necessario, e se la connessione cade a metà rischi di ritrovarti con solo una parte della settimana duplicata.
-
-### 8. Le foto dei referti vengono inviate all'AI a piena risoluzione
-**Dove**: `lib/features/referti/presentation/leggi_referto_screen.dart` (righe 42-46), `lib/features/referti/data/referti_repository.dart` (riga 37)
-**Cosa significa in pratica**: quando scatti o carichi la foto di un referto, l'app ne riduce la qualità (85%) ma non le dimensioni in pixel. Una foto di un moderno smartphone resta molto più grande di quanto serva per leggere del testo scritto — invii più lenti e probabilmente un costo più alto ad ogni lettura.
+Tutto è ordinato dal più grave al meno grave. Non c'è nessun punto
+"bloccante" (cioè: niente che rischi di far crashare l'app o perdere dati in
+modo grave e frequente) — il più serio trovato è in categoria "da sistemare
+presto".
 
 ---
 
-## ⚪ Rifiniture (nessun impatto reale per ora)
+## 1. Da sistemare presto
 
-### 9. Tre widget scritti per la vecchia gerarchia delle stagioni non vengono più usati da nessuna parte
-**Dove**: `lib/widgets/breadcrumb_bar.dart` (tutto il file), `lib/widgets/ordine_badge.dart` (tutto il file), `lib/widgets/app_list_panel.dart` righe 41-85 (`ReorderableAppListPanel`)
-**Cosa significa in pratica**: erano stati costruiti per la gerarchia macrociclo/mesociclo/microciclo, eliminata di recente. Restano nel progetto ma non li richiama più nessuna schermata — codice morto, non fanno danno ma occupano spazio.
+### 1.1 — Se due dispositivi modificano lo stesso allenamento offline, uno dei due perde le modifiche senza avviso
+**Dove**: `lib/core/sync/sync_engine.dart` (tutta la funzione `processQueue`, righe 40-96)
+**Gravità**: da sistemare presto
 
-### 10. Una dipendenza dichiarata nel progetto non viene mai usata
-**Dove**: `pubspec.yaml` (riga 38, `cupertino_icons`)
-**Cosa significa in pratica**: pacchetto di icone in stile Apple rimasto dal modello iniziale di Flutter, mai effettivamente usato in nessuna schermata. Si potrebbe togliere senza cambiare nulla nell'app.
+In pratica: se tu e un altro allenatore (o tu su due dispositivi) modificate
+lo stesso allenamento mentre siete entrambi offline, quando tornate online
+l'app non se ne accorge — vince semplicemente chi si sincronizza per
+ultimo, e le modifiche dell'altro vengono sovrascritte senza nessun
+messaggio d'avviso. Il controllo del 12/09 aveva già ridotto il danno per
+allenamenti/atleti (ora si manda solo il campo davvero cambiato, non tutto
+il modulo), ma il meccanismo di fondo — nessun confronto reale tra chi ha
+modificato cosa e quando — resta questo per tutte le tabelle. È una scelta
+esistente e documentata nel codice, non un errore di distrazione: succede
+solo se più persone lavorano sullo stesso club offline nello stesso
+momento, oggi un caso raro ma non impossibile.
 
-### 11. Due tabelle non hanno una regola per "cancellare" righe
-**Dove**: tabella `generazioni_ai` e tabella `codici_gruppo`
-**Cosa significa in pratica**: non è un rischio di sicurezza (nessuno può leggere/scrivere dati di un altro club), è solo una funzionalità mancante — oggi non si possono eliminare vecchie generazioni AI o vecchi codici gruppo dall'app, se mai un giorno servisse.
+### 1.2 — Le liste di dati (allenamenti, presenze, atleti, tempi, personal best) si scaricano sempre tutte intere, senza un limite
+**Dove**: `lib/features/allenamenti/data/allenamenti_repository.dart:104-107`, `lib/features/presenze/data/presenze_repository.dart:73-92`, `lib/features/atleti/data/atleti_repository.dart:66`, `lib/features/atleti/data/personal_best_repository.dart:79-100`, `lib/features/atleti/data/tempi_gara_repository.dart:75-77` (e, meno urgente, `lib/features/pallanuoto/data/eventi_partita_repository.dart` e `lib/features/pallanuoto/data/partite_repository.dart:77`)
+**Gravità**: da sistemare presto (stesso punto già aperto dal 12/09 e ancora in `ROADMAP.md` — qui solo l'elenco aggiornato dei file coinvolti, comprese le tabelle più recenti come `tempi_gara` e `personal_best`)
 
-### 12. Quasi tutte le richieste al database non hanno un limite di righe
-**Dove**: la maggior parte dei file `data/*_repository.dart` (es. allenamenti, serie, partite, presenze)
-**Cosa significa in pratica**: l'app scarica sempre tutti i dati di un club in un colpo solo, poi li salva sul telefono e da lì legge velocemente. Oggi non si nota; se un club crescesse molto (centinaia di allenamenti/partite), i primi scaricamenti diventerebbero via via più lenti.
+In pratica: ogni volta che l'app scarica i dati di un club per usarli anche
+offline, prende sempre **tutta** la tabella in un colpo, senza un tetto
+massimo. Con i numeri di oggi non si nota. Se un club crescesse molto (anni
+di storico allenamenti/presenze, centinaia di atleti), il primo
+caricamento dopo l'installazione diventerebbe via via più lento. Non è un
+fix da un'ora: tocca il modo in cui l'app tiene i dati disponibili offline,
+va deciso insieme prima di cambiare qualcosa.
 
-### 13. Qualche `const` mancante, isolato
-**Dove**: `lib/features/home/home_screen.dart` (riga 235), `lib/features/stagioni/presentation/stagione_detail_screen.dart` (righe 118 e 128)
-**Cosa significa in pratica**: tre icone che potrebbero essere marcate come "non cambiano mai" (`const`) per un minimo risparmio, ma non lo sono. Effetto pratico impercettibile — la disciplina generale sul resto del codice è già buona.
+### 1.3 — "Segna come letta" su una notifica può fallire senza che l'allenatore se ne accorga
+**Dove**: `lib/features/notifiche/data/notifiche_repository.dart:26-28` e `lib/features/notifiche/presentation/notifiche_screen.dart:26-29`
+**Gravità**: da sistemare presto
+
+In pratica: quando tocchi l'icona "segna come letta" su una notifica, se in
+quel momento non c'è connessione (o il server risponde con un errore),
+l'app non mostra nessun messaggio di errore — sembra aver funzionato ma la
+notifica potrebbe restare "non letta" alla prossima apertura. Fastidioso,
+non pericoloso: non si perdono dati, nessun'altra parte dell'app fa questo
+errore (è l'unico punto rimasto scoperto, lo stesso tipo di problema che il
+controllo del 12/09 aveva già corretto altrove — logout, annulla evento —
+ma non era ancora arrivato qui).
+
+### 1.4 — Alcune schermate si aggiornano più del necessario
+**Dove**: `lib/features/home/home_screen.dart:252-262` (e un doppio controllo dei gruppi già fatto anche alla riga 205) e `lib/features/pallanuoto/presentation/partita_live_screen.dart:319-321`
+**Gravità**: da sistemare presto
+
+In pratica: alcune schermate "ascoltano" più dati di quelli che mostrano
+davvero, quindi ogni piccola modifica a uno qualsiasi di quei dati fa
+ridisegnare tutta la schermata anche se solo un dettaglio è cambiato. Il
+caso più sensibile è la schermata "partita dal vivo": ogni singolo
+evento segnato (un tiro, un'espulsione) potrebbe far ridisegnare più del
+dovuto durante la partita, quando la fluidità conta di più. Con i volumi
+attuali non è percepibile: è più un'attenzione da avere se in futuro l'app
+sembrasse "a scatti" durante una partita live.
 
 ---
 
-## Cosa NON è stato trovato (buone notizie)
+## 2. Rifinitura
 
-- **Nessuna falla di sicurezza tra club**: ogni tabella ha le regole di isolamento attive e corrette, verificate una per una.
-- **Nessun controller/risorsa dimenticata aperta** (niente `dispose()` mancanti) in tutto il progetto.
-- **Nessun caso trovato** di schermata che usa riferimenti "morti" dopo essere stata chiusa (un problema classico in app Flutter che qui non si presenta).
-- **Nessuna vera perdita di reattività**: le schermate con liste/statistiche già calcolano i dati pesanti una sola volta invece che ad ogni ridisegno.
-- Tutte le altre dipendenze del progetto (oltre a `cupertino_icons`) sono realmente usate.
+### 2.1 — Il progetto non ha attivato il controllo automatico di uno spreco comune ("const" mancanti)
+**Dove**: `analysis_options.yaml` (tutto il file — manca la riga che attiverebbe questo controllo)
+**Gravità**: rifinitura
+
+In pratica: Flutter permette di dire "questo pezzo di schermata non cambia
+mai, non ridisegnarlo" (si scrive `const` nel codice). Il progetto non ha
+attivato il controllo automatico che segnala dove questo manca, quindi non
+possiamo sapere con certezza quanti punti dell'app lo stiano già facendo
+bene o no — un controllo a campione su un paio di file grandi ha trovato
+codice già scritto bene, ma non è stato controllato ovunque per tempo.
+Attivare il controllo è un'operazione di un minuto; sistemare quello che
+segnalerebbe è lavoro a parte.
+
+### 2.2 — Il logo viene caricato sempre a piena qualità anche quando è mostrato piccolo
+**Dove**: `lib/features/home/home_screen.dart` (dove viene mostrato `assets/images/logo.png` nella barra in alto)
+**Gravità**: rifinitura
+
+In pratica: il file del logo (153 KB, dimensione già ragionevole) viene
+sempre aperto a piena risoluzione anche quando sullo schermo occupa pochi
+centimetri quadrati (l'icona nella barra in alto). Uno spreco piccolissimo
+con un solo file di queste dimensioni — da tenere d'occhio solo se in
+futuro si aggiungono altre immagini più pesanti.
+
+---
+
+## 3. Controllato, nessun problema trovato
+
+Un controllo completo ha anche lo scopo di dire cosa **va bene**, non solo
+cosa non va — ecco cosa è stato verificato a fondo e trovato a posto.
+
+- **Chi può vedere i dati di chi (RLS)** — priorità alta di questo
+  controllo: verificate tutte le migrazioni del database (regole che
+  decidono chi può leggere/scrivere cosa), comprese quelle più recenti
+  aggiunte da settembre. Ogni tabella è correttamente riservata al club di
+  appartenenza (per l'allenatore) o al proprio profilo (per l'atleta):
+  nessuna tabella è risultata apribile da un club diverso da quello giusto,
+  e nessuna delle funzioni "speciali" del database (quelle che a volte
+  bypassano i controlli normali per motivi tecnici) si è rivelata usabile
+  per leggere dati di un altro club. Anche il problema di privacy tra
+  atleti dello stesso club, segnalato nel controllo del 12/09 (un atleta
+  poteva leggere le note di allenamenti destinate ad altri compagni), è
+  confermato corretto oggi.
+- **L'app non crasha per uno schermo chiuso troppo in fretta** — controllato
+  ogni punto dell'app dove si aspetta una risposta dal server e poi si
+  aggiorna lo schermo: se nel frattempo l'utente ha già chiuso quella
+  schermata, l'app se ne accorge sempre correttamente prima di provare ad
+  aggiornarla (nessun punto dove questo controllo manca).
+- **Nessuna "perdita di memoria" da elementi non richiusi** — controllati
+  tutti i punti che aprono una fotocamera, un timer, o un campo di testo:
+  vengono sempre richiusi correttamente quando la schermata si chiude.
+- **`flutter analyze` e `dart fix`** (i due controlli automatici standard di
+  Flutter): **0 problemi** su tutto il codice.
+- **Nessun file, importazione o libreria inutilizzata**: controllato
+  l'intero progetto, nessun file "orfano" lasciato da versioni precedenti,
+  nessuna libreria elencata in `pubspec.yaml` che non viene più usata.
+- **I dati non vengono scaricati due volte per sbaglio**: il modo in cui
+  l'app tiene una copia locale dei dati (per funzionare anche offline) e la
+  aggiorna dal server è applicato in modo uniforme in tutta l'app — non
+  sono stati trovati punti che richiamano il server ripetutamente ad ogni
+  piccolo aggiornamento dello schermo invece di usare la copia locale già
+  pronta.
+
+---
+
+## Prossimo passo
+
+Nessuna correzione è stata fatta. Decidiamo insieme quali dei punti sopra
+affrontare (e in che ordine) — nessuno di questi è urgente al punto da
+richiedere un intervento immediato.
