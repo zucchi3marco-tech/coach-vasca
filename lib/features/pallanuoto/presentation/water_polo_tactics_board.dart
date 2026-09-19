@@ -666,13 +666,20 @@ class _TokenGiocatore extends StatelessWidget {
 
   static const _diametro = 32.0;
 
+  /// La palla (giallo) e' un terzo del diametro degli altri pallini —
+  /// non e' un giocatore, deve distinguersi a colpo d'occhio anche
+  /// dalla sola dimensione, non solo dall'assenza del numero.
+  double get _diametroEffettivo =>
+      giocatore.colore == ColoreLavagna.giallo ? _diametro / 3 : _diametro;
+
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
     final posizione = giocatore.posizione;
+    final diametro = _diametroEffettivo;
     return Positioned(
-      left: posizione.dx * larghezza - _diametro / 2,
-      top: posizione.dy * altezza - _diametro / 2,
+      left: posizione.dx * larghezza - diametro / 2,
+      top: posizione.dy * altezza - diametro / 2,
       child: IgnorePointer(
         ignoring: !attivo,
         child: GestureDetector(
@@ -689,8 +696,8 @@ class _TokenGiocatore extends StatelessWidget {
           },
           onDoubleTap: onRimuovi,
           child: Container(
-            width: _diametro,
-            height: _diametro,
+            width: diametro,
+            height: diametro,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: giocatore.colore.colore,
@@ -996,6 +1003,11 @@ class _TokenAnimato extends StatelessWidget {
 
   static const _diametro = 32.0;
 
+  /// Stessa regola di [_TokenGiocatore._diametroEffettivo]: la palla
+  /// (giallo) e' un terzo del diametro degli altri pallini.
+  double get _diametroEffettivo =>
+      token.colore == ColoreLavagna.giallo ? _diametro / 3 : _diametro;
+
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
@@ -1007,14 +1019,15 @@ class _TokenAnimato extends StatelessWidget {
     final opacita =
         token.opacitaIniziale +
         (token.opacitaFinale - token.opacitaIniziale) * t;
+    final diametro = _diametroEffettivo;
     return Positioned(
-      left: posizione.dx * larghezza - _diametro / 2,
-      top: posizione.dy * altezza - _diametro / 2,
+      left: posizione.dx * larghezza - diametro / 2,
+      top: posizione.dy * altezza - diametro / 2,
       child: Opacity(
         opacity: opacita,
         child: Container(
-          width: _diametro,
-          height: _diametro,
+          width: diametro,
+          height: diametro,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: token.colore.colore,
