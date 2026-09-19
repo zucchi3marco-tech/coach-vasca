@@ -10,6 +10,7 @@ import '../../theme/tokens_dominio.dart';
 import '../../widgets/app_list_panel.dart';
 import '../../widgets/app_list_row.dart';
 import '../../widgets/athlete_avatar_circle.dart';
+import '../../widgets/icon_badge.dart';
 import '../../widgets/pool_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_panel.dart';
@@ -41,36 +42,6 @@ String _etichettaSport(String? sport) => switch (sport) {
   'pallanuoto' => 'Pallanuoto',
   _ => 'Nuoto',
 };
-
-/// Icona a cerchio per l'intestazione di una scheda della dashboard —
-/// stesso aspetto per tutte (48px, sfondo tenue/pieno dello stesso
-/// colore), solo il glifo e il [colore] cambiano da scheda a scheda:
-/// dà un'identità riconoscibile a colpo d'occhio. La dashboard atleta è
-/// una delle eccezioni al "un solo accento per schermata" di DESIGN.md
-/// (vedi "Dove spendere l'audacia") — tavolozza `evidenza*` di
-/// `TokenDominio`: [colore] è sempre un token passato dal chiamante,
-/// mai un valore esadecimale scritto qui.
-class _BadgeScheda extends StatelessWidget {
-  const _BadgeScheda(this.icona, {this.colore});
-
-  final IconData icona;
-  final Color? colore;
-
-  @override
-  Widget build(BuildContext context) {
-    final colore = this.colore ?? context.colori.azione;
-    return Container(
-      width: 48,
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colore.withValues(alpha: 0.14),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icona, color: colore),
-    );
-  }
-}
 
 /// Home/dashboard dell'atleta collegato (FASE 9, ridisegnata FASE 16):
 /// mostrata da HomeScreen al posto delle tab da coach quando l'account
@@ -195,7 +166,7 @@ class _CardAndamento extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _BadgeScheda(
+                IconBadge(
                   Icons.show_chart,
                   colore: context.dominio.evidenzaCiano,
                 ),
@@ -273,7 +244,7 @@ class _CardLavagnaTattica extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _BadgeScheda(
+                IconBadge(
                   Icons.route_outlined,
                   colore: context.dominio.evidenzaVerde,
                 ),
@@ -495,7 +466,7 @@ class _CardTempiRecenti extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _BadgeScheda(
+                IconBadge(
                   Icons.timer_outlined,
                   colore: context.dominio.evidenzaAmbra,
                 ),
@@ -628,7 +599,7 @@ class _CardRiepilogoClub extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const _BadgeScheda(Icons.pool_outlined),
+              const IconBadge(Icons.pool_outlined),
               const SizedBox(width: AppSpacing.s12),
               Expanded(
                 child: clubAsync.when(

@@ -6,13 +6,18 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/icon_badge.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/stat_panel.dart';
+import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../carico/presentation/carico_atleta_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -27,6 +32,10 @@ import 'gestisci_account_atleta_dialog.dart';
 import 'pb_list_screen.dart';
 
 enum _Ordinamento { cognome, dataNascita }
+
+String _formattaData(DateTime data) =>
+    '${data.day.toString().padLeft(2, '0')}/'
+    '${data.month.toString().padLeft(2, '0')}';
 
 class AtletiListScreen extends ConsumerStatefulWidget {
   const AtletiListScreen({
@@ -59,6 +68,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _RiepilogoClub(
+            clubId: widget.clubId,
+            filtroGruppoId: widget.filtroGruppoId,
+          ),
+          const SizedBox(height: AppSpacing.s16),
           Row(
             children: [
               Expanded(
@@ -175,6 +189,102 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
       MaterialPageRoute(
         builder: (_) => AtletaFormScreen(clubId: widget.clubId, atleta: atleta),
       ),
+    );
+  }
+}
+
+/// Riepilogo rapido sopra l'elenco: atleti attivi, prossimo allenamento
+/// in programma, quanti nei prossimi 7 giorni. Stessa tavolozza
+/// "evidenza" della dashboard atleta (DESIGN.md "Dove spendere
+/// l'audacia") — qui la sua seconda eccezione esplicita, per dare
+/// all'allenatore lo stesso colpo d'occhio a colori sulla propria home.
+class _RiepilogoClub extends ConsumerWidget {
+  const _RiepilogoClub({required this.clubId, required this.filtroGruppoId});
+
+  final String clubId;
+  final String? filtroGruppoId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dominio = context.dominio;
+    final atletiAsync = ref.watch(
+      atletiListProvider((clubId: clubId, includeInactive: false)),
+    );
+    final allenamentiAsync = ref.watch(allenamentiListProvider(clubId));
+
+    final tuttiAttivi = atletiAsync.value;
+    final atletiAttivi = tuttiAttivi == null
+        ? null
+        : filtroGruppoId == null
+        ? tuttiAttivi.length
+        : tuttiAttivi.where((a) => a.gruppoId == filtroGruppoId).length;
+
+    var prossimoAllenamento = '—';
+    var prossimi7Giorni = 0;
+    final allenamenti = allenamentiAsync.value;
+    if (allenamenti != null) {
+      final oggi = DateTime.now();
+      final inizio = DateTime(oggi.year, oggi.month, oggi.day);
+      final fine = inizio.add(const Duration(days: 7));
+      final futuri = allenamenti.where((a) => !a.data.isBefore(inizio)).toList()
+        ..sort((a, b) => a.data.compareTo(b.data));
+      if (futuri.isNotEmpty) {
+        prossimoAllenamento = _formattaData(futuri.first.data);
+      }
+      prossimi7Giorni = futuri.where((a) => a.data.isBefore(fine)).length;
+    }
+
+    return PoolCard(
+      child: Wrap(
+        spacing: AppSpacing.s24,
+        runSpacing: AppSpacing.s16,
+        children: [
+          _VoceRiepilogo(
+            icona: Icons.groups_outlined,
+            colore: dominio.evidenzaCiano,
+            etichetta: 'Atleti attivi',
+            valore: atletiAttivi == null ? '—' : '$atletiAttivi',
+          ),
+          _VoceRiepilogo(
+            icona: Icons.calendar_month_outlined,
+            colore: dominio.evidenzaVerde,
+            etichetta: 'Prossimo allenamento',
+            valore: prossimoAllenamento,
+          ),
+          _VoceRiepilogo(
+            icona: Icons.event_available_outlined,
+            colore: dominio.evidenzaAmbra,
+            etichetta: 'Nei prossimi 7 giorni',
+            valore: '$prossimi7Giorni',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoceRiepilogo extends StatelessWidget {
+  const _VoceRiepilogo({
+    required this.icona,
+    required this.colore,
+    required this.etichetta,
+    required this.valore,
+  });
+
+  final IconData icona;
+  final Color colore;
+  final String etichetta;
+  final String valore;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconBadge(icona, colore: colore, dimensione: 40),
+        const SizedBox(width: AppSpacing.s12),
+        StatPanel(etichetta: etichetta, valore: valore),
+      ],
     );
   }
 }

@@ -6,6 +6,8 @@ import '../../core/pwa/installabilita_pwa.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
 import '../../theme/app_spacing.dart';
+import '../../theme/colori_app.dart';
+import '../../theme/tokens_dominio.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_skeleton.dart';
 import '../../widgets/theme_toggle.dart';
@@ -257,6 +259,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mostraTab) _controllaOnboarding();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
+    // Un colore diverso per tab quando selezionata (tavolozza "evidenza",
+    // stessa eccezione della dashboard atleta — vedi DESIGN.md "Dove
+    // spendere l'audacia"): Atleti resta sul colore d'azione (l'ancora
+    // neutra, come "Il tuo club" nella dashboard), le altre tre hanno un
+    // colore vivace ciascuna. Da tenere in ordine con [_destinazioniTab].
+    final coloriTab = [
+      context.colori.azione,
+      context.dominio.evidenzaCiano,
+      context.dominio.evidenzaVerde,
+      context.dominio.evidenzaAmbra,
+    ];
 
     final corpoPrincipale = atletaAsync.when(
       data: (atleta) => atleta != null
@@ -280,11 +293,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onDestinationSelected: (index) => setState(() => _tabIndex = index),
             labelType: NavigationRailLabelType.all,
             destinations: [
-              for (final d in _destinazioniTab)
+              for (var i = 0; i < _destinazioniTab.length; i++)
                 NavigationRailDestination(
-                  icon: Icon(d.icona),
-                  selectedIcon: Icon(d.iconaSelezionata),
-                  label: Text(d.etichetta),
+                  icon: Icon(_destinazioniTab[i].icona),
+                  selectedIcon: Icon(
+                    _destinazioniTab[i].iconaSelezionata,
+                    color: coloriTab[i],
+                  ),
+                  label: Text(_destinazioniTab[i].etichetta),
                 ),
             ],
           ),
@@ -301,11 +317,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onDestinationSelected: (index) =>
                   setState(() => _tabIndex = index),
               destinations: [
-                for (final d in _destinazioniTab)
+                for (var i = 0; i < _destinazioniTab.length; i++)
                   NavigationDestination(
-                    icon: Icon(d.icona),
-                    selectedIcon: Icon(d.iconaSelezionata),
-                    label: d.etichetta,
+                    icon: Icon(_destinazioniTab[i].icona),
+                    selectedIcon: Icon(
+                      _destinazioniTab[i].iconaSelezionata,
+                      color: coloriTab[i],
+                    ),
+                    label: _destinazioniTab[i].etichetta,
                   ),
               ],
             )

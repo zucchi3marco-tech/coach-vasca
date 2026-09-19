@@ -46,10 +46,12 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
   final Color calottinaNumeroSuRossa;
 
   /// Tavolozza "evidenza" — DESIGN.md sezione "Dove spendere l'audacia":
-  /// riservata alla dashboard atleta (icone delle sue schede) e al
-  /// grafico Banister ovunque appaia (vedi [curvaFitness]/[curvaForma]).
-  /// Non va riusata altrove senza deciderlo esplicitamente — resta
-  /// un'eccezione delimitata, non il nuovo colore d'azione dell'app.
+  /// riservata alla dashboard atleta (icone delle sue schede), alla home
+  /// dell'allenatore (icone delle tab e riepilogo club sopra l'elenco
+  /// atleti) e al grafico Banister ovunque appaia (vedi
+  /// [curvaFitness]/[curvaForma]). Non va riusata altrove senza
+  /// deciderlo esplicitamente — resta un'eccezione delimitata, non il
+  /// nuovo colore d'azione dell'app.
   final Color evidenzaCiano;
   final Color evidenzaVerde;
   final Color evidenzaAmbra;

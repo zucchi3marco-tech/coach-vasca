@@ -49,6 +49,8 @@ Questo è il motivo per cui i due temi non condividono un solo valore esadecimal
 
 **Seconda eccezione, la dashboard atleta.** È la schermata-vetrina dell'atleta — il primo (e spesso unico) punto su cui gira tutto il suo account, l'equivalente per lui della pagina bordo vasca per l'allenatore — quindi ha una sua tavolozza dedicata: `TokenDominio.evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra`, un colore diverso per l'icona di ogni scheda invece del solo `azione`, più lo stesso duo ciano/verde sul grafico Banister ovunque appaia (anche fuori dalla dashboard, es. `CaricoAtletaScreen`). Resta legata al tema chiaro/scuro dell'utente come tutto il resto dell'app — nessuna schermata "sempre scura" a parte. **Delimitata**: sfondi dei pannelli, titoli e i valori degli `StatPanel` restano neutri, il colore arriva solo dalle icone e dal grafico; la tavolozza `evidenza*` non si estende ad altre schermate senza deciderlo di nuovo esplicitamente qui.
 
+**Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 4 tab Atleti/Allenamenti/Stagioni/Partite) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e una card di riepilogo sopra l'elenco atleti (`_RiepilogoClub`, `atleti_list_screen.dart`) mostra 3 statistiche rapide del club con la stessa tavolozza. **Delimitata** allo stesso modo: nessun altro sfondo/titolo/testo cambia colore, la card di riepilogo è un `PoolCard` neutro come tutti gli altri, il colore arriva solo dalle icone.
+
 ---
 
 ## 3. Architettura dei token
