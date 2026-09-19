@@ -326,25 +326,44 @@ Deno.serve(async (req) => {
 
   const prompt = costruisciPrompt(parametri);
 
-  let rispostaGemini: Response;
-  try {
-    rispostaGemini = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema,
-          },
-        }),
-      },
-    );
-  } catch (errore) {
+  // Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo
+  // (il messaggio stesso dice "usually temporary, please try again later")
+  // — senza un ritentativo qui, questi picchi si vedevano come "il
+  // generatore non funziona" lato coach, pur essendo transitori.
+  const TENTATIVI_MASSIMI = 3;
+  const ATTESE_MS = [1500, 3000];
+
+  let rispostaGemini: Response | undefined;
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      rispostaGemini = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema,
+            },
+          }),
+        },
+      );
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      rispostaGemini = undefined;
+    }
+    const daRiprovare = rispostaGemini?.status === 503 || erroreRete !== undefined;
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
+    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  }
+
+  if (erroreRete !== undefined || rispostaGemini === undefined) {
     return jsonResponse(
-      { error: `Impossibile contattare il provider AI: ${errore}` },
+      { error: `Impossibile contattare il provider AI: ${erroreRete}` },
       502,
     );
   }
