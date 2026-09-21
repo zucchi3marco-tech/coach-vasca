@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -194,9 +195,16 @@ class _RiepilogoClub extends ConsumerWidget {
         ? tuttiAttivi.length
         : tuttiAttivi.where((a) => a.gruppoId == filtroGruppoId).length;
 
-    var prossimoAllenamento = '—';
+    var dataProssimoAllenamento = '—';
     var prossimi7Giorni = 0;
-    final allenamenti = allenamentiAsync.value;
+    // Solo gli allenamenti del gruppo scelto (e quelli di tutto il club),
+    // come nella tab Allenamenti: così i due conteggi coincidono.
+    final allenamenti = allenamentiAsync.value?.where(
+      (a) => visibileNelGruppo(
+        gruppoDelRecord: a.gruppoId,
+        gruppoSelezionato: filtroGruppoId,
+      ),
+    );
     if (allenamenti != null) {
       final oggi = DateTime.now();
       final inizio = DateTime(oggi.year, oggi.month, oggi.day);
@@ -204,7 +212,7 @@ class _RiepilogoClub extends ConsumerWidget {
       final futuri = allenamenti.where((a) => !a.data.isBefore(inizio)).toList()
         ..sort((a, b) => a.data.compareTo(b.data));
       if (futuri.isNotEmpty) {
-        prossimoAllenamento = _formattaData(futuri.first.data);
+        dataProssimoAllenamento = _formattaData(futuri.first.data);
       }
       prossimi7Giorni = futuri.where((a) => a.data.isBefore(fine)).length;
     }
@@ -224,7 +232,7 @@ class _RiepilogoClub extends ConsumerWidget {
             icona: Icons.calendar_month_outlined,
             colore: dominio.evidenzaVerde,
             etichetta: 'Prossimo allenamento',
-            valore: prossimoAllenamento,
+            valore: dataProssimoAllenamento,
           ),
           _VoceRiepilogo(
             icona: Icons.event_available_outlined,

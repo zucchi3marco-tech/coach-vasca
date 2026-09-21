@@ -19,6 +19,7 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/zone_chip.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
@@ -31,10 +32,21 @@ import '../../../widgets/nascondi_barra_club.dart';
 /// da 64, orientamento forzato landscape, e — a scelta dell'allenatore —
 /// sfondo scuro. Solo lettura: la modifica della scheda resta nella
 /// schermata di dettaglio "da ufficio".
+///
+/// Con [perAtleta] la stessa vista serve all'atleta che apre il suo
+/// prossimo allenamento dalla dashboard: le serie arrivano dalla funzione
+/// che nasconde le note dell'allenatore, il titolo non dipende dai gruppi
+/// (che l'atleta non legge) e in fondo non c'è "Segna presenze", che è
+/// dell'allenatore.
 class SchedaBordoVascaScreen extends ConsumerStatefulWidget {
-  const SchedaBordoVascaScreen({required this.allenamento, super.key});
+  const SchedaBordoVascaScreen({
+    required this.allenamento,
+    this.perAtleta = false,
+    super.key,
+  });
 
   final Allenamento allenamento;
+  final bool perAtleta;
 
   @override
   ConsumerState<SchedaBordoVascaScreen> createState() =>
@@ -76,14 +88,18 @@ class _SchedaBordoVascaScreenState
 
   Widget _costruisci(BuildContext context) {
     final allenamento = widget.allenamento;
-    final serieAsync = ref.watch(serieListProvider(allenamento.id));
+    final perAtleta = widget.perAtleta;
+    final serieAsync = perAtleta
+        ? ref.watch(serieAtletaProvider(allenamento.id))
+        : ref.watch(serieListProvider(allenamento.id));
     final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
     final temaVasca = temaBordoVascaDa(overrideVasca);
-    final gruppi =
-        ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [];
-    final nomeGruppo = {
-      for (final g in gruppi) g.id: g.nome,
-    }[allenamento.gruppoId];
+    final gruppi = perAtleta
+        ? const <Gruppo>[]
+        : ref.watch(gruppiListProvider(allenamento.clubId)).value ?? [];
+    final nomeGruppo = perAtleta
+        ? allenamento.titolo
+        : {for (final g in gruppi) g.id: g.nome}[allenamento.gruppoId];
 
     Widget content = AppScaffold(
       appBar: AppBar(
@@ -100,9 +116,11 @@ class _SchedaBordoVascaScreenState
             ? EmptyState(
                 icona: Icons.pool_outlined,
                 titolo: 'Nessuna serie in questo allenamento',
-                descrizione:
-                    'Aggiungi le serie dalla scheda allenamento per vederle '
-                    'qui a bordo vasca.',
+                descrizione: perAtleta
+                    ? 'L\'allenatore non ha ancora inserito le serie di '
+                          'questo allenamento.'
+                    : 'Aggiungi le serie dalla scheda allenamento per vederle '
+                          'qui a bordo vasca.',
                 azionePrincipale: 'Torna indietro',
                 onAzionePrincipale: () => Navigator.of(context).pop(),
               )
@@ -184,23 +202,26 @@ class _SchedaBordoVascaScreenState
           ),
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: SizedBox(
-            height: AppSpacing.altezzaMinimaBersaglioVasca,
-            child: PrimaryButton(
-              label: 'Segna presenze',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PresenzeScreen(allenamento: allenamento),
+      bottomNavigationBar: perAtleta
+          ? null
+          : SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: SizedBox(
+                  height: AppSpacing.altezzaMinimaBersaglioVasca,
+                  child: PrimaryButton(
+                    label: 'Segna presenze',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PresenzeScreen(allenamento: allenamento),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
     );
 
     if (temaVasca != null) {

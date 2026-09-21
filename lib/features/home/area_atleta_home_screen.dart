@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/gruppo_visibilita.dart';
 import '../../core/utils/pace_format.dart';
 import '../../theme/app_layout.dart';
 import '../../theme/app_spacing.dart';
@@ -15,6 +16,9 @@ import '../../widgets/pool_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_panel.dart';
 import '../allenamenti/application/allenamenti_providers.dart';
+import '../allenamenti/domain/allenamento.dart';
+import '../allenamenti/domain/prossimo_allenamento.dart';
+import '../allenamenti/presentation/scheda_bordo_vasca_screen.dart';
 import '../atleti/application/personal_best_providers.dart';
 import '../atleti/domain/atleta.dart';
 import '../atleti/domain/pb_slots.dart';
@@ -584,20 +588,21 @@ class _CardRiepilogoClub extends ConsumerWidget {
     final colori = context.colori;
 
     String? percentuale;
-    var prossimi7Giorni = 0;
+    Allenamento? prossimo;
     if (allenamentiAsync.hasValue) {
       final allenamenti = allenamentiAsync.value!;
-      final haGruppo = atleta.gruppoId != null;
-      final delGruppo = haGruppo
-          ? allenamenti.where((a) => a.gruppoId == atleta.gruppoId).toList()
-          : allenamenti;
-      final rilevanti = delGruppo.isEmpty ? allenamenti : delGruppo;
-      final oggi = DateTime.now();
-      final inizio = DateTime(oggi.year, oggi.month, oggi.day);
-      final fine = inizio.add(const Duration(days: 7));
-      prossimi7Giorni = rilevanti
-          .where((a) => !a.data.isBefore(inizio) && a.data.isBefore(fine))
-          .length;
+      // Gli allenamenti dell'atleta: del suo gruppo o senza gruppo (di
+      // tutto il club). Gli stessi contano per la % presenze e per il
+      // prossimo allenamento.
+      final rilevanti = allenamenti
+          .where(
+            (a) => visibileNelGruppo(
+              gruppoDelRecord: a.gruppoId,
+              gruppoSelezionato: atleta.gruppoId,
+            ),
+          )
+          .toList();
+      prossimo = prossimoAllenamento(rilevanti, atleta.gruppoId);
       if (presenzeAsync.hasValue && rilevanti.isNotEmpty) {
         final idRilevanti = rilevanti.map((a) => a.id).toSet();
         final presenti = presenzeAsync.value!
@@ -651,14 +656,52 @@ class _CardRiepilogoClub extends ConsumerWidget {
             runSpacing: AppSpacing.s12,
             children: [
               StatPanel(etichetta: '% presenze', valore: percentuale ?? '—'),
-              StatPanel(
-                etichetta: 'Prossimi 7 giorni',
-                valore: '$prossimi7Giorni',
-              ),
+              _ProssimoAllenamentoStat(atleta: atleta, allenamento: prossimo),
               if (atleta.sport == 'pallanuoto') _GolTotaliStat(atleta: atleta),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// «Prossimo allenamento»: i metri totali della scheda del primo
+/// allenamento in programma; al tocco si apre in modalità vasca (senza
+/// «Segna presenze», che è dell'allenatore).
+class _ProssimoAllenamentoStat extends ConsumerWidget {
+  const _ProssimoAllenamentoStat({
+    required this.atleta,
+    required this.allenamento,
+  });
+
+  final Atleta atleta;
+  final Allenamento? allenamento;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prossimo = allenamento;
+    if (prossimo == null) {
+      return const StatPanel(
+        etichetta: 'Prossimo allenamento',
+        valore: '—',
+        confronto: 'Nessuno in programma',
+      );
+    }
+    final serie = ref.watch(serieAtletaProvider(prossimo.id));
+    final metri = serie.hasValue ? metriTotaliSerie(serie.value!) : null;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.s8),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              SchedaBordoVascaScreen(allenamento: prossimo, perAtleta: true),
+        ),
+      ),
+      child: StatPanel(
+        etichetta: 'Prossimo allenamento',
+        valore: metri == null || metri == 0 ? '—' : formattaMetri(metri),
+        confronto: '${_formattaData(prossimo.data)} · tocca per aprire',
       ),
     );
   }

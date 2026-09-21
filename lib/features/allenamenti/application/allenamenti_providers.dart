@@ -22,6 +22,13 @@ final allenamentiAtletaProvider = FutureProvider.autoDispose
       return ref.read(allenamentiRepositoryProvider).fetchPerAtleta(clubId);
     });
 
+/// Le serie di un allenamento viste dall'atleta (senza `note`) — vedi
+/// `SerieRepository.fetchPerAtleta`.
+final serieAtletaProvider = FutureProvider.autoDispose
+    .family<List<Serie>, String>((ref, allenamentoId) {
+      return ref.read(serieRepositoryProvider).fetchPerAtleta(allenamentoId);
+    });
+
 final serieListProvider = StreamProvider.family<List<Serie>, String>((
   ref,
   allenamentoId,

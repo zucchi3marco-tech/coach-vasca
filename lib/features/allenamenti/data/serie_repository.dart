@@ -107,6 +107,21 @@ class SerieRepository {
     });
   }
 
+  /// Per l'atleta collegato: le serie di UN allenamento, senza il campo
+  /// libero `note` (l'atleta non legge la tabella `serie`, vedi la
+  /// funzione `serie_allenamento_atleta`). Solo da rete: l'atleta non ha
+  /// una cache locale delle serie.
+  Future<List<Serie>> fetchPerAtleta(String allenamentoId) async {
+    final risposta = await _client.rpc(
+      'serie_allenamento_atleta',
+      params: {'p_allenamento_id': allenamentoId},
+    );
+    return (risposta as List)
+        .cast<Map<String, dynamic>>()
+        .map(Serie.fromMap)
+        .toList();
+  }
+
   /// Letto da remoto quando possibile (dati sempre freschi per la
   /// duplicazione settimana), con fallback sulla cache locale se offline.
   Future<List<Serie>> fetchPerAllenamento(String allenamentoId) async {
@@ -119,10 +134,11 @@ class SerieRepository {
       return rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final rows = await (_db.select(_db.serieTable)
-            ..where((t) => t.allenamentoId.equals(allenamentoId))
-            ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
-          .get();
+      final rows =
+          await (_db.select(_db.serieTable)
+                ..where((t) => t.allenamentoId.equals(allenamentoId))
+                ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
+              .get();
       return rows.map(_fromRow).toList();
     }
   }
@@ -161,7 +177,9 @@ class SerieRepository {
     };
     try {
       final row = await _client.from('serie').insert(payload).select().single();
-      await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
+      await _db
+          .into(_db.serieTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
       return _fromMap(row);
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -222,7 +240,9 @@ class SerieRepository {
           .eq('id', id)
           .select()
           .single();
-      await _db.into(_db.serieTable).insertOnConflictUpdate(_companionFromMap(row));
+      await _db
+          .into(_db.serieTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
       return _fromMap(row);
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
