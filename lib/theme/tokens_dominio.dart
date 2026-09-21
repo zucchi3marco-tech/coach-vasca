@@ -49,8 +49,10 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
   /// Tavolozza "evidenza" — DESIGN.md sezione "Dove spendere l'audacia":
   /// riservata alla dashboard atleta (icone delle sue schede), alla home
   /// dell'allenatore (icone delle tab e riepilogo club sopra l'elenco
-  /// atleti) e al grafico Banister ovunque appaia (vedi
-  /// [curvaFitness]/[curvaForma]). Non va riusata altrove senza
+  /// atleti), al calendario della stagione (`evidenzaAmbra` per gli eventi
+  /// di tutto il club) e al grafico Banister ovunque appaia (vedi
+  /// [curvaFitness]/[curvaForma]). `evidenzaViola` è la tinta della tab
+  /// Schemi tattici. Non va riusata altrove senza
   /// deciderlo esplicitamente — resta un'eccezione delimitata, non il
   /// nuovo colore d'azione dell'app.
   final Color evidenzaCiano;

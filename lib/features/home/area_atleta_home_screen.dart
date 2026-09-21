@@ -54,7 +54,8 @@ String _etichettaSport(String? sport) => switch (sport) {
 /// mostrata da HomeScreen al posto delle tab da coach quando l'account
 /// autenticato non e' membro di nessun club ma e' collegato a un record
 /// atleti. Nessun Scaffold proprio: e' incorporata nel body di
-/// HomeScreen, che ha gia' AppBar e pulsante "Esci". Vedi anche
+/// HomeScreen (in alto c'e' la barra fissa con logo, nome del club e menu
+/// con "Esci"). Vedi anche
 /// [AtletaDashboardScreen], che la incornicia con una AppBar propria
 /// per raggiungerla anche dall'account allenatore.
 ///
@@ -276,7 +277,8 @@ class _CardLavagnaTattica extends ConsumerWidget {
                     'Schemi tattici',
                     spiegazione:
                         'Gli schemi che il tuo allenatore ha disegnato e '
-                        'salvato sulla lavagna tattica: posizioni dei '
+                        'salvato per il tuo gruppo o per tutto il club: '
+                        'posizioni dei '
                         'giocatori e frecce di movimento, anche in più '
                         'passi in sequenza. Tocca per sfogliarli.',
                   ),

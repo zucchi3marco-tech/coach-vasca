@@ -32,16 +32,17 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         iconaSelezionata: Icons.groups,
         etichetta: 'Atleti',
         guida:
-            'L\'elenco dei tuoi atleti: profili, personal best, presenze e '
-            'carico di lavoro.',
+            'La tua home: il riepilogo del gruppo e l\'elenco dei suoi '
+            'atleti, con profili, personal best, presenze e carico di '
+            'lavoro.',
       ),
       VoceHome.allenamenti => (
         icona: Icons.calendar_month_outlined,
         iconaSelezionata: Icons.calendar_month,
         etichetta: 'Allenamenti',
         guida:
-            'Pianifica le sedute con le loro serie, e segna le presenze a '
-            'bordo vasca.',
+            'Pianifica le sedute con le loro serie; a bordo vasca le '
+            'apri in grande e segni le presenze.',
       ),
       VoceHome.schemi => (
         icona: Icons.sports_outlined,
@@ -56,25 +57,27 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         iconaSelezionata: Icons.event_note,
         etichetta: 'Stagioni',
         guida:
-            'Una stagione per gruppo (o per tutto il club) con il suo '
-            'calendario: si aggiungono le partite o le gare toccando un '
-            'giorno.',
+            'Una stagione per gruppo (o per tutti gli atleti) con il suo '
+            'calendario: tocca un giorno per aggiungere una partita o una '
+            'gara. Qui trovi anche le statistiche di stagione.',
       ),
       VoceHome.eventi when sport == 'nuoto' => (
         icona: Icons.emoji_events_outlined,
         iconaSelezionata: Icons.emoji_events,
         etichetta: 'Gare',
         guida:
-            'Le gare della stagione in corso, con gli atleti iscritti e i '
-            'loro risultati.',
+            'Le gare della stagione in corso, in ordine di data. Si '
+            'aggiungono dal calendario della stagione; aprendone una '
+            'iscrivi gli atleti e registri i risultati.',
       ),
       VoceHome.eventi => (
         icona: Icons.sports_handball_outlined,
         iconaSelezionata: Icons.sports_handball,
         etichetta: 'Partite',
         guida:
-            'Le partite della stagione in corso: distinta, eventi dal vivo, '
-            'referti e statistiche di squadra.',
+            'Le partite della stagione in corso, in ordine di data. Si '
+            'aggiungono dal calendario della stagione; aprendone una trovi '
+            'distinta, eventi dal vivo e referto.',
       ),
     };
 

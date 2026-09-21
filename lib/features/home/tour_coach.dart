@@ -23,6 +23,15 @@ Future<void> mostraTourCoach(BuildContext context, String? sport) async {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.s16),
+              child: Text(
+                'In alto trovi sempre il nome del tuo club: tocca il logo '
+                'per tornare alla home. Dal menu ☰ cambi gruppo, leggi le '
+                'notifiche e rivedi questa guida.',
+                style: Theme.of(dialogContext).textTheme.bodyMedium,
+              ),
+            ),
             for (final voce in vociHome(
               sport,
             ).map((v) => destinazioneHome(v, sport)))

@@ -15,8 +15,8 @@ import '../data/gruppi_repository.dart';
 /// Mostrata al primo accesso di un club senza ancora nessun gruppo di
 /// allenamento (FASE 10, ultimo punto): l'allenatore deve crearne almeno
 /// uno prima di continuare. Nessuna AppBar propria: e' incorporata nel
-/// body di HomeScreen, che ha gia' AppBar e pulsante "Esci" (stesso
-/// pattern di AreaAtletaHomeScreen).
+/// body di HomeScreen, sotto la barra fissa in alto con il menu "Esci"
+/// (stesso pattern di AreaAtletaHomeScreen).
 class GruppiOnboardingScreen extends ConsumerStatefulWidget {
   const GruppiOnboardingScreen({required this.clubId, super.key});
 

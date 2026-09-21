@@ -68,8 +68,10 @@ class StagioniListScreen extends ConsumerWidget {
                       icona: Icons.event_note_outlined,
                       titolo: 'Nessuna stagione',
                       descrizione:
-                          'Crea la prima stagione per programmare '
-                          'macrocicli, mesocicli e microcicli.',
+                          'Crea la prima stagione del gruppo: avrà il suo '
+                          'calendario, dove aggiungi partite o gare, e la '
+                          'programmazione in macrocicli, mesocicli e '
+                          'microcicli.',
                       azionePrincipale: 'Nuova stagione',
                       onAzionePrincipale: () => Navigator.of(context).push(
                         MaterialPageRoute(

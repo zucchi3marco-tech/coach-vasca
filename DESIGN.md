@@ -51,6 +51,8 @@ Questo è il motivo per cui i due temi non condividono un solo valore esadecimal
 
 **Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 5 tab Atleti/Allenamenti/Schemi tattici/Stagioni/Partite, o 4 per il nuoto: niente Schemi tattici, l'ultima si chiama Gare) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaViola`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e una card di riepilogo sopra l'elenco atleti (`_RiepilogoClub`, `atleti_list_screen.dart`) mostra 3 statistiche rapide del club con la stessa tavolozza. **Delimitata** allo stesso modo: nessun altro sfondo/titolo/testo cambia colore, la card di riepilogo è un `PoolCard` neutro come tutti gli altri, il colore arriva solo dalle icone.
 
+**Quarta eccezione, il calendario della stagione.** Nel dettaglio di una stagione (`calendario_stagione_view.dart`) i giorni con una partita o una gara sono riquadri pieni ad alto contrasto, perché il coach deve vederli a colpo d'occhio: `azione` per gli eventi del gruppo, `evidenzaAmbra` per quelli di tutto il club (stagione «Tutti gli atleti»), con una legenda di due voci sotto il calendario (un giorno con entrambi: `azione` con un punto ambra). Nessun altro colore: i giorni senza eventi restano neutri, i giorni fuori stagione disattivati.
+
 ---
 
 ## 3. Architettura dei token
