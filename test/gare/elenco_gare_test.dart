@@ -1,3 +1,4 @@
+import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/gare/domain/elenco_gare.dart';
 import 'package:coach_vasca/features/gare/domain/gara.dart';
 import 'package:coach_vasca/features/stagioni/domain/stagione.dart';
@@ -10,6 +11,23 @@ Gara _gara(String id, DateTime data, String? gruppoId, {String? ora}) => Gara(
   data: data,
   nome: id,
   ora: ora,
+);
+
+Atleta _atleta(
+  String id,
+  String cognome,
+  String? gruppoId, {
+  bool attivo = true,
+}) => Atleta(
+  id: id,
+  clubId: 'club',
+  nome: 'X',
+  cognome: cognome,
+  dataNascita: DateTime(2012),
+  sport: 'nuoto',
+  gruppoId: gruppoId,
+  consensoPrivacyFirmato: true,
+  attivo: attivo,
 );
 
 void main() {
@@ -48,5 +66,47 @@ void main() {
       _gara('ultimo', DateTime(2027, 6, 30), 'u14'),
     ], 'u14');
     expect(elenco.map((g) => g.id), ['ultimo']);
+  });
+
+  group('atletiPerIscrizione', () {
+    final garaGruppo = Gara(
+      id: 'g',
+      clubId: 'club',
+      gruppoId: 'u14',
+      data: DateTime(2026, 10, 3),
+      nome: 'Trofeo',
+    );
+    final garaClub = Gara(
+      id: 'gc',
+      clubId: 'club',
+      gruppoId: null,
+      data: DateTime(2026, 10, 3),
+      nome: 'Regionale',
+    );
+    final atleti = [
+      _atleta('z', 'Zanetti', 'u14'),
+      _atleta('a', 'Abate', 'u14'),
+      _atleta('l', 'Libero', null),
+      _atleta('o', 'Altrove', 'u16'),
+      _atleta('i', 'Inattivo', 'u14', attivo: false),
+    ];
+
+    test('gara di gruppo: attivi del gruppo e senza gruppo, per cognome', () {
+      final elenco = atletiPerIscrizione(garaGruppo, atleti, {});
+      expect(elenco.map((a) => a.id), ['a', 'l', 'z']);
+    });
+
+    test('gara di club: tutti gli attivi', () {
+      final elenco = atletiPerIscrizione(garaClub, atleti, {});
+      expect(elenco.map((a) => a.id), ['a', 'o', 'l', 'z']);
+    });
+
+    test(
+      'un iscritto resta in elenco anche se di un altro gruppo o inattivo',
+      () {
+        final elenco = atletiPerIscrizione(garaGruppo, atleti, {'o', 'i'});
+        expect(elenco.map((a) => a.id), ['a', 'o', 'i', 'l', 'z']);
+      },
+    );
   });
 }

@@ -10397,6 +10397,314 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
   }
 }
 
+class $GaraIscrittiTableTable extends GaraIscrittiTable
+    with TableInfo<$GaraIscrittiTableTable, GaraIscrittiTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GaraIscrittiTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _garaIdMeta = const VerificationMeta('garaId');
+  @override
+  late final GeneratedColumn<String> garaId = GeneratedColumn<String>(
+    'gara_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, garaId, atletaId, clubId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gara_iscritti_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GaraIscrittiTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('gara_id')) {
+      context.handle(
+        _garaIdMeta,
+        garaId.isAcceptableOrUnknown(data['gara_id']!, _garaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_garaIdMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GaraIscrittiTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GaraIscrittiTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      garaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gara_id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+    );
+  }
+
+  @override
+  $GaraIscrittiTableTable createAlias(String alias) {
+    return $GaraIscrittiTableTable(attachedDatabase, alias);
+  }
+}
+
+class GaraIscrittiTableData extends DataClass
+    implements Insertable<GaraIscrittiTableData> {
+  final String id;
+  final String garaId;
+  final String atletaId;
+  final String clubId;
+  const GaraIscrittiTableData({
+    required this.id,
+    required this.garaId,
+    required this.atletaId,
+    required this.clubId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['gara_id'] = Variable<String>(garaId);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    return map;
+  }
+
+  GaraIscrittiTableCompanion toCompanion(bool nullToAbsent) {
+    return GaraIscrittiTableCompanion(
+      id: Value(id),
+      garaId: Value(garaId),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+    );
+  }
+
+  factory GaraIscrittiTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GaraIscrittiTableData(
+      id: serializer.fromJson<String>(json['id']),
+      garaId: serializer.fromJson<String>(json['garaId']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'garaId': serializer.toJson<String>(garaId),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+    };
+  }
+
+  GaraIscrittiTableData copyWith({
+    String? id,
+    String? garaId,
+    String? atletaId,
+    String? clubId,
+  }) => GaraIscrittiTableData(
+    id: id ?? this.id,
+    garaId: garaId ?? this.garaId,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+  );
+  GaraIscrittiTableData copyWithCompanion(GaraIscrittiTableCompanion data) {
+    return GaraIscrittiTableData(
+      id: data.id.present ? data.id.value : this.id,
+      garaId: data.garaId.present ? data.garaId.value : this.garaId,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GaraIscrittiTableData(')
+          ..write('id: $id, ')
+          ..write('garaId: $garaId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, garaId, atletaId, clubId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GaraIscrittiTableData &&
+          other.id == this.id &&
+          other.garaId == this.garaId &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId);
+}
+
+class GaraIscrittiTableCompanion
+    extends UpdateCompanion<GaraIscrittiTableData> {
+  final Value<String> id;
+  final Value<String> garaId;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<int> rowid;
+  const GaraIscrittiTableCompanion({
+    this.id = const Value.absent(),
+    this.garaId = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GaraIscrittiTableCompanion.insert({
+    required String id,
+    required String garaId,
+    required String atletaId,
+    required String clubId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       garaId = Value(garaId),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId);
+  static Insertable<GaraIscrittiTableData> custom({
+    Expression<String>? id,
+    Expression<String>? garaId,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (garaId != null) 'gara_id': garaId,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GaraIscrittiTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? garaId,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<int>? rowid,
+  }) {
+    return GaraIscrittiTableCompanion(
+      id: id ?? this.id,
+      garaId: garaId ?? this.garaId,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (garaId.present) {
+      map['gara_id'] = Variable<String>(garaId.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GaraIscrittiTableCompanion(')
+          ..write('id: $id, ')
+          ..write('garaId: $garaId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10428,6 +10736,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $RefertiPartitaTableTable(this);
   late final $GruppiTableTable gruppiTable = $GruppiTableTable(this);
   late final $GareTableTable gareTable = $GareTableTable(this);
+  late final $GaraIscrittiTableTable garaIscrittiTable =
+      $GaraIscrittiTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10451,6 +10761,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     refertiPartitaTable,
     gruppiTable,
     gareTable,
+    garaIscrittiTable,
   ];
 }
 
@@ -15902,6 +16213,211 @@ typedef $$GareTableTableProcessedTableManager =
       GareTableData,
       PrefetchHooks Function()
     >;
+typedef $$GaraIscrittiTableTableCreateCompanionBuilder =
+    GaraIscrittiTableCompanion Function({
+      required String id,
+      required String garaId,
+      required String atletaId,
+      required String clubId,
+      Value<int> rowid,
+    });
+typedef $$GaraIscrittiTableTableUpdateCompanionBuilder =
+    GaraIscrittiTableCompanion Function({
+      Value<String> id,
+      Value<String> garaId,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<int> rowid,
+    });
+
+class $$GaraIscrittiTableTableFilterComposer
+    extends Composer<_$AppDatabase, $GaraIscrittiTableTable> {
+  $$GaraIscrittiTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get garaId => $composableBuilder(
+    column: $table.garaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GaraIscrittiTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $GaraIscrittiTableTable> {
+  $$GaraIscrittiTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get garaId => $composableBuilder(
+    column: $table.garaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GaraIscrittiTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GaraIscrittiTableTable> {
+  $$GaraIscrittiTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get garaId =>
+      $composableBuilder(column: $table.garaId, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+}
+
+class $$GaraIscrittiTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GaraIscrittiTableTable,
+          GaraIscrittiTableData,
+          $$GaraIscrittiTableTableFilterComposer,
+          $$GaraIscrittiTableTableOrderingComposer,
+          $$GaraIscrittiTableTableAnnotationComposer,
+          $$GaraIscrittiTableTableCreateCompanionBuilder,
+          $$GaraIscrittiTableTableUpdateCompanionBuilder,
+          (
+            GaraIscrittiTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $GaraIscrittiTableTable,
+              GaraIscrittiTableData
+            >,
+          ),
+          GaraIscrittiTableData,
+          PrefetchHooks Function()
+        > {
+  $$GaraIscrittiTableTableTableManager(
+    _$AppDatabase db,
+    $GaraIscrittiTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GaraIscrittiTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GaraIscrittiTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GaraIscrittiTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> garaId = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GaraIscrittiTableCompanion(
+                id: id,
+                garaId: garaId,
+                atletaId: atletaId,
+                clubId: clubId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String garaId,
+                required String atletaId,
+                required String clubId,
+                Value<int> rowid = const Value.absent(),
+              }) => GaraIscrittiTableCompanion.insert(
+                id: id,
+                garaId: garaId,
+                atletaId: atletaId,
+                clubId: clubId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$GaraIscrittiTableTable, GaraIscrittiTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $GaraIscrittiTableTable,
+                    GaraIscrittiTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GaraIscrittiTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GaraIscrittiTableTable,
+      GaraIscrittiTableData,
+      $$GaraIscrittiTableTableFilterComposer,
+      $$GaraIscrittiTableTableOrderingComposer,
+      $$GaraIscrittiTableTableAnnotationComposer,
+      $$GaraIscrittiTableTableCreateCompanionBuilder,
+      $$GaraIscrittiTableTableUpdateCompanionBuilder,
+      (
+        GaraIscrittiTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $GaraIscrittiTableTable,
+          GaraIscrittiTableData
+        >,
+      ),
+      GaraIscrittiTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15948,4 +16464,6 @@ class $AppDatabaseManager {
       $$GruppiTableTableTableManager(_db, _db.gruppiTable);
   $$GareTableTableTableManager get gareTable =>
       $$GareTableTableTableManager(_db, _db.gareTable);
+  $$GaraIscrittiTableTableTableManager get garaIscrittiTable =>
+      $$GaraIscrittiTableTableTableManager(_db, _db.garaIscrittiTable);
 }

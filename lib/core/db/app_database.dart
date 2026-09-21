@@ -25,13 +25,14 @@ part 'app_database.g.dart';
     RefertiPartitaTable,
     GruppiTable,
     GareTable,
+    GaraIscrittiTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -260,6 +261,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 21) {
         if (!await _hasTable(m, 'gare_table')) {
           await m.createTable(gareTable);
+        }
+      }
+      // v21 -> v22: atleti iscritti alle gare.
+      if (from < 22) {
+        if (!await _hasTable(m, 'gara_iscritti_table')) {
+          await m.createTable(garaIscrittiTable);
         }
       }
     },

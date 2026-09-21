@@ -4,9 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../core/utils/error_messages.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/section_header.dart';
+import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../application/gara_iscritti_providers.dart';
 import '../application/gare_providers.dart';
+import '../data/gara_iscritti_repository.dart';
+import '../domain/elenco_gare.dart';
 import '../domain/gara.dart';
 import 'gara_form_screen.dart';
 
@@ -98,8 +106,109 @@ class GaraDetailScreen extends ConsumerWidget {
           ),
           if (g.note != null && g.note!.isNotEmpty)
             riga(Icons.notes_outlined, g.note!),
+          const SizedBox(height: AppSpacing.s24),
+          _SezioneIscritti(gara: g),
         ],
       ),
+    );
+  }
+}
+
+/// Gli atleti che partecipano alla gara: una spunta per atleta. Si
+/// propongono gli attivi del gruppo della gara (tutti, per una gara di club).
+class _SezioneIscritti extends ConsumerWidget {
+  const _SezioneIscritti({required this.gara});
+
+  final Gara gara;
+
+  Future<void> _cambia(
+    BuildContext context,
+    WidgetRef ref,
+    String atletaId,
+    String? idIscrizione,
+    bool iscrivere,
+  ) async {
+    final repository = ref.read(garaIscrittiRepositoryProvider);
+    try {
+      if (iscrivere) {
+        await repository.iscrivi(
+          garaId: gara.id,
+          atletaId: atletaId,
+          clubId: gara.clubId,
+        );
+      } else if (idIscrizione != null) {
+        await repository.rimuovi(idIscrizione);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Iscrizione non riuscita: ${messaggioErrore(e)}'),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final atleti =
+        ref
+            .watch(
+              atletiListProvider((clubId: gara.clubId, includeInactive: true)),
+            )
+            .value ??
+        const [];
+    final iscritti = ref.watch(garaIscrittiProvider(gara.id)).value ?? const [];
+    final idPerAtleta = {for (final i in iscritti) i.atletaId: i.id};
+    final elenco = atletiPerIscrizione(gara, atleti, idPerAtleta.keys.toSet());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          'Atleti iscritti (${idPerAtleta.length})',
+          spiegazione:
+              'Spunta gli atleti che partecipano alla gara. Si propongono '
+              'gli atleti del gruppo della gara; per una gara di tutto il '
+              'club, tutti gli atleti attivi.',
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        if (elenco.isEmpty)
+          Text(
+            'Nessun atleta disponibile per questa gara.',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          )
+        else
+          AppListPanel(
+            righe: [
+              for (final a in elenco)
+                AppListRow(
+                  titolo: a.nomeCompleto,
+                  trailing: Checkbox(
+                    value: idPerAtleta.containsKey(a.id),
+                    onChanged: (v) => _cambia(
+                      context,
+                      ref,
+                      a.id,
+                      idPerAtleta[a.id],
+                      v ?? false,
+                    ),
+                  ),
+                  onTap: () => _cambia(
+                    context,
+                    ref,
+                    a.id,
+                    idPerAtleta[a.id],
+                    !idPerAtleta.containsKey(a.id),
+                  ),
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

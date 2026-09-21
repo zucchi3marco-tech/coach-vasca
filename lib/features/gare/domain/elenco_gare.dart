@@ -1,4 +1,5 @@
 import '../../../core/utils/gruppo_visibilita.dart';
+import '../../atleti/domain/atleta.dart';
 import '../../stagioni/domain/evento_calendario.dart';
 import '../../stagioni/domain/stagione.dart';
 import 'gara.dart';
@@ -28,5 +29,29 @@ List<Gara> gareDellaStagione(
     if (perGiorno != 0) return perGiorno;
     return (a.ora ?? '').compareTo(b.ora ?? '');
   });
+  return risultato;
+}
+
+/// Gli atleti da proporre per l'iscrizione a una gara: gli attivi del
+/// gruppo della gara (e quelli senza gruppo); per una gara di tutto il
+/// club, tutti gli attivi. Chi è già iscritto resta sempre in elenco, anche
+/// se nel frattempo è stato spostato di gruppo o disattivato. Ordinati per
+/// cognome e nome.
+List<Atleta> atletiPerIscrizione(
+  Gara gara,
+  Iterable<Atleta> atleti,
+  Set<String> idIscritti,
+) {
+  final risultato = [
+    for (final a in atleti)
+      if (idIscritti.contains(a.id) ||
+          (a.attivo &&
+              visibileNelGruppo(
+                gruppoDelRecord: a.gruppoId,
+                gruppoSelezionato: gara.gruppoId,
+              )))
+        a,
+  ];
+  risultato.sort((a, b) => a.nomeCompleto.compareTo(b.nomeCompleto));
   return risultato;
 }

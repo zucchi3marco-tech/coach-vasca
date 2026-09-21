@@ -330,3 +330,13 @@ class GareTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class GaraIscrittiTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get garaId => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
