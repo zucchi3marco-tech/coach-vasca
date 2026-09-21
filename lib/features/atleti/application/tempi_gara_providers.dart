@@ -14,3 +14,14 @@ final tempiGaraListProvider = StreamProvider.family<List<TempoGara>, String>((
     watch: () => repository.watchPerAtleta(atletaId),
   );
 });
+
+/// I risultati collegati a una gara (tutti gli atleti).
+final tempiGaraPerGaraProvider = StreamProvider.family<List<TempoGara>, String>(
+  (ref, garaId) {
+    final repository = ref.watch(tempiGaraRepositoryProvider);
+    return streamConRefreshIniziale(
+      refresh: () => repository.refreshFromRemotePerGara(garaId),
+      watch: () => repository.watchPerGara(garaId),
+    );
+  },
+);

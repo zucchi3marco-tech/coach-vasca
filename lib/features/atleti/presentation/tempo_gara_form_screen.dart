@@ -12,6 +12,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../gare/application/risultato_gara_service.dart';
 import '../data/tempi_gara_repository.dart';
 import '../domain/atleta.dart';
 import '../domain/pb_slots.dart';
@@ -28,6 +29,9 @@ class TempoGaraFormScreen extends ConsumerStatefulWidget {
     this.stileIniziale,
     this.distanzaMIniziale,
     this.vascaMIniziale,
+    this.garaId,
+    this.nomeGara,
+    this.dataIniziale,
     super.key,
   });
 
@@ -40,6 +44,13 @@ class TempoGaraFormScreen extends ConsumerStatefulWidget {
   final String? stileIniziale;
   final int? distanzaMIniziale;
   final int? vascaMIniziale;
+
+  /// Se il tempo è il risultato di una gara: la gara a cui collegarlo
+  /// (il personal best si aggiorna da solo se battuto), il suo nome per
+  /// la nota del PB e la data suggerita.
+  final String? garaId;
+  final String? nomeGara;
+  final DateTime? dataIniziale;
 
   @override
   ConsumerState<TempoGaraFormScreen> createState() =>
@@ -72,7 +83,10 @@ class _TempoGaraFormScreenState extends ConsumerState<TempoGaraFormScreen> {
         widget.distanzaMIniziale ??
         distanzePerStileNuoto[_stile]!.first;
     _vascaM = t?.vascaM ?? widget.vascaMIniziale ?? 25;
-    _data = t?.data ?? DateTime.now();
+    final oggi = DateTime.now();
+    final suggerita = widget.dataIniziale ?? oggi;
+    // Un risultato si registra a gara fatta: mai una data futura.
+    _data = t?.data ?? (suggerita.isAfter(oggi) ? oggi : suggerita);
     final tempo = t?.tempoS;
     _minutiController = TextEditingController(
       text: tempo == null ? '0' : (tempo ~/ 60).toString(),
@@ -139,6 +153,7 @@ class _TempoGaraFormScreenState extends ConsumerState<TempoGaraFormScreen> {
     });
 
     final repository = ref.read(tempiGaraRepositoryProvider);
+    var nuovoPb = false;
     try {
       if (_isEditing) {
         await repository.aggiornaTempoGara(
@@ -159,9 +174,34 @@ class _TempoGaraFormScreenState extends ConsumerState<TempoGaraFormScreen> {
           tempoS: tempoS,
           data: _data,
           note: _noteController.text.trim(),
+          garaId: widget.garaId,
         );
+        if (widget.garaId != null) {
+          try {
+            nuovoPb = await ref
+                .read(risultatoGaraServiceProvider)
+                .aggiornaPbSeMigliore(
+                  atletaId: widget.atleta.id,
+                  stile: _stile,
+                  distanzaM: _distanzaM,
+                  tempoS: tempoS,
+                  data: _data,
+                  nomeGara: widget.nomeGara,
+                );
+          } catch (_) {
+            // Il tempo è già salvato: un PB non aggiornato non deve
+            // far fallire il salvataggio.
+          }
+        }
       }
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        if (nuovoPb) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Nuovo personal best!')));
+        }
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
       if (mounted) setState(() => _errorMessage = messaggioErrore(e));
     } finally {

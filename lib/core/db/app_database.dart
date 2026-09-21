@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -267,6 +267,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 22) {
         if (!await _hasTable(m, 'gara_iscritti_table')) {
           await m.createTable(garaIscrittiTable);
+        }
+      }
+      // v22 -> v23: risultati di gara (un tempo puo' essere collegato
+      // alla gara in cui e' stato nuotato).
+      if (from < 23) {
+        if (!await _hasColumn(m, 'tempi_gara_table', 'gara_id')) {
+          await m.addColumn(tempiGaraTable, tempiGaraTable.garaId);
         }
       }
     },

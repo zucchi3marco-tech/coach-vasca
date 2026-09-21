@@ -73,6 +73,9 @@ class TempiGaraTable extends Table {
   DateTimeColumn get data => dateTime()();
   TextColumn get note => text().nullable()();
 
+  /// Gara in cui e' stato nuotato (null = tempo inserito a mano).
+  TextColumn get garaId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

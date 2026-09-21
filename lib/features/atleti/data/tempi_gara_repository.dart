@@ -37,6 +37,7 @@ class TempiGaraRepository {
       tempoS: row.tempoS,
       data: row.data,
       note: row.note,
+      garaId: row.garaId,
     );
   }
 
@@ -51,6 +52,7 @@ class TempiGaraRepository {
       tempoS: (map['tempo_s'] as num).toDouble(),
       data: DateTime.parse(map['data'] as String),
       note: Value(map['note'] as String?),
+      garaId: Value(map['gara_id'] as String?),
     );
   }
 
@@ -65,6 +67,36 @@ class TempiGaraRepository {
       ..where((t) => t.atletaId.equals(atletaId))
       ..orderBy([(t) => OrderingTerm.asc(t.data)]);
     return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// I tempi collegati a una gara (tutti gli atleti), per data.
+  Stream<List<TempoGara>> watchPerGara(String garaId) {
+    final query = _db.select(_db.tempiGaraTable)
+      ..where((t) => t.garaId.equals(garaId))
+      ..orderBy([(t) => OrderingTerm.asc(t.distanzaM)]);
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Sostituzione totale dei risultati di questa gara.
+  Future<void> refreshFromRemotePerGara(String garaId) async {
+    final rows = await _client
+        .from('tempi_gara')
+        .select()
+        .eq('gara_id', garaId);
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.tempiGaraTable,
+      )..where((t) => t.garaId.equals(garaId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(
+            _db.tempiGaraTable,
+            _companionFromMap(row),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+    });
   }
 
   /// Sostituzione totale per questo atleta (non insertOrReplace): un
@@ -95,11 +127,13 @@ class TempiGaraRepository {
     required double tempoS,
     required DateTime data,
     String? note,
+    String? garaId,
   }) async {
     final id = _uuid.v4();
     final payload = {
       'id': id,
       'atleta_id': atletaId,
+      'gara_id': ?garaId,
       'stile': stile,
       'distanza_m': distanzaM,
       'vasca_m': vascaM,

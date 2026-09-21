@@ -1950,6 +1950,15 @@ class $TempiGaraTableTable extends TempiGaraTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _garaIdMeta = const VerificationMeta('garaId');
+  @override
+  late final GeneratedColumn<String> garaId = GeneratedColumn<String>(
+    'gara_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1961,6 +1970,7 @@ class $TempiGaraTableTable extends TempiGaraTable
     tempoS,
     data,
     note,
+    garaId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2041,6 +2051,12 @@ class $TempiGaraTableTable extends TempiGaraTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('gara_id')) {
+      context.handle(
+        _garaIdMeta,
+        garaId.isAcceptableOrUnknown(data['gara_id']!, _garaIdMeta),
+      );
+    }
     return context;
   }
 
@@ -2086,6 +2102,10 @@ class $TempiGaraTableTable extends TempiGaraTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      garaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gara_id'],
+      ),
     );
   }
 
@@ -2106,6 +2126,9 @@ class TempiGaraTableData extends DataClass
   final double tempoS;
   final DateTime data;
   final String? note;
+
+  /// Gara in cui e' stato nuotato (null = tempo inserito a mano).
+  final String? garaId;
   const TempiGaraTableData({
     required this.id,
     required this.atletaId,
@@ -2116,6 +2139,7 @@ class TempiGaraTableData extends DataClass
     required this.tempoS,
     required this.data,
     this.note,
+    this.garaId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2131,6 +2155,9 @@ class TempiGaraTableData extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || garaId != null) {
+      map['gara_id'] = Variable<String>(garaId);
+    }
     return map;
   }
 
@@ -2145,6 +2172,9 @@ class TempiGaraTableData extends DataClass
       tempoS: Value(tempoS),
       data: Value(data),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      garaId: garaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(garaId),
     );
   }
 
@@ -2163,6 +2193,7 @@ class TempiGaraTableData extends DataClass
       tempoS: serializer.fromJson<double>(json['tempoS']),
       data: serializer.fromJson<DateTime>(json['data']),
       note: serializer.fromJson<String?>(json['note']),
+      garaId: serializer.fromJson<String?>(json['garaId']),
     );
   }
   @override
@@ -2178,6 +2209,7 @@ class TempiGaraTableData extends DataClass
       'tempoS': serializer.toJson<double>(tempoS),
       'data': serializer.toJson<DateTime>(data),
       'note': serializer.toJson<String?>(note),
+      'garaId': serializer.toJson<String?>(garaId),
     };
   }
 
@@ -2191,6 +2223,7 @@ class TempiGaraTableData extends DataClass
     double? tempoS,
     DateTime? data,
     Value<String?> note = const Value.absent(),
+    Value<String?> garaId = const Value.absent(),
   }) => TempiGaraTableData(
     id: id ?? this.id,
     atletaId: atletaId ?? this.atletaId,
@@ -2201,6 +2234,7 @@ class TempiGaraTableData extends DataClass
     tempoS: tempoS ?? this.tempoS,
     data: data ?? this.data,
     note: note.present ? note.value : this.note,
+    garaId: garaId.present ? garaId.value : this.garaId,
   );
   TempiGaraTableData copyWithCompanion(TempiGaraTableCompanion data) {
     return TempiGaraTableData(
@@ -2213,6 +2247,7 @@ class TempiGaraTableData extends DataClass
       tempoS: data.tempoS.present ? data.tempoS.value : this.tempoS,
       data: data.data.present ? data.data.value : this.data,
       note: data.note.present ? data.note.value : this.note,
+      garaId: data.garaId.present ? data.garaId.value : this.garaId,
     );
   }
 
@@ -2227,7 +2262,8 @@ class TempiGaraTableData extends DataClass
           ..write('vascaM: $vascaM, ')
           ..write('tempoS: $tempoS, ')
           ..write('data: $data, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('garaId: $garaId')
           ..write(')'))
         .toString();
   }
@@ -2243,6 +2279,7 @@ class TempiGaraTableData extends DataClass
     tempoS,
     data,
     note,
+    garaId,
   );
   @override
   bool operator ==(Object other) =>
@@ -2256,7 +2293,8 @@ class TempiGaraTableData extends DataClass
           other.vascaM == this.vascaM &&
           other.tempoS == this.tempoS &&
           other.data == this.data &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.garaId == this.garaId);
 }
 
 class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
@@ -2269,6 +2307,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
   final Value<double> tempoS;
   final Value<DateTime> data;
   final Value<String?> note;
+  final Value<String?> garaId;
   final Value<int> rowid;
   const TempiGaraTableCompanion({
     this.id = const Value.absent(),
@@ -2280,6 +2319,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
     this.tempoS = const Value.absent(),
     this.data = const Value.absent(),
     this.note = const Value.absent(),
+    this.garaId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TempiGaraTableCompanion.insert({
@@ -2292,6 +2332,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
     required double tempoS,
     required DateTime data,
     this.note = const Value.absent(),
+    this.garaId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        atletaId = Value(atletaId),
@@ -2311,6 +2352,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
     Expression<double>? tempoS,
     Expression<DateTime>? data,
     Expression<String>? note,
+    Expression<String>? garaId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2323,6 +2365,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
       if (tempoS != null) 'tempo_s': tempoS,
       if (data != null) 'data': data,
       if (note != null) 'note': note,
+      if (garaId != null) 'gara_id': garaId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2337,6 +2380,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
     Value<double>? tempoS,
     Value<DateTime>? data,
     Value<String?>? note,
+    Value<String?>? garaId,
     Value<int>? rowid,
   }) {
     return TempiGaraTableCompanion(
@@ -2349,6 +2393,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
       tempoS: tempoS ?? this.tempoS,
       data: data ?? this.data,
       note: note ?? this.note,
+      garaId: garaId ?? this.garaId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2383,6 +2428,9 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (garaId.present) {
+      map['gara_id'] = Variable<String>(garaId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2401,6 +2449,7 @@ class TempiGaraTableCompanion extends UpdateCompanion<TempiGaraTableData> {
           ..write('tempoS: $tempoS, ')
           ..write('data: $data, ')
           ..write('note: $note, ')
+          ..write('garaId: $garaId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11717,6 +11766,7 @@ typedef $$TempiGaraTableTableCreateCompanionBuilder =
       required double tempoS,
       required DateTime data,
       Value<String?> note,
+      Value<String?> garaId,
       Value<int> rowid,
     });
 typedef $$TempiGaraTableTableUpdateCompanionBuilder =
@@ -11730,6 +11780,7 @@ typedef $$TempiGaraTableTableUpdateCompanionBuilder =
       Value<double> tempoS,
       Value<DateTime> data,
       Value<String?> note,
+      Value<String?> garaId,
       Value<int> rowid,
     });
 
@@ -11784,6 +11835,11 @@ class $$TempiGaraTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get garaId => $composableBuilder(
+    column: $table.garaId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11841,6 +11897,11 @@ class $$TempiGaraTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get garaId => $composableBuilder(
+    column: $table.garaId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TempiGaraTableTableAnnotationComposer
@@ -11878,6 +11939,9 @@ class $$TempiGaraTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get garaId =>
+      $composableBuilder(column: $table.garaId, builder: (column) => column);
 }
 
 class $$TempiGaraTableTableTableManager
@@ -11926,6 +11990,7 @@ class $$TempiGaraTableTableTableManager
                 Value<double> tempoS = const Value.absent(),
                 Value<DateTime> data = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> garaId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TempiGaraTableCompanion(
                 id: id,
@@ -11937,6 +12002,7 @@ class $$TempiGaraTableTableTableManager
                 tempoS: tempoS,
                 data: data,
                 note: note,
+                garaId: garaId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11950,6 +12016,7 @@ class $$TempiGaraTableTableTableManager
                 required double tempoS,
                 required DateTime data,
                 Value<String?> note = const Value.absent(),
+                Value<String?> garaId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TempiGaraTableCompanion.insert(
                 id: id,
@@ -11961,6 +12028,7 @@ class $$TempiGaraTableTableTableManager
                 tempoS: tempoS,
                 data: data,
                 note: note,
+                garaId: garaId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

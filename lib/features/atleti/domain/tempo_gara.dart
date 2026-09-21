@@ -14,6 +14,7 @@ class TempoGara {
     required this.tempoS,
     required this.data,
     this.note,
+    this.garaId,
   });
 
   final String id;
@@ -29,4 +30,7 @@ class TempoGara {
   final double tempoS;
   final DateTime data;
   final String? note;
+
+  /// La gara in cui e' stato nuotato, se collegato a una.
+  final String? garaId;
 }

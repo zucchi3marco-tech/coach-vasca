@@ -5,11 +5,18 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/application/tempi_gara_providers.dart';
+import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/pb_slots.dart';
+import '../../atleti/domain/tempo_gara.dart';
+import '../../atleti/presentation/tempo_gara_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/gara_iscritti_providers.dart';
 import '../application/gare_providers.dart';
@@ -108,6 +115,8 @@ class GaraDetailScreen extends ConsumerWidget {
             riga(Icons.notes_outlined, g.note!),
           const SizedBox(height: AppSpacing.s24),
           _SezioneIscritti(gara: g),
+          const SizedBox(height: AppSpacing.s24),
+          _SezioneRisultati(gara: g),
         ],
       ),
     );
@@ -209,6 +218,152 @@ class _SezioneIscritti extends ConsumerWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+/// I risultati della gara, per ogni atleta iscritto: i tempi nuotati (ogni
+/// risultato è anche una voce dello storico tempi dell'atleta) e il
+/// pulsante per aggiungerne. Battere il personal best lo aggiorna da solo.
+class _SezioneRisultati extends ConsumerWidget {
+  const _SezioneRisultati({required this.gara});
+
+  final Gara gara;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final atleti =
+        ref
+            .watch(
+              atletiListProvider((clubId: gara.clubId, includeInactive: true)),
+            )
+            .value ??
+        const <Atleta>[];
+    final iscritti = ref.watch(garaIscrittiProvider(gara.id)).value ?? const [];
+    final risultati =
+        ref.watch(tempiGaraPerGaraProvider(gara.id)).value ??
+        const <TempoGara>[];
+    final idIscritti = {for (final i in iscritti) i.atletaId};
+    final atletiIscritti = [
+      for (final a in atleti)
+        if (idIscritti.contains(a.id)) a,
+    ]..sort((a, b) => a.nomeCompleto.compareTo(b.nomeCompleto));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(
+          'Risultati',
+          spiegazione:
+              'I tempi nuotati in questa gara, atleta per atleta. Ogni '
+              'risultato entra anche nello storico tempi dell\'atleta; se '
+              'batte il suo personal best, il personal best si aggiorna da '
+              'solo.',
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        if (atletiIscritti.isEmpty)
+          Text(
+            'Iscrivi gli atleti alla gara per registrarne i risultati.',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          )
+        else
+          for (final a in atletiIscritti) ...[
+            _RisultatiAtleta(
+              gara: gara,
+              atleta: a,
+              risultati: [
+                for (final r in risultati)
+                  if (r.atletaId == a.id) r,
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s12),
+          ],
+      ],
+    );
+  }
+}
+
+class _RisultatiAtleta extends StatelessWidget {
+  const _RisultatiAtleta({
+    required this.gara,
+    required this.atleta,
+    required this.risultati,
+  });
+
+  final Gara gara;
+  final Atleta atleta;
+  final List<TempoGara> risultati;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return PoolCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            atleta.nomeCompleto,
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
+          ),
+          if (risultati.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s8),
+            for (final r in risultati)
+              InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        TempoGaraFormScreen(atleta: atleta, tempoGara: r),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${r.distanzaM} m ${capitalizzaParola(r.stile)} '
+                          '· vasca ${r.vascaM} m',
+                          style: AppTypography.corpo.copyWith(
+                            color: colori.testo,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        formatPaceSeconds(r.tempoS),
+                        style: AppTypography.numerica(
+                          AppTypography.corpoForte.copyWith(
+                            color: colori.testo,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+          const SizedBox(height: AppSpacing.s4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TempoGaraFormScreen(
+                    atleta: atleta,
+                    garaId: gara.id,
+                    nomeGara: gara.nome,
+                    dataIniziale: gara.data,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Aggiungi risultato'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
