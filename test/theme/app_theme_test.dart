@@ -56,8 +56,8 @@ void main() {
 
   group('DESIGN.md sezione 5 — ogni token semantico differisce fra i temi', () {
     test('nessun valore di ColoriApp è identico fra chiaro e scuro', () {
-      final chiaro = ColoriApp.chiaro;
-      final scuro = ColoriApp.scuro;
+      const chiaro = ColoriApp.chiaro;
+      const scuro = ColoriApp.scuro;
 
       final coppie = <String, (Color, Color)>{
         'sfondo': (chiaro.sfondo, scuro.sfondo),

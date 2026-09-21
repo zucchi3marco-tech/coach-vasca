@@ -110,7 +110,7 @@ class _DatiAtleta extends ConsumerWidget {
           final rigaEventi = _trovaEventi(e.perAtleta);
           return ListView(
             children: [
-              SectionHeader('Da referti'),
+              const SectionHeader('Da referti'),
               const SizedBox(height: AppSpacing.s8),
               Text(
                 'Non include i tiri sbagliati (non registrati nel referto).',
@@ -145,7 +145,7 @@ class _DatiAtleta extends ConsumerWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.s28),
-              SectionHeader('Da eventi live'),
+              const SectionHeader('Da eventi live'),
               const SizedBox(height: AppSpacing.s8),
               Text(
                 'Solo dalle partite seguite dal vivo con "Eventi partita".',
@@ -237,7 +237,7 @@ class _SezioneMappaTiri extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(
+        const SectionHeader(
           'Shot chart dei tiri',
           spiegazione:
               'La mappa di tutti i tiri registrati, nella posizione da cui '
@@ -400,7 +400,7 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
               onSelectionChanged: (s) => setState(() => _vascaM = s.first),
             ),
             const SizedBox(height: AppSpacing.s28),
-            SectionHeader(
+            const SectionHeader(
               'Curva delle prestazioni',
               spiegazione:
                   'Tutti i tempi registrati per lo stile, la distanza e la '
@@ -419,7 +419,7 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
             else
               SizedBox(height: 220, child: _GraficoTempi(punti: filtrati)),
             const SizedBox(height: AppSpacing.s28),
-            SectionHeader('Storico'),
+            const SectionHeader('Storico'),
             const SizedBox(height: AppSpacing.s16),
             AppListPanel(
               righe: [

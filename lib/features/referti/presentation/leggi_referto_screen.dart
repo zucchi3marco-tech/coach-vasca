@@ -313,7 +313,7 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
           ],
         ),
         const SizedBox(height: AppSpacing.s16),
-        SectionHeader('Parziali'),
+        const SectionHeader('Parziali'),
         const SizedBox(height: AppSpacing.s8),
         for (var i = 0; i < _parzialiCtrl.length; i++)
           Padding(

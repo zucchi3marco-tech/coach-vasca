@@ -173,8 +173,8 @@ class _CampoPainter extends CustomPainter {
     // spazio fra 2m e 5m e' ridotto del 20% (il gap fra 5m e 6m resta
     // quello reale, 1m).
     const distanza2mVisiva = 1.0;
-    final distanza5mVisiva = distanza2mVisiva + (5.0 - 2.0) * 0.8;
-    final distanza6mVisiva = distanza5mVisiva + (6.0 - 5.0);
+    const distanza5mVisiva = distanza2mVisiva + (5.0 - 2.0) * 0.8;
+    const distanza6mVisiva = distanza5mVisiva + (6.0 - 5.0);
     lineaOrizzontale(distanza2mVisiva, '2 m', colori.rosso, 1.5);
     lineaOrizzontale(distanza5mVisiva, '5 m', colori.rosso, 1.0);
     lineaOrizzontale(distanza6mVisiva, '6 m', colori.attenzione, 1.5);

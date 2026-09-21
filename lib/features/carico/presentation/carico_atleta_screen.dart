@@ -159,7 +159,7 @@ class _SezioneVolumi extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader('Volume'),
+            const SectionHeader('Volume'),
             const SizedBox(height: AppSpacing.s16),
             StatPanel(
               etichetta: 'Volume totale',

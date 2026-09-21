@@ -23,9 +23,28 @@ class NotificheScreen extends ConsumerWidget {
       '${data.year} ${data.hour.toString().padLeft(2, '0')}:'
       '${data.minute.toString().padLeft(2, '0')}';
 
-  Future<void> _segnaLetta(WidgetRef ref, Notifica notifica) async {
-    await ref.read(notificheRepositoryProvider).segnaLetta(notifica.id);
-    ref.invalidate(notificheNonLetteProvider(clubId));
+  Future<void> _segnaLetta(
+    BuildContext context,
+    WidgetRef ref,
+    Notifica notifica,
+  ) async {
+    try {
+      await ref.read(notificheRepositoryProvider).segnaLetta(notifica.id);
+      ref.invalidate(notificheNonLetteProvider(clubId));
+    } catch (e) {
+      // Senza rete (o con un errore del server) la notifica resta non
+      // letta: meglio dirlo che far credere che sia andata a buon fine.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Non è stato possibile segnarla come letta: '
+              '${messaggioErrore(e)}',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -54,7 +73,7 @@ class NotificheScreen extends ConsumerWidget {
                         trailing: IconButton(
                           icon: const Icon(Icons.check_outlined),
                           tooltip: 'Segna come letta',
-                          onPressed: () => _segnaLetta(ref, n),
+                          onPressed: () => _segnaLetta(context, ref, n),
                         ),
                       ),
                   ],

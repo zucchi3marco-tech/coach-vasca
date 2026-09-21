@@ -149,7 +149,7 @@ class _SezioneReferti extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s24),
-              SectionHeader('Per atleta'),
+              const SectionHeader('Per atleta'),
               const SizedBox(height: AppSpacing.s16),
               if (righe.isEmpty)
                 Text(
@@ -275,7 +275,7 @@ class _SezioneEventi extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s24),
-              SectionHeader('Per atleta'),
+              const SectionHeader('Per atleta'),
               const SizedBox(height: AppSpacing.s16),
               if (righe.isEmpty)
                 Text(
@@ -300,7 +300,7 @@ class _SezioneEventi extends ConsumerWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.s24),
-              SectionHeader('Shot chart dei tiri'),
+              const SectionHeader('Shot chart dei tiri'),
               const SizedBox(height: AppSpacing.s16),
               tiriMappaAsync.when(
                 data: (tiri) => tiri.isEmpty

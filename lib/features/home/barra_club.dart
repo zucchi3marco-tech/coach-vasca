@@ -113,6 +113,10 @@ class BarraClub extends ConsumerWidget {
                         'assets/images/logo.png',
                         width: altezza - AppSpacing.s8,
                         height: altezza - AppSpacing.s8,
+                        // Decodificato alla misura di uso (con margine per
+                        // gli schermi ad alta densità), non a piena
+                        // risoluzione.
+                        cacheWidth: 144,
                       ),
                     ),
                   ),

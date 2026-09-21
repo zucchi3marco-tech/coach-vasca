@@ -211,7 +211,7 @@ abstract final class AppTheme {
         elevation: 0,
         modalBackgroundColor: colori.superficieMassima,
         modalBarrierColor: colori.scrim,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheet),
           ),

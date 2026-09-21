@@ -12,6 +12,17 @@ affrontare e quando.
 > allora. Questo è un controllo da zero sullo stato attuale del codice, non
 > una correzione di quello vecchio.
 
+## Stato dei punti (aggiornato 2026-09-21)
+
+| Punto | Stato |
+| --- | --- |
+| 1.1 Conflitti di sincronizzazione offline | **Aperto** — serve una decisione (vedi sotto) |
+| 1.2 Liste scaricate senza limite | **Aperto** — serve una decisione (vedi sotto) |
+| 1.3 «Segna come letta» che può fallire in silenzio | **Fatto** — ora mostra un messaggio d'errore (test in `test/notifiche/segna_letta_test.dart`) |
+| 1.4 Schermate che si ridisegnano più del necessario | **Non toccato**: nessun sintomo reale; `home_screen.dart` è stato riscritto il 21/09 (i riferimenti a riga non valgono più). Da riprendere solo se la partita dal vivo risulta «a scatti» |
+| 2.1 Controllo dei `const` non attivo | **Fatto** — attivate `prefer_const_constructors`, `prefer_const_literals_to_create_immutables`, `prefer_const_declarations`; 21 segnalazioni sistemate in automatico (`dart fix`), ora 0 |
+| 2.2 Logo a piena risoluzione | **Fatto** — il logo della barra in alto è decodificato a 144 px (`cacheWidth`) |
+
 Metodo: `flutter analyze` e `dart fix --dry-run` (strumenti automatici che
 controllano tutto il codice in pochi secondi) più una lettura a occhio delle
 parti più delicate — gestione degli errori, chiamate al database (Supabase),

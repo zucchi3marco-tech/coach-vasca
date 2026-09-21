@@ -140,7 +140,7 @@ class PbListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.s16),
                 ],
-                SectionHeader('Test BVS'),
+                const SectionHeader('Test BVS'),
                 const SizedBox(height: AppSpacing.s8),
                 testAsync.when(
                   data: (test) => AppListPanel(

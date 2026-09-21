@@ -185,7 +185,7 @@ class _Contenuto extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.s24),
-        SectionHeader('Storico'),
+        const SectionHeader('Storico'),
         const SizedBox(height: AppSpacing.s16),
         if (storico.isEmpty)
           Text(
