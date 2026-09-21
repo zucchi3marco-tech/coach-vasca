@@ -24,6 +24,7 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
     required this.evidenzaCiano,
     required this.evidenzaVerde,
     required this.evidenzaAmbra,
+    required this.evidenzaViola,
   });
 
   /// Colore per sigla di zona (A1, A2, B1, B2, C1, C2, C3, D). `C` senza
@@ -55,6 +56,7 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
   final Color evidenzaCiano;
   final Color evidenzaVerde;
   final Color evidenzaAmbra;
+  final Color evidenzaViola;
 
   /// Colore della zona, o un neutro tenue se la sigla non è
   /// riconosciuta — non deve mai capitare, ma non deve nemmeno far
@@ -87,6 +89,7 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
     Color? evidenzaCiano,
     Color? evidenzaVerde,
     Color? evidenzaAmbra,
+    Color? evidenzaViola,
   }) {
     return TokenDominio(
       coloriZona: coloriZona ?? this.coloriZona,
@@ -102,6 +105,7 @@ class TokenDominio extends ThemeExtension<TokenDominio> {
       evidenzaCiano: evidenzaCiano ?? this.evidenzaCiano,
       evidenzaVerde: evidenzaVerde ?? this.evidenzaVerde,
       evidenzaAmbra: evidenzaAmbra ?? this.evidenzaAmbra,
+      evidenzaViola: evidenzaViola ?? this.evidenzaViola,
     );
   }
 

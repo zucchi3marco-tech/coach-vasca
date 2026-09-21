@@ -27,11 +27,16 @@ class SchemiTatticiListScreen extends ConsumerWidget {
     required this.clubId,
     this.soloLettura = false,
     this.filtroGruppoId,
+    this.comeTab = false,
     super.key,
   });
 
   final String clubId;
   final bool soloLettura;
+
+  /// Usata come corpo di una tab della home: senza barra propria (c'è già
+  /// quella della home).
+  final bool comeTab;
 
   /// null = nessun filtro (mostra gli schemi di tutti i gruppi).
   final String? filtroGruppoId;
@@ -64,7 +69,7 @@ class SchemiTatticiListScreen extends ConsumerWidget {
     );
 
     return AppScaffold(
-      appBar: AppBar(title: const Text('Schemi tattici')),
+      appBar: comeTab ? null : AppBar(title: const Text('Schemi tattici')),
       body: schemiAsync.when(
         data: (schemi) => schemi.isEmpty
             ? ListView(

@@ -68,4 +68,5 @@ const tokenDominioScuro = TokenDominio(
   evidenzaCiano: Color(0xFF2FE3FF),
   evidenzaVerde: Color(0xFF5EE88A),
   evidenzaAmbra: Color(0xFFFFC24B),
+  evidenzaViola: Color(0xFFB794FF),
 );

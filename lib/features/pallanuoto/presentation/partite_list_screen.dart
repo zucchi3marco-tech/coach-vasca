@@ -10,7 +10,6 @@ import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
-import '../../../widgets/fab_azioni.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/data/stagioni_repository.dart';
@@ -21,7 +20,6 @@ import '../domain/elenco_partite.dart';
 import '../domain/partita.dart';
 import 'distinta_screen.dart';
 import 'partita_form_screen.dart';
-import 'schemi_tattici_list_screen.dart';
 
 /// Elenco delle partite della stagione in corso del gruppo, una sotto
 /// l'altra dalla più vecchia alla più recente. Le partite non si creano
@@ -184,25 +182,6 @@ class PartiteListScreen extends ConsumerWidget {
           await ref.read(stagioniRepositoryProvider).refreshFromRemote(clubId);
         },
         child: corpo,
-      ),
-      // Provvisorio: l'unica azione rimasta, gli schemi tattici, passa
-      // alla barra di navigazione (poi questo pulsante sparisce).
-      floatingActionButton: FabAzioni(
-        heroTag: 'fab-partite',
-        azioni: [
-          AzioneFab(
-            icona: Icons.sports_outlined,
-            etichetta: 'Schemi tattici',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => SchemiTatticiListScreen(
-                  clubId: clubId,
-                  filtroGruppoId: filtroGruppoId,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

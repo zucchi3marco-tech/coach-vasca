@@ -27,6 +27,7 @@ import '../gruppi/presentation/gruppi_onboarding_screen.dart';
 import '../notifiche/data/notifiche_repository.dart';
 import '../notifiche/presentation/notifiche_screen.dart';
 import '../pallanuoto/presentation/partite_list_screen.dart';
+import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
 import 'area_atleta_home_screen.dart';
 
@@ -35,86 +36,89 @@ import 'area_atleta_home_screen.dart';
 /// in fondo allo schermo la barra e' il punto piu' lontano dal mouse.
 const _larghezzaNavigazioneLaterale = 900.0;
 
-/// La quarta voce è "Partite" per la pallanuoto e "Gare" per il nuoto
-/// (sport nullo, cioè club vecchi senza sport: "Partite").
-const _destinazioneGare = (
-  icona: Icons.emoji_events_outlined,
-  iconaSelezionata: Icons.emoji_events,
-  etichetta: 'Gare',
-);
+/// Le voci della barra di navigazione. "Schemi tattici" è di pallanuoto:
+/// per il nuoto non compare; l'ultima voce è "Partite" per la pallanuoto e
+/// "Gare" per il nuoto (sport nullo, cioè club vecchi senza sport:
+/// pallanuoto). Un'unica lista alimenta barra, tour e corpo delle tab, così
+/// restano sempre allineati.
+enum _Voce { atleti, allenamenti, schemi, stagioni, eventi }
 
-const _guidaGare = (
-  icona: Icons.emoji_events_outlined,
-  titolo: 'Gare',
-  descrizione:
-      'Le gare del calendario: si aggiungono dalla stagione, toccando un '
-      'giorno.',
-);
+List<_Voce> _voci(String? sport) => [
+  _Voce.atleti,
+  _Voce.allenamenti,
+  if (sport != 'nuoto') _Voce.schemi,
+  _Voce.stagioni,
+  _Voce.eventi,
+];
 
-const _destinazioniTab = [
-  (
+typedef _Destinazione = ({
+  IconData icona,
+  IconData iconaSelezionata,
+  String etichetta,
+  String guida,
+});
+
+_Destinazione _destinazione(_Voce voce, String? sport) => switch (voce) {
+  _Voce.atleti => (
     icona: Icons.groups_outlined,
     iconaSelezionata: Icons.groups,
     etichetta: 'Atleti',
-  ),
-  (
-    icona: Icons.calendar_month_outlined,
-    iconaSelezionata: Icons.calendar_month,
-    etichetta: 'Allenamenti',
-  ),
-  (
-    icona: Icons.event_note_outlined,
-    iconaSelezionata: Icons.event_note,
-    etichetta: 'Stagioni',
-  ),
-  (
-    icona: Icons.sports_outlined,
-    iconaSelezionata: Icons.sports,
-    etichetta: 'Partite',
-  ),
-];
-
-/// Testo del tour mostrato una sola volta, al primo accesso da
-/// allenatore — stessi 4 elementi di [_destinazioniTab], con una
-/// spiegazione in più.
-const _guidaTab = [
-  (
-    icona: Icons.groups_outlined,
-    titolo: 'Atleti',
-    descrizione:
+    guida:
         'L\'elenco dei tuoi atleti: profili, personal best, presenze e '
         'carico di lavoro.',
   ),
-  (
+  _Voce.allenamenti => (
     icona: Icons.calendar_month_outlined,
-    titolo: 'Allenamenti',
-    descrizione:
+    iconaSelezionata: Icons.calendar_month,
+    etichetta: 'Allenamenti',
+    guida:
         'Pianifica le sedute con le loro serie, e segna le presenze a '
         'bordo vasca.',
   ),
-  (
-    icona: Icons.event_note_outlined,
-    titolo: 'Stagioni',
-    descrizione: 'Organizza la stagione in macrocicli, mesocicli e microcicli.',
-  ),
-  (
+  _Voce.schemi => (
     icona: Icons.sports_outlined,
-    titolo: 'Partite',
-    descrizione:
-        'Pallanuoto: distinta, eventi dal vivo, referti e statistiche di '
-        'squadra.',
+    iconaSelezionata: Icons.sports,
+    etichetta: 'Schemi tattici',
+    guida:
+        'Pallanuoto: disegna gli schemi sulla lavagna tattica, anche in più '
+        'passi, e condividili con gli atleti.',
   ),
-];
+  _Voce.stagioni => (
+    icona: Icons.event_note_outlined,
+    iconaSelezionata: Icons.event_note,
+    etichetta: 'Stagioni',
+    guida:
+        'Una stagione per gruppo (o per tutto il club) con il suo '
+        'calendario: si aggiungono le partite o le gare toccando un giorno.',
+  ),
+  _Voce.eventi when sport == 'nuoto' => (
+    icona: Icons.emoji_events_outlined,
+    iconaSelezionata: Icons.emoji_events,
+    etichetta: 'Gare',
+    guida:
+        'Le gare della stagione in corso, con gli atleti iscritti e i '
+        'loro risultati.',
+  ),
+  _Voce.eventi => (
+    icona: Icons.sports_handball_outlined,
+    iconaSelezionata: Icons.sports_handball,
+    etichetta: 'Partite',
+    guida:
+        'Le partite della stagione in corso: distinta, eventi dal vivo, '
+        'referti e statistiche di squadra.',
+  ),
+};
 
-List<({IconData icona, IconData iconaSelezionata, String etichetta})>
-_destinazioni(String? sport) => [
-  ..._destinazioniTab.take(3),
-  if (sport == 'nuoto') _destinazioneGare else _destinazioniTab[3],
-];
-
-List<({IconData icona, String titolo, String descrizione})> _guida(
-  String? sport,
-) => [..._guidaTab.take(3), if (sport == 'nuoto') _guidaGare else _guidaTab[3]];
+/// Colore della voce quando è selezionata (tavolozza "evidenza", vedi
+/// DESIGN.md "Dove spendere l'audacia"): Atleti resta sul colore d'azione,
+/// l'ancora neutra; le altre hanno un colore vivace ciascuna.
+Color _coloreVoce(BuildContext context, _Voce voce) => switch (voce) {
+  _Voce.atleti => context.colori.azione,
+  _Voce.allenamenti => context.dominio.evidenzaCiano,
+  _Voce.schemi => context.dominio.evidenzaViola,
+  _Voce.stagioni => context.dominio.evidenzaVerde,
+  _Voce.eventi => context.dominio.evidenzaAmbra,
+};
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -157,9 +161,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final voce in _guida(
-                ref.read(currentClubProvider).value?.sport,
-              ))
+              for (final voce in [
+                for (final v in _voci(
+                  ref.read(currentClubProvider).value?.sport,
+                ))
+                  _destinazione(v, ref.read(currentClubProvider).value?.sport),
+              ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.s16),
                   child: Row(
@@ -172,11 +179,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              voce.titolo,
+                              voce.etichetta,
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
                             Text(
-                              voce.descrizione,
+                              voce.guida,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
@@ -241,33 +248,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (selezione == null) {
           return GruppiChooserScreen(clubId: club.id);
         }
+        final voci = _voci(club.sport);
         return IndexedStack(
-          index: _tabIndex,
+          index: _tabIndex.clamp(0, voci.length - 1),
           children: [
-            AtletiListScreen(
-              clubId: club.id,
-              filtroGruppoId: selezione.gruppoId,
-            ),
-            AllenamentiListScreen(
-              clubId: club.id,
-              filtroGruppoId: selezione.gruppoId,
-            ),
-            StagioniListScreen(
-              clubId: club.id,
-              filtroGruppoId: selezione.gruppoId,
-            ),
-            if (club.sport == 'nuoto')
-              GareListScreen(
-                clubId: club.id,
-                filtroGruppoId: selezione.gruppoId,
-                onVaiAStagioni: () => setState(() => _tabIndex = 2),
-              )
-            else
-              PartiteListScreen(
-                clubId: club.id,
-                filtroGruppoId: selezione.gruppoId,
-                onVaiAStagioni: () => setState(() => _tabIndex = 2),
-              ),
+            for (final voce in voci)
+              switch (voce) {
+                _Voce.atleti => AtletiListScreen(
+                  clubId: club.id,
+                  filtroGruppoId: selezione.gruppoId,
+                ),
+                _Voce.allenamenti => AllenamentiListScreen(
+                  clubId: club.id,
+                  filtroGruppoId: selezione.gruppoId,
+                ),
+                _Voce.schemi => SchemiTatticiListScreen(
+                  clubId: club.id,
+                  filtroGruppoId: selezione.gruppoId,
+                  comeTab: true,
+                ),
+                _Voce.stagioni => StagioniListScreen(
+                  clubId: club.id,
+                  filtroGruppoId: selezione.gruppoId,
+                ),
+                _Voce.eventi =>
+                  club.sport == 'nuoto'
+                      ? GareListScreen(
+                          clubId: club.id,
+                          filtroGruppoId: selezione.gruppoId,
+                          onVaiAStagioni: () => setState(
+                            () => _tabIndex = voci.indexOf(_Voce.stagioni),
+                          ),
+                        )
+                      : PartiteListScreen(
+                          clubId: club.id,
+                          filtroGruppoId: selezione.gruppoId,
+                          onVaiAStagioni: () => setState(
+                            () => _tabIndex = voci.indexOf(_Voce.stagioni),
+                          ),
+                        ),
+              },
           ],
         );
       },
@@ -305,18 +325,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mostraTab) _controllaOnboarding();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
-    // Un colore diverso per tab quando selezionata (tavolozza "evidenza",
-    // stessa eccezione della dashboard atleta — vedi DESIGN.md "Dove
-    // spendere l'audacia"): Atleti resta sul colore d'azione (l'ancora
-    // neutra, come "Il tuo club" nella dashboard), le altre tre hanno un
-    // colore vivace ciascuna. Da tenere in ordine con [_destinazioniTab].
-    final destinazioni = _destinazioni(club?.sport);
-    final coloriTab = [
-      context.colori.azione,
-      context.dominio.evidenzaCiano,
-      context.dominio.evidenzaVerde,
-      context.dominio.evidenzaAmbra,
-    ];
+    final voci = _voci(club?.sport);
+    final destinazioni = [for (final v in voci) _destinazione(v, club?.sport)];
+    final coloriTab = [for (final v in voci) _coloreVoce(context, v)];
+    final indiceTab = _tabIndex.clamp(0, voci.length - 1);
 
     final corpoPrincipale = atletaAsync.when(
       data: (atleta) => atleta != null
@@ -336,7 +348,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           NavigationRail(
-            selectedIndex: _tabIndex,
+            selectedIndex: indiceTab,
             onDestinationSelected: (index) => setState(() => _tabIndex = index),
             labelType: NavigationRailLabelType.all,
             destinations: [
@@ -360,7 +372,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       corpo = corpoPrincipale;
       barraInferiore = mostraTab
           ? NavigationBar(
-              selectedIndex: _tabIndex,
+              selectedIndex: indiceTab,
               onDestinationSelected: (index) =>
                   setState(() => _tabIndex = index),
               destinations: [
