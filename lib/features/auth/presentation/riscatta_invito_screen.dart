@@ -10,8 +10,10 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../atleti/application/current_atleta_provider.dart';
 import '../../atleti/data/codici_gruppo_repository.dart';
 import '../../atleti/data/inviti_atleta_repository.dart';
+import '../../club/application/current_club_provider.dart';
 import '../data/auth_repository.dart';
 
 enum _Passo { codice, confermaAtleta, confermaGruppo, anagrafica, account }
@@ -190,6 +192,13 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
               sport: _sport,
             );
       }
+      // La sessione esiste da quando e' stato creato l'account, cioe' PRIMA
+      // del collegamento: la home, montata sotto questa schermata, ha gia'
+      // chiesto "chi sono?" e ha ricevuto "nessun atleta" (e "nessun club"),
+      // e senza questo passaggio mostrerebbe la schermata "crea il tuo
+      // club" dell'allenatore invece dell'area atleta.
+      ref.invalidate(currentAtletaProvider);
+      ref.invalidate(currentClubProvider);
       // authStateChangesProvider ha gia' una sessione attiva: la root
       // dell'app mostrera' l'Area atleta appena questo pop libera il
       // percorso di navigazione (stesso schema di SignUpScreen).
