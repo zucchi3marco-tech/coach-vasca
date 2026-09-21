@@ -11,6 +11,7 @@ import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/icon_badge.dart';
@@ -122,6 +123,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   ),
                   onTapNuovo: () => _apriForm(context),
                   onTapModifica: (atleta) => _apriForm(context, atleta: atleta),
+                  onTapElimina: (atleta) => _eliminaAtleta(context, atleta),
                 ),
                 loading: () => ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -158,6 +160,54 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<void> _eliminaAtleta(BuildContext context, Atleta atleta) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Eliminare ${atleta.nomeCompleto}?'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'L\'atleta viene cancellato per sempre, insieme a presenze, '
+            'personal best, tempi di gara, iscrizioni alle gare, test e '
+            'convocazioni. Nelle partite già giocate restano gli eventi, '
+            'ma senza il suo nome. Se ha un account collegato, lo perde.\n\n'
+            'Per toglierlo solo dall\'elenco senza perdere lo storico usa '
+            '«Modifica anagrafica» e poi «Archivia».',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annulla'),
+          ),
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (conferma != true) return;
+
+    try {
+      await ref.read(atletiRepositoryProvider).deleteAtleta(atleta.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${atleta.nomeCompleto} eliminato.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eliminazione non riuscita: ${messaggioErrore(e)}'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _apriForm(BuildContext context, {Atleta? atleta}) async {
@@ -282,6 +332,7 @@ class _AtletiList extends StatelessWidget {
     required this.onTap,
     required this.onTapNuovo,
     required this.onTapModifica,
+    required this.onTapElimina,
   });
 
   final List<Atleta> atleti;
@@ -296,6 +347,9 @@ class _AtletiList extends StatelessWidget {
 
   /// Menu `⋮`: "Modifica anagrafica" (prima era l'azione della riga).
   final ValueChanged<Atleta> onTapModifica;
+
+  /// Menu `⋮`: "Elimina atleta" (definitivo, dopo conferma).
+  final ValueChanged<Atleta> onTapElimina;
 
   List<Atleta> _filtrati() {
     final query = ricerca.trim().toLowerCase();
@@ -408,6 +462,14 @@ class _AtletiList extends StatelessWidget {
                               ? Icons.verified_user_outlined
                               : Icons.person_add_alt_outlined,
                           etichetta: 'Account atleta',
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: () => onTapElimina(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.delete_outline,
+                          etichetta: 'Elimina atleta',
                         ),
                       ),
                     ],

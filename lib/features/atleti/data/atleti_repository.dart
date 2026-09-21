@@ -366,6 +366,11 @@ class AtletiRepository {
     );
   }
 
+  /// Eliminazione definitiva. Sul server la cancellazione a cascata porta
+  /// via test, presenze, distinta, personal best, tempi gara e iscrizioni
+  /// alle gare dell'atleta, mentre gli eventi di partita restano con
+  /// l'atleta azzerato (`on delete set null`): la cache locale segue la
+  /// stessa regola, senza aspettare il prossimo aggiornamento dal server.
   Future<void> deleteAtleta(String id) async {
     try {
       await _client.from('atleti').delete().eq('id', id);
@@ -379,7 +384,33 @@ class AtletiRepository {
       );
       _syncEngine.processQueue();
     }
-    await (_db.delete(_db.atletiTable)..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.personalBestTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.tempiGaraTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.testIngressoTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.tabellePassiTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.presenzeTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.delete(
+        _db.garaIscrittiTable,
+      )..where((t) => t.atletaId.equals(id))).go();
+      await (_db.update(_db.eventiPartitaTable)
+            ..where((t) => t.atletaId.equals(id)))
+          .write(const EventiPartitaTableCompanion(atletaId: Value(null)));
+      await (_db.delete(_db.atletiTable)..where((t) => t.id.equals(id))).go();
+    });
   }
 }
 
