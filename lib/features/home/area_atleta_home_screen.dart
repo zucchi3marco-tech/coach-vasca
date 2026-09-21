@@ -767,10 +767,12 @@ class _ProssimiEventi extends ConsumerWidget {
             righe: [
               for (final e in prossimi)
                 AppListRow(
-                  leading: Icon(
+                  leading: IconBadge(
                     pallanuoto
                         ? Icons.sports_outlined
                         : Icons.emoji_events_outlined,
+                    colore: context.dominio.evidenzaViola,
+                    dimensione: 40,
                   ),
                   titolo: e.titolo,
                   sottotitolo:
@@ -798,7 +800,11 @@ class _AltriCollegamenti extends StatelessWidget {
     return AppListPanel(
       righe: [
         AppListRow(
-          leading: const Icon(Icons.how_to_reg_outlined),
+          leading: IconBadge(
+            Icons.how_to_reg_outlined,
+            colore: context.dominio.evidenzaVerde,
+            dimensione: 40,
+          ),
           titolo: 'Le mie presenze',
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
@@ -808,7 +814,11 @@ class _AltriCollegamenti extends StatelessWidget {
           ),
         ),
         AppListRow(
-          leading: const Icon(Icons.event_note_outlined),
+          leading: IconBadge(
+            Icons.event_note_outlined,
+            colore: context.dominio.evidenzaAmbra,
+            dimensione: 40,
+          ),
           titolo: 'La mia stagione',
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
@@ -818,7 +828,11 @@ class _AltriCollegamenti extends StatelessWidget {
           ),
         ),
         AppListRow(
-          leading: const Icon(Icons.bar_chart_outlined),
+          leading: IconBadge(
+            Icons.bar_chart_outlined,
+            colore: context.dominio.evidenzaCiano,
+            dimensione: 40,
+          ),
           titolo: 'Le mie statistiche',
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
@@ -829,7 +843,11 @@ class _AltriCollegamenti extends StatelessWidget {
         ),
         if (pallanuoto)
           AppListRow(
-            leading: const Icon(Icons.sports_outlined),
+            leading: IconBadge(
+              Icons.sports_outlined,
+              colore: context.dominio.evidenzaViola,
+              dimensione: 40,
+            ),
             titolo: 'Le mie partite',
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
