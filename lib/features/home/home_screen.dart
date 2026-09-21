@@ -22,6 +22,7 @@ import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../gruppi/domain/gruppo.dart';
 import '../gruppi/presentation/gruppi_chooser_screen.dart';
+import '../gare/presentation/gare_list_screen.dart';
 import '../gruppi/presentation/gruppi_onboarding_screen.dart';
 import '../notifiche/data/notifiche_repository.dart';
 import '../notifiche/presentation/notifiche_screen.dart';
@@ -33,6 +34,22 @@ import 'area_atleta_home_screen.dart';
 /// telefono/tablet) al lato, come su desktop (analisi video, punto 3.5):
 /// in fondo allo schermo la barra e' il punto piu' lontano dal mouse.
 const _larghezzaNavigazioneLaterale = 900.0;
+
+/// La quarta voce è "Partite" per la pallanuoto e "Gare" per il nuoto
+/// (sport nullo, cioè club vecchi senza sport: "Partite").
+const _destinazioneGare = (
+  icona: Icons.emoji_events_outlined,
+  iconaSelezionata: Icons.emoji_events,
+  etichetta: 'Gare',
+);
+
+const _guidaGare = (
+  icona: Icons.emoji_events_outlined,
+  titolo: 'Gare',
+  descrizione:
+      'Le gare del calendario: si aggiungono dalla stagione, toccando un '
+      'giorno.',
+);
 
 const _destinazioniTab = [
   (
@@ -89,6 +106,16 @@ const _guidaTab = [
   ),
 ];
 
+List<({IconData icona, IconData iconaSelezionata, String etichetta})>
+_destinazioni(String? sport) => [
+  ..._destinazioniTab.take(3),
+  if (sport == 'nuoto') _destinazioneGare else _destinazioniTab[3],
+];
+
+List<({IconData icona, String titolo, String descrizione})> _guida(
+  String? sport,
+) => [..._guidaTab.take(3), if (sport == 'nuoto') _guidaGare else _guidaTab[3]];
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -130,7 +157,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final voce in _guidaTab)
+              for (final voce in _guida(
+                ref.read(currentClubProvider).value?.sport,
+              ))
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.s16),
                   child: Row(
@@ -227,11 +256,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               clubId: club.id,
               filtroGruppoId: selezione.gruppoId,
             ),
-            PartiteListScreen(
-              clubId: club.id,
-              filtroGruppoId: selezione.gruppoId,
-              onVaiAStagioni: () => setState(() => _tabIndex = 2),
-            ),
+            if (club.sport == 'nuoto')
+              GareListScreen(
+                clubId: club.id,
+                filtroGruppoId: selezione.gruppoId,
+                onVaiAStagioni: () => setState(() => _tabIndex = 2),
+              )
+            else
+              PartiteListScreen(
+                clubId: club.id,
+                filtroGruppoId: selezione.gruppoId,
+                onVaiAStagioni: () => setState(() => _tabIndex = 2),
+              ),
           ],
         );
       },
@@ -274,6 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // spendere l'audacia"): Atleti resta sul colore d'azione (l'ancora
     // neutra, come "Il tuo club" nella dashboard), le altre tre hanno un
     // colore vivace ciascuna. Da tenere in ordine con [_destinazioniTab].
+    final destinazioni = _destinazioni(club?.sport);
     final coloriTab = [
       context.colori.azione,
       context.dominio.evidenzaCiano,
@@ -303,14 +340,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onDestinationSelected: (index) => setState(() => _tabIndex = index),
             labelType: NavigationRailLabelType.all,
             destinations: [
-              for (var i = 0; i < _destinazioniTab.length; i++)
+              for (var i = 0; i < destinazioni.length; i++)
                 NavigationRailDestination(
-                  icon: Icon(_destinazioniTab[i].icona),
+                  icon: Icon(destinazioni[i].icona),
                   selectedIcon: Icon(
-                    _destinazioniTab[i].iconaSelezionata,
+                    destinazioni[i].iconaSelezionata,
                     color: coloriTab[i],
                   ),
-                  label: Text(_destinazioniTab[i].etichetta),
+                  label: Text(destinazioni[i].etichetta),
                 ),
             ],
           ),
@@ -327,14 +364,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onDestinationSelected: (index) =>
                   setState(() => _tabIndex = index),
               destinations: [
-                for (var i = 0; i < _destinazioniTab.length; i++)
+                for (var i = 0; i < destinazioni.length; i++)
                   NavigationDestination(
-                    icon: Icon(_destinazioniTab[i].icona),
+                    icon: Icon(destinazioni[i].icona),
                     selectedIcon: Icon(
-                      _destinazioniTab[i].iconaSelezionata,
+                      destinazioni[i].iconaSelezionata,
                       color: coloriTab[i],
                     ),
-                    label: _destinazioniTab[i].etichetta,
+                    label: destinazioni[i].etichetta,
                   ),
               ],
             )

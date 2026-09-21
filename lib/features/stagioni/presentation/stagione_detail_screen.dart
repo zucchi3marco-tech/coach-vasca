@@ -11,6 +11,10 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../atleti/presentation/record_club_screen.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../gare/application/gare_providers.dart';
+import '../../gare/domain/gara.dart';
+import '../../gare/presentation/gara_detail_screen.dart';
+import '../../gare/presentation/gara_form_screen.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../pallanuoto/presentation/distinta_screen.dart';
@@ -52,8 +56,14 @@ class StagioneDetailScreen extends ConsumerWidget {
   void _creaEvento(BuildContext context, WidgetRef ref, DateTime giorno) {
     final sport = ref.read(currentClubProvider).value?.sport;
     if (sport == 'nuoto') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Le gare del nuoto arrivano a breve.')),
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => GaraFormScreen(
+            clubId: stagione.clubId,
+            stagione: stagione,
+            dataIniziale: giorno,
+          ),
+        ),
       );
       return;
     }
@@ -73,6 +83,10 @@ class StagioneDetailScreen extends ConsumerWidget {
     if (origine is Partita) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DistintaScreen(partita: origine)),
+      );
+    } else if (origine is Gara) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => GaraDetailScreen(gara: origine)),
       );
     }
   }
@@ -128,7 +142,9 @@ class StagioneDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s12),
               SecondaryButton(
-                label: 'Aggiungi',
+                label: ref.read(currentClubProvider).value?.sport == 'nuoto'
+                    ? 'Aggiungi gara'
+                    : 'Aggiungi partita',
                 icon: Icons.add,
                 onPressed: () {
                   Navigator.of(sheetContext).pop();
@@ -191,8 +207,12 @@ class StagioneDetailScreen extends ConsumerWidget {
     final partite = mostraPallanuoto
         ? ref.watch(partiteListProvider(stagione.clubId)).value ?? const []
         : const <Partita>[];
+    final gare = mostraNuoto
+        ? ref.watch(gareListProvider(stagione.clubId)).value ?? const []
+        : const <Gara>[];
     final eventi = eventiVisibiliInStagione(stagione, [
       for (final p in partite) EventoCalendario.daPartita(p),
+      for (final g in gare) EventoCalendario.daGara(g),
     ]);
 
     return AppScaffold(

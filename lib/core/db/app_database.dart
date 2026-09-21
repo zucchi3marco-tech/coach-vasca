@@ -24,13 +24,14 @@ part 'app_database.g.dart';
     EventiPartitaTable,
     RefertiPartitaTable,
     GruppiTable,
+    GareTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -252,6 +253,13 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'schemi_tattici_table', 'gruppo_id')) {
           await m.addColumn(schemiTatticiTable, schemiTatticiTable.gruppoId);
+        }
+      }
+      // v20 -> v21: gare del nuoto (evento di calendario, come la partita
+      // per la pallanuoto).
+      if (from < 21) {
+        if (!await _hasTable(m, 'gare_table')) {
+          await m.createTable(gareTable);
         }
       }
     },

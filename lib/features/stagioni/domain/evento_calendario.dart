@@ -1,4 +1,5 @@
 import '../../../core/utils/gruppo_visibilita.dart';
+import '../../gare/domain/gara.dart';
 import '../../pallanuoto/domain/partita.dart';
 import 'stagione.dart';
 
@@ -32,6 +33,22 @@ class EventoCalendario {
       titolo: '${p.squadraCasa} - ${p.squadraTrasferta}',
       sottotitolo: dettagli.isEmpty ? null : dettagli.join(' · '),
       origine: p,
+    );
+  }
+
+  factory EventoCalendario.daGara(Gara g) {
+    final dettagli = [
+      if (g.ora != null && g.ora!.isNotEmpty) g.ora!,
+      if (g.luogo != null && g.luogo!.isNotEmpty) g.luogo!,
+    ];
+    return EventoCalendario(
+      id: g.id,
+      tipo: TipoEventoCalendario.gara,
+      data: g.data,
+      gruppoId: g.gruppoId,
+      titolo: g.nome,
+      sottotitolo: dettagli.isEmpty ? null : dettagli.join(' · '),
+      origine: g,
     );
   }
 

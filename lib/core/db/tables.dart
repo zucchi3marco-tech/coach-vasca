@@ -314,3 +314,19 @@ class PendingOperationsTable extends Table {
   TextColumn get payloadJson => text().nullable()();
   DateTimeColumn get creatoIl => dateTime().withDefault(currentDateAndTime)();
 }
+
+class GareTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+
+  /// Gruppo a cui appartiene la gara — null se di tutto il club.
+  TextColumn get gruppoId => text().nullable()();
+  DateTimeColumn get data => dateTime()();
+  TextColumn get ora => text().nullable()();
+  TextColumn get luogo => text().nullable()();
+  TextColumn get nome => text()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

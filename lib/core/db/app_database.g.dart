@@ -9903,6 +9903,500 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
   }
 }
 
+class $GareTableTable extends GareTable
+    with TableInfo<$GareTableTable, GareTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GareTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
+  @override
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _oraMeta = const VerificationMeta('ora');
+  @override
+  late final GeneratedColumn<String> ora = GeneratedColumn<String>(
+    'ora',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _luogoMeta = const VerificationMeta('luogo');
+  @override
+  late final GeneratedColumn<String> luogo = GeneratedColumn<String>(
+    'luogo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    gruppoId,
+    data,
+    ora,
+    luogo,
+    nome,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gare_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GareTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('gruppo_id')) {
+      context.handle(
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
+      );
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('ora')) {
+      context.handle(
+        _oraMeta,
+        ora.isAcceptableOrUnknown(data['ora']!, _oraMeta),
+      );
+    }
+    if (data.containsKey('luogo')) {
+      context.handle(
+        _luogoMeta,
+        luogo.isAcceptableOrUnknown(data['luogo']!, _luogoMeta),
+      );
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GareTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GareTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      gruppoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo_id'],
+      ),
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      )!,
+      ora: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ora'],
+      ),
+      luogo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}luogo'],
+      ),
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $GareTableTable createAlias(String alias) {
+    return $GareTableTable(attachedDatabase, alias);
+  }
+}
+
+class GareTableData extends DataClass implements Insertable<GareTableData> {
+  final String id;
+  final String clubId;
+
+  /// Gruppo a cui appartiene la gara — null se di tutto il club.
+  final String? gruppoId;
+  final DateTime data;
+  final String? ora;
+  final String? luogo;
+  final String nome;
+  final String? note;
+  const GareTableData({
+    required this.id,
+    required this.clubId,
+    this.gruppoId,
+    required this.data,
+    this.ora,
+    this.luogo,
+    required this.nome,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
+    }
+    map['data'] = Variable<DateTime>(data);
+    if (!nullToAbsent || ora != null) {
+      map['ora'] = Variable<String>(ora);
+    }
+    if (!nullToAbsent || luogo != null) {
+      map['luogo'] = Variable<String>(luogo);
+    }
+    map['nome'] = Variable<String>(nome);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  GareTableCompanion toCompanion(bool nullToAbsent) {
+    return GareTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      gruppoId: gruppoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppoId),
+      data: Value(data),
+      ora: ora == null && nullToAbsent ? const Value.absent() : Value(ora),
+      luogo: luogo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(luogo),
+      nome: Value(nome),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory GareTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GareTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
+      data: serializer.fromJson<DateTime>(json['data']),
+      ora: serializer.fromJson<String?>(json['ora']),
+      luogo: serializer.fromJson<String?>(json['luogo']),
+      nome: serializer.fromJson<String>(json['nome']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
+      'data': serializer.toJson<DateTime>(data),
+      'ora': serializer.toJson<String?>(ora),
+      'luogo': serializer.toJson<String?>(luogo),
+      'nome': serializer.toJson<String>(nome),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  GareTableData copyWith({
+    String? id,
+    String? clubId,
+    Value<String?> gruppoId = const Value.absent(),
+    DateTime? data,
+    Value<String?> ora = const Value.absent(),
+    Value<String?> luogo = const Value.absent(),
+    String? nome,
+    Value<String?> note = const Value.absent(),
+  }) => GareTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
+    data: data ?? this.data,
+    ora: ora.present ? ora.value : this.ora,
+    luogo: luogo.present ? luogo.value : this.luogo,
+    nome: nome ?? this.nome,
+    note: note.present ? note.value : this.note,
+  );
+  GareTableData copyWithCompanion(GareTableCompanion data) {
+    return GareTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
+      data: data.data.present ? data.data.value : this.data,
+      ora: data.ora.present ? data.ora.value : this.ora,
+      luogo: data.luogo.present ? data.luogo.value : this.luogo,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GareTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
+          ..write('data: $data, ')
+          ..write('ora: $ora, ')
+          ..write('luogo: $luogo, ')
+          ..write('nome: $nome, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, clubId, gruppoId, data, ora, luogo, nome, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GareTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.gruppoId == this.gruppoId &&
+          other.data == this.data &&
+          other.ora == this.ora &&
+          other.luogo == this.luogo &&
+          other.nome == this.nome &&
+          other.note == this.note);
+}
+
+class GareTableCompanion extends UpdateCompanion<GareTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String?> gruppoId;
+  final Value<DateTime> data;
+  final Value<String?> ora;
+  final Value<String?> luogo;
+  final Value<String> nome;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const GareTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.gruppoId = const Value.absent(),
+    this.data = const Value.absent(),
+    this.ora = const Value.absent(),
+    this.luogo = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GareTableCompanion.insert({
+    required String id,
+    required String clubId,
+    this.gruppoId = const Value.absent(),
+    required DateTime data,
+    this.ora = const Value.absent(),
+    this.luogo = const Value.absent(),
+    required String nome,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       data = Value(data),
+       nome = Value(nome);
+  static Insertable<GareTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? gruppoId,
+    Expression<DateTime>? data,
+    Expression<String>? ora,
+    Expression<String>? luogo,
+    Expression<String>? nome,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
+      if (data != null) 'data': data,
+      if (ora != null) 'ora': ora,
+      if (luogo != null) 'luogo': luogo,
+      if (nome != null) 'nome': nome,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GareTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String?>? gruppoId,
+    Value<DateTime>? data,
+    Value<String?>? ora,
+    Value<String?>? luogo,
+    Value<String>? nome,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return GareTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      gruppoId: gruppoId ?? this.gruppoId,
+      data: data ?? this.data,
+      ora: ora ?? this.ora,
+      luogo: luogo ?? this.luogo,
+      nome: nome ?? this.nome,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (ora.present) {
+      map['ora'] = Variable<String>(ora.value);
+    }
+    if (luogo.present) {
+      map['luogo'] = Variable<String>(luogo.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GareTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
+          ..write('data: $data, ')
+          ..write('ora: $ora, ')
+          ..write('luogo: $luogo, ')
+          ..write('nome: $nome, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9933,6 +10427,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RefertiPartitaTableTable refertiPartitaTable =
       $RefertiPartitaTableTable(this);
   late final $GruppiTableTable gruppiTable = $GruppiTableTable(this);
+  late final $GareTableTable gareTable = $GareTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9955,6 +10450,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     eventiPartitaTable,
     refertiPartitaTable,
     gruppiTable,
+    gareTable,
   ];
 }
 
@@ -15142,6 +15638,270 @@ typedef $$GruppiTableTableProcessedTableManager =
       GruppiTableData,
       PrefetchHooks Function()
     >;
+typedef $$GareTableTableCreateCompanionBuilder = GareTableCompanion Function({
+  required String id,
+  required String clubId,
+  Value<String?> gruppoId,
+  required DateTime data,
+  Value<String?> ora,
+  Value<String?> luogo,
+  required String nome,
+  Value<String?> note,
+  Value<int> rowid,
+});
+typedef $$GareTableTableUpdateCompanionBuilder = GareTableCompanion Function({
+  Value<String> id,
+  Value<String> clubId,
+  Value<String?> gruppoId,
+  Value<DateTime> data,
+  Value<String?> ora,
+  Value<String?> luogo,
+  Value<String> nome,
+  Value<String?> note,
+  Value<int> rowid,
+});
+
+class $$GareTableTableFilterComposer
+    extends Composer<_$AppDatabase, $GareTableTable> {
+  $$GareTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ora => $composableBuilder(
+    column: $table.ora,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get luogo => $composableBuilder(
+    column: $table.luogo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GareTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $GareTableTable> {
+  $$GareTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ora => $composableBuilder(
+    column: $table.ora,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get luogo => $composableBuilder(
+    column: $table.luogo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GareTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GareTableTable> {
+  $$GareTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get ora =>
+      $composableBuilder(column: $table.ora, builder: (column) => column);
+
+  GeneratedColumn<String> get luogo =>
+      $composableBuilder(column: $table.luogo, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$GareTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GareTableTable,
+          GareTableData,
+          $$GareTableTableFilterComposer,
+          $$GareTableTableOrderingComposer,
+          $$GareTableTableAnnotationComposer,
+          $$GareTableTableCreateCompanionBuilder,
+          $$GareTableTableUpdateCompanionBuilder,
+          (
+            GareTableData,
+            BaseReferences<_$AppDatabase, $GareTableTable, GareTableData>,
+          ),
+          GareTableData,
+          PrefetchHooks Function()
+        > {
+  $$GareTableTableTableManager(_$AppDatabase db, $GareTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GareTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GareTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GareTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
+                Value<DateTime> data = const Value.absent(),
+                Value<String?> ora = const Value.absent(),
+                Value<String?> luogo = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GareTableCompanion(
+                id: id,
+                clubId: clubId,
+                gruppoId: gruppoId,
+                data: data,
+                ora: ora,
+                luogo: luogo,
+                nome: nome,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                Value<String?> gruppoId = const Value.absent(),
+                required DateTime data,
+                Value<String?> ora = const Value.absent(),
+                Value<String?> luogo = const Value.absent(),
+                required String nome,
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GareTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                gruppoId: gruppoId,
+                data: data,
+                ora: ora,
+                luogo: luogo,
+                nome: nome,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$GareTableTable, GareTableData>(table),
+                  BaseReferences<_$AppDatabase, $GareTableTable, GareTableData>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GareTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GareTableTable,
+      GareTableData,
+      $$GareTableTableFilterComposer,
+      $$GareTableTableOrderingComposer,
+      $$GareTableTableAnnotationComposer,
+      $$GareTableTableCreateCompanionBuilder,
+      $$GareTableTableUpdateCompanionBuilder,
+      (
+        GareTableData,
+        BaseReferences<_$AppDatabase, $GareTableTable, GareTableData>,
+      ),
+      GareTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15186,4 +15946,6 @@ class $AppDatabaseManager {
       $$RefertiPartitaTableTableTableManager(_db, _db.refertiPartitaTable);
   $$GruppiTableTableTableManager get gruppiTable =>
       $$GruppiTableTableTableManager(_db, _db.gruppiTable);
+  $$GareTableTableTableManager get gareTable =>
+      $$GareTableTableTableManager(_db, _db.gareTable);
 }
