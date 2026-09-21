@@ -24,6 +24,7 @@ import 'fascia_calottine_partita.dart';
 import 'selettore_giocatore_partita.dart';
 import 'squalifiche_partita.dart';
 import 'striscia_sanzionati_partita.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 enum _Interazione { riposo, sceltaGiocatoreTiro, sceltaGiocatoreSanzione }
 
@@ -315,7 +316,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      NascondiBarraClub(child: _costruisci(context));
+
+  Widget _costruisci(BuildContext context) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(widget.partita.id));
     final convocatiAsync = ref.watch(distintaListProvider(widget.partita.id));
     final atletiAsync = ref.watch(

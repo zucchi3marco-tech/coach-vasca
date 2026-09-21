@@ -16,6 +16,7 @@ import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
 import 'water_polo_tactics_board.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 /// Crea (o modifica) uno schema tattico: titolo + una sequenza di passi
 /// (al più [SchemaTattico.massimoPassi]), ciascuno con la propria
@@ -234,7 +235,10 @@ class _SchemaTatticoFormScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      NascondiBarraClub(child: _costruisci(context));
+
+  Widget _costruisci(BuildContext context) {
     final categorieEsistenti =
         (ref.watch(schemiTatticiListProvider(widget.clubId)).value ?? [])
             .map((s) => s.categoria)

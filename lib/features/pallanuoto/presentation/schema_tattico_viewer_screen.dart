@@ -4,6 +4,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../domain/schema_tattico.dart';
 import 'water_polo_tactics_board.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 /// Vista in sola lettura di uno schema tattico salvato dall'allenatore:
 /// sfoglia i passi come [SchemaTatticoPlayer], compreso il tasto play
@@ -14,7 +15,10 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
   final SchemaTattico schema;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      NascondiBarraClub(child: _costruisci(context));
+
+  Widget _costruisci(BuildContext context) {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: Text(schema.titolo)),

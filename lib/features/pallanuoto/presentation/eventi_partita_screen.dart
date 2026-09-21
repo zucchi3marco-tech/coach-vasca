@@ -23,6 +23,7 @@ import '../data/eventi_partita_repository.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
 import 'eventi_labels.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 /// Cronologia degli eventi partita: sola lettura (con modifica/cancellazione
 /// di un evento tramite tocco) e registrazione delle superiorità a inizio/
@@ -88,7 +89,10 @@ class EventiPartitaScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      NascondiBarraClub(child: _costruisci(context, ref));
+
+  Widget _costruisci(BuildContext context, WidgetRef ref) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(partita.id));
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: partita.clubId, includeInactive: false)),

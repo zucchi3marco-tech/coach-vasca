@@ -17,6 +17,7 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/presenze_providers.dart';
 import '../data/presenze_repository.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 /// Schermata da bordo vasca (DESIGN.md sezione 9): bersagli grandi, niente
 /// form, e — a scelta dell'allenatore — sfondo scuro (vedi
@@ -27,7 +28,10 @@ class PresenzeScreen extends ConsumerWidget {
   final Allenamento allenamento;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      NascondiBarraClub(child: _costruisci(context, ref));
+
+  Widget _costruisci(BuildContext context, WidgetRef ref) {
     final filter = (clubId: allenamento.clubId, includeInactive: false);
     final atletiAsync = ref.watch(atletiListProvider(filter));
     final presenzeAsync = ref.watch(presenzeListProvider(allenamento.id));

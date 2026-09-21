@@ -49,7 +49,7 @@ Questo è il motivo per cui i due temi non condividono un solo valore esadecimal
 
 **Seconda eccezione, la dashboard atleta.** È la schermata-vetrina dell'atleta — il primo (e spesso unico) punto su cui gira tutto il suo account, l'equivalente per lui della pagina bordo vasca per l'allenatore — quindi ha una sua tavolozza dedicata: `TokenDominio.evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra`, un colore diverso per l'icona di ogni scheda invece del solo `azione`, più lo stesso duo ciano/verde sul grafico Banister ovunque appaia (anche fuori dalla dashboard, es. `CaricoAtletaScreen`). Resta legata al tema chiaro/scuro dell'utente come tutto il resto dell'app — nessuna schermata "sempre scura" a parte. **Delimitata**: sfondi dei pannelli, titoli e i valori degli `StatPanel` restano neutri, il colore arriva solo dalle icone e dal grafico; la tavolozza `evidenza*` non si estende ad altre schermate senza deciderlo di nuovo esplicitamente qui.
 
-**Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 4 tab Atleti/Allenamenti/Stagioni/Partite) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e una card di riepilogo sopra l'elenco atleti (`_RiepilogoClub`, `atleti_list_screen.dart`) mostra 3 statistiche rapide del club con la stessa tavolozza. **Delimitata** allo stesso modo: nessun altro sfondo/titolo/testo cambia colore, la card di riepilogo è un `PoolCard` neutro come tutti gli altri, il colore arriva solo dalle icone.
+**Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 5 tab Atleti/Allenamenti/Schemi tattici/Stagioni/Partite, o 4 per il nuoto: niente Schemi tattici, l'ultima si chiama Gare) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaViola`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e una card di riepilogo sopra l'elenco atleti (`_RiepilogoClub`, `atleti_list_screen.dart`) mostra 3 statistiche rapide del club con la stessa tavolozza. **Delimitata** allo stesso modo: nessun altro sfondo/titolo/testo cambia colore, la card di riepilogo è un `PoolCard` neutro come tutti gli altri, il colore arriva solo dalle icone.
 
 ---
 
@@ -430,6 +430,15 @@ Oltre i 1200 il contenuto **non si allarga**: si centra e ai lati resta `sfondo`
 In tutti i casi: icona **più** etichetta di testo, sempre. La voce attiva ha icona in `azione` con riempimento pieno (Material Symbols `FILL 1`), etichetta in `azione` peso 600, e un indicatore — pillola `azioneTenue` dietro l'icona nel compatto, filetto verticale di 3px `azione` a sinistra nella rail. Le voci a riposo hanno icona `FILL 0` in `testoSecondario`.
 
 La barra in basso non ha ombra: ha un bordo superiore di 1px `linea` e fondo `superficie`.
+
+#### Barra club (in alto)
+
+Sopra il Navigator, fissa su ogni schermata dell'utente autenticato: **logo** (torna alla home) + **nome del club** + selettore del tema + menu ☰ (notifiche, sincronizzazione, installa l'app, cambia gruppo, guida, esci). Ogni schermata tiene sotto la sua AppBar (freccia e titolo).
+
+- Altezza 44 più l'area sicura in alto; fondo `superficie`, nessuna ombra, bordo inferiore di 1px `linea`. Nome del club in `corpoForte`, una riga, con i puntini se troppo lungo.
+- Il logo dell'allenatore chiude le schermate aperte e riporta alla prima tab (Atleti, col riepilogo del gruppo); quello dell'atleta alla sua dashboard.
+- **Nascosta** su lavagna tattica (editor e visualizzatore), partita dal vivo, eventi partita, segna presenze e scheda bordo vasca: schermate a tutto schermo, da usare in piedi con una mano sola. Una schermata si dichiara così avvolgendosi in `NascondiBarraClub`; la barra torna da sola alla chiusura.
+- Sta fuori dal Navigator, quindi non ci vanno `Tooltip`, `PopupMenuButton` né `showDialog` col proprio contesto: menu e dialoghi passano da `navigatorKeyApp` (`showMenu` sull'overlay del Navigator). Un dialogo aperto non copre la barra.
 
 ### Archetipi di pagina
 

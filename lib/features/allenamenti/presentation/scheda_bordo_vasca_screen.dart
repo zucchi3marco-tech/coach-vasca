@@ -24,6 +24,7 @@ import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import 'serie_labels.dart';
+import '../../../widgets/nascondi_barra_club.dart';
 
 /// Vista pensata per un tablet fissato a bordo vasca — vedi DESIGN.md
 /// sezione 2 e 9: tipografia enorme, colori ridotti all'osso, bersagli
@@ -70,7 +71,10 @@ class _SchedaBordoVascaScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      NascondiBarraClub(child: _costruisci(context));
+
+  Widget _costruisci(BuildContext context) {
     final allenamento = widget.allenamento;
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
     final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);

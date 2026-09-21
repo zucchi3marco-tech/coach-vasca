@@ -3,9 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/db/cache_utente_guard.dart';
+import 'core/navigation/navigator_key.dart';
 import 'core/supabase/supabase_providers.dart';
 import 'core/sync/connectivity_sync_trigger.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/home/barra_club.dart';
 import 'features/home/home_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/tema_provider.dart';
@@ -22,6 +24,10 @@ class CoachVascaApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'WaterTactics',
+      navigatorKey: navigatorKeyApp,
+      // La barra fissa in alto (logo + nome del club) sta sopra il
+      // Navigator, così resta ferma mentre le schermate cambiano.
+      builder: (context, child) => BarraClubHost(child: child),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.chiaro,
       darkTheme: AppTheme.scuro,
