@@ -97,3 +97,25 @@ Map<DateTime, List<EventoCalendario>> raggruppaEventiPerGiorno(
   }
   return mappa;
 }
+
+/// I prossimi eventi di un atleta: da oggi in poi, visibili al suo gruppo
+/// (gli eventi del suo gruppo e quelli di tutto il club), dal più vicino,
+/// al massimo [massimo].
+List<EventoCalendario> prossimiEventi(
+  Iterable<EventoCalendario> eventi,
+  String? gruppoAtleta,
+  DateTime oggi, {
+  int massimo = 3,
+}) {
+  final da = soloGiorno(oggi);
+  final risultato = [
+    for (final e in eventi)
+      if (!soloGiorno(e.data).isBefore(da) &&
+          visibileNelGruppo(
+            gruppoDelRecord: e.gruppoId,
+            gruppoSelezionato: gruppoAtleta,
+          ))
+        e,
+  ]..sort((a, b) => soloGiorno(a.data).compareTo(soloGiorno(b.data)));
+  return risultato.take(massimo).toList();
+}

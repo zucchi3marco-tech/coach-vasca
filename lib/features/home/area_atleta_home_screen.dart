@@ -23,6 +23,8 @@ import '../carico/application/carico_providers.dart';
 import '../carico/presentation/carico_atleta_screen.dart';
 import '../carico/presentation/grafico_banister.dart';
 import '../club/application/current_club_provider.dart';
+import '../gare/application/gare_providers.dart';
+import '../gare/domain/gara.dart';
 import '../pallanuoto/application/pallanuoto_providers.dart';
 import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/domain/partita.dart';
@@ -30,6 +32,7 @@ import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/application/presenze_providers.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
+import '../stagioni/domain/evento_calendario.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
 
@@ -112,10 +115,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.s16),
             _CardRiepilogoClub(atleta: atleta),
-            if (pallanuoto) ...[
-              const SizedBox(height: AppSpacing.s16),
-              _ProssimoEvento(clubId: atleta.clubId),
-            ],
+            _ProssimiEventi(atleta: atleta),
             const SizedBox(height: AppSpacing.s24),
             _AltriCollegamenti(atleta: atleta),
           ],
@@ -682,46 +682,61 @@ class _GolTotaliStat extends ConsumerWidget {
 }
 
 /// Prossima partita in agenda per il club (solo atleti di pallanuoto).
-class _ProssimoEvento extends ConsumerWidget {
-  const _ProssimoEvento({required this.clubId});
+class _ProssimiEventi extends ConsumerWidget {
+  const _ProssimiEventi({required this.atleta});
 
-  final String clubId;
+  final Atleta atleta;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final partitaAsync = ref.watch(prossimaPartitaProvider(clubId));
+    final pallanuoto = atleta.sport == 'pallanuoto';
+    final eventi = pallanuoto
+        ? [
+            for (final p
+                in ref.watch(partiteListProvider(atleta.clubId)).value ??
+                    const <Partita>[])
+              EventoCalendario.daPartita(p),
+          ]
+        : [
+            for (final g
+                in ref.watch(gareListProvider(atleta.clubId)).value ??
+                    const <Gara>[])
+              EventoCalendario.daGara(g),
+          ];
+    final prossimi = prossimiEventi(eventi, atleta.gruppoId, DateTime.now());
+    if (prossimi.isEmpty) return const SizedBox.shrink();
 
-    return partitaAsync.when(
-      data: (Partita? partita) {
-        if (partita == null) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Prossimo evento',
-              style: AppTypography.etichetta.copyWith(
-                color: context.colori.testoSecondario,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Prossimi eventi',
+            style: AppTypography.etichetta.copyWith(
+              color: context.colori.testoSecondario,
             ),
-            const SizedBox(height: AppSpacing.s8),
-            AppListPanel(
-              righe: [
+          ),
+          const SizedBox(height: AppSpacing.s8),
+          AppListPanel(
+            righe: [
+              for (final e in prossimi)
                 AppListRow(
-                  leading: const Icon(Icons.sports_outlined),
-                  titolo:
-                      '${partita.squadraCasa} - ${partita.squadraTrasferta}',
+                  leading: Icon(
+                    pallanuoto
+                        ? Icons.sports_outlined
+                        : Icons.emoji_events_outlined,
+                  ),
+                  titolo: e.titolo,
                   sottotitolo:
-                      '${_formattaData(partita.data)}'
-                      '${partita.ora != null ? ' · ${partita.ora}' : ''}'
-                      '${partita.luogo != null ? ' · ${partita.luogo}' : ''}',
+                      '${_formattaData(e.data)}'
+                      '${e.sottotitolo != null ? ' · ${e.sottotitolo}' : ''}'
+                      '${e.diClub ? ' · Tutto il club' : ''}',
                 ),
-              ],
-            ),
-          ],
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -92,4 +92,41 @@ void main() {
       );
     });
   });
+
+  group('prossimiEventi', () {
+    final oggi = DateTime(2026, 10, 10);
+    final passato = _evento('passato', DateTime(2026, 10, 9), 'u14');
+    final oggiEv = _evento('oggi', DateTime(2026, 10, 10), 'u14');
+    final vicino = _evento('vicino', DateTime(2026, 10, 12), null);
+    final lontano = _evento('lontano', DateTime(2026, 12, 1), 'u14');
+    final piuLontano = _evento('piulontano', DateTime(2027, 1, 1), 'u14');
+    final altroGruppo = _evento('altro', DateTime(2026, 10, 11), 'u16');
+    final tutti = [piuLontano, passato, lontano, altroGruppo, vicino, oggiEv];
+
+    test(
+      'da oggi in poi, del gruppo e di club, dal più vicino, al massimo 3',
+      () {
+        final prossimi = prossimiEventi(tutti, 'u14', oggi);
+        expect(prossimi.map((e) => e.id), ['oggi', 'vicino', 'lontano']);
+      },
+    );
+
+    test('il massimo si può cambiare', () {
+      expect(prossimiEventi(tutti, 'u14', oggi, massimo: 1).map((e) => e.id), [
+        'oggi',
+      ]);
+    });
+
+    test('atleta senza gruppo: nessun filtro', () {
+      expect(prossimiEventi(tutti, null, oggi).map((e) => e.id), [
+        'oggi',
+        'altro',
+        'vicino',
+      ]);
+    });
+
+    test('nessun evento futuro', () {
+      expect(prossimiEventi([passato], 'u14', oggi), isEmpty);
+    });
+  });
 }
