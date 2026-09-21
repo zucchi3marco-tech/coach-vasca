@@ -15,15 +15,29 @@ import '../../../widgets/primary_button.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
+import '../../stagioni/domain/stagione.dart';
 import '../../stagioni/presentation/stagione_form_screen.dart';
 import '../data/partite_repository.dart';
 import '../domain/partita.dart';
 
 class PartitaFormScreen extends ConsumerStatefulWidget {
-  const PartitaFormScreen({required this.clubId, this.partita, super.key});
+  const PartitaFormScreen({
+    required this.clubId,
+    this.partita,
+    this.stagione,
+    this.dataIniziale,
+    super.key,
+  });
 
   final String clubId;
   final Partita? partita;
+
+  /// Stagione dal cui calendario si sta creando la partita: da lei
+  /// arrivano il gruppo (nullo = partita di club) e il campionato.
+  final Stagione? stagione;
+
+  /// Data suggerita in creazione (il giorno toccato nel calendario).
+  final DateTime? dataIniziale;
 
   @override
   ConsumerState<PartitaFormScreen> createState() => _PartitaFormScreenState();
@@ -65,8 +79,8 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
       text: p?.squadraTrasferta ?? '',
     );
     _noteController = TextEditingController(text: p?.note ?? '');
-    _gruppoId = p?.gruppoId;
-    _data = p?.data ?? DateTime.now();
+    _gruppoId = p != null ? p.gruppoId : widget.stagione?.gruppoId;
+    _data = p?.data ?? widget.dataIniziale ?? DateTime.now();
     _dataController = TextEditingController(text: _formattaData(_data));
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
@@ -176,13 +190,15 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   /// partita (FASE 10, punto 1). Nessuna corrispondenza -> null, come
   /// prima quando il campo restava vuoto.
   Future<String?> _campionatoPerData(DateTime data) async {
-    final stagioni = await ref.read(stagioniListProvider(widget.clubId).future);
-    for (final s in stagioni) {
-      if (!data.isBefore(s.dataInizio) && !data.isAfter(s.dataFine)) {
-        return s.campionato;
-      }
+    final daStagione = widget.stagione;
+    if (daStagione != null &&
+        !data.isBefore(daStagione.dataInizio) &&
+        !data.isAfter(daStagione.dataFine) &&
+        daStagione.gruppoId == _gruppoId) {
+      return daStagione.campionato;
     }
-    return null;
+    final stagioni = await ref.read(stagioniListProvider(widget.clubId).future);
+    return campionatoPerData(stagioni, data, _gruppoId);
   }
 
   Future<void> _submit() async {
@@ -366,7 +382,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                         child: const Text('Gruppo non trovato'),
                       ),
                   ],
-                  onChanged: (value) => setState(() => _gruppoId = value),
+                  onChanged: (value) {
+                    setState(() => _gruppoId = value);
+                    _aggiornaCampionatoAnteprima();
+                  },
                 ),
               ],
             ),

@@ -8,31 +8,139 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/secondary_button.dart';
 import '../../atleti/presentation/record_club_screen.dart';
 import '../../club/application/current_club_provider.dart';
-import '../../gruppi/application/gruppi_providers.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/domain/partita.dart';
+import '../../pallanuoto/presentation/distinta_screen.dart';
+import '../../pallanuoto/presentation/partita_form_screen.dart';
 import '../../statistiche/presentation/statistiche_squadra_screen.dart';
 import '../data/duplicazione_stagione_service.dart';
 import '../data/stagioni_repository.dart';
+import '../domain/evento_calendario.dart';
 import '../domain/stagione.dart';
+import 'calendario_stagione_view.dart';
 import 'elimina_dialogs.dart';
 import 'stagione_form_screen.dart';
 
 enum _AzioneStagione { duplica, modifica, elimina }
 
-/// Scheda di una stagione: solo intestazione (periodo, gruppo, campionato,
-/// obiettivo) e, al posto della programmazione a settimane eliminata in
-/// FASE 11, un collegamento alle statistiche di stagione (pallanuoto) o ai
-/// record di club (nuoto), secondo lo sport del club.
+/// Scheda di una stagione: il calendario dei mesi della stagione (un tocco
+/// su un giorno crea o apre una partita/gara), poi il collegamento alle
+/// statistiche di stagione (pallanuoto) o ai record di club (nuoto),
+/// secondo lo sport del club, e campionato/obiettivo.
 class StagioneDetailScreen extends ConsumerWidget {
   const StagioneDetailScreen({required this.stagione, super.key});
 
   final Stagione stagione;
 
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year}';
+  static const _nomiGiorni = [
+    'Lunedì',
+    'Martedì',
+    'Mercoledì',
+    'Giovedì',
+    'Venerdì',
+    'Sabato',
+    'Domenica',
+  ];
+
+  String _titoloGiorno(DateTime d) =>
+      '${_nomiGiorni[d.weekday - 1]} ${d.day}/'
+      '${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  void _creaEvento(BuildContext context, WidgetRef ref, DateTime giorno) {
+    final sport = ref.read(currentClubProvider).value?.sport;
+    if (sport == 'nuoto') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le gare del nuoto arrivano a breve.')),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PartitaFormScreen(
+          clubId: stagione.clubId,
+          stagione: stagione,
+          dataIniziale: giorno,
+        ),
+      ),
+    );
+  }
+
+  void _apriEvento(BuildContext context, EventoCalendario evento) {
+    final origine = evento.origine;
+    if (origine is Partita) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => DistintaScreen(partita: origine)),
+      );
+    }
+  }
+
+  void _giornoSelezionato(
+    BuildContext context,
+    WidgetRef ref,
+    DateTime giorno,
+    List<EventoCalendario> eventi,
+  ) {
+    if (eventi.isEmpty) {
+      _creaEvento(context, ref, giorno);
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s16,
+            0,
+            AppSpacing.s16,
+            AppSpacing.s16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                _titoloGiorno(giorno),
+                style: AppTypography.sezione.copyWith(
+                  color: sheetContext.colori.testo,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              AppListPanel(
+                righe: [
+                  for (final e in eventi)
+                    AppListRow(
+                      titolo: e.titolo,
+                      sottotitolo: [
+                        if (e.diClub) 'Evento di tutto il club',
+                        ?e.sottotitolo,
+                      ].join(' · '),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _apriEvento(context, e);
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              SecondaryButton(
+                label: 'Aggiungi',
+                icon: Icons.add,
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  _creaEvento(context, ref, giorno);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _elimina(BuildContext context, WidgetRef ref) async {
     final conferma = await confermaEliminaStagione(context);
@@ -73,11 +181,6 @@ class StagioneDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nomeGruppo = {
-      for (final g
-          in ref.watch(gruppiListProvider(stagione.clubId)).value ?? [])
-        g.id: g.nome,
-    }[stagione.gruppoId];
     // null finche' il club non ha ancora compilato lo sport (o durante il
     // caricamento): in quel caso si mostrano entrambe le sezioni, non si
     // nasconde contenuto per un dato mancante.
@@ -85,8 +188,15 @@ class StagioneDetailScreen extends ConsumerWidget {
     final mostraPallanuoto = sport == null || sport == 'pallanuoto';
     final mostraNuoto = sport == null || sport == 'nuoto';
     final colori = context.colori;
+    final partite = mostraPallanuoto
+        ? ref.watch(partiteListProvider(stagione.clubId)).value ?? const []
+        : const <Partita>[];
+    final eventi = eventiVisibiliInStagione(stagione, [
+      for (final p in partite) EventoCalendario.daPartita(p),
+    ]);
 
     return AppScaffold(
+      scrollabile: true,
       appBar: AppBar(
         title: Text(stagione.nome),
         actions: [
@@ -147,61 +257,59 @@ class StagioneDetailScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_formattaData(stagione.dataInizio)} — '
-                  '${_formattaData(stagione.dataFine)}'
-                  '${nomeGruppo != null ? ' · $nomeGruppo' : ''}'
-                  '${stagione.campionato != null && stagione.campionato!.isNotEmpty ? ' · ${stagione.campionato}' : ''}',
-                  style: AppTypography.sezione.copyWith(color: colori.testo),
+          CalendarioStagioneView(
+            primoGiorno: stagione.dataInizio,
+            ultimoGiorno: stagione.dataFine,
+            eventi: eventi,
+            onGiornoSelezionato: (giorno, eventiDelGiorno) =>
+                _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          AppListPanel(
+            righe: [
+              if (mostraPallanuoto)
+                AppListRow(
+                  leading: const Icon(Icons.query_stats),
+                  titolo: 'Statistiche di stagione',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          StatisticheSquadraScreen(clubId: stagione.clubId),
+                    ),
+                  ),
                 ),
-                if (stagione.obiettivo != null &&
-                    stagione.obiettivo!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    stagione.obiettivo!,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: AppListPanel(
-              righe: [
-                if (mostraPallanuoto)
-                  AppListRow(
-                    leading: const Icon(Icons.query_stats),
-                    titolo: 'Statistiche di stagione',
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            StatisticheSquadraScreen(clubId: stagione.clubId),
-                      ),
+              if (mostraNuoto)
+                AppListRow(
+                  leading: const Icon(Icons.emoji_events_outlined),
+                  titolo: 'Record',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RecordClubScreen(clubId: stagione.clubId),
                     ),
                   ),
-                if (mostraNuoto)
-                  AppListRow(
-                    leading: const Icon(Icons.emoji_events_outlined),
-                    titolo: 'Record',
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            RecordClubScreen(clubId: stagione.clubId),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+                ),
+            ],
           ),
+          if ((stagione.campionato ?? '').isNotEmpty ||
+              (stagione.obiettivo ?? '').isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s16),
+            if ((stagione.campionato ?? '').isNotEmpty)
+              Text(
+                'Campionato: ${stagione.campionato}',
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
+            if ((stagione.obiettivo ?? '').isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.s4),
+              Text(
+                'Obiettivo: ${stagione.obiettivo}',
+                style: AppTypography.corpo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );

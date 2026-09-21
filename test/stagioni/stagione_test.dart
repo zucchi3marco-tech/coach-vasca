@@ -110,6 +110,50 @@ void main() {
     });
   });
 
+  group('campionatoPerData', () {
+    Stagione conCampionato(String id, String? gruppoId, String campionato) =>
+        Stagione(
+          id: id,
+          clubId: 'club',
+          nome: id,
+          dataInizio: DateTime(2026, 9),
+          dataFine: DateTime(2027, 6, 30),
+          gruppoId: gruppoId,
+          campionato: campionato,
+        );
+    final u14 = conCampionato('u14', 'g-u14', 'Serie C');
+    final u16 = conCampionato('u16', 'g-u16', 'Serie B');
+    final club = conCampionato('club', null, 'Coppa');
+    final data = DateTime(2026, 11, 3);
+
+    test('la partita di un gruppo eredita dalla stagione del suo gruppo', () {
+      expect(campionatoPerData([u16, u14, club], data, 'g-u14'), 'Serie C');
+    });
+
+    test('senza stagione del gruppo usa quella di club', () {
+      expect(campionatoPerData([u16, club], data, 'g-u14'), 'Coppa');
+    });
+
+    test('mai il campionato di un altro gruppo', () {
+      expect(campionatoPerData([u16], data, 'g-u14'), isNull);
+    });
+
+    test(
+      'partita di club: stagione di club, altrimenti la prima che copre',
+      () {
+        expect(campionatoPerData([u16, club], data, null), 'Coppa');
+        expect(campionatoPerData([u16], data, null), 'Serie B');
+      },
+    );
+
+    test('fuori da ogni stagione: nessun campionato', () {
+      expect(
+        campionatoPerData([u14, club], DateTime(2028, 1, 1), 'g-u14'),
+        isNull,
+      );
+    });
+  });
+
   group('visibileNelGruppo', () {
     test('senza filtro tutto è visibile', () {
       expect(

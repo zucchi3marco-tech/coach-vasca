@@ -67,3 +67,37 @@ Stagione? stagioneCorrenteDiGruppo(
   }
   return null;
 }
+
+/// Il campionato che una partita eredita dalla stagione che ne comprende la
+/// data: preferisce una stagione del suo gruppo, poi una di club (senza
+/// gruppo). Una partita di club (senza gruppo) usa una stagione di club e,
+/// solo se non c'è, la prima che copre la data (compatibilità con le
+/// partite create prima della divisione per gruppo). Mai la stagione di
+/// un altro gruppo per una partita che ha un gruppo.
+String? campionatoPerData(
+  List<Stagione> stagioni,
+  DateTime data,
+  String? gruppoId,
+) {
+  final giorno = DateTime(data.year, data.month, data.day);
+  final coprono = [
+    for (final s in stagioni)
+      if (!giorno.isBefore(
+            DateTime(s.dataInizio.year, s.dataInizio.month, s.dataInizio.day),
+          ) &&
+          !giorno.isAfter(
+            DateTime(s.dataFine.year, s.dataFine.month, s.dataFine.day),
+          ))
+        s,
+  ];
+  if (gruppoId != null) {
+    for (final s in coprono) {
+      if (s.gruppoId == gruppoId) return s.campionato;
+    }
+  }
+  for (final s in coprono) {
+    if (s.gruppoId == null) return s.campionato;
+  }
+  if (gruppoId == null && coprono.isNotEmpty) return coprono.first.campionato;
+  return null;
+}
