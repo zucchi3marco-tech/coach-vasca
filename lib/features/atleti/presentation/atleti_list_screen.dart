@@ -17,7 +17,6 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/icon_badge.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
-import '../../../widgets/stat_panel.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -268,9 +267,11 @@ class _RiepilogoClub extends ConsumerWidget {
     }
 
     return PoolCard(
-      child: Wrap(
-        spacing: AppSpacing.s24,
-        runSpacing: AppSpacing.s16,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: AppSpacing.s12,
+      ),
+      child: Row(
         children: [
           _VoceRiepilogo(
             icona: Icons.groups_outlined,
@@ -311,13 +312,32 @@ class _VoceRiepilogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconBadge(icona, colore: colore, dimensione: 40),
-        const SizedBox(width: AppSpacing.s12),
-        StatPanel(etichetta: etichetta, valore: valore),
-      ],
+    // Solo icona e dato: l'etichetta resta come descrizione per i lettori
+    // di schermo e come suggerimento al passaggio del mouse / tocco
+    // prolungato.
+    return Expanded(
+      child: Semantics(
+        label: '$etichetta: $valore',
+        excludeSemantics: true,
+        child: Tooltip(
+          message: etichetta,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconBadge(icona, colore: colore, dimensione: 36),
+              const SizedBox(height: AppSpacing.s4),
+              Text(
+                valore,
+                style: AppTypography.numerica(
+                  AppTypography.numeroMedio.copyWith(
+                    color: context.colori.testo,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
