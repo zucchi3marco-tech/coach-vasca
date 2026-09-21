@@ -283,7 +283,7 @@ Tutto ciò che è ancora aperto, in un unico posto (raccolto il 2026-09-21): pri
 
 ### Test e processo di lavoro
 
-- [ ] Checklist di test manuale prima di chiudere una fase (FASE 2)
+- [x] Checklist di test manuale prima di chiudere una fase (FASE 2) — scritta il 2026-09-21 in `CHECKLIST_TEST.md` (allenatore, atleta, senza rete, telefono; con le funzioni nuove di questa settimana). **Da passare a mano** prima di chiudere la prossima fase: da qui non si può fare un login reale
 - [ ] Test su Chrome + telefono Android reale (FASE 2)
 - [ ] Commit frequenti su branch feature, merge su main solo quando funziona (FASE 2)
 - [ ] 2-3 sessioni vere in piscina (FASE 6)
