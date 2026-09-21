@@ -21,47 +21,53 @@ Atleta _atleta(String id, String cognome) => Atleta(
 );
 
 void main() {
-  testWidgets('il riepilogo mostra solo le icone con il dato sotto', (
-    tester,
-  ) async {
-    final domani = DateTime.now().add(const Duration(days: 1));
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          atletiListProvider.overrideWith(
-            (ref, filter) => Stream.value([
-              _atleta('a1', 'Rossi'),
-              _atleta('a2', 'Bianchi'),
-            ]),
+  testWidgets(
+    'il riepilogo mostra icone, dato sotto e una didascalia piccola',
+    (tester) async {
+      final domani = DateTime.now().add(const Duration(days: 1));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            atletiListProvider.overrideWith(
+              (ref, filter) => Stream.value([
+                _atleta('a1', 'Rossi'),
+                _atleta('a2', 'Bianchi'),
+              ]),
+            ),
+            gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
+            allenamentiListProvider.overrideWith(
+              (ref, clubId) => Stream.value([
+                Allenamento(id: 'x', clubId: 'c1', data: domani),
+              ]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.chiaro,
+            home: const AtletiListScreen(clubId: 'c1'),
           ),
-          gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
-          allenamentiListProvider.overrideWith(
-            (ref, clubId) => Stream.value([
-              Allenamento(id: 'x', clubId: 'c1', data: domani),
-            ]),
-          ),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.chiaro,
-          home: const AtletiListScreen(clubId: 'c1'),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.event_available_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.event_available_outlined), findsOneWidget);
 
-    // Il dato sta sotto la sua icona.
-    final iconaAtleti = tester.getCenter(find.byIcon(Icons.groups_outlined));
-    final datoAtleti = tester.getCenter(find.text('2').first);
-    expect(datoAtleti.dy, greaterThan(iconaAtleti.dy));
-    expect((datoAtleti.dx - iconaAtleti.dx).abs(), lessThan(2));
+      // Il dato sta sotto la sua icona.
+      final iconaAtleti = tester.getCenter(find.byIcon(Icons.groups_outlined));
+      final datoAtleti = tester.getCenter(find.text('2').first);
+      expect(datoAtleti.dy, greaterThan(iconaAtleti.dy));
+      expect((datoAtleti.dx - iconaAtleti.dx).abs(), lessThan(2));
 
-    // Niente etichette di testo: restano solo come suggerimento.
-    expect(find.text('Atleti attivi'), findsNothing);
-    expect(find.text('Prossimo allenamento'), findsNothing);
-    expect(find.text('Nei prossimi 7 giorni'), findsNothing);
-  });
+      // Sotto ogni dato, la sua didascalia.
+      for (final didascalia in [
+        'Atleti attivi',
+        'Prossimo allenamento',
+        'Nei prossimi 7 giorni',
+      ]) {
+        final centro = tester.getCenter(find.text(didascalia));
+        expect(centro.dy, greaterThan(datoAtleti.dy));
+      }
+    },
+  );
 }

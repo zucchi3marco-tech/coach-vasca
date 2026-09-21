@@ -312,30 +312,34 @@ class _VoceRiepilogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Solo icona e dato: l'etichetta resta come descrizione per i lettori
-    // di schermo e come suggerimento al passaggio del mouse / tocco
-    // prolungato.
+    // Icona, dato e una didascalia piccola: la riga resta bassa, ma ogni
+    // numero dice cosa conta.
+    final colori = context.colori;
     return Expanded(
       child: Semantics(
         label: '$etichetta: $valore',
         excludeSemantics: true,
-        child: Tooltip(
-          message: etichetta,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconBadge(icona, colore: colore, dimensione: 36),
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                valore,
-                style: AppTypography.numerica(
-                  AppTypography.numeroMedio.copyWith(
-                    color: context.colori.testo,
-                  ),
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconBadge(icona, colore: colore, dimensione: 36),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              valore,
+              style: AppTypography.numerica(
+                AppTypography.numeroMedio.copyWith(color: colori.testo),
               ),
-            ],
-          ),
+            ),
+            Text(
+              etichetta,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ],
         ),
       ),
     );
