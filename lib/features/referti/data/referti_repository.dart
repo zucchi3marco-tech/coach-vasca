@@ -68,7 +68,8 @@ class RefertiRepository {
             'Prova con una foto più nitida o riprova.';
       default:
         final errore = dettagli is Map ? dettagli['error'] as String? : null;
-        return errore ?? 'Errore imprevisto nella lettura del referto. Riprova.';
+        return errore ??
+            'Errore imprevisto nella lettura del referto. Riprova.';
     }
   }
 
@@ -92,15 +93,15 @@ class RefertiRepository {
       squadraTrasferta: row.squadraTrasferta,
       risultatoCasa: row.risultatoCasa,
       risultatoTrasferta: row.risultatoTrasferta,
-      parziali: _asListaMappe(
-        jsonDecode(row.parzialiJson),
-      ).map(ParzialeReferto.fromMap).toList(),
-      giocatoriCasa: _asListaMappe(
-        jsonDecode(row.giocatoriCasaJson),
-      ).map(GiocatoreReferto.fromMap).toList(),
-      giocatoriTrasferta: _asListaMappe(
-        jsonDecode(row.giocatoriTrasfertaJson),
-      ).map(GiocatoreReferto.fromMap).toList(),
+      parziali: _asListaMappe(jsonDecode(row.parzialiJson))
+          .map(ParzialeReferto.fromMap)
+          .toList(),
+      giocatoriCasa: _asListaMappe(jsonDecode(row.giocatoriCasaJson))
+          .map(GiocatoreReferto.fromMap)
+          .toList(),
+      giocatoriTrasferta: _asListaMappe(jsonDecode(row.giocatoriTrasfertaJson))
+          .map(GiocatoreReferto.fromMap)
+          .toList(),
     );
   }
 
@@ -113,15 +114,15 @@ class RefertiRepository {
       squadraTrasferta: map['squadra_trasferta'] as String,
       risultatoCasa: map['risultato_casa'] as int,
       risultatoTrasferta: map['risultato_trasferta'] as int,
-      parziali: _asListaMappe(
-        map['parziali'],
-      ).map(ParzialeReferto.fromMap).toList(),
-      giocatoriCasa: _asListaMappe(
-        map['giocatori_casa'],
-      ).map(GiocatoreReferto.fromMap).toList(),
-      giocatoriTrasferta: _asListaMappe(
-        map['giocatori_trasferta'],
-      ).map(GiocatoreReferto.fromMap).toList(),
+      parziali: _asListaMappe(map['parziali'])
+          .map(ParzialeReferto.fromMap)
+          .toList(),
+      giocatoriCasa: _asListaMappe(map['giocatori_casa'])
+          .map(GiocatoreReferto.fromMap)
+          .toList(),
+      giocatoriTrasferta: _asListaMappe(map['giocatori_trasferta'])
+          .map(GiocatoreReferto.fromMap)
+          .toList(),
     );
   }
 
@@ -225,11 +226,7 @@ class RefertiRepository {
         _db.refertiPartitaTable,
       )..where((t) => t.partitaId.equals(partitaId))).getSingleOrNull();
       final id = esistente?.id ?? _uuid.v4();
-      final payloadCompleto = {
-        ...payload,
-        'id': id,
-        'club_id': partita.clubId,
-      };
+      final payloadCompleto = {...payload, 'id': id, 'club_id': partita.clubId};
       await _db
           .into(_db.refertiPartitaTable)
           .insertOnConflictUpdate(_companionFromMap(payloadCompleto));

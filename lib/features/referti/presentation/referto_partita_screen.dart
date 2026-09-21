@@ -9,6 +9,7 @@ import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/cap_badge.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -16,32 +17,72 @@ import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../domain/referto_letto.dart';
 import '../domain/referto_partita.dart';
+import 'leggi_referto_screen.dart';
 
 /// Mostra il referto gia' salvato per questa partita (risultato finale,
-/// parziali, rose complete di reti/espulsioni), se esiste. Il salvataggio
-/// vero e proprio avviene da "Leggi referto" (tab Partite): questa
-/// schermata e' solo di consultazione.
+/// parziali, rose complete di reti/espulsioni), se esiste. Da qui si legge
+/// anche un nuovo referto da una foto ("Leggi referto"), gia' assegnato a
+/// questa partita; se ne esiste uno, "Rileggi referto" lo sostituisce.
 class RefertoPartitaScreen extends ConsumerWidget {
   const RefertoPartitaScreen({required this.partita, super.key});
 
   final Partita partita;
+
+  void _leggiReferto(BuildContext context) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => LeggiRefertoScreen(partita: partita)),
+  );
+
+  Future<void> _rileggiReferto(BuildContext context) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sostituire il referto salvato?'),
+        content: const Text(
+          'Leggendo una nuova foto, il referto attuale di questa partita '
+          'viene sostituito.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annulla'),
+          ),
+          DangerButton(
+            label: 'Sostituisci',
+            expanded: false,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (conferma == true && context.mounted) _leggiReferto(context);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final refertoAsync = ref.watch(refertoPerPartitaProvider(partita.id));
 
     return AppScaffold(
-      appBar: AppBar(title: const Text('Referto')),
+      appBar: AppBar(
+        title: const Text('Referto'),
+        actions: [
+          if (refertoAsync.value != null)
+            TextButton.icon(
+              onPressed: () => _rileggiReferto(context),
+              icon: const Icon(Icons.document_scanner_outlined),
+              label: const Text('Rileggi referto'),
+            ),
+        ],
+      ),
       body: refertoAsync.when(
         data: (referto) => referto == null
             ? EmptyState(
                 icona: Icons.description_outlined,
                 titolo: 'Nessun referto salvato',
                 descrizione:
-                    'Usa "Leggi referto" dalla lista partite per '
-                    'digitalizzarne uno da una foto.',
-                azionePrincipale: 'Torna indietro',
-                onAzionePrincipale: () => Navigator.of(context).pop(),
+                    'Scatta o carica la foto del referto: i dati letti '
+                    'vengono assegnati a questa partita.',
+                azionePrincipale: 'Leggi referto',
+                onAzionePrincipale: () => _leggiReferto(context),
               )
             : _RefertoSalvatoView(referto: referto),
         loading: () => const Padding(

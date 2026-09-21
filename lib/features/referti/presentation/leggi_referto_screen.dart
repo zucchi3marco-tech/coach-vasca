@@ -15,18 +15,18 @@ import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
-import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/data/distinta_repository.dart';
-import '../../pallanuoto/data/partite_repository.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../data/referti_repository.dart';
 import '../domain/referto_letto.dart';
 
 class LeggiRefertoScreen extends ConsumerStatefulWidget {
-  const LeggiRefertoScreen({required this.clubId, super.key});
+  const LeggiRefertoScreen({required this.partita, super.key});
 
-  final String clubId;
+  /// La partita a cui appartiene il referto: si arriva qui dalla partita
+  /// stessa, quindi il referto è già assegnato a quella giusta.
+  final Partita partita;
 
   @override
   ConsumerState<LeggiRefertoScreen> createState() => _LeggiRefertoScreenState();
@@ -177,7 +177,7 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
             _RefertoModificabile(
               key: ObjectKey(_risultato),
               referto: _risultato!,
-              clubId: widget.clubId,
+              partita: widget.partita,
             ),
           ],
         ],
@@ -198,12 +198,12 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
 class _RefertoModificabile extends ConsumerStatefulWidget {
   const _RefertoModificabile({
     required this.referto,
-    required this.clubId,
+    required this.partita,
     super.key,
   });
 
   final RefertoLetto referto;
-  final String clubId;
+  final Partita partita;
 
   @override
   ConsumerState<_RefertoModificabile> createState() =>
@@ -410,34 +410,8 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
       }
 
       if (!mounted) return;
-      final scelta = await showDialog<_ScelteSalvataggio>(
-        context: context,
-        builder: (context) => _DialogSceltaPartita(clubId: widget.clubId),
-      );
-      if (scelta == null) return;
-
-      String partitaId;
-      String nostraSquadra;
-      if (scelta.partitaEsistente != null) {
-        partitaId = scelta.partitaEsistente!.id;
-        nostraSquadra = scelta.partitaEsistente!.nostraSquadra;
-      } else {
-        final nuova = await ref
-            .read(partiteRepositoryProvider)
-            .createPartita(
-              clubId: widget.clubId,
-              data: scelta.dataNuovaPartita!,
-              squadraCasa: squadraCasa,
-              squadraTrasferta: squadraTrasferta,
-              numeroMaxConvocati: 15,
-              dettaglioTiro: 'semplice',
-              tracciaTempo: true,
-              modalitaSuperiorita: 'singolo',
-              nostraSquadra: scelta.nostraSquadraNuova!,
-            );
-        partitaId = nuova.id;
-        nostraSquadra = scelta.nostraSquadraNuova!;
-      }
+      final partitaId = widget.partita.id;
+      final nostraSquadra = widget.partita.nostraSquadra;
 
       final nostriGiocatori = nostraSquadra == 'casa'
           ? _giocatoriCasaCtrl
@@ -447,7 +421,7 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
         context: context,
         barrierDismissible: false,
         builder: (context) => _DialogCollegaAtleti(
-          clubId: widget.clubId,
+          clubId: widget.partita.clubId,
           partitaId: partitaId,
           giocatori: nostriGiocatori,
         ),
@@ -483,198 +457,14 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Referto salvato.')));
+        // Si torna alla partita: il referto salvato compare lì.
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) setState(() => _saveError = messaggioErrore(e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
-  }
-}
-
-/// Esito del dialog di scelta: o una partita esistente, o data + nostra
-/// squadra (casa/trasferta) per una nuova partita da creare al volo (nome
-/// squadre presi dal referto).
-class _ScelteSalvataggio {
-  const _ScelteSalvataggio({
-    this.partitaEsistente,
-    this.dataNuovaPartita,
-    this.nostraSquadraNuova,
-  });
-
-  final Partita? partitaEsistente;
-  final DateTime? dataNuovaPartita;
-  final String? nostraSquadraNuova;
-}
-
-class _DialogSceltaPartita extends ConsumerStatefulWidget {
-  const _DialogSceltaPartita({required this.clubId});
-
-  final String clubId;
-
-  @override
-  ConsumerState<_DialogSceltaPartita> createState() =>
-      _DialogSceltaPartitaState();
-}
-
-class _DialogSceltaPartitaState extends ConsumerState<_DialogSceltaPartita> {
-  bool _nuovaPartita = false;
-  Partita? _partitaSelezionata;
-  DateTime _dataNuovaPartita = DateTime.now();
-  String _nostraSquadraNuova = 'casa';
-
-  Future<void> _pickData() async {
-    final selezionata = await showDatePicker(
-      context: context,
-      initialDate: _dataNuovaPartita,
-      firstDate: DateTime(DateTime.now().year - 2),
-      lastDate: DateTime(DateTime.now().year + 2),
-    );
-    if (selezionata != null) {
-      setState(() => _dataNuovaPartita = selezionata);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final partiteAsync = ref.watch(partiteListProvider(widget.clubId));
-    final colori = context.colori;
-
-    return AlertDialog(
-      title: const Text('Collega il referto a una partita'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('Partita esistente')),
-                ButtonSegment(value: true, label: Text('Nuova partita')),
-              ],
-              selected: {_nuovaPartita},
-              onSelectionChanged: (s) =>
-                  setState(() => _nuovaPartita = s.first),
-            ),
-            const SizedBox(height: AppSpacing.s12),
-            if (!_nuovaPartita)
-              partiteAsync.when(
-                data: (partite) => partite.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: AppSpacing.s16),
-                        child: Text(
-                          'Nessuna partita in agenda per il club.',
-                          style: AppTypography.corpo.copyWith(
-                            color: colori.testo,
-                          ),
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(left: AppSpacing.s16),
-                        child: DropdownButtonFormField<Partita>(
-                          initialValue: _partitaSelezionata,
-                          isExpanded: true,
-                          hint: const Text('Scegli la partita'),
-                          items: [
-                            for (final p in partite)
-                              DropdownMenuItem(
-                                value: p,
-                                child: Text(
-                                  '${p.squadraCasa} - ${p.squadraTrasferta} '
-                                  '(${p.data.day.toString().padLeft(2, '0')}/'
-                                  '${p.data.month.toString().padLeft(2, '0')}/'
-                                  '${p.data.year})',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _partitaSelezionata = v),
-                        ),
-                      ),
-                loading: () => const Padding(
-                  padding: EdgeInsets.only(left: AppSpacing.s16),
-                  child: LinearProgressIndicator(),
-                ),
-                error: (e, _) => Padding(
-                  padding: const EdgeInsets.only(left: AppSpacing.s16),
-                  child: Text(
-                    messaggioErrore(e),
-                    style: AppTypography.piccolo.copyWith(color: colori.rosso),
-                  ),
-                ),
-              ),
-            if (_nuovaPartita)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.s16),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data partita'),
-                  subtitle: Text(
-                    '${_dataNuovaPartita.day.toString().padLeft(2, '0')}/'
-                    '${_dataNuovaPartita.month.toString().padLeft(2, '0')}/'
-                    '${_dataNuovaPartita.year}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: _pickData,
-                ),
-              ),
-            if (_nuovaPartita) ...[
-              const SizedBox(height: AppSpacing.s8),
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.s16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'La mia squadra',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'casa', label: Text('Casa')),
-                        ButtonSegment(
-                          value: 'trasferta',
-                          label: Text('Trasferta'),
-                        ),
-                      ],
-                      selected: {_nostraSquadraNuova},
-                      onSelectionChanged: (s) =>
-                          setState(() => _nostraSquadraNuova = s.first),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: (!_nuovaPartita && _partitaSelezionata == null)
-              ? null
-              : () => Navigator.of(context).pop(
-                  _nuovaPartita
-                      ? _ScelteSalvataggio(
-                          dataNuovaPartita: _dataNuovaPartita,
-                          nostraSquadraNuova: _nostraSquadraNuova,
-                        )
-                      : _ScelteSalvataggio(
-                          partitaEsistente: _partitaSelezionata,
-                        ),
-                ),
-          child: const Text('Conferma'),
-        ),
-      ],
-    );
   }
 }
 

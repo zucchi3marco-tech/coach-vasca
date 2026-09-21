@@ -230,6 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             PartiteListScreen(
               clubId: club.id,
               filtroGruppoId: selezione.gruppoId,
+              onVaiAStagioni: () => setState(() => _tabIndex = 2),
             ),
           ],
         );

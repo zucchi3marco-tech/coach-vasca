@@ -8,9 +8,7 @@ import '../domain/referto_partita.dart';
 /// invalidato esplicitamente dopo un salvataggio riuscito (vedi
 /// leggi_referto_screen.dart) perche' e' una lettura una tantum, non un
 /// watch continuo su Supabase/Drift.
-final refertoPerPartitaProvider = FutureProvider.family<RefertoPartita?, String>((
-  ref,
-  partitaId,
-) {
-  return ref.watch(refertiRepositoryProvider).perPartita(partitaId);
-});
+final refertoPerPartitaProvider =
+    FutureProvider.family<RefertoPartita?, String>((ref, partitaId) {
+      return ref.watch(refertiRepositoryProvider).perPartita(partitaId);
+    });

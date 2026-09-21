@@ -55,9 +55,7 @@ class EventiPartitaRepository {
       numeroCalottinaAvversario: Value(
         map['numero_calottina_avversario'] as int?,
       ),
-      espulsioneDaRigore: Value(
-        map['espulsione_da_rigore'] as bool? ?? false,
-      ),
+      espulsioneDaRigore: Value(map['espulsione_da_rigore'] as bool? ?? false),
       creatoIl: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
@@ -142,10 +140,11 @@ class EventiPartitaRepository {
       return rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final righe = await (_db.select(_db.eventiPartitaTable)
-            ..where((t) => t.atletaId.equals(atletaId))
-            ..where((t) => t.tipo.equals('tiro')))
-          .get();
+      final righe =
+          await (_db.select(_db.eventiPartitaTable)
+                ..where((t) => t.atletaId.equals(atletaId))
+                ..where((t) => t.tipo.equals('tiro')))
+              .get();
       return righe.map(_fromRow).toList();
     }
   }

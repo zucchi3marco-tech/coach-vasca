@@ -101,3 +101,24 @@ String? campionatoPerData(
   if (gruppoId == null && coprono.isNotEmpty) return coprono.first.campionato;
   return null;
 }
+
+/// La stagione di cui mostrare partite/gare in elenco: quella in corso del
+/// gruppo (o di club); se oggi nessuna è in corso, la più recente fra
+/// quelle visibili al gruppo. Torna null se non esiste nessuna stagione
+/// visibile. [gruppoId] null = "Tutti gli atleti": tutte le stagioni sono
+/// visibili.
+Stagione? stagionePerElenco(
+  List<Stagione> stagioni,
+  String? gruppoId, {
+  DateTime? oggi,
+}) {
+  final corrente = stagioneCorrenteDiGruppo(stagioni, gruppoId, oggi: oggi);
+  if (corrente != null) return corrente;
+  final visibili = [
+    for (final s in stagioni)
+      if (gruppoId == null || s.gruppoId == null || s.gruppoId == gruppoId) s,
+  ];
+  if (visibili.isEmpty) return null;
+  visibili.sort((a, b) => b.dataFine.compareTo(a.dataFine));
+  return visibili.first;
+}
