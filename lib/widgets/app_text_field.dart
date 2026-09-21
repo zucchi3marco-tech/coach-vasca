@@ -23,6 +23,8 @@ class AppTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.onChanged,
     this.focusNode,
+    this.valoreIniziale,
+    this.abilitato = true,
     super.key,
   });
 
@@ -45,6 +47,11 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final ValueChanged<String>? onChanged;
 
+  /// Testo di un campo di sola visualizzazione (senza controller): per un
+  /// valore che cambia, dare al widget una `key` che cambi con esso.
+  final String? valoreIniziale;
+  final bool abilitato;
+
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
@@ -60,6 +67,8 @@ class AppTextField extends StatelessWidget {
         const SizedBox(height: AppSpacing.s8),
         TextFormField(
           controller: controller,
+          initialValue: controller == null ? valoreIniziale : null,
+          enabled: abilitato,
           focusNode: focusNode,
           validator: validator,
           keyboardType: keyboardType,

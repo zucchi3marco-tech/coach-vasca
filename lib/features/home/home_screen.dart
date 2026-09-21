@@ -223,7 +223,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               clubId: club.id,
               filtroGruppoId: selezione.gruppoId,
             ),
-            StagioniListScreen(clubId: club.id),
+            StagioniListScreen(
+              clubId: club.id,
+              filtroGruppoId: selezione.gruppoId,
+            ),
             PartiteListScreen(
               clubId: club.id,
               filtroGruppoId: selezione.gruppoId,

@@ -24,20 +24,46 @@ class Stagione {
   final String? campionato;
 }
 
-/// La stagione che contiene la data odierna, preferendo quelle del
-/// gruppo indicato (fallback su tutte se nessuna stagione ha quel
-/// gruppo) — usata per la "stagione in corso" nella home dell'atleta.
-/// Torna null se nessuna stagione contiene oggi.
-Stagione? stagioneCorrenteDiGruppo(List<Stagione> stagioni, String? gruppoId) {
+/// Etichetta della "categoria" di una stagione di club (senza gruppo).
+const etichettaTuttiGliAtleti = 'Tutti gli atleti';
+
+String _giornoMeseAnno(DateTime d) =>
+    '${d.day}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+/// Titolo automatico di una stagione, es. "Campionato U14 -
+/// 1/09/2026-30/06/2027": parola fissa "Campionato", la categoria (il
+/// nome del gruppo, oppure [etichettaTuttiGliAtleti]) e le date.
+String titoloStagione({
+  required String? categoria,
+  required DateTime dataInizio,
+  required DateTime dataFine,
+}) {
+  final cat = (categoria == null || categoria.trim().isEmpty)
+      ? ''
+      : ' ${categoria.trim()}';
+  return 'Campionato$cat - ${_giornoMeseAnno(dataInizio)}-'
+      '${_giornoMeseAnno(dataFine)}';
+}
+
+/// La stagione che contiene la data odierna: preferisce quelle del gruppo
+/// indicato, altrimenti quelle di club (senza gruppo) — mai quelle di un
+/// altro gruppo. [gruppoId] null = nessun gruppo: solo le stagioni di
+/// club. Usata per la "stagione in corso" (home dell'atleta, tab Partite).
+/// Torna null se nessuna stagione visibile contiene oggi.
+Stagione? stagioneCorrenteDiGruppo(
+  List<Stagione> stagioni,
+  String? gruppoId, {
+  DateTime? oggi,
+}) {
+  final data = oggi ?? DateTime.now();
+  bool inCorso(Stagione s) =>
+      !data.isBefore(s.dataInizio) && !data.isAfter(s.dataFine);
   final delGruppo = gruppoId == null
-      ? stagioni
-      : stagioni.where((s) => s.gruppoId == gruppoId).toList();
-  final candidate = delGruppo.isEmpty ? stagioni : delGruppo;
-  final oggi = DateTime.now();
-  for (final s in candidate) {
-    if (!oggi.isBefore(s.dataInizio) && !oggi.isAfter(s.dataFine)) {
-      return s;
-    }
+      ? const <Stagione>[]
+      : stagioni.where((s) => s.gruppoId == gruppoId && inCorso(s));
+  if (delGruppo.isNotEmpty) return delGruppo.first;
+  for (final s in stagioni) {
+    if (s.gruppoId == null && inCorso(s)) return s;
   }
   return null;
 }

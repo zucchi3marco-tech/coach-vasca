@@ -5,11 +5,12 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/stagione.dart';
 import 'elimina_dialogs.dart';
@@ -26,7 +27,6 @@ class StagioneFormScreen extends ConsumerStatefulWidget {
 
 class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nomeController;
   late final TextEditingController _obiettivoController;
   String? _gruppoId;
   late final TextEditingController _campionatoController;
@@ -44,9 +44,12 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
   void initState() {
     super.initState();
     final s = widget.stagione;
-    _nomeController = TextEditingController(text: s?.nome ?? '');
     _obiettivoController = TextEditingController(text: s?.obiettivo ?? '');
-    _gruppoId = s?.gruppoId;
+    // In creazione la stagione prende il gruppo su cui si sta lavorando
+    // (null = "Tutti gli atleti": stagione di club); in modifica lo mantiene.
+    _gruppoId = s != null
+        ? s.gruppoId
+        : ref.read(selezioneGruppoProvider)?.gruppoId;
     _campionatoController = TextEditingController(text: s?.campionato ?? '');
     final oggi = DateTime.now();
     _dataInizio = s?.dataInizio ?? DateTime(oggi.year, 9);
@@ -59,7 +62,6 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
 
   @override
   void dispose() {
-    _nomeController.dispose();
     _obiettivoController.dispose();
     _campionatoController.dispose();
     _dataInizioController.dispose();
@@ -102,6 +104,16 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
     }
   }
 
+  /// La "categoria" della stagione: il nome del gruppo in uso, oppure
+  /// "Tutti gli atleti" per una stagione di club (nessun gruppo).
+  String _categoria(List<Gruppo> gruppi) {
+    if (_gruppoId == null) return etichettaTuttiGliAtleti;
+    for (final g in gruppi) {
+      if (g.id == _gruppoId) return g.nome;
+    }
+    return '';
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_dataFine.isBefore(_dataInizio)) {
@@ -119,10 +131,16 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
 
     final repository = ref.read(stagioniRepositoryProvider);
     try {
+      final gruppi = await ref.read(gruppiListProvider(widget.clubId).future);
+      final nome = titoloStagione(
+        categoria: _categoria(gruppi),
+        dataInizio: _dataInizio,
+        dataFine: _dataFine,
+      );
       if (_isEditing) {
         await repository.updateStagione(
           id: widget.stagione!.id,
-          nome: _nomeController.text.trim(),
+          nome: nome,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
@@ -132,7 +150,7 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
       } else {
         await repository.createStagione(
           clubId: widget.clubId,
-          nome: _nomeController.text.trim(),
+          nome: nome,
           dataInizio: _dataInizio,
           dataFine: _dataFine,
           obiettivo: _obiettivoController.text.trim(),
@@ -183,13 +201,6 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              etichetta: 'Nome',
-              controller: _nomeController,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
               etichetta: 'Data inizio',
               controller: _dataInizioController,
               readOnly: true,
@@ -211,29 +222,20 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
               maxLines: 2,
             ),
             const SizedBox(height: AppSpacing.s16),
-            AppSelect<String?>(
-              etichetta: 'Gruppo (facoltativo)',
-              value: _gruppoId,
-              hint: 'Nessun gruppo',
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Nessun gruppo'),
-                ),
-                for (final g in gruppi)
-                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
-                if (_gruppoId != null && !gruppi.any((g) => g.id == _gruppoId))
-                  DropdownMenuItem(
-                    value: _gruppoId,
-                    child: const Text('Gruppo non trovato'),
-                  ),
-              ],
-              onChanged: (value) => setState(() => _gruppoId = value),
-            ),
-            const SizedBox(height: AppSpacing.s16),
             AppTextField(
               etichetta: 'Campionato (facoltativo)',
               controller: _campionatoController,
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppTextField(
+              key: ValueKey('categoria-${_categoria(gruppi)}'),
+              etichetta: 'Categoria',
+              valoreIniziale: _categoria(gruppi),
+              readOnly: true,
+              abilitato: false,
+              aiuto:
+                  'È il gruppo su cui stai lavorando: il titolo della '
+                  'stagione si compone da solo.',
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s12),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
@@ -12,13 +13,21 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/stagioni_providers.dart';
 import '../data/stagioni_repository.dart';
+import '../domain/stagione.dart';
 import 'stagione_detail_screen.dart';
 import 'stagione_form_screen.dart';
 
 class StagioniListScreen extends ConsumerWidget {
-  const StagioniListScreen({required this.clubId, super.key});
+  const StagioniListScreen({
+    required this.clubId,
+    this.filtroGruppoId,
+    super.key,
+  });
 
   final String clubId;
+
+  /// null = nessun filtro (stagioni di tutti i gruppi).
+  final String? filtroGruppoId;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -27,7 +36,20 @@ class StagioniListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stagioniAsync = ref.watch(stagioniListProvider(clubId));
+    // Una stagione con gruppo è visibile solo a quel gruppo; una senza
+    // gruppo è una stagione di club, visibile a tutti.
+    final stagioniAsync = ref
+        .watch(stagioniListProvider(clubId))
+        .whenData(
+          (stagioni) => stagioni
+              .where(
+                (s) => visibileNelGruppo(
+                  gruppoDelRecord: s.gruppoId,
+                  gruppoSelezionato: filtroGruppoId,
+                ),
+              )
+              .toList(),
+        );
     final Map<String, String> nomiGruppi = {
       for (final g in ref.watch(gruppiListProvider(clubId)).value ?? [])
         g.id: g.nome,
@@ -68,13 +90,12 @@ class StagioniListScreen extends ConsumerWidget {
                           sottotitolo:
                               '${_formattaData(s.dataInizio)} — '
                               '${_formattaData(s.dataFine)}'
-                              '${nomiGruppi[s.gruppoId] != null ? ' · ${nomiGruppi[s.gruppoId]}' : ''}'
+                              ' · ${s.gruppoId == null ? etichettaTuttiGliAtleti : (nomiGruppi[s.gruppoId] ?? '')}'
                               '${s.campionato != null && s.campionato!.isNotEmpty ? ' · ${s.campionato}' : ''}',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  StagioneDetailScreen(stagione: s),
+                              builder: (_) => StagioneDetailScreen(stagione: s),
                             ),
                           ),
                         ),
