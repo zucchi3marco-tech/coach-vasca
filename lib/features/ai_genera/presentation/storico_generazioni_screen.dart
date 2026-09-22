@@ -14,6 +14,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/generazione_ai_registrata.dart';
+import '../domain/riassunto_parametri.dart';
 
 const _voxPerPagina = 30;
 
@@ -79,15 +80,6 @@ class _StoricoGenerazioniScreenState
       '${data.year} ${data.hour.toString().padLeft(2, '0')}:'
       '${data.minute.toString().padLeft(2, '0')}';
 
-  String _riassuntoParametri(Map<String, dynamic> p) {
-    final parti = <String>[];
-    if (p['gruppo'] != null) parti.add(p['gruppo'] as String);
-    if (p['livello'] != null) parti.add(p['livello'] as String);
-    if (p['volumeMetri'] != null) parti.add('${p['volumeMetri']} m');
-    if (p['focus'] != null) parti.add(p['focus'] as String);
-    return parti.join(' · ');
-  }
-
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
@@ -137,7 +129,7 @@ class _StoricoGenerazioniScreenState
                           ? colori.ok
                           : colori.testoTenue,
                     ),
-                    titolo: _riassuntoParametri(voce.parametri),
+                    titolo: riassuntoParametriGenerazione(voce.parametri),
                     sottotitolo:
                         '${_formattaData(voce.creatoIl)} · '
                         '${!voce.successo

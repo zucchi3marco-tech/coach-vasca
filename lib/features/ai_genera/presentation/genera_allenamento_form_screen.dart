@@ -250,7 +250,7 @@ class _GeneraAllenamentoFormScreenState
             .read(generazioniAiRepositoryProvider)
             .registraGenerazione(
               clubId: widget.clubId,
-              parametri: parametri,
+              parametri: parametri.toMap(),
               esito: 'successo',
               scheda: scheda.toMap(),
             );
@@ -282,7 +282,7 @@ class _GeneraAllenamentoFormScreenState
             .read(generazioniAiRepositoryProvider)
             .registraGenerazione(
               clubId: widget.clubId,
-              parametri: parametri,
+              parametri: parametri.toMap(),
               esito: 'errore',
               messaggioErrore: e.toString(),
             );

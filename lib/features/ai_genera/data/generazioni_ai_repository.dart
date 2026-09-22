@@ -9,7 +9,6 @@ import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../domain/generazione_ai_registrata.dart';
-import '../domain/parametri_generazione.dart';
 
 const _uuid = Uuid();
 
@@ -26,9 +25,14 @@ class GenerazioniAiRepository {
   final AppDatabase _db;
   final SyncEngine _syncEngine;
 
+  /// [parametri] è una mappa grezza (non più `ParametriGenerazione`): la
+  /// dettatura vocale registra una forma diversa (`{modalita: 'dettatura',
+  /// testo: ..., gruppo: ...}`) dello stesso storico — vedi
+  /// `_riassuntoParametri` in `storico_generazioni_screen.dart`, che sa
+  /// leggere entrambe le forme.
   Future<String> registraGenerazione({
     required String clubId,
-    required ParametriGenerazione parametri,
+    required Map<String, dynamic> parametri,
     required String esito,
     Map<String, dynamic>? scheda,
     String? messaggioErrore,
@@ -37,7 +41,7 @@ class GenerazioniAiRepository {
     final payload = {
       'id': id,
       'club_id': clubId,
-      'parametri': parametri.toMap(),
+      'parametri': parametri,
       'esito': esito,
       'scheda': ?scheda,
       'messaggio_errore': ?messaggioErrore,

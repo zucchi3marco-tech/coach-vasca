@@ -1,10 +1,14 @@
-// Edge Function: genera-allenamento
+// Edge Function: detta-allenamento
 //
-// Riceve i parametri raccolti dal form "Genera con AI" e li inoltra a
-// Gemini, tenendo la API key lato server (mai esposta al client Flutter).
-// Chiede output JSON strutturato (responseSchema) e lo rivalida qui prima
-// di restituirlo, così l'app riceve sempre una scheda con campi noti o un
-// errore esplicito, mai testo libero da interpretare.
+// Riceve il testo dettato a voce dal coach (trascritto nel browser dalla
+// Web Speech API, gratuita — questa funzione non tocca l'audio) e chiede
+// a Gemini di STRUTTURARLO in una scheda, non di INVENTARLA come fa
+// `genera-allenamento`: qui il compito è trascrivere fedelmente quello
+// che è stato detto, riconoscendo il gergo del nuoto parlato (numeri,
+// stili, zone, recuperi), non proporre una programmazione.
+// Stessa forma di output di `genera-allenamento` (SchedaGenerata),
+// rivalidata qui prima di rispondere: l'app riceve sempre una scheda con
+// campi noti o un errore esplicito, mai testo libero da interpretare.
 // Se in futuro si cambia provider AI, si riscrive solo questo file: il
 // contratto verso l'app (corpo della richiesta e { scheda } in risposta)
 // resta invariato.
@@ -14,27 +18,11 @@ const GEMINI_MODEL = "gemini-3.6-flash";
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
 const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
-const ESECUZIONI = ["nuoto", "gambe", "braccia", "pull", "tecnica"];
-// "C" (senza numero) è uno storico dell'enum del database, tenuto solo
-// per le righe salvate prima dello split in C1/C2/C3 (FASE 9): non va
-// più proposto per le serie nuove, in generazione come nel resto
-// dell'app — vedi `ordineZone` in `lib/features/tabelle_passi`.
+const ESECUZIONI = ["nuoto", "gambe", "braccia", "pull", "tecnica", "remate"];
+// "C" (senza numero) è uno storico dell'enum del database (righe salvate
+// prima dello split in C1/C2/C3, FASE 9): non va proposto per le serie
+// nuove — vedi `ordineZone` in `lib/features/tabelle_passi`.
 const ZONE = ["A1", "A2", "B1", "B2", "C1", "C2", "C3", "D"];
-
-interface CorsiaGenerazione {
-  nome: string;
-  passo100S: number;
-  differenzialeS?: number | null;
-}
-
-interface ParametriGenerazione {
-  gruppo?: string;
-  volumeMetri?: number;
-  focus?: string;
-  regimiAmmessi?: string[];
-  vincoli?: string | null;
-  corsie?: CorsiaGenerazione[];
-}
 
 interface RipartenzaCorsia {
   nome: string;
@@ -61,6 +49,11 @@ interface SchedaGenerata {
   serie: SerieGenerata[];
 }
 
+interface RichiestaDettatura {
+  testo?: string;
+  gruppo?: string | null;
+}
+
 // Il browser (Flutter Web) chiama questa funzione da un'origine diversa
 // (localhost in sviluppo, il dominio dell'app in produzione): senza questi
 // header ogni richiesta viene bloccata dal CORS prima ancora di arrivare
@@ -79,77 +72,57 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-// Distillato della metodologia di periodizzazione del coach (documento
-// fornito, FASE 10 punto 4): parametri per zona (durata, volume, distanze,
-// recupero) e come usare il differenziale di gara T200-T100 per calcolare
-// ripartenze realistiche invece di un numero indicativo generico.
-const METODOLOGIA_ZONE = `
-Metodologia per zona, da usare per calcolare le ripartenze (tempi di
-partenza) quando sono forniti i passi di riferimento delle corsie:
-- A1/A2 (aerobico, smaltimento/costruzione): distanze 100-400m (fino a 400
-  per fondisti), recupero 5-30s (più lungo quanto più lunga la distanza).
-  Passo più lento del passo di riferimento sui 100 (A1 il più lento, A2 un
-  po' meno).
-- B1 (soglia anaerobica): distanze 100-300m, recupero 10-30s. Passo vicino
-  al passo di riferimento sui 100 (soglia).
-- B2 (potenza aerobica/VO2max): distanze 200-400m (anche frazionate in
-  50/100/200 con recuperi brevi 3-10s), recupero pieno 30s-2min fra le
-  ripetute intere. Usa ESPLICITAMENTE il differenziale T200-T100 fornito:
-  la ripartenza per una distanza intera vicina ai 200m è approssimabile a
-  passo100S*(distanza/100) + differenzialeS; per distanze frazionate più
-  corte usa un passo più vicino al passo100S puro (più veloce).
-- C1 (tolleranza al lattato): distanze 50-100m, recupero 30s-2min passivi.
-  Ripartenza vicina o leggermente sotto il passo100S (quasi massimale).
-- C2 (picco di lattato): distanze 50-75m, recupero ampio 1'30-5' passivi.
-  Ripartenza massimale.
-- C3 (velocità/alattacido): distanze 10-50m, durata 8-10s per ripetuta,
-  recupero elevato (fino a 2') per il recupero neuromuscolare. Non è una
-  ripartenza basata sul passo100S: è velocità pura.
-- D (ritmo gara): ripartenza il più vicina possibile al ritmo di gara reale
-  alla distanza della serie, stimato da passo100S e differenzialeS.
-Arrotonda ogni ripartenza a un valore realistico da usare a bordo vasca
-(es. multiplo di 5 secondi).
+// Glossario del gergo parlato più comune → i codici che il database
+// riconosce: senza questo, "trazioni"/"pull boy"/"crawl" arriverebbero a
+// Gemini senza un ponte esplicito verso gli enum consentiti, con più
+// probabilità che li indovini male o che li lasci fuori.
+const GLOSSARIO = `
+Corrispondenze fra gergo parlato e valori consentiti (usa il buon senso
+anche per varianti non elencate qui):
+- Stile: "libero"/"crawl" = libero; "dorso" = dorso; "rana"/"bracciata
+  rana" = rana; "delfino"/"farfalla" = delfino; "misti"/"quattro stili" =
+  misti.
+- Esecuzione (se non detta esplicitamente, usa "nuoto"): "gambe"/"kick" =
+  gambe; "braccia"/"trazioni"/"pull" = pull (non "braccia": quel codice è
+  riservato a un lavoro braccia diverso dal pull, usalo solo se il coach
+  dice esplicitamente "solo braccia" senza nominare pull/pull-buoy);
+  "tecnica"/"drill" = tecnica; "remate" solo per pallanuoto.
+- Zona/regime, se nominati (altrimenti lascia il campo vuoto, non
+  indovinare): "aerobico leggero"/"A1" = A1; "aerobico"/"A2" = A2;
+  "soglia"/"B1" = B1; "VO2"/"potenza aerobica"/"B2" = B2;
+  "resistenza lattacida"/"C1" = C1; "lattacido"/"C2" = C2;
+  "velocità"/"sprint"/"C3" = C3; "ritmo gara"/"D" = D.
+- Blocco: "riscaldamento" = riscaldamento; "principale"/"parte centrale" o
+  non specificato = principale; "defaticamento"/"scarico"/"finale" =
+  defaticamento.
 `.trim();
 
-function costruisciPrompt(p: ParametriGenerazione): string {
-  const regimi = Array.isArray(p.regimiAmmessi) ? p.regimiAmmessi.join(", ") : "";
-  const corsie = Array.isArray(p.corsie) ? p.corsie : [];
-  const righeCorsie = corsie.map((c) => {
-    const diff = c.differenzialeS != null
-      ? `, differenziale di gara T200-T100 = ${c.differenzialeS}s`
-      : "";
-    return `- Corsia "${c.nome}": passo di riferimento sui 100 stile libero = ${c.passo100S}s${diff}`;
-  });
+function costruisciPrompt(r: RichiestaDettatura): string {
   return [
-    "Sei un allenatore di nuoto esperto. Genera una scheda di allenamento " +
-      "per la seguente sessione, come elenco di serie.",
-    `Gruppo: ${p.gruppo ?? ""}`,
-    `Volume totale: ${p.volumeMetri ?? ""} metri`,
-    `Focus: ${p.focus ?? ""}`,
-    `Regimi di allenamento ammessi: ${regimi}`,
-    p.vincoli ? `Vincoli: ${p.vincoli}` : "",
-    "Dividi la scheda in riscaldamento, parte principale e defaticamento. " +
-      "La somma di ripetute*distanza di tutte le serie deve avvicinarsi il " +
-      "più possibile al volume totale richiesto. Usa solo zone tra quelle " +
-      "ammesse indicate sopra.",
-    righeCorsie.length > 0
-      ? [
-          "",
-          "Passi di riferimento calcolati dai personal best degli atleti " +
-            "del gruppo:",
-          ...righeCorsie,
-          "",
-          METODOLOGIA_ZONE,
-          "",
-          "Per ogni serie della parte principale (e del defaticamento se " +
-            "in zona A2 o superiore), calcola in ripartenzePerCorsia una " +
-            "ripartenza per OGNUNA delle corsie elencate sopra, usando il " +
-            "loro passo/differenziale secondo la metodologia della zona " +
-            "assegnata a quella serie. Non è richiesta per il " +
-            "riscaldamento a bassa intensità (A1) o per serie tecniche " +
-            "senza zona.",
-        ].join("\n")
-      : "",
+    "Un allenatore di nuoto ha DETTATO A VOCE la scheda di un " +
+      "allenamento; il testo qui sotto è la trascrizione automatica di " +
+      "quella registrazione (può contenere piccoli errori di " +
+      "riconoscimento vocale, soprattutto su numeri e termini tecnici: " +
+      "usa il contesto per correggerli quando è ovvio, es. \"cento\" per " +
+      "una distanza è quasi certamente 100 metri).",
+    "",
+    "Il tuo compito è TRASCRIVERE FEDELMENTE quello che è stato detto in " +
+      "una scheda strutturata, NON inventare o completare una " +
+      "programmazione: se il coach ha dettato solo 3 serie, la scheda " +
+      "deve avere esattamente quelle 3 serie, non un allenamento completo " +
+      "con riscaldamento e defaticamento aggiunti di tua iniziativa. Se un " +
+      "dettaglio opzionale (zona, recupero, attrezzatura) non è stato " +
+      "detto, lascia quel campo vuoto invece di indovinarlo.",
+    "",
+    GLOSSARIO,
+    "",
+    r.gruppo ? `Gruppo a cui è rivolto l'allenamento: ${r.gruppo}.` : "",
+    "",
+    "Testo dettato:",
+    `"${(r.testo ?? "").trim()}"`,
+    "",
+    "Componi anche un titolo breve (max 6 parole) che descriva la seduta, " +
+      "es. \"Seduta soglia 3000m\".",
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
@@ -175,17 +148,6 @@ const responseSchema = {
           recuperoS: { type: "INTEGER" },
           attrezzatura: { type: "STRING" },
           note: { type: "STRING" },
-          ripartenzePerCorsia: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                nome: { type: "STRING" },
-                ripartenzaS: { type: "NUMBER" },
-              },
-              required: ["nome", "ripartenzaS"],
-            },
-          },
         },
         required: ["ordine", "blocco", "ripetute", "distanzaM", "stile", "esecuzione"],
       },
@@ -208,7 +170,10 @@ function validaScheda(dati: unknown): SchedaGenerata {
     throw new Error("titolo mancante o non valido");
   }
   if (!Array.isArray(scheda.serie) || scheda.serie.length === 0) {
-    throw new Error("nessuna serie generata");
+    throw new Error(
+      "non ho capito nessuna serie dal testo dettato: prova a ripetere più " +
+        "chiaramente, o scrivilo a mano",
+    );
   }
 
   const serieValidate: SerieGenerata[] = scheda.serie.map((voce, indice) => {
@@ -256,33 +221,6 @@ function validaScheda(dati: unknown): SchedaGenerata {
       recuperoS = valore;
     }
 
-    let ripartenzePerCorsia: RipartenzaCorsia[] = [];
-    if (s.ripartenzePerCorsia !== undefined && s.ripartenzePerCorsia !== null) {
-      if (!Array.isArray(s.ripartenzePerCorsia)) {
-        throw new Error(`serie #${indice + 1}: ripartenzePerCorsia non valido`);
-      }
-      ripartenzePerCorsia = s.ripartenzePerCorsia.map((voceRip, indiceRip) => {
-        if (typeof voceRip !== "object" || voceRip === null) {
-          throw new Error(
-            `serie #${indice + 1}: ripartenza #${indiceRip + 1} non valida`,
-          );
-        }
-        const r = voceRip as Record<string, unknown>;
-        if (typeof r.nome !== "string" || r.nome.trim() === "") {
-          throw new Error(
-            `serie #${indice + 1}: nome corsia mancante nella ripartenza #${indiceRip + 1}`,
-          );
-        }
-        const ripartenzaS = Number(r.ripartenzaS);
-        if (!Number.isFinite(ripartenzaS) || ripartenzaS <= 0) {
-          throw new Error(
-            `serie #${indice + 1}: ripartenzaS non valida per la corsia "${r.nome}"`,
-          );
-        }
-        return { nome: r.nome, ripartenzaS };
-      });
-    }
-
     return {
       ordine,
       blocco: s.blocco,
@@ -294,7 +232,7 @@ function validaScheda(dati: unknown): SchedaGenerata {
       recuperoS,
       attrezzatura: typeof s.attrezzatura === "string" ? s.attrezzatura : null,
       note: typeof s.note === "string" ? s.note : null,
-      ripartenzePerCorsia,
+      ripartenzePerCorsia: [],
     };
   });
 
@@ -321,14 +259,21 @@ Deno.serve(async (req) => {
     );
   }
 
-  let parametri: ParametriGenerazione;
+  let richiesta: RichiestaDettatura;
   try {
-    parametri = await req.json();
+    richiesta = await req.json();
   } catch {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
 
-  const prompt = costruisciPrompt(parametri);
+  if (!richiesta.testo || richiesta.testo.trim().length < 10) {
+    return jsonResponse(
+      { error: "Il testo dettato è troppo corto per essere interpretato" },
+      400,
+    );
+  }
+
+  const prompt = costruisciPrompt(richiesta);
 
   // Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo
   // (il messaggio stesso dice "usually temporary, please try again later")
@@ -398,7 +343,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ scheda });
   } catch (errore) {
     return jsonResponse(
-      { error: `Scheda generata non valida: ${(errore as Error).message}` },
+      { error: `Non sono riuscito a interpretare la dettatura: ${(errore as Error).message}` },
       502,
     );
   }

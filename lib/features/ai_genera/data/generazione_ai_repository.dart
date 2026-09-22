@@ -55,6 +55,34 @@ class GenerazioneAiRepository {
     }
   }
 
+  /// Chiama la Edge Function `detta-allenamento`: a differenza di
+  /// [generaAllenamento] (che *inventa* una scheda da parametri), qui
+  /// Gemini deve solo *trascrivere fedelmente* in JSON strutturato quello
+  /// che il coach ha dettato — stessa forma di output ([SchedaGenerata]),
+  /// stessa Edge Function del "genera con AI" nel senso di isolare la
+  /// chiave del provider lato server, ma un prompt diverso.
+  Future<SchedaGenerata> generaDaDettatura({
+    required String testo,
+    String? gruppo,
+  }) async {
+    try {
+      final risposta = await _client.functions
+          .invoke('detta-allenamento', body: {'testo': testo, 'gruppo': gruppo})
+          .timeout(_timeoutGenerazione);
+      final dati = risposta.data;
+      if (dati is Map && dati['scheda'] is Map) {
+        return SchedaGenerata.fromMap(dati['scheda'] as Map<String, dynamic>);
+      }
+      throw Exception('Risposta inattesa dalla dettatura: $dati');
+    } on FunctionException catch (e) {
+      final dettagli = e.details;
+      if (dettagli is Map && dettagli['error'] is String) {
+        throw Exception(dettagli['error'] as String);
+      }
+      rethrow;
+    }
+  }
+
   /// Chiama `genera-settimana`: solo lo scheletro di una settimana
   /// (numero di sedute, codice, volume) — FASE 10, punto 5. Il dettaglio
   /// delle serie di ogni seduta si genera poi con [generaAllenamento].
