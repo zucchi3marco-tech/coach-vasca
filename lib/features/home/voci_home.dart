@@ -39,7 +39,13 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
       VoceHome.allenamenti => (
         icona: Icons.calendar_month_outlined,
         iconaSelezionata: Icons.calendar_month,
-        etichetta: 'Allenamenti',
+        // "Allenamenti" è una sola parola, senza spazi dove il testo possa
+        // andare a capo con naturalezza: nella barra in basso (5 voci, poco
+        // spazio a testa) senza aiuto va a capo vicino all'ultima lettera
+        // ("Allenamen-ti"). Il trattino software (U+00AD) invisibile finché
+        // non serve indica un punto migliore ("Allena-menti"); su rail e
+        // guida, dove la parola sta su una riga sola, non si vede.
+        etichetta: 'Allena­menti',
         guida:
             'Pianifica le sedute con le loro serie; a bordo vasca le '
             'apri in grande e segni le presenze.',

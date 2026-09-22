@@ -220,20 +220,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } else {
       corpo = corpoPrincipale;
       barraInferiore = mostraTab
-          ? NavigationBar(
-              selectedIndex: indiceTab,
-              onDestinationSelected: _vaiAllaTab,
-              destinations: [
-                for (var i = 0; i < destinazioni.length; i++)
-                  NavigationDestination(
-                    icon: Icon(destinazioni[i].icona),
-                    selectedIcon: Icon(
-                      destinazioni[i].iconaSelezionata,
-                      color: coloriTab[i],
+          // NavigationDestination.label vuole una String, non un widget: non
+          // si può passare un Text(textAlign: center) per singola voce. La
+          // barra Material disegna l'etichetta con un Text semplice che, se
+          // va a capo su due righe ("Schemi tattici"), eredita l'allineamento
+          // dall'ambiente — di default a sinistra, storta rispetto
+          // all'icona sopra. DefaultTextStyle.merge lo corregge per tutta la
+          // barra senza toccare nient'altro dello stile.
+          ? DefaultTextStyle.merge(
+              textAlign: TextAlign.center,
+              child: NavigationBar(
+                selectedIndex: indiceTab,
+                onDestinationSelected: _vaiAllaTab,
+                destinations: [
+                  for (var i = 0; i < destinazioni.length; i++)
+                    NavigationDestination(
+                      icon: Icon(destinazioni[i].icona),
+                      selectedIcon: Icon(
+                        destinazioni[i].iconaSelezionata,
+                        color: coloriTab[i],
+                      ),
+                      label: destinazioni[i].etichetta,
                     ),
-                    label: destinazioni[i].etichetta,
-                  ),
-              ],
+                ],
+              ),
             )
           : null;
     }
