@@ -12,6 +12,15 @@ void main() {
       expect(riassunto, 'U14 · 3000 m · soglia');
     });
 
+    test('con più focus li unisce con il più', () {
+      final riassunto = riassuntoParametriGenerazione({
+        'gruppo': 'U14',
+        'volumeMetri': 3000,
+        'focus': ['gambe', 'braccia'],
+      });
+      expect(riassunto, 'U14 · 3000 m · gambe+braccia');
+    });
+
     test('salta i campi mancanti senza lasciare separatori vuoti', () {
       expect(riassuntoParametriGenerazione({'focus': 'tecnica'}), 'tecnica');
     });

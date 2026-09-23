@@ -23,24 +23,46 @@ class CorsiaGenerazione {
   }
 }
 
+/// Dettaglio del lavoro di braccia o di gambe scelto fra i focus: metri
+/// dedicati, attrezzatura e stile — ognuno indipendente dall'altro, così
+/// una seduta può avere sia un blocco braccia sia uno gambe.
+class DettaglioFocus {
+  const DettaglioFocus({this.metri, this.attrezzatura = const [], this.stile});
+
+  /// Metri dedicati a questo lavoro, entro il volume totale. `null` =
+  /// l'AI decide quanto.
+  final int? metri;
+
+  /// Braccia: pull, palette. Gambe: pinne, tavola, boccaglio.
+  final List<String> attrezzatura;
+
+  /// 'libero'|'dorso'|'rana'|'delfino'|'misti'. `null` = l'AI sceglie.
+  final String? stile;
+
+  Map<String, dynamic> toMap() => {
+    'metri': metri,
+    'attrezzatura': attrezzatura,
+    'stile': stile,
+  };
+}
+
 /// Parametri raccolti dal form "Genera con AI" (o costruiti seduta per
 /// seduta da "Genera settimana con AI", che riusa la stessa Edge
 /// Function — vedi `genera_settimana_form_screen.dart`).
 ///
 /// [minutiMax] e [vascaM] sono **obbligatori nel form del generatore
 /// singolo** (validazione lì, non qui): restano nullable a livello di
-/// classe perché il generatore settimana, finché non li raccoglie anche
-/// lui (redesign in corso), può ancora chiamare senza — l'Edge Function
-/// tratta la loro assenza come "nessun vincolo", non come un errore.
+/// classe perché l'Edge Function tratta la loro assenza come "nessun
+/// vincolo", non come un errore.
 class ParametriGenerazione {
   const ParametriGenerazione({
     required this.gruppo,
     required this.volumeMetri,
     this.volumeLavoroCentraleM,
     required this.focus,
-    this.metriFocusSpecifico,
-    this.attrezzaturaFocus = const [],
-    this.stileFocus,
+    this.dettaglioBraccia,
+    this.dettaglioGambe,
+    this.stileTecnica,
     this.attrezzaturaLavoroCentrale = const [],
     this.minutiMax,
     this.vascaM,
@@ -56,23 +78,18 @@ class ParametriGenerazione {
   /// `null` = l'AI decide liberamente la ripartizione fra i blocchi.
   final int? volumeLavoroCentraleM;
 
-  /// 'completo' | 'braccia' | 'gambe' | 'tecnica' — quale parte del
-  /// corpo/nuotata enfatizzare (non più l'energia: quella vive in
-  /// [regimiAmmessi]/"tipo di lavoro").
-  final String focus;
+  /// Uno o più fra 'completo' | 'braccia' | 'gambe' | 'tecnica' — quali
+  /// parti del corpo/nuotata enfatizzare (non l'energia: quella vive in
+  /// [regimiAmmessi]/"tipo di lavoro"). 'completo' sta da solo.
+  final List<String> focus;
 
-  /// Solo quando [focus] è 'braccia' o 'gambe': metri dedicati a quel
-  /// lavoro specifico, entro [volumeMetri].
-  final int? metriFocusSpecifico;
+  /// Presenti solo se [focus] contiene 'braccia' / 'gambe'.
+  final DettaglioFocus? dettaglioBraccia;
+  final DettaglioFocus? dettaglioGambe;
 
-  /// Attrezzatura per il lavoro di [focus] (braccia: pull, palette;
-  /// gambe: pinne, tavola, boccaglio). Vuota se [focus] non è
-  /// braccia/gambe o il coach non ne ha scelta nessuna.
-  final List<String> attrezzaturaFocus;
-
-  /// Stile per il lavoro di [focus] ('libero'|'dorso'|'rana'|'delfino'|
-  /// 'misti'), solo quando [focus] è braccia/gambe. `null` = l'AI sceglie.
-  final String? stileFocus;
+  /// Stile del lavoro tecnico, solo se [focus] contiene 'tecnica'.
+  /// `null` = l'AI sceglie.
+  final String? stileTecnica;
 
   /// Attrezzatura per il blocco "principale" in generale (pull, palette,
   /// boccaglio, pinne), indipendente dal [focus].
@@ -100,9 +117,9 @@ class ParametriGenerazione {
       'volumeMetri': volumeMetri,
       'volumeLavoroCentraleMetri': volumeLavoroCentraleM,
       'focus': focus,
-      'metriFocusSpecifico': metriFocusSpecifico,
-      'attrezzaturaFocus': attrezzaturaFocus,
-      'stileFocus': stileFocus,
+      'dettaglioBraccia': dettaglioBraccia?.toMap(),
+      'dettaglioGambe': dettaglioGambe?.toMap(),
+      'stileTecnica': stileTecnica,
       'attrezzaturaLavoroCentrale': attrezzaturaLavoroCentrale,
       'minutiMax': minutiMax,
       'vascaM': vascaM,

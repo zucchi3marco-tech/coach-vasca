@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../domain/modulo_compilato.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
@@ -29,17 +30,7 @@ class GenerazioneAiRepository {
   ) async {
     try {
       final risposta = await _client.functions
-          .invoke(
-            'genera-allenamento',
-            body: {
-              'gruppo': parametri.gruppo,
-              'volumeMetri': parametri.volumeMetri,
-              'focus': parametri.focus,
-              'regimiAmmessi': parametri.regimiAmmessi,
-              'vincoli': parametri.vincoli,
-              'corsie': parametri.corsie.map((c) => c.toMap()).toList(),
-            },
-          )
+          .invoke('genera-allenamento', body: parametri.toMap())
           .timeout(_timeoutGenerazione);
       final dati = risposta.data;
       if (dati is Map && dati['scheda'] is Map) {
@@ -74,6 +65,31 @@ class GenerazioneAiRepository {
         return SchedaGenerata.fromMap(dati['scheda'] as Map<String, dynamic>);
       }
       throw Exception('Risposta inattesa dalla dettatura: $dati');
+    } on FunctionException catch (e) {
+      final dettagli = e.details;
+      if (dettagli is Map && dettagli['error'] is String) {
+        throw Exception(dettagli['error'] as String);
+      }
+      rethrow;
+    }
+  }
+
+  /// Chiama `compila-modulo`: dal testo libero del coach ricava i valori
+  /// dei campi del form "Genera con AI" (vasca, volumi, tipi di lavoro,
+  /// focus, attrezzi...). Non genera nessuna scheda: il coach rivede il
+  /// modulo compilato e poi preme Genera.
+  Future<ModuloCompilato> compilaModulo(String testo) async {
+    try {
+      final risposta = await _client.functions
+          .invoke('compila-modulo', body: {'testo': testo})
+          .timeout(_timeoutGenerazione);
+      final dati = risposta.data;
+      if (dati is Map && dati['modulo'] is Map) {
+        return ModuloCompilato.fromMap(
+          Map<String, dynamic>.from(dati['modulo'] as Map),
+        );
+      }
+      throw Exception('Risposta inattesa dall\'AI: $dati');
     } on FunctionException catch (e) {
       final dettagli = e.details;
       if (dettagli is Map && dettagli['error'] is String) {

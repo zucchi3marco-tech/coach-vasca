@@ -28,16 +28,24 @@ interface CorsiaGenerazione {
   differenzialeS?: number | null;
 }
 
+interface DettaglioFocus {
+  metri?: number | null;
+  attrezzatura?: string[];
+  stile?: string | null;
+}
+
 interface ParametriGenerazione {
   gruppo?: string;
   volumeMetri?: number;
   volumeLavoroCentraleMetri?: number | null;
-  // 'completo' | 'braccia' | 'gambe' | 'tecnica' — quale parte del corpo/
-  // nuotata enfatizzare (l'energia sta in regimiAmmessi, sotto).
-  focus?: string;
-  metriFocusSpecifico?: number | null;
-  attrezzaturaFocus?: string[];
-  stileFocus?: string | null;
+  // Uno o più fra 'completo' | 'braccia' | 'gambe' | 'tecnica' — quali
+  // parti del corpo/nuotata enfatizzare (l'energia sta in regimiAmmessi,
+  // sotto). Accetta anche una stringa singola (client vecchi, generatore
+  // settimana).
+  focus?: string | string[];
+  dettaglioBraccia?: DettaglioFocus | null;
+  dettaglioGambe?: DettaglioFocus | null;
+  stileTecnica?: string | null;
   attrezzaturaLavoroCentrale?: string[];
   // Vincolo stretto: vedi stimaMinutiSessione() e il controllo dopo la
   // validazione, sotto.
@@ -131,33 +139,54 @@ Il riscaldamento è SEMPRE in zona A1, senza eccezioni.
 `.trim();
 
 function istruzioniFocus(p: ParametriGenerazione): string {
-  const attrezzi = Array.isArray(p.attrezzaturaFocus)
-    ? p.attrezzaturaFocus.join(", ")
-    : "";
-  switch (p.focus) {
-    case "braccia":
-      return [
-        `Focus della seduta: lavoro di braccia. Dedica circa ${p.metriFocusSpecifico ?? "una parte"} metri a serie di sole braccia.`,
-        attrezzi
-          ? `Usa esecuzione "pull" per queste serie, con attrezzatura fra: ${attrezzi}.`
-          : 'Usa esecuzione "braccia" per queste serie (nessuna attrezzatura specifica indicata).',
-        p.stileFocus ? `Stile per queste serie: ${p.stileFocus}.` : "",
-      ]
-        .filter((r) => r.length > 0)
-        .join(" ");
-    case "gambe":
-      return [
-        `Focus della seduta: lavoro di gambe. Dedica circa ${p.metriFocusSpecifico ?? "una parte"} metri a serie di sole gambe (esecuzione "gambe").`,
-        attrezzi ? `Attrezzatura fra: ${attrezzi}.` : "",
-        p.stileFocus ? `Stile per queste serie: ${p.stileFocus}.` : "",
-      ]
-        .filter((r) => r.length > 0)
-        .join(" ");
-    case "tecnica":
-      return "Focus della seduta: tecnica. La maggior parte delle serie deve avere esecuzione \"tecnica\" (drills), volume contenuto per serie.";
-    default:
-      return "Focus della seduta: completo, nessuna parte del corpo da enfatizzare in particolare.";
+  const focus = (Array.isArray(p.focus) ? p.focus : [p.focus ?? "completo"])
+    .filter((f): f is string => typeof f === "string");
+  const attivi = focus.filter((f) => f !== "completo");
+  if (attivi.length === 0) {
+    return "Focus della seduta: completo, nessuna parte del corpo da enfatizzare in particolare.";
   }
+  const righe: string[] = [
+    `Focus della seduta (più aree insieme): ${attivi.join(", ")}. Ogni area ha il suo blocco di serie dedicato, indicato qui sotto.`,
+  ];
+  const attrezzi = (d?: DettaglioFocus | null) =>
+    Array.isArray(d?.attrezzatura) ? d!.attrezzatura!.join(", ") : "";
+  if (attivi.includes("braccia")) {
+    const d = p.dettaglioBraccia;
+    const a = attrezzi(d);
+    righe.push(
+      [
+        `BRACCIA: dedica circa ${d?.metri ?? "una parte dei"} metri a serie di sole braccia.`,
+        a
+          ? `Usa esecuzione "pull" per queste serie, con attrezzatura fra: ${a}.`
+          : 'Usa esecuzione "braccia" per queste serie (nessuna attrezzatura specifica indicata).',
+        d?.stile ? `Stile per queste serie: ${d.stile}.` : "",
+      ]
+        .filter((r) => r.length > 0)
+        .join(" "),
+    );
+  }
+  if (attivi.includes("gambe")) {
+    const d = p.dettaglioGambe;
+    const a = attrezzi(d);
+    righe.push(
+      [
+        `GAMBE: dedica circa ${d?.metri ?? "una parte dei"} metri a serie di sole gambe (esecuzione "gambe").`,
+        a ? `Attrezzatura fra: ${a}.` : "",
+        d?.stile ? `Stile per queste serie: ${d.stile}.` : "",
+      ]
+        .filter((r) => r.length > 0)
+        .join(" "),
+    );
+  }
+  if (attivi.includes("tecnica")) {
+    righe.push(
+      'TECNICA: una parte delle serie deve avere esecuzione "tecnica" (drills), volume contenuto per serie.' +
+        (p.stileTecnica
+          ? ` Lo stile principale della tecnica è ${p.stileTecnica}.`
+          : ""),
+    );
+  }
+  return righe.join("\n");
 }
 
 function costruisciPrompt(p: ParametriGenerazione): string {

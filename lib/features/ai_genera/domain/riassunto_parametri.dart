@@ -25,6 +25,9 @@ String riassuntoParametriGenerazione(Map<String, dynamic> p) {
   if (p['gruppo'] != null) parti.add(p['gruppo'] as String);
   if (p['livello'] != null) parti.add(p['livello'] as String);
   if (p['volumeMetri'] != null) parti.add('${p['volumeMetri']} m');
-  if (p['focus'] != null) parti.add(p['focus'] as String);
+  // Le voci vecchie hanno un solo focus (stringa), le nuove una lista.
+  final focus = p['focus'];
+  if (focus is String) parti.add(focus);
+  if (focus is List && focus.isNotEmpty) parti.add(focus.join('+'));
   return parti.join(' · ');
 }
