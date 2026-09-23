@@ -164,6 +164,32 @@ function validaSettimana(dati: unknown, numeroSeduteAtteso?: number): SettimanaG
   return { sedute };
 }
 
+// Il messaggio grezzo di Gemini e' JSON tecnico in inglese (es. "quota
+// exceeded... RESOURCE_EXHAUSTED" o "model overloaded... UNAVAILABLE"):
+// qui si traduce nei due casi piu' comuni (limite di richieste al minuto
+// del piano gratuito, modello momentaneamente sovraccarico) in un
+// messaggio comprensibile, e in un messaggio generico altrimenti — mai
+// il JSON grezzo mostrato al coach.
+function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
+  let statoGemini: string | undefined;
+  try {
+    const corpo = JSON.parse(corpoGrezzo);
+    statoGemini = corpo?.error?.status;
+  } catch {
+    // corpo non JSON: si usa il messaggio generico sotto.
+  }
+  if (statoGemini === "RESOURCE_EXHAUSTED" || status === 429) {
+    return "Troppe richieste al servizio AI in poco tempo (il piano attuale " +
+      "ne permette solo poche al minuto). Aspetta un minuto e riprova.";
+  }
+  if (statoGemini === "UNAVAILABLE" || status === 503) {
+    return "Il servizio AI è momentaneamente sovraccarico. Riprova tra " +
+      "qualche istante.";
+  }
+  return `Il servizio AI non ha risposto correttamente (errore ${status}). ` +
+    "Riprova tra qualche istante.";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -234,7 +260,7 @@ Deno.serve(async (req) => {
   if (!rispostaGemini.ok) {
     const dettaglio = await rispostaGemini.text();
     return jsonResponse(
-      { error: `Errore dal provider AI (${rispostaGemini.status}): ${dettaglio}` },
+      { error: messaggioErroreProvider(rispostaGemini.status, dettaglio) },
       502,
     );
   }

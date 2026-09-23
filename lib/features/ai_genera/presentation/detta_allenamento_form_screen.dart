@@ -10,6 +10,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
+import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../allenamenti/domain/allenamento.dart';
@@ -237,6 +238,7 @@ class _DettaAllenamentoFormScreenState
             isLoading: _generazioneInCorso,
             onPressed: _generazioneInCorso ? null : _conferma,
           ),
+          if (_generazioneInCorso) const AttesaAiHint(),
         ],
       ),
     );

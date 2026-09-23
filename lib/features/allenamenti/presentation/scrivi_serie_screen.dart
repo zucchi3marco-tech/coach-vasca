@@ -9,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
+import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
@@ -303,6 +304,7 @@ class _ScriviSerieScreenState extends ConsumerState<ScriviSerieScreen> {
               isLoading: _interpretazioneInCorso,
               onPressed: _interpretazioneInCorso ? null : _interpreta,
             ),
+            if (_interpretazioneInCorso) const AttesaAiHint(),
           ] else ...[
             Text(
               '${anteprima.serie.length} serie interpretate. Controllale, '
