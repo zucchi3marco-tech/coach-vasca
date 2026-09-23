@@ -6,7 +6,7 @@
 /// a mano) come percorso normale, non come errore.
 class DettatoreVocale {
   DettatoreVocale({
-    required void Function(String testo, {required bool finale}) onTrascrizione,
+    required void Function(String testoSessione) onTrascrizione,
     required void Function(String messaggio) onErrore,
     required void Function() onFine,
   });

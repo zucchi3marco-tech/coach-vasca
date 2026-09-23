@@ -9,9 +9,6 @@ JSObject _prop(JSObject o, String proprieta) =>
 String _testo(JSObject o, String proprieta) =>
     o.getProperty<JSString>(proprieta.toJS).toDart;
 
-bool _flag(JSObject o, String proprieta) =>
-    o.getProperty<JSBoolean>(proprieta.toJS).toDart;
-
 int _numero(JSObject o, String proprieta) =>
     o.getProperty<JSNumber>(proprieta.toJS).toDartInt;
 
@@ -43,10 +40,11 @@ class DettatoreVocale {
     required this.onFine,
   });
 
-  /// Chiamato ad ogni frammento riconosciuto: `finale: false` per le
-  /// parole ancora provvisorie (possono cambiare mentre il coach continua
-  /// a parlare), `finale: true` quando quel pezzo di frase è definitivo.
-  final void Function(String testo, {required bool finale}) onTrascrizione;
+  /// Chiamato ad ogni aggiornamento con l'INTERO testo riconosciuto in
+  /// questa sessione di ascolto (non un pezzo da aggiungere al
+  /// precedente): rimpiazza sempre quanto dato prima, mai da sommare a
+  /// mano dal chiamante — vedi [_suRisultato] sul perché.
+  final void Function(String testoSessione) onTrascrizione;
   final void Function(String messaggio) onErrore;
 
   /// L'ascolto è terminato (tocco su "ferma", errore, o il browser lo ha
@@ -111,18 +109,26 @@ class DettatoreVocale {
     riconoscimento.callMethod<JSAny?>('start'.toJS);
   }
 
+  // Ricostruisce SEMPRE l'intero testo della sessione da `evento.results`
+  // (indice 0 → length-1), invece di leggere solo da `evento.resultIndex`
+  // e aggiungere quel pezzo al testo già accumulato: con `continuous:
+  // true` Chrome a volte rimanda lo stesso indice (o un indice
+  // precedente) più di una volta nella stessa sessione, e un'aggiunta
+  // incrementale lo duplicherebbe ogni volta che succede — bug osservato
+  // dal coach ("la stessa frase trascritta molte volte"). Ricostruire da
+  // zero è idempotente: lo stesso `results` dà sempre lo stesso testo,
+  // qualunque cosa il browser rimandi.
   void _suRisultato(JSObject evento) {
     final risultati = _prop(evento, 'results');
     final lunghezza = _numero(risultati, 'length');
-    final indiceIniziale = _numero(evento, 'resultIndex');
-    for (var i = indiceIniziale; i < lunghezza; i++) {
+    final pezzi = <String>[];
+    for (var i = 0; i < lunghezza; i++) {
       final risultato = _prop(risultati, '$i');
       final alternativaMigliore = _prop(risultato, '0');
-      onTrascrizione(
-        _testo(alternativaMigliore, 'transcript'),
-        finale: _flag(risultato, 'isFinal'),
-      );
+      final pezzo = _testo(alternativaMigliore, 'transcript').trim();
+      if (pezzo.isNotEmpty) pezzi.add(pezzo);
     }
+    onTrascrizione(pezzi.join(' '));
   }
 
   void ferma() {

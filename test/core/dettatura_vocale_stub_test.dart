@@ -14,7 +14,7 @@ void main() {
   test('avvia/ferma/dispose non fanno nulla e non lanciano eccezioni', () {
     var chiamato = false;
     final dettatore = DettatoreVocale(
-      onTrascrizione: (_, {required finale}) => chiamato = true,
+      onTrascrizione: (_) => chiamato = true,
       onErrore: (_) => chiamato = true,
       onFine: () => chiamato = true,
     );
