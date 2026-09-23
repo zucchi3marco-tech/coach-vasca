@@ -34,10 +34,10 @@ class ParametriSettimana {
   /// quando si genera il dettaglio (nessun campo per singola seduta).
   final int? volumeLavoroCentraleSettimanaleM;
 
-  /// Un focus per ciascuna seduta, nello stesso ordine di
+  /// I focus (uno o più) di ciascuna seduta, nello stesso ordine di
   /// [giorniSettimana]: l'AI resta libera di scegliere volume/codice ma
   /// deve rispettare l'ordine e il conteggio.
-  final List<String> focusPerSeduta;
+  final List<List<String>> focusPerSeduta;
 
   /// Una volta per l'intera settimana (non per seduta): propagata
   /// identica ad ogni chiamata di dettaglio.

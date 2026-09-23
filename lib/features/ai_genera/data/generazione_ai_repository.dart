@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/modulo_compilato.dart';
+import '../domain/modulo_settimana_compilato.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
@@ -86,6 +87,29 @@ class GenerazioneAiRepository {
       final dati = risposta.data;
       if (dati is Map && dati['modulo'] is Map) {
         return ModuloCompilato.fromMap(
+          Map<String, dynamic>.from(dati['modulo'] as Map),
+        );
+      }
+      throw Exception('Risposta inattesa dall\'AI: $dati');
+    } on FunctionException catch (e) {
+      final dettagli = e.details;
+      if (dettagli is Map && dettagli['error'] is String) {
+        throw Exception(dettagli['error'] as String);
+      }
+      rethrow;
+    }
+  }
+
+  /// Chiama `compila-settimana`: come [compilaModulo], ma per il form
+  /// della settimana (giorni, volume settimanale, focus per giorno...).
+  Future<ModuloSettimanaCompilato> compilaSettimana(String testo) async {
+    try {
+      final risposta = await _client.functions
+          .invoke('compila-settimana', body: {'testo': testo})
+          .timeout(_timeoutGenerazione);
+      final dati = risposta.data;
+      if (dati is Map && dati['modulo'] is Map) {
+        return ModuloSettimanaCompilato.fromMap(
           Map<String, dynamic>.from(dati['modulo'] as Map),
         );
       }

@@ -29,7 +29,6 @@ import 'campi_generatore.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
-const _stiliNuoto = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
 const _attrezzaturaBraccia = ['pull', 'palette'];
 const _attrezzaturaGambe = ['pinne', 'tavola', 'boccaglio'];
 const _attrezzaturaLavoroCentraleDisponibile = [
@@ -38,27 +37,6 @@ const _attrezzaturaLavoroCentraleDisponibile = [
   'boccaglio',
   'pinne',
 ];
-
-String _capitalizza(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-String _etichettaAttrezzo(String a) => switch (a) {
-  'pull' => 'Pull',
-  'palette' => 'Palette',
-  'boccaglio' => 'Boccaglio',
-  'pinne' => 'Pinne',
-  'tavola' => 'Tavola',
-  _ => _capitalizza(a),
-};
-
-String _siglaStile(String s) => switch (s) {
-  'libero' => 'SL',
-  'dorso' => 'DO',
-  'rana' => 'RA',
-  'delfino' => 'FA',
-  'misti' => 'MX',
-  _ => s,
-};
 
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({
@@ -252,60 +230,6 @@ class _GeneraAllenamentoFormScreenState
     });
   }
 
-  Widget _pannelloFocus({
-    required String titolo,
-    required String etichettaMetri,
-    required double? metri,
-    required ValueChanged<double> onMetri,
-    required List<String> attrezziDisponibili,
-    required Set<String> attrezziSelezionati,
-    required String? stile,
-    required ValueChanged<String?> onStile,
-  }) {
-    return PannelloCampi(
-      titolo: titolo,
-      figli: [
-        SliderConValore(
-          etichetta: etichettaMetri,
-          valore: (metri ?? 0).clamp(0, _volumeMetri).toDouble(),
-          min: 0,
-          max: _volumeMetri,
-          divisioni: (_volumeMetri / 100).round().clamp(1, 999),
-          testoValore: metri == null ? 'Auto' : null,
-          onChanged: onMetri,
-        ),
-        GruppoChip(
-          etichetta: 'Attrezzi',
-          chip: [
-            for (final a in attrezziDisponibili)
-              TonalChip(
-                etichetta: _etichettaAttrezzo(a),
-                selezionato: attrezziSelezionati.contains(a),
-                onSelezionato: (selezionato) => setState(() {
-                  if (selezionato) {
-                    attrezziSelezionati.add(a);
-                  } else {
-                    attrezziSelezionati.remove(a);
-                  }
-                }),
-              ),
-          ],
-        ),
-        GruppoChip(
-          etichetta: 'Stile (facoltativo)',
-          chip: [
-            for (final s in _stiliNuoto)
-              TonalChip(
-                etichetta: _siglaStile(s),
-                selezionato: stile == s,
-                onSelezionato: (selezionato) => onStile(selezionato ? s : null),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final gruppoId = ref.watch(selezioneGruppoProvider)?.gruppoId;
@@ -457,7 +381,7 @@ class _GeneraAllenamentoFormScreenState
                       GruppoChip(
                         etichetta: 'Facoltativo: se non scegli, decide l\'AI',
                         chip: [
-                          for (final s in _stiliNuoto)
+                          for (final s in stiliNuoto)
                             TonalChip(
                               etichetta: labelStile(s),
                               selezionato: _stileTecnica == s,
@@ -470,26 +394,42 @@ class _GeneraAllenamentoFormScreenState
                     ],
                   ),
                 if (_haFocus('braccia'))
-                  _pannelloFocus(
+                  PannelloFocusDettaglio(
                     titolo: 'Braccia',
                     etichettaMetri: 'Braccia — metri',
                     metri: _metriBraccia,
+                    maxMetri: _volumeMetri,
                     onMetri: (v) => setState(() => _metriBraccia = v),
                     attrezziDisponibili: _attrezzaturaBraccia,
                     attrezziSelezionati: _attrezziBraccia,
+                    onAttrezzo: (a, sel) => setState(() {
+                      if (sel) {
+                        _attrezziBraccia.add(a);
+                      } else {
+                        _attrezziBraccia.remove(a);
+                      }
+                    }),
                     stile: _stileBraccia,
-                    onStile: (s) => setState(() => _stileBraccia = s),
+                    onStile: (st) => setState(() => _stileBraccia = st),
                   ),
                 if (_haFocus('gambe'))
-                  _pannelloFocus(
+                  PannelloFocusDettaglio(
                     titolo: 'Gambe',
                     etichettaMetri: 'Gambe — metri',
                     metri: _metriGambe,
+                    maxMetri: _volumeMetri,
                     onMetri: (v) => setState(() => _metriGambe = v),
                     attrezziDisponibili: _attrezzaturaGambe,
                     attrezziSelezionati: _attrezziGambe,
+                    onAttrezzo: (a, sel) => setState(() {
+                      if (sel) {
+                        _attrezziGambe.add(a);
+                      } else {
+                        _attrezziGambe.remove(a);
+                      }
+                    }),
                     stile: _stileGambe,
-                    onStile: (s) => setState(() => _stileGambe = s),
+                    onStile: (st) => setState(() => _stileGambe = st),
                   ),
               ],
             ),
@@ -506,7 +446,7 @@ class _GeneraAllenamentoFormScreenState
                       children: [
                         for (final a in _attrezzaturaLavoroCentraleDisponibile)
                           TonalChip(
-                            etichetta: _etichettaAttrezzo(a),
+                            etichetta: etichettaAttrezzo(a),
                             selezionato: _attrezzaturaLavoroCentraleSelezionata
                                 .contains(a),
                             onSelezionato: (selezionato) => setState(() {

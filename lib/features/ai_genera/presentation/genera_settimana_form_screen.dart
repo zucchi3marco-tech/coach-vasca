@@ -13,6 +13,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
@@ -26,6 +27,7 @@ import '../application/settimana_ai_providers.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
+import '../domain/modulo_settimana_compilato.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
@@ -42,6 +44,8 @@ const _nomiGiorni = [
   'Sabato',
   'Domenica',
 ];
+const _attrezzaturaBraccia = ['pull', 'palette'];
+const _attrezzaturaGambe = ['pinne', 'tavola', 'boccaglio'];
 const _attrezzaturaLavoroCentraleDisponibile = [
   'pull',
   'palette',
@@ -51,14 +55,6 @@ const _attrezzaturaLavoroCentraleDisponibile = [
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-String _etichettaAttrezzo(String a) => switch (a) {
-  'pull' => 'Pull',
-  'palette' => 'Palette',
-  'boccaglio' => 'Boccaglio',
-  'pinne' => 'Pinne',
-  _ => _capitalizza(a),
-};
 
 /// Pianifica una settimana intera (FASE 10, punto 5): prima uno scheletro
 /// leggero (codice, volume) via `genera-settimana`, poi il dettaglio delle
@@ -97,7 +93,19 @@ class _GeneraSettimanaFormScreenState
   double _minutiMax = 60;
   int _vascaM = 25;
   final Set<String> _attrezzaturaLavoroCentraleSelezionata = {};
-  List<String> _focusPerSeduta = List.filled(4, focusLavoro.first);
+  List<Set<String>> _focusPerSeduta = List.generate(
+    4,
+    (_) => {focusLavoro.first},
+  );
+  double? _metriBraccia;
+  final Set<String> _attrezziBraccia = {};
+  String? _stileBraccia;
+  double? _metriGambe;
+  final Set<String> _attrezziGambe = {};
+  String? _stileGambe;
+  String? _stileTecnica;
+  final _testoController = TextEditingController();
+  bool _compilazioneInCorso = false;
   bool _generazioneInCorso = false;
   String? _fasePassaggio;
   String? _erroreGiorni;
@@ -105,6 +113,7 @@ class _GeneraSettimanaFormScreenState
   @override
   void dispose() {
     _vincoliController.dispose();
+    _testoController.dispose();
     _dataInizioController.dispose();
     super.dispose();
   }
@@ -122,7 +131,7 @@ class _GeneraSettimanaFormScreenState
         _focusPerSeduta = [
           ..._focusPerSeduta,
           for (var i = _focusPerSeduta.length; i < numero; i++)
-            focusLavoro.first,
+            {focusLavoro.first},
         ];
       } else if (numero < _focusPerSeduta.length) {
         _focusPerSeduta = _focusPerSeduta.sublist(0, numero);
@@ -158,6 +167,177 @@ class _GeneraSettimanaFormScreenState
     return '${_nomiGiorni[data.weekday - 1]} '
         '${data.day.toString().padLeft(2, '0')}/'
         '${data.month.toString().padLeft(2, '0')}';
+  }
+
+  DettaglioFocus _dettaglio(
+    double? metri,
+    Set<String> attrezzi,
+    String? stile,
+  ) => DettaglioFocus(
+    metri: metri?.round(),
+    attrezzatura: attrezzi.toList(),
+    stile: stile,
+  );
+
+  bool _qualcunoHaFocus(String f) => _focusPerSeduta.any((s) => s.contains(f));
+
+  void _alternaFocusSeduta(int indice, String f) {
+    setState(() {
+      final insieme = _focusPerSeduta[indice];
+      if (f == 'completo') {
+        insieme
+          ..clear()
+          ..add('completo');
+        return;
+      }
+      insieme.remove('completo');
+      if (!insieme.remove(f)) insieme.add(f);
+      if (insieme.isEmpty) insieme.add('completo');
+    });
+  }
+
+  Future<void> _compilaDalTesto() async {
+    final testo = _testoController.text.trim();
+    if (testo.length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Scrivi prima come vuoi la settimana')),
+      );
+      return;
+    }
+    setState(() => _compilazioneInCorso = true);
+    try {
+      final modulo = await ref
+          .read(generazioneAiRepositoryProvider)
+          .compilaSettimana(testo);
+      if (!mounted) return;
+      if (modulo.vuoto) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Non ho trovato nel testo niente da compilare: '
+              'prova a essere più preciso, o imposta i campi qui sotto.',
+            ),
+          ),
+        );
+      } else {
+        _applicaModulo(modulo);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Modulo compilato: controlla i campi e poi premi Genera.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Errore nella lettura del testo: ${messaggioErrore(e)}',
+          ),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(label: 'Riprova', onPressed: _compilaDalTesto),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _compilazioneInCorso = false);
+    }
+  }
+
+  void _applicaModulo(ModuloSettimanaCompilato m) {
+    setState(() {
+      if (m.volumeSettimanaleMetri != null) {
+        _volumeSettimanale = m.volumeSettimanaleMetri!
+            .clamp(2000, 20000)
+            .toDouble();
+        if ((_volumeLavoroCentraleSettimanale ?? 0) > _volumeSettimanale) {
+          _volumeLavoroCentraleSettimanale = _volumeSettimanale;
+        }
+      }
+      if (m.volumeLavoroCentraleSettimanaleMetri != null) {
+        _volumeLavoroCentraleSettimanale = m
+            .volumeLavoroCentraleSettimanaleMetri!
+            .clamp(0, _volumeSettimanale)
+            .toDouble();
+      }
+      if (m.minutiMax != null) {
+        _minutiMax = m.minutiMax!.clamp(20, 180).toDouble();
+      }
+      if (m.vascaM != null) _vascaM = m.vascaM!;
+      if (m.tipoSettimana != null && _tipiSettimana.contains(m.tipoSettimana)) {
+        _tipoSettimana = m.tipoSettimana;
+      }
+
+      // Giorni nominati (1 = lunedì) -> distanza in giorni dalla data di
+      // inizio, che è ciò che il form tiene.
+      if (m.giorni.isNotEmpty) {
+        _giorniSelezionati
+          ..clear()
+          ..addAll({
+            for (final g in m.giorni) (g - _dataInizio.weekday + 7) % 7,
+          })
+          ..sort();
+        _erroreGiorni = null;
+      }
+      final numero = _giorniSelezionati.length;
+      _focusPerSeduta = [
+        for (var i = 0; i < numero; i++)
+          i < _focusPerSeduta.length ? _focusPerSeduta[i] : {focusLavoro.first},
+      ];
+      if (m.focusComune.isNotEmpty) {
+        for (final f in _focusPerSeduta) {
+          f
+            ..clear()
+            ..addAll(m.focusComune);
+        }
+      }
+      for (final voce in m.focusPerGiorno.entries) {
+        final offset = (voce.key - _dataInizio.weekday + 7) % 7;
+        final indice = _giorniSelezionati.indexOf(offset);
+        if (indice >= 0) {
+          _focusPerSeduta[indice]
+            ..clear()
+            ..addAll(voce.value);
+        }
+      }
+
+      final braccia = m.braccia;
+      if (braccia != null) {
+        if (braccia.metri != null) _metriBraccia = braccia.metri!.toDouble();
+        if (braccia.attrezzatura.isNotEmpty) {
+          _attrezziBraccia
+            ..clear()
+            ..addAll(braccia.attrezzatura);
+        }
+        if (braccia.stile != null) _stileBraccia = braccia.stile;
+      }
+      final gambe = m.gambe;
+      if (gambe != null) {
+        if (gambe.metri != null) _metriGambe = gambe.metri!.toDouble();
+        if (gambe.attrezzatura.isNotEmpty) {
+          _attrezziGambe
+            ..clear()
+            ..addAll(gambe.attrezzatura);
+        }
+        if (gambe.stile != null) _stileGambe = gambe.stile;
+      }
+      if (m.stileTecnica != null) _stileTecnica = m.stileTecnica;
+      if (m.attrezzaturaLavoroCentrale.isNotEmpty) {
+        _attrezzaturaLavoroCentraleSelezionata
+          ..clear()
+          ..addAll(m.attrezzaturaLavoroCentrale);
+      }
+      final vincoli = m.vincoli;
+      if (vincoli != null) {
+        final attuali = _vincoliController.text.trim();
+        if (attuali.isEmpty) {
+          _vincoliController.text = vincoli;
+        } else if (!attuali.contains(vincoli)) {
+          _vincoliController.text = '$attuali. $vincoli';
+        }
+      }
+    });
   }
 
   Future<void> _conferma(String? gruppoId) async {
@@ -221,7 +401,10 @@ class _GeneraSettimanaFormScreenState
               volumeSettimanaleMetri: _volumeSettimanale.round(),
               volumeLavoroCentraleSettimanaleM: _volumeLavoroCentraleSettimanale
                   ?.round(),
-              focusPerSeduta: _focusPerSeduta,
+              focusPerSeduta: [
+                for (final f in _focusPerSeduta)
+                  focusLavoro.where(f.contains).toList(),
+              ],
               attrezzaturaLavoroCentrale: attrezzaturaCentrale,
               minutiMax: minutiMax,
               vascaM: _vascaM,
@@ -263,9 +446,23 @@ class _GeneraSettimanaFormScreenState
       final sedute = <SedutaConScheda>[];
       for (var i = 0; i < settimana.sedute.length; i++) {
         final seduta = settimana.sedute[i];
-        final focusSeduta = i < _focusPerSeduta.length
-            ? _focusPerSeduta[i]
-            : _focusPerSeduta.last;
+        final focusSeduta = focusLavoro
+            .where(
+              (i < _focusPerSeduta.length
+                      ? _focusPerSeduta[i]
+                      : _focusPerSeduta.last)
+                  .contains,
+            )
+            .toList();
+        final dettagli = dettagliFocusPerSeduta(
+          focus: focusSeduta,
+          volumeSeduta: seduta.volumeMetri,
+          braccia: _dettaglio(_metriBraccia, _attrezziBraccia, _stileBraccia),
+          gambe: _dettaglio(_metriGambe, _attrezziGambe, _stileGambe),
+        );
+        final stileTecnica = focusSeduta.contains('tecnica')
+            ? _stileTecnica
+            : null;
         if (mounted) {
           setState(
             () => _fasePassaggio =
@@ -290,7 +487,10 @@ class _GeneraSettimanaFormScreenState
                 gruppo: gruppoLabel,
                 volumeMetri: seduta.volumeMetri,
                 volumeLavoroCentraleM: volumeLavoroCentraleSeduta,
-                focus: [focusSeduta],
+                focus: focusSeduta,
+                dettaglioBraccia: dettagli.braccia,
+                dettaglioGambe: dettagli.gambe,
+                stileTecnica: stileTecnica,
                 attrezzaturaLavoroCentrale: attrezzaturaCentrale,
                 minutiMax: minutiMax,
                 vascaM: _vascaM,
@@ -317,6 +517,9 @@ class _GeneraSettimanaFormScreenState
             scheda: scheda,
             data: _dataInizio.add(Duration(days: offset)),
             focus: focusSeduta,
+            dettaglioBraccia: dettagli.braccia,
+            dettaglioGambe: dettagli.gambe,
+            stileTecnica: stileTecnica,
             volumeLavoroCentraleM: volumeLavoroCentraleSeduta,
           ),
         );
@@ -440,6 +643,30 @@ class _GeneraSettimanaFormScreenState
           ),
           const SizedBox(height: AppSpacing.s16),
           FormGroup(
+            titolo: 'Descrivi la settimana',
+            campi: [
+              AppTextField(
+                etichetta: 'Scrivila a parole',
+                controller: _testoController,
+                maxLines: 3,
+                aiuto:
+                    'Es. "lunedì, mercoledì e venerdì, 12 km in totale, il '
+                    'mercoledì tecnica, il venerdì gambe con pinne, no '
+                    'rana". Il modulo si compila da solo: poi lo rivedi. '
+                    'Oppure salta e imposta tutto qui sotto.',
+              ),
+              SecondaryButton(
+                label: _compilazioneInCorso
+                    ? 'Sto leggendo...'
+                    : 'Compila il modulo',
+                icon: Icons.auto_fix_high,
+                onPressed: _compilazioneInCorso || _generazioneInCorso
+                    ? null
+                    : _compilaDalTesto,
+              ),
+            ],
+          ),
+          FormGroup(
             titolo: 'Settimana',
             campi: [
               AppTextField(
@@ -555,18 +782,73 @@ class _GeneraSettimanaFormScreenState
             campi: [
               for (var i = 0; i < _focusPerSeduta.length; i++)
                 GruppoChip(
-                  etichetta: i < _giorniSelezionati.length
-                      ? _etichettaGiornoBreve(_giorniSelezionati[i])
-                      : 'Seduta ${i + 1}',
+                  etichetta:
+                      '${i < _giorniSelezionati.length ? _etichettaGiornoBreve(_giorniSelezionati[i]) : 'Seduta ${i + 1}'}'
+                      ' (più scelte)',
                   chip: [
                     for (final f in focusLavoro)
                       TonalChip(
                         etichetta: etichettaFocusLavoro(f),
-                        selezionato: _focusPerSeduta[i] == f,
-                        onSelezionato: (_) =>
-                            setState(() => _focusPerSeduta[i] = f),
+                        selezionato: _focusPerSeduta[i].contains(f),
+                        onSelezionato: (_) => _alternaFocusSeduta(i, f),
                       ),
                   ],
+                ),
+              if (_qualcunoHaFocus('tecnica'))
+                PannelloCampi(
+                  titolo: 'Stile tecnica principale',
+                  figli: [
+                    GruppoChip(
+                      etichetta: "Facoltativo: se non scegli, decide l'AI",
+                      chip: [
+                        for (final st in stiliNuoto)
+                          TonalChip(
+                            etichetta: labelStile(st),
+                            selezionato: _stileTecnica == st,
+                            onSelezionato: (sel) =>
+                                setState(() => _stileTecnica = sel ? st : null),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              if (_qualcunoHaFocus('braccia'))
+                PannelloFocusDettaglio(
+                  titolo: 'Braccia (in ogni seduta con questo focus)',
+                  etichettaMetri: 'Braccia — metri per seduta',
+                  metri: _metriBraccia,
+                  maxMetri: 3000,
+                  onMetri: (v) => setState(() => _metriBraccia = v),
+                  attrezziDisponibili: _attrezzaturaBraccia,
+                  attrezziSelezionati: _attrezziBraccia,
+                  onAttrezzo: (a, sel) => setState(() {
+                    if (sel) {
+                      _attrezziBraccia.add(a);
+                    } else {
+                      _attrezziBraccia.remove(a);
+                    }
+                  }),
+                  stile: _stileBraccia,
+                  onStile: (st) => setState(() => _stileBraccia = st),
+                ),
+              if (_qualcunoHaFocus('gambe'))
+                PannelloFocusDettaglio(
+                  titolo: 'Gambe (in ogni seduta con questo focus)',
+                  etichettaMetri: 'Gambe — metri per seduta',
+                  metri: _metriGambe,
+                  maxMetri: 3000,
+                  onMetri: (v) => setState(() => _metriGambe = v),
+                  attrezziDisponibili: _attrezzaturaGambe,
+                  attrezziSelezionati: _attrezziGambe,
+                  onAttrezzo: (a, sel) => setState(() {
+                    if (sel) {
+                      _attrezziGambe.add(a);
+                    } else {
+                      _attrezziGambe.remove(a);
+                    }
+                  }),
+                  stile: _stileGambe,
+                  onStile: (st) => setState(() => _stileGambe = st),
                 ),
             ],
           ),
@@ -583,7 +865,7 @@ class _GeneraSettimanaFormScreenState
                     children: [
                       for (final a in _attrezzaturaLavoroCentraleDisponibile)
                         TonalChip(
-                          etichetta: _etichettaAttrezzo(a),
+                          etichetta: etichettaAttrezzo(a),
                           selezionato: _attrezzaturaLavoroCentraleSelezionata
                               .contains(a),
                           onSelezionato: (selezionato) => setState(() {
@@ -667,6 +949,9 @@ class SedutaConScheda {
     required this.scheda,
     required this.data,
     required this.focus,
+    this.dettaglioBraccia,
+    this.dettaglioGambe,
+    this.stileTecnica,
     this.volumeLavoroCentraleM,
   });
 
@@ -674,9 +959,13 @@ class SedutaConScheda {
   final SchedaGenerata scheda;
   final DateTime data;
 
-  /// Il focus usato per generare questa seduta — serve a poterla
-  /// rigenerare singolarmente nella revisione, con lo stesso focus.
-  final String focus;
+  /// Il focus (uno o più) e i dettagli già adattati a questa seduta,
+  /// usati per generarla — servono a poterla rigenerare singolarmente
+  /// nella revisione, con gli stessi parametri.
+  final List<String> focus;
+  final DettaglioFocus? dettaglioBraccia;
+  final DettaglioFocus? dettaglioGambe;
+  final String? stileTecnica;
 
   /// La quota di volume lavoro centrale di questa seduta (ripartita
   /// proporzionalmente dal totale settimanale) — riusata se si rigenera
@@ -754,6 +1043,9 @@ class _RevisioneSettimanaScreenState
           scheda: corrente.scheda,
           data: scelta,
           focus: corrente.focus,
+          dettaglioBraccia: corrente.dettaglioBraccia,
+          dettaglioGambe: corrente.dettaglioGambe,
+          stileTecnica: corrente.stileTecnica,
           volumeLavoroCentraleM: corrente.volumeLavoroCentraleM,
         );
       });
@@ -775,7 +1067,10 @@ class _RevisioneSettimanaScreenState
               gruppo: widget.gruppoLabel,
               volumeMetri: voce.seduta.volumeMetri,
               volumeLavoroCentraleM: voce.volumeLavoroCentraleM,
-              focus: [voce.focus],
+              focus: voce.focus,
+              dettaglioBraccia: voce.dettaglioBraccia,
+              dettaglioGambe: voce.dettaglioGambe,
+              stileTecnica: voce.stileTecnica,
               attrezzaturaLavoroCentrale: widget.attrezzaturaLavoroCentrale,
               minutiMax: widget.minutiMax,
               vascaM: widget.vascaM,
@@ -800,6 +1095,9 @@ class _RevisioneSettimanaScreenState
           scheda: nuovaScheda,
           data: voce.data,
           focus: voce.focus,
+          dettaglioBraccia: voce.dettaglioBraccia,
+          dettaglioGambe: voce.dettaglioGambe,
+          stileTecnica: voce.stileTecnica,
           volumeLavoroCentraleM: voce.volumeLavoroCentraleM,
         );
       });

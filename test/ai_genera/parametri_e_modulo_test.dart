@@ -1,3 +1,4 @@
+import 'package:coach_vasca/features/ai_genera/domain/focus_lavoro.dart';
 import 'package:coach_vasca/features/ai_genera/domain/modulo_compilato.dart';
 import 'package:coach_vasca/features/ai_genera/domain/parametri_generazione.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -90,6 +91,44 @@ void main() {
       expect(m.vascaM, isNull);
       expect(m.tipiLavoro, isEmpty);
       expect(m.focus, ['gambe']);
+    });
+  });
+
+  group('dettagliFocusPerSeduta', () {
+    const braccia = DettaglioFocus(metri: 600, attrezzatura: ['palette']);
+    const gambe = DettaglioFocus(metri: 400, stile: 'delfino');
+
+    test('include solo i dettagli dei focus della seduta', () {
+      final r = dettagliFocusPerSeduta(
+        focus: ['gambe'],
+        volumeSeduta: 3000,
+        braccia: braccia,
+        gambe: gambe,
+      );
+      expect(r.braccia, isNull);
+      expect(r.gambe?.metri, 400);
+      expect(r.gambe?.stile, 'delfino');
+    });
+
+    test('riduce in proporzione se braccia e gambe superano la seduta', () {
+      final r = dettagliFocusPerSeduta(
+        focus: ['braccia', 'gambe'],
+        volumeSeduta: 500,
+        braccia: braccia,
+        gambe: gambe,
+      );
+      expect(r.braccia!.metri! + r.gambe!.metri!, 500);
+      expect(r.braccia!.metri, 300);
+      expect(r.braccia!.attrezzatura, ['palette']);
+    });
+
+    test('senza metri (Auto) lascia i metri vuoti', () {
+      final r = dettagliFocusPerSeduta(
+        focus: ['braccia'],
+        volumeSeduta: 1000,
+        braccia: const DettaglioFocus(attrezzatura: ['pull']),
+      );
+      expect(r.braccia?.metri, isNull);
     });
   });
 }

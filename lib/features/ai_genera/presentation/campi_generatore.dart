@@ -5,6 +5,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../domain/tipo_lavoro.dart';
 
 /// Contenitore di un blocco di campi che dipendono da una scelta fatta
@@ -272,6 +273,96 @@ class GrigliaTipiLavoro extends StatelessWidget {
             ],
           ),
         ],
+      ],
+    );
+  }
+}
+
+const stiliNuoto = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
+
+String etichettaAttrezzo(String a) => switch (a) {
+  'pull' => 'Pull',
+  'palette' => 'Palette',
+  'boccaglio' => 'Boccaglio',
+  'pinne' => 'Pinne',
+  'tavola' => 'Tavola',
+  _ => a.isEmpty ? a : a[0].toUpperCase() + a.substring(1),
+};
+
+String siglaStile(String s) => switch (s) {
+  'libero' => 'SL',
+  'dorso' => 'DO',
+  'rana' => 'RA',
+  'delfino' => 'FA',
+  'misti' => 'MX',
+  _ => s,
+};
+
+/// Pannello di dettaglio di un focus (braccia o gambe): metri dedicati,
+/// attrezzi e stile. Stateless: chi lo usa tiene lo stato e passa le
+/// modifiche con i callback.
+class PannelloFocusDettaglio extends StatelessWidget {
+  const PannelloFocusDettaglio({
+    required this.titolo,
+    required this.etichettaMetri,
+    required this.metri,
+    required this.maxMetri,
+    required this.onMetri,
+    required this.attrezziDisponibili,
+    required this.attrezziSelezionati,
+    required this.onAttrezzo,
+    required this.stile,
+    required this.onStile,
+    super.key,
+  });
+
+  final String titolo;
+  final String etichettaMetri;
+  final double? metri;
+  final double maxMetri;
+  final ValueChanged<double> onMetri;
+  final List<String> attrezziDisponibili;
+  final Set<String> attrezziSelezionati;
+  final void Function(String attrezzo, bool selezionato) onAttrezzo;
+  final String? stile;
+  final ValueChanged<String?> onStile;
+
+  @override
+  Widget build(BuildContext context) {
+    return PannelloCampi(
+      titolo: titolo,
+      figli: [
+        SliderConValore(
+          etichetta: etichettaMetri,
+          valore: (metri ?? 0).clamp(0, maxMetri).toDouble(),
+          min: 0,
+          max: maxMetri,
+          divisioni: (maxMetri / 100).round().clamp(1, 999),
+          testoValore: metri == null ? 'Auto' : null,
+          onChanged: onMetri,
+        ),
+        GruppoChip(
+          etichetta: 'Attrezzi',
+          chip: [
+            for (final a in attrezziDisponibili)
+              TonalChip(
+                etichetta: etichettaAttrezzo(a),
+                selezionato: attrezziSelezionati.contains(a),
+                onSelezionato: (s) => onAttrezzo(a, s),
+              ),
+          ],
+        ),
+        GruppoChip(
+          etichetta: 'Stile (facoltativo)',
+          chip: [
+            for (final s in stiliNuoto)
+              TonalChip(
+                etichetta: siglaStile(s),
+                selezionato: stile == s,
+                onSelezionato: (sel) => onStile(sel ? s : null),
+              ),
+          ],
+        ),
       ],
     );
   }

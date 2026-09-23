@@ -33,7 +33,8 @@ interface ParametriSettimana {
   giorniSettimana?: string[];
   volumeSettimanaleMetri?: number;
   volumeLavoroCentraleSettimanaleMetri?: number | null;
-  focusPerSeduta?: string[];
+  // Per ogni seduta uno o più focus (stringa singola accettata per compatibilità).
+  focusPerSeduta?: (string | string[])[];
   attrezzaturaLavoroCentrale?: string[];
   minutiMax?: number | null;
   vascaM?: number | null;
@@ -109,7 +110,9 @@ function costruisciPrompt(p: ParametriSettimana): string {
   const giorni = Array.isArray(p.giorniSettimana) ? p.giorniSettimana : [];
   const focusPerSeduta = Array.isArray(p.focusPerSeduta) ? p.focusPerSeduta : [];
   const righeSedute = giorni.map((g, i) =>
-    `- Seduta ${i + 1}, ${g}: focus "${focusPerSeduta[i] ?? ""}"`
+    `- Seduta ${i + 1}, ${g}: focus "${
+      [focusPerSeduta[i] ?? ""].flat().join(" + ")
+    }"`
   );
   return [
     "Sei un allenatore di nuoto esperto. Pianifica una settimana di " +
