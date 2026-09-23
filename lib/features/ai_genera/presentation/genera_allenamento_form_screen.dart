@@ -16,6 +16,7 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/corsie_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
@@ -54,7 +55,6 @@ class _GeneraAllenamentoFormScreenState
   final _formKey = GlobalKey<FormState>();
   final _vincoliController = TextEditingController();
 
-  String? _gruppoId;
   double _volumeMetri = 3000;
   String _focusSelezionato = _focus.first;
   final Set<String> _regimiSelezionati = {};
@@ -68,7 +68,11 @@ class _GeneraAllenamentoFormScreenState
 
   @override
   Widget build(BuildContext context) {
+    final gruppoId = ref.watch(selezioneGruppoProvider)?.gruppoId;
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
+    final nomeGruppo =
+        gruppi.where((g) => g.id == gruppoId).firstOrNull?.nome ??
+        'Tutti gli atleti';
     final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
@@ -94,19 +98,21 @@ class _GeneraAllenamentoFormScreenState
             FormGroup(
               titolo: 'Parametri',
               campi: [
-                AppSelect<String?>(
-                  etichetta: 'Gruppo',
-                  value: _gruppoId,
-                  hint: 'Tutti gli atleti',
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Tutti gli atleti'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gruppo',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
                     ),
-                    for (final g in gruppi)
-                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      nomeGruppo,
+                      style: AppTypography.corpo.copyWith(color: colori.testo),
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _gruppoId = value),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,15 +213,16 @@ class _GeneraAllenamentoFormScreenState
 
     setState(() => _generazioneInCorso = true);
 
+    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
     var corsie = const <CorsiaGenerazione>[];
     try {
       final tuttiGliAtleti = await ref.read(
         atletiListProvider((clubId: widget.clubId, includeInactive: false))
             .future,
       );
-      final atletiDelGruppo = _gruppoId == null
+      final atletiDelGruppo = gruppoId == null
           ? tuttiGliAtleti
-          : tuttiGliAtleti.where((a) => a.gruppoId == _gruppoId).toList();
+          : tuttiGliAtleti.where((a) => a.gruppoId == gruppoId).toList();
       corsie = await calcolaCorsie(ref, atletiDelGruppo);
     } catch (_) {
       // Le corsie migliorano la generazione (ripartenze sui passi reali),
@@ -229,7 +236,7 @@ class _GeneraAllenamentoFormScreenState
     };
 
     final parametri = ParametriGenerazione(
-      gruppo: nomiGruppi[_gruppoId] ?? 'Tutti gli atleti',
+      gruppo: nomiGruppi[gruppoId] ?? 'Tutti gli atleti',
       volumeMetri: _volumeMetri.round(),
       focus: _focusSelezionato,
       regimiAmmessi: _regimiSelezionati.toList(),
@@ -264,7 +271,7 @@ class _GeneraAllenamentoFormScreenState
           builder: (_) => SchedaGenerataScreen(
             scheda: scheda,
             clubId: widget.clubId,
-            gruppoId: _gruppoId,
+            gruppoId: gruppoId,
             dataIniziale: widget.dataPredefinita,
             generazioneId: generazioneId,
           ),
