@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/dettatura/dettatura_vocale.dart';
+import '../../../core/dettatura/testo_con_prefisso.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -54,7 +55,13 @@ class _DettaAllenamentoFormScreenState
 
   DettatoreVocale? _dettatore;
   bool _inAscolto = false;
-  String _testoFinale = '';
+
+  /// Cosa c'era già scritto nel campo prima di premere il microfono
+  /// (testo digitato a mano, o rimasto da una dettatura precedente): un
+  /// prefisso fisso su cui si affianca il testo della sessione corrente,
+  /// che `DettatoreVocale` ricostruisce sempre per intero ad ogni
+  /// aggiornamento (mai da sommare qui) — vedi `dettatura_vocale_web.dart`.
+  String _prefisso = '';
 
   @override
   void dispose() {
@@ -70,22 +77,13 @@ class _DettaAllenamentoFormScreenState
     }
     setState(() => _erroreMicrofono = null);
     // Riparte da quello che c'è già nel campo (compresi eventuali ritocchi
-    // fatti a mano fra una dettatura e l'altra), non lo sovrascrive.
-    _testoFinale = _testoController.text.trim();
+    // fatti a mano fra una dettatura e l'altra): resta fisso per tutta la
+    // sessione, il testo dettato si affianca ma non lo sovrascrive.
+    _prefisso = _testoController.text.trim();
     _dettatore = DettatoreVocale(
-      onTrascrizione: (testo, {required finale}) {
+      onTrascrizione: (testoSessione) {
         if (!mounted) return;
-        if (finale) {
-          _testoFinale = [
-            _testoFinale,
-            testo,
-          ].where((t) => t.isNotEmpty).join(' ');
-          _aggiornaCampo(_testoFinale);
-        } else {
-          _aggiornaCampo(
-            [_testoFinale, testo].where((t) => t.isNotEmpty).join(' '),
-          );
-        }
+        _aggiornaCampo(testoConPrefisso(_prefisso, testoSessione));
       },
       onErrore: (messaggio) {
         if (!mounted) return;
