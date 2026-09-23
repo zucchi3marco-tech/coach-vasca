@@ -6,7 +6,6 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/empty_state.dart';
@@ -30,6 +29,7 @@ import '../domain/focus_lavoro.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
+import 'campi_generatore.dart';
 
 const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
 const _abbreviazioniGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -440,7 +440,7 @@ class _GeneraSettimanaFormScreenState
           ),
           const SizedBox(height: AppSpacing.s16),
           FormGroup(
-            titolo: 'Parametri',
+            titolo: 'Settimana',
             campi: [
               AppTextField(
                 etichetta: 'Data di inizio',
@@ -449,44 +449,29 @@ class _GeneraSettimanaFormScreenState
                 onTap: _pickDataInizio,
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gruppo',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    nomeGruppo,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                  ),
-                ],
+              Text(
+                'Gruppo: $nomeGruppo',
+                style: AppTypography.corpo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppSelect<String?>(
+                  GruppoChip(
                     etichetta: 'Tipo di settimana (facoltativo)',
-                    value: _tipoSettimana,
-                    hint: 'Nessuno',
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Nessuno'),
-                      ),
+                    chip: [
                       for (final t in _tipiSettimana)
-                        DropdownMenuItem(
-                          value: t,
-                          child: Text(_capitalizza(t)),
+                        TonalChip(
+                          etichetta: _capitalizza(t),
+                          selezionato: _tipoSettimana == t,
+                          onSelezionato: (selezionato) => setState(
+                            () => _tipoSettimana = selezionato ? t : null,
+                          ),
                         ),
                     ],
-                    onChanged: (value) =>
-                        setState(() => _tipoSettimana = value),
                   ),
-                  const SizedBox(height: AppSpacing.s4),
+                  const SizedBox(height: AppSpacing.s8),
                   Text(
                     'Regola volume e intensità della settimana generata: '
                     'una settimana di scarico avrà volumi più bassi di '
@@ -501,17 +486,9 @@ class _GeneraSettimanaFormScreenState
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Giorni della settimana',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
-                  Wrap(
-                    spacing: AppSpacing.s8,
-                    runSpacing: AppSpacing.s8,
-                    children: [
+                  GruppoChip(
+                    etichetta: 'Giorni della settimana',
+                    chip: [
                       for (var offset = 0; offset < 7; offset++)
                         TonalChip(
                           etichetta: _etichettaGiornoBreve(offset),
@@ -532,102 +509,20 @@ class _GeneraSettimanaFormScreenState
                   ],
                 ],
               ),
+            ],
+          ),
+          FormGroup(
+            titolo: 'Sessione',
+            campi: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Volume settimanale: ${_volumeSettimanale.round()} m',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  Slider(
-                    value: _volumeSettimanale,
-                    min: 2000,
-                    max: 20000,
-                    divisions: 36,
-                    label: '${_volumeSettimanale.round()} m',
-                    onChanged: (value) => setState(() {
-                      _volumeSettimanale = value;
-                      if ((_volumeLavoroCentraleSettimanale ?? 0) > value) {
-                        _volumeLavoroCentraleSettimanale = value;
-                      }
-                    }),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _volumeLavoroCentraleSettimanale == null
-                        ? 'Volume lavoro centrale settimanale: decide l\'AI'
-                        : 'Volume lavoro centrale settimanale: '
-                              '${volumeLavoroCentraleClampato.round()} m',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  Slider(
-                    value: volumeLavoroCentraleClampato,
-                    min: 0,
-                    max: _volumeSettimanale,
-                    divisions: (_volumeSettimanale / 200).round().clamp(1, 999),
-                    label: '${volumeLavoroCentraleClampato.round()} m',
-                    onChanged: (value) => setState(
-                      () => _volumeLavoroCentraleSettimanale = value,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Minuti max di lavoro: ${_minutiMax.round()} min',
-                          style: AppTypography.etichetta.copyWith(
-                            color: colori.testoSecondario,
-                          ),
-                        ),
-                      ),
-                      const PulsanteSpiegazione(
-                        titolo: 'Minuti max di lavoro',
-                        spiegazione:
-                            'Vale per ogni seduta della settimana: nessuna '
-                            'deve superare questo tempo, stimato su nuoto + '
-                            "recuperi dell'atleta più lento del gruppo. La "
-                            'stima non tiene conto dei tempi di virata né '
-                            'della lunghezza della vasca.',
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _minutiMax,
-                    min: 20,
-                    max: 180,
-                    divisions: 32,
-                    label: '${_minutiMax.round()} min',
-                    onChanged: (value) => setState(() => _minutiMax = value),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Vasca',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
+                  const EtichettaCampo('Vasca'),
                   const SizedBox(height: AppSpacing.s8),
                   SegmentedButton<int>(
                     segments: const [
-                      ButtonSegment(value: 25, label: Text('25m')),
-                      ButtonSegment(value: 50, label: Text('50m')),
+                      ButtonSegment(value: 25, label: Text('25 m')),
+                      ButtonSegment(value: 50, label: Text('50 m')),
                     ],
                     selected: {_vascaM},
                     onSelectionChanged: (s) =>
@@ -635,18 +530,56 @@ class _GeneraSettimanaFormScreenState
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Attrezzi lavoro centrale',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
+              SliderConValore(
+                etichetta: 'Minuti max di lavoro (ogni seduta)',
+                valore: _minutiMax,
+                min: 20,
+                max: 180,
+                divisioni: 32,
+                testoValore: '${_minutiMax.round()} min',
+                onChanged: (value) => setState(() => _minutiMax = value),
+                azione: const PulsanteSpiegazione(
+                  titolo: 'Minuti max di lavoro',
+                  spiegazione:
+                      'Vale per ogni seduta della settimana: nessuna '
+                      'deve superare questo tempo, stimato su nuoto + '
+                      "recuperi dell'atleta più lento del gruppo. La "
+                      'stima non tiene conto dei tempi di virata né '
+                      'della lunghezza della vasca.',
+                ),
+              ),
+            ],
+          ),
+          FormGroup(
+            titolo: 'Focus di ogni seduta',
+            campi: [
+              for (var i = 0; i < _focusPerSeduta.length; i++)
+                GruppoChip(
+                  etichetta: i < _giorniSelezionati.length
+                      ? _etichettaGiornoBreve(_giorniSelezionati[i])
+                      : 'Seduta ${i + 1}',
+                  chip: [
+                    for (final f in focusLavoro)
+                      TonalChip(
+                        etichetta: etichettaFocusLavoro(f),
+                        selezionato: _focusPerSeduta[i] == f,
+                        onSelezionato: (_) =>
+                            setState(() => _focusPerSeduta[i] = f),
+                      ),
+                  ],
+                ),
+            ],
+          ),
+          FormGroup(
+            titolo: 'Volume e attrezzi',
+            isUltimo: true,
+            campi: [
+              PannelloCampi(
+                titolo: 'Attrezzi lavoro centrale',
+                figli: [
                   Wrap(
                     spacing: AppSpacing.s8,
+                    runSpacing: AppSpacing.s8,
                     children: [
                       for (final a in _attrezzaturaLavoroCentraleDisponibile)
                         TonalChip(
@@ -665,37 +598,32 @@ class _GeneraSettimanaFormScreenState
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Focus di ogni seduta',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
-                  for (var i = 0; i < _focusPerSeduta.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                      child: AppSelect<String>(
-                        etichetta: i < _giorniSelezionati.length
-                            ? _etichettaGiornoBreve(_giorniSelezionati[i])
-                            : 'Seduta ${i + 1}',
-                        value: _focusPerSeduta[i],
-                        items: [
-                          for (final f in focusLavoro)
-                            DropdownMenuItem(
-                              value: f,
-                              child: Text(etichettaFocusLavoro(f)),
-                            ),
-                        ],
-                        onChanged: (value) => setState(
-                          () => _focusPerSeduta[i] = value ?? focusLavoro.first,
-                        ),
-                      ),
-                    ),
-                ],
+              SliderConValore(
+                etichetta: 'Volume settimanale (m)',
+                valore: _volumeSettimanale,
+                min: 2000,
+                max: 20000,
+                divisioni: 36,
+                onChanged: (value) => setState(() {
+                  _volumeSettimanale = value;
+                  if ((_volumeLavoroCentraleSettimanale ?? 0) > value) {
+                    _volumeLavoroCentraleSettimanale = value;
+                  }
+                }),
+              ),
+              SliderConValore(
+                etichetta: _volumeLavoroCentraleSettimanale == null
+                    ? "Volume lavoro centrale settimanale (m) — se non lo muovi decide l'AI"
+                    : 'Volume lavoro centrale settimanale (m)',
+                valore: volumeLavoroCentraleClampato,
+                min: 0,
+                max: _volumeSettimanale,
+                divisioni: (_volumeSettimanale / 200).round().clamp(1, 999),
+                testoValore: _volumeLavoroCentraleSettimanale == null
+                    ? 'Auto'
+                    : null,
+                onChanged: (value) =>
+                    setState(() => _volumeLavoroCentraleSettimanale = value),
               ),
               AppTextField(
                 etichetta: 'Vincoli (facoltativo)',
