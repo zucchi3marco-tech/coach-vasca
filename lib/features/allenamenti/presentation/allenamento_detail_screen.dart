@@ -25,6 +25,7 @@ import '../domain/serie.dart';
 import '../domain/serie_rapida.dart';
 import 'allenamento_form_screen.dart';
 import 'scheda_bordo_vasca_screen.dart';
+import 'scrivi_serie_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
 
@@ -69,6 +70,17 @@ class _AllenamentoDetailScreenState
           allenamentoId: widget.allenamento.id,
           ordineSuccessivo: ordineSuccessivo,
           serie: serie,
+        ),
+      ),
+    );
+  }
+
+  void _apriScriviSerie(int ordineSuccessivo) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ScriviSerieScreen(
+          allenamento: widget.allenamento,
+          ordineSuccessivo: ordineSuccessivo,
         ),
       ),
     );
@@ -291,9 +303,12 @@ class _AllenamentoDetailScreenState
                     titolo: 'Nessuna serie',
                     descrizione:
                         'Scrivi la prima serie qui sotto per costruire '
-                        'questo allenamento.',
+                        'questo allenamento, oppure scrivi o detta più '
+                        'serie insieme.',
                     azionePrincipale: 'Scrivi la prima serie',
                     onAzionePrincipale: () => _quickFocusNode.requestFocus(),
+                    azioneSecondaria: 'Scrivi o detta più serie insieme',
+                    onAzioneSecondaria: () => _apriScriviSerie(1),
                   );
                 }
                 // Riepilogo, non un campo a se': l'attrezzatura resta
@@ -546,6 +561,11 @@ class _AllenamentoDetailScreenState
                       ordineSuccessivo: serieAttuale.length + 1,
                       serie: null,
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.mic_none_outlined),
+                    tooltip: 'Scrivi o detta più serie insieme',
+                    onPressed: () => _apriScriviSerie(serieAttuale.length + 1),
                   ),
                   const SizedBox(width: AppSpacing.s8),
                   Expanded(
