@@ -90,7 +90,7 @@ anche per varianti non elencate qui):
 - Zona/regime, se nominati (altrimenti lascia il campo vuoto, non
   indovinare): "aerobico leggero"/"A1" = A1; "aerobico"/"A2" = A2;
   "soglia"/"B1" = B1; "VO2"/"potenza aerobica"/"B2" = B2;
-  "resistenza lattacida"/"C1" = C1; "lattacido"/"C2" = C2;
+  "tolleranza lattacida"/"C1" = C1; "picco di lattato"/"C2" = C2;
   "velocità"/"sprint"/"C3" = C3; "ritmo gara"/"D" = D.
 - Blocco: "riscaldamento" = riscaldamento; "principale"/"parte centrale" o
   non specificato = principale; "defaticamento"/"scarico"/"finale" =

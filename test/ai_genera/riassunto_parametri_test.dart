@@ -32,5 +32,23 @@ void main() {
       });
       expect(riassunto, '🎙️ ${'a' * 60}…');
     });
+
+    test('dalla settimana: unisce gruppo, sedute e volume settimanale', () {
+      final riassunto = riassuntoParametriGenerazione({
+        'modalita': 'settimana',
+        'gruppo': 'U16',
+        'sedute': 4,
+        'volumeSettimanaleMetri': 12000,
+      });
+      expect(riassunto, '📅 U16 · 4 sedute · 12000 m');
+    });
+
+    test('dalla settimana: salta i campi mancanti senza separatori vuoti', () {
+      final riassunto = riassuntoParametriGenerazione({
+        'modalita': 'settimana',
+        'sedute': 3,
+      });
+      expect(riassunto, '📅 3 sedute');
+    });
   });
 }

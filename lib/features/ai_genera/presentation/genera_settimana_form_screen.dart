@@ -25,6 +25,7 @@ import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/corsie_service.dart';
 import '../application/settimana_ai_providers.dart';
 import '../data/generazione_ai_repository.dart';
+import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
@@ -202,6 +203,11 @@ class _GeneraSettimanaFormScreenState
     final attrezzaturaCentrale = _attrezzaturaLavoroCentraleSelezionata
         .toList();
     final minutiMax = _minutiMax.round();
+    final parametriStorico = {
+      'modalita': 'settimana',
+      'gruppo': gruppoLabel,
+      'volumeSettimanaleMetri': _volumeSettimanale.round(),
+    };
 
     try {
       final settimana = await ref
@@ -225,6 +231,29 @@ class _GeneraSettimanaFormScreenState
               riassuntoProgrammazione: riassunto?.toMap(),
             ),
           );
+
+      // Lo storico e' un di piu' per rivedere/migliorare i prompt: un suo
+      // fallimento non deve mai bloccare una generazione riuscita. Una sola
+      // voce per l'intera settimana, non una per seduta.
+      String? generazioneId;
+      try {
+        generazioneId = await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: {
+                ...parametriStorico,
+                'sedute': settimana.sedute.length,
+              },
+              esito: 'successo',
+              scheda: {
+                'sedute': [
+                  for (final s in settimana.sedute)
+                    {'codice': s.codice, 'volumeMetri': s.volumeMetri},
+                ],
+              },
+            );
+      } catch (_) {}
 
       final volumeSkeletroTotale = settimana.sedute.fold<int>(
         0,
@@ -305,12 +334,23 @@ class _GeneraSettimanaFormScreenState
             attrezzaturaLavoroCentrale: attrezzaturaCentrale,
             minutiMax: minutiMax,
             vascaM: _vascaM,
+            generazioneId: generazioneId,
             sedute: sedute,
           ),
         ),
       );
       if (salvata == true && mounted) Navigator.of(context).pop(true);
     } catch (e) {
+      try {
+        await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: parametriStorico,
+              esito: 'errore',
+              messaggioErrore: e.toString(),
+            );
+      } catch (_) {}
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -726,6 +766,7 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
     required this.attrezzaturaLavoroCentrale,
     required this.minutiMax,
     required this.vascaM,
+    this.generazioneId,
     required this.sedute,
   });
 
@@ -737,6 +778,11 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   final List<String> attrezzaturaLavoroCentrale;
   final int minutiMax;
   final int vascaM;
+
+  /// Id della voce di storico creata per l'intera settimana (nullo se la
+  /// registrazione stessa era fallita): se presente, dopo il primo
+  /// salvataggio ci si collega l'allenamento creato.
+  final String? generazioneId;
   final List<SedutaConScheda> sedute;
 
   @override
@@ -846,6 +892,7 @@ class _RevisioneSettimanaScreenState
     try {
       final allenamentiRepository = ref.read(allenamentiRepositoryProvider);
       final serieRepository = ref.read(serieRepositoryProvider);
+      var primoAllenamentoCollegato = false;
       for (final voce in _sedute) {
         final allenamento = await allenamentiRepository.createAllenamento(
           clubId: widget.clubId,
@@ -854,6 +901,17 @@ class _RevisioneSettimanaScreenState
           gruppoId: widget.gruppoId,
           note: voce.scheda.note,
         );
+        if (!primoAllenamentoCollegato && widget.generazioneId != null) {
+          primoAllenamentoCollegato = true;
+          try {
+            await ref
+                .read(generazioniAiRepositoryProvider)
+                .collegaAllenamento(
+                  generazioneId: widget.generazioneId!,
+                  allenamentoId: allenamento.id,
+                );
+          } catch (_) {}
+        }
         for (final s in voce.scheda.serie) {
           final risolto = risolviRipartenza(s.ripartenzePerCorsia, s.note);
           await serieRepository.createSerie(
