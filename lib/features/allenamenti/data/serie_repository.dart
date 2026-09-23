@@ -143,6 +143,27 @@ class SerieRepository {
     }
   }
 
+  /// Le serie di più allenamenti in un colpo solo, per analizzare come
+  /// il gruppo è stato allenato finora (generatore settimana AI — vedi
+  /// `storico_settimana_service.dart`): senza questa, occorrerebbe una
+  /// chiamata per allenamento.
+  Future<List<Serie>> fetchPerAllenamenti(List<String> allenamentoIds) async {
+    if (allenamentoIds.isEmpty) return [];
+    try {
+      final rows = await _client
+          .from('serie')
+          .select()
+          .inFilter('allenamento_id', allenamentoIds);
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final rows = await (_db.select(
+        _db.serieTable,
+      )..where((t) => t.allenamentoId.isIn(allenamentoIds))).get();
+      return rows.map(_fromRow).toList();
+    }
+  }
+
   Future<Serie> createSerie({
     required String allenamentoId,
     required int ordine,

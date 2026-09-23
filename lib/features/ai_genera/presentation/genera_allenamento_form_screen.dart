@@ -22,13 +22,13 @@ import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/corsie_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
+import '../domain/focus_lavoro.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/tipo_lavoro.dart';
 import 'chip_tipo_lavoro.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
-const _focus = ['completo', 'braccia', 'gambe', 'tecnica'];
 const _stiliNuoto = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
 const _attrezzaturaBraccia = ['pull', 'palette'];
 const _attrezzaturaGambe = ['pinne', 'tavola', 'boccaglio'];
@@ -41,14 +41,6 @@ const _attrezzaturaLavoroCentraleDisponibile = [
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-String _etichettaFocus(String f) => switch (f) {
-  'completo' => 'Completo',
-  'braccia' => 'Braccia',
-  'gambe' => 'Gambe',
-  'tecnica' => 'Tecnica',
-  _ => _capitalizza(f),
-};
 
 String _etichettaAttrezzo(String a) => switch (a) {
   'pull' => 'Pull',
@@ -83,7 +75,7 @@ class _GeneraAllenamentoFormScreenState
   double? _volumeLavoroCentraleMetri;
   double _minutiMax = 60;
   int _vascaM = 25;
-  String _focusSelezionato = _focus.first;
+  String _focusSelezionato = focusLavoro.first;
   double? _metriFocusSpecifico;
   final Set<String> _attrezzaturaFocusSelezionata = {};
   String? _stileFocus;
@@ -275,14 +267,14 @@ class _GeneraAllenamentoFormScreenState
                   etichetta: 'Focus',
                   value: _focusSelezionato,
                   items: [
-                    for (final f in _focus)
+                    for (final f in focusLavoro)
                       DropdownMenuItem(
                         value: f,
-                        child: Text(_etichettaFocus(f)),
+                        child: Text(etichettaFocusLavoro(f)),
                       ),
                   ],
                   onChanged: (value) => setState(() {
-                    _focusSelezionato = value ?? _focus.first;
+                    _focusSelezionato = value ?? focusLavoro.first;
                     _attrezzaturaFocusSelezionata.clear();
                     _stileFocus = null;
                   }),
@@ -292,7 +284,7 @@ class _GeneraAllenamentoFormScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Metri di ${_etichettaFocus(_focusSelezionato).toLowerCase()}: '
+                        'Metri di ${etichettaFocusLavoro(_focusSelezionato).toLowerCase()}: '
                         '${(_metriFocusSpecifico ?? 0).round()} m',
                         style: AppTypography.etichetta.copyWith(
                           color: colori.testoSecondario,

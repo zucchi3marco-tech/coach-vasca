@@ -9,8 +9,12 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/attesa_ai_hint.dart';
+import '../../../widgets/empty_state.dart';
+import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
@@ -19,12 +23,13 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/corsie_service.dart';
+import '../application/settimana_ai_providers.dart';
 import '../data/generazione_ai_repository.dart';
+import '../domain/focus_lavoro.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
 
-const _focus = ['aerobico', 'soglia', 'velocita', 'tecnica', 'misto'];
 const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
 const _abbreviazioniGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const _nomiGiorni = [
@@ -36,21 +41,33 @@ const _nomiGiorni = [
   'Sabato',
   'Domenica',
 ];
+const _attrezzaturaLavoroCentraleDisponibile = [
+  'pull',
+  'palette',
+  'boccaglio',
+  'pinne',
+];
 
 String _capitalizza(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-/// "velocita" resta senza accento come valore interno (identico a quanto
-/// manda l'Edge Function): solo l'etichetta mostrata va accentata.
-String _etichettaFocus(String f) =>
-    f == 'velocita' ? 'Velocità' : _capitalizza(f);
+String _etichettaAttrezzo(String a) => switch (a) {
+  'pull' => 'Pull',
+  'palette' => 'Palette',
+  'boccaglio' => 'Boccaglio',
+  'pinne' => 'Pinne',
+  _ => _capitalizza(a),
+};
 
 /// Pianifica una settimana intera (FASE 10, punto 5): prima uno scheletro
 /// leggero (codice, volume) via `genera-settimana`, poi il dettaglio delle
 /// serie di ogni seduta via `genera-allenamento` — stessi passi/corsie
-/// calcolati una sola volta per il gruppo. Non tiene ancora conto delle
-/// settimane precedenti né del calendario gare (rimandato, vedi
-/// ROADMAP.md).
+/// calcolati una sola volta per il gruppo.
+///
+/// Disponibile solo se il gruppo selezionato ha almeno 60 giorni di
+/// allenamenti già programmati (`gateSettimanaAiProvider`): la
+/// generazione analizza quello storico per imitare lo stile del coach,
+/// non parte da zero.
 class GeneraSettimanaFormScreen extends ConsumerStatefulWidget {
   const GeneraSettimanaFormScreen({required this.clubId, super.key});
 
@@ -75,7 +92,11 @@ class _GeneraSettimanaFormScreenState
   // spesso fisse per giorno, il coach sa già quando si allena.
   final List<int> _giorniSelezionati = [0, 2, 4, 5];
   double _volumeSettimanale = 12000;
-  List<String> _focusPerSeduta = List.filled(4, _focus.first);
+  double? _volumeLavoroCentraleSettimanale;
+  double _minutiMax = 60;
+  int _vascaM = 25;
+  final Set<String> _attrezzaturaLavoroCentraleSelezionata = {};
+  List<String> _focusPerSeduta = List.filled(4, focusLavoro.first);
   bool _generazioneInCorso = false;
   String? _fasePassaggio;
   String? _erroreGiorni;
@@ -99,7 +120,8 @@ class _GeneraSettimanaFormScreenState
       if (numero > _focusPerSeduta.length) {
         _focusPerSeduta = [
           ..._focusPerSeduta,
-          for (var i = _focusPerSeduta.length; i < numero; i++) _focus.first,
+          for (var i = _focusPerSeduta.length; i < numero; i++)
+            focusLavoro.first,
         ];
       } else if (numero < _focusPerSeduta.length) {
         _focusPerSeduta = _focusPerSeduta.sublist(0, numero);
@@ -137,7 +159,7 @@ class _GeneraSettimanaFormScreenState
         '${data.month.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _conferma() async {
+  Future<void> _conferma(String? gruppoId) async {
     if (!_formKey.currentState!.validate()) return;
     if (_giorniSelezionati.isEmpty) {
       setState(() => _erroreGiorni = 'Scegli almeno un giorno');
@@ -149,7 +171,13 @@ class _GeneraSettimanaFormScreenState
       _fasePassaggio = 'Pianificazione della settimana...';
     });
 
-    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
+    final riassunto = ref
+        .read(
+          gateSettimanaAiProvider((clubId: widget.clubId, gruppoId: gruppoId)),
+        )
+        .value
+        ?.riassunto;
+
     var corsie = const <CorsiaGenerazione>[];
     try {
       final tuttiGliAtleti = await ref.read(
@@ -171,6 +199,9 @@ class _GeneraSettimanaFormScreenState
     final gruppoLabel = nomiGruppi[gruppoId] ?? 'Tutti gli atleti';
     final vincoliUtente = _vincoliController.text.trim();
     final giorniOrdinati = List<int>.of(_giorniSelezionati)..sort();
+    final attrezzaturaCentrale = _attrezzaturaLavoroCentraleSelezionata
+        .toList();
+    final minutiMax = _minutiMax.round();
 
     try {
       final settimana = await ref
@@ -182,12 +213,23 @@ class _GeneraSettimanaFormScreenState
                 for (final g in giorniOrdinati) _etichettaGiornoCompleta(g),
               ],
               volumeSettimanaleMetri: _volumeSettimanale.round(),
+              volumeLavoroCentraleSettimanaleM: _volumeLavoroCentraleSettimanale
+                  ?.round(),
               focusPerSeduta: _focusPerSeduta,
+              attrezzaturaLavoroCentrale: attrezzaturaCentrale,
+              minutiMax: minutiMax,
+              vascaM: _vascaM,
               tipoSettimana: _tipoSettimana,
               vincoli: vincoliUtente.isEmpty ? null : vincoliUtente,
               corsie: corsie,
+              riassuntoProgrammazione: riassunto?.toMap(),
             ),
           );
+
+      final volumeSkeletroTotale = settimana.sedute.fold<int>(
+        0,
+        (t, s) => t + s.volumeMetri,
+      );
 
       final sedute = <SedutaConScheda>[];
       for (var i = 0; i < settimana.sedute.length; i++) {
@@ -205,13 +247,24 @@ class _GeneraSettimanaFormScreenState
           'Enfasi di questa seduta: ${seduta.codice}.',
           if (vincoliUtente.isNotEmpty) vincoliUtente,
         ].join(' ');
+        final volumeLavoroCentraleSeduta =
+            _volumeLavoroCentraleSettimanale != null && volumeSkeletroTotale > 0
+            ? (_volumeLavoroCentraleSettimanale! *
+                      seduta.volumeMetri /
+                      volumeSkeletroTotale)
+                  .round()
+            : null;
         final scheda = await ref
             .read(generazioneAiRepositoryProvider)
             .generaAllenamento(
               ParametriGenerazione(
                 gruppo: gruppoLabel,
                 volumeMetri: seduta.volumeMetri,
+                volumeLavoroCentraleM: volumeLavoroCentraleSeduta,
                 focus: focusSeduta,
+                attrezzaturaLavoroCentrale: attrezzaturaCentrale,
+                minutiMax: minutiMax,
+                vascaM: _vascaM,
                 regimiAmmessi: const [
                   'A1',
                   'A2',
@@ -235,6 +288,7 @@ class _GeneraSettimanaFormScreenState
             scheda: scheda,
             data: _dataInizio.add(Duration(days: offset)),
             focus: focusSeduta,
+            volumeLavoroCentraleM: volumeLavoroCentraleSeduta,
           ),
         );
       }
@@ -248,6 +302,9 @@ class _GeneraSettimanaFormScreenState
             gruppoLabel: gruppoLabel,
             corsie: corsie,
             vincoliUtente: vincoliUtente,
+            attrezzaturaLavoroCentrale: attrezzaturaCentrale,
+            minutiMax: minutiMax,
+            vascaM: _vascaM,
             sedute: sedute,
           ),
         ),
@@ -259,7 +316,10 @@ class _GeneraSettimanaFormScreenState
         SnackBar(
           content: Text('Errore nella generazione: ${messaggioErrore(e)}'),
           duration: const Duration(seconds: 6),
-          action: SnackBarAction(label: 'Riprova', onPressed: _conferma),
+          action: SnackBarAction(
+            label: 'Riprova',
+            onPressed: () => _conferma(gruppoId),
+          ),
         ),
       );
     } finally {
@@ -275,200 +335,353 @@ class _GeneraSettimanaFormScreenState
   @override
   Widget build(BuildContext context) {
     final gruppoId = ref.watch(selezioneGruppoProvider)?.gruppoId;
+    final gateAsync = ref.watch(
+      gateSettimanaAiProvider((clubId: widget.clubId, gruppoId: gruppoId)),
+    );
+
+    return AppScaffold(
+      scrollabile: true,
+      appBar: AppBar(title: const Text('Genera settimana con AI')),
+      body: gateAsync.when(
+        data: (gate) => gate.sbloccato
+            ? _corpoForm(context, gruppoId)
+            : EmptyState(
+                icona: Icons.calendar_month_outlined,
+                titolo: 'Servono più dati storici',
+                descrizione:
+                    'La pianificazione settimanale AI impara dallo stile di '
+                    'programmazione del gruppo: servono almeno 60 giorni di '
+                    'allenamenti già registrati, con le loro serie.',
+                azionePrincipale: 'Torna ad Allenamenti',
+                onAzionePrincipale: () => Navigator.of(context).pop(),
+              ),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 4),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio:
+                'Non è stato possibile controllare lo storico del '
+                'gruppo.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _corpoForm(BuildContext context, String? gruppoId) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     final nomeGruppo =
         gruppi.where((g) => g.id == gruppoId).firstOrNull?.nome ??
         'Tutti gli atleti';
     final colori = context.colori;
+    final volumeLavoroCentraleClampato = (_volumeLavoroCentraleSettimanale ?? 0)
+        .clamp(0, _volumeSettimanale)
+        .toDouble();
 
-    return AppScaffold(
-      scrollabile: true,
-      appBar: AppBar(title: const Text('Genera settimana con AI')),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Pianifica le sedute della settimana, seguendo lo stile con '
+            'cui il gruppo è già stato allenato. Il dettaglio di ogni '
+            'seduta si genera subito dopo lo scheletro: la revisione '
+            'richiede qualche secondo in più di una singola generazione.',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          FormGroup(
+            titolo: 'Parametri',
+            campi: [
+              AppTextField(
+                etichetta: 'Data di inizio',
+                controller: _dataInizioController,
+                readOnly: true,
+                onTap: _pickDataInizio,
+                suffixIcon: const Icon(Icons.calendar_today_outlined),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gruppo',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    nomeGruppo,
+                    style: AppTypography.corpo.copyWith(color: colori.testo),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSelect<String?>(
+                    etichetta: 'Tipo di settimana (facoltativo)',
+                    value: _tipoSettimana,
+                    hint: 'Nessuno',
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Nessuno'),
+                      ),
+                      for (final t in _tipiSettimana)
+                        DropdownMenuItem(
+                          value: t,
+                          child: Text(_capitalizza(t)),
+                        ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _tipoSettimana = value),
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    'Regola volume e intensità della settimana generata: '
+                    'una settimana di scarico avrà volumi più bassi di '
+                    'una di carico, una di gara punterà su freschezza e '
+                    'ritmo gara.',
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Giorni della settimana',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  Wrap(
+                    spacing: AppSpacing.s8,
+                    runSpacing: AppSpacing.s8,
+                    children: [
+                      for (var offset = 0; offset < 7; offset++)
+                        TonalChip(
+                          etichetta: _etichettaGiornoBreve(offset),
+                          selezionato: _giorniSelezionati.contains(offset),
+                          onSelezionato: (selezionato) =>
+                              _alternaGiorno(offset, selezionato),
+                        ),
+                    ],
+                  ),
+                  if (_erroreGiorni != null) ...[
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      _erroreGiorni!,
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.rosso,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Volume settimanale: ${_volumeSettimanale.round()} m',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  Slider(
+                    value: _volumeSettimanale,
+                    min: 2000,
+                    max: 20000,
+                    divisions: 36,
+                    label: '${_volumeSettimanale.round()} m',
+                    onChanged: (value) => setState(() {
+                      _volumeSettimanale = value;
+                      if ((_volumeLavoroCentraleSettimanale ?? 0) > value) {
+                        _volumeLavoroCentraleSettimanale = value;
+                      }
+                    }),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _volumeLavoroCentraleSettimanale == null
+                        ? 'Volume lavoro centrale settimanale: decide l\'AI'
+                        : 'Volume lavoro centrale settimanale: '
+                              '${volumeLavoroCentraleClampato.round()} m',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  Slider(
+                    value: volumeLavoroCentraleClampato,
+                    min: 0,
+                    max: _volumeSettimanale,
+                    divisions: (_volumeSettimanale / 200).round().clamp(1, 999),
+                    label: '${volumeLavoroCentraleClampato.round()} m',
+                    onChanged: (value) => setState(
+                      () => _volumeLavoroCentraleSettimanale = value,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Minuti max di lavoro: ${_minutiMax.round()} min',
+                          style: AppTypography.etichetta.copyWith(
+                            color: colori.testoSecondario,
+                          ),
+                        ),
+                      ),
+                      const PulsanteSpiegazione(
+                        titolo: 'Minuti max di lavoro',
+                        spiegazione:
+                            'Vale per ogni seduta della settimana: nessuna '
+                            'deve superare questo tempo, stimato su nuoto + '
+                            "recuperi dell'atleta più lento del gruppo. La "
+                            'stima non tiene conto dei tempi di virata né '
+                            'della lunghezza della vasca.',
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _minutiMax,
+                    min: 20,
+                    max: 180,
+                    divisions: 32,
+                    label: '${_minutiMax.round()} min',
+                    onChanged: (value) => setState(() => _minutiMax = value),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Vasca',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(value: 25, label: Text('25m')),
+                      ButtonSegment(value: 50, label: Text('50m')),
+                    ],
+                    selected: {_vascaM},
+                    onSelectionChanged: (s) =>
+                        setState(() => _vascaM = s.first),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Attrezzi lavoro centrale',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  Wrap(
+                    spacing: AppSpacing.s8,
+                    children: [
+                      for (final a in _attrezzaturaLavoroCentraleDisponibile)
+                        TonalChip(
+                          etichetta: _etichettaAttrezzo(a),
+                          selezionato: _attrezzaturaLavoroCentraleSelezionata
+                              .contains(a),
+                          onSelezionato: (selezionato) => setState(() {
+                            if (selezionato) {
+                              _attrezzaturaLavoroCentraleSelezionata.add(a);
+                            } else {
+                              _attrezzaturaLavoroCentraleSelezionata.remove(a);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Focus di ogni seduta',
+                    style: AppTypography.etichetta.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  for (var i = 0; i < _focusPerSeduta.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                      child: AppSelect<String>(
+                        etichetta: i < _giorniSelezionati.length
+                            ? _etichettaGiornoBreve(_giorniSelezionati[i])
+                            : 'Seduta ${i + 1}',
+                        value: _focusPerSeduta[i],
+                        items: [
+                          for (final f in focusLavoro)
+                            DropdownMenuItem(
+                              value: f,
+                              child: Text(etichettaFocusLavoro(f)),
+                            ),
+                        ],
+                        onChanged: (value) => setState(
+                          () => _focusPerSeduta[i] = value ?? focusLavoro.first,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              AppTextField(
+                etichetta: 'Vincoli (facoltativo)',
+                controller: _vincoliController,
+                maxLines: 3,
+                aiuto: 'Es. niente pinne di gomma, riscaldamento breve',
+              ),
+            ],
+          ),
+          if (_fasePassaggio != null) ...[
+            const SizedBox(height: AppSpacing.s12),
             Text(
-              'Pianifica le sedute della settimana. Il dettaglio di ogni '
-              'seduta si genera subito dopo lo scheletro: la revisione '
-              'richiede qualche secondo in più di una singola generazione.',
+              _fasePassaggio!,
               style: AppTypography.piccolo.copyWith(
                 color: colori.testoSecondario,
               ),
             ),
-            const SizedBox(height: AppSpacing.s16),
-            FormGroup(
-              titolo: 'Parametri',
-              campi: [
-                AppTextField(
-                  etichetta: 'Data di inizio',
-                  controller: _dataInizioController,
-                  readOnly: true,
-                  onTap: _pickDataInizio,
-                  suffixIcon: const Icon(Icons.calendar_today_outlined),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Gruppo',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
-                    Text(
-                      nomeGruppo,
-                      style: AppTypography.corpo.copyWith(color: colori.testo),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppSelect<String?>(
-                      etichetta: 'Tipo di settimana (facoltativo)',
-                      value: _tipoSettimana,
-                      hint: 'Nessuno',
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Nessuno'),
-                        ),
-                        for (final t in _tipiSettimana)
-                          DropdownMenuItem(
-                            value: t,
-                            child: Text(_capitalizza(t)),
-                          ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _tipoSettimana = value),
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
-                    Text(
-                      'Regola volume e intensità della settimana generata: '
-                      'una settimana di scarico avrà volumi più bassi di '
-                      'una di carico, una di gara punterà su freschezza e '
-                      'ritmo gara.',
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Giorni della settimana',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    Wrap(
-                      spacing: AppSpacing.s8,
-                      runSpacing: AppSpacing.s8,
-                      children: [
-                        for (var offset = 0; offset < 7; offset++)
-                          TonalChip(
-                            etichetta: _etichettaGiornoBreve(offset),
-                            selezionato: _giorniSelezionati.contains(offset),
-                            onSelezionato: (selezionato) =>
-                                _alternaGiorno(offset, selezionato),
-                          ),
-                      ],
-                    ),
-                    if (_erroreGiorni != null) ...[
-                      const SizedBox(height: AppSpacing.s4),
-                      Text(
-                        _erroreGiorni!,
-                        style: AppTypography.piccolo.copyWith(
-                          color: colori.rosso,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Volume settimanale: ${_volumeSettimanale.round()} m',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    Slider(
-                      value: _volumeSettimanale,
-                      min: 2000,
-                      max: 20000,
-                      divisions: 36,
-                      label: '${_volumeSettimanale.round()} m',
-                      onChanged: (value) =>
-                          setState(() => _volumeSettimanale = value),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Focus di ogni seduta',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    for (var i = 0; i < _focusPerSeduta.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                        child: AppSelect<String>(
-                          etichetta: i < _giorniSelezionati.length
-                              ? _etichettaGiornoBreve(_giorniSelezionati[i])
-                              : 'Seduta ${i + 1}',
-                          value: _focusPerSeduta[i],
-                          items: [
-                            for (final f in _focus)
-                              DropdownMenuItem(
-                                value: f,
-                                child: Text(_etichettaFocus(f)),
-                              ),
-                          ],
-                          onChanged: (value) => setState(
-                            () => _focusPerSeduta[i] = value ?? _focus.first,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                AppTextField(
-                  etichetta: 'Vincoli (facoltativo)',
-                  controller: _vincoliController,
-                  maxLines: 3,
-                  aiuto: 'Es. niente pinne, max 75 minuti, vasca 25m',
-                ),
-              ],
-            ),
-            if (_fasePassaggio != null) ...[
-              const SizedBox(height: AppSpacing.s12),
-              Text(
-                _fasePassaggio!,
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.s16),
-            PrimaryButton(
-              label: 'Genera settimana',
-              isLoading: _generazioneInCorso,
-              onPressed: _generazioneInCorso ? null : _conferma,
-            ),
-            if (_generazioneInCorso) const AttesaAiHint(),
           ],
-        ),
+          const SizedBox(height: AppSpacing.s16),
+          PrimaryButton(
+            label: 'Genera settimana',
+            isLoading: _generazioneInCorso,
+            onPressed: _generazioneInCorso ? null : () => _conferma(gruppoId),
+          ),
+          if (_generazioneInCorso) const AttesaAiHint(),
+        ],
       ),
     );
   }
@@ -486,6 +699,7 @@ class SedutaConScheda {
     required this.scheda,
     required this.data,
     required this.focus,
+    this.volumeLavoroCentraleM,
   });
 
   final SedutaGenerata seduta;
@@ -495,6 +709,11 @@ class SedutaConScheda {
   /// Il focus usato per generare questa seduta — serve a poterla
   /// rigenerare singolarmente nella revisione, con lo stesso focus.
   final String focus;
+
+  /// La quota di volume lavoro centrale di questa seduta (ripartita
+  /// proporzionalmente dal totale settimanale) — riusata se si rigenera
+  /// la seduta, così il vincolo resta coerente.
+  final int? volumeLavoroCentraleM;
 }
 
 class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
@@ -504,6 +723,9 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
     required this.gruppoLabel,
     required this.corsie,
     required this.vincoliUtente,
+    required this.attrezzaturaLavoroCentrale,
+    required this.minutiMax,
+    required this.vascaM,
     required this.sedute,
   });
 
@@ -512,6 +734,9 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   final String gruppoLabel;
   final List<CorsiaGenerazione> corsie;
   final String vincoliUtente;
+  final List<String> attrezzaturaLavoroCentrale;
+  final int minutiMax;
+  final int vascaM;
   final List<SedutaConScheda> sedute;
 
   @override
@@ -555,6 +780,7 @@ class _RevisioneSettimanaScreenState
           scheda: corrente.scheda,
           data: scelta,
           focus: corrente.focus,
+          volumeLavoroCentraleM: corrente.volumeLavoroCentraleM,
         );
       });
     }
@@ -574,7 +800,11 @@ class _RevisioneSettimanaScreenState
             ParametriGenerazione(
               gruppo: widget.gruppoLabel,
               volumeMetri: voce.seduta.volumeMetri,
+              volumeLavoroCentraleM: voce.volumeLavoroCentraleM,
               focus: voce.focus,
+              attrezzaturaLavoroCentrale: widget.attrezzaturaLavoroCentrale,
+              minutiMax: widget.minutiMax,
+              vascaM: widget.vascaM,
               regimiAmmessi: const [
                 'A1',
                 'A2',
@@ -596,6 +826,7 @@ class _RevisioneSettimanaScreenState
           scheda: nuovaScheda,
           data: voce.data,
           focus: voce.focus,
+          volumeLavoroCentraleM: voce.volumeLavoroCentraleM,
         );
       });
     } catch (e) {
@@ -783,7 +1014,8 @@ class _CardSeduta extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
-              '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m',
+              '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m · '
+              'centrale ${voce.scheda.volumeLavoroCentraleM} m',
               style: AppTypography.piccolo.copyWith(
                 color: colori.testoSecondario,
               ),

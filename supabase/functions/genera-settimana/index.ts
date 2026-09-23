@@ -19,14 +19,28 @@ interface CorsiaGenerazione {
   differenzialeS?: number | null;
 }
 
+interface RiassuntoProgrammazione {
+  sedutePerSettimanaMedia?: number;
+  volumeMedioPerSedutaMetri?: number;
+  percentualeMetriPerZona?: Record<string, number>;
+  percentualeMetriPerBlocco?: Record<string, number>;
+  combinazioniStileEsecuzioneFrequenti?: string[];
+  attrezzaturaFrequente?: string[];
+}
+
 interface ParametriSettimana {
   gruppo?: string;
   giorniSettimana?: string[];
   volumeSettimanaleMetri?: number;
+  volumeLavoroCentraleSettimanaleMetri?: number | null;
   focusPerSeduta?: string[];
+  attrezzaturaLavoroCentrale?: string[];
+  minutiMax?: number | null;
+  vascaM?: number | null;
   tipoSettimana?: string | null;
   vincoli?: string | null;
   corsie?: CorsiaGenerazione[];
+  riassuntoProgrammazione?: RiassuntoProgrammazione | null;
 }
 
 interface SedutaGenerata {
@@ -50,6 +64,38 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
+}
+
+function riassuntoRiga(r: RiassuntoProgrammazione | null | undefined): string {
+  if (r == null) return "";
+  const zone = r.percentualeMetriPerZona
+    ? Object.entries(r.percentualeMetriPerZona)
+      .map(([zona, pct]) => `${zona} ${Math.round(pct)}%`)
+      .join(", ")
+    : "";
+  const blocchi = r.percentualeMetriPerBlocco
+    ? Object.entries(r.percentualeMetriPerBlocco)
+      .map(([blocco, pct]) => `${blocco} ${Math.round(pct)}%`)
+      .join(", ")
+    : "";
+  const combinazioni = Array.isArray(r.combinazioniStileEsecuzioneFrequenti)
+    ? r.combinazioniStileEsecuzioneFrequenti.join(", ")
+    : "";
+  const attrezzatura = Array.isArray(r.attrezzaturaFrequente)
+    ? r.attrezzaturaFrequente.join(", ")
+    : "";
+  return [
+    "Come il gruppo è stato allenato finora (ultimi ~2 mesi, riassunto): " +
+      `circa ${r.sedutePerSettimanaMedia?.toFixed(1) ?? "?"} sedute a ` +
+      `settimana, ${Math.round(r.volumeMedioPerSedutaMetri ?? 0)}m di media ` +
+      "a seduta" + (zone ? `, distribuzione per zona: ${zone}` : "") +
+      (blocchi ? `, per blocco: ${blocchi}` : "") +
+      (combinazioni ? `, combinazioni stile/esecuzione ricorrenti: ${combinazioni}` : "") +
+      (attrezzatura ? `, attrezzatura più usata: ${attrezzatura}` : "") + ".",
+    "Genera una settimana che segua questo stile di programmazione, " +
+      "adattandolo ai parametri richiesti sopra (non è un vincolo rigido: " +
+      "i parametri espliciti del coach vengono prima).",
+  ].join(" ");
 }
 
 function costruisciPrompt(p: ParametriSettimana): string {
@@ -78,6 +124,14 @@ function costruisciPrompt(p: ParametriSettimana): string {
         "ritmo gara)"
       : "",
     p.vincoli ? `Vincoli: ${p.vincoli}` : "",
+    p.volumeLavoroCentraleSettimanaleMetri != null
+      ? `Volume totale di lavoro centrale (blocco "principale") sull'intera settimana: circa ${p.volumeLavoroCentraleSettimanaleMetri} metri, ripartiti fra le sedute in proporzione al loro volume.`
+      : "",
+    p.minutiMax != null
+      ? `Ogni seduta ha un tetto di ${p.minutiMax} minuti di lavoro (nuoto + recuperi, sull'atleta più lento): dimensiona il volume di ciascuna seduta perché ci stia.`
+      : "",
+    p.vascaM != null ? `Vasca da ${p.vascaM}m.` : "",
+    riassuntoRiga(p.riassuntoProgrammazione),
     righeCorsie.length > 0
       ? [
           "Passi di riferimento calcolati dai personal best degli atleti " +

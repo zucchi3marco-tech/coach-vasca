@@ -9,10 +9,15 @@ class ParametriSettimana {
     required this.gruppo,
     required this.giorniSettimana,
     required this.volumeSettimanaleMetri,
+    this.volumeLavoroCentraleSettimanaleM,
     required this.focusPerSeduta,
+    this.attrezzaturaLavoroCentrale = const [],
+    this.minutiMax,
+    this.vascaM,
     this.tipoSettimana,
     this.vincoli,
     this.corsie = const [],
+    this.riassuntoProgrammazione,
   });
 
   final String gruppo;
@@ -24,23 +29,45 @@ class ParametriSettimana {
   final List<String> giorniSettimana;
   final int volumeSettimanaleMetri;
 
+  /// Metri di lavoro centrale (blocco "principale") per l'intera
+  /// settimana: ripartiti proporzionalmente al volume di ogni seduta
+  /// quando si genera il dettaglio (nessun campo per singola seduta).
+  final int? volumeLavoroCentraleSettimanaleM;
+
   /// Un focus per ciascuna seduta, nello stesso ordine di
   /// [giorniSettimana]: l'AI resta libera di scegliere volume/codice ma
   /// deve rispettare l'ordine e il conteggio.
   final List<String> focusPerSeduta;
+
+  /// Una volta per l'intera settimana (non per seduta): propagata
+  /// identica ad ogni chiamata di dettaglio.
+  final List<String> attrezzaturaLavoroCentrale;
+  final int? minutiMax;
+  final int? vascaM;
+
   final String? tipoSettimana;
   final String? vincoli;
   final List<CorsiaGenerazione> corsie;
+
+  /// Come il gruppo è stato allenato negli ultimi ~2 mesi (vedi
+  /// `storico_settimana_service.dart`), da `RiassuntoProgrammazione.
+  /// toMap()`: guida lo stile della settimana generata.
+  final Map<String, dynamic>? riassuntoProgrammazione;
 
   Map<String, dynamic> toMap() {
     return {
       'gruppo': gruppo,
       'giorniSettimana': giorniSettimana,
       'volumeSettimanaleMetri': volumeSettimanaleMetri,
+      'volumeLavoroCentraleSettimanaleMetri': volumeLavoroCentraleSettimanaleM,
       'focusPerSeduta': focusPerSeduta,
+      'attrezzaturaLavoroCentrale': attrezzaturaLavoroCentrale,
+      'minutiMax': minutiMax,
+      'vascaM': vascaM,
       'tipoSettimana': tipoSettimana,
       'vincoli': vincoli,
       'corsie': corsie.map((c) => c.toMap()).toList(),
+      'riassuntoProgrammazione': riassuntoProgrammazione,
     };
   }
 }
