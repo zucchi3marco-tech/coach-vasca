@@ -12,6 +12,11 @@ class SchedaGenerata {
   int get volumeTotaleM =>
       serie.fold(0, (totale, s) => totale + s.distanzaTotaleM);
 
+  /// Metri del solo blocco "principale" (lavoro centrale).
+  int get volumeLavoroCentraleM => serie
+      .where((s) => s.blocco == 'principale')
+      .fold(0, (totale, s) => totale + s.distanzaTotaleM);
+
   factory SchedaGenerata.fromMap(Map<String, dynamic> map) {
     return SchedaGenerata(
       titolo: map['titolo'] as String,

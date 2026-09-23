@@ -1,10 +1,11 @@
 // Edge Function: genera-allenamento
 //
-// Riceve i parametri raccolti dal form "Genera con AI" e li inoltra a
-// Gemini, tenendo la API key lato server (mai esposta al client Flutter).
-// Chiede output JSON strutturato (responseSchema) e lo rivalida qui prima
-// di restituirlo, così l'app riceve sempre una scheda con campi noti o un
-// errore esplicito, mai testo libero da interpretare.
+// Riceve i parametri raccolti dal form "Genera con AI" (o, seduta per
+// seduta, da "Genera settimana con AI") e li inoltra a Gemini, tenendo la
+// API key lato server (mai esposta al client Flutter). Chiede output JSON
+// strutturato (responseSchema) e lo rivalida qui prima di restituirlo,
+// così l'app riceve sempre una scheda con campi noti o un errore
+// esplicito, mai testo libero da interpretare.
 // Se in futuro si cambia provider AI, si riscrive solo questo file: il
 // contratto verso l'app (corpo della richiesta e { scheda } in risposta)
 // resta invariato.
@@ -30,7 +31,19 @@ interface CorsiaGenerazione {
 interface ParametriGenerazione {
   gruppo?: string;
   volumeMetri?: number;
+  volumeLavoroCentraleMetri?: number | null;
+  // 'completo' | 'braccia' | 'gambe' | 'tecnica' — quale parte del corpo/
+  // nuotata enfatizzare (l'energia sta in regimiAmmessi, sotto).
   focus?: string;
+  metriFocusSpecifico?: number | null;
+  attrezzaturaFocus?: string[];
+  stileFocus?: string | null;
+  attrezzaturaLavoroCentrale?: string[];
+  // Vincolo stretto: vedi stimaMinutiSessione() e il controllo dopo la
+  // validazione, sotto.
+  minutiMax?: number | null;
+  // 25 o 50: solo contesto per il prompt (evitare distanze scomode).
+  vascaM?: number | null;
   regimiAmmessi?: string[];
   vincoli?: string | null;
   corsie?: CorsiaGenerazione[];
@@ -48,7 +61,7 @@ interface SerieGenerata {
   distanzaM: number;
   stile: string;
   esecuzione: string;
-  zona?: string | null;
+  zona: string;
   recuperoS?: number | null;
   attrezzatura?: string | null;
   note?: string | null;
@@ -83,6 +96,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 // fornito, FASE 10 punto 4): parametri per zona (durata, volume, distanze,
 // recupero) e come usare il differenziale di gara T200-T100 per calcolare
 // ripartenze realistiche invece di un numero indicativo generico.
+//
+// Tenere sincronizzato a mano con la mappa canonica
+// `lib/features/ai_genera/domain/tipo_lavoro.dart` (nessun meccanismo di
+// codice condiviso fra le Edge Function in questo repo).
 const METODOLOGIA_ZONE = `
 Metodologia per zona, da usare per calcolare le ripartenze (tempi di
 partenza) quando sono forniti i passi di riferimento delle corsie:
@@ -109,7 +126,39 @@ partenza) quando sono forniti i passi di riferimento delle corsie:
   alla distanza della serie, stimato da passo100S e differenzialeS.
 Arrotonda ogni ripartenza a un valore realistico da usare a bordo vasca
 (es. multiplo di 5 secondi).
+
+Il riscaldamento è SEMPRE in zona A1, senza eccezioni.
 `.trim();
+
+function istruzioniFocus(p: ParametriGenerazione): string {
+  const attrezzi = Array.isArray(p.attrezzaturaFocus)
+    ? p.attrezzaturaFocus.join(", ")
+    : "";
+  switch (p.focus) {
+    case "braccia":
+      return [
+        `Focus della seduta: lavoro di braccia. Dedica circa ${p.metriFocusSpecifico ?? "una parte"} metri a serie di sole braccia.`,
+        attrezzi
+          ? `Usa esecuzione "pull" per queste serie, con attrezzatura fra: ${attrezzi}.`
+          : 'Usa esecuzione "braccia" per queste serie (nessuna attrezzatura specifica indicata).',
+        p.stileFocus ? `Stile per queste serie: ${p.stileFocus}.` : "",
+      ]
+        .filter((r) => r.length > 0)
+        .join(" ");
+    case "gambe":
+      return [
+        `Focus della seduta: lavoro di gambe. Dedica circa ${p.metriFocusSpecifico ?? "una parte"} metri a serie di sole gambe (esecuzione "gambe").`,
+        attrezzi ? `Attrezzatura fra: ${attrezzi}.` : "",
+        p.stileFocus ? `Stile per queste serie: ${p.stileFocus}.` : "",
+      ]
+        .filter((r) => r.length > 0)
+        .join(" ");
+    case "tecnica":
+      return "Focus della seduta: tecnica. La maggior parte delle serie deve avere esecuzione \"tecnica\" (drills), volume contenuto per serie.";
+    default:
+      return "Focus della seduta: completo, nessuna parte del corpo da enfatizzare in particolare.";
+  }
+}
 
 function costruisciPrompt(p: ParametriGenerazione): string {
   const regimi = Array.isArray(p.regimiAmmessi) ? p.regimiAmmessi.join(", ") : "";
@@ -120,18 +169,38 @@ function costruisciPrompt(p: ParametriGenerazione): string {
       : "";
     return `- Corsia "${c.nome}": passo di riferimento sui 100 stile libero = ${c.passo100S}s${diff}`;
   });
+  const attrezziCentrale = Array.isArray(p.attrezzaturaLavoroCentrale)
+    ? p.attrezzaturaLavoroCentrale
+    : [];
   return [
     "Sei un allenatore di nuoto esperto. Genera una scheda di allenamento " +
       "per la seguente sessione, come elenco di serie.",
     `Gruppo: ${p.gruppo ?? ""}`,
     `Volume totale: ${p.volumeMetri ?? ""} metri`,
-    `Focus: ${p.focus ?? ""}`,
+    p.volumeLavoroCentraleMetri != null
+      ? `Volume del blocco "principale" (lavoro centrale): circa ${p.volumeLavoroCentraleMetri} metri, il resto (riscaldamento, defaticamento, eventuale tecnica) copre la differenza rispetto al volume totale.`
+      : "",
+    istruzioniFocus(p),
+    attrezziCentrale.length > 0
+      ? `Per le serie del blocco "principale", quando prevedi attrezzatura preferisci fra: ${attrezziCentrale.join(", ")}.`
+      : "",
     `Regimi di allenamento ammessi: ${regimi}`,
     p.vincoli ? `Vincoli: ${p.vincoli}` : "",
+    p.vascaM != null
+      ? `Vasca da ${p.vascaM}m: evita distanze scomode rispetto a questa lunghezza (preferisci multipli o mezzi di ${p.vascaM}m dove sensato).`
+      : "",
     "Dividi la scheda in riscaldamento, parte principale e defaticamento. " +
       "La somma di ripetute*distanza di tutte le serie deve avvicinarsi il " +
       "più possibile al volume totale richiesto. Usa solo zone tra quelle " +
-      "ammesse indicate sopra.",
+      "ammesse indicate sopra. OGNI serie deve avere una zona assegnata " +
+      "(mai vuota): il riscaldamento è sempre zona A1.",
+    p.minutiMax != null
+      ? `Vincolo di tempo: la scheda intera (nuoto + recuperi, sull'atleta ` +
+          `più lento fra le corsie indicate sotto, o un ritmo prudente se ` +
+          `non ce ne sono) non deve superare ${p.minutiMax} minuti. Se il ` +
+          "volume richiesto non ci sta, riduci le ripetute mantenendo la " +
+          "struttura della scheda, piuttosto che ignorare il limite."
+      : "",
     righeCorsie.length > 0
       ? [
           "",
@@ -187,18 +256,46 @@ const responseSchema = {
             },
           },
         },
-        required: ["ordine", "blocco", "ripetute", "distanzaM", "stile", "esecuzione"],
+        required: [
+          "ordine",
+          "blocco",
+          "ripetute",
+          "distanzaM",
+          "stile",
+          "esecuzione",
+          "zona",
+        ],
       },
     },
   },
   required: ["titolo", "serie"],
 };
 
+// Stessa formula, tenuta manualmente sincronizzata, della funzione
+// `stimaMinutiSessione` in `lib/features/ai_genera/application/
+// tempo_stimato_service.dart` (lì è solo informativa; qui è il
+// riferimento per il vincolo bloccante). Una serie senza ripartenze non
+// ha un passo noto: la sua parte di nuoto non entra nella stima — che
+// resta quindi un'approssimazione per difetto, mai un rifiuto per
+// mancanza di dati.
+function stimaMinutiSessione(serie: SerieGenerata[]): number {
+  let secondiTotali = 0;
+  for (const s of serie) {
+    const ripartenze = s.ripartenzePerCorsia ?? [];
+    if (ripartenze.length > 0) {
+      const ripartenzaPiuLenta = Math.max(...ripartenze.map((r) => r.ripartenzaS));
+      secondiTotali += s.ripetute * (s.distanzaM / 100) * ripartenzaPiuLenta;
+    }
+    secondiTotali += s.ripetute * (s.recuperoS ?? 0);
+  }
+  return secondiTotali / 60;
+}
+
 /// Rivalida la scheda restituita dal modello: anche con responseSchema
 /// impostato, il provider può comunque restituire un JSON che non rispetta
 /// lo schema (bug del modello, cambio di comportamento, ecc.), quindi non
 /// ci fidiamo alla cieca.
-function validaScheda(dati: unknown): SchedaGenerata {
+function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGenerata {
   if (typeof dati !== "object" || dati === null) {
     throw new Error("la scheda generata non è un oggetto JSON valido");
   }
@@ -240,12 +337,16 @@ function validaScheda(dati: unknown): SchedaGenerata {
         `serie #${indice + 1}: esecuzione "${s.esecuzione}" non riconosciuta`,
       );
     }
-    let zona: string | null = null;
-    if (s.zona !== undefined && s.zona !== null) {
-      if (typeof s.zona !== "string" || !ZONE.includes(s.zona)) {
-        throw new Error(`serie #${indice + 1}: zona "${s.zona}" non riconosciuta`);
-      }
-      zona = s.zona;
+    // La zona è sempre obbligatoria (era opzionale): serve alle statistiche
+    // di carico, che ignorano le serie senza zona. Il riscaldamento è
+    // forzato ad A1 sotto come rete di sicurezza, anche se il prompt lo
+    // chiede già esplicitamente.
+    if (typeof s.zona !== "string" || !ZONE.includes(s.zona)) {
+      throw new Error(`serie #${indice + 1}: zona "${s.zona}" non riconosciuta`);
+    }
+    let zona = s.zona;
+    if (s.blocco === "riscaldamento" && zona !== "A1") {
+      zona = "A1";
     }
     let recuperoS: number | null = null;
     if (s.recuperoS !== undefined && s.recuperoS !== null) {
@@ -297,6 +398,18 @@ function validaScheda(dati: unknown): SchedaGenerata {
       ripartenzePerCorsia,
     };
   });
+
+  if (parametri.minutiMax != null) {
+    const minutiStimati = stimaMinutiSessione(serieValidate);
+    const limiteConTolleranza = parametri.minutiMax * 1.05;
+    if (minutiStimati > limiteConTolleranza) {
+      throw new Error(
+        `la scheda generata richiede circa ${Math.round(minutiStimati)} minuti, ` +
+          `oltre il limite di ${parametri.minutiMax} richiesto (stima sull'atleta ` +
+          "più lento del gruppo): riprova, magari riducendo il volume",
+      );
+    }
+  }
 
   return {
     titolo: scheda.titolo,
@@ -420,7 +533,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const scheda = validaScheda(schedaGrezza);
+    const scheda = validaScheda(schedaGrezza, parametri);
     return jsonResponse({ scheda });
   } catch (errore) {
     return jsonResponse(

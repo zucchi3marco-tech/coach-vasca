@@ -13,6 +13,7 @@ import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../application/corsie_service.dart';
+import '../application/tempo_stimato_service.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/scheda_generata.dart';
 
@@ -157,7 +158,9 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Volume totale: ${scheda.volumeTotaleM} m',
+            'Volume totale: ${scheda.volumeTotaleM} m · '
+            'Lavoro centrale: ${scheda.volumeLavoroCentraleM} m · '
+            'Stima: ${stimaMinutiSessione(scheda.serie)} min',
             style: AppTypography.piccolo.copyWith(
               color: colori.testoSecondario,
             ),
