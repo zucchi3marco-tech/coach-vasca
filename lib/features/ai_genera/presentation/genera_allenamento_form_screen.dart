@@ -6,7 +6,6 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/form_group.dart';
@@ -15,7 +14,6 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
-import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
@@ -24,8 +22,7 @@ import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
 import '../domain/parametri_generazione.dart';
-import '../domain/tipo_lavoro.dart';
-import 'chip_tipo_lavoro.dart';
+import 'campi_generatore.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
@@ -49,6 +46,15 @@ String _etichettaAttrezzo(String a) => switch (a) {
   'pinne' => 'Pinne',
   'tavola' => 'Tavola',
   _ => _capitalizza(a),
+};
+
+String _siglaStile(String s) => switch (s) {
+  'libero' => 'SL',
+  'dorso' => 'DO',
+  'rana' => 'RA',
+  'delfino' => 'FA',
+  'misti' => 'MX',
+  _ => s,
 };
 
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
@@ -132,125 +138,23 @@ class _GeneraAllenamentoFormScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormGroup(
-              titolo: 'Parametri',
-              campi: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Gruppo',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
-                    Text(
-                      nomeGruppo,
-                      style: AppTypography.corpo.copyWith(color: colori.testo),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Volume totale: ${_volumeMetri.round()} m',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    Slider(
-                      value: _volumeMetri,
-                      min: 500,
-                      max: 6000,
-                      divisions: 55,
-                      label: '${_volumeMetri.round()} m',
-                      onChanged: (value) => setState(() {
-                        _volumeMetri = value;
-                        if ((_volumeLavoroCentraleMetri ?? 0) > value) {
-                          _volumeLavoroCentraleMetri = value;
-                        }
-                      }),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _volumeLavoroCentraleMetri == null
-                          ? 'Volume lavoro centrale: decide l\'AI'
-                          : 'Volume lavoro centrale: '
-                                '${volumeLavoroCentraleClampato.round()} m',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    Slider(
-                      value: volumeLavoroCentraleClampato,
-                      min: 0,
-                      max: _volumeMetri,
-                      divisions: (_volumeMetri / 100).round().clamp(1, 999),
-                      label: '${volumeLavoroCentraleClampato.round()} m',
-                      onChanged: (value) =>
-                          setState(() => _volumeLavoroCentraleMetri = value),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            FormGroup(
               titolo: 'Sessione',
               campi: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Minuti max di lavoro: ${_minutiMax.round()} min',
-                            style: AppTypography.etichetta.copyWith(
-                              color: colori.testoSecondario,
-                            ),
-                          ),
-                        ),
-                        const PulsanteSpiegazione(
-                          titolo: 'Minuti max di lavoro',
-                          spiegazione:
-                              'La scheda generata non deve superare questo '
-                              "tempo, stimato su nuoto + recuperi dell'atleta "
-                              'più lento del gruppo (è quello che finisce per '
-                              'ultimo). La stima non tiene conto dei tempi di '
-                              'virata né della lunghezza della vasca: è '
-                              'un\'approssimazione, non un cronometro.',
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: _minutiMax,
-                      min: 20,
-                      max: 180,
-                      divisions: 32,
-                      label: '${_minutiMax.round()} min',
-                      onChanged: (value) => setState(() => _minutiMax = value),
-                    ),
-                  ],
+                Text(
+                  'Gruppo: $nomeGruppo',
+                  style: AppTypography.corpo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Vasca',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
+                    const EtichettaCampo('Vasca'),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
                       segments: const [
-                        ButtonSegment(value: 25, label: Text('25m')),
-                        ButtonSegment(value: 50, label: Text('50m')),
+                        ButtonSegment(value: 25, label: Text('25 m')),
+                        ButtonSegment(value: 50, label: Text('50 m')),
                       ],
                       selected: {_vascaM},
                       onSelectionChanged: (s) =>
@@ -258,65 +162,93 @@ class _GeneraAllenamentoFormScreenState
                     ),
                   ],
                 ),
+                SliderConValore(
+                  etichetta: 'Minuti max di lavoro',
+                  valore: _minutiMax,
+                  min: 20,
+                  max: 180,
+                  divisioni: 32,
+                  testoValore: '${_minutiMax.round()} min',
+                  onChanged: (value) => setState(() => _minutiMax = value),
+                  azione: const PulsanteSpiegazione(
+                    titolo: 'Minuti max di lavoro',
+                    spiegazione:
+                        'La scheda generata non deve superare questo '
+                        "tempo, stimato su nuoto + recuperi dell'atleta "
+                        'più lento del gruppo (è quello che finisce per '
+                        'ultimo). La stima non tiene conto dei tempi di '
+                        'virata né della lunghezza della vasca: è '
+                        "un'approssimazione, non un cronometro.",
+                  ),
+                ),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Tipo di lavoro',
+              campi: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => setState(
+                      () => _mostraCodiciTipoLavoro = !_mostraCodiciTipoLavoro,
+                    ),
+                    child: Text(
+                      _mostraCodiciTipoLavoro ? 'Mostra nomi' : 'Mostra sigle',
+                    ),
+                  ),
+                ),
+                GrigliaTipiLavoro(
+                  selezionati: _regimiSelezionati,
+                  mostraCodici: _mostraCodiciTipoLavoro,
+                  onCambia: (zona, selezionato) => setState(() {
+                    if (selezionato) {
+                      _regimiSelezionati.add(zona);
+                    } else {
+                      _regimiSelezionati.remove(zona);
+                    }
+                  }),
+                ),
               ],
             ),
             FormGroup(
               titolo: 'Focus',
               campi: [
-                AppSelect<String>(
-                  etichetta: 'Focus',
-                  value: _focusSelezionato,
-                  items: [
+                GruppoChip(
+                  etichetta: 'Su cosa si concentra la seduta',
+                  chip: [
                     for (final f in focusLavoro)
-                      DropdownMenuItem(
-                        value: f,
-                        child: Text(etichettaFocusLavoro(f)),
+                      TonalChip(
+                        etichetta: etichettaFocusLavoro(f),
+                        selezionato: _focusSelezionato == f,
+                        onSelezionato: (_) => setState(() {
+                          _focusSelezionato = f;
+                          _attrezzaturaFocusSelezionata.clear();
+                          _stileFocus = null;
+                        }),
                       ),
                   ],
-                  onChanged: (value) => setState(() {
-                    _focusSelezionato = value ?? focusLavoro.first;
-                    _attrezzaturaFocusSelezionata.clear();
-                    _stileFocus = null;
-                  }),
                 ),
-                if (_focusHaDettaglio) ...[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Metri di ${etichettaFocusLavoro(_focusSelezionato).toLowerCase()}: '
-                        '${(_metriFocusSpecifico ?? 0).round()} m',
-                        style: AppTypography.etichetta.copyWith(
-                          color: colori.testoSecondario,
-                        ),
-                      ),
-                      Slider(
-                        value: (_metriFocusSpecifico ?? 0).clamp(
-                          0,
-                          _volumeMetri,
-                        ),
+                if (_focusHaDettaglio)
+                  PannelloCampi(
+                    titolo: _focusSelezionato == 'braccia'
+                        ? 'Dettaglio braccia'
+                        : 'Dettaglio gambe',
+                    figli: [
+                      SliderConValore(
+                        etichetta:
+                            'Metri di ${etichettaFocusLavoro(_focusSelezionato).toLowerCase()}',
+                        valore: (_metriFocusSpecifico ?? 0)
+                            .clamp(0, _volumeMetri)
+                            .toDouble(),
                         min: 0,
                         max: _volumeMetri,
-                        divisions: (_volumeMetri / 100).round().clamp(1, 999),
-                        label: '${(_metriFocusSpecifico ?? 0).round()} m',
+                        divisioni: (_volumeMetri / 100).round().clamp(1, 999),
                         onChanged: (value) =>
                             setState(() => _metriFocusSpecifico = value),
                       ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Attrezzatura',
-                        style: AppTypography.etichetta.copyWith(
-                          color: colori.testoSecondario,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.s8),
-                      Wrap(
-                        spacing: AppSpacing.s8,
-                        children: [
+                      GruppoChip(
+                        etichetta: 'Attrezzi',
+                        chip: [
                           for (final a in _attrezzaturaFocusDisponibile)
                             TonalChip(
                               etichetta: _etichettaAttrezzo(a),
@@ -332,89 +264,35 @@ class _GeneraAllenamentoFormScreenState
                             ),
                         ],
                       ),
-                    ],
-                  ),
-                  AppSelect<String?>(
-                    etichetta: 'Stile (facoltativo)',
-                    value: _stileFocus,
-                    hint: 'Decide l\'AI',
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Decide l\'AI'),
+                      GruppoChip(
+                        etichetta: _focusSelezionato == 'braccia'
+                            ? 'Stile braccia (facoltativo)'
+                            : 'Stile gambe (facoltativo)',
+                        chip: [
+                          for (final s in _stiliNuoto)
+                            TonalChip(
+                              etichetta: _siglaStile(s),
+                              selezionato: _stileFocus == s,
+                              onSelezionato: (selezionato) => setState(
+                                () => _stileFocus = selezionato ? s : null,
+                              ),
+                            ),
+                        ],
                       ),
-                      for (final s in _stiliNuoto)
-                        DropdownMenuItem(value: s, child: Text(labelStile(s))),
                     ],
-                    onChanged: (value) => setState(() => _stileFocus = value),
                   ),
-                ],
               ],
             ),
             FormGroup(
-              titolo: 'Tipo di lavoro e vincoli',
+              titolo: 'Volume e attrezzi',
               isUltimo: true,
               campi: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Tipo di lavoro ammesso',
-                            style: AppTypography.etichetta.copyWith(
-                              color: colori.testoSecondario,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => setState(
-                            () => _mostraCodiciTipoLavoro =
-                                !_mostraCodiciTipoLavoro,
-                          ),
-                          child: Text(
-                            _mostraCodiciTipoLavoro
-                                ? 'Mostra nomi'
-                                : 'Mostra sigle',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
+                PannelloCampi(
+                  titolo: 'Attrezzi lavoro centrale',
+                  figli: [
                     Wrap(
                       spacing: AppSpacing.s8,
                       runSpacing: AppSpacing.s8,
-                      children: [
-                        for (final zona in ordineTipiLavoro)
-                          ChipTipoLavoro(
-                            zona: zona,
-                            selezionato: _regimiSelezionati.contains(zona),
-                            mostraCodici: _mostraCodiciTipoLavoro,
-                            onSelezionato: (selezionato) => setState(() {
-                              if (selezionato) {
-                                _regimiSelezionati.add(zona);
-                              } else {
-                                _regimiSelezionati.remove(zona);
-                              }
-                            }),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Attrezzi lavoro centrale',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    Wrap(
-                      spacing: AppSpacing.s8,
                       children: [
                         for (final a in _attrezzaturaLavoroCentraleDisponibile)
                           TonalChip(
@@ -435,6 +313,33 @@ class _GeneraAllenamentoFormScreenState
                     ),
                   ],
                 ),
+                SliderConValore(
+                  etichetta: 'Volume totale (m)',
+                  valore: _volumeMetri,
+                  min: 500,
+                  max: 6000,
+                  divisioni: 55,
+                  onChanged: (value) => setState(() {
+                    _volumeMetri = value;
+                    if ((_volumeLavoroCentraleMetri ?? 0) > value) {
+                      _volumeLavoroCentraleMetri = value;
+                    }
+                  }),
+                ),
+                SliderConValore(
+                  etichetta: _volumeLavoroCentraleMetri == null
+                      ? "Volume lavoro centrale (m) — se non lo muovi decide l'AI"
+                      : 'Volume lavoro centrale (m)',
+                  valore: volumeLavoroCentraleClampato,
+                  min: 0,
+                  max: _volumeMetri,
+                  divisioni: (_volumeMetri / 100).round().clamp(1, 999),
+                  testoValore: _volumeLavoroCentraleMetri == null
+                      ? 'Auto'
+                      : null,
+                  onChanged: (value) =>
+                      setState(() => _volumeLavoroCentraleMetri = value),
+                ),
                 AppTextField(
                   etichetta: 'Vincoli (facoltativo)',
                   controller: _vincoliController,
@@ -443,6 +348,7 @@ class _GeneraAllenamentoFormScreenState
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.s28),
             PrimaryButton(
               label: _generazioneInCorso ? 'Sto generando...' : 'Genera',
               isLoading: _generazioneInCorso,
