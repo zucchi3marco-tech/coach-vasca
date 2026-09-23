@@ -401,7 +401,7 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
 
   if (parametri.minutiMax != null) {
     const minutiStimati = stimaMinutiSessione(serieValidate);
-    const limiteConTolleranza = parametri.minutiMax * 1.05;
+    const limiteConTolleranza = parametri.minutiMax * 1.1;
     if (minutiStimati > limiteConTolleranza) {
       throw new Error(
         `la scheda generata richiede circa ${Math.round(minutiStimati)} minuti, ` +
