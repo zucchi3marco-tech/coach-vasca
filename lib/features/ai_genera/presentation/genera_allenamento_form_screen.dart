@@ -15,6 +15,7 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
+import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -502,6 +503,19 @@ class _GeneraAllenamentoFormScreenState
                   : _conferma,
             ),
             if (_generazioneInCorso) const AttesaAiHint(),
+            TextButton(
+              onPressed: _generazioneInCorso
+                  ? null
+                  : () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => AllenamentoFormScreen(
+                          clubId: widget.clubId,
+                          dataPredefinita: widget.dataPredefinita,
+                        ),
+                      ),
+                    ),
+              child: const Text('Preferisci crearlo a mano, serie per serie?'),
+            ),
           ],
         ),
       ),

@@ -18,7 +18,6 @@ import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 import 'allenamento_detail_screen.dart';
-import 'allenamento_form_screen.dart';
 import 'calendario/calendario_mensile_view.dart';
 import 'calendario/calendario_settimanale_view.dart';
 import 'giorno_allenamenti_screen.dart';
@@ -128,13 +127,8 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
         heroTag: 'fab-allenamenti',
         azioni: [
           AzioneFab(
-            icona: Icons.add,
-            etichetta: 'Nuovo allenamento',
-            onPressed: _apriForm,
-          ),
-          AzioneFab(
             icona: Icons.auto_awesome,
-            etichetta: 'Genera con AI',
+            etichetta: 'Nuovo allenamento',
             onPressed: _apriGeneraAI,
           ),
           AzioneFab(
@@ -168,10 +162,10 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                   icona: Icons.calendar_month_outlined,
                   titolo: 'Nessun allenamento',
                   descrizione:
-                      'Crea il primo allenamento a mano oppure genera una '
-                      'proposta con l\'AI.',
+                      'Descrivi il primo allenamento o impostane i '
+                      'parametri: l\'AI ti propone la scheda.',
                   azionePrincipale: 'Nuovo allenamento',
-                  onAzionePrincipale: _apriForm,
+                  onAzionePrincipale: _apriGeneraAI,
                 ),
               ],
             )
@@ -209,14 +203,6 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
       MaterialPageRoute(
         builder: (_) =>
             GiornoAllenamentiScreen(clubId: widget.clubId, data: data),
-      ),
-    );
-  }
-
-  Future<void> _apriForm() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AllenamentoFormScreen(clubId: widget.clubId),
       ),
     );
   }

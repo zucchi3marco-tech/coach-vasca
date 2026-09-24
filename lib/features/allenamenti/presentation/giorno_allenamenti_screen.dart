@@ -9,10 +9,10 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
 import 'allenamento_detail_screen.dart';
-import 'allenamento_form_screen.dart';
 import 'calendario/allenamenti_per_giorno.dart';
 
 class GiornoAllenamentiScreen extends ConsumerWidget {
@@ -41,7 +41,7 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
     void apriNuovo() => Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) =>
-            AllenamentoFormScreen(clubId: clubId, dataPredefinita: data),
+            GeneraAllenamentoFormScreen(clubId: clubId, dataPredefinita: data),
       ),
     );
 
@@ -56,7 +56,9 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
             return EmptyState(
               icona: Icons.calendar_month_outlined,
               titolo: 'Nessun allenamento in questo giorno',
-              descrizione: 'Crea il primo allenamento per questa data.',
+              descrizione:
+                  'Descrivi il primo allenamento di questa data o impostane '
+                  'i parametri: verrà salvato in questo giorno.',
               azionePrincipale: 'Nuovo allenamento',
               onAzionePrincipale: apriNuovo,
             );
@@ -100,7 +102,7 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
         heroTag: 'fab-giorno-allenamenti',
         onPressed: apriNuovo,
         tooltip: 'Nuovo allenamento',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.auto_awesome),
       ),
     );
   }
