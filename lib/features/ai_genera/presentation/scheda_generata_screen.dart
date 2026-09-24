@@ -12,10 +12,12 @@ import '../../../widgets/primary_button.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
+import '../../atleti/application/atleti_providers.dart';
 import '../application/corsie_service.dart';
 import '../application/tempo_stimato_service.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/scheda_generata.dart';
+import 'campi_generatore.dart';
 
 /// Anteprima della scheda proposta dall'AI, prima del salvataggio: data
 /// modificabile, elenco delle serie generate in sola lettura. Schermata
@@ -29,6 +31,7 @@ class SchedaGenerataScreen extends ConsumerStatefulWidget {
     required this.gruppoId,
     this.dataIniziale,
     this.generazioneId,
+    this.assegnazione,
     super.key,
   });
 
@@ -41,6 +44,10 @@ class SchedaGenerataScreen extends ConsumerStatefulWidget {
   /// registrazione dello storico stessa era fallita): se presente, dopo il
   /// salvataggio ci si collega l'allenamento creato.
   final String? generazioneId;
+
+  /// Come il gruppo è stato diviso in corsie di ripartenza (nullo se non
+  /// calcolato, es. scheda trascritta dalla dettatura).
+  final AssegnazioneCorsie? assegnazione;
 
   @override
   ConsumerState<SchedaGenerataScreen> createState() =>
@@ -172,6 +179,14 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
               style: AppTypography.corpo.copyWith(color: colori.testo),
             ),
           ],
+          if (widget.assegnazione != null &&
+              widget.assegnazione!.divisoInDue) ...[
+            const SizedBox(height: AppSpacing.s16),
+            _PannelloCorsie(
+              assegnazione: widget.assegnazione!,
+              clubId: widget.clubId,
+            ),
+          ],
           const SizedBox(height: AppSpacing.s16),
           FormGroup(
             titolo: 'Quando',
@@ -231,6 +246,65 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// I due gruppi di ripartenza con i nomi degli atleti, per dividerli in
+/// vasca (in Presenze ogni atleta ha lo stesso numero, 1 o 2).
+class _PannelloCorsie extends ConsumerWidget {
+  const _PannelloCorsie({required this.assegnazione, required this.clubId});
+
+  final AssegnazioneCorsie assegnazione;
+  final String clubId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final atleti =
+        ref
+            .watch(atletiListProvider((clubId: clubId, includeInactive: false)))
+            .value ??
+        const [];
+    final nomi = {for (final a in atleti) a.id: a.nomeCompleto};
+    String elenco(Iterable<String> ids) {
+      final n = ids.map((id) => nomi[id]).whereType<String>().toList()..sort();
+      return n.isEmpty ? '—' : n.join(', ');
+    }
+
+    return PannelloCampi(
+      titolo: 'Il gruppo si divide in due corsie',
+      figli: [
+        Text(
+          'I tempi del gruppo sono molto diversi: le ripartenze sono '
+          'calcolate separatamente. In Presenze ogni atleta ha il numero '
+          'della sua corsia.',
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+        ),
+        for (var i = 0; i < assegnazione.corsie.length; i++)
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${assegnazione.corsie[i].nome}: ',
+                  style: AppTypography.corpoForte.copyWith(color: colori.testo),
+                ),
+                TextSpan(
+                  text: elenco(assegnazione.corsie[i].atletiIds),
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                ),
+              ],
+            ),
+          ),
+        if (assegnazione.senzaTempo.isNotEmpty)
+          Text(
+            'Senza tempo sui 100 stile libero (da assegnare tu): '
+            '${elenco(assegnazione.senzaTempo)}',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+      ],
     );
   }
 }

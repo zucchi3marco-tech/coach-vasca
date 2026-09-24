@@ -558,7 +558,7 @@ class _GeneraAllenamentoFormScreenState
     final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
     setState(() => _generazioneInCorso = true);
 
-    var corsie = const <CorsiaGenerazione>[];
+    var assegnazione = const AssegnazioneCorsie(corsie: []);
     try {
       final tuttiGliAtleti = await ref.read(
         atletiListProvider((clubId: widget.clubId, includeInactive: false))
@@ -567,7 +567,7 @@ class _GeneraAllenamentoFormScreenState
       final atletiDelGruppo = gruppoId == null
           ? tuttiGliAtleti
           : tuttiGliAtleti.where((a) => a.gruppoId == gruppoId).toList();
-      corsie = await calcolaCorsie(ref, atletiDelGruppo);
+      assegnazione = await calcolaAssegnazioneCorsie(ref, atletiDelGruppo);
     } catch (_) {
       // Le corsie migliorano la generazione (ripartenze sui passi reali),
       // ma non sono indispensabili: se il calcolo fallisce si procede
@@ -599,7 +599,7 @@ class _GeneraAllenamentoFormScreenState
       vincoli: _vincoliController.text.trim().isEmpty
           ? null
           : _vincoliController.text.trim(),
-      corsie: corsie,
+      corsie: assegnazione.corsie,
     );
 
     try {
@@ -630,6 +630,7 @@ class _GeneraAllenamentoFormScreenState
             gruppoId: gruppoId,
             dataIniziale: widget.dataPredefinita,
             generazioneId: generazioneId,
+            assegnazione: assegnazione,
           ),
         ),
       );

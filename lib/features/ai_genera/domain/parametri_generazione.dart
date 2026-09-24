@@ -8,11 +8,16 @@ class CorsiaGenerazione {
     required this.nome,
     required this.passo100S,
     this.differenzialeS,
+    this.atletiIds = const [],
   });
 
   final String nome;
   final double passo100S;
   final double? differenzialeS;
+
+  /// Gli atleti che stanno in questa corsia: serve solo all'app per
+  /// mostrarli all'allenatore, non viene inviato alla generazione.
+  final List<String> atletiIds;
 
   Map<String, dynamic> toMap() {
     return {

@@ -12,8 +12,11 @@ import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../ai_genera/application/corsie_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/application/personal_best_providers.dart';
+import '../../atleti/domain/personal_best.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/presenze_providers.dart';
 import '../data/presenze_repository.dart';
@@ -82,20 +85,45 @@ class PresenzeScreen extends ConsumerWidget {
                 for (final p in presenze) p.atletaId: p.stato,
               };
 
-              return AppListPanel(
-                righe: [
-                  for (final atleta in atleti)
-                    _RigaPresenza(
-                      atleta: atleta,
-                      statoAttuale: statoPerAtleta[atleta.id],
-                      onSelect: (nuovoStato) => ref
-                          .read(presenzeRepositoryProvider)
-                          .segnaPresenza(
-                            allenamentoId: allenamento.id,
-                            atletaId: atleta.id,
-                            stato: nuovoStato,
-                          ),
+              // Se i tempi del gruppo sono troppo diversi per un'unica
+              // ripartenza, la generazione li divide in due corsie: qui
+              // si vede chi sta in quale (1 = veloci, 2 = lenti).
+              final pbPerAtleta = <String, List<PersonalBest>>{};
+              for (final pb
+                  in ref
+                          .watch(personalBestClubProvider(allenamento.clubId))
+                          .value ??
+                      const <PersonalBest>[]) {
+                pbPerAtleta.putIfAbsent(pb.atletaId, () => []).add(pb);
+              }
+              final corsie = assegnaCorsie(atleti, pbPerAtleta);
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (corsie.divisoInDue)
+                    _AvvisoCorsie(
+                      senzaTempo: corsie.senzaTempo
+                          .where((id) => atleti.any((a) => a.id == id))
+                          .length,
                     ),
+                  AppListPanel(
+                    righe: [
+                      for (final atleta in atleti)
+                        _RigaPresenza(
+                          atleta: atleta,
+                          corsia: corsie.numeroCorsia(atleta.id),
+                          statoAttuale: statoPerAtleta[atleta.id],
+                          onSelect: (nuovoStato) => ref
+                              .read(presenzeRepositoryProvider)
+                              .segnaPresenza(
+                                allenamentoId: allenamento.id,
+                                atletaId: atleta.id,
+                                stato: nuovoStato,
+                              ),
+                        ),
+                    ],
+                  ),
                 ],
               );
             },
@@ -129,11 +157,15 @@ class PresenzeScreen extends ConsumerWidget {
 class _RigaPresenza extends StatelessWidget {
   const _RigaPresenza({
     required this.atleta,
+    required this.corsia,
     required this.statoAttuale,
     required this.onSelect,
   });
 
   final Atleta atleta;
+
+  /// 1 o 2 se il gruppo è diviso in corsie di ripartenza, altrimenti null.
+  final int? corsia;
   final String? statoAttuale;
   final ValueChanged<String> onSelect;
 
@@ -148,9 +180,19 @@ class _RigaPresenza extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            atleta.nomeCompleto,
-            style: AppTypography.corpoForte.copyWith(color: colori.testo),
+          Row(
+            children: [
+              if (corsia != null) ...[
+                _BadgeCorsia(numero: corsia!),
+                const SizedBox(width: AppSpacing.s12),
+              ],
+              Expanded(
+                child: Text(
+                  atleta.nomeCompleto,
+                  style: AppTypography.corpoForte.copyWith(color: colori.testo),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.s12),
           Row(
@@ -241,6 +283,58 @@ class _BottoneStato extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Numero della corsia di ripartenza (1 = veloci, 2 = lenti) accanto al
+/// nome: il gruppo si divide guardando i numeri, senza leggere i tempi.
+class _BadgeCorsia extends StatelessWidget {
+  const _BadgeCorsia({required this.numero});
+
+  final int numero;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colori.azioneTenue,
+        shape: BoxShape.circle,
+        border: Border.all(color: colori.azione),
+      ),
+      child: Text(
+        '$numero',
+        style: AppTypography.corpoForte.copyWith(color: colori.azione),
+      ),
+    );
+  }
+}
+
+class _AvvisoCorsie extends StatelessWidget {
+  const _AvvisoCorsie({required this.senzaTempo});
+
+  final int senzaTempo;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s16,
+        AppSpacing.s12,
+        AppSpacing.s16,
+        AppSpacing.s8,
+      ),
+      child: Text(
+        'Tempi molto diversi nel gruppo: due corsie di ripartenza. '
+        '1 = più veloci, 2 = più lenti.'
+        '${senzaTempo > 0 ? ' Senza numero: $senzaTempo atleti senza tempo sui 100 stile libero, da assegnare tu.' : ''}',
+        style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
       ),
     );
   }
