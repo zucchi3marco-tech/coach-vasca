@@ -28,7 +28,7 @@ import 'serie_labels.dart';
 /// coach 2026-09-22: "così è più facile scrivere le serie e
 /// modificarle, piuttosto che creare un allenamento da zero").
 ///
-/// Stessa interpretazione di [DettaAllenamentoFormScreen] (stesso motore
+/// Stessa interpretazione del campo "Scrivi o detta" di "Nuovo allenamento" (stesso motore
 /// di dettatura, stessa Edge Function `detta-allenamento`), ma qui il
 /// risultato si AGGIUNGE a un allenamento che esiste già invece di
 /// crearne uno nuovo: niente titolo/data da scegliere, solo le serie.

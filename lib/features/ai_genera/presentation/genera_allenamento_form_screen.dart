@@ -13,9 +13,9 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
-import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -27,6 +27,7 @@ import '../domain/focus_lavoro.dart';
 import '../domain/modulo_compilato.dart';
 import '../domain/parametri_generazione.dart';
 import 'campi_generatore.dart';
+import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
@@ -59,6 +60,13 @@ class _GeneraAllenamentoFormScreenState
   final _formKey = GlobalKey<FormState>();
   final _vincoliController = TextEditingController();
   final _testoController = TextEditingController();
+  final _casellaKey = GlobalKey<CasellaDettaturaState>();
+  late DateTime _data = widget.dataPredefinita ?? DateTime.now();
+  late final TextEditingController _dataController = TextEditingController(
+    text: _formattaData(_data),
+  );
+  bool _serieDaTestoInCorso = false;
+  bool _creazioneVuotaInCorso = false;
 
   double _volumeMetri = 3000;
   double? _volumeLavoroCentraleMetri;
@@ -82,10 +90,160 @@ class _GeneraAllenamentoFormScreenState
 
   bool _haFocus(String f) => _focusSelezionati.contains(f);
 
+  bool get _occupato =>
+      _generazioneInCorso ||
+      _compilazioneInCorso ||
+      _serieDaTestoInCorso ||
+      _creazioneVuotaInCorso;
+
+  String _formattaData(DateTime data) =>
+      '${data.day.toString().padLeft(2, '0')}/'
+      '${data.month.toString().padLeft(2, '0')}/'
+      '${data.year}';
+
+  Future<void> _scegliData() async {
+    final scelta = await showDatePicker(
+      context: context,
+      initialDate: _data,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (scelta != null) {
+      setState(() {
+        _data = scelta;
+        _dataController.text = _formattaData(scelta);
+      });
+    }
+  }
+
+  /// Il coach ha scritto (o detto) le serie: si trascrivono fedelmente
+  /// (`detta-allenamento`) invece di inventarle dai parametri.
+  Future<void> _creaSerieDaTesto() async {
+    final testo = _testoController.text.trim();
+    if (testo.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Scrivi o detta prima le serie')),
+      );
+      return;
+    }
+    _casellaKey.currentState?.ferma();
+    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
+    final nomeGruppo = (ref.read(gruppiListProvider(widget.clubId)).value ?? [])
+        .where((g) => g.id == gruppoId)
+        .firstOrNull
+        ?.nome;
+    setState(() => _serieDaTestoInCorso = true);
+
+    final parametriStorico = {
+      'modalita': 'dettatura',
+      'testo': testo,
+      'gruppo': ?nomeGruppo,
+    };
+
+    try {
+      final scheda = await ref
+          .read(generazioneAiRepositoryProvider)
+          .generaDaDettatura(testo: testo, gruppo: nomeGruppo);
+
+      String? generazioneId;
+      try {
+        generazioneId = await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: parametriStorico,
+              esito: 'successo',
+              scheda: scheda.toMap(),
+            );
+      } catch (_) {}
+
+      if (!mounted) return;
+      await _mostraSchedaEApriDettaglio(
+        SchedaGenerataScreen(
+          scheda: scheda,
+          clubId: widget.clubId,
+          gruppoId: gruppoId,
+          dataIniziale: _data,
+          generazioneId: generazioneId,
+        ),
+      );
+    } catch (e) {
+      try {
+        await ref
+            .read(generazioniAiRepositoryProvider)
+            .registraGenerazione(
+              clubId: widget.clubId,
+              parametri: parametriStorico,
+              esito: 'errore',
+              messaggioErrore: e.toString(),
+            );
+      } catch (_) {}
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Errore nella lettura delle serie: ${messaggioErrore(e)}',
+          ),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Riprova',
+            onPressed: _creaSerieDaTesto,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _serieDaTestoInCorso = false);
+    }
+  }
+
+  Future<void> _mostraSchedaEApriDettaglio(Widget schermataScheda) async {
+    final allenamentoSalvato = await Navigator.of(context)
+        .push<Allenamento>(MaterialPageRoute(builder: (_) => schermataScheda));
+    if (allenamentoSalvato != null && mounted) {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) =>
+              AllenamentoDetailScreen(allenamento: allenamentoSalvato),
+        ),
+      );
+    }
+  }
+
+  /// Nessuna generazione: si crea l'allenamento vuoto nella data scelta e
+  /// si apre il dettaglio, dove le serie si aggiungono a mano.
+  Future<void> _creaVuoto() async {
+    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
+    setState(() => _creazioneVuotaInCorso = true);
+    try {
+      final allenamento = await ref
+          .read(allenamentiRepositoryProvider)
+          .createAllenamento(
+            clubId: widget.clubId,
+            data: _data,
+            gruppoId: gruppoId,
+          );
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => AllenamentoDetailScreen(allenamento: allenamento),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore nella creazione: ${messaggioErrore(e)}'),
+        ),
+      );
+      setState(() => _creazioneVuotaInCorso = false);
+    }
+  }
+
   @override
   void dispose() {
     _vincoliController.dispose();
     _testoController.dispose();
+    _dataController.dispose();
     super.dispose();
   }
 
@@ -265,27 +423,46 @@ class _GeneraAllenamentoFormScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormGroup(
-              titolo: 'Scrivi il tuo allenamento',
+              titolo: 'Quando',
               campi: [
                 AppTextField(
-                  etichetta: 'Descrivilo a parole',
+                  etichetta: 'Data dell\'allenamento',
+                  controller: _dataController,
+                  readOnly: true,
+                  onTap: _occupato ? null : _scegliData,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Scrivi o detta il tuo allenamento',
+              campi: [
+                CasellaDettatura(
+                  key: _casellaKey,
                   controller: _testoController,
-                  maxLines: 3,
+                  etichetta: 'Descrivilo a parole',
                   aiuto:
-                      'Es. "5 km con 3 km di aerobico, 400 di gambe e 600 di '
-                      'braccia con palette, no rana". Il modulo si compila '
-                      'da solo: poi lo rivedi. Oppure salta e imposta tutto '
-                      'qui sotto.',
+                      'Se scrivi le serie (es. "400 riscaldamento, 8x100 sl '
+                      'soglia rec 20, 200 defaticamento") premi "Crea le '
+                      'serie". Se descrivi solo cosa vuoi (es. "5 km con 3 '
+                      'km di aerobico, no rana") premi "Compila il '
+                      'modulo": poi lo rivedi e generi.',
+                ),
+                PrimaryButton(
+                  label: _serieDaTestoInCorso
+                      ? 'Sto leggendo...'
+                      : 'Crea le serie da questo testo',
+                  isLoading: _serieDaTestoInCorso,
+                  onPressed: _occupato ? null : _creaSerieDaTesto,
                 ),
                 SecondaryButton(
                   label: _compilazioneInCorso
                       ? 'Sto leggendo...'
                       : 'Compila il modulo',
                   icon: Icons.auto_fix_high,
-                  onPressed: _compilazioneInCorso || _generazioneInCorso
-                      ? null
-                      : _compilaDalTesto,
+                  onPressed: _occupato ? null : _compilaDalTesto,
                 ),
+                if (_serieDaTestoInCorso) const AttesaAiHint(),
               ],
             ),
             FormGroup(
@@ -498,23 +675,16 @@ class _GeneraAllenamentoFormScreenState
             PrimaryButton(
               label: _generazioneInCorso ? 'Sto generando...' : 'Genera',
               isLoading: _generazioneInCorso,
-              onPressed: _generazioneInCorso || _compilazioneInCorso
-                  ? null
-                  : _conferma,
+              onPressed: _occupato ? null : _conferma,
             ),
             if (_generazioneInCorso) const AttesaAiHint(),
-            TextButton(
-              onPressed: _generazioneInCorso
-                  ? null
-                  : () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => AllenamentoFormScreen(
-                          clubId: widget.clubId,
-                          dataPredefinita: widget.dataPredefinita,
-                        ),
-                      ),
-                    ),
-              child: const Text('Preferisci crearlo a mano, serie per serie?'),
+            const SizedBox(height: AppSpacing.s12),
+            SecondaryButton(
+              label: _creazioneVuotaInCorso
+                  ? 'Sto creando...'
+                  : 'Crea vuoto e aggiungo le serie a mano',
+              icon: Icons.edit_outlined,
+              onPressed: _occupato ? null : _creaVuoto,
             ),
           ],
         ),
@@ -628,7 +798,7 @@ class _GeneraAllenamentoFormScreenState
             scheda: scheda,
             clubId: widget.clubId,
             gruppoId: gruppoId,
-            dataIniziale: widget.dataPredefinita,
+            dataIniziale: _data,
             generazioneId: generazioneId,
             assegnazione: assegnazione,
           ),

@@ -10,7 +10,6 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/fab_azioni.dart';
 import '../../../widgets/loading_skeleton.dart';
-import '../../ai_genera/presentation/detta_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -136,11 +135,6 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
             etichetta: 'Genera settimana con AI',
             onPressed: _apriGeneraSettimanaAI,
           ),
-          AzioneFab(
-            icona: Icons.mic_outlined,
-            etichetta: 'Detta allenamento',
-            onPressed: _apriDettaAllenamento,
-          ),
         ],
       ),
     );
@@ -211,14 +205,6 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GeneraAllenamentoFormScreen(clubId: widget.clubId),
-      ),
-    );
-  }
-
-  Future<void> _apriDettaAllenamento() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => DettaAllenamentoFormScreen(clubId: widget.clubId),
       ),
     );
   }
