@@ -26,8 +26,10 @@ alter table public.notifiche add constraint notifiche_tipo_check check (
   )
 );
 
-create unique index idx_notifiche_chiave
-  on public.notifiche(chiave) where chiave is not null;
+-- Unico ma non parziale: i valori nulli (le notifiche senza chiave) non
+-- confliggono fra loro, e un upsert ON CONFLICT (chiave) funziona anche da
+-- PostgREST, che non sa indicare il predicato di un indice parziale.
+create unique index idx_notifiche_chiave on public.notifiche(chiave);
 create index idx_notifiche_user
   on public.notifiche(user_id) where user_id is not null;
 

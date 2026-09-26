@@ -99,8 +99,12 @@ class BarraClub extends ConsumerWidget {
         ? null
         : ref.watch(clubAtletaProvider(atleta.clubId)).value;
     final nome = (areaAtleta ? clubAtleta?.nome : clubCoach?.nome);
-    final nonLette = (!areaAtleta && clubCoach != null)
-        ? ref.watch(notificheNonLetteProvider(clubCoach.id)).value ?? const []
+    // Le notifiche del club le vede il coach, quelle personali (es. una
+    // convocazione) l'atleta: le regole di accesso del database filtrano.
+    final clubNotificheId = atleta?.clubId ?? clubCoach?.id;
+    final nonLette = clubNotificheId != null
+        ? ref.watch(notificheNonLetteProvider(clubNotificheId)).value ??
+              const []
         : const [];
     final temaScelto = ref.watch(temaAppProvider);
 
@@ -240,9 +244,11 @@ Future<void> _apriMenuPrincipale(
   final selezione = ref.read(selezioneGruppoProvider);
   final mostraTab =
       !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
-  final mostraNotifiche = club != null;
-  final nonLette = mostraNotifiche
-      ? ref.read(notificheNonLetteProvider(club.id)).value ?? const []
+  final clubNotificheId =
+      ref.read(currentAtletaProvider).value?.clubId ?? club?.id;
+  final mostraNotifiche = clubNotificheId != null;
+  final nonLette = clubNotificheId != null
+      ? ref.read(notificheNonLetteProvider(clubNotificheId)).value ?? const []
       : const [];
   final inCoda = ref.read(pendingOperationsCountProvider).value ?? 0;
   final installabile = installabilitaPwa.value;
@@ -334,7 +340,7 @@ Future<void> _apriMenuPrincipale(
     case null:
       return;
     case _AzioneMenu.notifiche:
-      final clubId = club?.id;
+      final clubId = clubNotificheId;
       if (clubId == null) return;
       await navigatorKeyApp.currentState?.push(
         MaterialPageRoute<void>(

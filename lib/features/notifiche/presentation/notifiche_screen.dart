@@ -17,6 +17,13 @@ class NotificheScreen extends ConsumerWidget {
 
   final String clubId;
 
+  IconData _icona(String tipo) => switch (tipo) {
+    'convocazione_gara' => Icons.pool_outlined,
+    'convocazione_partita' => Icons.sports_handball_outlined,
+    'visita_medica' => Icons.medical_services_outlined,
+    _ => Icons.person_add_alt_outlined,
+  };
+
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
       '${data.month.toString().padLeft(2, '0')}/'
@@ -67,7 +74,7 @@ class NotificheScreen extends ConsumerWidget {
                   righe: [
                     for (final n in notifiche)
                       AppListRow(
-                        leading: const Icon(Icons.person_add_alt_outlined),
+                        leading: Icon(_icona(n.tipo)),
                         titolo: n.messaggio,
                         sottotitolo: _formattaData(n.creataIl),
                         trailing: IconButton(

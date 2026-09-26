@@ -1,5 +1,6 @@
-/// Un avviso per il coach (FASE 13, punto 1) — oggi solo del tipo
-/// "atleta_registrato", creato dalle funzioni di registrazione atleta.
+/// Un avviso in app (e, con le notifiche push, anche sul telefono): tipi
+/// `atleta_registrato` (per il coach), `convocazione_gara` e
+/// `convocazione_partita` (per l'atleta), `visita_medica` (coach e atleta).
 class Notifica {
   const Notifica({
     required this.id,

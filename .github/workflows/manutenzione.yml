@@ -1,9 +1,11 @@
 name: Manutenzione
 
-# Due lavori automatici sul database Supabase:
+# Tre lavori automatici sul database Supabase:
 # - anti-pausa: il piano gratuito mette il progetto in pausa dopo 7 giorni
 #   senza attivita', quindi lo si "tocca" due volte a settimana;
-# - backup: ogni domenica una copia cifrata dei dati, conservata 90 giorni.
+# - backup: ogni domenica una copia cifrata dei dati, conservata 90 giorni;
+# - promemoria visite mediche: ogni giorno controlla le scadenze e crea le
+#   notifiche (le manda sul telefono la funzione invia-push).
 # Si possono lanciare a mano da Actions > Manutenzione > Run workflow.
 # Segreti richiesti (Settings > Secrets and variables > Actions):
 # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_DB_URL (stringa "Session pooler",
@@ -14,18 +16,19 @@ on:
   schedule:
     - cron: '0 6 * * 1,4'
     - cron: '0 3 * * 0'
+    - cron: '0 7 * * *'
   workflow_dispatch:
     inputs:
       azione:
         description: 'Cosa eseguire'
         type: choice
         default: tutto
-        options: [tutto, anti-pausa, backup]
+        options: [tutto, anti-pausa, backup, promemoria-visite]
 
 jobs:
   anti-pausa:
     if: >-
-      github.event_name == 'workflow_dispatch' && inputs.azione != 'backup'
+      github.event_name == 'workflow_dispatch' && (inputs.azione == 'tutto' || inputs.azione == 'anti-pausa')
       || github.event.schedule == '0 6 * * 1,4'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -46,9 +49,26 @@ jobs:
           # manda una email.
           [ "$codice" = "200" ]
 
+  promemoria-visite:
+    if: >-
+      github.event_name == 'workflow_dispatch' && (inputs.azione == 'tutto' || inputs.azione == 'promemoria-visite')
+      || github.event.schedule == '0 7 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Controlla le visite mediche in scadenza
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          codice=$(curl -s -o risposta.json -w '%{http_code}' --max-time 60             -X POST "$SUPABASE_URL/functions/v1/promemoria-visite"             -H "apikey: $SUPABASE_ANON_KEY"             -H "Authorization: Bearer $SUPABASE_ANON_KEY"             -H "Content-Type: application/json" -d '{}')
+          echo "Risposta HTTP: $codice"
+          cat risposta.json
+          [ "$codice" = "200" ]
+
   backup:
     if: >-
-      github.event_name == 'workflow_dispatch' && inputs.azione != 'anti-pausa'
+      github.event_name == 'workflow_dispatch' && (inputs.azione == 'tutto' || inputs.azione == 'backup')
       || github.event.schedule == '0 3 * * 0'
     runs-on: ubuntu-latest
     timeout-minutes: 20

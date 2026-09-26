@@ -66,8 +66,11 @@ Pezzi: tabella `push_subscriptions` e colonne nuove di `notifiche`
 
 Setup una tantum:
 
-1. **Migrazione**: incolla `migrations/20260926000100_notifiche_push.sql`
-   nel SQL Editor ed eseguila.
+1. **Migrazioni**: incolla nel SQL Editor ed esegui, uno alla volta e in
+   quest'ordine, `migrations/20260926000100_notifiche_push.sql` e
+   `migrations/20260926000200_notifiche_convocazioni.sql` (quest'ultima
+   avvisa l'atleta quando viene iscritto a una gara o convocato in una
+   partita).
 2. **Chiavi VAPID**: nel terminale `npx web-push generate-vapid-keys`.
    Danno una chiave pubblica e una privata. La privata non va mai nel
    repository.
@@ -75,7 +78,11 @@ Setup una tantum:
    `VAPID_PUBLIC_KEY` (la pubblica), `VAPID_PRIVATE_KEY` (la privata) e
    `VAPID_SUBJECT` (un indirizzo `https://` o `mailto:` di contatto).
 4. **Chiave pubblica nel codice**: incollala in `lib/core/push/vapid.dart`.
-5. **Deploy**: `supabase functions deploy invia-push --project-ref <ref>`.
+5. **Deploy**: `supabase functions deploy invia-push --project-ref <ref>`
+   e `supabase functions deploy promemoria-visite --project-ref <ref>`
+   (quest'ultima crea ogni giorno le notifiche per le visite mediche a
+   30 giorni, 7 giorni e alla scadenza: la lancia il workflow
+   "Manutenzione").
 6. **Database Webhook**: Supabase → Database → Webhooks → Create a new
    hook: nome `notifiche_push`, tabella `public.notifiche`, evento
    **Insert**, tipo **Supabase Edge Functions**, funzione `invia-push`,
