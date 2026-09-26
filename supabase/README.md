@@ -55,3 +55,39 @@ solo dalla RLS.
 - Vincoli di coerenza date tra stagione/macro/meso/micro (es. un microciclo
   interamente contenuto nel suo mesociclo) — lasciati alla validazione
   applicativa in V1.
+
+## Notifiche push (Web Push)
+
+Oltre alla campanella, le notifiche arrivano sul telefono ad app chiusa.
+Pezzi: tabella `push_subscriptions` e colonne nuove di `notifiche`
+(migrazione `20260926000100_notifiche_push.sql`), Edge Function
+`invia-push`, service worker `web/push/sw.js`, chiave pubblica in
+`lib/core/push/vapid.dart`.
+
+Setup una tantum:
+
+1. **Migrazione**: incolla `migrations/20260926000100_notifiche_push.sql`
+   nel SQL Editor ed eseguila.
+2. **Chiavi VAPID**: nel terminale `npx web-push generate-vapid-keys`.
+   Danno una chiave pubblica e una privata. La privata non va mai nel
+   repository.
+3. **Segreti**: Supabase → Edge Functions → Secrets → aggiungi
+   `VAPID_PUBLIC_KEY` (la pubblica), `VAPID_PRIVATE_KEY` (la privata) e
+   `VAPID_SUBJECT` (un indirizzo `https://` o `mailto:` di contatto).
+4. **Chiave pubblica nel codice**: incollala in `lib/core/push/vapid.dart`.
+5. **Deploy**: `supabase functions deploy invia-push --project-ref <ref>`.
+6. **Database Webhook**: Supabase → Database → Webhooks → Create a new
+   hook: nome `notifiche_push`, tabella `public.notifiche`, evento
+   **Insert**, tipo **Supabase Edge Functions**, funzione `invia-push`,
+   metodo POST. (Non si puo' mettere in una migrazione senza incorporare la
+   chiave di servizio.)
+7. **Prova**: sul telefono apri l'app → menu ☰ → "Attiva le notifiche sul
+   telefono" → consenti. Poi dal SQL Editor:
+   ```sql
+   insert into public.notifiche (club_id, tipo, messaggio)
+   select id, 'atleta_registrato', 'Prova notifica push' from public.club limit 1;
+   ```
+   Deve comparire la notifica sul telefono.
+
+Su iPhone/iPad il push funziona solo con l'app aggiunta alla Home da Safari
+(iOS 16.4 o successivo).

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/navigation/barra_club_providers.dart';
 import '../../core/navigation/navigator_key.dart';
+import '../../core/push/push_notifiche.dart';
 import '../../core/pwa/installabilita_pwa.dart';
 import '../../core/supabase/supabase_providers.dart';
 import '../../core/sync/sync_engine.dart';
@@ -16,6 +17,7 @@ import '../auth/data/auth_repository.dart';
 import '../club/application/current_club_provider.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
+import '../notifiche/application/push_service.dart';
 import '../notifiche/data/notifiche_repository.dart';
 import '../notifiche/presentation/notifiche_screen.dart';
 import 'tour_coach.dart';
@@ -32,8 +34,13 @@ class BarraClubHost extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final autenticato =
-        ref.watch(authStateChangesProvider).value?.session != null;
+    final sessione = ref.watch(authStateChangesProvider).value?.session;
+    final autenticato = sessione != null;
+    // Una volta per utente e sessione: ri-registra l'iscrizione push se il
+    // permesso c'e' gia' (non chiede nulla all'utente).
+    if (sessione != null) {
+      ref.watch(pushRisincronizzaProvider(sessione.user.id));
+    }
     final nascosta = ref.watch(barraClubNascostaProvider) > 0;
     final visibile = autenticato && !nascosta;
 
@@ -54,7 +61,15 @@ class BarraClubHost extends ConsumerWidget {
   }
 }
 
-enum _AzioneMenu { notifiche, sincronizza, installa, cambiaGruppo, guida, esci }
+enum _AzioneMenu {
+  notifiche,
+  notifichePush,
+  sincronizza,
+  installa,
+  cambiaGruppo,
+  guida,
+  esci,
+}
 
 /// La barra: logo (bottone home), nome del club, menu ☰ e tema.
 ///
@@ -231,6 +246,8 @@ Future<void> _apriMenuPrincipale(
       : const [];
   final inCoda = ref.read(pendingOperationsCountProvider).value ?? 0;
   final installabile = installabilitaPwa.value;
+  final statoPushAttuale = await ref.read(pushServiceProvider).stato();
+  if (!bottoneContext.mounted || !overlayContext.mounted) return;
 
   final scelta = await showMenu<_AzioneMenu>(
     context: overlayContext,
@@ -247,6 +264,23 @@ Future<void> _apriMenuPrincipale(
             ),
             title: const Text('Notifiche'),
             trailing: nonLette.isEmpty ? null : Text('${nonLette.length}'),
+          ),
+        ),
+      if (statoPushAttuale != StatoPush.nonSupportato)
+        PopupMenuItem(
+          value: _AzioneMenu.notifichePush,
+          enabled: statoPushAttuale != StatoPush.attivo,
+          child: ListTile(
+            leading: Icon(
+              statoPushAttuale == StatoPush.attivo
+                  ? Icons.notifications_active_outlined
+                  : Icons.notification_add_outlined,
+            ),
+            title: Text(
+              statoPushAttuale == StatoPush.attivo
+                  ? 'Notifiche sul telefono attive'
+                  : 'Attiva le notifiche sul telefono',
+            ),
           ),
         ),
       PopupMenuItem(
@@ -308,6 +342,10 @@ Future<void> _apriMenuPrincipale(
         ),
       );
       ref.invalidate(notificheNonLetteProvider(clubId));
+    case _AzioneMenu.notifichePush:
+      if (overlayContext.mounted) {
+        await _gestisciNotifichePush(ref, overlayContext, statoPushAttuale);
+      }
     case _AzioneMenu.sincronizza:
       await ref.read(syncEngineProvider).processQueue();
     case _AzioneMenu.installa:
@@ -332,5 +370,67 @@ Future<void> _apriMenuPrincipale(
           );
         }
       }
+  }
+}
+
+/// Attivazione delle notifiche push dal menu: il permesso del browser si
+/// chiede solo da qui (un tocco dell'utente, come esige il browser).
+Future<void> _gestisciNotifichePush(
+  WidgetRef ref,
+  BuildContext contesto,
+  StatoPush stato,
+) async {
+  Future<void> spiega(String titolo, String testo) => showDialog<void>(
+    context: contesto,
+    builder: (context) => AlertDialog(
+      title: Text(titolo),
+      content: Text(testo),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Ho capito'),
+        ),
+      ],
+    ),
+  );
+
+  const bloccate =
+      'Le notifiche sono bloccate per questo sito. Riattivale dalle '
+      'impostazioni del browser (in Chrome: il lucchetto accanto '
+      "all'indirizzo, poi Notifiche) e riprova da qui.";
+
+  switch (stato) {
+    case StatoPush.installaPrima:
+      await spiega(
+        'Aggiungi prima l\'app alla Home',
+        'Su iPhone e iPad le notifiche funzionano solo se l\'app è '
+            'aggiunta alla schermata Home: in Safari tocca Condividi, poi '
+            '"Aggiungi alla schermata Home", quindi riaprila da lì e scegli '
+            'di nuovo questa voce.',
+      );
+    case StatoPush.negato:
+      await spiega('Notifiche bloccate', bloccate);
+    case StatoPush.daAttivare:
+      try {
+        final nuovo = await ref.read(pushServiceProvider).attiva();
+        if (!contesto.mounted) return;
+        final testo = switch (nuovo) {
+          StatoPush.attivo => 'Notifiche attivate su questo telefono.',
+          StatoPush.negato => bloccate,
+          _ => 'Notifiche non attivate.',
+        };
+        ScaffoldMessenger.of(contesto)
+            .showSnackBar(SnackBar(content: Text(testo)));
+      } catch (e) {
+        if (!contesto.mounted) return;
+        ScaffoldMessenger.of(contesto).showSnackBar(
+          SnackBar(
+            content: Text('Attivazione non riuscita: ${messaggioErrore(e)}'),
+          ),
+        );
+      }
+    case StatoPush.nonSupportato:
+    case StatoPush.attivo:
+      return;
   }
 }
