@@ -2,39 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
-import '../../../widgets/lane_rule.dart';
 import '../../../widgets/loading_skeleton.dart';
-import '../../../widgets/pool_card.dart';
-import '../../../widgets/zone_chip.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
+import '../domain/riordino_serie.dart';
 import '../domain/serie.dart';
 import '../domain/serie_rapida.dart';
 import 'allenamento_form_screen.dart';
+import 'pannello_aggiungi_serie.dart';
+import 'riepilogo_volumi.dart';
+import 'riga_serie.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'scrivi_serie_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
-
-const _blocchiRapidi = [
-  ('riscaldamento', 'Risc.'),
-  ('principale', 'Princ.'),
-  ('defaticamento', 'Defat.'),
-  ('altro', 'Altro'),
-];
 
 class AllenamentoDetailScreen extends ConsumerStatefulWidget {
   const AllenamentoDetailScreen({required this.allenamento, super.key});
@@ -48,56 +40,62 @@ class AllenamentoDetailScreen extends ConsumerStatefulWidget {
 
 class _AllenamentoDetailScreenState
     extends ConsumerState<AllenamentoDetailScreen> {
-  final _quickController = TextEditingController();
-  final _quickFocusNode = FocusNode();
   String _bloccoRapido = 'principale';
-  bool _aggiuntaInCorso = false;
 
-  @override
-  void dispose() {
-    _quickController.dispose();
-    _quickFocusNode.dispose();
-    super.dispose();
+  void _errore(Object e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
   }
 
-  void _apriSerieCompleta({
-    required int ordineSuccessivo,
-    required Serie? serie,
-  }) {
+  int _ordineSuccessivo() {
+    final serie =
+        ref.read(serieListProvider(widget.allenamento.id)).value ?? const [];
+    return serie.fold<int>(0, (m, s) => s.ordine > m ? s.ordine : m) + 1;
+  }
+
+  void _apriSerieCompleta({required Serie? serie}) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SerieFormScreen(
           allenamentoId: widget.allenamento.id,
-          ordineSuccessivo: ordineSuccessivo,
+          ordineSuccessivo: _ordineSuccessivo(),
           serie: serie,
         ),
       ),
     );
   }
 
-  void _apriScriviSerie(int ordineSuccessivo) {
+  void _apriScriviSerie() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ScriviSerieScreen(
           allenamento: widget.allenamento,
-          ordineSuccessivo: ordineSuccessivo,
+          ordineSuccessivo: _ordineSuccessivo(),
         ),
       ),
     );
   }
 
-  Future<void> _aggiungiRapida(int ordineSuccessivo) async {
-    final parsed = parseSerieRapida(_quickController.text);
-    if (parsed == null || _aggiuntaInCorso) return;
+  void _apriPannello() {
+    mostraPannelloAggiungiSerie(
+      context,
+      bloccoIniziale: _bloccoRapido,
+      onBloccoCambiato: (b) => _bloccoRapido = b,
+      aggiungiRapida: _aggiungiRapida,
+      onScrivi: _apriScriviSerie,
+      onSerieCompleta: () => _apriSerieCompleta(serie: null),
+    );
+  }
 
-    setState(() => _aggiuntaInCorso = true);
+  Future<void> _aggiungiRapida(SerieRapida parsed, String blocco) async {
     try {
       await ref
           .read(serieRepositoryProvider)
           .createSerie(
             allenamentoId: widget.allenamento.id,
-            ordine: ordineSuccessivo,
-            blocco: _bloccoRapido,
+            ordine: _ordineSuccessivo(),
+            blocco: blocco,
             ripetute: parsed.ripetute,
             distanzaM: parsed.distanzaM,
             stile: parsed.stile,
@@ -106,40 +104,19 @@ class _AllenamentoDetailScreenState
             passoObiettivoS: parsed.passoObiettivoS,
             recuperoS: parsed.recuperoS,
           );
-      _quickController.clear();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-      }
-    } finally {
-      if (mounted) setState(() => _aggiuntaInCorso = false);
+      _errore(e);
+      rethrow;
     }
   }
 
-  /// Trascinare una serie nell'elenco la sposta e rinumera tutto l'ordine
-  /// di conseguenza (nessun campo "Ordine" da compilare a mano, vedi
-  /// SerieFormScreen). `serie` e' gia' ordinata come mostrata a schermo;
-  /// `newIndex` arriva gia' corretto da `onReorderItem` (a differenza del
-  /// vecchio `onReorder`, deprecato, non serve piu' aggiustarlo a mano).
-  Future<void> _riordinaSerie(
-    List<Serie> serie,
-    int oldIndex,
-    int newIndex,
-  ) async {
-    final riordinate = List<Serie>.of(serie);
-    final spostata = riordinate.removeAt(oldIndex);
-    riordinate.insert(newIndex, spostata);
-
-    final repository = ref.read(serieRepositoryProvider);
-    try {
-      for (var i = 0; i < riordinate.length; i++) {
-        final s = riordinate[i];
-        if (s.ordine == i + 1) continue;
-        await repository.updateSerie(
+  Future<void> _aggiornaSerie(Serie s, {int? ordine, String? blocco}) {
+    return ref
+        .read(serieRepositoryProvider)
+        .updateSerie(
           id: s.id,
-          ordine: i + 1,
-          blocco: s.blocco,
+          ordine: ordine ?? s.ordine,
+          blocco: blocco ?? s.blocco,
           ripetute: s.ripetute,
           distanzaM: s.distanzaM,
           stile: s.stile,
@@ -151,31 +128,144 @@ class _AllenamentoDetailScreenState
           attrezzatura: s.attrezzatura,
           note: s.note,
         );
+  }
+
+  /// Riscrive il numero d'ordine solo delle serie che cambiano (nessun
+  /// campo "Ordine" da compilare a mano, vedi SerieFormScreen).
+  Future<void> _scriviOrdine(List<Serie> ordinate) async {
+    try {
+      for (final c in cambiDiOrdine(ordinate)) {
+        await _aggiornaSerie(c.serie, ordine: c.ordine);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-      }
+      _errore(e);
     }
   }
 
-  String _aiutoRapido(SerieRapida? parsed) {
-    if (_quickController.text.trim().isEmpty) {
-      return 'Es. 10x100 A2 1:25 r15 sl';
+  /// `serie` è già ordinata come mostrata a schermo; `newIndex` arriva già
+  /// corretto da `onReorderItem`.
+  Future<void> _riordinaSerie(List<Serie> serie, int da, int a) =>
+      _scriviOrdine(spostaSerie(serie, da, a));
+
+  Future<void> _azione(List<Serie> serie, int index, AzioneSerie azione) async {
+    final s = serie[index];
+    switch (azione) {
+      case AzioneSerie.su:
+        await _riordinaSerie(serie, index, index - 1);
+      case AzioneSerie.giu:
+        await _riordinaSerie(serie, index, index + 1);
+      case AzioneSerie.cambiaBlocco:
+        final scelto = await _scegliBlocco(s.blocco);
+        if (scelto == null || scelto == s.blocco) return;
+        try {
+          await _aggiornaSerie(s, blocco: scelto);
+        } catch (e) {
+          _errore(e);
+        }
+      case AzioneSerie.duplica:
+        await _duplica(serie, index);
+      case AzioneSerie.elimina:
+        await _elimina(serie, index);
     }
-    if (parsed == null) {
-      return 'Scrivi almeno ripetute×distanza (es. 10x100)';
+  }
+
+  Future<String?> _scegliBlocco(String attuale) {
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sposta in',
+              style: AppTypography.sezione.copyWith(
+                color: sheetContext.colori.testo,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (final b in ordineBlocchi)
+                  TonalChip(
+                    etichetta: labelBlocco(b),
+                    selezionato: b == attuale,
+                    onSelezionato: (_) => Navigator.of(sheetContext).pop(b),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// La copia va subito dopo l'originale: le serie successive slittano di
+  /// una posizione (partendo dall'ultima, così non ci sono mai due serie
+  /// con lo stesso numero).
+  Future<void> _duplica(List<Serie> serie, int index) async {
+    final s = serie[index];
+    try {
+      for (var i = serie.length - 1; i > index; i--) {
+        await _aggiornaSerie(serie[i], ordine: i + 2);
+      }
+      await ref
+          .read(serieRepositoryProvider)
+          .createSerie(
+            allenamentoId: s.allenamentoId,
+            ordine: index + 2,
+            blocco: s.blocco,
+            ripetute: s.ripetute,
+            distanzaM: s.distanzaM,
+            stile: s.stile,
+            esecuzione: s.esecuzione,
+            zona: s.zona,
+            passoObiettivoS: s.passoObiettivoS,
+            recuperoS: s.recuperoS,
+            ripartenzaS: s.ripartenzaS,
+            attrezzatura: s.attrezzatura,
+            note: s.note,
+          );
+    } catch (e) {
+      _errore(e);
     }
-    final parti = <String>[
-      '${parsed.ripetute} × ${parsed.distanzaM}m ${labelStile(parsed.stile)}',
-    ];
-    if (parsed.zona != null) parti.add('zona ${parsed.zona}');
-    if (parsed.passoObiettivoS != null) {
-      parti.add('passo ${formatPaceSeconds(parsed.passoObiettivoS!)}/100m');
+  }
+
+  Future<void> _elimina(List<Serie> serie, int index) async {
+    final s = serie[index];
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elimina serie'),
+        content: Text(
+          'Eliminare ${s.ripetute}×${s.distanzaM} ${labelStile(s.stile)}? '
+          "L'operazione non si può annullare.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (conferma != true) return;
+    try {
+      await ref.read(serieRepositoryProvider).deleteSerie(s.id);
+      // Il numero d'ordine non deve avere buchi: la prossima serie
+      // aggiunta prende lunghezza+1.
+      final restanti = [...serie]..removeAt(index);
+      await _scriviOrdine(restanti);
+    } catch (e) {
+      _errore(e);
     }
-    if (parsed.recuperoS != null) parti.add("rec ${parsed.recuperoS}''");
-    return '→ ${parti.join(' · ')}';
   }
 
   @override
@@ -188,9 +278,27 @@ class _AllenamentoDetailScreenState
         g.id: g.nome,
     };
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
-    final serieAttuale = serieAsync.value ?? const [];
-    final parsedRapida = parseSerieRapida(_quickController.text);
     final colori = context.colori;
+
+    final testata = Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${allenamento.data.day.toString().padLeft(2, '0')}/'
+            '${allenamento.data.month.toString().padLeft(2, '0')}/'
+            '${allenamento.data.year}'
+            '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
+            style: AppTypography.sezione.copyWith(color: colori.testo),
+          ),
+          if (allenamento.note != null && allenamento.note!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s4),
+            _NoteCompatte(allenamento.note!),
+          ],
+        ],
+      ),
+    );
 
     return AppScaffold(
       appBar: AppBar(
@@ -268,344 +376,115 @@ class _AllenamentoDetailScreenState
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-dettaglio-allenamento',
+        onPressed: _apriPannello,
+        tooltip: 'Aggiungi serie',
+        child: const Icon(Icons.add),
+      ),
+      body: serieAsync.when(
+        data: (serie) {
+          if (serie.isEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  '${allenamento.data.day.toString().padLeft(2, '0')}/'
-                  '${allenamento.data.month.toString().padLeft(2, '0')}/'
-                  '${allenamento.data.year}'
-                  '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
-                  style: AppTypography.sezione.copyWith(color: colori.testo),
-                ),
-                if (allenamento.note != null &&
-                    allenamento.note!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    allenamento.note!,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: serieAsync.when(
-              data: (serie) {
-                if (serie.isEmpty) {
-                  return EmptyState(
+                testata,
+                const Divider(height: 1),
+                Expanded(
+                  child: EmptyState(
                     icona: Icons.pool_outlined,
                     titolo: 'Nessuna serie',
                     descrizione:
-                        'Scrivi la prima serie qui sotto per costruire '
-                        'questo allenamento, oppure scrivi o detta più '
-                        'serie insieme.',
-                    azionePrincipale: 'Scrivi la prima serie',
-                    onAzionePrincipale: () => _quickFocusNode.requestFocus(),
+                        'Aggiungi la prima serie con il pulsante +, '
+                        'oppure scrivi o detta più serie insieme.',
+                    azionePrincipale: 'Aggiungi la prima serie',
+                    onAzionePrincipale: _apriPannello,
                     azioneSecondaria: 'Scrivi o detta più serie insieme',
-                    onAzioneSecondaria: () => _apriScriviSerie(1),
-                  );
-                }
-                // Riepilogo, non un campo a se': l'attrezzatura resta
-                // scritta sulla singola serie (vedi SerieFormScreen), qui
-                // si mostra solo l'elenco senza doppioni di quanto già
-                // compilato, per prepararsi prima di andare in vasca.
-                final materiale = {
-                  for (final s in serie)
-                    if (s.attrezzatura != null &&
-                        s.attrezzatura!.trim().isNotEmpty)
-                      s.attrezzatura!.trim(),
-                }.toList()..sort();
-                final totaleMetri = serie.fold<int>(
-                  0,
-                  (tot, s) => tot + s.distanzaTotaleM,
-                );
-                final metriPerBlocco = <String, int>{};
-                for (final s in serie) {
-                  metriPerBlocco[s.blocco] =
-                      (metriPerBlocco[s.blocco] ?? 0) + s.distanzaTotaleM;
-                }
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.s16,
-                        AppSpacing.s16,
-                        AppSpacing.s16,
-                        0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Totale: $totaleMetri m',
-                            style: AppTypography.corpoForte.copyWith(
-                              color: colori.testo,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.s4),
-                          Wrap(
-                            spacing: AppSpacing.s12,
-                            runSpacing: AppSpacing.s4,
-                            children: [
-                              for (final blocco in ordineBlocchi)
-                                if (metriPerBlocco[blocco] != null)
-                                  Text(
-                                    '${labelBlocco(blocco)} '
-                                    '${metriPerBlocco[blocco]} m',
-                                    style: AppTypography.piccolo.copyWith(
-                                      color: colori.testoSecondario,
-                                    ),
-                                  ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (materiale.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.s16,
-                          AppSpacing.s16,
-                          AppSpacing.s16,
-                          0,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Materiale utilizzato',
-                              style: AppTypography.etichetta.copyWith(
-                                color: colori.testoSecondario,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.s8),
-                            Wrap(
-                              spacing: AppSpacing.s8,
-                              runSpacing: AppSpacing.s8,
-                              children: [
-                                for (final m in materiale) Chip(label: Text(m)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    Expanded(
-                      child: ReorderableListView.builder(
-                        padding: const EdgeInsets.all(AppSpacing.s16),
-                        itemCount: serie.length,
-                        onReorderItem: (oldIndex, newIndex) =>
-                            _riordinaSerie(serie, oldIndex, newIndex),
-                        itemBuilder: (context, index) {
-                          final s = serie[index];
-                          final coloreZona = context.dominio.colorePerZona(
-                            s.zona,
-                            rispetto: colori.linea,
-                          );
-                          final meta = <String>[];
-                          if (s.passoObiettivoS != null) {
-                            meta.add(
-                              '${formatPaceSeconds(s.passoObiettivoS!)}/100m',
-                            );
-                          }
-                          if (s.recuperoS != null) {
-                            meta.add("rec ${s.recuperoS}''");
-                          }
-                          if (s.ripartenzaS != null) {
-                            meta.add(
-                              'rip ${formatPaceSeconds(s.ripartenzaS!)}',
-                            );
-                          }
-                          if (s.attrezzatura != null &&
-                              s.attrezzatura!.isNotEmpty) {
-                            meta.add(s.attrezzatura!);
-                          }
-                          return Padding(
-                            key: ValueKey(s.id),
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.s12,
-                            ),
-                            child: LaneRule(
-                              colore: coloreZona,
-                              child: InkWell(
-                                onTap: () => _apriSerieCompleta(
-                                  ordineSuccessivo: serie.length + 1,
-                                  serie: s,
-                                ),
-                                child: PoolCard(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            width: 28,
-                                            height: 28,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              color: colori.azioneTenue,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Text(
-                                              '${s.ordine}',
-                                              style: AppTypography.piccolo
-                                                  .copyWith(
-                                                    color: colori.azione,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.s12),
-                                          Expanded(
-                                            child: Text(
-                                              '${s.ripetute}×${s.distanzaM}m '
-                                              '${labelStile(s.stile)} '
-                                              '${labelEsecuzione(s.esecuzione)}',
-                                              style: AppTypography.corpoForte
-                                                  .copyWith(
-                                                    color: colori.testo,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: AppSpacing.s8),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            labelBlocco(s.blocco),
-                                            style: AppTypography.etichetta
-                                                .copyWith(
-                                                  color: colori.testoSecondario,
-                                                ),
-                                          ),
-                                          if (s.zona != null) ...[
-                                            const SizedBox(
-                                              width: AppSpacing.s8,
-                                            ),
-                                            ZoneChip(sigla: s.zona!),
-                                          ],
-                                        ],
-                                      ),
-                                      if (meta.isNotEmpty) ...[
-                                        const SizedBox(height: AppSpacing.s8),
-                                        Wrap(
-                                          spacing: AppSpacing.s16,
-                                          runSpacing: AppSpacing.s4,
-                                          children: [
-                                            for (final m in meta)
-                                              Text(
-                                                m,
-                                                style: AppTypography.piccolo
-                                                    .copyWith(
-                                                      color: colori
-                                                          .testoSecondario,
-                                                    ),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(AppSpacing.s16),
-                child: LoadingSkeletonList(righe: 5),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: ErrorBanner(
-                  messaggio: 'Non è stato possibile caricare le serie.',
-                  suggerimento:
-                      'Riprova. Se l\'errore continua, chiudi e riapri '
-                      'l\'app.',
-                  dettaglioTecnico: messaggioErrore(error),
+                    onAzioneSecondaria: _apriScriviSerie,
+                  ),
                 ),
-              ),
+              ],
+            );
+          }
+          // Testata e riepilogo stanno DENTRO l'elenco (header): scorrono
+          // via e le serie occupano lo schermo.
+          return ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            padding: const EdgeInsets.only(bottom: 88),
+            header: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                testata,
+                RiepilogoVolumi(serie: serie),
+                const SizedBox(height: AppSpacing.s12),
+              ],
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s16,
-            AppSpacing.s8,
-            AppSpacing.s16,
-            AppSpacing.s8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.list_alt),
-                    tooltip: 'Serie completa',
-                    onPressed: () => _apriSerieCompleta(
-                      ordineSuccessivo: serieAttuale.length + 1,
-                      serie: null,
+            itemCount: serie.length,
+            onReorderItem: (da, a) => _riordinaSerie(serie, da, a),
+            itemBuilder: (context, index) {
+              final s = serie[index];
+              return Padding(
+                key: ValueKey(s.id),
+                padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                child: RigaSerie(
+                  serie: s,
+                  primo: index == 0,
+                  ultimo: index == serie.length - 1,
+                  maniglia: ReorderableDragStartListener(
+                    index: index,
+                    child: Icon(
+                      Icons.drag_indicator,
+                      color: colori.testoSecondario,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.mic_none_outlined),
-                    tooltip: 'Scrivi o detta più serie insieme',
-                    onPressed: () => _apriScriviSerie(serieAttuale.length + 1),
-                  ),
-                  const SizedBox(width: AppSpacing.s8),
-                  Expanded(
-                    child: SegmentedButton<String>(
-                      style: const ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      segments: [
-                        for (final (valore, etichetta) in _blocchiRapidi)
-                          ButtonSegment(value: valore, label: Text(etichetta)),
-                      ],
-                      selected: {_bloccoRapido},
-                      onSelectionChanged: (s) =>
-                          setState(() => _bloccoRapido = s.first),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.s8),
-              AppTextField(
-                etichetta: 'Aggiungi serie',
-                controller: _quickController,
-                focusNode: _quickFocusNode,
-                aiuto: _aiutoRapido(parsedRapida),
-                onChanged: (_) => setState(() {}),
-                onFieldSubmitted: (_) =>
-                    _aggiungiRapida(serieAttuale.length + 1),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.add_circle),
-                  color: parsedRapida != null
-                      ? colori.azione
-                      : colori.testoTenue,
-                  onPressed: (parsedRapida != null && !_aggiuntaInCorso)
-                      ? () => _aggiungiRapida(serieAttuale.length + 1)
-                      : null,
+                  onApri: () => _apriSerieCompleta(serie: s),
+                  onAzione: (azione) => _azione(serie, index, azione),
                 ),
-              ),
-            ],
+              );
+            },
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.s16),
+          child: LoadingSkeletonList(righe: 5),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: ErrorBanner(
+            messaggio: 'Non è stato possibile caricare le serie.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Le note libere dell'allenamento su due righe, con "Mostra tutto".
+class _NoteCompatte extends StatefulWidget {
+  const _NoteCompatte(this.testo);
+
+  final String testo;
+
+  @override
+  State<_NoteCompatte> createState() => _NoteCompatteState();
+}
+
+class _NoteCompatteState extends State<_NoteCompatte> {
+  bool _aperte = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return GestureDetector(
+      onTap: () => setState(() => _aperte = !_aperte),
+      child: Text(
+        widget.testo,
+        maxLines: _aperte ? null : 2,
+        overflow: _aperte ? TextOverflow.visible : TextOverflow.ellipsis,
+        style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
       ),
     );
   }

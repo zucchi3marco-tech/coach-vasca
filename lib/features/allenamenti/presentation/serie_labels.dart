@@ -28,3 +28,12 @@ String labelBlocco(String blocco) => switch (blocco) {
   'altro' => 'Altro',
   _ => blocco,
 };
+
+/// Etichetta breve per spazi stretti (elenco serie su smartphone).
+String labelBloccoBreve(String blocco) => switch (blocco) {
+  'riscaldamento' => 'Risc.',
+  'principale' => 'Princ.',
+  'defaticamento' => 'Defat.',
+  'altro' => 'Altro',
+  _ => blocco,
+};
