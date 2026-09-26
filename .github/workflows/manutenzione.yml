@@ -1,0 +1,98 @@
+name: Manutenzione
+
+# Due lavori automatici sul database Supabase:
+# - anti-pausa: il piano gratuito mette il progetto in pausa dopo 7 giorni
+#   senza attivita', quindi lo si "tocca" due volte a settimana;
+# - backup: ogni domenica una copia cifrata dei dati, conservata 90 giorni.
+# Si possono lanciare a mano da Actions > Manutenzione > Run workflow.
+# Segreti richiesti (Settings > Secrets and variables > Actions):
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_DB_URL (stringa "Session pooler",
+# IPv4: la connessione diretta e' solo IPv6 e i runner GitHub non la
+# raggiungono), BACKUP_PASSPHRASE. Vedi docs/backup.md.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,4'
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      azione:
+        description: 'Cosa eseguire'
+        type: choice
+        default: tutto
+        options: [tutto, anti-pausa, backup]
+
+jobs:
+  anti-pausa:
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.azione != 'backup'
+      || github.event.schedule == '0 6 * * 1,4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tocca il database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          codice=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 \
+            "$SUPABASE_URL/rest/v1/club?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Risposta HTTP: $codice"
+          # Una richiesta che arriva al database risponde 200 (anche con
+          # zero righe, per le regole di accesso). Qualsiasi altro codice
+          # (progetto in pausa, chiave errata) fa fallire il lavoro: GitHub
+          # manda una email.
+          [ "$codice" = "200" ]
+
+  backup:
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.azione != 'anti-pausa'
+      || github.event.schedule == '0 3 * * 0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Installa pg_dump 17 (stessa versione del server)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsS -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Esporta i dati
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          data=$(date -u +%Y%m%d_%H%M%S)
+          mkdir backup
+          # Le tabelle dell'app.
+          pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges \
+            --format=plain --file="backup/coach-vasca_$data.sql"
+          # Gli account (senza, un ripristino perde i login).
+          pg_dump "$SUPABASE_DB_URL" --data-only --no-owner --no-privileges \
+            --table=auth.users --table=auth.identities \
+            --format=plain --file="backup/coach-vasca_auth_$data.sql"
+          # Controllo minimo: un dump vuoto non deve passare per buono.
+          for f in backup/*.sql; do
+            test "$(wc -c < "$f")" -gt 1000
+          done
+          tar czf "coach-vasca_$data.tar.gz" backup
+          # Sono dati di minori: si cifra prima di caricare qualsiasi cosa.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+            --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+            --output "coach-vasca_$data.tar.gz.gpg" "coach-vasca_$data.tar.gz"
+          rm -rf backup "coach-vasca_$data.tar.gz"
+          echo "FILE=coach-vasca_$data.tar.gz.gpg" >> "$GITHUB_ENV"
+
+      - name: Conserva la copia cifrata per 90 giorni
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}
+          path: ${{ env.FILE }}
+          retention-days: 90
+          if-no-files-found: error

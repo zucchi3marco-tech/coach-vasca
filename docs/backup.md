@@ -1,4 +1,52 @@
-# Backup manuale del database
+# Backup e anti-pausa del database
+
+## Automatico (GitHub Actions)
+
+Il file `.github/workflows/manutenzione.yml` fa due cose da solo:
+
+- **Anti-pausa** (lunedi e giovedi): il piano gratuito di Supabase mette il
+  progetto in pausa dopo 7 giorni senza attivita. Il lavoro fa una richiesta
+  al database e, se non risponde, GitHub ti manda una email di errore.
+- **Backup** (ogni domenica notte): salva le tabelle dell'app **e gli
+  account** (`auth.users`, senza i quali un ripristino perde i login), lo
+  cifra e lo conserva su GitHub per 90 giorni.
+
+### Setup una tantum: 4 segreti
+
+Su GitHub apri il repository, poi **Settings → Secrets and variables →
+Actions → New repository secret**, e crea questi quattro (nome esatto):
+
+| Nome | Valore |
+| --- | --- |
+| `SUPABASE_URL` | l'indirizzo del progetto, `https://kinkwzciqtegtblieash.supabase.co` |
+| `SUPABASE_ANON_KEY` | la stessa chiave `anon` che hai messo in Vercel (Supabase: Project Settings → API Keys) |
+| `SUPABASE_DB_URL` | Supabase: pulsante **Connect** in alto → **Session pooler** → copia l'URI e sostituisci `[YOUR-PASSWORD]` con la password del database. Deve essere il *Session pooler*, non la connessione diretta: GitHub non raggiunge quella diretta |
+| `BACKUP_PASSPHRASE` | una frase lunga e casuale inventata da te. **Salvala nel tuo gestore di password**: senza, i backup non si aprono piu |
+
+Poi provalo: **Actions → Manutenzione → Run workflow → tutto → Run
+workflow**. Dopo un paio di minuti i due lavori devono essere verdi. Nel
+backup, in fondo alla pagina del lavoro, compare l'allegato `backup-…`.
+
+### Scaricare e aprire un backup
+
+1. GitHub → **Actions → Manutenzione** → clicca l'esecuzione che vuoi → in
+   fondo, sezione **Artifacts**, scarica `backup-…` (e un file zip).
+2. Estrailo: dentro c'e `coach-vasca_….tar.gz.gpg`.
+3. In Git Bash, nella cartella del file:
+
+```
+gpg --decrypt coach-vasca_AAAAMMGG_HHMMSS.tar.gz.gpg > backup.tar.gz
+tar xzf backup.tar.gz
+```
+
+(ti chiede la passphrase). Nella cartella `backup/` trovi due file `.sql`:
+le tabelle dell'app e gli account. Non metterli mai in una cartella del
+repository (dati di minori).
+
+Se una domenica il backup fallisce, GitHub ti scrive una email. Se cambi la
+password del database, aggiorna `SUPABASE_DB_URL`.
+
+## Manuale dal PC (in aggiunta)
 
 Il piano Free di Supabase non offre un modo semplice per scaricare in
 autonomia i backup automatici né il point-in-time recovery. Questo backup
@@ -68,6 +116,11 @@ conservarlo in una cartella cifrata.
 ```
 psql $env:SUPABASE_DB_URL -f backups\coach-vasca_AAAAMMGG_HHMMSS.sql
 ```
+
+Gli account stanno nell'altro file del backup automatico
+(`coach-vasca_auth_….sql`): importalo **prima**, sul nuovo progetto,
+perche le tabelle dell'app puntano agli utenti (`auth.users`). Il backup
+manuale con `backup_db.ps1` non li contiene.
 
 Da fare con attenzione: se alcune tabelle sono già popolate (es. da
 trigger di setup), l'import può dare errori di chiave duplicata su quelle

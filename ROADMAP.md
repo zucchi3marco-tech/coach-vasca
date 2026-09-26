@@ -307,5 +307,6 @@ Tutto ciò che è ancora aperto, in un unico posto (raccolto il 2026-09-21): pri
 ### Costi, infrastruttura e distribuzione
 
 - [ ] Valutare Cursor Pro se i limiti free iniziano a bloccare il lavoro (FASE 6)
-- [ ] Supabase Pro (backup automatici) (FASE 8)
+- [x] Backup automatico e anti-pausa senza passare a Supabase Pro — `.github/workflows/manutenzione.yml` (lunedi e giovedi tocca il database per evitare la pausa dopo 7 giorni; ogni domenica copia cifrata di tabelle e account, conservata 90 giorni). Setup dei 4 segreti in `docs/backup.md`
+- [ ] Supabase Pro (backup automatici gestiti da Supabase) (FASE 8): non piu necessario se il backup su GitHub basta
 - [ ] Pubblicazione store (Play/App Store) se necessario (FASE 8)
