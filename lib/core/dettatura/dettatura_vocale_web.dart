@@ -44,7 +44,6 @@ class DettatoreVocale {
     required this.onTrascrizione,
     required this.onErrore,
     required this.onFine,
-    this.onEventoGrezzo,
   });
 
   /// Chiamato ad ogni aggiornamento con l'INTERO testo riconosciuto in
@@ -53,14 +52,6 @@ class DettatoreVocale {
   /// mano dal chiamante — vedi [_suRisultato] sul perché.
   final void Function(String testoSessione) onTrascrizione;
   final void Function(String messaggio) onErrore;
-
-  /// Diagnostica TEMPORANEA (da togliere una volta risolto per sempre il
-  /// difetto della dettatura ripetuta): se non nullo, riceve una riga
-  /// grezza per ogni evento `result` del browser, PRIMA di qualunque
-  /// nostra deduplicazione — serve a vedere esattamente cosa manda il
-  /// motore vocale del dispositivo del coach, invece di continuare a
-  /// indovinare da qui.
-  final void Function(String riga)? onEventoGrezzo;
 
   /// L'ascolto è terminato (tocco su "ferma", errore, o il browser lo ha
   /// chiuso da solo dopo un silenzio prolungato): la UI deve tornare allo
@@ -130,15 +121,13 @@ class DettatoreVocale {
     riconoscimento.callMethod<JSAny?>('start'.toJS);
   }
 
-  // Un segmento diventato finale resta quello per tutta la sessione, per
-  // il suo indice: se il browser lo ripropone — identico o con una minima
-  // differenza — altrove nell'evento o in un evento successivo, in coda o
-  // intercalato ad altro, non lo si aggiunge una seconda volta. È il
-  // difetto reale di Chrome in `continuous`: non lo ripropone sempre
-  // subito consecutivo, quindi un confronto solo col pezzo appena
-  // aggiunto (versione precedente di questo metodo) non lo scartava
-  // sempre — il sintomo era la stessa frase trascritta molte volte,
-  // segnalato più volte dal coach. Vedi `aggiorna_segmenti.dart`.
+  // La deduplicazione vera sta in `aggiorna_segmenti.dart`: alcuni
+  // dispositivi (confermato su Android, con un log grezzo mandato da un
+  // coach) segnano OGNI risultato come "finale" fin da subito, mai come
+  // provvisorio, sotto un indice sempre nuovo — anche quando è solo la
+  // stessa frase con una parola in più. `aggiornaSegmenti` riconosce
+  // quando un nuovo segmento finale è la crescita dell'ultimo confermato
+  // e lo sostituisce, invece di accumularli entrambi.
   void _suRisultato(JSObject evento) {
     final risultati = _prop(evento, 'results');
     final lunghezza = _numero(risultati, 'length');
@@ -151,19 +140,6 @@ class DettatoreVocale {
         finale: _booleano(risultato, 'isFinal'),
         testo: _testo(alternativaMigliore, 'transcript'),
       ));
-    }
-    if (onEventoGrezzo != null) {
-      final resultIndex = _numero(evento, 'resultIndex');
-      final adesso = DateTime.now();
-      final ora =
-          '${adesso.hour.toString().padLeft(2, '0')}:'
-          '${adesso.minute.toString().padLeft(2, '0')}:'
-          '${adesso.second.toString().padLeft(2, '0')}.'
-          '${adesso.millisecond.toString().padLeft(3, '0')}';
-      final voci = segmenti
-          .map((s) => '[${s.indice}${s.finale ? "F" : "I"}:"${s.testo}"]')
-          .join(' ');
-      onEventoGrezzo!('$ora ri=$resultIndex $voci');
     }
     final aggiornati = aggiornaSegmenti(
       committatiPrima: _segmentiCommittati,
