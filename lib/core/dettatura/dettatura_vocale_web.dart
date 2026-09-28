@@ -3,6 +3,8 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
+import 'ricostruisci_trascrizione.dart';
+
 JSObject _prop(JSObject o, String proprieta) =>
     o.getProperty<JSObject>(proprieta.toJS);
 
@@ -114,21 +116,26 @@ class DettatoreVocale {
   // e aggiungere quel pezzo al testo già accumulato: con `continuous:
   // true` Chrome a volte rimanda lo stesso indice (o un indice
   // precedente) più di una volta nella stessa sessione, e un'aggiunta
-  // incrementale lo duplicherebbe ogni volta che succede — bug osservato
-  // dal coach ("la stessa frase trascritta molte volte"). Ricostruire da
+  // incrementale lo duplicherebbe ogni volta che succede. Ricostruire da
   // zero è idempotente: lo stesso `results` dà sempre lo stesso testo,
   // qualunque cosa il browser rimandi.
+  //
+  // Questo da solo non basta: a volte è `results` stesso, dentro un unico
+  // evento, a contenere lo stesso segmento finalizzato due o più volte di
+  // fila (un difetto del browser, non un problema di come lo leggiamo
+  // qui) — il sintomo segnalato dal coach ("la stessa frase trascritta
+  // molte volte") anche dopo il fix sopra. `ricostruisciTrascrizione`
+  // scarta i duplicati consecutivi.
   void _suRisultato(JSObject evento) {
     final risultati = _prop(evento, 'results');
     final lunghezza = _numero(risultati, 'length');
-    final pezzi = <String>[];
+    final segmenti = <String>[];
     for (var i = 0; i < lunghezza; i++) {
       final risultato = _prop(risultati, '$i');
       final alternativaMigliore = _prop(risultato, '0');
-      final pezzo = _testo(alternativaMigliore, 'transcript').trim();
-      if (pezzo.isNotEmpty) pezzi.add(pezzo);
+      segmenti.add(_testo(alternativaMigliore, 'transcript'));
     }
-    onTrascrizione(pezzi.join(' '));
+    onTrascrizione(ricostruisciTrascrizione(segmenti));
   }
 
   void ferma() {
