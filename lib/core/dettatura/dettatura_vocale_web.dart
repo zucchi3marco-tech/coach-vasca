@@ -3,6 +3,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
+import 'aggiorna_segmenti.dart';
 import 'ricostruisci_trascrizione.dart';
 
 JSObject _prop(JSObject o, String proprieta) =>
@@ -13,6 +14,9 @@ String _testo(JSObject o, String proprieta) =>
 
 int _numero(JSObject o, String proprieta) =>
     o.getProperty<JSNumber>(proprieta.toJS).toDartInt;
+
+bool _booleano(JSObject o, String proprieta) =>
+    o.getProperty<JSBoolean>(proprieta.toJS).toDart;
 
 /// Messaggi in italiano per i codici d'errore della Web Speech API — vedi
 /// https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionErrorEvent/error
@@ -57,6 +61,11 @@ class DettatoreVocale {
   JSObject? _riconoscimento;
   bool _inAscolto = false;
 
+  /// I segmenti finali confermati in questa sessione di ascolto (indice
+  /// di `event.results` → testo): si azzera ad ogni [avvia] — vedi
+  /// [_suRisultato].
+  Map<int, String> _segmentiCommittati = {};
+
   bool get inAscolto => _inAscolto;
 
   static bool get disponibile =>
@@ -65,6 +74,7 @@ class DettatoreVocale {
 
   void avvia() {
     if (_inAscolto) return;
+    _segmentiCommittati = {};
     final costruttore = web.window.has('SpeechRecognition')
         ? web.window.getProperty<JSFunction>('SpeechRecognition'.toJS)
         : web.window.has('webkitSpeechRecognition')
@@ -111,31 +121,39 @@ class DettatoreVocale {
     riconoscimento.callMethod<JSAny?>('start'.toJS);
   }
 
-  // Ricostruisce SEMPRE l'intero testo della sessione da `evento.results`
-  // (indice 0 → length-1), invece di leggere solo da `evento.resultIndex`
-  // e aggiungere quel pezzo al testo già accumulato: con `continuous:
-  // true` Chrome a volte rimanda lo stesso indice (o un indice
-  // precedente) più di una volta nella stessa sessione, e un'aggiunta
-  // incrementale lo duplicherebbe ogni volta che succede. Ricostruire da
-  // zero è idempotente: lo stesso `results` dà sempre lo stesso testo,
-  // qualunque cosa il browser rimandi.
-  //
-  // Questo da solo non basta: a volte è `results` stesso, dentro un unico
-  // evento, a contenere lo stesso segmento finalizzato due o più volte di
-  // fila (un difetto del browser, non un problema di come lo leggiamo
-  // qui) — il sintomo segnalato dal coach ("la stessa frase trascritta
-  // molte volte") anche dopo il fix sopra. `ricostruisciTrascrizione`
-  // scarta i duplicati consecutivi.
+  // Un segmento diventato finale resta quello per tutta la sessione, per
+  // il suo indice: se il browser lo ripropone — identico o con una minima
+  // differenza — altrove nell'evento o in un evento successivo, in coda o
+  // intercalato ad altro, non lo si aggiunge una seconda volta. È il
+  // difetto reale di Chrome in `continuous`: non lo ripropone sempre
+  // subito consecutivo, quindi un confronto solo col pezzo appena
+  // aggiunto (versione precedente di questo metodo) non lo scartava
+  // sempre — il sintomo era la stessa frase trascritta molte volte,
+  // segnalato più volte dal coach. Vedi `aggiorna_segmenti.dart`.
   void _suRisultato(JSObject evento) {
     final risultati = _prop(evento, 'results');
     final lunghezza = _numero(risultati, 'length');
-    final segmenti = <String>[];
+    final segmenti = <SegmentoRisultato>[];
     for (var i = 0; i < lunghezza; i++) {
       final risultato = _prop(risultati, '$i');
       final alternativaMigliore = _prop(risultato, '0');
-      segmenti.add(_testo(alternativaMigliore, 'transcript'));
+      segmenti.add((
+        indice: i,
+        finale: _booleano(risultato, 'isFinal'),
+        testo: _testo(alternativaMigliore, 'transcript'),
+      ));
     }
-    onTrascrizione(ricostruisciTrascrizione(segmenti));
+    final aggiornati = aggiornaSegmenti(
+      committatiPrima: _segmentiCommittati,
+      segmenti: segmenti,
+    );
+    _segmentiCommittati = aggiornati.committati;
+    onTrascrizione(
+      ricostruisciTrascrizione([
+        testoCommittato(_segmentiCommittati),
+        aggiornati.interim,
+      ]),
+    );
   }
 
   void ferma() {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/navigation/barra_club_providers.dart';
 import '../../core/navigation/navigator_key.dart';
 import '../../core/push/push_notifiche.dart';
+import '../../core/pwa/aggiornamento_pwa.dart';
 import '../../core/pwa/installabilita_pwa.dart';
 import '../../core/supabase/supabase_providers.dart';
 import '../../core/sync/sync_engine.dart';
@@ -44,21 +45,69 @@ class BarraClubHost extends ConsumerWidget {
     final nascosta = ref.watch(barraClubNascostaProvider) > 0;
     final visibile = autenticato && !nascosta;
 
-    return Column(
-      children: [
-        visibile ? const BarraClub() : const SizedBox.shrink(),
-        Expanded(
-          // La barra assorbe l'area sicura in alto: le schermate sotto non
-          // devono lasciarla di nuovo.
-          child: MediaQuery.removePadding(
-            context: context,
-            removeTop: visibile,
-            child: child ?? const SizedBox.shrink(),
+    return _OsservatoreAggiornamentoPwa(
+      child: Column(
+        children: [
+          visibile ? const BarraClub() : const SizedBox.shrink(),
+          Expanded(
+            // La barra assorbe l'area sicura in alto: le schermate sotto
+            // non devono lasciarla di nuovo.
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: visibile,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+/// Mostra un avviso quando un nuovo service worker ha preso il controllo
+/// della pagina (vedi `aggiornamento_pwa_web.dart`): senza, una PWA
+/// installata e tenuta sempre aperta continuerebbe a eseguire codice
+/// vecchio finché il coach non la chiude e riapre da sola. Nessun
+/// ricaricamento automatico: solo un'azione a portata di tocco.
+class _OsservatoreAggiornamentoPwa extends StatefulWidget {
+  const _OsservatoreAggiornamentoPwa({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_OsservatoreAggiornamentoPwa> createState() =>
+      _OsservatoreAggiornamentoPwaState();
+}
+
+class _OsservatoreAggiornamentoPwaState
+    extends State<_OsservatoreAggiornamentoPwa> {
+  @override
+  void initState() {
+    super.initState();
+    aggiornamentoDisponibile.addListener(_mostraAvviso);
+  }
+
+  @override
+  void dispose() {
+    aggiornamentoDisponibile.removeListener(_mostraAvviso);
+    super.dispose();
+  }
+
+  void _mostraAvviso() {
+    if (!aggiornamentoDisponibile.value) return;
+    final contesto = contestoNavigatorApp();
+    if (contesto == null || !contesto.mounted) return;
+    ScaffoldMessenger.of(contesto).showSnackBar(
+      const SnackBar(
+        content: Text('È disponibile una nuova versione della app.'),
+        duration: Duration(days: 1),
+        action: SnackBarAction(label: 'Aggiorna', onPressed: aggiornaPwa),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 enum _AzioneMenu {
