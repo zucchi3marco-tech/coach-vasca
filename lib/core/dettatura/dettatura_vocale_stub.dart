@@ -9,6 +9,7 @@ class DettatoreVocale {
     required void Function(String testoSessione) onTrascrizione,
     required void Function(String messaggio) onErrore,
     required void Function() onFine,
+    void Function(String riga)? onEventoGrezzo,
   });
 
   static bool get disponibile => false;
