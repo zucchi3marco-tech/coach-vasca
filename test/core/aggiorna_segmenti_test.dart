@@ -15,26 +15,35 @@ void main() {
       expect(r.interim, '8 volte');
     });
 
-    test('un indice gia\' finale non viene mai sovrascritto', () {
+    test('riproporre lo stesso indice con testo identico non cambia nulla', () {
       final dopoPrimoEvento = aggiornaSegmenti(
         committatiPrima: const {},
         segmenti: [(indice: 0, finale: true, testo: '8 volte 100 sl')],
       );
-      // Il browser ripropone lo stesso indice, testo identico.
       final identico = aggiornaSegmenti(
         committatiPrima: dopoPrimoEvento.committati,
         segmenti: [(indice: 0, finale: true, testo: '8 volte 100 sl')],
       );
       expect(identico.committati, {0: '8 volte 100 sl'});
-
-      // Il browser lo ripropone con una minima differenza: vince sempre
-      // la prima versione vista.
-      final leggermenteDiverso = aggiornaSegmenti(
-        committatiPrima: dopoPrimoEvento.committati,
-        segmenti: [(indice: 0, finale: true, testo: '8 volte 100 SL.')],
-      );
-      expect(leggermenteDiverso.committati, {0: '8 volte 100 sl'});
     });
+
+    test(
+      'una versione più completa (indice nuovo o lo stesso) sostituisce '
+      'quella precedente se ne è la crescita — il motore vocale del '
+      'coach segna ogni aggiornamento come "finale" fin da subito, mai '
+      'come provvisorio: qui arriva la revisione con la maiuscola giusta',
+      () {
+        final dopoPrimoEvento = aggiornaSegmenti(
+          committatiPrima: const {},
+          segmenti: [(indice: 0, finale: true, testo: '8 volte 100 sl')],
+        );
+        final rivisto = aggiornaSegmenti(
+          committatiPrima: dopoPrimoEvento.committati,
+          segmenti: [(indice: 1, finale: true, testo: '8 volte 100 SL.')],
+        );
+        expect(rivisto.committati, {0: '8 volte 100 SL.'});
+      },
+    );
 
     test('lo stesso testo riconfermato sotto un indice nuovo (non riusato) '
         'viene scartato se e\' consecutivo all\'ultimo confermato — il caso '
@@ -138,6 +147,69 @@ void main() {
           segmenti: [(indice: 0, finale: true, testo: '400 misti')],
         );
         expect(r.interim, isEmpty);
+      },
+    );
+
+    test(
+      'sequenza reale mandata dal coach: crescita parola per parola, '
+      'tutta "finale", indice sempre nuovo — deve restare una frase sola',
+      () {
+        // Riprodotto esattamente dal log tecnico dell'app (evento dopo
+        // evento, ognuno con TUTTI i segmenti visti finora perché
+        // `event.results` dell'API del browser è cumulativo).
+        const eventi = [
+          [''],
+          ['', ''],
+          ['', '', ''],
+          ['', '', '', ''],
+          ['', '', '', '', 'Quattrocento'],
+          ['', '', '', '', 'Quattrocento', 'Quattrocento'],
+          [
+            '',
+            '',
+            '',
+            '',
+            'Quattrocento',
+            'Quattrocento',
+            'Quattrocento metri',
+          ],
+          [
+            '',
+            '',
+            '',
+            '',
+            'Quattrocento',
+            'Quattrocento',
+            'Quattrocento metri',
+            'Quattrocento metri di',
+          ],
+          [
+            '',
+            '',
+            '',
+            '',
+            'Quattrocento',
+            'Quattrocento',
+            'Quattrocento metri',
+            'Quattrocento metri di',
+            'Quattrocento metri di riscaldamento',
+          ],
+        ];
+        var stato = (committati: <int, String>{}, interim: '');
+        for (final testi in eventi) {
+          stato = aggiornaSegmenti(
+            committatiPrima: stato.committati,
+            segmenti: [
+              for (var i = 0; i < testi.length; i++)
+                (indice: i, finale: true, testo: testi[i]),
+            ],
+          );
+        }
+        expect(
+          testoCommittato(stato.committati),
+          'Quattrocento metri di riscaldamento',
+        );
+        expect(stato.committati.length, 1);
       },
     );
   });

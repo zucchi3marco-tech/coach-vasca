@@ -10,20 +10,22 @@ typedef SegmentiAggiornati = ({Map<int, String> committati, String interim});
 /// Aggiorna i segmenti finali già confermati ([committatiPrima]) con quelli
 /// dell'evento corrente ([segmenti]).
 ///
-/// Due difese indipendenti, per due modi diversi in cui il motore vocale
-/// del browser duplica (confermati entrambi su dispositivi reali, non solo
-/// teorici):
-/// 1. Un indice, una volta diventato finale, resta quello per tutta la
-///    sessione: se il browser lo ripropone — identico o con una minima
-///    differenza — sotto lo STESSO indice, viene ignorato.
-/// 2. Se il browser riconferma la stessa frase sotto un indice NUOVO
-///    (il motore "rifinalizza" lo stesso pezzo di audio più volte di
-///    fila, capita su Android) — quindi la difesa 1 non basta perché
-///    l'indice è davvero diverso ogni volta — si scarta anche un nuovo
-///    segmento finale il cui testo (normalizzato) coincide con l'ULTIMO
-///    segmento già confermato, indipendentemente dal loro indice. Non si
-///    confronta con TUTTI i precedenti: una frase genuinamente ripetuta
-///    più avanti nella dettatura, con qualcos'altro nel mezzo, resta.
+/// Verificato su un dispositivo reale (log grezzo mandato dal coach):
+/// alcuni motori vocali (osservato su Android) non usano `isFinal` come
+/// promesso dallo standard — non mandano mai un risultato provvisorio,
+/// ogni aggiornamento arriva già segnato come definitivo, sotto un
+/// indice sempre nuovo, anche quando è solo la stessa frase con una
+/// parola in più ("Quattrocento" → "Quattrocento metri" → "Quattrocento
+/// metri di" ..., ciascuno un indice diverso, tutti "finali"). Trattarli
+/// come frasi separate (comportamento corretto per un browser che li usa
+/// bene) le accumula tutte invece di tenere solo l'ultima.
+///
+/// La difesa: quando un nuovo segmento finale, confrontato senza
+/// maiuscole, è la CRESCITA del segmento finale confermato più di
+/// recente (lo stesso testo, o quel testo seguito da altro), sostituisce
+/// quella voce invece di aggiungersi come frase nuova. Una frase
+/// genuinamente diversa — che non prosegue quella precedente — resta
+/// comunque una voce a sé.
 ///
 /// Pura: non tocca nulla del browser, testabile senza un vero motore di
 /// riconoscimento vocale.
@@ -32,21 +34,24 @@ SegmentiAggiornati aggiornaSegmenti({
   required List<SegmentoRisultato> segmenti,
 }) {
   final committati = Map<int, String>.of(committatiPrima);
-  var ultimoTesto = committati.isEmpty
+  int? chiaveAttiva = committati.isEmpty
       ? null
-      : committati[(committati.keys.toList()..sort()).last];
+      : (committati.keys.toList()..sort()).last;
   var interim = '';
   for (final segmento in segmenti) {
     final testo = segmento.testo.trim();
     if (testo.isEmpty) continue;
     if (segmento.finale) {
-      if (committati.containsKey(segmento.indice)) continue;
+      final ultimoTesto = chiaveAttiva == null
+          ? null
+          : committati[chiaveAttiva];
       if (ultimoTesto != null &&
-          ultimoTesto.toLowerCase() == testo.toLowerCase()) {
-        continue;
+          testo.toLowerCase().startsWith(ultimoTesto.toLowerCase())) {
+        committati[chiaveAttiva!] = testo;
+      } else {
+        committati[segmento.indice] = testo;
+        chiaveAttiva = segmento.indice;
       }
-      committati[segmento.indice] = testo;
-      ultimoTesto = testo;
     } else {
       interim = testo;
     }
