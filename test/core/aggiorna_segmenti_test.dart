@@ -36,6 +36,60 @@ void main() {
       expect(leggermenteDiverso.committati, {0: '8 volte 100 sl'});
     });
 
+    test('lo stesso testo riconfermato sotto un indice nuovo (non riusato) '
+        'viene scartato se e\' consecutivo all\'ultimo confermato — il caso '
+        'reale osservato dal coach: "400 di riscaldamento poi" ripetuto '
+        'identico più volte, ogni volta con un indice diverso', () {
+      var stato = aggiornaSegmenti(
+        committatiPrima: const {},
+        segmenti: [
+          (indice: 0, finale: true, testo: '400 di riscaldamento poi'),
+        ],
+      );
+      for (final nuovoIndice in [1, 2, 3, 4, 5]) {
+        stato = aggiornaSegmenti(
+          committatiPrima: stato.committati,
+          segmenti: [
+            (
+              indice: nuovoIndice,
+              finale: true,
+              testo: '400 di riscaldamento poi',
+            ),
+          ],
+        );
+      }
+      expect(stato.committati, {0: '400 di riscaldamento poi'});
+
+      // Dopo il duplicato, una frase diversa si aggiunge normalmente.
+      final finale = aggiornaSegmenti(
+        committatiPrima: stato.committati,
+        segmenti: [(indice: 6, finale: true, testo: '8 per cento')],
+      );
+      expect(
+        testoCommittato(finale.committati),
+        '400 di riscaldamento poi 8 per cento',
+      );
+    });
+
+    test(
+      'una frase ripetuta piu\' avanti, con qualcos\'altro nel mezzo, resta',
+      () {
+        final stato = aggiornaSegmenti(
+          committatiPrima: const {},
+          segmenti: [
+            (indice: 0, finale: true, testo: '200 dorso'),
+            (indice: 1, finale: true, testo: '200 rana'),
+            (indice: 2, finale: true, testo: '200 dorso'),
+          ],
+        );
+        expect(stato.committati, {
+          0: '200 dorso',
+          1: '200 rana',
+          2: '200 dorso',
+        });
+      },
+    );
+
     test('segmenti non consecutivi restano tutti, ognuno una volta', () {
       final primoEvento = aggiornaSegmenti(
         committatiPrima: const {},

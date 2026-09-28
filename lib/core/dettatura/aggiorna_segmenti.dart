@@ -10,14 +10,20 @@ typedef SegmentiAggiornati = ({Map<int, String> committati, String interim});
 /// Aggiorna i segmenti finali già confermati ([committatiPrima]) con quelli
 /// dell'evento corrente ([segmenti]).
 ///
-/// Un indice, una volta diventato finale, resta quello per tutta la
-/// sessione: se il browser lo ripropone — identico o con una minima
-/// differenza (uno spazio, una maiuscola) — in questo stesso evento o in
-/// uno successivo, in coda o intercalato ad altro, viene ignorato. Questo
-/// è il difetto reale di Chrome in modalità `continuous`: non ripropone
-/// sempre il duplicato subito consecutivo, quindi un confronto solo con
-/// "l'ultimo pezzo aggiunto" (come faceva la versione precedente di
-/// questa logica) non basta a scartarlo sempre.
+/// Due difese indipendenti, per due modi diversi in cui il motore vocale
+/// del browser duplica (confermati entrambi su dispositivi reali, non solo
+/// teorici):
+/// 1. Un indice, una volta diventato finale, resta quello per tutta la
+///    sessione: se il browser lo ripropone — identico o con una minima
+///    differenza — sotto lo STESSO indice, viene ignorato.
+/// 2. Se il browser riconferma la stessa frase sotto un indice NUOVO
+///    (il motore "rifinalizza" lo stesso pezzo di audio più volte di
+///    fila, capita su Android) — quindi la difesa 1 non basta perché
+///    l'indice è davvero diverso ogni volta — si scarta anche un nuovo
+///    segmento finale il cui testo (normalizzato) coincide con l'ULTIMO
+///    segmento già confermato, indipendentemente dal loro indice. Non si
+///    confronta con TUTTI i precedenti: una frase genuinamente ripetuta
+///    più avanti nella dettatura, con qualcos'altro nel mezzo, resta.
 ///
 /// Pura: non tocca nulla del browser, testabile senza un vero motore di
 /// riconoscimento vocale.
@@ -26,12 +32,21 @@ SegmentiAggiornati aggiornaSegmenti({
   required List<SegmentoRisultato> segmenti,
 }) {
   final committati = Map<int, String>.of(committatiPrima);
+  var ultimoTesto = committati.isEmpty
+      ? null
+      : committati[(committati.keys.toList()..sort()).last];
   var interim = '';
   for (final segmento in segmenti) {
     final testo = segmento.testo.trim();
     if (testo.isEmpty) continue;
     if (segmento.finale) {
-      committati.putIfAbsent(segmento.indice, () => testo);
+      if (committati.containsKey(segmento.indice)) continue;
+      if (ultimoTesto != null &&
+          ultimoTesto.toLowerCase() == testo.toLowerCase()) {
+        continue;
+      }
+      committati[segmento.indice] = testo;
+      ultimoTesto = testo;
     } else {
       interim = testo;
     }
