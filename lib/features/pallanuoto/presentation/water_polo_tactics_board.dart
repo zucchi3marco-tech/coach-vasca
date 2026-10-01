@@ -666,11 +666,11 @@ class _TokenGiocatore extends StatelessWidget {
 
   static const _diametro = 32.0;
 
-  /// La palla (giallo) e' un terzo del diametro degli altri pallini —
+  /// La palla (giallo) e' meta' del diametro degli altri pallini —
   /// non e' un giocatore, deve distinguersi a colpo d'occhio anche
   /// dalla sola dimensione, non solo dall'assenza del numero.
   double get _diametroEffettivo =>
-      giocatore.colore == ColoreLavagna.giallo ? _diametro / 3 : _diametro;
+      giocatore.colore == ColoreLavagna.giallo ? _diametro / 2 : _diametro;
 
   @override
   Widget build(BuildContext context) {
@@ -1004,9 +1004,9 @@ class _TokenAnimato extends StatelessWidget {
   static const _diametro = 32.0;
 
   /// Stessa regola di [_TokenGiocatore._diametroEffettivo]: la palla
-  /// (giallo) e' un terzo del diametro degli altri pallini.
+  /// (giallo) e' meta' del diametro degli altri pallini.
   double get _diametroEffettivo =>
-      token.colore == ColoreLavagna.giallo ? _diametro / 3 : _diametro;
+      token.colore == ColoreLavagna.giallo ? _diametro / 2 : _diametro;
 
   @override
   Widget build(BuildContext context) {
