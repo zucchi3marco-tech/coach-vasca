@@ -22,7 +22,7 @@ Future<void> mostraPannelloAggiungiSerie(
   BuildContext context, {
   required String bloccoIniziale,
   required ValueChanged<String> onBloccoCambiato,
-  required Future<void> Function(SerieRapida serie, String blocco)
+  required Future<void> Function(List<SerieRapida> serie, String blocco)
   aggiungiRapida,
   required VoidCallback onScrivi,
   required VoidCallback onSerieCompleta,
@@ -59,7 +59,8 @@ class PannelloAggiungiSerie extends StatefulWidget {
 
   final String bloccoIniziale;
   final ValueChanged<String> onBloccoCambiato;
-  final Future<void> Function(SerieRapida serie, String blocco) aggiungiRapida;
+  final Future<void> Function(List<SerieRapida> serie, String blocco)
+  aggiungiRapida;
   final VoidCallback onScrivi;
   final VoidCallback onSerieCompleta;
 
@@ -79,25 +80,39 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
     super.dispose();
   }
 
-  String _descrizione(SerieRapida s) {
-    final parti = <String>[
-      '${s.ripetute} × ${s.distanzaM}m ${labelStile(s.stile)}',
-    ];
+  String _suffissoComune(SerieRapida s) {
+    final parti = <String>[];
     if (s.zona != null) parti.add('zona ${s.zona}');
     if (s.passoObiettivoS != null) {
       parti.add('passo ${formatPaceSeconds(s.passoObiettivoS!)}/100m');
     }
     if (s.recuperoS != null) parti.add("rec ${s.recuperoS}''");
-    return parti.join(' · ');
+    return parti.isEmpty ? '' : ' · ${parti.join(' · ')}';
   }
 
-  String _aiuto(SerieRapida? parsed) {
+  String _descrizione(List<SerieRapida> serie) {
+    if (serie.length == 1) {
+      final s = serie.single;
+      return '${s.ripetute} × ${s.distanzaM}m ${labelStile(s.stile)}'
+          '${_suffissoComune(s)}';
+    }
+    // Piramide: una distanza diversa per serie, 1 ripetuta ciascuna.
+    final primo = serie.first;
+    final distanze = serie.map((s) => '${s.distanzaM}').join('-');
+    return '${serie.length} serie $distanze'
+        'm ${labelStile(primo.stile)}${_suffissoComune(primo)}';
+  }
+
+  String _aiuto(List<SerieRapida>? parsed) {
     if (_controller.text.trim().isEmpty) {
       return _ultimaAggiunta != null
           ? 'Aggiunta: $_ultimaAggiunta. Scrivi la prossima.'
-          : 'Es. 10x100 A2 1:25 r15 sl';
+          : 'Es. 10x100 A2 1:25 r15 sl, oppure 50-100-200-100-50 sl';
     }
-    if (parsed == null) return 'Scrivi almeno ripetute×distanza (es. 10x100)';
+    if (parsed == null) {
+      return 'Scrivi ripetute×distanza (es. 10x100) oppure una piramide '
+          '(es. 50-100-200-100-50)';
+    }
     return '→ ${_descrizione(parsed)}';
   }
 

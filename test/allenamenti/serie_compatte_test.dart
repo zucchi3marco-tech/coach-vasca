@@ -219,7 +219,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
-      final aggiunte = <(SerieRapida, String)>[];
+      final aggiunte = <(List<SerieRapida>, String)>[];
       final blocchi = <String>[];
       await tester.pumpWidget(
         _app(
@@ -249,8 +249,8 @@ void main() {
 
       expect(aggiunte, hasLength(1));
       expect(aggiunte.single.$2, 'riscaldamento');
-      expect(aggiunte.single.$1.ripetute, 10);
-      expect(aggiunte.single.$1.distanzaM, 100);
+      expect(aggiunte.single.$1.single.ripetute, 10);
+      expect(aggiunte.single.$1.single.distanzaM, 100);
       expect(find.textContaining('Aggiunta:'), findsOneWidget);
       expect(
         tester.widget<TextField>(find.byType(TextField)).controller!.text,

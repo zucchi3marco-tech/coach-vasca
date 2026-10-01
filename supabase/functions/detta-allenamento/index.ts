@@ -114,6 +114,15 @@ function costruisciPrompt(r: RichiestaDettatura): string {
       "dettaglio opzionale (zona, recupero, attrezzatura) non è stato " +
       "detto, lascia quel campo vuoto invece di indovinarlo.",
     "",
+    "Se il coach detta una sequenza di distanze diverse una dopo l'altra " +
+      "(una \"piramide\" o \"scaletta\", es. \"50, 100, 200, 100, 50\" " +
+      "oppure \"cinquanta cento duecento cento cinquanta\"), NON è una " +
+      "sola serie da sommare o da arrotondare: crea una serie separata " +
+      "per ciascuna distanza, con ripetute=1 ciascuna, nello stesso " +
+      "ordine in cui sono state dette, condividendo lo stesso stile/ " +
+      "zona/recupero/esecuzione detti per quel gruppo (a meno che il " +
+      "coach non ne specifichi di diversi per una distanza particolare).",
+    "",
     GLOSSARIO,
     "",
     r.gruppo ? `Gruppo a cui è rivolto l'allenamento: ${r.gruppo}.` : "",

@@ -90,22 +90,33 @@ class _AllenamentoDetailScreenState
     );
   }
 
-  Future<void> _aggiungiRapida(SerieRapida parsed, String blocco) async {
+  /// Una riga rapida può interpretarsi in più serie (piramide: una
+  /// distanza diversa per serie, vedi [parseSerieRapida]): l'ordine si
+  /// calcola una sola volta prima del giro, non ad ogni iterazione — il
+  /// provider locale potrebbe non essersi ancora aggiornato fra una
+  /// creazione e la successiva.
+  Future<void> _aggiungiRapida(
+    List<SerieRapida> parsedList,
+    String blocco,
+  ) async {
     try {
-      await ref
-          .read(serieRepositoryProvider)
-          .createSerie(
-            allenamentoId: widget.allenamento.id,
-            ordine: _ordineSuccessivo(),
-            blocco: blocco,
-            ripetute: parsed.ripetute,
-            distanzaM: parsed.distanzaM,
-            stile: parsed.stile,
-            esecuzione: 'nuoto',
-            zona: parsed.zona,
-            passoObiettivoS: parsed.passoObiettivoS,
-            recuperoS: parsed.recuperoS,
-          );
+      final repository = ref.read(serieRepositoryProvider);
+      var ordine = _ordineSuccessivo();
+      for (final parsed in parsedList) {
+        await repository.createSerie(
+          allenamentoId: widget.allenamento.id,
+          ordine: ordine,
+          blocco: blocco,
+          ripetute: parsed.ripetute,
+          distanzaM: parsed.distanzaM,
+          stile: parsed.stile,
+          esecuzione: 'nuoto',
+          zona: parsed.zona,
+          passoObiettivoS: parsed.passoObiettivoS,
+          recuperoS: parsed.recuperoS,
+        );
+        ordine++;
+      }
     } catch (e) {
       _errore(e);
       rethrow;

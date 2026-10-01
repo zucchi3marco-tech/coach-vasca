@@ -19,6 +19,7 @@ class SerieRapida {
 }
 
 final _rxRipeteDistanza = RegExp(r'(\d+)\s*[xX×]\s*(\d+)');
+final _rxPiramide = RegExp(r'\b(\d+(?:-\d+)+)\b');
 final _rxPasso = RegExp(r'^(\d+):(\d+(?:\.\d+)?)$');
 final _rxRecupero = RegExp(r'^r(\d+)$', caseSensitive: false);
 
@@ -39,24 +40,24 @@ const _stiliAbbreviati = {
   'misti': 'misti',
 };
 
-/// Interpreta una riga di testo libero in ripetute, distanza, zona,
-/// passo obiettivo, recupero e stile — pensata per come un allenatore
-/// scrive davvero una serie a bordo vasca (es. "10x100 A2 1:25 r15 sl").
-/// Gli unici campi obbligatori sono ripetute e distanza (formato
-/// "NxM", tollera spazi intorno alla "x"): senza quelli torna `null`.
-/// Ogni altro token è opzionale e riconosciuto in un solo modo (zona,
-/// "rNN" per il recupero, "m:ss" per il passo, abbreviazione di stile);
-/// un token non riconosciuto viene semplicemente ignorato, non blocca
-/// l'interpretazione del resto della riga.
-SerieRapida? parseSerieRapida(String testo) {
-  final match = _rxRipeteDistanza.firstMatch(testo);
-  if (match == null) return null;
-  final ripetute = int.parse(match.group(1)!);
-  final distanzaM = int.parse(match.group(2)!);
-  if (ripetute <= 0 || distanzaM <= 0) return null;
+/// Zona/passo/recupero/stile letti dal testo restante dopo aver tolto il
+/// token di ripetute×distanza (o la sequenza piramidale): stessi 4 campi
+/// opzionali, condivisi da entrambi i formati di riga.
+class _AttributiComuni {
+  const _AttributiComuni({
+    required this.stile,
+    this.zona,
+    this.passoObiettivoS,
+    this.recuperoS,
+  });
 
-  final resto = testo.replaceRange(match.start, match.end, ' ');
+  final String stile;
+  final String? zona;
+  final double? passoObiettivoS;
+  final int? recuperoS;
+}
 
+_AttributiComuni _leggiAttributiComuni(String resto) {
   var stile = 'libero';
   String? zona;
   double? passoObiettivoS;
@@ -94,12 +95,70 @@ SerieRapida? parseSerieRapida(String testo) {
     // Token non riconosciuto: ignorato, non blocca la riga.
   }
 
-  return SerieRapida(
-    ripetute: ripetute,
-    distanzaM: distanzaM,
+  return _AttributiComuni(
     stile: stile,
     zona: zona,
     passoObiettivoS: passoObiettivoS,
     recuperoS: recuperoS,
   );
+}
+
+/// Interpreta una riga di testo libero in una o più serie — pensata per
+/// come un allenatore scrive davvero una serie a bordo vasca.
+///
+/// Due formati per le ripetute/distanze (il primo che combacia vince):
+/// - **piramide**: distanze separate da un trattino, es. "50-100-200-
+///   100-50" → una serie per ogni distanza, con 1 ripetuta ciascuna,
+///   nell'ordine scritto;
+/// - **ripetute×distanza**: "NxM" (tollera spazi intorno alla "x"), es.
+///   "10x100" → una sola serie con quelle ripetute.
+///
+/// Senza nessuno dei due, torna `null`. Ogni altro token nella riga è
+/// facoltativo e riconosciuto in un solo modo (zona, "rNN" per il
+/// recupero, "m:ss" per il passo, abbreviazione di stile — comuni a
+/// tutte le serie della riga): un token non riconosciuto viene
+/// semplicemente ignorato, non blocca l'interpretazione del resto.
+List<SerieRapida>? parseSerieRapida(String testo) {
+  final piramideMatch = _rxPiramide.firstMatch(testo);
+  if (piramideMatch != null) {
+    final distanze = piramideMatch.group(1)!.split('-').map(int.parse).toList();
+    if (distanze.any((d) => d <= 0)) return null;
+    final resto = testo.replaceRange(
+      piramideMatch.start,
+      piramideMatch.end,
+      ' ',
+    );
+    final comuni = _leggiAttributiComuni(resto);
+    return [
+      for (final distanzaM in distanze)
+        SerieRapida(
+          ripetute: 1,
+          distanzaM: distanzaM,
+          stile: comuni.stile,
+          zona: comuni.zona,
+          passoObiettivoS: comuni.passoObiettivoS,
+          recuperoS: comuni.recuperoS,
+        ),
+    ];
+  }
+
+  final match = _rxRipeteDistanza.firstMatch(testo);
+  if (match == null) return null;
+  final ripetute = int.parse(match.group(1)!);
+  final distanzaM = int.parse(match.group(2)!);
+  if (ripetute <= 0 || distanzaM <= 0) return null;
+
+  final resto = testo.replaceRange(match.start, match.end, ' ');
+  final comuni = _leggiAttributiComuni(resto);
+
+  return [
+    SerieRapida(
+      ripetute: ripetute,
+      distanzaM: distanzaM,
+      stile: comuni.stile,
+      zona: comuni.zona,
+      passoObiettivoS: comuni.passoObiettivoS,
+      recuperoS: comuni.recuperoS,
+    ),
+  ];
 }
