@@ -288,7 +288,18 @@ class PartiteRepository {
       );
       _syncEngine.processQueue();
     }
-    await (_db.delete(_db.partiteTable)..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.partitaId.equals(id))).go();
+      await (_db.delete(
+        _db.eventiPartitaTable,
+      )..where((t) => t.partitaId.equals(id))).go();
+      await (_db.delete(
+        _db.refertiPartitaTable,
+      )..where((t) => t.partitaId.equals(id))).go();
+      await (_db.delete(_db.partiteTable)..where((t) => t.id.equals(id))).go();
+    });
   }
 }
 

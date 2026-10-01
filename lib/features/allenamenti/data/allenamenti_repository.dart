@@ -242,9 +242,17 @@ class AllenamentiRepository {
       );
       _syncEngine.processQueue();
     }
-    await (_db.delete(
-      _db.allenamentiTable,
-    )..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.serieTable,
+      )..where((t) => t.allenamentoId.equals(id))).go();
+      await (_db.delete(
+        _db.presenzeTable,
+      )..where((t) => t.allenamentoId.equals(id))).go();
+      await (_db.delete(
+        _db.allenamentiTable,
+      )..where((t) => t.id.equals(id))).go();
+    });
   }
 }
 

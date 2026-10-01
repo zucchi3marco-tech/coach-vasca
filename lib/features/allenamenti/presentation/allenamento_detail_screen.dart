@@ -6,6 +6,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
@@ -268,6 +269,39 @@ class _AllenamentoDetailScreenState
     }
   }
 
+  Future<void> _eliminaAllenamento(Allenamento allenamento) async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminare l\'allenamento?'),
+        content: const Text(
+          'Verranno eliminate per sempre anche le serie e le presenze '
+          'registrate per questo allenamento.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annulla'),
+          ),
+          DangerButton(
+            label: 'Elimina',
+            expanded: false,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (conferma != true) return;
+    try {
+      await ref
+          .read(allenamentiRepositoryProvider)
+          .deleteAllenamento(allenamento.id);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      _errore(e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final allenamento = widget.allenamento;
@@ -370,6 +404,13 @@ class _AllenamentoDetailScreenState
                 child: const _VoceMenu(
                   icona: Icons.edit_outlined,
                   etichetta: 'Modifica',
+                ),
+              ),
+              PopupMenuItem(
+                value: () => _eliminaAllenamento(allenamento),
+                child: const _VoceMenu(
+                  icona: Icons.delete_outline,
+                  etichetta: 'Elimina',
                 ),
               ),
             ],
