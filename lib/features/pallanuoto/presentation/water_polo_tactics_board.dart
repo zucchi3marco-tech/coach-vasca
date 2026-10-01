@@ -12,15 +12,16 @@ import '../../../widgets/tonal_chip.dart';
 enum _ModalitaLavagna { giocatori, frecce }
 
 const _spiegazioneLavagna =
-    'Modalità "Giocatori": tocca per piazzare un pallino, trascinalo per '
-    'spostarlo, doppio tocco per rimuoverlo. Modalità "Frecce": trascina '
-    'per disegnare una freccia di movimento.\n\n'
+    'Modalità "Giocatori": tocca il campo vuoto per piazzare un pallino, '
+    'doppio tocco per rimuoverlo. Per spostarne uno: trascinalo, oppure '
+    'toccalo (si evidenzia) e poi tocca il punto di arrivo. Modalità '
+    '"Frecce": trascina per disegnare una freccia di movimento.\n\n'
     'Scegli il colore prima di disegnare: al massimo 7 pallini per '
     'colore (i giocatori in acqua), numerati in ordine di piazzamento. '
     'Il giallo è riservato alla palla: una sola, più piccola e senza '
     'numero. Tocca la palla e poi il giocatore che la riceve per '
     'agganciargliela: lo seguirà finché non la riassegni a un altro. '
-    'Quando non è agganciata resta trascinabile liberamente.\n\n'
+    'Quando non è agganciata si sposta come un giocatore qualunque.\n\n'
     'Il lucchetto blocca lo scorrimento della pagina mentre disegni una '
     'freccia (utile se trascinando ti si sposta lo schermo).';
 
@@ -237,27 +238,81 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
 
-  /// true mentre si aspetta il tocco sul giocatore che riceve la palla
-  /// (dopo aver toccato la palla stessa): un secondo tocco su un
-  /// giocatore la aggancia, un tocco sul campo vuoto annulla.
-  bool _pallaArmata = false;
+  /// Il giocatore (o la palla) toccato in attesa di un secondo tocco: su
+  /// un punto libero del campo lo sposta lì, su un altro giocatore — solo
+  /// se il selezionato è la palla — gliela assegna come portatore.
+  /// Identificato per chiave (colore, numero), non per indice di lista:
+  /// più stabile se nel frattempo un altro giocatore viene rimosso.
+  (ColoreLavagna, int)? _selezionato;
 
   (ColoreLavagna, int) _chiave(int indice) =>
       (_giocatori[indice].colore, _numeroPerColore(_giocatori, indice));
 
-  void _armaODisarmaPalla() => setState(() => _pallaArmata = !_pallaArmata);
+  int? _indiceDaChiave((ColoreLavagna, int)? chiave) {
+    if (chiave == null) return null;
+    for (var i = 0; i < _giocatori.length; i++) {
+      if (_chiave(i) == chiave) return i;
+    }
+    return null;
+  }
 
-  void _assegnaPallaA(int indiceGiocatore) {
-    final indicePalla = _giocatori.indexWhere(
-      (g) => g.colore == ColoreLavagna.giallo,
-    );
-    if (indicePalla == -1) return;
+  /// Sposta il giocatore/palla all'indice [i] in [nuova]: se è lui stesso
+  /// a portare la palla, la trascina con sé; se è la palla a essere
+  /// spostata direttamente, si stacca dal portatore (altrimenti al primo
+  /// spostamento del portatore tornerebbe a seguirlo, annullando il
+  /// riposizionamento manuale appena fatto).
+  void _muoviGiocatore(int i, Offset nuova) {
+    final chiave = _chiave(i);
+    final giocatore = _giocatori[i];
+    _giocatori[i] = giocatore.colore == ColoreLavagna.giallo
+        ? giocatore.spostato(nuova).conPortatore(null)
+        : giocatore.spostato(nuova);
+    for (var j = 0; j < _giocatori.length; j++) {
+      if (j != i && _giocatori[j].portatore == chiave) {
+        _giocatori[j] = _giocatori[j].spostato(nuova);
+      }
+    }
+  }
+
+  void _onTapGiocatore(int i) {
+    final chiave = _chiave(i);
+    if (_selezionato == null || _selezionato == chiave) {
+      // Primo tocco (lo seleziona) o tocco di nuovo sullo stesso
+      // giocatore (lo deseleziona).
+      setState(() => _selezionato = _selezionato == chiave ? null : chiave);
+      return;
+    }
+    final indiceSelezionato = _indiceDaChiave(_selezionato);
+    if (indiceSelezionato != null &&
+        _giocatori[indiceSelezionato].colore == ColoreLavagna.giallo) {
+      // La palla era selezionata: questo secondo tocco su un giocatore
+      // gliela assegna come portatore.
+      _registraCronologia();
+      setState(() {
+        _giocatori[indiceSelezionato] = _giocatori[indiceSelezionato]
+            .conPortatore(chiave);
+        _selezionato = null;
+      });
+      _notifica();
+    } else {
+      // Un giocatore qualunque (non la palla) era selezionato: il tocco
+      // su un altro giocatore sposta semplicemente la selezione.
+      setState(() => _selezionato = chiave);
+    }
+  }
+
+  /// Tocco sul campo libero mentre un giocatore/la palla è selezionato:
+  /// lo sposta lì invece di piazzarne uno nuovo.
+  void _muoviSelezionatoIn(Offset punto) {
+    final indice = _indiceDaChiave(_selezionato);
+    if (indice == null) {
+      setState(() => _selezionato = null);
+      return;
+    }
     _registraCronologia();
     setState(() {
-      _giocatori[indicePalla] = _giocatori[indicePalla].conPortatore(
-        _chiave(indiceGiocatore),
-      );
-      _pallaArmata = false;
+      _muoviGiocatore(indice, punto);
+      _selezionato = null;
     });
     _notifica();
   }
@@ -295,6 +350,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       _frecce
         ..clear()
         ..addAll(precedente.frecce);
+      _selezionato = null;
     });
     _notifica();
   }
@@ -304,6 +360,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     setState(() {
       _giocatori.clear();
       _frecce.clear();
+      _selezionato = null;
     });
     _notifica();
   }
@@ -339,6 +396,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         // Le posizioni salvate nella cronologia erano per il campo
         // precedente: non avrebbero più senso qui.
         _cronologia.clear();
+        _selezionato = null;
       });
       _notifica();
     }
@@ -374,8 +432,10 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                     ),
                   ],
                   selected: {_modalita},
-                  onSelectionChanged: (s) =>
-                      setState(() => _modalita = s.first),
+                  onSelectionChanged: (s) => setState(() {
+                    _modalita = s.first;
+                    _selezionato = null;
+                  }),
                 ),
               ),
               const SizedBox(width: AppSpacing.s8),
@@ -457,12 +517,11 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           _modalita != _ModalitaLavagna.giocatori
                       ? null
                       : (d) {
-                          // Un tocco sul campo vuoto mentre la palla e'
-                          // "armata" (in attesa del giocatore che la
-                          // riceve) la disarma soltanto, senza piazzare
-                          // nulla.
-                          if (_pallaArmata) {
-                            setState(() => _pallaArmata = false);
+                          // Un tocco sul campo vuoto mentre un giocatore
+                          // (o la palla) e' selezionato lo sposta li',
+                          // invece di piazzarne uno nuovo.
+                          if (_selezionato != null) {
+                            _muoviSelezionatoIn(relativa(d.localPosition));
                             return;
                           }
                           // Il giallo e' riservato alla palla: al
@@ -605,19 +664,31 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                                               .length;
                                       i++
                                     )
-                                      _TokenGiocatore(
-                                        giocatore:
-                                            widget.passoFantasma!.giocatori[i],
-                                        numero: _numeroPerColore(
-                                          widget.passoFantasma!.giocatori,
-                                          i,
+                                      // La palla non si mostra nel
+                                      // fantasma: senza numero, una
+                                      // seconda in trasparenza vicino a
+                                      // quella vera sembra un secondo
+                                      // pallone invece di un riferimento
+                                      // al passo precedente.
+                                      if (widget
+                                              .passoFantasma!
+                                              .giocatori[i]
+                                              .colore !=
+                                          ColoreLavagna.giallo)
+                                        _TokenGiocatore(
+                                          giocatore: widget
+                                              .passoFantasma!
+                                              .giocatori[i],
+                                          numero: _numeroPerColore(
+                                            widget.passoFantasma!.giocatori,
+                                            i,
+                                          ),
+                                          larghezza: larghezza,
+                                          altezza: altezza,
+                                          attivo: false,
+                                          onSposta: (_) {},
+                                          onRimuovi: () {},
                                         ),
-                                        larghezza: larghezza,
-                                        altezza: altezza,
-                                        attivo: false,
-                                        onSposta: (_) {},
-                                        onRimuovi: () {},
-                                      ),
                                   ],
                                 ),
                               ),
@@ -635,29 +706,14 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             attivo:
                                 widget.modificabile &&
                                 _modalita == _ModalitaLavagna.giocatori,
-                            evidenziato:
-                                _giocatori[i].colore == ColoreLavagna.giallo &&
-                                _pallaArmata,
-                            onTap: _giocatori[i].colore == ColoreLavagna.giallo
-                                ? _armaODisarmaPalla
-                                : (_pallaArmata
-                                      ? () => _assegnaPallaA(i)
-                                      : null),
-                            onInizioTrascinamento: _registraCronologia,
+                            evidenziato: _chiave(i) == _selezionato,
+                            onTap: () => _onTapGiocatore(i),
+                            onInizioTrascinamento: () {
+                              _registraCronologia();
+                              _selezionato = null;
+                            },
                             onSposta: (nuova) {
-                              final chiave = _chiave(i);
-                              setState(() {
-                                _giocatori[i] = _giocatori[i].spostato(nuova);
-                                // La palla portata da questo giocatore
-                                // lo segue nello spostamento.
-                                for (var j = 0; j < _giocatori.length; j++) {
-                                  if (_giocatori[j].portatore == chiave) {
-                                    _giocatori[j] = _giocatori[j].spostato(
-                                      nuova,
-                                    );
-                                  }
-                                }
-                              });
+                              setState(() => _muoviGiocatore(i, nuova));
                               _notifica();
                             },
                             onRimuovi: () {
@@ -675,7 +731,9 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                                     );
                                   }
                                 }
-                                _pallaArmata = false;
+                                if (_selezionato == chiave) {
+                                  _selezionato = null;
+                                }
                               });
                               _notifica();
                             },
