@@ -214,6 +214,21 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
 
+  /// Le frecce disegnate per il passo corrente sono annotazioni libere,
+  /// senza un legame esplicito con un giocatore. Una volta che il
+  /// giocatore è stato davvero trascinato fino al punto indicato dalla
+  /// freccia (stessa soglia di distanza usata per riconoscere un
+  /// trascinamento valido, vedi sopra), la freccia ha fatto il suo
+  /// lavoro e sparisce: è un'euristica di prossimità, non un vincolo
+  /// esatto.
+  List<FrecciaLavagna> get _frecceVisibili => _frecce.where((freccia) {
+    return !_giocatori.any(
+      (g) =>
+          g.colore == freccia.colore &&
+          (g.posizione - freccia.fine).distance <= 0.02,
+    );
+  }).toList();
+
   void _notifica() =>
       widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
 
@@ -485,7 +500,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             painter: _CampoCompletoPainter(
                               colori: colori,
                               campo: widget.campo,
-                              frecce: _frecce,
+                              frecce: _frecceVisibili,
                               anteprimaFreccia:
                                   _freccitaInizio != null &&
                                       _freccitaAnteprima != null
@@ -1073,8 +1088,14 @@ class SchemaTatticoPlayer extends StatefulWidget {
 
 class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
     with SingleTickerProviderStateMixin {
-  static const _durataMovimento = Duration(milliseconds: 900);
-  static const _durataPausa = Duration(milliseconds: 900);
+  static const _durataBase = Duration(milliseconds: 900);
+  static const _velocitaDisponibili = [0.5, 1.0, 1.5, 2.0];
+
+  double _velocita = 1.0;
+
+  Duration get _durataMovimento =>
+      Duration(milliseconds: (_durataBase.inMilliseconds / _velocita).round());
+  Duration get _durataPausa => _durataMovimento;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -1085,6 +1106,12 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
   int? _passoSuccessivo;
   bool _inRiproduzione = false;
 
+  /// Impostato solo quando la riproduzione arriva da sola in fondo alla
+  /// sequenza (non con Stop manuale né saltando a un passo): a quel
+  /// punto si vogliono rivedere tutte le frecce dello schema insieme,
+  /// non solo quelle dell'ultimo passo.
+  bool _mostraTutteLeFrecce = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -1093,12 +1120,16 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
 
   Future<void> _play() async {
     if (_inRiproduzione || widget.passi.length < 2) return;
-    setState(() => _inRiproduzione = true);
+    setState(() {
+      _inRiproduzione = true;
+      _mostraTutteLeFrecce = false;
+    });
     var i = _passoAttuale;
     while (_inRiproduzione && i < widget.passi.length - 1) {
       await Future.delayed(_durataPausa);
       if (!_inRiproduzione || !mounted) return;
       setState(() => _passoSuccessivo = i + 1);
+      _controller.duration = _durataMovimento;
       await _controller.forward(from: 0);
       if (!mounted) return;
       i++;
@@ -1107,7 +1138,12 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
         _passoSuccessivo = null;
       });
     }
-    if (mounted) setState(() => _inRiproduzione = false);
+    if (mounted) {
+      setState(() {
+        _inRiproduzione = false;
+        _mostraTutteLeFrecce = true;
+      });
+    }
   }
 
   void _stop() {
@@ -1115,6 +1151,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
     setState(() {
       _inRiproduzione = false;
       _passoSuccessivo = null;
+      _mostraTutteLeFrecce = false;
     });
   }
 
@@ -1183,6 +1220,21 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
                 ),
             ],
           ),
+          const SizedBox(height: AppSpacing.s8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.s8,
+            children: [
+              for (final v in _velocitaDisponibili)
+                TonalChip(
+                  etichetta: '${v}x'.replaceAll('.0x', 'x'),
+                  selezionato: v == _velocita,
+                  onSelezionato: _inRiproduzione
+                      ? null
+                      : (_) => setState(() => _velocita = v),
+                ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.s16),
         ],
         AspectRatio(
@@ -1196,6 +1248,14 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
 
                 if (passoSuccessivo == null) {
                   final passo = passi[_passoAttuale];
+                  // A fine riproduzione (non su uno stop manuale o su un
+                  // salto a un passo) si rivedono insieme le frecce di
+                  // tutti i passi, non solo quelle dell'ultimo.
+                  final mostraRiepilogoFrecce =
+                      _mostraTutteLeFrecce && _passoAttuale == passi.length - 1;
+                  final frecceDaMostrare = mostraRiepilogoFrecce
+                      ? [for (final p in passi) ...p.frecce]
+                      : passo.frecce;
                   return Container(
                     decoration: BoxDecoration(
                       color: colori.azioneTenue,
@@ -1208,7 +1268,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
                             painter: _CampoCompletoPainter(
                               colori: colori,
                               campo: widget.campo,
-                              frecce: passo.frecce,
+                              frecce: frecceDaMostrare,
                             ),
                           ),
                         ),
