@@ -13,6 +13,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../ripartenze/presentation/ripartenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
@@ -135,6 +136,11 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
             etichetta: 'Genera settimana con AI',
             onPressed: _apriGeneraSettimanaAI,
           ),
+          AzioneFab(
+            icona: Icons.speed,
+            etichetta: 'Ripartenze',
+            onPressed: _apriRipartenze,
+          ),
         ],
       ),
     );
@@ -213,6 +219,17 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GeneraSettimanaFormScreen(clubId: widget.clubId),
+      ),
+    );
+  }
+
+  Future<void> _apriRipartenze() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RipartenzeScreen(
+          clubId: widget.clubId,
+          gruppoIdIniziale: widget.filtroGruppoId,
+        ),
       ),
     );
   }
