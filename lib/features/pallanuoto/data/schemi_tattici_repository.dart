@@ -18,6 +18,9 @@ const _uuid = Uuid();
 PuntoSchema _puntoDaLista(List lista) =>
     ((lista[0] as num).toDouble(), (lista[1] as num).toDouble());
 
+(String, int)? _portatoreDaLista(List? lista) =>
+    lista == null ? null : (lista[0] as String, lista[1] as int);
+
 List<GiocatoreSchema> _giocatoriFromDati(Map<String, dynamic> dati) {
   final lista = dati['giocatori'] as List? ?? const [];
   return [
@@ -27,6 +30,7 @@ List<GiocatoreSchema> _giocatoriFromDati(Map<String, dynamic> dati) {
         // Fallback prudente: schemi salvati prima dell'introduzione dei
         // colori (nessuno, in pratica) non hanno questo campo.
         colore: g['colore'] as String? ?? 'blu',
+        portatore: _portatoreDaLista(g['portatore'] as List?),
       ),
   ];
 }
@@ -49,6 +53,8 @@ Map<String, dynamic> _passoToMap(PassoSchema passo) => {
       {
         'punto': [g.punto.$1, g.punto.$2],
         'colore': g.colore,
+        if (g.portatore case (final colore, final numero))
+          'portatore': [colore, numero],
       },
   ],
   'frecce': [

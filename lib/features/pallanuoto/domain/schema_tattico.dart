@@ -7,7 +7,14 @@ typedef PuntoSchema = (double x, double y);
 /// Colore: uno tra 'blu' | 'bianco' | 'nero' | 'rosso' | 'giallo' — vedi
 /// `ColoreLavagna` in `WaterPoloTacticsBoard`, qui solo il nome (stessa
 /// ragione di [PuntoSchema]: evitare la dipendenza da Flutter).
-typedef GiocatoreSchema = ({PuntoSchema punto, String colore});
+/// [portatore]: solo per la palla (colore 'giallo') — il giocatore che
+/// la porta, identificato con (colore, numero-nel-colore). `null` =
+/// palla libera o giocatore di movimento qualunque.
+typedef GiocatoreSchema = ({
+  PuntoSchema punto,
+  String colore,
+  (String, int)? portatore,
+});
 typedef FrecciaSchema = ({PuntoSchema inizio, PuntoSchema fine, String colore});
 
 /// Un fotogramma dello schema: una disposizione di giocatori/frecce

@@ -79,7 +79,14 @@ class _SchemaTatticoFormScreenState
     _passi[_passoAttuale] = (
       giocatori: [
         for (final g in giocatori)
-          (punto: (g.posizione.dx, g.posizione.dy), colore: g.colore.name),
+          (
+            punto: (g.posizione.dx, g.posizione.dy),
+            colore: g.colore.name,
+            portatore: switch (g.portatore) {
+              (final colore, final numero) => (colore.name, numero),
+              null => null,
+            },
+          ),
       ],
       frecce: [
         for (final f in frecce)
@@ -102,6 +109,13 @@ class _SchemaTatticoFormScreenState
         GiocatoreLavagna(
           posizione: Offset(g.punto.$1, g.punto.$2),
           colore: ColoreLavagna.values.byName(g.colore),
+          portatore: switch (g.portatore) {
+            (final colore, final numero) => (
+              ColoreLavagna.values.byName(colore),
+              numero,
+            ),
+            null => null,
+          },
         ),
     ],
     frecce: [

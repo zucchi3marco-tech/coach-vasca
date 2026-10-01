@@ -17,8 +17,10 @@ const _spiegazioneLavagna =
     'per disegnare una freccia di movimento.\n\n'
     'Scegli il colore prima di disegnare: al massimo 7 pallini per '
     'colore (i giocatori in acqua), numerati in ordine di piazzamento. '
-    'Il giallo è riservato alla palla: nessun numero e nessun limite, '
-    'così i passaggi si riconoscono a colpo d\'occhio.\n\n'
+    'Il giallo è riservato alla palla: una sola, più piccola e senza '
+    'numero. Tocca la palla e poi il giocatore che la riceve per '
+    'agganciargliela: lo seguirà finché non la riassegni a un altro. '
+    'Quando non è agganciata resta trascinabile liberamente.\n\n'
     'Il lucchetto blocca lo scorrimento della pagina mentre disegni una '
     'freccia (utile se trascinando ti si sposta lo schermo).';
 
@@ -92,13 +94,34 @@ enum CampoLavagna {
 /// entrambi gli assi, così resta corretta a qualunque dimensione della
 /// card) e colore del pallino.
 class GiocatoreLavagna {
-  const GiocatoreLavagna({required this.posizione, required this.colore});
+  const GiocatoreLavagna({
+    required this.posizione,
+    required this.colore,
+    this.portatore,
+  });
 
   final Offset posizione;
   final ColoreLavagna colore;
 
-  GiocatoreLavagna spostato(Offset nuovaPosizione) =>
-      GiocatoreLavagna(posizione: nuovaPosizione, colore: colore);
+  /// Solo per la palla (colore giallo): il giocatore che la porta,
+  /// identificato con la stessa chiave (colore, numero-nel-colore) usata
+  /// da [_abbinaGiocatori] — più stabile di un indice di lista, che
+  /// cambia se un giocatore viene rimosso. `null` = palla libera, non
+  /// agganciata a nessuno.
+  final (ColoreLavagna, int)? portatore;
+
+  GiocatoreLavagna spostato(Offset nuovaPosizione) => GiocatoreLavagna(
+    posizione: nuovaPosizione,
+    colore: colore,
+    portatore: portatore,
+  );
+
+  GiocatoreLavagna conPortatore((ColoreLavagna, int)? nuovoPortatore) =>
+      GiocatoreLavagna(
+        posizione: posizione,
+        colore: colore,
+        portatore: nuovoPortatore,
+      );
 }
 
 /// Una freccia di movimento disegnata sulla lavagna: inizio/fine
@@ -213,6 +236,31 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
 
   Offset? _freccitaInizio;
   Offset? _freccitaAnteprima;
+
+  /// true mentre si aspetta il tocco sul giocatore che riceve la palla
+  /// (dopo aver toccato la palla stessa): un secondo tocco su un
+  /// giocatore la aggancia, un tocco sul campo vuoto annulla.
+  bool _pallaArmata = false;
+
+  (ColoreLavagna, int) _chiave(int indice) =>
+      (_giocatori[indice].colore, _numeroPerColore(_giocatori, indice));
+
+  void _armaODisarmaPalla() => setState(() => _pallaArmata = !_pallaArmata);
+
+  void _assegnaPallaA(int indiceGiocatore) {
+    final indicePalla = _giocatori.indexWhere(
+      (g) => g.colore == ColoreLavagna.giallo,
+    );
+    if (indicePalla == -1) return;
+    _registraCronologia();
+    setState(() {
+      _giocatori[indicePalla] = _giocatori[indicePalla].conPortatore(
+        _chiave(indiceGiocatore),
+      );
+      _pallaArmata = false;
+    });
+    _notifica();
+  }
 
   /// Le frecce disegnate per il passo corrente sono annotazioni libere,
   /// senza un legame esplicito con un giocatore. Una volta che il
@@ -409,20 +457,38 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           _modalita != _ModalitaLavagna.giocatori
                       ? null
                       : (d) {
-                          // Il giallo e' riservato alla palla (nessun
-                          // numero, vedi _TokenGiocatore): non e' un
-                          // "giocatore di movimento", quindi non conta
-                          // per il tetto dei 7.
-                          final giaPresenti =
+                          // Un tocco sul campo vuoto mentre la palla e'
+                          // "armata" (in attesa del giocatore che la
+                          // riceve) la disarma soltanto, senza piazzare
+                          // nulla.
+                          if (_pallaArmata) {
+                            setState(() => _pallaArmata = false);
+                            return;
+                          }
+                          // Il giallo e' riservato alla palla: al
+                          // massimo una (non conta per il tetto dei 7
+                          // dei giocatori di movimento, che ha un tetto
+                          // a parte).
+                          final giaPresenti = _giocatori
+                              .where((g) => g.colore == _coloreSelezionato)
+                              .length;
+                          final tetto =
                               _coloreSelezionato == ColoreLavagna.giallo
-                              ? 0
-                              : _giocatori
-                                    .where(
-                                      (g) => g.colore == _coloreSelezionato,
-                                    )
-                                    .length;
-                          if (giaPresenti >=
-                              WaterPoloTacticsBoard.massimoGiocatoriPerColore) {
+                              ? 1
+                              : WaterPoloTacticsBoard.massimoGiocatoriPerColore;
+                          if (giaPresenti >= tetto) {
+                            if (_coloreSelezionato == ColoreLavagna.giallo) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Puoi avere una sola palla: tocca '
+                                    'quella già piazzata per riassegnarla '
+                                    'a un altro giocatore.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -569,18 +635,48 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                             attivo:
                                 widget.modificabile &&
                                 _modalita == _ModalitaLavagna.giocatori,
+                            evidenziato:
+                                _giocatori[i].colore == ColoreLavagna.giallo &&
+                                _pallaArmata,
+                            onTap: _giocatori[i].colore == ColoreLavagna.giallo
+                                ? _armaODisarmaPalla
+                                : (_pallaArmata
+                                      ? () => _assegnaPallaA(i)
+                                      : null),
                             onInizioTrascinamento: _registraCronologia,
                             onSposta: (nuova) {
-                              setState(
-                                () => _giocatori[i] = _giocatori[i].spostato(
-                                  nuova,
-                                ),
-                              );
+                              final chiave = _chiave(i);
+                              setState(() {
+                                _giocatori[i] = _giocatori[i].spostato(nuova);
+                                // La palla portata da questo giocatore
+                                // lo segue nello spostamento.
+                                for (var j = 0; j < _giocatori.length; j++) {
+                                  if (_giocatori[j].portatore == chiave) {
+                                    _giocatori[j] = _giocatori[j].spostato(
+                                      nuova,
+                                    );
+                                  }
+                                }
+                              });
                               _notifica();
                             },
                             onRimuovi: () {
                               _registraCronologia();
-                              setState(() => _giocatori.removeAt(i));
+                              final chiave = _chiave(i);
+                              setState(() {
+                                _giocatori.removeAt(i);
+                                // Un giocatore rimosso non puo' restare
+                                // il portatore della palla: resta dov'e',
+                                // non agganciata a nessuno.
+                                for (var j = 0; j < _giocatori.length; j++) {
+                                  if (_giocatori[j].portatore == chiave) {
+                                    _giocatori[j] = _giocatori[j].conPortatore(
+                                      null,
+                                    );
+                                  }
+                                }
+                                _pallaArmata = false;
+                              });
                               _notifica();
                             },
                           ),
@@ -660,6 +756,8 @@ class _TokenGiocatore extends StatelessWidget {
     required this.onSposta,
     required this.onRimuovi,
     this.onInizioTrascinamento,
+    this.onTap,
+    this.evidenziato = false,
   });
 
   final GiocatoreLavagna giocatore;
@@ -678,6 +776,14 @@ class _TokenGiocatore extends StatelessWidget {
   /// pixel di movimento, a differenza di [onSposta]): usato per
   /// registrare la posizione di partenza nella cronologia di "Annulla".
   final VoidCallback? onInizioTrascinamento;
+
+  /// Tocco semplice (non trascinamento): usato per armare la palla o,
+  /// con la palla già armata, per assegnarla a questo giocatore.
+  final VoidCallback? onTap;
+
+  /// true sulla palla mentre è "armata" (in attesa del giocatore che la
+  /// riceve): un bordo evidenziato segnala lo stato in attesa.
+  final bool evidenziato;
 
   static const _diametro = 32.0;
 
@@ -698,6 +804,7 @@ class _TokenGiocatore extends StatelessWidget {
       child: IgnorePointer(
         ignoring: !attivo,
         child: GestureDetector(
+          onTap: onTap,
           onPanStart: (_) => onInizioTrascinamento?.call(),
           onPanUpdate: (d) {
             final nuovaX =
@@ -717,7 +824,10 @@ class _TokenGiocatore extends StatelessWidget {
             decoration: BoxDecoration(
               color: giocatore.colore.colore,
               shape: BoxShape.circle,
-              border: Border.all(color: colori.superficie, width: 2),
+              border: Border.all(
+                color: evidenziato ? colori.azione : colori.superficie,
+                width: evidenziato ? 3 : 2,
+              ),
             ),
             // Il giallo e' riservato alla palla: nessun numero sopra,
             // cosi' si distingue a colpo d'occhio dai giocatori e si
