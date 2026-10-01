@@ -16,13 +16,24 @@ final presenzeListProvider = StreamProvider.family<List<Presenza>, String>((
 });
 
 /// Tutte le presenze proprie di un atleta (FASE 9, "le mie presenze").
-final presenzePerAtletaProvider = StreamProvider.family<List<Presenza>, String>((
+final presenzePerAtletaProvider = StreamProvider.family<List<Presenza>, String>(
+  (ref, atletaId) {
+    final repository = ref.watch(presenzeRepositoryProvider);
+    return streamConRefreshIniziale(
+      refresh: () => repository.refreshFromRemotePerAtleta(atletaId),
+      watch: () => repository.watchPerAtleta(atletaId),
+    );
+  },
+);
+
+/// Tutte le presenze del club (lista atleti: % presenze per ogni riga).
+final presenzeClubProvider = StreamProvider.family<List<Presenza>, String>((
   ref,
-  atletaId,
+  clubId,
 ) {
   final repository = ref.watch(presenzeRepositoryProvider);
   return streamConRefreshIniziale(
-    refresh: () => repository.refreshFromRemotePerAtleta(atletaId),
-    watch: () => repository.watchPerAtleta(atletaId),
+    refresh: () => repository.refreshFromRemotePerClub(clubId),
+    watch: () => repository.watchPerClub(clubId),
   );
 });

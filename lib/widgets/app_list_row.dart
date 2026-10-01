@@ -10,6 +10,7 @@ import '../theme/colori_app.dart';
 class AppListRow extends StatelessWidget {
   const AppListRow({
     required this.titolo,
+    this.extraTitolo,
     this.sottotitolo,
     this.leading,
     this.trailing,
@@ -19,6 +20,10 @@ class AppListRow extends StatelessWidget {
   });
 
   final String titolo;
+
+  /// Widget facoltativo subito dopo il titolo, sulla stessa riga (es. una
+  /// percentuale): il titolo si tronca con i puntini se non c'è spazio.
+  final Widget? extraTitolo;
   final String? sottotitolo;
   final Widget? leading;
   final Widget? trailing;
@@ -51,11 +56,22 @@ class AppListRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      titolo,
-                      style: AppTypography.corpoForte.copyWith(
-                        color: colori.testo,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            titolo,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                        ),
+                        if (extraTitolo != null) ...[
+                          const SizedBox(width: AppSpacing.s8),
+                          extraTitolo!,
+                        ],
+                      ],
                     ),
                     if (sottotitolo != null) ...[
                       const SizedBox(height: 2),

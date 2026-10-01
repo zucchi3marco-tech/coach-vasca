@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/gruppo_visibilita.dart';
+import '../../../core/utils/percentuale_presenze.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -18,16 +19,19 @@ import '../../../widgets/icon_badge.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
+import '../../allenamenti/domain/allenamento.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../home/area_atleta_home_screen.dart';
+import '../../presenze/application/presenze_providers.dart';
+import '../../presenze/domain/presenza.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import 'atleta_form_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
 
-enum _Ordinamento { cognome, dataNascita }
+enum _Ordinamento { cognome, dataNascita, percentualePresenze }
 
 String _formattaData(DateTime data) =>
     '${data.day.toString().padLeft(2, '0')}/'
@@ -59,6 +63,9 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
     final filter = (clubId: widget.clubId, includeInactive: _mostraInattivi);
     final atletiAsync = ref.watch(atletiListProvider(filter));
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
+    final allenamenti =
+        ref.watch(allenamentiListProvider(widget.clubId)).value ?? [];
+    final presenze = ref.watch(presenzeClubProvider(widget.clubId)).value ?? [];
 
     return AppScaffold(
       body: Column(
@@ -98,6 +105,13 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                       etichetta: 'Data di nascita',
                     ),
                   ),
+                  PopupMenuItem(
+                    value: _Ordinamento.percentualePresenze,
+                    child: _VoceMenu(
+                      icona: Icons.percent,
+                      etichetta: '% presenze (più alta prima)',
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -112,6 +126,8 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                 data: (atleti) => _AtletiList(
                   atleti: atleti,
                   gruppi: gruppi,
+                  allenamenti: allenamenti,
+                  presenze: presenze,
                   filtroGruppoId: widget.filtroGruppoId,
                   ricerca: _ricerca,
                   ordinamento: _ordinamento,
@@ -350,6 +366,8 @@ class _AtletiList extends StatelessWidget {
   const _AtletiList({
     required this.atleti,
     required this.gruppi,
+    required this.allenamenti,
+    required this.presenze,
     required this.filtroGruppoId,
     required this.ricerca,
     required this.ordinamento,
@@ -361,6 +379,8 @@ class _AtletiList extends StatelessWidget {
 
   final List<Atleta> atleti;
   final List<Gruppo> gruppi;
+  final List<Allenamento> allenamenti;
+  final List<Presenza> presenze;
   final String? filtroGruppoId;
   final String ricerca;
   final _Ordinamento ordinamento;
@@ -375,6 +395,13 @@ class _AtletiList extends StatelessWidget {
   /// Menu `⋮`: "Elimina atleta" (definitivo, dopo conferma).
   final ValueChanged<Atleta> onTapElimina;
 
+  double? _percentuale(Atleta a) => percentualePresenze(
+    allenamenti: allenamenti,
+    presenze: presenze,
+    atletaId: a.id,
+    gruppoAtleta: a.gruppoId,
+  );
+
   List<Atleta> _filtrati() {
     final query = ricerca.trim().toLowerCase();
     var filtrati = filtroGruppoId == null
@@ -386,11 +413,19 @@ class _AtletiList extends StatelessWidget {
           .toList();
     }
     filtrati.sort((a, b) {
-      if (ordinamento == _Ordinamento.dataNascita) {
-        return a.dataNascita.compareTo(b.dataNascita);
+      switch (ordinamento) {
+        case _Ordinamento.dataNascita:
+          return a.dataNascita.compareTo(b.dataNascita);
+        case _Ordinamento.percentualePresenze:
+          // Più alta prima; senza allenamenti rilevanti in fondo, non
+          // confuso con uno 0% (sempre assente).
+          final pa = _percentuale(a) ?? -1;
+          final pb = _percentuale(b) ?? -1;
+          return pb.compareTo(pa);
+        case _Ordinamento.cognome:
+          final perCognome = a.cognome.compareTo(b.cognome);
+          return perCognome != 0 ? perCognome : a.nome.compareTo(b.nome);
       }
-      final perCognome = a.cognome.compareTo(b.cognome);
-      return perCognome != 0 ? perCognome : a.nome.compareTo(b.nome);
     });
     return filtrati;
   }
@@ -439,6 +474,9 @@ class _AtletiList extends StatelessWidget {
             AppListRow(
               leading: _AvatarAtleta(atleta: atleta),
               titolo: atleta.nomeCompleto,
+              extraTitolo: _BadgePercentualePresenze(
+                percentuale: _percentuale(atleta),
+              ),
               sottotitolo:
                   [
                     atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
@@ -526,6 +564,24 @@ class _VoceMenu extends StatelessWidget {
           style: AppTypography.corpo.copyWith(color: colori.testo),
         ),
       ],
+    );
+  }
+}
+
+/// Percentuale di presenze accanto al nome, nella lista atleti. `null`
+/// (nessun allenamento rilevante su cui calcolarla) mostra "—" invece di
+/// un fuorviante 0%.
+class _BadgePercentualePresenze extends StatelessWidget {
+  const _BadgePercentualePresenze({required this.percentuale});
+
+  final double? percentuale;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Text(
+      percentuale == null ? '—' : '${percentuale!.round()}%',
+      style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
     );
   }
 }

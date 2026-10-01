@@ -66,6 +66,31 @@ class PresenzeRepository {
     return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Tutte le presenze del club in un colpo solo (es. % presenze di ogni
+  /// atleta nella lista atleti): evita una query per atleta.
+  Stream<List<Presenza>> watchPerClub(String clubId) {
+    final query = _db.select(_db.presenzeTable)
+      ..where((t) => t.clubId.equals(clubId));
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Sostituzione totale delle presenze del club — vedi [refreshFromRemote]
+  /// per il motivo (upsert per id non basta, una riga sparita da remoto
+  /// deve sparire anche in locale).
+  Future<void> refreshFromRemotePerClub(String clubId) async {
+    final rows = await _client.from('presenze').select().eq('club_id', clubId);
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.presenzeTable,
+      )..where((t) => t.clubId.equals(clubId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.presenzeTable, _companionFromMap(row));
+        }
+      });
+    });
+  }
+
   /// Sostituzione totale delle presenze di un atleta (non insertOrReplace):
   /// stesso motivo di [refreshFromRemote].
   Future<void> refreshFromRemotePerAtleta(String atletaId) async {
@@ -135,14 +160,19 @@ class PresenzeRepository {
       final allenamento = await (_db.select(
         _db.allenamentiTable,
       )..where((t) => t.id.equals(allenamentoId))).getSingle();
-      final esistente = await (_db.select(_db.presenzeTable)..where(
-            (t) =>
-                t.allenamentoId.equals(allenamentoId) &
-                t.atletaId.equals(atletaId),
-          ))
-          .getSingleOrNull();
+      final esistente =
+          await (_db.select(_db.presenzeTable)..where(
+                (t) =>
+                    t.allenamentoId.equals(allenamentoId) &
+                    t.atletaId.equals(atletaId),
+              ))
+              .getSingleOrNull();
       final id = esistente?.id ?? _uuid.v4();
-      final payloadCompleto = {...payload, 'id': id, 'club_id': allenamento.clubId};
+      final payloadCompleto = {
+        ...payload,
+        'id': id,
+        'club_id': allenamento.clubId,
+      };
       await _db
           .into(_db.presenzeTable)
           .insertOnConflictUpdate(_companionFromMap(payloadCompleto));
