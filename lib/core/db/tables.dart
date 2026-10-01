@@ -85,9 +85,13 @@ class SchemiTatticiTable extends Table {
   TextColumn get clubId => text()();
   TextColumn get titolo => text()();
 
-  /// Gruppo di allenamento (squadra) a cui appartiene lo schema — null
-  /// se condiviso con tutto il club. Da non confondere con [categoria].
-  TextColumn get gruppoId => text().nullable()();
+  /// Gruppi di allenamento (squadre) a cui appartiene lo schema — lista
+  /// vuota se condiviso con tutto il club. Prima una singola colonna
+  /// nullable `gruppo_id` (un solo gruppo): JSON con gli id, come il
+  /// campo `gruppo_ids` jsonb lato Supabase — stesso schema di
+  /// [ClubTable.categorieJson]. Da non confondere con [categoria] (il
+  /// tipo di azione tattica, es. "Superiorità").
+  TextColumn get gruppoIdsJson => text().withDefault(const Constant('[]'))();
 
   /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
   /// "Superiorità"...): non un elenco chiuso, se ne possono creare

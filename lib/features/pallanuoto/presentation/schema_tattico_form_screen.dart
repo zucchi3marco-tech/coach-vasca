@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
@@ -41,7 +42,7 @@ class _SchemaTatticoFormScreenState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titoloController;
   late final TextEditingController _categoriaController;
-  String? _gruppoId;
+  late final Set<String> _gruppoIdsSelezionati;
 
   late List<PassoSchema> _passi;
   int _passoAttuale = 0;
@@ -59,7 +60,7 @@ class _SchemaTatticoFormScreenState
     final s = widget.schema;
     _titoloController = TextEditingController(text: s?.titolo ?? '');
     _categoriaController = TextEditingController(text: s?.categoria ?? '');
-    _gruppoId = s?.gruppoId;
+    _gruppoIdsSelezionati = {...?s?.gruppoIds};
     _passi = List.of(s?.passi ?? const [(giocatori: [], frecce: [])]);
     _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
   }
@@ -184,7 +185,7 @@ class _SchemaTatticoFormScreenState
       if (_isEditing) {
         await repository.aggiornaSchema(
           id: widget.schema!.id,
-          gruppoId: _gruppoId,
+          gruppoIds: _gruppoIdsSelezionati.toList(),
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
@@ -193,7 +194,7 @@ class _SchemaTatticoFormScreenState
       } else {
         await repository.creaSchema(
           clubId: widget.clubId,
-          gruppoId: _gruppoId,
+          gruppoIds: _gruppoIdsSelezionati.toList(),
           titolo: _titoloController.text.trim(),
           categoria: _categoriaController.text.trim(),
           campo: _campo.name,
@@ -296,25 +297,38 @@ class _SchemaTatticoFormScreenState
                         ),
                     ],
                   ),
-                AppSelect<String?>(
-                  etichetta: 'Gruppo (facoltativo)',
-                  value: _gruppoId,
-                  hint: 'Nessun gruppo',
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Nessun gruppo'),
-                    ),
+                Text(
+                  'Gruppi (facoltativo, nessuno = tutto il club)',
+                  style: AppTypography.corpo.copyWith(
+                    color: context.colori.testoSecondario,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s8),
+                Wrap(
+                  spacing: AppSpacing.s8,
+                  runSpacing: AppSpacing.s8,
+                  children: [
                     for (final g in gruppi)
-                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
-                    if (_gruppoId != null &&
-                        !gruppi.any((g) => g.id == _gruppoId))
-                      DropdownMenuItem(
-                        value: _gruppoId,
-                        child: const Text('Gruppo non trovato'),
+                      TonalChip(
+                        etichetta: g.nome,
+                        selezionato: _gruppoIdsSelezionati.contains(g.id),
+                        onSelezionato: (selezionato) => setState(() {
+                          if (selezionato) {
+                            _gruppoIdsSelezionati.add(g.id);
+                          } else {
+                            _gruppoIdsSelezionati.remove(g.id);
+                          }
+                        }),
                       ),
+                    for (final id in _gruppoIdsSelezionati)
+                      if (!gruppi.any((g) => g.id == id))
+                        TonalChip(
+                          etichetta: 'Gruppo non trovato',
+                          selezionato: true,
+                          onSelezionato: (_) =>
+                              setState(() => _gruppoIdsSelezionati.remove(id)),
+                        ),
                   ],
-                  onChanged: (value) => setState(() => _gruppoId = value),
                 ),
               ],
             ),

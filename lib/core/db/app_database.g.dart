@@ -2489,16 +2489,17 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
-    'gruppoId',
+  static const VerificationMeta _gruppoIdsJsonMeta = const VerificationMeta(
+    'gruppoIdsJson',
   );
   @override
-  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
-    'gruppo_id',
+  late final GeneratedColumn<String> gruppoIdsJson = GeneratedColumn<String>(
+    'gruppo_ids_json',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
   );
   static const VerificationMeta _categoriaMeta = const VerificationMeta(
     'categoria',
@@ -2547,7 +2548,7 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
     id,
     clubId,
     titolo,
-    gruppoId,
+    gruppoIdsJson,
     categoria,
     campo,
     dati,
@@ -2586,10 +2587,13 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
     } else if (isInserting) {
       context.missing(_titoloMeta);
     }
-    if (data.containsKey('gruppo_id')) {
+    if (data.containsKey('gruppo_ids_json')) {
       context.handle(
-        _gruppoIdMeta,
-        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
+        _gruppoIdsJsonMeta,
+        gruppoIdsJson.isAcceptableOrUnknown(
+          data['gruppo_ids_json']!,
+          _gruppoIdsJsonMeta,
+        ),
       );
     }
     if (data.containsKey('categoria')) {
@@ -2644,10 +2648,10 @@ class $SchemiTatticiTableTable extends SchemiTatticiTable
         DriftSqlType.string,
         data['${effectivePrefix}titolo'],
       )!,
-      gruppoId: attachedDatabase.typeMapping.read(
+      gruppoIdsJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}gruppo_id'],
-      ),
+        data['${effectivePrefix}gruppo_ids_json'],
+      )!,
       categoria: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}categoria'],
@@ -2679,9 +2683,13 @@ class SchemiTatticiTableData extends DataClass
   final String clubId;
   final String titolo;
 
-  /// Gruppo di allenamento (squadra) a cui appartiene lo schema — null
-  /// se condiviso con tutto il club. Da non confondere con [categoria].
-  final String? gruppoId;
+  /// Gruppi di allenamento (squadre) a cui appartiene lo schema — lista
+  /// vuota se condiviso con tutto il club. Prima una singola colonna
+  /// nullable `gruppo_id` (un solo gruppo): JSON con gli id, come il
+  /// campo `gruppo_ids` jsonb lato Supabase — stesso schema di
+  /// [ClubTable.categorieJson]. Da non confondere con [categoria] (il
+  /// tipo di azione tattica, es. "Superiorità").
+  final String gruppoIdsJson;
 
   /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
   /// "Superiorità"...): non un elenco chiuso, se ne possono creare
@@ -2700,7 +2708,7 @@ class SchemiTatticiTableData extends DataClass
     required this.id,
     required this.clubId,
     required this.titolo,
-    this.gruppoId,
+    required this.gruppoIdsJson,
     required this.categoria,
     required this.campo,
     required this.dati,
@@ -2712,9 +2720,7 @@ class SchemiTatticiTableData extends DataClass
     map['id'] = Variable<String>(id);
     map['club_id'] = Variable<String>(clubId);
     map['titolo'] = Variable<String>(titolo);
-    if (!nullToAbsent || gruppoId != null) {
-      map['gruppo_id'] = Variable<String>(gruppoId);
-    }
+    map['gruppo_ids_json'] = Variable<String>(gruppoIdsJson);
     map['categoria'] = Variable<String>(categoria);
     map['campo'] = Variable<String>(campo);
     map['dati'] = Variable<String>(dati);
@@ -2727,9 +2733,7 @@ class SchemiTatticiTableData extends DataClass
       id: Value(id),
       clubId: Value(clubId),
       titolo: Value(titolo),
-      gruppoId: gruppoId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(gruppoId),
+      gruppoIdsJson: Value(gruppoIdsJson),
       categoria: Value(categoria),
       campo: Value(campo),
       dati: Value(dati),
@@ -2746,7 +2750,7 @@ class SchemiTatticiTableData extends DataClass
       id: serializer.fromJson<String>(json['id']),
       clubId: serializer.fromJson<String>(json['clubId']),
       titolo: serializer.fromJson<String>(json['titolo']),
-      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
+      gruppoIdsJson: serializer.fromJson<String>(json['gruppoIdsJson']),
       categoria: serializer.fromJson<String>(json['categoria']),
       campo: serializer.fromJson<String>(json['campo']),
       dati: serializer.fromJson<String>(json['dati']),
@@ -2760,7 +2764,7 @@ class SchemiTatticiTableData extends DataClass
       'id': serializer.toJson<String>(id),
       'clubId': serializer.toJson<String>(clubId),
       'titolo': serializer.toJson<String>(titolo),
-      'gruppoId': serializer.toJson<String?>(gruppoId),
+      'gruppoIdsJson': serializer.toJson<String>(gruppoIdsJson),
       'categoria': serializer.toJson<String>(categoria),
       'campo': serializer.toJson<String>(campo),
       'dati': serializer.toJson<String>(dati),
@@ -2772,7 +2776,7 @@ class SchemiTatticiTableData extends DataClass
     String? id,
     String? clubId,
     String? titolo,
-    Value<String?> gruppoId = const Value.absent(),
+    String? gruppoIdsJson,
     String? categoria,
     String? campo,
     String? dati,
@@ -2781,7 +2785,7 @@ class SchemiTatticiTableData extends DataClass
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
     titolo: titolo ?? this.titolo,
-    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
+    gruppoIdsJson: gruppoIdsJson ?? this.gruppoIdsJson,
     categoria: categoria ?? this.categoria,
     campo: campo ?? this.campo,
     dati: dati ?? this.dati,
@@ -2792,7 +2796,9 @@ class SchemiTatticiTableData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       clubId: data.clubId.present ? data.clubId.value : this.clubId,
       titolo: data.titolo.present ? data.titolo.value : this.titolo,
-      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
+      gruppoIdsJson: data.gruppoIdsJson.present
+          ? data.gruppoIdsJson.value
+          : this.gruppoIdsJson,
       categoria: data.categoria.present ? data.categoria.value : this.categoria,
       campo: data.campo.present ? data.campo.value : this.campo,
       dati: data.dati.present ? data.dati.value : this.dati,
@@ -2808,7 +2814,7 @@ class SchemiTatticiTableData extends DataClass
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
           ..write('titolo: $titolo, ')
-          ..write('gruppoId: $gruppoId, ')
+          ..write('gruppoIdsJson: $gruppoIdsJson, ')
           ..write('categoria: $categoria, ')
           ..write('campo: $campo, ')
           ..write('dati: $dati, ')
@@ -2822,7 +2828,7 @@ class SchemiTatticiTableData extends DataClass
     id,
     clubId,
     titolo,
-    gruppoId,
+    gruppoIdsJson,
     categoria,
     campo,
     dati,
@@ -2835,7 +2841,7 @@ class SchemiTatticiTableData extends DataClass
           other.id == this.id &&
           other.clubId == this.clubId &&
           other.titolo == this.titolo &&
-          other.gruppoId == this.gruppoId &&
+          other.gruppoIdsJson == this.gruppoIdsJson &&
           other.categoria == this.categoria &&
           other.campo == this.campo &&
           other.dati == this.dati &&
@@ -2847,7 +2853,7 @@ class SchemiTatticiTableCompanion
   final Value<String> id;
   final Value<String> clubId;
   final Value<String> titolo;
-  final Value<String?> gruppoId;
+  final Value<String> gruppoIdsJson;
   final Value<String> categoria;
   final Value<String> campo;
   final Value<String> dati;
@@ -2857,7 +2863,7 @@ class SchemiTatticiTableCompanion
     this.id = const Value.absent(),
     this.clubId = const Value.absent(),
     this.titolo = const Value.absent(),
-    this.gruppoId = const Value.absent(),
+    this.gruppoIdsJson = const Value.absent(),
     this.categoria = const Value.absent(),
     this.campo = const Value.absent(),
     this.dati = const Value.absent(),
@@ -2868,7 +2874,7 @@ class SchemiTatticiTableCompanion
     required String id,
     required String clubId,
     required String titolo,
-    this.gruppoId = const Value.absent(),
+    this.gruppoIdsJson = const Value.absent(),
     this.categoria = const Value.absent(),
     this.campo = const Value.absent(),
     required String dati,
@@ -2883,7 +2889,7 @@ class SchemiTatticiTableCompanion
     Expression<String>? id,
     Expression<String>? clubId,
     Expression<String>? titolo,
-    Expression<String>? gruppoId,
+    Expression<String>? gruppoIdsJson,
     Expression<String>? categoria,
     Expression<String>? campo,
     Expression<String>? dati,
@@ -2894,7 +2900,7 @@ class SchemiTatticiTableCompanion
       if (id != null) 'id': id,
       if (clubId != null) 'club_id': clubId,
       if (titolo != null) 'titolo': titolo,
-      if (gruppoId != null) 'gruppo_id': gruppoId,
+      if (gruppoIdsJson != null) 'gruppo_ids_json': gruppoIdsJson,
       if (categoria != null) 'categoria': categoria,
       if (campo != null) 'campo': campo,
       if (dati != null) 'dati': dati,
@@ -2907,7 +2913,7 @@ class SchemiTatticiTableCompanion
     Value<String>? id,
     Value<String>? clubId,
     Value<String>? titolo,
-    Value<String?>? gruppoId,
+    Value<String>? gruppoIdsJson,
     Value<String>? categoria,
     Value<String>? campo,
     Value<String>? dati,
@@ -2918,7 +2924,7 @@ class SchemiTatticiTableCompanion
       id: id ?? this.id,
       clubId: clubId ?? this.clubId,
       titolo: titolo ?? this.titolo,
-      gruppoId: gruppoId ?? this.gruppoId,
+      gruppoIdsJson: gruppoIdsJson ?? this.gruppoIdsJson,
       categoria: categoria ?? this.categoria,
       campo: campo ?? this.campo,
       dati: dati ?? this.dati,
@@ -2939,8 +2945,8 @@ class SchemiTatticiTableCompanion
     if (titolo.present) {
       map['titolo'] = Variable<String>(titolo.value);
     }
-    if (gruppoId.present) {
-      map['gruppo_id'] = Variable<String>(gruppoId.value);
+    if (gruppoIdsJson.present) {
+      map['gruppo_ids_json'] = Variable<String>(gruppoIdsJson.value);
     }
     if (categoria.present) {
       map['categoria'] = Variable<String>(categoria.value);
@@ -2966,7 +2972,7 @@ class SchemiTatticiTableCompanion
           ..write('id: $id, ')
           ..write('clubId: $clubId, ')
           ..write('titolo: $titolo, ')
-          ..write('gruppoId: $gruppoId, ')
+          ..write('gruppoIdsJson: $gruppoIdsJson, ')
           ..write('categoria: $categoria, ')
           ..write('campo: $campo, ')
           ..write('dati: $dati, ')
@@ -12070,7 +12076,7 @@ typedef $$SchemiTatticiTableTableCreateCompanionBuilder =
       required String id,
       required String clubId,
       required String titolo,
-      Value<String?> gruppoId,
+      Value<String> gruppoIdsJson,
       Value<String> categoria,
       Value<String> campo,
       required String dati,
@@ -12082,7 +12088,7 @@ typedef $$SchemiTatticiTableTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> clubId,
       Value<String> titolo,
-      Value<String?> gruppoId,
+      Value<String> gruppoIdsJson,
       Value<String> categoria,
       Value<String> campo,
       Value<String> dati,
@@ -12114,8 +12120,8 @@ class $$SchemiTatticiTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get gruppoId => $composableBuilder(
-    column: $table.gruppoId,
+  ColumnFilters<String> get gruppoIdsJson => $composableBuilder(
+    column: $table.gruppoIdsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12164,8 +12170,8 @@ class $$SchemiTatticiTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get gruppoId => $composableBuilder(
-    column: $table.gruppoId,
+  ColumnOrderings<String> get gruppoIdsJson => $composableBuilder(
+    column: $table.gruppoIdsJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12208,8 +12214,10 @@ class $$SchemiTatticiTableTableAnnotationComposer
   GeneratedColumn<String> get titolo =>
       $composableBuilder(column: $table.titolo, builder: (column) => column);
 
-  GeneratedColumn<String> get gruppoId =>
-      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
+  GeneratedColumn<String> get gruppoIdsJson => $composableBuilder(
+    column: $table.gruppoIdsJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get categoria =>
       $composableBuilder(column: $table.categoria, builder: (column) => column);
@@ -12269,7 +12277,7 @@ class $$SchemiTatticiTableTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> clubId = const Value.absent(),
                 Value<String> titolo = const Value.absent(),
-                Value<String?> gruppoId = const Value.absent(),
+                Value<String> gruppoIdsJson = const Value.absent(),
                 Value<String> categoria = const Value.absent(),
                 Value<String> campo = const Value.absent(),
                 Value<String> dati = const Value.absent(),
@@ -12279,7 +12287,7 @@ class $$SchemiTatticiTableTableTableManager
                 id: id,
                 clubId: clubId,
                 titolo: titolo,
-                gruppoId: gruppoId,
+                gruppoIdsJson: gruppoIdsJson,
                 categoria: categoria,
                 campo: campo,
                 dati: dati,
@@ -12291,7 +12299,7 @@ class $$SchemiTatticiTableTableTableManager
                 required String id,
                 required String clubId,
                 required String titolo,
-                Value<String?> gruppoId = const Value.absent(),
+                Value<String> gruppoIdsJson = const Value.absent(),
                 Value<String> categoria = const Value.absent(),
                 Value<String> campo = const Value.absent(),
                 required String dati,
@@ -12301,7 +12309,7 @@ class $$SchemiTatticiTableTableTableManager
                 id: id,
                 clubId: clubId,
                 titolo: titolo,
-                gruppoId: gruppoId,
+                gruppoIdsJson: gruppoIdsJson,
                 categoria: categoria,
                 campo: campo,
                 dati: dati,

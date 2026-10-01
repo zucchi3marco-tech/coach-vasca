@@ -10,3 +10,14 @@ bool visibileNelGruppo({
   if (gruppoSelezionato == null) return true;
   return gruppoDelRecord == null || gruppoDelRecord == gruppoSelezionato;
 }
+
+/// Stessa regola di [visibileNelGruppo], per un record che può
+/// appartenere a più gruppi insieme (es. uno schema tattico): lista
+/// vuota = di club, visibile a tutti i gruppi.
+bool visibileNelGruppoMultiplo({
+  required List<String> gruppiDelRecord,
+  required String? gruppoSelezionato,
+}) {
+  if (gruppoSelezionato == null) return true;
+  return gruppiDelRecord.isEmpty || gruppiDelRecord.contains(gruppoSelezionato);
+}

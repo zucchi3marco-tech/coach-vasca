@@ -245,7 +245,12 @@ class _CardLavagnaTattica extends ConsumerWidget {
         ? tuttiGliSchemi
         : tuttiGliSchemi.whenData(
             (schemi) => schemi
-                .where((s) => s.gruppoId == gruppoId || s.gruppoId == null)
+                .where(
+                  (s) => visibileNelGruppoMultiplo(
+                    gruppiDelRecord: s.gruppoIds,
+                    gruppoSelezionato: gruppoId,
+                  ),
+                )
                 .toList(),
           );
     final colori = context.colori;

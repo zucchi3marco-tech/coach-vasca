@@ -94,7 +94,7 @@ class SchemiTatticiRepository {
     return SchemaTattico(
       id: row.id,
       clubId: row.clubId,
-      gruppoId: row.gruppoId,
+      gruppoIds: (jsonDecode(row.gruppoIdsJson) as List).cast<String>(),
       titolo: row.titolo,
       categoria: row.categoria,
       campo: row.campo,
@@ -108,7 +108,7 @@ class SchemiTatticiRepository {
     return SchemiTatticiTableCompanion.insert(
       id: map['id'] as String,
       clubId: map['club_id'] as String,
-      gruppoId: Value(map['gruppo_id'] as String?),
+      gruppoIdsJson: Value(jsonEncode(map['gruppo_ids'] ?? const [])),
       titolo: map['titolo'] as String,
       categoria: Value(map['categoria'] as String? ?? ''),
       campo: Value(map['campo'] as String? ?? 'intero'),
@@ -151,7 +151,7 @@ class SchemiTatticiRepository {
 
   Future<void> creaSchema({
     required String clubId,
-    String? gruppoId,
+    List<String> gruppoIds = const [],
     required String titolo,
     required String categoria,
     required String campo,
@@ -162,7 +162,7 @@ class SchemiTatticiRepository {
     final payload = {
       'id': id,
       'club_id': clubId,
-      'gruppo_id': ?gruppoId,
+      'gruppo_ids': gruppoIds,
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
@@ -191,7 +191,7 @@ class SchemiTatticiRepository {
 
   Future<void> aggiornaSchema({
     required String id,
-    String? gruppoId,
+    List<String> gruppoIds = const [],
     required String titolo,
     required String categoria,
     required String campo,
@@ -199,7 +199,7 @@ class SchemiTatticiRepository {
   }) async {
     final ora = DateTime.now();
     final payload = {
-      'gruppo_id': gruppoId,
+      'gruppo_ids': gruppoIds,
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
@@ -219,7 +219,7 @@ class SchemiTatticiRepository {
         _db.schemiTatticiTable,
       )..where((t) => t.id.equals(id))).write(
         SchemiTatticiTableCompanion(
-          gruppoId: Value(gruppoId),
+          gruppoIdsJson: Value(jsonEncode(gruppoIds)),
           titolo: Value(titolo),
           categoria: Value(categoria),
           campo: Value(campo),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
@@ -57,7 +58,10 @@ class SchemiTatticiListScreen extends ConsumerWidget {
         : tuttiGliSchemi.whenData(
             (schemi) => schemi
                 .where(
-                  (s) => s.gruppoId == filtroGruppoId || s.gruppoId == null,
+                  (s) => visibileNelGruppoMultiplo(
+                    gruppiDelRecord: s.gruppoIds,
+                    gruppoSelezionato: filtroGruppoId,
+                  ),
                 )
                 .toList(),
           );

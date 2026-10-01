@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -253,7 +253,13 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(partiteTable, partiteTable.gruppoId);
         }
         if (!await _hasColumn(m, 'schemi_tattici_table', 'gruppo_id')) {
-          await m.addColumn(schemiTatticiTable, schemiTatticiTable.gruppoId);
+          // Colonna rimossa in v23 -> v24 (sostituita da
+          // gruppo_ids_json): SQL diretto invece di
+          // schemiTatticiTable.gruppoId, che non esiste piu' nel
+          // modello Drift attuale.
+          await m.database.customStatement(
+            'ALTER TABLE schemi_tattici_table ADD COLUMN gruppo_id TEXT',
+          );
         }
       }
       // v20 -> v21: gare del nuoto (evento di calendario, come la partita
@@ -274,6 +280,24 @@ class AppDatabase extends _$AppDatabase {
       if (from < 23) {
         if (!await _hasColumn(m, 'tempi_gara_table', 'gara_id')) {
           await m.addColumn(tempiGaraTable, tempiGaraTable.garaId);
+        }
+      }
+      // v23 -> v24: uno schema tattico puo' appartenere a piu' gruppi
+      // (prima un solo `gruppo_id` nullable) — sostituito da un elenco
+      // JSON di id, stesso schema di [ClubTable.categorieJson]. La
+      // cache si ripopola al prossimo refresh, nessun backfill locale
+      // necessario.
+      if (from < 24) {
+        if (!await _hasColumn(m, 'schemi_tattici_table', 'gruppo_ids_json')) {
+          await m.addColumn(
+            schemiTatticiTable,
+            schemiTatticiTable.gruppoIdsJson,
+          );
+        }
+        if (await _hasColumn(m, 'schemi_tattici_table', 'gruppo_id')) {
+          await m.database.customStatement(
+            'ALTER TABLE schemi_tattici_table DROP COLUMN gruppo_id',
+          );
         }
       }
     },

@@ -29,7 +29,7 @@ class SchemaTattico {
   const SchemaTattico({
     required this.id,
     required this.clubId,
-    this.gruppoId,
+    this.gruppoIds = const [],
     required this.titolo,
     required this.categoria,
     required this.campo,
@@ -42,10 +42,10 @@ class SchemaTattico {
   final String id;
   final String clubId;
 
-  /// Gruppo di allenamento (squadra) a cui appartiene — null se
+  /// Gruppi di allenamento (squadre) a cui appartiene — lista vuota se
   /// condiviso con tutto il club. Da non confondere con [categoria]
   /// (il tipo di azione tattica, es. "Superiorità").
-  final String? gruppoId;
+  final List<String> gruppoIds;
   final String titolo;
 
   /// Gruppo libero scelto dall'allenatore (es. "Transizioni",
