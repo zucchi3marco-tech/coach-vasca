@@ -15,6 +15,7 @@ import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
+import '../data/allenamenti_repository.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/riordino_serie.dart';
