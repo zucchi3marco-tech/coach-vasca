@@ -65,4 +65,57 @@ void main() {
       expect(serie, hasLength(3));
     });
   });
+
+  group('parseSerieRapida — piramide con giri', () {
+    test('2 giri: r1 tra le distanze, r2 solo tra un giro e l\'altro', () {
+      final serie = parseSerieRapida('2x(50-100-200-100-50) sl r15 r30');
+      expect(serie, hasLength(10));
+      expect(serie!.map((s) => s.distanzaM), [
+        50,
+        100,
+        200,
+        100,
+        50,
+        50,
+        100,
+        200,
+        100,
+        50,
+      ]);
+      expect(serie.every((s) => s.ripetute == 1), isTrue);
+      expect(serie.every((s) => s.stile == 'libero'), isTrue);
+      // Dentro ogni giro: r1 su tutte tranne l'ultima distanza del giro.
+      expect(serie.sublist(0, 4).every((s) => s.recuperoS == 15), isTrue);
+      // Ultima distanza del primo giro (non l'ultimo giro): r2.
+      expect(serie[4].recuperoS, 30);
+      expect(serie.sublist(5, 9).every((s) => s.recuperoS == 15), isTrue);
+      // Ultima distanza dell'ultimo giro: r1, come una serie normale.
+      expect(serie[9].recuperoS, 15);
+    });
+
+    test(
+      'un solo giro con due recuperi scritti: sempre r1, anche l\'ultima',
+      () {
+        final serie = parseSerieRapida('50-100-50 sl r15 r30');
+        expect(serie, hasLength(3));
+        expect(serie!.every((s) => s.recuperoS == 15), isTrue);
+      },
+    );
+
+    test('senza il secondo recupero, tra i giri ricade sul primo', () {
+      final serie = parseSerieRapida('2x(50-100-50) r10');
+      expect(serie!.map((s) => s.recuperoS), [10, 10, 10, 10, 10, 10]);
+    });
+
+    test('0 giri o una distanza a zero torna null', () {
+      expect(parseSerieRapida('0x(50-100-50)'), isNull);
+      expect(parseSerieRapida('2x(50-0-50)'), isNull);
+    });
+
+    test('un solo giro senza parentesi resta il formato piramide semplice', () {
+      final serie = parseSerieRapida('50-100-200-100-50 sl r15');
+      expect(serie, hasLength(5));
+      expect(serie!.every((s) => s.recuperoS == 15), isTrue);
+    });
+  });
 }

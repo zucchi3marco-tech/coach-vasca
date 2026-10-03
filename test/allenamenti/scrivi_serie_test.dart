@@ -82,6 +82,7 @@ class _SerieFinta implements SerieRepository {
     double? ripartenzaS,
     String? attrezzatura,
     String? note,
+    String? piramideId,
   }) async {
     if (errore != null) throw errore!;
     create.add({

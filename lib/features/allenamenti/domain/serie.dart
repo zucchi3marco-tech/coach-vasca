@@ -15,6 +15,7 @@ class Serie {
     this.ripartenzaS,
     this.attrezzatura,
     this.note,
+    this.piramideId,
   });
 
   final String id;
@@ -32,6 +33,11 @@ class Serie {
   final double? ripartenzaS;
   final String? attrezzatura;
   final String? note;
+
+  /// Righe della stessa piramide (es. 50-100-200-100-50) condividono
+  /// questo id, per raggrupparle in un'unica riga visiva — null per una
+  /// serie normale.
+  final String? piramideId;
 
   int get distanzaTotaleM => ripetute * distanzaM;
 
@@ -52,6 +58,7 @@ class Serie {
       ripartenzaS: (map['ripartenza_s'] as num?)?.toDouble(),
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
+      piramideId: map['piramide_id'] as String?,
     );
   }
 }

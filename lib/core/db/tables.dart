@@ -193,6 +193,11 @@ class SerieTable extends Table {
   TextColumn get attrezzatura => text().nullable()();
   TextColumn get note => text().nullable()();
 
+  /// Righe della stessa piramide (es. 50-100-200-100-50, dalla barra
+  /// rapida) condividono questo id, per raggrupparle in un'unica riga
+  /// visiva — null per una serie normale.
+  TextColumn get piramideId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

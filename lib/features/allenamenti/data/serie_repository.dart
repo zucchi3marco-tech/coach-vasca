@@ -37,6 +37,7 @@ class SerieRepository {
       ripartenzaS: row.ripartenzaS,
       attrezzatura: row.attrezzatura,
       note: row.note,
+      piramideId: row.piramideId,
     );
   }
 
@@ -57,6 +58,7 @@ class SerieRepository {
       ripartenzaS: (map['ripartenza_s'] as num?)?.toDouble(),
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
+      piramideId: map['piramide_id'] as String?,
     );
   }
 
@@ -77,6 +79,7 @@ class SerieRepository {
       ripartenzaS: Value((map['ripartenza_s'] as num?)?.toDouble()),
       attrezzatura: Value(map['attrezzatura'] as String?),
       note: Value(map['note'] as String?),
+      piramideId: Value(map['piramide_id'] as String?),
     );
   }
 
@@ -178,6 +181,7 @@ class SerieRepository {
     double? ripartenzaS,
     String? attrezzatura,
     String? note,
+    String? piramideId,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -195,6 +199,7 @@ class SerieRepository {
       'ripartenza_s': ripartenzaS,
       'attrezzatura': attrezzatura,
       'note': note,
+      'piramide_id': piramideId,
     };
     try {
       final row = await _client.from('serie').insert(payload).select().single();

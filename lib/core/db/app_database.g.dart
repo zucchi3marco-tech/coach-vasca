@@ -5105,6 +5105,17 @@ class $SerieTableTable extends SerieTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _piramideIdMeta = const VerificationMeta(
+    'piramideId',
+  );
+  @override
+  late final GeneratedColumn<String> piramideId = GeneratedColumn<String>(
+    'piramide_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5122,6 +5133,7 @@ class $SerieTableTable extends SerieTable
     ripartenzaS,
     attrezzatura,
     note,
+    piramideId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5252,6 +5264,12 @@ class $SerieTableTable extends SerieTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('piramide_id')) {
+      context.handle(
+        _piramideIdMeta,
+        piramideId.isAcceptableOrUnknown(data['piramide_id']!, _piramideIdMeta),
+      );
+    }
     return context;
   }
 
@@ -5321,6 +5339,10 @@ class $SerieTableTable extends SerieTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      piramideId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}piramide_id'],
+      ),
     );
   }
 
@@ -5346,6 +5368,11 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
   final double? ripartenzaS;
   final String? attrezzatura;
   final String? note;
+
+  /// Righe della stessa piramide (es. 50-100-200-100-50, dalla barra
+  /// rapida) condividono questo id, per raggrupparle in un'unica riga
+  /// visiva — null per una serie normale.
+  final String? piramideId;
   const SerieTableData({
     required this.id,
     required this.allenamentoId,
@@ -5362,6 +5389,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     this.ripartenzaS,
     this.attrezzatura,
     this.note,
+    this.piramideId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5393,6 +5421,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || piramideId != null) {
+      map['piramide_id'] = Variable<String>(piramideId);
+    }
     return map;
   }
 
@@ -5421,6 +5452,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           ? const Value.absent()
           : Value(attrezzatura),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      piramideId: piramideId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(piramideId),
     );
   }
 
@@ -5445,6 +5479,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       ripartenzaS: serializer.fromJson<double?>(json['ripartenzaS']),
       attrezzatura: serializer.fromJson<String?>(json['attrezzatura']),
       note: serializer.fromJson<String?>(json['note']),
+      piramideId: serializer.fromJson<String?>(json['piramideId']),
     );
   }
   @override
@@ -5466,6 +5501,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       'ripartenzaS': serializer.toJson<double?>(ripartenzaS),
       'attrezzatura': serializer.toJson<String?>(attrezzatura),
       'note': serializer.toJson<String?>(note),
+      'piramideId': serializer.toJson<String?>(piramideId),
     };
   }
 
@@ -5485,6 +5521,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     Value<double?> ripartenzaS = const Value.absent(),
     Value<String?> attrezzatura = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<String?> piramideId = const Value.absent(),
   }) => SerieTableData(
     id: id ?? this.id,
     allenamentoId: allenamentoId ?? this.allenamentoId,
@@ -5503,6 +5540,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     ripartenzaS: ripartenzaS.present ? ripartenzaS.value : this.ripartenzaS,
     attrezzatura: attrezzatura.present ? attrezzatura.value : this.attrezzatura,
     note: note.present ? note.value : this.note,
+    piramideId: piramideId.present ? piramideId.value : this.piramideId,
   );
   SerieTableData copyWithCompanion(SerieTableCompanion data) {
     return SerieTableData(
@@ -5531,6 +5569,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           ? data.attrezzatura.value
           : this.attrezzatura,
       note: data.note.present ? data.note.value : this.note,
+      piramideId: data.piramideId.present
+          ? data.piramideId.value
+          : this.piramideId,
     );
   }
 
@@ -5551,7 +5592,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           ..write('recuperoS: $recuperoS, ')
           ..write('ripartenzaS: $ripartenzaS, ')
           ..write('attrezzatura: $attrezzatura, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('piramideId: $piramideId')
           ..write(')'))
         .toString();
   }
@@ -5573,6 +5615,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     ripartenzaS,
     attrezzatura,
     note,
+    piramideId,
   );
   @override
   bool operator ==(Object other) =>
@@ -5592,7 +5635,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           other.recuperoS == this.recuperoS &&
           other.ripartenzaS == this.ripartenzaS &&
           other.attrezzatura == this.attrezzatura &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.piramideId == this.piramideId);
 }
 
 class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
@@ -5611,6 +5655,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
   final Value<double?> ripartenzaS;
   final Value<String?> attrezzatura;
   final Value<String?> note;
+  final Value<String?> piramideId;
   final Value<int> rowid;
   const SerieTableCompanion({
     this.id = const Value.absent(),
@@ -5628,6 +5673,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     this.ripartenzaS = const Value.absent(),
     this.attrezzatura = const Value.absent(),
     this.note = const Value.absent(),
+    this.piramideId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SerieTableCompanion.insert({
@@ -5646,6 +5692,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     this.ripartenzaS = const Value.absent(),
     this.attrezzatura = const Value.absent(),
     this.note = const Value.absent(),
+    this.piramideId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        allenamentoId = Value(allenamentoId),
@@ -5672,6 +5719,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Expression<double>? ripartenzaS,
     Expression<String>? attrezzatura,
     Expression<String>? note,
+    Expression<String>? piramideId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5690,6 +5738,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       if (ripartenzaS != null) 'ripartenza_s': ripartenzaS,
       if (attrezzatura != null) 'attrezzatura': attrezzatura,
       if (note != null) 'note': note,
+      if (piramideId != null) 'piramide_id': piramideId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5710,6 +5759,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Value<double?>? ripartenzaS,
     Value<String?>? attrezzatura,
     Value<String?>? note,
+    Value<String?>? piramideId,
     Value<int>? rowid,
   }) {
     return SerieTableCompanion(
@@ -5728,6 +5778,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       ripartenzaS: ripartenzaS ?? this.ripartenzaS,
       attrezzatura: attrezzatura ?? this.attrezzatura,
       note: note ?? this.note,
+      piramideId: piramideId ?? this.piramideId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5780,6 +5831,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (piramideId.present) {
+      map['piramide_id'] = Variable<String>(piramideId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5804,6 +5858,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
           ..write('ripartenzaS: $ripartenzaS, ')
           ..write('attrezzatura: $attrezzatura, ')
           ..write('note: $note, ')
+          ..write('piramideId: $piramideId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13456,6 +13511,7 @@ typedef $$SerieTableTableCreateCompanionBuilder = SerieTableCompanion Function({
   Value<double?> ripartenzaS,
   Value<String?> attrezzatura,
   Value<String?> note,
+  Value<String?> piramideId,
   Value<int> rowid,
 });
 typedef $$SerieTableTableUpdateCompanionBuilder = SerieTableCompanion Function({
@@ -13474,6 +13530,7 @@ typedef $$SerieTableTableUpdateCompanionBuilder = SerieTableCompanion Function({
   Value<double?> ripartenzaS,
   Value<String?> attrezzatura,
   Value<String?> note,
+  Value<String?> piramideId,
   Value<int> rowid,
 });
 
@@ -13558,6 +13615,11 @@ class $$SerieTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get piramideId => $composableBuilder(
+    column: $table.piramideId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13645,6 +13707,11 @@ class $$SerieTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get piramideId => $composableBuilder(
+    column: $table.piramideId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SerieTableTableAnnotationComposer
@@ -13710,6 +13777,11 @@ class $$SerieTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get piramideId => $composableBuilder(
+    column: $table.piramideId,
+    builder: (column) => column,
+  );
 }
 
 class $$SerieTableTableTableManager
@@ -13758,6 +13830,7 @@ class $$SerieTableTableTableManager
                 Value<double?> ripartenzaS = const Value.absent(),
                 Value<String?> attrezzatura = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> piramideId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieTableCompanion(
                 id: id,
@@ -13775,6 +13848,7 @@ class $$SerieTableTableTableManager
                 ripartenzaS: ripartenzaS,
                 attrezzatura: attrezzatura,
                 note: note,
+                piramideId: piramideId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13794,6 +13868,7 @@ class $$SerieTableTableTableManager
                 Value<double?> ripartenzaS = const Value.absent(),
                 Value<String?> attrezzatura = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> piramideId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieTableCompanion.insert(
                 id: id,
@@ -13811,6 +13886,7 @@ class $$SerieTableTableTableManager
                 ripartenzaS: ripartenzaS,
                 attrezzatura: attrezzatura,
                 note: note,
+                piramideId: piramideId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

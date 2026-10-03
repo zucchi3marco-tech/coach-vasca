@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
@@ -24,6 +25,7 @@ import '../domain/serie_rapida.dart';
 import 'allenamento_form_screen.dart';
 import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
+import 'riga_gruppo_piramide.dart';
 import 'riga_serie.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'scrivi_serie_screen.dart';
@@ -94,13 +96,16 @@ class _AllenamentoDetailScreenState
   /// distanza diversa per serie, vedi [parseSerieRapida]): l'ordine si
   /// calcola una sola volta prima del giro, non ad ogni iterazione — il
   /// provider locale potrebbe non essersi ancora aggiornato fra una
-  /// creazione e la successiva.
+  /// creazione e la successiva. Più di una serie dalla stessa riga
+  /// condividono un `piramideId`, per restare raggruppate in un'unica
+  /// riga visiva (vedi `raggruppaPerPiramide`).
   Future<void> _aggiungiRapida(
     List<SerieRapida> parsedList,
     String blocco,
   ) async {
     try {
       final repository = ref.read(serieRepositoryProvider);
+      final piramideId = parsedList.length > 1 ? const Uuid().v4() : null;
       var ordine = _ordineSuccessivo();
       for (final parsed in parsedList) {
         await repository.createSerie(
@@ -114,6 +119,7 @@ class _AllenamentoDetailScreenState
           zona: parsed.zona,
           passoObiettivoS: parsed.passoObiettivoS,
           recuperoS: parsed.recuperoS,
+          piramideId: piramideId,
         );
         ordine++;
       }
@@ -155,30 +161,41 @@ class _AllenamentoDetailScreenState
     }
   }
 
-  /// `serie` è già ordinata come mostrata a schermo; `newIndex` arriva già
-  /// corretto da `onReorderItem`.
-  Future<void> _riordinaSerie(List<Serie> serie, int da, int a) =>
-      _scriviOrdine(spostaSerie(serie, da, a));
+  /// `gruppi` è già nell'ordine mostrato a schermo (una serie normale è
+  /// un gruppo da sola, una piramide un gruppo di più righe, vedi
+  /// `raggruppaPerPiramide`); `newIndex` arriva già corretto da
+  /// `onReorderItem`. Spostare un gruppo lo muove intero, come un solo
+  /// elemento dell'elenco.
+  Future<void> _riordinaGruppi(List<List<Serie>> gruppi, int da, int a) {
+    final riordinati = spostaSerie(gruppi, da, a);
+    return _scriviOrdine([for (final g in riordinati) ...g]);
+  }
 
-  Future<void> _azione(List<Serie> serie, int index, AzioneSerie azione) async {
-    final s = serie[index];
+  Future<void> _azioneGruppo(
+    List<List<Serie>> gruppi,
+    int index,
+    AzioneSerie azione,
+  ) async {
+    final gruppo = gruppi[index];
     switch (azione) {
       case AzioneSerie.su:
-        await _riordinaSerie(serie, index, index - 1);
+        await _riordinaGruppi(gruppi, index, index - 1);
       case AzioneSerie.giu:
-        await _riordinaSerie(serie, index, index + 1);
+        await _riordinaGruppi(gruppi, index, index + 1);
       case AzioneSerie.cambiaBlocco:
-        final scelto = await _scegliBlocco(s.blocco);
-        if (scelto == null || scelto == s.blocco) return;
+        final scelto = await _scegliBlocco(gruppo.first.blocco);
+        if (scelto == null || scelto == gruppo.first.blocco) return;
         try {
-          await _aggiornaSerie(s, blocco: scelto);
+          for (final s in gruppo) {
+            await _aggiornaSerie(s, blocco: scelto);
+          }
         } catch (e) {
           _errore(e);
         }
       case AzioneSerie.duplica:
-        await _duplica(serie, index);
+        await _duplicaGruppo(gruppi, index);
       case AzioneSerie.elimina:
-        await _elimina(serie, index);
+        await _eliminaGruppo(gruppi, index);
     }
   }
 
@@ -216,20 +233,23 @@ class _AllenamentoDetailScreenState
     );
   }
 
-  /// La copia va subito dopo l'originale: le serie successive slittano di
-  /// una posizione (partendo dall'ultima, così non ci sono mai due serie
-  /// con lo stesso numero).
-  Future<void> _duplica(List<Serie> serie, int index) async {
-    final s = serie[index];
+  /// La copia (tutte le righe del gruppo, con un nuovo `piramideId`
+  /// condiviso se è una piramide) va subito dopo l'originale: le righe
+  /// successive slittano di conseguenza. Le nuove righe si creano con un
+  /// ordine provvisorio (in fondo), poi `_scriviOrdine` riscrive tutto
+  /// l'elenco nell'ordine finale voluto, toccando solo chi deve cambiare.
+  Future<void> _duplicaGruppo(List<List<Serie>> gruppi, int index) async {
+    final gruppo = gruppi[index];
+    final nuovoPiramideId = gruppo.length > 1 ? const Uuid().v4() : null;
     try {
-      for (var i = serie.length - 1; i > index; i--) {
-        await _aggiornaSerie(serie[i], ordine: i + 2);
-      }
-      await ref
-          .read(serieRepositoryProvider)
-          .createSerie(
+      final repository = ref.read(serieRepositoryProvider);
+      final nuove = <Serie>[];
+      var ordineProvvisorio = _ordineSuccessivo();
+      for (final s in gruppo) {
+        nuove.add(
+          await repository.createSerie(
             allenamentoId: s.allenamentoId,
-            ordine: index + 2,
+            ordine: ordineProvvisorio,
             blocco: s.blocco,
             ripetute: s.ripetute,
             distanzaM: s.distanzaM,
@@ -241,21 +261,37 @@ class _AllenamentoDetailScreenState
             ripartenzaS: s.ripartenzaS,
             attrezzatura: s.attrezzatura,
             note: s.note,
-          );
+            piramideId: nuovoPiramideId,
+          ),
+        );
+        ordineProvvisorio++;
+      }
+      await _scriviOrdine([
+        for (var i = 0; i <= index; i++) ...gruppi[i],
+        ...nuove,
+        for (var i = index + 1; i < gruppi.length; i++) ...gruppi[i],
+      ]);
     } catch (e) {
       _errore(e);
     }
   }
 
-  Future<void> _elimina(List<Serie> serie, int index) async {
-    final s = serie[index];
+  Future<void> _eliminaGruppo(List<List<Serie>> gruppi, int index) async {
+    final gruppo = gruppi[index];
+    final piramide = gruppo.length > 1;
+    final prima = gruppo.first;
     final conferma = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Elimina serie'),
+        title: Text(piramide ? 'Eliminare la piramide?' : 'Elimina serie'),
         content: Text(
-          'Eliminare ${s.ripetute}×${s.distanzaM} ${labelStile(s.stile)}? '
-          "L'operazione non si può annullare.",
+          piramide
+              ? 'Eliminare le ${gruppo.length} distanze di questa piramide '
+                    '(${gruppo.map((s) => s.distanzaM).join('-')})? '
+                    "L'operazione non si può annullare."
+              : 'Eliminare ${prima.ripetute}×${prima.distanzaM} '
+                    '${labelStile(prima.stile)}? '
+                    "L'operazione non si può annullare.",
         ),
         actions: [
           TextButton(
@@ -271,10 +307,16 @@ class _AllenamentoDetailScreenState
     );
     if (conferma != true) return;
     try {
-      await ref.read(serieRepositoryProvider).deleteSerie(s.id);
+      final repository = ref.read(serieRepositoryProvider);
+      for (final s in gruppo) {
+        await repository.deleteSerie(s.id);
+      }
       // Il numero d'ordine non deve avere buchi: la prossima serie
       // aggiunta prende lunghezza+1.
-      final restanti = [...serie]..removeAt(index);
+      final restanti = [
+        for (var i = 0; i < gruppi.length; i++)
+          if (i != index) ...gruppi[i],
+      ];
       await _scriviOrdine(restanti);
     } catch (e) {
       _errore(e);
@@ -460,7 +502,10 @@ class _AllenamentoDetailScreenState
             );
           }
           // Testata e riepilogo stanno DENTRO l'elenco (header): scorrono
-          // via e le serie occupano lo schermo.
+          // via e le serie occupano lo schermo. Una piramide (più righe
+          // con lo stesso piramideId) è un solo elemento dell'elenco, non
+          // una per distanza — si trascina, duplica ed elimina insieme.
+          final gruppi = raggruppaPerPiramide(serie);
           return ReorderableListView.builder(
             buildDefaultDragHandles: false,
             padding: const EdgeInsets.only(bottom: 88),
@@ -472,27 +517,38 @@ class _AllenamentoDetailScreenState
                 const SizedBox(height: AppSpacing.s12),
               ],
             ),
-            itemCount: serie.length,
-            onReorderItem: (da, a) => _riordinaSerie(serie, da, a),
+            itemCount: gruppi.length,
+            onReorderItem: (da, a) => _riordinaGruppi(gruppi, da, a),
             itemBuilder: (context, index) {
-              final s = serie[index];
-              return Padding(
-                key: ValueKey(s.id),
-                padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                child: RigaSerie(
-                  serie: s,
-                  primo: index == 0,
-                  ultimo: index == serie.length - 1,
-                  maniglia: ReorderableDragStartListener(
-                    index: index,
-                    child: Icon(
-                      Icons.drag_indicator,
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  onApri: () => _apriSerieCompleta(serie: s),
-                  onAzione: (azione) => _azione(serie, index, azione),
+              final gruppo = gruppi[index];
+              final maniglia = ReorderableDragStartListener(
+                index: index,
+                child: Icon(
+                  Icons.drag_indicator,
+                  color: colori.testoSecondario,
                 ),
+              );
+              return Padding(
+                key: ValueKey(gruppo.first.id),
+                padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                child: gruppo.length == 1
+                    ? RigaSerie(
+                        serie: gruppo.single,
+                        primo: index == 0,
+                        ultimo: index == gruppi.length - 1,
+                        maniglia: maniglia,
+                        onApri: () => _apriSerieCompleta(serie: gruppo.single),
+                        onAzione: (azione) =>
+                            _azioneGruppo(gruppi, index, azione),
+                      )
+                    : RigaGruppoPiramide(
+                        gruppo: gruppo,
+                        primo: index == 0,
+                        ultimo: index == gruppi.length - 1,
+                        maniglia: maniglia,
+                        onAzione: (azione) =>
+                            _azioneGruppo(gruppi, index, azione),
+                      ),
               );
             },
           );

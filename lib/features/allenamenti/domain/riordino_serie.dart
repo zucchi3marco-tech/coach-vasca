@@ -1,15 +1,37 @@
 import 'serie.dart';
 
-/// Sposta la serie in posizione [da] alla posizione [a] (indici dell'elenco
-/// come mostrato a schermo). [a] fuori dai limiti viene riportato al primo
-/// o all'ultimo posto; se non cambia nulla si restituisce lo stesso ordine.
-List<Serie> spostaSerie(List<Serie> serie, int da, int a) {
+/// Sposta l'elemento in posizione [da] alla posizione [a] (indici
+/// dell'elenco come mostrato a schermo). [a] fuori dai limiti viene
+/// riportato al primo o all'ultimo posto; se non cambia nulla si
+/// restituisce lo stesso ordine. Generico: usato sia per una `List<Serie>`
+/// sia per una `List<List<Serie>>` (gruppi piramide), così spostare un
+/// gruppo lo muove come un unico elemento.
+List<T> spostaSerie<T>(List<T> serie, int da, int a) {
   if (da < 0 || da >= serie.length) return List.of(serie);
   final destinazione = a.clamp(0, serie.length - 1);
-  final riordinate = List<Serie>.of(serie);
+  final riordinate = List<T>.of(serie);
   final spostata = riordinate.removeAt(da);
   riordinate.insert(destinazione, spostata);
   return riordinate;
+}
+
+/// Accorpa righe **consecutive** con lo stesso [Serie.piramideId] non
+/// nullo in un unico gruppo (una piramide, es. 50-100-200-100-50): una
+/// riga normale (`piramideId == null`) è un gruppo da sola. [serie] deve
+/// essere già nell'ordine mostrato a schermo (per `ordine`).
+List<List<Serie>> raggruppaPerPiramide(List<Serie> serie) {
+  final gruppi = <List<Serie>>[];
+  for (final s in serie) {
+    final ultimo = gruppi.isNotEmpty ? gruppi.last : null;
+    if (s.piramideId != null &&
+        ultimo != null &&
+        ultimo.first.piramideId == s.piramideId) {
+      ultimo.add(s);
+    } else {
+      gruppi.add([s]);
+    }
+  }
+  return gruppi;
 }
 
 /// Le serie che, nell'elenco [ordinate] (già nell'ordine voluto), non hanno

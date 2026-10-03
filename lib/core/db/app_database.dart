@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -298,6 +298,14 @@ class AppDatabase extends _$AppDatabase {
           await m.database.customStatement(
             'ALTER TABLE schemi_tattici_table DROP COLUMN gruppo_id',
           );
+        }
+      }
+      // v24 -> v25: le righe di una serie piramidale (es. 50-100-200-
+      // 100-50, dalla barra rapida) condividono un piramide_id, per
+      // raggrupparle in un'unica riga visiva.
+      if (from < 25) {
+        if (!await _hasColumn(m, 'serie_table', 'piramide_id')) {
+          await m.addColumn(serieTable, serieTable.piramideId);
         }
       }
     },
