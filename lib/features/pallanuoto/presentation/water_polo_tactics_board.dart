@@ -650,7 +650,12 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                                         painter: _CampoCompletoPainter(
                                           colori: colori,
                                           campo: widget.campo,
-                                          frecce: widget.passoFantasma!.frecce,
+                                          // Il fantasma mostra solo i
+                                          // giocatori: le frecce sono
+                                          // del passo in cui sono state
+                                          // disegnate, non devono
+                                          // restare visibili dopo.
+                                          frecce: const [],
                                           disegnaCampo: false,
                                         ),
                                       ),

@@ -150,10 +150,15 @@ class _SchemaTatticoFormScreenState
   void _aggiungiPasso() {
     if (_passi.length >= SchemaTattico.massimoPassi) return;
     setState(() {
-      // Il nuovo passo parte da una copia dell'attuale: di solito il
-      // passo successivo (es. le posizioni finali) riparte da dove sta
-      // il precedente (es. le posizioni di partenza), non da zero.
-      _passi.add(_passi[_passoAttuale]);
+      // Il nuovo passo parte dalle posizioni dei giocatori dell'attuale
+      // (di solito il passo successivo riparte da dove sta il
+      // precedente, non da zero), ma senza le sue frecce: sono
+      // annotazioni di quel singolo passo, non devono restare a
+      // descrivere uno spostamento vecchio nei passi successivi.
+      _passi.add((
+        giocatori: _passi[_passoAttuale].giocatori,
+        frecce: const [],
+      ));
       _passoAttuale = _passi.length - 1;
     });
   }
