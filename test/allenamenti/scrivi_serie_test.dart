@@ -17,6 +17,7 @@ class _GenerazioneFinta implements GenerazioneAiRepository {
   @override
   Future<SchedaGenerata> generaDaDettatura({
     required String testo,
+    required String clubId,
     String? gruppo,
   }) async {
     if (errore != null) throw errore!;

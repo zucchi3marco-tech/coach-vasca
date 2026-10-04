@@ -2,19 +2,42 @@
 //
 // Riceve il testo dettato a voce dal coach (trascritto nel browser dalla
 // Web Speech API, gratuita — questa funzione non tocca l'audio) e chiede
-// a Gemini di STRUTTURARLO in una scheda, non di INVENTARLA come fa
+// al provider AI di STRUTTURARLO in una scheda, non di INVENTARLA come fa
 // `genera-allenamento`: qui il compito è trascrivere fedelmente quello
 // che è stato detto, riconoscendo il gergo del nuoto parlato (numeri,
 // stili, zone, recuperi), non proporre una programmazione.
 // Stessa forma di output di `genera-allenamento` (SchedaGenerata),
 // rivalidata qui prima di rispondere: l'app riceve sempre una scheda con
 // campi noti o un errore esplicito, mai testo libero da interpretare.
-// Se in futuro si cambia provider AI, si riscrive solo questo file: il
-// contratto verso l'app (corpo della richiesta e { scheda } in risposta)
-// resta invariato.
+//
+// RIPROGETTAZIONE AI, FASE 2: provider passato da Gemini a OpenAI (solo
+// qui, solo l'interpretazione del testo — la trascrizione vocale resta
+// quella gratuita del browser). `chiamaGemini` resta nel file, spenta
+// (PROVIDER_ATTIVO = "openai"): se qualcosa con OpenAI non funziona, si
+// torna a Gemini cambiando quella sola costante e redistribuendo.
+//
+// Se in futuro si cambia ancora provider, si riscrive solo questo file:
+// il contratto verso l'app (corpo della richiesta e { scheda } in
+// risposta) resta invariato. Nessuna cartella `_shared/` in questo
+// repo (vedi `tipo_lavoro.dart`): l'infrastruttura ai_usage/tetto
+// settimanale qui sotto va risincronizzata a mano quando arriverà
+// anche in `genera-allenamento`/`genera-settimana` (FASE 3).
+
+const PROVIDER_ATTIVO: "openai" | "gemini" = "openai";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-3.6-flash";
+
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const TEXT_MODEL = Deno.env.get("TEXT_MODEL") ?? "gpt-4o-mini";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+// Tetto di richieste AI (qualunque funzione scriva su ai_usage, non solo
+// questa) per persona a settimana — numero concordato col coach,
+// modificabile qui se serve cambiarlo.
+const LIMITE_SETTIMANALE_PER_PERSONA = 30;
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
 const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
@@ -52,6 +75,7 @@ interface SchedaGenerata {
 interface RichiestaDettatura {
   testo?: string;
   gruppo?: string | null;
+  clubId?: string;
 }
 
 // Il browser (Flutter Web) chiama questa funzione da un'origine diversa
@@ -73,8 +97,8 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 // Glossario del gergo parlato più comune → i codici che il database
-// riconosce: senza questo, "trazioni"/"pull boy"/"crawl" arriverebbero a
-// Gemini senza un ponte esplicito verso gli enum consentiti, con più
+// riconosce: senza questo, "trazioni"/"pull boy"/"crawl" arriverebbero al
+// provider senza un ponte esplicito verso gli enum consentiti, con più
 // probabilità che li indovini male o che li lasci fuori.
 const GLOSSARIO = `
 Corrispondenze fra gergo parlato e valori consentiti (usa il buon senso
@@ -137,7 +161,9 @@ function costruisciPrompt(r: RichiestaDettatura): string {
     .join("\n");
 }
 
-const responseSchema = {
+// Schema "stile Gemini" (responseSchema di generateContent): tipi in
+// MAIUSCOLO, i campi facoltativi semplicemente non sono in `required`.
+const geminiResponseSchema = {
   type: "OBJECT",
   properties: {
     titolo: { type: "STRING" },
@@ -165,9 +191,55 @@ const responseSchema = {
   required: ["titolo", "serie"],
 };
 
-/// Rivalida la scheda restituita dal modello: anche con responseSchema
-/// impostato, il provider può comunque restituire un JSON che non rispetta
-/// lo schema (bug del modello, cambio di comportamento, ecc.), quindi non
+// Schema JSON standard per gli "structured outputs" di OpenAI
+// (response_format json_schema, strict: true): a differenza di Gemini,
+// in modalità strict OGNI proprietà deve stare in `required` e non può
+// esistere un campo "davvero opzionale" — i campi facoltativi diventano
+// nullable (`type: [tipo, "null"]`) invece di assenti.
+const openAiResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    titolo: { type: "string" },
+    note: { type: ["string", "null"] },
+    serie: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          ordine: { type: "integer" },
+          blocco: { type: "string", enum: BLOCCHI },
+          ripetute: { type: "integer" },
+          distanzaM: { type: "integer" },
+          stile: { type: "string", enum: STILI },
+          esecuzione: { type: "string", enum: ESECUZIONI },
+          zona: { type: ["string", "null"], enum: [...ZONE, null] },
+          recuperoS: { type: ["integer", "null"] },
+          attrezzatura: { type: ["string", "null"] },
+          note: { type: ["string", "null"] },
+        },
+        required: [
+          "ordine",
+          "blocco",
+          "ripetute",
+          "distanzaM",
+          "stile",
+          "esecuzione",
+          "zona",
+          "recuperoS",
+          "attrezzatura",
+          "note",
+        ],
+      },
+    },
+  },
+  required: ["titolo", "note", "serie"],
+};
+
+/// Rivalida la scheda restituita dal modello: anche con lo schema
+/// impostato, il provider può comunque restituire un JSON che non lo
+/// rispetta (bug del modello, cambio di comportamento, ecc.), quindi non
 /// ci fidiamo alla cieca.
 function validaScheda(dati: unknown): SchedaGenerata {
   if (typeof dati !== "object" || dati === null) {
@@ -258,7 +330,7 @@ function validaScheda(dati: unknown): SchedaGenerata {
 // del piano gratuito, modello momentaneamente sovraccarico) in un
 // messaggio comprensibile, e in un messaggio generico altrimenti — mai
 // il JSON grezzo mostrato al coach.
-function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
+function messaggioErroreGemini(status: number, corpoGrezzo: string): string {
   let statoGemini: string | undefined;
   try {
     const corpo = JSON.parse(corpoGrezzo);
@@ -278,6 +350,210 @@ function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
     "Riprova tra qualche istante.";
 }
 
+function messaggioErroreOpenAi(status: number, corpoGrezzo: string): string {
+  let codiceOpenAi: string | undefined;
+  try {
+    const corpo = JSON.parse(corpoGrezzo);
+    codiceOpenAi = corpo?.error?.code ?? corpo?.error?.type;
+  } catch {
+    // corpo non JSON: si usa il messaggio generico sotto.
+  }
+  if (status === 429 || codiceOpenAi === "rate_limit_exceeded") {
+    return "Troppe richieste al servizio AI in poco tempo. Aspetta un minuto " +
+      "e riprova.";
+  }
+  if (status === 503 || status === 500) {
+    return "Il servizio AI è momentaneamente sovraccarico. Riprova tra " +
+      "qualche istante.";
+  }
+  return `Il servizio AI non ha risposto correttamente (errore ${status}). ` +
+    "Riprova tra qualche istante.";
+}
+
+type RispostaProvider =
+  | { ok: true; testoJson: string; gettoni: number | null }
+  | { ok: false; errorMessage: string };
+
+// Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo,
+// OpenAI 429/500/503 per gli stessi motivi — senza un ritentativo qui,
+// questi picchi si vedevano come "il generatore non funziona" lato
+// coach, pur essendo transitori.
+const TENTATIVI_MASSIMI = 3;
+const ATTESE_MS = [1500, 3000];
+
+async function chiamaGemini(prompt: string): Promise<RispostaProvider> {
+  if (!GEMINI_API_KEY) {
+    return { ok: false, errorMessage: "GEMINI_API_KEY non configurata sul server" };
+  }
+
+  let risposta: Response | undefined;
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: geminiResponseSchema,
+            },
+          }),
+        },
+      );
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    const daRiprovare = risposta?.status === 503 || erroreRete !== undefined;
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
+    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  }
+
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    const dettaglio = await risposta.text();
+    return { ok: false, errorMessage: messaggioErroreGemini(risposta.status, dettaglio) };
+  }
+
+  const dati = await risposta.json();
+  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return { ok: true, testoJson, gettoni: dati?.usageMetadata?.totalTokenCount ?? null };
+}
+
+async function chiamaOpenAi(prompt: string): Promise<RispostaProvider> {
+  if (!OPENAI_API_KEY) {
+    return { ok: false, errorMessage: "OPENAI_API_KEY non configurata sul server" };
+  }
+
+  let risposta: Response | undefined;
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: TEXT_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "scheda_generata",
+              strict: true,
+              schema: openAiResponseSchema,
+            },
+          },
+        }),
+      });
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    const daRiprovare =
+      (risposta !== undefined && [429, 500, 503].includes(risposta.status)) ||
+      erroreRete !== undefined;
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
+    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  }
+
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    const dettaglio = await risposta.text();
+    return { ok: false, errorMessage: messaggioErroreOpenAi(risposta.status, dettaglio) };
+  }
+
+  const dati = await risposta.json();
+  const testoJson = dati?.choices?.[0]?.message?.content ?? "";
+  return { ok: true, testoJson, gettoni: dati?.usage?.total_tokens ?? null };
+}
+
+/// Decodifica il payload del JWT (già verificato dal gateway Supabase
+/// prima che la richiesta arrivasse qui: non serve riverificarlo) per
+/// sapere chi ha chiamato — serve per il tetto settimanale e per
+/// ai_usage. `null` se l'header manca o non è un JWT valido.
+function idUtenteDaRichiesta(req: Request): string | null {
+  const header = req.headers.get("Authorization");
+  if (!header?.startsWith("Bearer ")) return null;
+  const jwt = header.slice("Bearer ".length);
+  const parti = jwt.split(".");
+  if (parti.length !== 3) return null;
+  try {
+    const payload = JSON.parse(atob(parti[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/// Quante chiamate AI (qualunque funzione) ha già fatto questo utente
+/// negli ultimi 7 giorni. In caso di errore di rete verso il database
+/// non blocca la dettatura per un problema che non è dell'utente:
+/// torna 0 (fail-open), diversamente da un tetto superato per davvero.
+async function richiesteUltimaSettimana(userId: string): Promise<number> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return 0;
+  const seiGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    const risposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/ai_usage?select=id&user_id=eq.${userId}&creato_il=gte.${seiGiorniFa}`,
+      {
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: "count=exact",
+        },
+      },
+    );
+    const header = risposta.headers.get("content-range");
+    const totale = header?.split("/")[1];
+    if (totale && totale !== "*") return Number(totale);
+    const righe = await risposta.json();
+    return Array.isArray(righe) ? righe.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/// Registra la chiamata — se fallisce, lo scrive solo nei log: non deve
+/// far fallire una dettatura già andata a buon fine.
+async function registraUsoAi(
+  params: { clubId: string; userId: string; modello: string; gettoni: number | null },
+): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        club_id: params.clubId,
+        user_id: params.userId,
+        funzione: "detta-allenamento",
+        modello: params.modello,
+        gettoni: params.gettoni,
+      }),
+    });
+  } catch (errore) {
+    console.error("registraUsoAi fallita:", errore);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -285,13 +561,6 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Metodo non supportato" }, 405);
-  }
-
-  if (!GEMINI_API_KEY) {
-    return jsonResponse(
-      { error: "GEMINI_API_KEY non configurata sul server" },
-      500,
-    );
   }
 
   let richiesta: RichiestaDettatura;
@@ -308,64 +577,34 @@ Deno.serve(async (req) => {
     );
   }
 
+  const userId = idUtenteDaRichiesta(req);
+  if (userId) {
+    const richiesteFatte = await richiesteUltimaSettimana(userId);
+    if (richiesteFatte >= LIMITE_SETTIMANALE_PER_PERSONA) {
+      return jsonResponse(
+        {
+          error: `Hai raggiunto il limite di ${LIMITE_SETTIMANALE_PER_PERSONA} ` +
+            "richieste AI per questa settimana. Riprova la settimana prossima, " +
+            "o scrivi la scheda a mano.",
+        },
+        429,
+      );
+    }
+  }
+
   const prompt = costruisciPrompt(richiesta);
 
-  // Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo
-  // (il messaggio stesso dice "usually temporary, please try again later")
-  // — senza un ritentativo qui, questi picchi si vedevano come "il
-  // generatore non funziona" lato coach, pur essendo transitori.
-  const TENTATIVI_MASSIMI = 3;
-  const ATTESE_MS = [1500, 3000];
+  const risultato = PROVIDER_ATTIVO === "openai"
+    ? await chiamaOpenAi(prompt)
+    : await chiamaGemini(prompt);
 
-  let rispostaGemini: Response | undefined;
-  let erroreRete: unknown;
-  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
-    try {
-      rispostaGemini = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema,
-            },
-          }),
-        },
-      );
-      erroreRete = undefined;
-    } catch (errore) {
-      erroreRete = errore;
-      rispostaGemini = undefined;
-    }
-    const daRiprovare = rispostaGemini?.status === 503 || erroreRete !== undefined;
-    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
-    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  if (!risultato.ok) {
+    return jsonResponse({ error: risultato.errorMessage }, 502);
   }
-
-  if (erroreRete !== undefined || rispostaGemini === undefined) {
-    return jsonResponse(
-      { error: `Impossibile contattare il provider AI: ${erroreRete}` },
-      502,
-    );
-  }
-
-  if (!rispostaGemini.ok) {
-    const dettaglio = await rispostaGemini.text();
-    return jsonResponse(
-      { error: messaggioErroreProvider(rispostaGemini.status, dettaglio) },
-      502,
-    );
-  }
-
-  const dati = await rispostaGemini.json();
-  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
   let schedaGrezza: unknown;
   try {
-    schedaGrezza = JSON.parse(testoJson);
+    schedaGrezza = JSON.parse(risultato.testoJson);
   } catch {
     return jsonResponse(
       { error: "Il provider AI non ha restituito un JSON valido" },
@@ -375,6 +614,14 @@ Deno.serve(async (req) => {
 
   try {
     const scheda = validaScheda(schedaGrezza);
+    if (userId && richiesta.clubId) {
+      await registraUsoAi({
+        clubId: richiesta.clubId,
+        userId,
+        modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+        gettoni: risultato.gettoni,
+      });
+    }
     return jsonResponse({ scheda });
   } catch (errore) {
     return jsonResponse(

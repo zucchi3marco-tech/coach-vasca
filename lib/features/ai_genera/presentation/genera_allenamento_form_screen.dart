@@ -144,7 +144,11 @@ class _GeneraAllenamentoFormScreenState
     try {
       final scheda = await ref
           .read(generazioneAiRepositoryProvider)
-          .generaDaDettatura(testo: testo, gruppo: nomeGruppo);
+          .generaDaDettatura(
+            testo: testo,
+            clubId: widget.clubId,
+            gruppo: nomeGruppo,
+          );
 
       String? generazioneId;
       try {

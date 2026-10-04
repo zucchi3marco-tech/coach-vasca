@@ -55,11 +55,15 @@ class GenerazioneAiRepository {
   /// chiave del provider lato server, ma un prompt diverso.
   Future<SchedaGenerata> generaDaDettatura({
     required String testo,
+    required String clubId,
     String? gruppo,
   }) async {
     try {
       final risposta = await _client.functions
-          .invoke('detta-allenamento', body: {'testo': testo, 'gruppo': gruppo})
+          .invoke(
+            'detta-allenamento',
+            body: {'testo': testo, 'gruppo': gruppo, 'clubId': clubId},
+          )
           .timeout(_timeoutGenerazione);
       final dati = risposta.data;
       if (dati is Map && dati['scheda'] is Map) {

@@ -124,7 +124,11 @@ class _ScriviSerieScreenState extends ConsumerState<ScriviSerieScreen> {
     try {
       final scheda = await ref
           .read(generazioneAiRepositoryProvider)
-          .generaDaDettatura(testo: testo, gruppo: nomeGruppo);
+          .generaDaDettatura(
+            testo: testo,
+            clubId: widget.allenamento.clubId,
+            gruppo: nomeGruppo,
+          );
       try {
         await ref
             .read(generazioniAiRepositoryProvider)
