@@ -20,8 +20,10 @@ import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
 import '../application/corsie_service.dart';
 import '../application/settimana_ai_providers.dart';
 import '../data/generazione_ai_repository.dart';
@@ -378,6 +380,20 @@ class _GeneraSettimanaFormScreenState
         g.id: g.nome,
     };
     final gruppoLabel = nomiGruppi[gruppoId] ?? 'Tutti gli atleti';
+
+    var blocchi = const <BloccoDisponibile>[];
+    try {
+      final club = await ref.read(currentClubProvider.future);
+      blocchi = await blocchiCompatibili(
+        ref,
+        clubId: widget.clubId,
+        sportRichiesto: sportRichiestoDaClub(club?.sport),
+        nomeGruppo: nomiGruppi[gruppoId],
+      );
+    } catch (_) {
+      // Come le corsie: migliora la generazione, non è indispensabile.
+    }
+
     final vincoliUtente = _vincoliController.text.trim();
     final giorniOrdinati = List<int>.of(_giorniSelezionati)..sort();
     final attrezzaturaCentrale = _attrezzaturaLavoroCentraleSelezionata
@@ -506,6 +522,7 @@ class _GeneraSettimanaFormScreenState
                 ],
                 vincoli: vincoliGiorno,
                 corsie: corsie,
+                blocchiDisponibili: blocchi,
               ),
             );
         final offset = i < giorniOrdinati.length
@@ -533,6 +550,7 @@ class _GeneraSettimanaFormScreenState
             gruppoId: gruppoId,
             gruppoLabel: gruppoLabel,
             corsie: corsie,
+            blocchi: blocchi,
             vincoliUtente: vincoliUtente,
             attrezzaturaLavoroCentrale: attrezzaturaCentrale,
             minutiMax: minutiMax,
@@ -979,6 +997,7 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
     required this.gruppoId,
     required this.gruppoLabel,
     required this.corsie,
+    this.blocchi = const [],
     required this.vincoliUtente,
     required this.attrezzaturaLavoroCentrale,
     required this.minutiMax,
@@ -991,6 +1010,7 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   final String? gruppoId;
   final String gruppoLabel;
   final List<CorsiaGenerazione> corsie;
+  final List<BloccoDisponibile> blocchi;
   final String vincoliUtente;
   final List<String> attrezzaturaLavoroCentrale;
   final int minutiMax;
@@ -1086,6 +1106,7 @@ class _RevisioneSettimanaScreenState
               ],
               vincoli: vincoliGiorno,
               corsie: widget.corsie,
+              blocchiDisponibili: widget.blocchi,
             ),
           );
       if (!mounted) return;

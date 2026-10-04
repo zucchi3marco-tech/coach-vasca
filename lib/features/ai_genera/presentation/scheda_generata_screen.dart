@@ -13,6 +13,7 @@ import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../libreria_blocchi/data/training_blocks_repository.dart';
 import '../application/corsie_service.dart';
 import '../application/tempo_stimato_service.dart';
 import '../data/generazioni_ai_repository.dart';
@@ -147,7 +148,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
       final serieRepository = ref.read(serieRepositoryProvider);
       for (final s in scheda.serie) {
         final risolto = risolviRipartenza(_ripartenzePerSerie(s), s.note);
-        await serieRepository.createSerie(
+        final serieCreata = await serieRepository.createSerie(
           allenamentoId: allenamento.id,
           ordine: s.ordine,
           blocco: s.blocco,
@@ -161,6 +162,23 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
           attrezzatura: s.attrezzatura,
           note: risolto.note,
         );
+        // L'AI non ha trovato un blocco di libreria adatto e ne ha
+        // inventato uno (FASE 3): lo archivio come bozza, da approvare
+        // prima che possa essere riproposto ad altri. Un fallimento qui
+        // non deve bloccare un salvataggio già riuscito.
+        if (s.nuovo) {
+          try {
+            await ref
+                .read(trainingBlocksRepositoryProvider)
+                .salvaSerieComeBlocco(
+                  clubId: widget.clubId,
+                  codice: 'IA-${serieCreata.id.substring(0, 8)}',
+                  sport: 'entrambi',
+                  titolo: scheda.titolo,
+                  serieGruppo: [serieCreata],
+                );
+          } catch (_) {}
+        }
       }
       if (widget.generazioneId != null) {
         try {

@@ -69,6 +69,8 @@ class SerieGenerata {
     this.attrezzatura,
     this.note,
     this.ripartenzePerCorsia = const [],
+    this.bloccoLibreriaId,
+    this.nuovo = false,
   });
 
   final int ordine;
@@ -86,6 +88,16 @@ class SerieGenerata {
   /// la generazione non aveva passi di riferimento da usare, o se questo
   /// tipo di serie (es. riscaldamento) non ha una ripartenza sensata.
   final List<RipartenzaCorsia> ripartenzePerCorsia;
+
+  /// Id del blocco di libreria scelto e adattato dall'AI per questa
+  /// serie (FASE 3) — `null` se la generazione non usava una libreria
+  /// (club senza blocchi approvati) o se questa serie è [nuovo].
+  final String? bloccoLibreriaId;
+
+  /// Vero se l'AI non ha trovato nessun blocco adatto e ne ha inventata
+  /// una: al salvataggio finisce anche in libreria come bozza da
+  /// approvare (vedi `TrainingBlocksRepository.salvaSerieComeBlocco`).
+  final bool nuovo;
 
   int get distanzaTotaleM => ripetute * distanzaM;
 
@@ -106,6 +118,8 @@ class SerieGenerata {
               ?.map((v) => RipartenzaCorsia.fromMap(v as Map<String, dynamic>))
               .toList() ??
           const [],
+      bloccoLibreriaId: map['bloccoLibreriaId'] as String?,
+      nuovo: map['nuovo'] as bool? ?? false,
     );
   }
 
@@ -122,6 +136,8 @@ class SerieGenerata {
       'attrezzatura': attrezzatura,
       'note': note,
       'ripartenzePerCorsia': ripartenzePerCorsia.map((r) => r.toMap()).toList(),
+      'bloccoLibreriaId': bloccoLibreriaId,
+      'nuovo': nuovo,
     };
   }
 }

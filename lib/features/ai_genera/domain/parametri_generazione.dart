@@ -1,3 +1,5 @@
+import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
+
 /// Passo di riferimento di una corsia (FASE 10, punto 4): calcolato dai
 /// personal best degli atleti del gruppo (100 stile libero) e dal
 /// differenziale di gara T200-T100, quando disponibile. Se i PB del
@@ -74,6 +76,7 @@ class ParametriGenerazione {
     required this.regimiAmmessi,
     this.vincoli,
     this.corsie = const [],
+    this.blocchiDisponibili = const [],
   });
 
   final String gruppo;
@@ -116,6 +119,12 @@ class ParametriGenerazione {
   /// calcolate sui passi reali.
   final List<CorsiaGenerazione> corsie;
 
+  /// Fino a ~40 blocchi approvati compatibili per sport/livello (FASE 3):
+  /// l'AI può solo scegliere e adattare questi, non inventare liberamente
+  /// come prima — vuoto se il club non ha ancora una libreria, la
+  /// generazione resta quella "libera" di sempre.
+  final List<BloccoDisponibile> blocchiDisponibili;
+
   Map<String, dynamic> toMap() {
     return {
       'gruppo': gruppo,
@@ -131,6 +140,7 @@ class ParametriGenerazione {
       'regimiAmmessi': regimiAmmessi,
       'vincoli': vincoli,
       'corsie': corsie.map((c) => c.toMap()).toList(),
+      'blocchiDisponibili': blocchiDisponibili.map((b) => b.toMap()).toList(),
     };
   }
 }

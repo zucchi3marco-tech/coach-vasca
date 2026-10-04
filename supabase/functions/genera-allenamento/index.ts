@@ -15,7 +15,16 @@ const GEMINI_MODEL = "gemini-3.6-flash";
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
 const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
-const ESECUZIONI = ["nuoto", "gambe", "braccia", "pull", "tecnica"];
+const ESECUZIONI = [
+  "nuoto",
+  "gambe",
+  "braccia",
+  "pull",
+  "tecnica",
+  "remate",
+  "pallanuoto tecnico-tattico",
+  "a secco",
+];
 // "C" (senza numero) è uno storico dell'enum del database, tenuto solo
 // per le righe salvate prima dello split in C1/C2/C3 (FASE 9): non va
 // più proposto per le serie nuove, in generazione come nel resto
@@ -32,6 +41,27 @@ interface DettaglioFocus {
   metri?: number | null;
   attrezzatura?: string[];
   stile?: string | null;
+}
+
+interface ParteBlocco {
+  ordine: number;
+  giri: number;
+  ripetizioni: number;
+  distanzaM?: number | null;
+  durataS?: number | null;
+  stile?: string | null;
+  zona: string;
+  esecuzione: string;
+  recuperoS?: number | null;
+}
+
+interface BloccoDisponibile {
+  id: string;
+  codice: string;
+  titolo: string;
+  fase: string;
+  metriTotali: number;
+  parti: ParteBlocco[];
 }
 
 interface ParametriGenerazione {
@@ -55,6 +85,11 @@ interface ParametriGenerazione {
   regimiAmmessi?: string[];
   vincoli?: string | null;
   corsie?: CorsiaGenerazione[];
+  // RIPROGETTAZIONE AI, FASE 3: fino a ~40 blocchi approvati compatibili
+  // scelti dal codice (non dall'AI) — vuoto se il club non ha ancora una
+  // libreria, nel qual caso la generazione resta quella "libera" di
+  // prima (nessun cambiamento di comportamento).
+  blocchiDisponibili?: BloccoDisponibile[];
 }
 
 interface RipartenzaCorsia {
@@ -74,6 +109,9 @@ interface SerieGenerata {
   attrezzatura?: string | null;
   note?: string | null;
   ripartenzePerCorsia?: RipartenzaCorsia[];
+  // RIPROGETTAZIONE AI, FASE 3.
+  bloccoLibreriaId?: string | null;
+  nuovo?: boolean;
 }
 
 interface SchedaGenerata {
@@ -189,9 +227,79 @@ function istruzioniFocus(p: ParametriGenerazione): string {
   return righe.join("\n");
 }
 
+// La libreria salva lo stile come nell'Excel originale ("Stile libero",
+// "Delfino", ma anche "A scelta"/"Testa alta", non uno degli STILI
+// ammessi per la serie generata): normalizzato qui, non lasciato
+// all'AI, per mostrarglielo già nel formato che deve riusare.
+function normalizzaStile(stile: string | null | undefined): string | null {
+  if (!stile) return null;
+  const s = stile.trim().toLowerCase();
+  if (s.includes("libero")) return "libero";
+  if (s.includes("dorso")) return "dorso";
+  if (s.includes("rana")) return "rana";
+  if (s.includes("delfino")) return "delfino";
+  if (s.includes("misti")) return "misti";
+  return null; // "a scelta", "testa alta": nessun suggerimento, scelga l'AI.
+}
+
+// RIPROGETTAZIONE AI, FASE 3: descrive un blocco e le sue parti nel
+// prompt, con lo stesso formato che l'AI deve usare per riferirsi a loro
+// (vedi istruzioniLibreria sotto).
+function descriviParte(parte: ParteBlocco): string {
+  const volume = parte.durataS != null
+    ? `${parte.durataS}s`
+    : `${parte.distanzaM}m`;
+  const giri = parte.giri > 1 ? `${parte.giri}x ` : "";
+  const stile = normalizzaStile(parte.stile);
+  return `${giri}${parte.ripetizioni}x${volume}` +
+    (stile ? ` ${stile}` : "") +
+    ` zona ${parte.zona} ${parte.esecuzione}` +
+    (parte.recuperoS != null ? ` rec ${parte.recuperoS}s` : "");
+}
+
+function istruzioniLibreria(blocchi: BloccoDisponibile[]): string {
+  if (blocchi.length === 0) return "";
+  const elenco = blocchi.map((b) => {
+    const parti = b.parti.map(descriviParte).join("; ");
+    return `- ID "${b.id}" (${b.codice}) "${b.titolo}" [fase: ${b.fase}, ~${b.metriTotali}m]: ${parti}`;
+  });
+  return [
+    "Hai a disposizione una libreria di blocchi di allenamento già " +
+      "approvati da questo coach, elencati sotto con il loro ID. Per le " +
+      "serie del blocco \"principale\" (e, se ce n'è uno adatto, anche " +
+      "per riscaldamento/defaticamento), SCEGLI fra questi quello più " +
+      "adatto al volume/focus/regimi richiesti invece di inventare da " +
+      "zero: puoi adattare ripetute e distanza (o durata) fino al 25% in " +
+      "più o in meno rispetto all'originale, indicando il suo ID in " +
+      "bloccoLibreriaId per OGNI serie che ne deriva. Se un blocco ha più " +
+      "parti, usa tutte le sue parti in sequenza (stessa zona/esecuzione/ " +
+      "stile di ciascuna), tutte con lo stesso bloccoLibreriaId.",
+    "Inventa una serie nuova SOLO se davvero nessun blocco disponibile è " +
+      "adatto: in quel caso lascia bloccoLibreriaId vuoto e segna " +
+      "nuovo=true. Per ogni altra serie, nuovo deve essere false.",
+    "Alcuni blocchi sono \"a tempo\" (una durata in secondi, es. \"600s\", " +
+      "invece di una distanza in metri): questa scheda non può ancora " +
+      "salvare serie a tempo, quindi NON scegliere quei blocchi con " +
+      "bloccoLibreriaId. Se il lavoro più adatto è uno di questi, inventa " +
+      "una serie equivalente a distanza (nuovo=true) invece di usarlo.",
+    "Le zone delle parti qui sotto usano anche sigle che NON sono fra " +
+      "quelle ammesse per la zona della serie generata: \"V\" = C3, " +
+      "\"RG\" = D; \"T\"/\"TT\"/\"TEST\" non sono zone di intensità " +
+      "(tecnica, tattica, test) — per queste assegna comunque alla serie " +
+      "generata la zona ammessa più vicina all'intensità reale (spesso " +
+      "A1/A2 se leggero, C3/D se intenso).",
+    "",
+    "Blocchi disponibili:",
+    ...elenco,
+  ].join("\n");
+}
+
 function costruisciPrompt(p: ParametriGenerazione): string {
   const regimi = Array.isArray(p.regimiAmmessi) ? p.regimiAmmessi.join(", ") : "";
   const corsie = Array.isArray(p.corsie) ? p.corsie : [];
+  const blocchiDisponibili = Array.isArray(p.blocchiDisponibili)
+    ? p.blocchiDisponibili
+    : [];
   const righeCorsie = corsie.map((c) => {
     const diff = c.differenzialeS != null
       ? `, differenziale di gara T200-T100 = ${c.differenzialeS}s`
@@ -248,57 +356,71 @@ function costruisciPrompt(p: ParametriGenerazione): string {
             "senza zona.",
         ].join("\n")
       : "",
+    istruzioniLibreria(blocchiDisponibili),
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
 }
 
-const responseSchema = {
-  type: "OBJECT",
-  properties: {
-    titolo: { type: "STRING" },
-    note: { type: "STRING" },
-    serie: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        properties: {
-          ordine: { type: "INTEGER" },
-          blocco: { type: "STRING", enum: BLOCCHI },
-          ripetute: { type: "INTEGER" },
-          distanzaM: { type: "INTEGER" },
-          stile: { type: "STRING", enum: STILI },
-          esecuzione: { type: "STRING", enum: ESECUZIONI },
-          zona: { type: "STRING", enum: ZONE },
-          recuperoS: { type: "INTEGER" },
-          attrezzatura: { type: "STRING" },
-          note: { type: "STRING" },
-          ripartenzePerCorsia: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                nome: { type: "STRING" },
-                ripartenzaS: { type: "NUMBER" },
+// Funzione (non una costante) perché bloccoLibreriaId deve elencare, in
+// un enum, solo gli ID davvero disponibili in QUESTA richiesta — un
+// vincolo esplicito che Gemini rispetta molto più fedelmente di un
+// semplice campo STRING libero (osservato nei test): elenca gli ID
+// scelti lasciando all'AI, come più oneroso, lasciarlo vuoto per
+// "nuovo".
+function costruisciResponseSchema(blocchiDisponibili: BloccoDisponibile[]) {
+  const idDisponibili = blocchiDisponibili.map((b) => b.id);
+  return {
+    type: "OBJECT",
+    properties: {
+      titolo: { type: "STRING" },
+      note: { type: "STRING" },
+      serie: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            ordine: { type: "INTEGER" },
+            blocco: { type: "STRING", enum: BLOCCHI },
+            ripetute: { type: "INTEGER" },
+            distanzaM: { type: "INTEGER" },
+            stile: { type: "STRING", enum: STILI },
+            esecuzione: { type: "STRING", enum: ESECUZIONI },
+            zona: { type: "STRING", enum: ZONE },
+            recuperoS: { type: "INTEGER" },
+            attrezzatura: { type: "STRING" },
+            note: { type: "STRING" },
+            ...(idDisponibili.length > 0
+              ? { bloccoLibreriaId: { type: "STRING", enum: idDisponibili } }
+              : {}),
+            nuovo: { type: "BOOLEAN" },
+            ripartenzePerCorsia: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  nome: { type: "STRING" },
+                  ripartenzaS: { type: "NUMBER" },
+                },
+                required: ["nome", "ripartenzaS"],
               },
-              required: ["nome", "ripartenzaS"],
             },
           },
+          required: [
+            "ordine",
+            "blocco",
+            "ripetute",
+            "distanzaM",
+            "stile",
+            "esecuzione",
+            "zona",
+          ],
         },
-        required: [
-          "ordine",
-          "blocco",
-          "ripetute",
-          "distanzaM",
-          "stile",
-          "esecuzione",
-          "zona",
-        ],
       },
     },
-  },
-  required: ["titolo", "serie"],
-};
+    required: ["titolo", "serie"],
+  };
+}
 
 // Stessa formula, tenuta manualmente sincronizzata, della funzione
 // `stimaMinutiSessione` in `lib/features/ai_genera/application/
@@ -320,6 +442,60 @@ function stimaMinutiSessione(serie: SerieGenerata[]): number {
   return secondiTotali / 60;
 }
 
+/// `null` se l'AI non ha indicato un bloccoLibreriaId, se l'ID non
+/// corrisponde a nessun blocco disponibile, o se il blocco è interamente
+/// a tempo (il prompt chiede di non scegliere questi, ma non ci si fida
+/// alla cieca).
+function _bloccoLibreriaIdValido(
+  s: Record<string, unknown>,
+  blocchiPerId: Map<string, BloccoDisponibile>,
+): string | null {
+  if (typeof s.bloccoLibreriaId !== "string") return null;
+  const blocco = blocchiPerId.get(s.bloccoLibreriaId);
+  if (!blocco) return null;
+  const tuttoATempo = blocco.parti.every((p) => p.durataS != null);
+  return tuttoATempo ? null : s.bloccoLibreriaId;
+}
+
+// Le zone dei blocchi usano anche sigle dell'Excel che non sono nella
+// zona_intensita della serie generata — solo quelle usate davvero nella
+// libreria oggi (V, RG), le altre (T/TT/TEST) non sono mai distanza/
+// ripetizioni comparabili a una serie di nuoto, quindi non servono qui.
+const _ZONA_BLOCCO_VERSO_SERIE: Record<string, string> = { V: "C3", RG: "D" };
+
+function _zonaEquivalente(zonaBlocco: string, zonaSerie: string): boolean {
+  return zonaBlocco === zonaSerie || _ZONA_BLOCCO_VERSO_SERIE[zonaBlocco] === zonaSerie;
+}
+
+/// L'AI, nei test, usa spesso il contenuto esatto di un blocco (stesse
+/// ripetute/distanza/zona) senza però compilare bloccoLibreriaId come
+/// chiesto nel prompt: questo controllo di contenuto (stessa zona,
+/// stesso stile se il blocco ne specifica uno, volume entro il 25%)
+/// recupera il collegamento anche quando l'etichetta manca — più
+/// affidabile di fidarsi solo di quello che l'AI dichiara.
+function _bloccoPerContenuto(
+  ripetute: number,
+  distanzaM: number,
+  stile: string,
+  zona: string,
+  blocchi: BloccoDisponibile[],
+): string | null {
+  for (const blocco of blocchi) {
+    for (const parte of blocco.parti) {
+      if (parte.distanzaM == null) continue; // a tempo: non comparabile qui.
+      if (!_zonaEquivalente(parte.zona, zona)) continue;
+      const stileParte = normalizzaStile(parte.stile);
+      if (stileParte != null && stileParte !== stile) continue;
+      const volumeParte = parte.giri * parte.ripetizioni * parte.distanzaM;
+      const volumeSerie = ripetute * distanzaM;
+      if (volumeParte <= 0) continue;
+      const scarto = Math.abs(volumeSerie - volumeParte) / volumeParte;
+      if (scarto <= 0.25) return blocco.id;
+    }
+  }
+  return null;
+}
+
 /// Rivalida la scheda restituita dal modello: anche con responseSchema
 /// impostato, il provider può comunque restituire un JSON che non rispetta
 /// lo schema (bug del modello, cambio di comportamento, ecc.), quindi non
@@ -336,6 +512,11 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
   if (!Array.isArray(scheda.serie) || scheda.serie.length === 0) {
     throw new Error("nessuna serie generata");
   }
+
+  const blocchiPerId = new Map(
+    (Array.isArray(parametri.blocchiDisponibili) ? parametri.blocchiDisponibili : [])
+      .map((b) => [b.id, b] as const),
+  );
 
   const serieValidate: SerieGenerata[] = scheda.serie.map((voce, indice) => {
     if (typeof voce !== "object" || voce === null) {
@@ -377,6 +558,18 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
     if (s.blocco === "riscaldamento" && zona !== "A1") {
       zona = "A1";
     }
+    // Il bloccoLibreriaId dichiarato dall'AI, se valido, altrimenti un
+    // confronto per contenuto con la libreria (vedi _bloccoPerContenuto):
+    // nei test l'AI sceglie spesso il contenuto giusto senza compilare
+    // l'etichetta come chiesto, quindi non ci si fida solo di quella.
+    const bloccoLibreriaId = _bloccoLibreriaIdValido(s, blocchiPerId) ??
+      _bloccoPerContenuto(
+        ripetute,
+        distanzaM,
+        s.stile as string,
+        zona,
+        [...blocchiPerId.values()],
+      );
     let recuperoS: number | null = null;
     if (s.recuperoS !== undefined && s.recuperoS !== null) {
       const valore = Number(s.recuperoS);
@@ -425,6 +618,14 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       attrezzatura: typeof s.attrezzatura === "string" ? s.attrezzatura : null,
       note: typeof s.note === "string" ? s.note : null,
       ripartenzePerCorsia,
+      // RIPROGETTAZIONE AI, FASE 3: "nuovo" è semplicemente "non
+      // riconducibile a nessun blocco della libreria", per etichetta o
+      // per contenuto — mai un errore, solo un'informazione per l'app
+      // (che la archivia come bozza al salvataggio). Se il club non ha
+      // ancora nessun blocco approvato, "nuovo" non ha senso: resta
+      // sempre false, non si archivia nulla.
+      bloccoLibreriaId,
+      nuovo: blocchiPerId.size > 0 && bloccoLibreriaId == null,
     };
   });
 
@@ -518,7 +719,11 @@ Deno.serve(async (req) => {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               responseMimeType: "application/json",
-              responseSchema,
+              responseSchema: costruisciResponseSchema(
+                Array.isArray(parametri.blocchiDisponibili)
+                  ? parametri.blocchiDisponibili
+                  : [],
+              ),
             },
           }),
         },

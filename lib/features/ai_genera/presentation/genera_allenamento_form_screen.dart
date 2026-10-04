@@ -18,15 +18,17 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
+import '../../libreria_blocchi/presentation/libreria_blocchi_screen.dart';
 import '../application/corsie_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
 import '../domain/modulo_compilato.dart';
 import '../domain/parametri_generazione.dart';
-import '../../libreria_blocchi/presentation/libreria_blocchi_screen.dart';
 import 'campi_generatore.dart';
 import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
@@ -763,6 +765,21 @@ class _GeneraAllenamentoFormScreenState
         g.id: g.nome,
     };
 
+    var blocchi = const <BloccoDisponibile>[];
+    try {
+      final club = await ref.read(currentClubProvider.future);
+      blocchi = await blocchiCompatibili(
+        ref,
+        clubId: widget.clubId,
+        sportRichiesto: sportRichiestoDaClub(club?.sport),
+        nomeGruppo: nomiGruppi[gruppoId],
+      );
+    } catch (_) {
+      // La libreria blocchi migliora la generazione, ma non è
+      // indispensabile: se il calcolo fallisce si procede comunque con
+      // la generazione "libera" di sempre.
+    }
+
     final parametri = ParametriGenerazione(
       gruppo: nomiGruppi[gruppoId] ?? 'Tutti gli atleti',
       volumeMetri: _volumeMetri.round(),
@@ -784,6 +801,7 @@ class _GeneraAllenamentoFormScreenState
           ? null
           : _vincoliController.text.trim(),
       corsie: assegnazione.corsie,
+      blocchiDisponibili: blocchi,
     );
 
     try {
