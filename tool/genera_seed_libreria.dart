@@ -30,6 +30,14 @@ String _sqlText(String? s) {
 
 String _sqlInt(int? i) => i?.toString() ?? 'null';
 
+/// Come [_sqlInt], ma con cast esplicito: da usare nelle colonne
+/// numeriche delle `select ... union all select ...` di una parte,
+/// dove un `null` letterale senza tipo, se è così per **tutte** le
+/// parti di un blocco (es. mai una durata), fa risolvere a Postgres
+/// l'intera colonna come testo — stesso problema del cast uuid qui
+/// sotto, non basta che altri blocchi abbiano valori interi.
+String _sqlIntCol(int? i) => '${_sqlInt(i)}::integer';
+
 String _bloccoSql(BloccoImportato b) {
   final buffer = StringBuffer();
   buffer.writeln('with b as (');
@@ -73,17 +81,22 @@ String _bloccoSql(BloccoImportato b) {
   for (var i = 0; i < b.parti.length; i++) {
     final p = b.parti[i];
     buffer.write(i == 0 ? 'select ' : 'union all select ');
+    // Il cast esplicito e' necessario: dentro una UNION ALL Postgres non
+    // applica la coercion implicita del letterale al tipo della colonna
+    // di destinazione (funziona solo per un INSERT...VALUES semplice,
+    // come quello del blocco qui sopra) — senza, l'inserimento fallisce
+    // con "column club_id is of type uuid but expression is of type text".
     buffer.write(
-      "id, '$_clubModello', ${p.ordine}, ${p.giri}, ${p.ripetizioni}, ",
+      "id, '$_clubModello'::uuid, ${p.ordine}, ${p.giri}, ${p.ripetizioni}, ",
     );
     buffer.write(
-      '${_sqlInt(p.distanzaM)}, ${_sqlInt(p.durataS)}, ${_sqlText(p.stile)}, ',
+      '${_sqlIntCol(p.distanzaM)}, ${_sqlIntCol(p.durataS)}, ${_sqlText(p.stile)}, ',
     );
     buffer.write(
       '${_sqlText(p.esercizio)}, ${_sqlText(p.zona)}, ${_sqlText(p.esecuzione)}, ',
     );
     buffer.write(
-      '${_sqlInt(p.recuperoS)}, ${_sqlText(p.attrezzi)}, ${_sqlText(p.note)}',
+      '${_sqlIntCol(p.recuperoS)}, ${_sqlText(p.attrezzi)}, ${_sqlText(p.note)}',
     );
     buffer.writeln(' from b');
   }

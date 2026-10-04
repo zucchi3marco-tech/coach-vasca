@@ -22,7 +22,11 @@ alter table public.serie
 
 -- La funzione per l'atleta collegato (dashboard "Prossimo allenamento")
 -- deve restituire anche la nuova colonna, altrimenti una serie a tempo
--- gli arriverebbe senza durata ne' distanza.
+-- gli arriverebbe senza durata ne' distanza. Il tipo di ritorno cambia
+-- (una colonna in piu'): va eliminata prima di ridefinirla, "create or
+-- replace" da solo non basta quando cambiano le colonne OUT.
+drop function if exists public.serie_allenamento_atleta(uuid);
+
 create or replace function public.serie_allenamento_atleta(p_allenamento_id uuid)
 returns table (
   id uuid,

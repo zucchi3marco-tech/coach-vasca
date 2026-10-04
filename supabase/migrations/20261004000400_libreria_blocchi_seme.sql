@@ -31,9 +31,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 100, null, 'Dorso', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 1, 100, null, 'Rana', 'sciolto', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 100::integer, null::integer, 'Dorso', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 1, 100::integer, null::integer, 'Rana', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -57,7 +57,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 100, null, 'Stile libero', 'respirazione ogni 3-5-7 bracciate per 25', 'A1', 'braccia', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 100::integer, null::integer, 'Stile libero', 'respirazione ogni 3-5-7 bracciate per 25', 'A1', 'braccia', 10::integer, null, null from b
 ;
 
 
@@ -81,7 +81,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Misti', '25 stile + 25 stile successivo, ordine inverso', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Misti', '25 stile + 25 stile successivo, ordine inverso', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -105,9 +105,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 200, null, 'Dorso', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 1, 200, null, 'Misti', 'sciolto', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 200::integer, null::integer, 'Dorso', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 1, 200::integer, null::integer, 'Misti', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -131,7 +131,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Stile libero', 'progressivo per 100 (da A1 ad A2)', 'A1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Stile libero', 'progressivo per 100 (da A1 ad A2)', 'A1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -155,9 +155,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'A scelta', 'gambe', 'A1', 'gambe', 15, 'Tavoletta', null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 50, null, 'Stile libero', 'braccia', 'A1', 'braccia', 15, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'A scelta', 'gambe', 'A1', 'gambe', 15::integer, 'Tavoletta', null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 50::integer, null::integer, 'Stile libero', 'braccia', 'A1', 'braccia', 15::integer, 'Pull buoy', null from b
 ;
 
 
@@ -181,9 +181,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 100, null, 'Dorso', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 25, null, 'A scelta', 'tecnica a scelta', 'A1', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 100::integer, null::integer, 'Dorso', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 25::integer, null::integer, 'A scelta', 'tecnica a scelta', 'A1', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -207,7 +207,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Misti', '25 dorso + 25 SL', 'A1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Misti', '25 dorso + 25 SL', 'A1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -231,8 +231,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'A scelta', 'sciolto', 'A1', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'Misti', 'sciolto', 'A1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'Misti', 'sciolto', 'A1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -256,7 +256,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Misti', '50 SL + 50 stile del giorno', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Misti', '50 SL + 50 stile del giorno', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -280,10 +280,10 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 200, null, 'Dorso', null, 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 1, 200, null, 'A scelta', 'gambe', 'A1', 'gambe', null, 'Pinne', null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 4, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 200::integer, null::integer, 'Dorso', null, 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 1, 200::integer, null::integer, 'A scelta', 'gambe', 'A1', 'gambe', null::integer, 'Pinne', null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 4, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -307,7 +307,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Misti', 'dispari SL, pari dorso, progressivo per serie', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Misti', 'dispari SL, pari dorso, progressivo per serie', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -331,9 +331,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'Rana', '2 gambate 1 bracciata', 'A1', 'braccia', 15, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 50, null, 'Rana', 'nuotato', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'Rana', '2 gambate 1 bracciata', 'A1', 'braccia', 15::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 50::integer, null::integer, 'Rana', 'nuotato', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -357,9 +357,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 6, 25, null, 'Delfino', 'braccio singolo dx/sx', 'A1', 'nuoto', 15, 'Pinne', null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 25, null, 'Delfino', 'nuotato', 'A1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 6, 25::integer, null::integer, 'Delfino', 'braccio singolo dx/sx', 'A1', 'nuoto', 15::integer, 'Pinne', null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 25::integer, null::integer, 'Delfino', 'nuotato', 'A1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -383,9 +383,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'Dorso', 'braccio singolo / doppio braccio', 'A1', 'nuoto', 15, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 50, null, 'Dorso', 'nuotato', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'Dorso', 'braccio singolo / doppio braccio', 'A1', 'nuoto', 15::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 50::integer, null::integer, 'Dorso', 'nuotato', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -409,10 +409,10 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'A scelta', 'sciolto', 'A1', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'Stile libero', 'progressivi', 'A2', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 25, null, 'A scelta', 'ritmo gara', 'RG', 'nuoto', 40, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 4, 1, 2, 15, null, 'A scelta', 'sprint dal blocco', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'Stile libero', 'progressivi', 'A2', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 25::integer, null::integer, 'A scelta', 'ritmo gara', 'RG', 'nuoto', 40::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 4, 1, 2, 15::integer, null::integer, 'A scelta', 'sprint dal blocco', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -436,7 +436,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Misti', '100 SL + 100 dorso + 100 delfino-ondulazioni + 100 SL', 'A1', 'nuoto', null, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Misti', '100 SL + 100 dorso + 100 delfino-ondulazioni + 100 SL', 'A1', 'nuoto', null::integer, 'Pinne', null from b
 ;
 
 
@@ -460,7 +460,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'progressivi nella serie', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'progressivi nella serie', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -484,7 +484,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'progressivi nella serie', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'progressivi nella serie', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -508,7 +508,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'progressivi nella serie', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'progressivi nella serie', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -532,7 +532,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'progressivi nella serie', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'progressivi nella serie', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -556,7 +556,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Misti', 'progressivi nella serie', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Misti', 'progressivi nella serie', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -580,7 +580,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Stile libero', 'crescente nella vasca', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Stile libero', 'crescente nella vasca', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -604,7 +604,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'A scelta', 'stile principale, crescente nella vasca', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'A scelta', 'stile principale, crescente nella vasca', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -628,7 +628,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'A scelta', '12,5 m veloce + 12,5 m facile', 'V', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'A scelta', '12,5 m veloce + 12,5 m facile', 'V', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -652,7 +652,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'A scelta', '25 veloce + 25 facile', 'B2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'A scelta', '25 veloce + 25 facile', 'B2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -676,7 +676,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'A scelta', 'partenza dal blocco, uscita e prime bracciate', 'V', 'braccia', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'A scelta', 'partenza dal blocco, uscita e prime bracciate', 'V', 'braccia', 45::integer, null, null from b
 ;
 
 
@@ -700,7 +700,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Delfino', 'ondulazioni subacquee fino a 10-15 m', 'V', 'nuoto', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Delfino', 'ondulazioni subacquee fino a 10-15 m', 'V', 'nuoto', 40::integer, null, null from b
 ;
 
 
@@ -724,7 +724,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 25, null, 'A scelta', 'ritmo gara della distanza obiettivo', 'RG', 'nuoto', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 25::integer, null::integer, 'A scelta', 'ritmo gara della distanza obiettivo', 'RG', 'nuoto', 40::integer, null, null from b
 ;
 
 
@@ -748,7 +748,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 catch-up (presa davanti) + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 catch-up (presa davanti) + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -772,7 +772,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'catch-up (presa davanti)', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'catch-up (presa davanti)', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -796,7 +796,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 braccio singolo, l''altro avanti + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 braccio singolo, l''altro avanti + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -820,7 +820,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'braccio singolo, l''altro avanti', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'braccio singolo, l''altro avanti', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -844,7 +844,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 6 battute di lato + bracciata (rotazione) + 25 nuotato', 'T', 'tecnica', 15, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 6 battute di lato + bracciata (rotazione) + 25 nuotato', 'T', 'tecnica', 15::integer, 'Pinne', null from b
 ;
 
 
@@ -868,7 +868,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', '6 battute di lato + bracciata (rotazione)', 'T', 'tecnica', 20, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', '6 battute di lato + bracciata (rotazione)', 'T', 'tecnica', 20::integer, 'Pinne', null from b
 ;
 
 
@@ -892,7 +892,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 zip: dita che sfiorano il fianco + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 zip: dita che sfiorano il fianco + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -916,7 +916,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'zip: dita che sfiorano il fianco', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'zip: dita che sfiorano il fianco', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -940,7 +940,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 pugni chiusi + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 pugni chiusi + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -964,7 +964,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'pugni chiusi', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'pugni chiusi', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -988,7 +988,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 respirazione bilaterale ogni 3 + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 respirazione bilaterale ogni 3 + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1012,7 +1012,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'respirazione bilaterale ogni 3', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'respirazione bilaterale ogni 3', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1036,7 +1036,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 testa alta (stile pallanuoto) + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 testa alta (stile pallanuoto) + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1060,7 +1060,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'testa alta (stile pallanuoto)', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'testa alta (stile pallanuoto)', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1084,7 +1084,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', '25 conta bracciate e riducile + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', '25 conta bracciate e riducile + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1108,7 +1108,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'conta bracciate e riducile', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'conta bracciate e riducile', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1132,7 +1132,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 braccio singolo + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 braccio singolo + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1156,7 +1156,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'braccio singolo', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'braccio singolo', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1180,7 +1180,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 doppio braccio + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 doppio braccio + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1204,7 +1204,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'doppio braccio', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'doppio braccio', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1228,7 +1228,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 6 battute con spalla fuori + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 6 battute con spalla fuori + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1252,7 +1252,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', '6 battute con spalla fuori', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', '6 battute con spalla fuori', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1276,7 +1276,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 bottiglia/bicchiere sulla fronte + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 bottiglia/bicchiere sulla fronte + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1300,7 +1300,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'bottiglia/bicchiere sulla fronte', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'bottiglia/bicchiere sulla fronte', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1324,7 +1324,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 3 bracciate dx, 3 sx, 3 complete + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 3 bracciate dx, 3 sx, 3 complete + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1348,7 +1348,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', '3 bracciate dx, 3 sx, 3 complete', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', '3 bracciate dx, 3 sx, 3 complete', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1372,7 +1372,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', '25 rotazione con pausa a braccio alto + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', '25 rotazione con pausa a braccio alto + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1396,7 +1396,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'rotazione con pausa a braccio alto', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'rotazione con pausa a braccio alto', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1420,7 +1420,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 2 gambate e 1 bracciata + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 2 gambate e 1 bracciata + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1444,7 +1444,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', '2 gambate e 1 bracciata', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', '2 gambate e 1 bracciata', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1468,7 +1468,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 braccia rana + gambe delfino + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 braccia rana + gambe delfino + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1492,7 +1492,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'braccia rana + gambe delfino', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'braccia rana + gambe delfino', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1516,7 +1516,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 gambe rana sul dorso + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 gambe rana sul dorso + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1540,7 +1540,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'gambe rana sul dorso', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'gambe rana sul dorso', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1564,7 +1564,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 scivolata lunga (conta 2) + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 scivolata lunga (conta 2) + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1588,7 +1588,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'scivolata lunga (conta 2)', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'scivolata lunga (conta 2)', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1612,7 +1612,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 braccia rana con pull buoy + 25 nuotato', 'T', 'tecnica', 15, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 braccia rana con pull buoy + 25 nuotato', 'T', 'tecnica', 15::integer, 'Pull buoy', null from b
 ;
 
 
@@ -1636,7 +1636,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'braccia rana con pull buoy', 'T', 'tecnica', 20, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'braccia rana con pull buoy', 'T', 'tecnica', 20::integer, 'Pull buoy', null from b
 ;
 
 
@@ -1660,7 +1660,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', '25 bracciata stretta e veloce, ritorno rapido + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', '25 bracciata stretta e veloce, ritorno rapido + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1684,7 +1684,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'bracciata stretta e veloce, ritorno rapido', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'bracciata stretta e veloce, ritorno rapido', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1708,7 +1708,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 braccio singolo dx/sx + 25 nuotato', 'T', 'tecnica', 15, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 braccio singolo dx/sx + 25 nuotato', 'T', 'tecnica', 15::integer, 'Pinne', null from b
 ;
 
 
@@ -1732,7 +1732,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'braccio singolo dx/sx', 'T', 'tecnica', 20, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'braccio singolo dx/sx', 'T', 'tecnica', 20::integer, 'Pinne', null from b
 ;
 
 
@@ -1756,7 +1756,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 3-3-3 (dx, sx, completo) + 25 nuotato', 'T', 'tecnica', 15, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 3-3-3 (dx, sx, completo) + 25 nuotato', 'T', 'tecnica', 15::integer, 'Pinne', null from b
 ;
 
 
@@ -1780,7 +1780,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', '3-3-3 (dx, sx, completo)', 'T', 'tecnica', 20, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', '3-3-3 (dx, sx, completo)', 'T', 'tecnica', 20::integer, 'Pinne', null from b
 ;
 
 
@@ -1804,7 +1804,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 ondulazioni con braccia avanti + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 ondulazioni con braccia avanti + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1828,7 +1828,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'ondulazioni con braccia avanti', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'ondulazioni con braccia avanti', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1852,7 +1852,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 braccia delfino + gambe stile + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 braccia delfino + gambe stile + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1876,7 +1876,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'braccia delfino + gambe stile', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'braccia delfino + gambe stile', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1900,7 +1900,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 2 gambate per bracciata accentuate + 25 nuotato', 'T', 'tecnica', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 2 gambate per bracciata accentuate + 25 nuotato', 'T', 'tecnica', 15::integer, null, null from b
 ;
 
 
@@ -1924,7 +1924,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', '2 gambate per bracciata accentuate', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', '2 gambate per bracciata accentuate', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -1948,7 +1948,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 ondulazioni sul fianco + 25 nuotato', 'T', 'tecnica', 15, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 ondulazioni sul fianco + 25 nuotato', 'T', 'tecnica', 15::integer, 'Pinne', null from b
 ;
 
 
@@ -1972,7 +1972,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'ondulazioni sul fianco', 'T', 'tecnica', 20, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'ondulazioni sul fianco', 'T', 'tecnica', 20::integer, 'Pinne', null from b
 ;
 
 
@@ -1996,7 +1996,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Stile libero', 'partenza a 7 m dal muro, virata e uscita fino a 10 m', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Stile libero', 'partenza a 7 m dal muro, virata e uscita fino a 10 m', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -2020,7 +2020,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Dorso', 'conta bracciate dalle bandierine, virata e subacquea', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Dorso', 'conta bracciate dalle bandierine, virata e subacquea', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -2044,7 +2044,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Misti', 'alterna rana e delfino, tocco a due mani e uscita', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Misti', 'alterna rana e delfino, tocco a due mani e uscita', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -2068,7 +2068,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Misti', 'cambi DF-DO, DO-RA, RA-SL (2 per tipo)', 'T', 'tecnica', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Misti', 'cambi DF-DO, DO-RA, RA-SL (2 per tipo)', 'T', 'tecnica', 20::integer, null, null from b
 ;
 
 
@@ -2092,7 +2092,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'A scelta', 'partenza dal blocco, tempo ai 15 m', 'V', 'tecnica', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'A scelta', 'partenza dal blocco, tempo ai 15 m', 'V', 'tecnica', 60::integer, null, null from b
 ;
 
 
@@ -2116,7 +2116,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Dorso', 'partenza dorso dal muro, subacquea', 'V', 'tecnica', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Dorso', 'partenza dorso dal muro, subacquea', 'V', 'tecnica', 60::integer, null, null from b
 ;
 
 
@@ -2140,7 +2140,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 15, null, 'Delfino', 'ondulazioni subacquee dal muro', 'T', 'tecnica', 30, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 15::integer, null::integer, 'Delfino', 'ondulazioni subacquee dal muro', 'T', 'tecnica', 30::integer, 'Pinne', null from b
 ;
 
 
@@ -2164,7 +2164,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 10, null, 'A scelta', 'arrivo senza respirare, tocco in allungo', 'V', 'tecnica', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 10::integer, null::integer, 'A scelta', 'arrivo senza respirare, tocco in allungo', 'V', 'tecnica', 30::integer, null, null from b
 ;
 
 
@@ -2188,7 +2188,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'A scelta', 'cambio staffetta a coppie dal blocco', 'T', 'tecnica', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'A scelta', 'cambio staffetta a coppie dal blocco', 'T', 'tecnica', 40::integer, null, null from b
 ;
 
 
@@ -2212,7 +2212,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Stile libero', 'conta le bracciate, riduci di 1 ogni 2 ripetizioni', 'A1', 'braccia', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Stile libero', 'conta le bracciate, riduci di 1 ogni 2 ripetizioni', 'A1', 'braccia', 20::integer, null, null from b
 ;
 
 
@@ -2236,7 +2236,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Stile libero', 'gambe', 'A2', 'gambe', 15, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Stile libero', 'gambe', 'A2', 'gambe', 15::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2260,7 +2260,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', 'gambe veloci', 'B2', 'gambe', 30, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', 'gambe veloci', 'B2', 'gambe', 30::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2284,7 +2284,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Stile libero', 'gambe massimali', 'V', 'gambe', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Stile libero', 'gambe massimali', 'V', 'gambe', 40::integer, null, null from b
 ;
 
 
@@ -2308,7 +2308,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Dorso', 'gambe', 'A2', 'gambe', 15, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Dorso', 'gambe', 'A2', 'gambe', 15::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2332,7 +2332,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', 'gambe veloci', 'B2', 'gambe', 30, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', 'gambe veloci', 'B2', 'gambe', 30::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2356,7 +2356,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Dorso', 'gambe massimali', 'V', 'gambe', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Dorso', 'gambe massimali', 'V', 'gambe', 40::integer, null, null from b
 ;
 
 
@@ -2380,7 +2380,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Rana', 'gambe', 'A2', 'gambe', 15, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Rana', 'gambe', 'A2', 'gambe', 15::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2404,7 +2404,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', 'gambe veloci', 'B2', 'gambe', 30, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', 'gambe veloci', 'B2', 'gambe', 30::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2428,7 +2428,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Rana', 'gambe massimali', 'V', 'gambe', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Rana', 'gambe massimali', 'V', 'gambe', 40::integer, null, null from b
 ;
 
 
@@ -2452,7 +2452,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Delfino', 'gambe', 'A2', 'gambe', 15, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Delfino', 'gambe', 'A2', 'gambe', 15::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2476,7 +2476,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', 'gambe veloci', 'B2', 'gambe', 30, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', 'gambe veloci', 'B2', 'gambe', 30::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2500,7 +2500,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Delfino', 'gambe massimali', 'V', 'gambe', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Delfino', 'gambe massimali', 'V', 'gambe', 40::integer, null, null from b
 ;
 
 
@@ -2524,7 +2524,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'Misti', 'gambe a stili ogni 25', 'A1', 'gambe', null, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'Misti', 'gambe a stili ogni 25', 'A1', 'gambe', null::integer, 'Pinne', null from b
 ;
 
 
@@ -2548,7 +2548,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', '25 ondulazioni subacquee + 25 facile', 'B2', 'gambe', 30, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', '25 ondulazioni subacquee + 25 facile', 'B2', 'gambe', 30::integer, 'Pinne', null from b
 ;
 
 
@@ -2572,7 +2572,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'A scelta', 'gambe progressive per 25', 'A2', 'gambe', 20, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'A scelta', 'gambe progressive per 25', 'A2', 'gambe', 20::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2596,7 +2596,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'A scelta', 'gambe (alterna stile e dorso)', 'A1', 'gambe', 20, 'Tavoletta', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'A scelta', 'gambe (alterna stile e dorso)', 'A1', 'gambe', 20::integer, 'Tavoletta', null from b
 ;
 
 
@@ -2620,7 +2620,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 30, null, 'gambe in verticale braccia incrociate al petto', 'B2', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 30::integer, null, 'gambe in verticale braccia incrociate al petto', 'B2', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -2644,7 +2644,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 200, null, 'Stile libero', 'braccia', 'A2', 'braccia', 20, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 200::integer, null::integer, 'Stile libero', 'braccia', 'A2', 'braccia', 20::integer, 'Pull buoy', null from b
 ;
 
 
@@ -2668,7 +2668,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Stile libero', 'braccia', 'B1', 'braccia', 15, 'Palette, Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Stile libero', 'braccia', 'B1', 'braccia', 15::integer, 'Palette, Pull buoy', null from b
 ;
 
 
@@ -2692,7 +2692,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Rana', 'braccia con pull buoy', 'A2', 'pull', 15, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Rana', 'braccia con pull buoy', 'A2', 'pull', 15::integer, 'Pull buoy', null from b
 ;
 
 
@@ -2716,7 +2716,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Stile libero', 'braccia, respirazione ogni 5', 'A2', 'braccia', null, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Stile libero', 'braccia, respirazione ogni 5', 'A2', 'braccia', null::integer, 'Pull buoy', null from b
 ;
 
 
@@ -2740,7 +2740,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 300, null, 'Stile libero', 'braccia, presa lunga', 'A2', 'braccia', 30, 'Palette, Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 300::integer, null::integer, 'Stile libero', 'braccia, presa lunga', 'A2', 'braccia', 30::integer, 'Palette, Pull buoy', null from b
 ;
 
 
@@ -2764,7 +2764,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 50, null, 'Dorso', 'braccia', 'A2', 'braccia', 15, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 50::integer, null::integer, 'Dorso', 'braccia', 'A2', 'braccia', 15::integer, 'Pull buoy', null from b
 ;
 
 
@@ -2788,7 +2788,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Stile libero', 'braccia con elastico alle caviglie', 'B1', 'braccia', 30, 'Pull buoy, Elastico', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Stile libero', 'braccia con elastico alle caviglie', 'B1', 'braccia', 30::integer, 'Pull buoy, Elastico', null from b
 ;
 
 
@@ -2812,7 +2812,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'A scelta', 'con paracadute/freno', 'C2', 'pull', 60, 'Paracadute', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'A scelta', 'con paracadute/freno', 'C2', 'pull', 60::integer, 'Paracadute', null from b
 ;
 
 
@@ -2836,7 +2836,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -2860,7 +2860,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -2884,7 +2884,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Rana', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Rana', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -2908,7 +2908,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 200, null, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 200::integer, null::integer, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -2932,7 +2932,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Misti', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Misti', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -2956,7 +2956,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 200, null, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 200::integer, null::integer, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -2980,7 +2980,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 200, null, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 200::integer, null::integer, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3004,7 +3004,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 200, null, 'Rana', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 200::integer, null::integer, 'Rana', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3028,7 +3028,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3052,7 +3052,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 200, null, 'Misti', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 200::integer, null::integer, 'Misti', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3076,7 +3076,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Stile libero', 'negative split', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Stile libero', 'negative split', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3100,7 +3100,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Dorso', 'negative split', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Dorso', 'negative split', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3124,7 +3124,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Rana', 'negative split', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Rana', 'negative split', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3148,7 +3148,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 50, null, 'Delfino', 'negative split', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 50::integer, null::integer, 'Delfino', 'negative split', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3172,7 +3172,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Misti', 'negative split', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Misti', 'negative split', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3196,7 +3196,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 16, 50, null, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 16, 50::integer, null::integer, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3220,7 +3220,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 16, 50, null, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 16, 50::integer, null::integer, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3244,7 +3244,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 16, 50, null, 'Rana', 'ritmo costante', 'A2', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 16, 50::integer, null::integer, 'Rana', 'ritmo costante', 'A2', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3268,7 +3268,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Delfino', 'ritmo costante', 'A2', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3292,7 +3292,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Stile libero', 'ritmo soglia costante', 'B1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Stile libero', 'ritmo soglia costante', 'B1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3316,7 +3316,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Dorso', 'ritmo soglia costante', 'B1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Dorso', 'ritmo soglia costante', 'B1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3340,7 +3340,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Rana', 'ritmo soglia costante', 'B1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Rana', 'ritmo soglia costante', 'B1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3364,7 +3364,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 50, null, 'Delfino', 'ritmo soglia costante', 'B1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 50::integer, null::integer, 'Delfino', 'ritmo soglia costante', 'B1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3388,7 +3388,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Misti', 'ritmo soglia costante', 'B1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Misti', 'ritmo soglia costante', 'B1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -3412,7 +3412,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 200, null, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 200::integer, null::integer, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3436,7 +3436,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 200, null, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 200::integer, null::integer, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3460,7 +3460,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 200, null, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 200::integer, null::integer, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3484,7 +3484,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 100, null, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 100::integer, null::integer, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3508,7 +3508,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 200, null, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 200::integer, null::integer, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -3532,7 +3532,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3556,7 +3556,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3580,7 +3580,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3604,7 +3604,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 200, null, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 200::integer, null::integer, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3628,7 +3628,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 400, null, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 400::integer, null::integer, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3652,7 +3652,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 20, 50, null, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 20, 50::integer, null::integer, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3676,7 +3676,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 20, 50, null, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 20, 50::integer, null::integer, 'Dorso', 'ritmo soglia', 'B1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3700,7 +3700,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 20, 50, null, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 20, 50::integer, null::integer, 'Rana', 'ritmo soglia', 'B1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3724,7 +3724,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 50, null, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 50::integer, null::integer, 'Delfino', 'ritmo soglia', 'B1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -3748,7 +3748,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Stile libero', 'forte, tempi costanti', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Stile libero', 'forte, tempi costanti', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3772,7 +3772,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Dorso', 'forte, tempi costanti', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Dorso', 'forte, tempi costanti', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3796,7 +3796,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Rana', 'forte, tempi costanti', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Rana', 'forte, tempi costanti', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3820,7 +3820,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Delfino', 'forte, tempi costanti', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Delfino', 'forte, tempi costanti', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3844,7 +3844,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Misti', 'forte, tempi costanti', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Misti', 'forte, tempi costanti', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -3868,7 +3868,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 200, null, 'Stile libero', 'forte', 'B2', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 200::integer, null::integer, 'Stile libero', 'forte', 'B2', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -3892,7 +3892,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 200, null, 'Dorso', 'forte', 'B2', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 200::integer, null::integer, 'Dorso', 'forte', 'B2', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -3916,7 +3916,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 200, null, 'Rana', 'forte', 'B2', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 200::integer, null::integer, 'Rana', 'forte', 'B2', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -3940,7 +3940,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Delfino', 'forte', 'B2', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Delfino', 'forte', 'B2', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -3964,7 +3964,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 200, null, 'Misti', 'forte', 'B2', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 200::integer, null::integer, 'Misti', 'forte', 'B2', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -3988,7 +3988,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 12, 50, null, 'Stile libero', 'forte', 'B2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 12, 50::integer, null::integer, 'Stile libero', 'forte', 'B2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -4012,7 +4012,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 12, 50, null, 'Dorso', 'forte', 'B2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 12, 50::integer, null::integer, 'Dorso', 'forte', 'B2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -4036,7 +4036,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 12, 50, null, 'Rana', 'forte', 'B2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 12, 50::integer, null::integer, 'Rana', 'forte', 'B2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -4060,7 +4060,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', 'forte', 'B2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', 'forte', 'B2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -4084,7 +4084,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Stile libero', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Stile libero', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4108,7 +4108,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Dorso', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Dorso', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4132,7 +4132,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Rana', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Rana', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4156,7 +4156,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4180,7 +4180,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Misti', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Misti', 'tolleranza, tempi vicini al ritmo gara', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4204,7 +4204,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Stile libero', 'tolleranza', 'C1', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Stile libero', 'tolleranza', 'C1', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4228,7 +4228,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Dorso', 'tolleranza', 'C1', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Dorso', 'tolleranza', 'C1', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4252,7 +4252,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Rana', 'tolleranza', 'C1', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Rana', 'tolleranza', 'C1', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4276,7 +4276,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Delfino', 'tolleranza', 'C1', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Delfino', 'tolleranza', 'C1', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4300,7 +4300,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 75, null, 'Stile libero', 'tolleranza', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 75::integer, null::integer, 'Stile libero', 'tolleranza', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4324,7 +4324,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 75, null, 'Dorso', 'tolleranza', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 75::integer, null::integer, 'Dorso', 'tolleranza', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4348,7 +4348,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 75, null, 'Rana', 'tolleranza', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 75::integer, null::integer, 'Rana', 'tolleranza', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4372,7 +4372,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 75, null, 'Delfino', 'tolleranza', 'C1', 'nuoto', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 75::integer, null::integer, 'Delfino', 'tolleranza', 'C1', 'nuoto', 90::integer, null, null from b
 ;
 
 
@@ -4396,7 +4396,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Stile libero', 'massimale', 'C2', 'nuoto', 180, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Stile libero', 'massimale', 'C2', 'nuoto', 180::integer, null, null from b
 ;
 
 
@@ -4420,7 +4420,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Dorso', 'massimale', 'C2', 'nuoto', 180, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Dorso', 'massimale', 'C2', 'nuoto', 180::integer, null, null from b
 ;
 
 
@@ -4444,7 +4444,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Rana', 'massimale', 'C2', 'nuoto', 180, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Rana', 'massimale', 'C2', 'nuoto', 180::integer, null, null from b
 ;
 
 
@@ -4468,7 +4468,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Delfino', 'massimale', 'C2', 'nuoto', 180, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Delfino', 'massimale', 'C2', 'nuoto', 180::integer, null, null from b
 ;
 
 
@@ -4492,7 +4492,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 100, null, 'Stile libero', 'massimale', 'C2', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 100::integer, null::integer, 'Stile libero', 'massimale', 'C2', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -4516,7 +4516,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 100, null, 'Dorso', 'massimale', 'C2', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 100::integer, null::integer, 'Dorso', 'massimale', 'C2', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -4540,7 +4540,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 100, null, 'Rana', 'massimale', 'C2', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 100::integer, null::integer, 'Rana', 'massimale', 'C2', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -4564,7 +4564,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 50, null, 'Delfino', 'massimale', 'C2', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 50::integer, null::integer, 'Delfino', 'massimale', 'C2', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -4588,7 +4588,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 100, null, 'Misti', 'massimale', 'C2', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 100::integer, null::integer, 'Misti', 'massimale', 'C2', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -4612,7 +4612,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Stile libero', 'massimale dal blocco', 'C2', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Stile libero', 'massimale dal blocco', 'C2', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -4636,7 +4636,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Dorso', 'massimale dal blocco', 'C2', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Dorso', 'massimale dal blocco', 'C2', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -4660,7 +4660,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Rana', 'massimale dal blocco', 'C2', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Rana', 'massimale dal blocco', 'C2', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -4684,7 +4684,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 25, null, 'Delfino', 'massimale dal blocco', 'C2', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 25::integer, null::integer, 'Delfino', 'massimale dal blocco', 'C2', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -4708,7 +4708,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Stile libero', 'massimale', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Stile libero', 'massimale', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4732,7 +4732,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Dorso', 'massimale', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Dorso', 'massimale', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4756,7 +4756,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Rana', 'massimale', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Rana', 'massimale', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4780,7 +4780,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Delfino', 'massimale', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Delfino', 'massimale', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4804,7 +4804,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'A scelta', 'massimale, stile a scelta', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'A scelta', 'massimale, stile a scelta', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -4828,7 +4828,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Stile libero', 'sprint dal muro', 'V', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Stile libero', 'sprint dal muro', 'V', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -4852,7 +4852,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Dorso', 'sprint dal muro', 'V', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Dorso', 'sprint dal muro', 'V', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -4876,7 +4876,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Rana', 'sprint dal muro', 'V', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Rana', 'sprint dal muro', 'V', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -4900,7 +4900,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 15, null, 'Delfino', 'sprint dal muro', 'V', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 15::integer, null::integer, 'Delfino', 'sprint dal muro', 'V', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -4924,7 +4924,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 13, null, 'Stile libero', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 13::integer, null::integer, 'Stile libero', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -4948,7 +4948,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 13, null, 'Dorso', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 13::integer, null::integer, 'Dorso', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -4972,7 +4972,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 13, null, 'Rana', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 13::integer, null::integer, 'Rana', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -4996,7 +4996,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 13, null, 'Delfino', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 13::integer, null::integer, 'Delfino', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5020,7 +5020,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 4, 3, 100, null, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 4, 3, 100::integer, null::integer, 'Stile libero', 'ritmo soglia', 'B1', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -5044,7 +5044,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 2, 4, 50, null, 'A scelta', 'stile principale, tolleranza', 'C1', 'nuoto', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 2, 4, 50::integer, null::integer, 'A scelta', 'stile principale, tolleranza', 'C1', 'nuoto', 45::integer, null, null from b
 ;
 
 
@@ -5068,7 +5068,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 4, 4, 25, null, 'A scelta', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 4, 4, 25::integer, null::integer, 'A scelta', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5092,7 +5092,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 1500, null, 'Stile libero', 'continuo, ritmo regolare', 'A2', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 1500::integer, null::integer, 'Stile libero', 'continuo, ritmo regolare', 'A2', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -5116,7 +5116,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, 300, null, 'Misti', '100 SL + 100 dorso + 100 SL', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, 300::integer, null::integer, 'Misti', '100 SL + 100 dorso + 100 SL', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5140,7 +5140,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Stile libero', 'ritmo 200', 'RG', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Stile libero', 'ritmo 200', 'RG', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5164,7 +5164,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Dorso', 'ritmo 200', 'RG', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Dorso', 'ritmo 200', 'RG', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5188,7 +5188,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Rana', 'ritmo 200', 'RG', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Rana', 'ritmo 200', 'RG', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5212,7 +5212,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Delfino', 'ritmo 200', 'RG', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Delfino', 'ritmo 200', 'RG', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5236,7 +5236,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Stile libero', 'ritmo 400', 'RG', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Stile libero', 'ritmo 400', 'RG', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5260,7 +5260,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Dorso', 'ritmo 400', 'RG', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Dorso', 'ritmo 400', 'RG', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5284,7 +5284,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Rana', 'ritmo 400', 'RG', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Rana', 'ritmo 400', 'RG', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5308,7 +5308,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', 'ritmo 100', 'RG', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', 'ritmo 100', 'RG', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -5332,7 +5332,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Dorso', 'ritmo 100', 'RG', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Dorso', 'ritmo 100', 'RG', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -5356,7 +5356,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Rana', 'ritmo 100', 'RG', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Rana', 'ritmo 100', 'RG', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -5380,7 +5380,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Delfino', 'ritmo 100', 'RG', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Delfino', 'ritmo 100', 'RG', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -5404,7 +5404,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Stile libero', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Stile libero', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -5428,7 +5428,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Dorso', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Dorso', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -5452,7 +5452,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Rana', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Rana', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -5476,7 +5476,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Delfino', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Delfino', 'broken 200 (rec 10" ogni 50)', 'RG', 'nuoto', 10::integer, null, null from b
 ;
 
 
@@ -5500,7 +5500,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Misti', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5524,7 +5524,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 200, null, 'Misti', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 200::integer, null::integer, 'Misti', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5548,7 +5548,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 100, null, 'Misti', 'forte', 'B2', 'nuoto', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 100::integer, null::integer, 'Misti', 'forte', 'B2', 'nuoto', 40::integer, null, null from b
 ;
 
 
@@ -5572,7 +5572,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Misti', 'ritmo gara 200 misti', 'C1', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Misti', 'ritmo gara 200 misti', 'C1', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -5596,7 +5596,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 3, 4, 50, null, 'Misti', '1 per stile, poi giro successivo più veloce', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 3, 4, 50::integer, null::integer, 'Misti', '1 per stile, poi giro successivo più veloce', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -5620,7 +5620,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5644,7 +5644,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 100, null, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 100::integer, null::integer, 'Stile libero', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5668,7 +5668,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Misti', '2 per stile', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Misti', '2 per stile', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5692,7 +5692,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Dorso', 'ritmo costante', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5716,7 +5716,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Rana', 'ritmo costante, scivolata', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Rana', 'ritmo costante, scivolata', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5740,7 +5740,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'A scelta', 'forte, tempi costanti', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'A scelta', 'forte, tempi costanti', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5764,7 +5764,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 2, 100, null, 'Misti', '25 per stile', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 2, 100::integer, null::integer, 'Misti', '25 per stile', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5788,7 +5788,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 25, null, 'A scelta', 'staffetta a squadre, gioco', 'V', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 25::integer, null::integer, 'A scelta', 'staffetta a squadre, gioco', 'V', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -5812,7 +5812,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 100, null, 'Stile libero', 'ritmo costante, partenza a tempo', 'A2', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 100::integer, null::integer, 'Stile libero', 'ritmo costante, partenza a tempo', 'A2', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -5836,7 +5836,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 200, null, 'A scelta', 'ritmo soglia', 'B1', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 200::integer, null::integer, 'A scelta', 'ritmo soglia', 'B1', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -5860,7 +5860,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'A scelta', 'veloci, tecnica pulita', 'V', 'tecnica', 45, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'A scelta', 'veloci, tecnica pulita', 'V', 'tecnica', 45::integer, null, null from b
 ;
 
 
@@ -5884,7 +5884,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'A scelta', 'sciolto', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -5908,7 +5908,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'Misti', 'molto facile', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'Misti', 'molto facile', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -5932,7 +5932,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, 50, null, 'Dorso', 'sciolto', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, 50::integer, null::integer, 'Dorso', 'sciolto', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -5956,8 +5956,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Stile libero', null, 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 100, null, 'Dorso', null, 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 100::integer, null::integer, 'Dorso', null, 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -5981,7 +5981,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Stile libero', 'braccia lente, respirazione 5', 'A1', 'braccia', null, 'Pull buoy', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Stile libero', 'braccia lente, respirazione 5', 'A1', 'braccia', null::integer, 'Pull buoy', null from b
 ;
 
 
@@ -6005,7 +6005,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'A scelta', 'gambe facili', 'A1', 'gambe', null, 'Pinne', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'A scelta', 'gambe facili', 'A1', 'gambe', null::integer, 'Pinne', null from b
 ;
 
 
@@ -6029,8 +6029,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'A scelta', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, null, 300, null, 'allungamento in acqua', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, null::integer, 300::integer, null, 'allungamento in acqua', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6054,8 +6054,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'A scelta', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, null, 300, null, 'gioco libero in acqua', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, null::integer, 300::integer, null, 'gioco libero in acqua', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6079,7 +6079,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Stile libero', 'massimale, prendi tempo e passaggi ai 100', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Stile libero', 'massimale, prendi tempo e passaggi ai 100', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6103,8 +6103,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Stile libero', 'massimale', 'TEST', 'nuoto', 600, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 200, null, 'Stile libero', 'massimale', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Stile libero', 'massimale', 'TEST', 'nuoto', 600::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 200::integer, null::integer, 'Stile libero', 'massimale', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6128,7 +6128,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 1800, 'Stile libero', '30 minuti continui, registra i metri percorsi', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 1800::integer, 'Stile libero', '30 minuti continui, registra i metri percorsi', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6152,7 +6152,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Stile libero', 'massimale dal blocco', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Stile libero', 'massimale dal blocco', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6176,7 +6176,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Dorso', 'massimale dal blocco', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Dorso', 'massimale dal blocco', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6200,7 +6200,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Rana', 'massimale dal blocco', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Rana', 'massimale dal blocco', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6224,7 +6224,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 100, null, 'Delfino', 'massimale dal blocco', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 100::integer, null::integer, 'Delfino', 'massimale dal blocco', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6248,7 +6248,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 2, 50, null, 'A scelta', 'massimale, vale il migliore', 'TEST', 'nuoto', 300, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 2, 50::integer, null::integer, 'A scelta', 'massimale, vale il migliore', 'TEST', 'nuoto', 300::integer, null, null from b
 ;
 
 
@@ -6272,7 +6272,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 7, 200, null, 'Stile libero', 'progressivo a gradini, tempo e FC a ogni 200', 'TEST', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 7, 200::integer, null::integer, 'Stile libero', 'progressivo a gradini, tempo e FC a ogni 200', 'TEST', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6296,7 +6296,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'A scelta', 'ritmo gara 200, registra i tempi', 'TEST', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'A scelta', 'ritmo gara 200, registra i tempi', 'TEST', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -6320,7 +6320,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'A scelta', 'massimale, stile principale', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'A scelta', 'massimale, stile principale', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6344,7 +6344,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 2000, null, 'Stile libero', 'massimale, passaggi ai 500', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 2000::integer, null::integer, 'Stile libero', 'massimale, passaggi ai 500', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6368,8 +6368,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Misti', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 200, null, 'Testa alta', null, 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Misti', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 200::integer, null::integer, 'Testa alta', null, 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6393,8 +6393,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'Stile libero', null, 'A1', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 50, null, 'Misti', '25 testa alta + 25 SL', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 50::integer, null::integer, 'Misti', '25 testa alta + 25 SL', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -6418,7 +6418,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'passaggi a coppie spostandosi con gambe a rana pallanuoto', 'A1', 'gambe', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'passaggi a coppie spostandosi con gambe a rana pallanuoto', 'A1', 'gambe', null::integer, 'Palloni', null from b
 ;
 
 
@@ -6442,9 +6442,9 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 200, null, null, 'gambe rana pallanuoto in verticale e spostamento', 'A1', 'gambe', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 4, 25, null, 'Testa alta', 'sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 200::integer, null::integer, null, 'gambe rana pallanuoto in verticale e spostamento', 'A1', 'gambe', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 4, 25::integer, null::integer, 'Testa alta', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6468,8 +6468,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'Stile libero', null, 'A1', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, null, 300, null, 'gioco con la palla (ruba-palla, passaggi liberi)', 'A1', 'nuoto', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'Stile libero', null, 'A1', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, null::integer, 300::integer, null, 'gioco con la palla (ruba-palla, passaggi liberi)', 'A1', 'nuoto', null::integer, 'Palloni', null from b
 ;
 
 
@@ -6493,7 +6493,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Misti', 'SL testa alta / dorso polo / rana alternati', 'A1', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Misti', 'SL testa alta / dorso polo / rana alternati', 'A1', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -6517,10 +6517,10 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'A scelta', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 4, 15, null, 'Testa alta', 'sprint', 'V', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 1, null, 300, null, 'passaggi a coppie', 'T', 'tecnica', null, 'Palloni', null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 4, 1, 1, null, 300, null, 'tiri al portiere progressivi', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 4, 15::integer, null::integer, 'Testa alta', 'sprint', 'V', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 1, null::integer, 300::integer, null, 'passaggi a coppie', 'T', 'tecnica', null::integer, 'Palloni', null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 4, 1, 1, null::integer, 300::integer, null, 'tiri al portiere progressivi', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -6544,8 +6544,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'A scelta', 'sciolto', 'A1', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, null, 300, null, 'passaggi a coppie da fermi', 'A1', 'nuoto', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, null::integer, 300::integer, null, 'passaggi a coppie da fermi', 'A1', 'nuoto', null::integer, 'Palloni', null from b
 ;
 
 
@@ -6569,7 +6569,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Testa alta', 'veloce', 'B2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Testa alta', 'veloce', 'B2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -6593,7 +6593,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 15, null, 'Testa alta', 'partenza dalla posizione verticale al fischio', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 15::integer, null::integer, 'Testa alta', 'partenza dalla posizione verticale al fischio', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6617,7 +6617,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 20, null, 'Testa alta', '10 m sprint, giro di 180° al fischio, 10 m sprint', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 20::integer, null::integer, 'Testa alta', '10 m sprint, giro di 180° al fischio, 10 m sprint', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6641,7 +6641,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Misti', '12,5 testa alta + 12,5 dorso polo', 'A2', 'nuoto', 15, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Misti', '12,5 testa alta + 12,5 dorso polo', 'A2', 'nuoto', 15::integer, null, null from b
 ;
 
 
@@ -6665,7 +6665,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 15, null, 'Testa alta', 'conduzione palla', 'V', 'nuoto', 30, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 15::integer, null::integer, 'Testa alta', 'conduzione palla', 'V', 'nuoto', 30::integer, 'Palloni', null from b
 ;
 
 
@@ -6689,7 +6689,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Testa alta', 'conduzione palla, ritmo costante', 'A2', 'nuoto', 20, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Testa alta', 'conduzione palla, ritmo costante', 'A2', 'nuoto', 20::integer, 'Palloni', null from b
 ;
 
 
@@ -6713,7 +6713,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 4, 4, 25, null, 'Testa alta', 'sprint con giro di 180° a metà vasca', 'V', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 4, 4, 25::integer, null::integer, 'Testa alta', 'sprint con giro di 180° a metà vasca', 'V', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -6737,7 +6737,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 20, 15, null, 'Testa alta', 'partenza al fischio, come in contropiede', 'V', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 20, 15::integer, null::integer, 'Testa alta', 'partenza al fischio, come in contropiede', 'V', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6761,7 +6761,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 50, null, 'Testa alta', 'forte', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 50::integer, null::integer, 'Testa alta', 'forte', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6785,7 +6785,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 200, null, 'Testa alta', 'ritmo costante', 'A2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 200::integer, null::integer, 'Testa alta', 'ritmo costante', 'A2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -6809,11 +6809,11 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 10, null, 'Testa alta', null, 'V', 'nuoto', 20, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, 15, null, 'Testa alta', null, 'V', 'nuoto', 25, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 3, 1, 1, 20, null, 'Testa alta', null, 'V', 'nuoto', 30, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 4, 1, 1, 15, null, 'Testa alta', null, 'V', 'nuoto', 25, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 5, 1, 1, 10, null, 'Testa alta', null, 'V', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 10::integer, null::integer, 'Testa alta', null, 'V', 'nuoto', 20::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, 15::integer, null::integer, 'Testa alta', null, 'V', 'nuoto', 25::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 3, 1, 1, 20::integer, null::integer, 'Testa alta', null, 'V', 'nuoto', 30::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 4, 1, 1, 15::integer, null::integer, 'Testa alta', null, 'V', 'nuoto', 25::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 5, 1, 1, 10::integer, null::integer, 'Testa alta', null, 'V', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -6837,7 +6837,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 60, null, 'gambe rana pallanuoto, braccia fuori dall''acqua', 'B2', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 60::integer, null, 'gambe rana pallanuoto, braccia fuori dall''acqua', 'B2', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -6861,7 +6861,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, null, 30, null, 'gambe in verticale tenendo un peso sopra la testa', 'C1', 'gambe', 30, 'Peso/cintura zavorrata', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, null::integer, 30::integer, null, 'gambe in verticale tenendo un peso sopra la testa', 'C1', 'gambe', 30::integer, 'Peso/cintura zavorrata', null from b
 ;
 
 
@@ -6885,7 +6885,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 300, null, 'spostamenti laterali dx/sx in verticale, busto alto', 'A2', 'gambe', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 300::integer, null, 'spostamenti laterali dx/sx in verticale, busto alto', 'A2', 'gambe', null::integer, null, null from b
 ;
 
 
@@ -6909,7 +6909,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, null, 20, null, 'salti/esplosioni fuori dall''acqua dalla verticale', 'V', 'gambe', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, null::integer, 20::integer, null, 'salti/esplosioni fuori dall''acqua dalla verticale', 'V', 'gambe', 40::integer, null, null from b
 ;
 
 
@@ -6933,7 +6933,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, null, 120, null, 'gambe rana pallanuoto, mani fuori', 'A2', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, null::integer, 120::integer, null, 'gambe rana pallanuoto, mani fuori', 'A2', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -6957,7 +6957,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, null, 'avanzamento in verticale con gambe, braccia fuori', 'B2', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, null, 'avanzamento in verticale con gambe, braccia fuori', 'B2', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -6981,7 +6981,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 30, null, 'spinta frontale a coppie in verticale', 'C1', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 30::integer, null, 'spinta frontale a coppie in verticale', 'C1', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -7005,7 +7005,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, null, 15, null, 'dalla verticale scatto orizzontale di 5 m', 'V', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, null::integer, 15::integer, null, 'dalla verticale scatto orizzontale di 5 m', 'V', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -7029,7 +7029,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 5, null, 30, null, 'gambe con mani sopra la testa, a gara', 'A2', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 5, null::integer, 30::integer, null, 'gambe con mani sopra la testa, a gara', 'A2', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -7053,7 +7053,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 45, null, 'gambe in verticale con palla tenuta in alto con una mano', 'B1', 'gambe', 30, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 45::integer, null, 'gambe in verticale con palla tenuta in alto con una mano', 'B1', 'gambe', 30::integer, 'Palloni', null from b
 ;
 
 
@@ -7077,7 +7077,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'passaggi a coppie, alterna mano dx e sx', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'passaggi a coppie, alterna mano dx e sx', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7101,7 +7101,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'terne che avanzano lungo la vasca passandosi la palla', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'terne che avanzano lungo la vasca passandosi la palla', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7125,7 +7125,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'ricezione, palleggio sul posto, passaggio', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'ricezione, palleggio sul posto, passaggio', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7149,7 +7149,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'passaggio e scatto in avanti, ricezione in movimento', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'passaggio e scatto in avanti, ricezione in movimento', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7173,7 +7173,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'due attaccanti si passano la palla con un difensore in mezzo', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'due attaccanti si passano la palla con un difensore in mezzo', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7197,7 +7197,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'alterna passaggi in aria (asciutti) e sull''acqua (bagnati)', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'alterna passaggi in aria (asciutti) e sull''acqua (bagnati)', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7221,7 +7221,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, '6 giocatori in posizione d''attacco, circolazione veloce', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, '6 giocatori in posizione d''attacco, circolazione veloce', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7245,7 +7245,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'lanci lunghi del portiere a giocatori in contropiede', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'lanci lunghi del portiere a giocatori in contropiede', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7269,7 +7269,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'tiri da 5 m mirando agli angoli alti e bassi', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'tiri da 5 m mirando agli angoli alti e bassi', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7293,7 +7293,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'conduzione palla 10 m e tiro in movimento', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'conduzione palla 10 m e tiro in movimento', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7317,7 +7317,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'tiro a pallonetto sopra il portiere', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'tiro a pallonetto sopra il portiere', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7341,7 +7341,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'tiro che rimbalza sull''acqua davanti al portiere', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'tiro che rimbalza sull''acqua davanti al portiere', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7365,7 +7365,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'tiri dai 7-8 m con elevazione', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'tiri dai 7-8 m con elevazione', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7389,7 +7389,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'ricezione spalle alla porta e tiro di girata', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'ricezione spalle alla porta e tiro di girata', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7413,7 +7413,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 15, null, 'Testa alta', 'sprint 15 m e tiro immediato', 'C1', 'pallanuoto tecnico-tattico', 45, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 15::integer, null::integer, 'Testa alta', 'sprint 15 m e tiro immediato', 'C1', 'pallanuoto tecnico-tattico', 45::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7437,7 +7437,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'rigori a rotazione, il portiere cambia', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'rigori a rotazione, il portiere cambia', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7461,7 +7461,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'attaccante contro difensore, conclusione a rete', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'attaccante contro difensore, conclusione a rete', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7485,7 +7485,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 30, null, 'elevazione massima con braccia fuori', 'C1', 'braccia', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 30::integer, null, 'elevazione massima con braccia fuori', 'C1', 'braccia', 30::integer, null, null from b
 ;
 
 
@@ -7509,7 +7509,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, null, 15, null, 'spostamenti laterali palo-palo', 'V', 'pallanuoto tecnico-tattico', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, null::integer, 15::integer, null, 'spostamenti laterali palo-palo', 'V', 'pallanuoto tecnico-tattico', 30::integer, null, null from b
 ;
 
 
@@ -7533,7 +7533,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'parate su tiri dell''allenatore da varie posizioni', 'T', 'tecnica', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'parate su tiri dell''allenatore da varie posizioni', 'T', 'tecnica', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7557,7 +7557,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'tiri ravvicinati rapidi da 2-3 m', 'V', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'tiri ravvicinati rapidi da 2-3 m', 'V', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7581,7 +7581,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'rinvii verso un compagno in movimento', 'T', 'tecnica', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'rinvii verso un compagno in movimento', 'T', 'tecnica', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7605,7 +7605,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 480, null, 'uscita su attaccante solo in contropiede', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 480::integer, null, 'uscita su attaccante solo in contropiede', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7629,7 +7629,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'difensore in pressing sul portatore', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'difensore in pressing sul portatore', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni', null from b
 ;
 
 
@@ -7653,7 +7653,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'anticipo, difesa davanti e dietro il centroboa', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'anticipo, difesa davanti e dietro il centroboa', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7677,7 +7677,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'difesa a zona con raddoppio sul centroboa', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'difesa a zona con raddoppio sul centroboa', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7701,7 +7701,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 25, null, 'Testa alta', 'dopo il tiro, rientro veloce in difesa', 'V', 'pallanuoto tecnico-tattico', 40, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 25::integer, null::integer, 'Testa alta', 'dopo il tiro, rientro veloce in difesa', 'V', 'pallanuoto tecnico-tattico', 40::integer, null, null from b
 ;
 
 
@@ -7725,7 +7725,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'difesa in inferiorità numerica', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'difesa in inferiorità numerica', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7749,7 +7749,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'circolazione e tagli in attacco 3-3', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'circolazione e tagli in attacco 3-3', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7773,7 +7773,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'attacco con due giocatori in zona 2 metri', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'attacco con due giocatori in zona 2 metri', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7797,7 +7797,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 30, null, 'centroboa contro difensore, conquista della posizione', 'C1', 'pallanuoto tecnico-tattico', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 30::integer, null, 'centroboa contro difensore, conquista della posizione', 'C1', 'pallanuoto tecnico-tattico', 30::integer, null, null from b
 ;
 
 
@@ -7821,7 +7821,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'schema di superiorità 4-2', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'schema di superiorità 4-2', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7845,7 +7845,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'schema di superiorità 3-3', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'schema di superiorità 3-3', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7869,7 +7869,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'due attaccanti contro un difensore fino al tiro', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'due attaccanti contro un difensore fino al tiro', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7893,7 +7893,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'tre attaccanti contro due difensori', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'tre attaccanti contro due difensori', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7917,7 +7917,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 900, null, 'partitella a metà campo', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 900::integer, null, 'partitella a metà campo', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7941,7 +7941,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 900, null, 'vietati i passaggi bagnati', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 900::integer, null, 'vietati i passaggi bagnati', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7965,7 +7965,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 900, null, 'tiro obbligatorio entro 3 passaggi', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 900::integer, null, 'tiro obbligatorio entro 3 passaggi', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -7989,7 +7989,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 900, null, 'i gol in contropiede valgono doppio', 'TT', 'pallanuoto tecnico-tattico', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 900::integer, null, 'i gol in contropiede valgono doppio', 'TT', 'pallanuoto tecnico-tattico', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -8013,7 +8013,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 4, null, 360, null, 'partita con regole ufficiali', 'TT', 'pallanuoto tecnico-tattico', 120, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 4, null::integer, 360::integer, null, 'partita con regole ufficiali', 'TT', 'pallanuoto tecnico-tattico', 120::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -8037,7 +8037,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 2, null, 480, null, 'partita libera con regole semplificate', 'TT', 'pallanuoto tecnico-tattico', 120, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 2, null::integer, 480::integer, null, 'partita libera con regole semplificate', 'TT', 'pallanuoto tecnico-tattico', 120::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -8061,7 +8061,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 15, null, 'Testa alta', 'sprint e 10" di gambe con braccia fuori', 'V', 'gambe', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 15::integer, null::integer, 'Testa alta', 'sprint e 10" di gambe con braccia fuori', 'V', 'gambe', 30::integer, null, null from b
 ;
 
 
@@ -8085,7 +8085,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, null, 60, null, 'stazioni: sprint, gambe con peso, lotta, tiri, salti, dorso polo', 'B2', 'gambe', 20, 'Palloni, Peso/cintura zavorrata', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, null::integer, 60::integer, null, 'stazioni: sprint, gambe con peso, lotta, tiri, salti, dorso polo', 'B2', 'gambe', 20::integer, 'Palloni, Peso/cintura zavorrata', null from b
 ;
 
 
@@ -8109,7 +8109,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 8, 100, null, 'Testa alta', 'ritmo soglia', 'B1', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 8, 100::integer, null::integer, 'Testa alta', 'ritmo soglia', 'B1', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -8133,7 +8133,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 6, 50, null, 'Testa alta', 'forte', 'C1', 'nuoto', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 6, 50::integer, null::integer, 'Testa alta', 'forte', 'C1', 'nuoto', 60::integer, null, null from b
 ;
 
 
@@ -8157,7 +8157,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, null, 30, 'Testa alta', 'nuoto forte', 'B2', 'nuoto', 30, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, null::integer, 30::integer, 'Testa alta', 'nuoto forte', 'B2', 'nuoto', 30::integer, null, null from b
 ;
 
 
@@ -8181,8 +8181,8 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 200, null, 'A scelta', 'sciolto', 'A1', 'nuoto', null, null, null from b
-union all select id, '00000000-0000-0000-0000-000000000001', 2, 1, 1, null, 300, null, 'allungamento in acqua', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 200::integer, null::integer, 'A scelta', 'sciolto', 'A1', 'nuoto', null::integer, null, null from b
+union all select id, '00000000-0000-0000-0000-000000000001'::uuid, 2, 1, 1, null::integer, 300::integer, null, 'allungamento in acqua', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -8206,7 +8206,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 300, null, 'Misti', 'molto facile', 'A1', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 300::integer, null::integer, 'Misti', 'molto facile', 'A1', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -8230,7 +8230,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, 15, null, 'Testa alta', 'dalla verticale, vale il migliore', 'TEST', 'nuoto', 120, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, 15::integer, null::integer, 'Testa alta', 'dalla verticale, vale il migliore', 'TEST', 'nuoto', 120::integer, null, null from b
 ;
 
 
@@ -8254,7 +8254,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, 400, null, 'Stile libero', 'massimale', 'TEST', 'nuoto', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, 400::integer, null::integer, 'Stile libero', 'massimale', 'TEST', 'nuoto', null::integer, null, null from b
 ;
 
 
@@ -8278,7 +8278,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 60, null, 'tempo di mantenimento con braccia fuori sopra la testa', 'TEST', 'braccia', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 60::integer, null, 'tempo di mantenimento con braccia fuori sopra la testa', 'TEST', 'braccia', null::integer, null, null from b
 ;
 
 
@@ -8302,7 +8302,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 10, 25, null, 'Testa alta', 'registra tutti i tempi (calo di prestazione)', 'TEST', 'nuoto', 20, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 10, 25::integer, null::integer, 'Testa alta', 'registra tutti i tempi (calo di prestazione)', 'TEST', 'nuoto', 20::integer, null, null from b
 ;
 
 
@@ -8326,7 +8326,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 300, null, '10 tiri nei 4 angoli, conta i centri', 'TEST', 'nuoto', null, 'Palloni, Porte', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 300::integer, null, '10 tiri nei 4 angoli, conta i centri', 'TEST', 'nuoto', null::integer, 'Palloni, Porte', null from b
 ;
 
 
@@ -8350,7 +8350,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'rotazioni interne/esterne, tirate, Y-T-W', 'T', 'tecnica', null, 'Elastici', null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'rotazioni interne/esterne, tirate, Y-T-W', 'T', 'tecnica', null::integer, 'Elastici', null from b
 ;
 
 
@@ -8374,7 +8374,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'mobilità di spalle, anche, caviglie e colonna', 'A1', 'a secco', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'mobilità di spalle, anche, caviglie e colonna', 'A1', 'a secco', null::integer, null, null from b
 ;
 
 
@@ -8398,7 +8398,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, null, 300, null, 'plank, plank laterale, dead bug, superman', 'B1', 'a secco', 60, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, null::integer, 300::integer, null, 'plank, plank laterale, dead bug, superman', 'B1', 'a secco', 60::integer, null, null from b
 ;
 
 
@@ -8422,7 +8422,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 3, null, 480, null, 'squat, affondi, piegamenti, trazioni assistite, salti', 'B2', 'a secco', 90, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 3, null::integer, 480::integer, null, 'squat, affondi, piegamenti, trazioni assistite, salti', 'B2', 'a secco', 90::integer, null, null from b
 ;
 
 
@@ -8446,7 +8446,7 @@ insert into public.training_block_parti (
   blocco_id, club_id, ordine, giri, ripetizioni, distanza_m, durata_s,
   stile, esercizio, zona, esecuzione, recupero_s, attrezzi, note
 )
-select id, '00000000-0000-0000-0000-000000000001', 1, 1, 1, null, 600, null, 'allungamento statico dei principali gruppi', 'A1', 'a secco', null, null, null from b
+select id, '00000000-0000-0000-0000-000000000001'::uuid, 1, 1, 1, null::integer, 600::integer, null, 'allungamento statico dei principali gruppi', 'A1', 'a secco', null::integer, null, null from b
 ;
 
 
