@@ -9,7 +9,7 @@ import '../../../widgets/lane_rule.dart';
 import '../domain/serie.dart';
 import 'serie_labels.dart';
 
-enum AzioneSerie { su, giu, cambiaBlocco, duplica, elimina }
+enum AzioneSerie { su, giu, cambiaBlocco, duplica, salvaComeBlocco, elimina }
 
 /// Una serie nell'elenco del dettaglio allenamento, su circa 64 px:
 /// maniglia di trascinamento a sinistra, filetto del colore di zona, due
@@ -167,6 +167,10 @@ class RigaSerie extends StatelessWidget {
                     const PopupMenuItem(
                       value: AzioneSerie.duplica,
                       child: _Voce(Icons.copy_outlined, 'Duplica'),
+                    ),
+                    const PopupMenuItem(
+                      value: AzioneSerie.salvaComeBlocco,
+                      child: _Voce(Icons.bookmark_add_outlined, 'Salva blocco'),
                     ),
                     PopupMenuItem(
                       value: AzioneSerie.elimina,

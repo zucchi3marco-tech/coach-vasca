@@ -14,6 +14,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../libreria_blocchi/data/training_blocks_repository.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
@@ -195,6 +196,8 @@ class _AllenamentoDetailScreenState
         }
       case AzioneSerie.duplica:
         await _duplicaGruppo(gruppi, index);
+      case AzioneSerie.salvaComeBlocco:
+        await _salvaComeBlocco(gruppo);
       case AzioneSerie.elimina:
         await _eliminaGruppo(gruppi, index);
     }
@@ -273,6 +276,37 @@ class _AllenamentoDetailScreenState
         ...nuove,
         for (var i = index + 1; i < gruppi.length; i++) ...gruppi[i],
       ]);
+    } catch (e) {
+      _errore(e);
+    }
+  }
+
+  /// "Salva come blocco": crea subito un blocco in bozza in libreria con
+  /// le righe del gruppo (una piramide intera diventa un blocco a più
+  /// parti) — da approvare poi nella schermata "Libreria blocchi".
+  Future<void> _salvaComeBlocco(List<Serie> gruppo) async {
+    final titolo = gruppo.length > 1
+        ? '${gruppo.map((s) => s.distanzaM ?? s.durataS).join('-')} ${labelStile(gruppo.first.stile)}'
+        : '${labelVolumeSerie(gruppo.first)} ${labelStile(gruppo.first.stile)}';
+    try {
+      await ref
+          .read(trainingBlocksRepositoryProvider)
+          .salvaSerieComeBlocco(
+            clubId: widget.allenamento.clubId,
+            codice: 'M-${DateTime.now().millisecondsSinceEpoch}',
+            sport: 'entrambi',
+            titolo: titolo,
+            serieGruppo: gruppo,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Salvato in libreria come bozza: da approvare nella schermata "Libreria blocchi".',
+            ),
+          ),
+        );
+      }
     } catch (e) {
       _errore(e);
     }

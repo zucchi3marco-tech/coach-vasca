@@ -50,6 +50,17 @@ dependencies:
   google_fonts: ^8.2.1
   shared_preferences: ^2.5.5
   web: ^1.1.1
+  file_picker: ^13.1.0
+  excel: ^4.0.6
+
+dependency_overrides:
+  # Il package excel (ultima versione 4.0.6) dichiara xml <7.0.0, ma pdf
+  # (gia' in uso per l'export) richiede xml ^7.0.1: le due fasce non si
+  # sovrappongono. L'uso che excel fa di xml (lettura/scrittura XML di
+  # base per gli zip .xlsx) non tocca le parti cambiate nella major 7 —
+  # verificato leggendo il file Excel vero della libreria blocchi prima
+  # di questo commit.
+  xml: ^7.0.1
 
 dev_dependencies:
   flutter_test:

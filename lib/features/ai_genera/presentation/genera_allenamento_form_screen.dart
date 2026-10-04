@@ -26,6 +26,7 @@ import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
 import '../domain/modulo_compilato.dart';
 import '../domain/parametri_generazione.dart';
+import '../../libreria_blocchi/presentation/libreria_blocchi_screen.dart';
 import 'campi_generatore.dart';
 import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
@@ -406,6 +407,15 @@ class _GeneraAllenamentoFormScreenState
       appBar: AppBar(
         title: const Text('Genera con AI'),
         actions: [
+          IconButton(
+            tooltip: 'Libreria blocchi',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => LibreriaBlocchiScreen(clubId: widget.clubId),
+              ),
+            ),
+            icon: const Icon(Icons.view_list_outlined),
+          ),
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(

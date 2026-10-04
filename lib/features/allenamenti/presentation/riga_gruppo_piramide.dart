@@ -171,6 +171,10 @@ class RigaGruppoPiramide extends StatelessWidget {
                     value: AzioneSerie.duplica,
                     child: _Voce(Icons.copy_outlined, 'Duplica'),
                   ),
+                  const PopupMenuItem(
+                    value: AzioneSerie.salvaComeBlocco,
+                    child: _Voce(Icons.bookmark_add_outlined, 'Salva blocco'),
+                  ),
                   PopupMenuItem(
                     value: AzioneSerie.elimina,
                     child: _Voce(

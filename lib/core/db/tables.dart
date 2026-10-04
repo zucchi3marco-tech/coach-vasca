@@ -358,3 +358,52 @@ class GaraIscrittiTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// Libreria di blocchi di allenamento approvati (RIPROGETTAZIONE AI,
+/// FASE 1) — cache locale, stesso pattern di [SerieTable]/[AllenamentiTable].
+class TrainingBlocksTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get codice => text()();
+  TextColumn get sport => text()();
+  TextColumn get fase => text()();
+  TextColumn get obiettivo => text()();
+  TextColumn get zoneCoinvolte => text()();
+  TextColumn get titolo => text()();
+  TextColumn get descrizione => text()();
+  TextColumn get stilePrincipale => text().nullable()();
+  TextColumn get livelli => text().withDefault(const Constant(''))();
+  TextColumn get attrezzi => text().nullable()();
+  IntColumn get metriTotali => integer().withDefault(const Constant(0))();
+  IntColumn get durataStimataMin => integer().withDefault(const Constant(0))();
+  TextColumn get note => text().nullable()();
+  TextColumn get stato => text().withDefault(const Constant('bozza'))();
+  TextColumn get fonte => text().withDefault(const Constant('Allenatore'))();
+  DateTimeColumn get importatoIl => dateTime().nullable()();
+  BoolColumn get modificatoInApp =>
+      boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class TrainingBlockPartiTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get bloccoId => text()();
+  TextColumn get clubId => text()();
+  IntColumn get ordine => integer().withDefault(const Constant(1))();
+  IntColumn get giri => integer().withDefault(const Constant(1))();
+  IntColumn get ripetizioni => integer().withDefault(const Constant(1))();
+  IntColumn get distanzaM => integer().nullable()();
+  IntColumn get durataS => integer().nullable()();
+  TextColumn get stile => text().nullable()();
+  TextColumn get esercizio => text().nullable()();
+  TextColumn get zona => text()();
+  TextColumn get esecuzione => text()();
+  IntColumn get recuperoS => integer().nullable()();
+  TextColumn get attrezzi => text().nullable()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

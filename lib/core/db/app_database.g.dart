@@ -10870,6 +10870,1914 @@ class GaraIscrittiTableCompanion
   }
 }
 
+class $TrainingBlocksTableTable extends TrainingBlocksTable
+    with TableInfo<$TrainingBlocksTableTable, TrainingBlocksTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrainingBlocksTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codiceMeta = const VerificationMeta('codice');
+  @override
+  late final GeneratedColumn<String> codice = GeneratedColumn<String>(
+    'codice',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sportMeta = const VerificationMeta('sport');
+  @override
+  late final GeneratedColumn<String> sport = GeneratedColumn<String>(
+    'sport',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _faseMeta = const VerificationMeta('fase');
+  @override
+  late final GeneratedColumn<String> fase = GeneratedColumn<String>(
+    'fase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _obiettivoMeta = const VerificationMeta(
+    'obiettivo',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivo = GeneratedColumn<String>(
+    'obiettivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _zoneCoinvolteMeta = const VerificationMeta(
+    'zoneCoinvolte',
+  );
+  @override
+  late final GeneratedColumn<String> zoneCoinvolte = GeneratedColumn<String>(
+    'zone_coinvolte',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titoloMeta = const VerificationMeta('titolo');
+  @override
+  late final GeneratedColumn<String> titolo = GeneratedColumn<String>(
+    'titolo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descrizioneMeta = const VerificationMeta(
+    'descrizione',
+  );
+  @override
+  late final GeneratedColumn<String> descrizione = GeneratedColumn<String>(
+    'descrizione',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stilePrincipaleMeta = const VerificationMeta(
+    'stilePrincipale',
+  );
+  @override
+  late final GeneratedColumn<String> stilePrincipale = GeneratedColumn<String>(
+    'stile_principale',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _livelliMeta = const VerificationMeta(
+    'livelli',
+  );
+  @override
+  late final GeneratedColumn<String> livelli = GeneratedColumn<String>(
+    'livelli',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _attrezziMeta = const VerificationMeta(
+    'attrezzi',
+  );
+  @override
+  late final GeneratedColumn<String> attrezzi = GeneratedColumn<String>(
+    'attrezzi',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _metriTotaliMeta = const VerificationMeta(
+    'metriTotali',
+  );
+  @override
+  late final GeneratedColumn<int> metriTotali = GeneratedColumn<int>(
+    'metri_totali',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _durataStimataMinMeta = const VerificationMeta(
+    'durataStimataMin',
+  );
+  @override
+  late final GeneratedColumn<int> durataStimataMin = GeneratedColumn<int>(
+    'durata_stimata_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statoMeta = const VerificationMeta('stato');
+  @override
+  late final GeneratedColumn<String> stato = GeneratedColumn<String>(
+    'stato',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('bozza'),
+  );
+  static const VerificationMeta _fonteMeta = const VerificationMeta('fonte');
+  @override
+  late final GeneratedColumn<String> fonte = GeneratedColumn<String>(
+    'fonte',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('Allenatore'),
+  );
+  static const VerificationMeta _importatoIlMeta = const VerificationMeta(
+    'importatoIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> importatoIl = GeneratedColumn<DateTime>(
+    'importato_il',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modificatoInAppMeta = const VerificationMeta(
+    'modificatoInApp',
+  );
+  @override
+  late final GeneratedColumn<bool> modificatoInApp = GeneratedColumn<bool>(
+    'modificato_in_app',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("modificato_in_app" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    codice,
+    sport,
+    fase,
+    obiettivo,
+    zoneCoinvolte,
+    titolo,
+    descrizione,
+    stilePrincipale,
+    livelli,
+    attrezzi,
+    metriTotali,
+    durataStimataMin,
+    note,
+    stato,
+    fonte,
+    importatoIl,
+    modificatoInApp,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'training_blocks_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrainingBlocksTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('codice')) {
+      context.handle(
+        _codiceMeta,
+        codice.isAcceptableOrUnknown(data['codice']!, _codiceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codiceMeta);
+    }
+    if (data.containsKey('sport')) {
+      context.handle(
+        _sportMeta,
+        sport.isAcceptableOrUnknown(data['sport']!, _sportMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sportMeta);
+    }
+    if (data.containsKey('fase')) {
+      context.handle(
+        _faseMeta,
+        fase.isAcceptableOrUnknown(data['fase']!, _faseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_faseMeta);
+    }
+    if (data.containsKey('obiettivo')) {
+      context.handle(
+        _obiettivoMeta,
+        obiettivo.isAcceptableOrUnknown(data['obiettivo']!, _obiettivoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_obiettivoMeta);
+    }
+    if (data.containsKey('zone_coinvolte')) {
+      context.handle(
+        _zoneCoinvolteMeta,
+        zoneCoinvolte.isAcceptableOrUnknown(
+          data['zone_coinvolte']!,
+          _zoneCoinvolteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_zoneCoinvolteMeta);
+    }
+    if (data.containsKey('titolo')) {
+      context.handle(
+        _titoloMeta,
+        titolo.isAcceptableOrUnknown(data['titolo']!, _titoloMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titoloMeta);
+    }
+    if (data.containsKey('descrizione')) {
+      context.handle(
+        _descrizioneMeta,
+        descrizione.isAcceptableOrUnknown(
+          data['descrizione']!,
+          _descrizioneMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descrizioneMeta);
+    }
+    if (data.containsKey('stile_principale')) {
+      context.handle(
+        _stilePrincipaleMeta,
+        stilePrincipale.isAcceptableOrUnknown(
+          data['stile_principale']!,
+          _stilePrincipaleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('livelli')) {
+      context.handle(
+        _livelliMeta,
+        livelli.isAcceptableOrUnknown(data['livelli']!, _livelliMeta),
+      );
+    }
+    if (data.containsKey('attrezzi')) {
+      context.handle(
+        _attrezziMeta,
+        attrezzi.isAcceptableOrUnknown(data['attrezzi']!, _attrezziMeta),
+      );
+    }
+    if (data.containsKey('metri_totali')) {
+      context.handle(
+        _metriTotaliMeta,
+        metriTotali.isAcceptableOrUnknown(
+          data['metri_totali']!,
+          _metriTotaliMeta,
+        ),
+      );
+    }
+    if (data.containsKey('durata_stimata_min')) {
+      context.handle(
+        _durataStimataMinMeta,
+        durataStimataMin.isAcceptableOrUnknown(
+          data['durata_stimata_min']!,
+          _durataStimataMinMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('stato')) {
+      context.handle(
+        _statoMeta,
+        stato.isAcceptableOrUnknown(data['stato']!, _statoMeta),
+      );
+    }
+    if (data.containsKey('fonte')) {
+      context.handle(
+        _fonteMeta,
+        fonte.isAcceptableOrUnknown(data['fonte']!, _fonteMeta),
+      );
+    }
+    if (data.containsKey('importato_il')) {
+      context.handle(
+        _importatoIlMeta,
+        importatoIl.isAcceptableOrUnknown(
+          data['importato_il']!,
+          _importatoIlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('modificato_in_app')) {
+      context.handle(
+        _modificatoInAppMeta,
+        modificatoInApp.isAcceptableOrUnknown(
+          data['modificato_in_app']!,
+          _modificatoInAppMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TrainingBlocksTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrainingBlocksTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      codice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}codice'],
+      )!,
+      sport: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sport'],
+      )!,
+      fase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fase'],
+      )!,
+      obiettivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo'],
+      )!,
+      zoneCoinvolte: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}zone_coinvolte'],
+      )!,
+      titolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}titolo'],
+      )!,
+      descrizione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descrizione'],
+      )!,
+      stilePrincipale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stile_principale'],
+      ),
+      livelli: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}livelli'],
+      )!,
+      attrezzi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attrezzi'],
+      ),
+      metriTotali: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}metri_totali'],
+      )!,
+      durataStimataMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}durata_stimata_min'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      stato: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stato'],
+      )!,
+      fonte: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fonte'],
+      )!,
+      importatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}importato_il'],
+      ),
+      modificatoInApp: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}modificato_in_app'],
+      )!,
+    );
+  }
+
+  @override
+  $TrainingBlocksTableTable createAlias(String alias) {
+    return $TrainingBlocksTableTable(attachedDatabase, alias);
+  }
+}
+
+class TrainingBlocksTableData extends DataClass
+    implements Insertable<TrainingBlocksTableData> {
+  final String id;
+  final String clubId;
+  final String codice;
+  final String sport;
+  final String fase;
+  final String obiettivo;
+  final String zoneCoinvolte;
+  final String titolo;
+  final String descrizione;
+  final String? stilePrincipale;
+  final String livelli;
+  final String? attrezzi;
+  final int metriTotali;
+  final int durataStimataMin;
+  final String? note;
+  final String stato;
+  final String fonte;
+  final DateTime? importatoIl;
+  final bool modificatoInApp;
+  const TrainingBlocksTableData({
+    required this.id,
+    required this.clubId,
+    required this.codice,
+    required this.sport,
+    required this.fase,
+    required this.obiettivo,
+    required this.zoneCoinvolte,
+    required this.titolo,
+    required this.descrizione,
+    this.stilePrincipale,
+    required this.livelli,
+    this.attrezzi,
+    required this.metriTotali,
+    required this.durataStimataMin,
+    this.note,
+    required this.stato,
+    required this.fonte,
+    this.importatoIl,
+    required this.modificatoInApp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['codice'] = Variable<String>(codice);
+    map['sport'] = Variable<String>(sport);
+    map['fase'] = Variable<String>(fase);
+    map['obiettivo'] = Variable<String>(obiettivo);
+    map['zone_coinvolte'] = Variable<String>(zoneCoinvolte);
+    map['titolo'] = Variable<String>(titolo);
+    map['descrizione'] = Variable<String>(descrizione);
+    if (!nullToAbsent || stilePrincipale != null) {
+      map['stile_principale'] = Variable<String>(stilePrincipale);
+    }
+    map['livelli'] = Variable<String>(livelli);
+    if (!nullToAbsent || attrezzi != null) {
+      map['attrezzi'] = Variable<String>(attrezzi);
+    }
+    map['metri_totali'] = Variable<int>(metriTotali);
+    map['durata_stimata_min'] = Variable<int>(durataStimataMin);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['stato'] = Variable<String>(stato);
+    map['fonte'] = Variable<String>(fonte);
+    if (!nullToAbsent || importatoIl != null) {
+      map['importato_il'] = Variable<DateTime>(importatoIl);
+    }
+    map['modificato_in_app'] = Variable<bool>(modificatoInApp);
+    return map;
+  }
+
+  TrainingBlocksTableCompanion toCompanion(bool nullToAbsent) {
+    return TrainingBlocksTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      codice: Value(codice),
+      sport: Value(sport),
+      fase: Value(fase),
+      obiettivo: Value(obiettivo),
+      zoneCoinvolte: Value(zoneCoinvolte),
+      titolo: Value(titolo),
+      descrizione: Value(descrizione),
+      stilePrincipale: stilePrincipale == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stilePrincipale),
+      livelli: Value(livelli),
+      attrezzi: attrezzi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attrezzi),
+      metriTotali: Value(metriTotali),
+      durataStimataMin: Value(durataStimataMin),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      stato: Value(stato),
+      fonte: Value(fonte),
+      importatoIl: importatoIl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importatoIl),
+      modificatoInApp: Value(modificatoInApp),
+    );
+  }
+
+  factory TrainingBlocksTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrainingBlocksTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      codice: serializer.fromJson<String>(json['codice']),
+      sport: serializer.fromJson<String>(json['sport']),
+      fase: serializer.fromJson<String>(json['fase']),
+      obiettivo: serializer.fromJson<String>(json['obiettivo']),
+      zoneCoinvolte: serializer.fromJson<String>(json['zoneCoinvolte']),
+      titolo: serializer.fromJson<String>(json['titolo']),
+      descrizione: serializer.fromJson<String>(json['descrizione']),
+      stilePrincipale: serializer.fromJson<String?>(json['stilePrincipale']),
+      livelli: serializer.fromJson<String>(json['livelli']),
+      attrezzi: serializer.fromJson<String?>(json['attrezzi']),
+      metriTotali: serializer.fromJson<int>(json['metriTotali']),
+      durataStimataMin: serializer.fromJson<int>(json['durataStimataMin']),
+      note: serializer.fromJson<String?>(json['note']),
+      stato: serializer.fromJson<String>(json['stato']),
+      fonte: serializer.fromJson<String>(json['fonte']),
+      importatoIl: serializer.fromJson<DateTime?>(json['importatoIl']),
+      modificatoInApp: serializer.fromJson<bool>(json['modificatoInApp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'codice': serializer.toJson<String>(codice),
+      'sport': serializer.toJson<String>(sport),
+      'fase': serializer.toJson<String>(fase),
+      'obiettivo': serializer.toJson<String>(obiettivo),
+      'zoneCoinvolte': serializer.toJson<String>(zoneCoinvolte),
+      'titolo': serializer.toJson<String>(titolo),
+      'descrizione': serializer.toJson<String>(descrizione),
+      'stilePrincipale': serializer.toJson<String?>(stilePrincipale),
+      'livelli': serializer.toJson<String>(livelli),
+      'attrezzi': serializer.toJson<String?>(attrezzi),
+      'metriTotali': serializer.toJson<int>(metriTotali),
+      'durataStimataMin': serializer.toJson<int>(durataStimataMin),
+      'note': serializer.toJson<String?>(note),
+      'stato': serializer.toJson<String>(stato),
+      'fonte': serializer.toJson<String>(fonte),
+      'importatoIl': serializer.toJson<DateTime?>(importatoIl),
+      'modificatoInApp': serializer.toJson<bool>(modificatoInApp),
+    };
+  }
+
+  TrainingBlocksTableData copyWith({
+    String? id,
+    String? clubId,
+    String? codice,
+    String? sport,
+    String? fase,
+    String? obiettivo,
+    String? zoneCoinvolte,
+    String? titolo,
+    String? descrizione,
+    Value<String?> stilePrincipale = const Value.absent(),
+    String? livelli,
+    Value<String?> attrezzi = const Value.absent(),
+    int? metriTotali,
+    int? durataStimataMin,
+    Value<String?> note = const Value.absent(),
+    String? stato,
+    String? fonte,
+    Value<DateTime?> importatoIl = const Value.absent(),
+    bool? modificatoInApp,
+  }) => TrainingBlocksTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    codice: codice ?? this.codice,
+    sport: sport ?? this.sport,
+    fase: fase ?? this.fase,
+    obiettivo: obiettivo ?? this.obiettivo,
+    zoneCoinvolte: zoneCoinvolte ?? this.zoneCoinvolte,
+    titolo: titolo ?? this.titolo,
+    descrizione: descrizione ?? this.descrizione,
+    stilePrincipale: stilePrincipale.present
+        ? stilePrincipale.value
+        : this.stilePrincipale,
+    livelli: livelli ?? this.livelli,
+    attrezzi: attrezzi.present ? attrezzi.value : this.attrezzi,
+    metriTotali: metriTotali ?? this.metriTotali,
+    durataStimataMin: durataStimataMin ?? this.durataStimataMin,
+    note: note.present ? note.value : this.note,
+    stato: stato ?? this.stato,
+    fonte: fonte ?? this.fonte,
+    importatoIl: importatoIl.present ? importatoIl.value : this.importatoIl,
+    modificatoInApp: modificatoInApp ?? this.modificatoInApp,
+  );
+  TrainingBlocksTableData copyWithCompanion(TrainingBlocksTableCompanion data) {
+    return TrainingBlocksTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      codice: data.codice.present ? data.codice.value : this.codice,
+      sport: data.sport.present ? data.sport.value : this.sport,
+      fase: data.fase.present ? data.fase.value : this.fase,
+      obiettivo: data.obiettivo.present ? data.obiettivo.value : this.obiettivo,
+      zoneCoinvolte: data.zoneCoinvolte.present
+          ? data.zoneCoinvolte.value
+          : this.zoneCoinvolte,
+      titolo: data.titolo.present ? data.titolo.value : this.titolo,
+      descrizione: data.descrizione.present
+          ? data.descrizione.value
+          : this.descrizione,
+      stilePrincipale: data.stilePrincipale.present
+          ? data.stilePrincipale.value
+          : this.stilePrincipale,
+      livelli: data.livelli.present ? data.livelli.value : this.livelli,
+      attrezzi: data.attrezzi.present ? data.attrezzi.value : this.attrezzi,
+      metriTotali: data.metriTotali.present
+          ? data.metriTotali.value
+          : this.metriTotali,
+      durataStimataMin: data.durataStimataMin.present
+          ? data.durataStimataMin.value
+          : this.durataStimataMin,
+      note: data.note.present ? data.note.value : this.note,
+      stato: data.stato.present ? data.stato.value : this.stato,
+      fonte: data.fonte.present ? data.fonte.value : this.fonte,
+      importatoIl: data.importatoIl.present
+          ? data.importatoIl.value
+          : this.importatoIl,
+      modificatoInApp: data.modificatoInApp.present
+          ? data.modificatoInApp.value
+          : this.modificatoInApp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingBlocksTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('codice: $codice, ')
+          ..write('sport: $sport, ')
+          ..write('fase: $fase, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('zoneCoinvolte: $zoneCoinvolte, ')
+          ..write('titolo: $titolo, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('stilePrincipale: $stilePrincipale, ')
+          ..write('livelli: $livelli, ')
+          ..write('attrezzi: $attrezzi, ')
+          ..write('metriTotali: $metriTotali, ')
+          ..write('durataStimataMin: $durataStimataMin, ')
+          ..write('note: $note, ')
+          ..write('stato: $stato, ')
+          ..write('fonte: $fonte, ')
+          ..write('importatoIl: $importatoIl, ')
+          ..write('modificatoInApp: $modificatoInApp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    codice,
+    sport,
+    fase,
+    obiettivo,
+    zoneCoinvolte,
+    titolo,
+    descrizione,
+    stilePrincipale,
+    livelli,
+    attrezzi,
+    metriTotali,
+    durataStimataMin,
+    note,
+    stato,
+    fonte,
+    importatoIl,
+    modificatoInApp,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrainingBlocksTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.codice == this.codice &&
+          other.sport == this.sport &&
+          other.fase == this.fase &&
+          other.obiettivo == this.obiettivo &&
+          other.zoneCoinvolte == this.zoneCoinvolte &&
+          other.titolo == this.titolo &&
+          other.descrizione == this.descrizione &&
+          other.stilePrincipale == this.stilePrincipale &&
+          other.livelli == this.livelli &&
+          other.attrezzi == this.attrezzi &&
+          other.metriTotali == this.metriTotali &&
+          other.durataStimataMin == this.durataStimataMin &&
+          other.note == this.note &&
+          other.stato == this.stato &&
+          other.fonte == this.fonte &&
+          other.importatoIl == this.importatoIl &&
+          other.modificatoInApp == this.modificatoInApp);
+}
+
+class TrainingBlocksTableCompanion
+    extends UpdateCompanion<TrainingBlocksTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> codice;
+  final Value<String> sport;
+  final Value<String> fase;
+  final Value<String> obiettivo;
+  final Value<String> zoneCoinvolte;
+  final Value<String> titolo;
+  final Value<String> descrizione;
+  final Value<String?> stilePrincipale;
+  final Value<String> livelli;
+  final Value<String?> attrezzi;
+  final Value<int> metriTotali;
+  final Value<int> durataStimataMin;
+  final Value<String?> note;
+  final Value<String> stato;
+  final Value<String> fonte;
+  final Value<DateTime?> importatoIl;
+  final Value<bool> modificatoInApp;
+  final Value<int> rowid;
+  const TrainingBlocksTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.codice = const Value.absent(),
+    this.sport = const Value.absent(),
+    this.fase = const Value.absent(),
+    this.obiettivo = const Value.absent(),
+    this.zoneCoinvolte = const Value.absent(),
+    this.titolo = const Value.absent(),
+    this.descrizione = const Value.absent(),
+    this.stilePrincipale = const Value.absent(),
+    this.livelli = const Value.absent(),
+    this.attrezzi = const Value.absent(),
+    this.metriTotali = const Value.absent(),
+    this.durataStimataMin = const Value.absent(),
+    this.note = const Value.absent(),
+    this.stato = const Value.absent(),
+    this.fonte = const Value.absent(),
+    this.importatoIl = const Value.absent(),
+    this.modificatoInApp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrainingBlocksTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String codice,
+    required String sport,
+    required String fase,
+    required String obiettivo,
+    required String zoneCoinvolte,
+    required String titolo,
+    required String descrizione,
+    this.stilePrincipale = const Value.absent(),
+    this.livelli = const Value.absent(),
+    this.attrezzi = const Value.absent(),
+    this.metriTotali = const Value.absent(),
+    this.durataStimataMin = const Value.absent(),
+    this.note = const Value.absent(),
+    this.stato = const Value.absent(),
+    this.fonte = const Value.absent(),
+    this.importatoIl = const Value.absent(),
+    this.modificatoInApp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       codice = Value(codice),
+       sport = Value(sport),
+       fase = Value(fase),
+       obiettivo = Value(obiettivo),
+       zoneCoinvolte = Value(zoneCoinvolte),
+       titolo = Value(titolo),
+       descrizione = Value(descrizione);
+  static Insertable<TrainingBlocksTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? codice,
+    Expression<String>? sport,
+    Expression<String>? fase,
+    Expression<String>? obiettivo,
+    Expression<String>? zoneCoinvolte,
+    Expression<String>? titolo,
+    Expression<String>? descrizione,
+    Expression<String>? stilePrincipale,
+    Expression<String>? livelli,
+    Expression<String>? attrezzi,
+    Expression<int>? metriTotali,
+    Expression<int>? durataStimataMin,
+    Expression<String>? note,
+    Expression<String>? stato,
+    Expression<String>? fonte,
+    Expression<DateTime>? importatoIl,
+    Expression<bool>? modificatoInApp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (codice != null) 'codice': codice,
+      if (sport != null) 'sport': sport,
+      if (fase != null) 'fase': fase,
+      if (obiettivo != null) 'obiettivo': obiettivo,
+      if (zoneCoinvolte != null) 'zone_coinvolte': zoneCoinvolte,
+      if (titolo != null) 'titolo': titolo,
+      if (descrizione != null) 'descrizione': descrizione,
+      if (stilePrincipale != null) 'stile_principale': stilePrincipale,
+      if (livelli != null) 'livelli': livelli,
+      if (attrezzi != null) 'attrezzi': attrezzi,
+      if (metriTotali != null) 'metri_totali': metriTotali,
+      if (durataStimataMin != null) 'durata_stimata_min': durataStimataMin,
+      if (note != null) 'note': note,
+      if (stato != null) 'stato': stato,
+      if (fonte != null) 'fonte': fonte,
+      if (importatoIl != null) 'importato_il': importatoIl,
+      if (modificatoInApp != null) 'modificato_in_app': modificatoInApp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrainingBlocksTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? codice,
+    Value<String>? sport,
+    Value<String>? fase,
+    Value<String>? obiettivo,
+    Value<String>? zoneCoinvolte,
+    Value<String>? titolo,
+    Value<String>? descrizione,
+    Value<String?>? stilePrincipale,
+    Value<String>? livelli,
+    Value<String?>? attrezzi,
+    Value<int>? metriTotali,
+    Value<int>? durataStimataMin,
+    Value<String?>? note,
+    Value<String>? stato,
+    Value<String>? fonte,
+    Value<DateTime?>? importatoIl,
+    Value<bool>? modificatoInApp,
+    Value<int>? rowid,
+  }) {
+    return TrainingBlocksTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      codice: codice ?? this.codice,
+      sport: sport ?? this.sport,
+      fase: fase ?? this.fase,
+      obiettivo: obiettivo ?? this.obiettivo,
+      zoneCoinvolte: zoneCoinvolte ?? this.zoneCoinvolte,
+      titolo: titolo ?? this.titolo,
+      descrizione: descrizione ?? this.descrizione,
+      stilePrincipale: stilePrincipale ?? this.stilePrincipale,
+      livelli: livelli ?? this.livelli,
+      attrezzi: attrezzi ?? this.attrezzi,
+      metriTotali: metriTotali ?? this.metriTotali,
+      durataStimataMin: durataStimataMin ?? this.durataStimataMin,
+      note: note ?? this.note,
+      stato: stato ?? this.stato,
+      fonte: fonte ?? this.fonte,
+      importatoIl: importatoIl ?? this.importatoIl,
+      modificatoInApp: modificatoInApp ?? this.modificatoInApp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (codice.present) {
+      map['codice'] = Variable<String>(codice.value);
+    }
+    if (sport.present) {
+      map['sport'] = Variable<String>(sport.value);
+    }
+    if (fase.present) {
+      map['fase'] = Variable<String>(fase.value);
+    }
+    if (obiettivo.present) {
+      map['obiettivo'] = Variable<String>(obiettivo.value);
+    }
+    if (zoneCoinvolte.present) {
+      map['zone_coinvolte'] = Variable<String>(zoneCoinvolte.value);
+    }
+    if (titolo.present) {
+      map['titolo'] = Variable<String>(titolo.value);
+    }
+    if (descrizione.present) {
+      map['descrizione'] = Variable<String>(descrizione.value);
+    }
+    if (stilePrincipale.present) {
+      map['stile_principale'] = Variable<String>(stilePrincipale.value);
+    }
+    if (livelli.present) {
+      map['livelli'] = Variable<String>(livelli.value);
+    }
+    if (attrezzi.present) {
+      map['attrezzi'] = Variable<String>(attrezzi.value);
+    }
+    if (metriTotali.present) {
+      map['metri_totali'] = Variable<int>(metriTotali.value);
+    }
+    if (durataStimataMin.present) {
+      map['durata_stimata_min'] = Variable<int>(durataStimataMin.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (stato.present) {
+      map['stato'] = Variable<String>(stato.value);
+    }
+    if (fonte.present) {
+      map['fonte'] = Variable<String>(fonte.value);
+    }
+    if (importatoIl.present) {
+      map['importato_il'] = Variable<DateTime>(importatoIl.value);
+    }
+    if (modificatoInApp.present) {
+      map['modificato_in_app'] = Variable<bool>(modificatoInApp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingBlocksTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('codice: $codice, ')
+          ..write('sport: $sport, ')
+          ..write('fase: $fase, ')
+          ..write('obiettivo: $obiettivo, ')
+          ..write('zoneCoinvolte: $zoneCoinvolte, ')
+          ..write('titolo: $titolo, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('stilePrincipale: $stilePrincipale, ')
+          ..write('livelli: $livelli, ')
+          ..write('attrezzi: $attrezzi, ')
+          ..write('metriTotali: $metriTotali, ')
+          ..write('durataStimataMin: $durataStimataMin, ')
+          ..write('note: $note, ')
+          ..write('stato: $stato, ')
+          ..write('fonte: $fonte, ')
+          ..write('importatoIl: $importatoIl, ')
+          ..write('modificatoInApp: $modificatoInApp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TrainingBlockPartiTableTable extends TrainingBlockPartiTable
+    with TableInfo<$TrainingBlockPartiTableTable, TrainingBlockPartiTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrainingBlockPartiTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bloccoIdMeta = const VerificationMeta(
+    'bloccoId',
+  );
+  @override
+  late final GeneratedColumn<String> bloccoId = GeneratedColumn<String>(
+    'blocco_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _giriMeta = const VerificationMeta('giri');
+  @override
+  late final GeneratedColumn<int> giri = GeneratedColumn<int>(
+    'giri',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _ripetizioniMeta = const VerificationMeta(
+    'ripetizioni',
+  );
+  @override
+  late final GeneratedColumn<int> ripetizioni = GeneratedColumn<int>(
+    'ripetizioni',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _distanzaMMeta = const VerificationMeta(
+    'distanzaM',
+  );
+  @override
+  late final GeneratedColumn<int> distanzaM = GeneratedColumn<int>(
+    'distanza_m',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durataSMeta = const VerificationMeta(
+    'durataS',
+  );
+  @override
+  late final GeneratedColumn<int> durataS = GeneratedColumn<int>(
+    'durata_s',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stileMeta = const VerificationMeta('stile');
+  @override
+  late final GeneratedColumn<String> stile = GeneratedColumn<String>(
+    'stile',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _esercizioMeta = const VerificationMeta(
+    'esercizio',
+  );
+  @override
+  late final GeneratedColumn<String> esercizio = GeneratedColumn<String>(
+    'esercizio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _zonaMeta = const VerificationMeta('zona');
+  @override
+  late final GeneratedColumn<String> zona = GeneratedColumn<String>(
+    'zona',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _esecuzioneMeta = const VerificationMeta(
+    'esecuzione',
+  );
+  @override
+  late final GeneratedColumn<String> esecuzione = GeneratedColumn<String>(
+    'esecuzione',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recuperoSMeta = const VerificationMeta(
+    'recuperoS',
+  );
+  @override
+  late final GeneratedColumn<int> recuperoS = GeneratedColumn<int>(
+    'recupero_s',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _attrezziMeta = const VerificationMeta(
+    'attrezzi',
+  );
+  @override
+  late final GeneratedColumn<String> attrezzi = GeneratedColumn<String>(
+    'attrezzi',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bloccoId,
+    clubId,
+    ordine,
+    giri,
+    ripetizioni,
+    distanzaM,
+    durataS,
+    stile,
+    esercizio,
+    zona,
+    esecuzione,
+    recuperoS,
+    attrezzi,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'training_block_parti_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrainingBlockPartiTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('blocco_id')) {
+      context.handle(
+        _bloccoIdMeta,
+        bloccoId.isAcceptableOrUnknown(data['blocco_id']!, _bloccoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bloccoIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    if (data.containsKey('giri')) {
+      context.handle(
+        _giriMeta,
+        giri.isAcceptableOrUnknown(data['giri']!, _giriMeta),
+      );
+    }
+    if (data.containsKey('ripetizioni')) {
+      context.handle(
+        _ripetizioniMeta,
+        ripetizioni.isAcceptableOrUnknown(
+          data['ripetizioni']!,
+          _ripetizioniMeta,
+        ),
+      );
+    }
+    if (data.containsKey('distanza_m')) {
+      context.handle(
+        _distanzaMMeta,
+        distanzaM.isAcceptableOrUnknown(data['distanza_m']!, _distanzaMMeta),
+      );
+    }
+    if (data.containsKey('durata_s')) {
+      context.handle(
+        _durataSMeta,
+        durataS.isAcceptableOrUnknown(data['durata_s']!, _durataSMeta),
+      );
+    }
+    if (data.containsKey('stile')) {
+      context.handle(
+        _stileMeta,
+        stile.isAcceptableOrUnknown(data['stile']!, _stileMeta),
+      );
+    }
+    if (data.containsKey('esercizio')) {
+      context.handle(
+        _esercizioMeta,
+        esercizio.isAcceptableOrUnknown(data['esercizio']!, _esercizioMeta),
+      );
+    }
+    if (data.containsKey('zona')) {
+      context.handle(
+        _zonaMeta,
+        zona.isAcceptableOrUnknown(data['zona']!, _zonaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_zonaMeta);
+    }
+    if (data.containsKey('esecuzione')) {
+      context.handle(
+        _esecuzioneMeta,
+        esecuzione.isAcceptableOrUnknown(data['esecuzione']!, _esecuzioneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_esecuzioneMeta);
+    }
+    if (data.containsKey('recupero_s')) {
+      context.handle(
+        _recuperoSMeta,
+        recuperoS.isAcceptableOrUnknown(data['recupero_s']!, _recuperoSMeta),
+      );
+    }
+    if (data.containsKey('attrezzi')) {
+      context.handle(
+        _attrezziMeta,
+        attrezzi.isAcceptableOrUnknown(data['attrezzi']!, _attrezziMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TrainingBlockPartiTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrainingBlockPartiTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bloccoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blocco_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+      giri: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}giri'],
+      )!,
+      ripetizioni: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ripetizioni'],
+      )!,
+      distanzaM: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distanza_m'],
+      ),
+      durataS: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}durata_s'],
+      ),
+      stile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stile'],
+      ),
+      esercizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esercizio'],
+      ),
+      zona: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}zona'],
+      )!,
+      esecuzione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esecuzione'],
+      )!,
+      recuperoS: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recupero_s'],
+      ),
+      attrezzi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attrezzi'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $TrainingBlockPartiTableTable createAlias(String alias) {
+    return $TrainingBlockPartiTableTable(attachedDatabase, alias);
+  }
+}
+
+class TrainingBlockPartiTableData extends DataClass
+    implements Insertable<TrainingBlockPartiTableData> {
+  final String id;
+  final String bloccoId;
+  final String clubId;
+  final int ordine;
+  final int giri;
+  final int ripetizioni;
+  final int? distanzaM;
+  final int? durataS;
+  final String? stile;
+  final String? esercizio;
+  final String zona;
+  final String esecuzione;
+  final int? recuperoS;
+  final String? attrezzi;
+  final String? note;
+  const TrainingBlockPartiTableData({
+    required this.id,
+    required this.bloccoId,
+    required this.clubId,
+    required this.ordine,
+    required this.giri,
+    required this.ripetizioni,
+    this.distanzaM,
+    this.durataS,
+    this.stile,
+    this.esercizio,
+    required this.zona,
+    required this.esecuzione,
+    this.recuperoS,
+    this.attrezzi,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['blocco_id'] = Variable<String>(bloccoId);
+    map['club_id'] = Variable<String>(clubId);
+    map['ordine'] = Variable<int>(ordine);
+    map['giri'] = Variable<int>(giri);
+    map['ripetizioni'] = Variable<int>(ripetizioni);
+    if (!nullToAbsent || distanzaM != null) {
+      map['distanza_m'] = Variable<int>(distanzaM);
+    }
+    if (!nullToAbsent || durataS != null) {
+      map['durata_s'] = Variable<int>(durataS);
+    }
+    if (!nullToAbsent || stile != null) {
+      map['stile'] = Variable<String>(stile);
+    }
+    if (!nullToAbsent || esercizio != null) {
+      map['esercizio'] = Variable<String>(esercizio);
+    }
+    map['zona'] = Variable<String>(zona);
+    map['esecuzione'] = Variable<String>(esecuzione);
+    if (!nullToAbsent || recuperoS != null) {
+      map['recupero_s'] = Variable<int>(recuperoS);
+    }
+    if (!nullToAbsent || attrezzi != null) {
+      map['attrezzi'] = Variable<String>(attrezzi);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  TrainingBlockPartiTableCompanion toCompanion(bool nullToAbsent) {
+    return TrainingBlockPartiTableCompanion(
+      id: Value(id),
+      bloccoId: Value(bloccoId),
+      clubId: Value(clubId),
+      ordine: Value(ordine),
+      giri: Value(giri),
+      ripetizioni: Value(ripetizioni),
+      distanzaM: distanzaM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanzaM),
+      durataS: durataS == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durataS),
+      stile: stile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stile),
+      esercizio: esercizio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(esercizio),
+      zona: Value(zona),
+      esecuzione: Value(esecuzione),
+      recuperoS: recuperoS == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recuperoS),
+      attrezzi: attrezzi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attrezzi),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory TrainingBlockPartiTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrainingBlockPartiTableData(
+      id: serializer.fromJson<String>(json['id']),
+      bloccoId: serializer.fromJson<String>(json['bloccoId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+      giri: serializer.fromJson<int>(json['giri']),
+      ripetizioni: serializer.fromJson<int>(json['ripetizioni']),
+      distanzaM: serializer.fromJson<int?>(json['distanzaM']),
+      durataS: serializer.fromJson<int?>(json['durataS']),
+      stile: serializer.fromJson<String?>(json['stile']),
+      esercizio: serializer.fromJson<String?>(json['esercizio']),
+      zona: serializer.fromJson<String>(json['zona']),
+      esecuzione: serializer.fromJson<String>(json['esecuzione']),
+      recuperoS: serializer.fromJson<int?>(json['recuperoS']),
+      attrezzi: serializer.fromJson<String?>(json['attrezzi']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bloccoId': serializer.toJson<String>(bloccoId),
+      'clubId': serializer.toJson<String>(clubId),
+      'ordine': serializer.toJson<int>(ordine),
+      'giri': serializer.toJson<int>(giri),
+      'ripetizioni': serializer.toJson<int>(ripetizioni),
+      'distanzaM': serializer.toJson<int?>(distanzaM),
+      'durataS': serializer.toJson<int?>(durataS),
+      'stile': serializer.toJson<String?>(stile),
+      'esercizio': serializer.toJson<String?>(esercizio),
+      'zona': serializer.toJson<String>(zona),
+      'esecuzione': serializer.toJson<String>(esecuzione),
+      'recuperoS': serializer.toJson<int?>(recuperoS),
+      'attrezzi': serializer.toJson<String?>(attrezzi),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  TrainingBlockPartiTableData copyWith({
+    String? id,
+    String? bloccoId,
+    String? clubId,
+    int? ordine,
+    int? giri,
+    int? ripetizioni,
+    Value<int?> distanzaM = const Value.absent(),
+    Value<int?> durataS = const Value.absent(),
+    Value<String?> stile = const Value.absent(),
+    Value<String?> esercizio = const Value.absent(),
+    String? zona,
+    String? esecuzione,
+    Value<int?> recuperoS = const Value.absent(),
+    Value<String?> attrezzi = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => TrainingBlockPartiTableData(
+    id: id ?? this.id,
+    bloccoId: bloccoId ?? this.bloccoId,
+    clubId: clubId ?? this.clubId,
+    ordine: ordine ?? this.ordine,
+    giri: giri ?? this.giri,
+    ripetizioni: ripetizioni ?? this.ripetizioni,
+    distanzaM: distanzaM.present ? distanzaM.value : this.distanzaM,
+    durataS: durataS.present ? durataS.value : this.durataS,
+    stile: stile.present ? stile.value : this.stile,
+    esercizio: esercizio.present ? esercizio.value : this.esercizio,
+    zona: zona ?? this.zona,
+    esecuzione: esecuzione ?? this.esecuzione,
+    recuperoS: recuperoS.present ? recuperoS.value : this.recuperoS,
+    attrezzi: attrezzi.present ? attrezzi.value : this.attrezzi,
+    note: note.present ? note.value : this.note,
+  );
+  TrainingBlockPartiTableData copyWithCompanion(
+    TrainingBlockPartiTableCompanion data,
+  ) {
+    return TrainingBlockPartiTableData(
+      id: data.id.present ? data.id.value : this.id,
+      bloccoId: data.bloccoId.present ? data.bloccoId.value : this.bloccoId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      giri: data.giri.present ? data.giri.value : this.giri,
+      ripetizioni: data.ripetizioni.present
+          ? data.ripetizioni.value
+          : this.ripetizioni,
+      distanzaM: data.distanzaM.present ? data.distanzaM.value : this.distanzaM,
+      durataS: data.durataS.present ? data.durataS.value : this.durataS,
+      stile: data.stile.present ? data.stile.value : this.stile,
+      esercizio: data.esercizio.present ? data.esercizio.value : this.esercizio,
+      zona: data.zona.present ? data.zona.value : this.zona,
+      esecuzione: data.esecuzione.present
+          ? data.esecuzione.value
+          : this.esecuzione,
+      recuperoS: data.recuperoS.present ? data.recuperoS.value : this.recuperoS,
+      attrezzi: data.attrezzi.present ? data.attrezzi.value : this.attrezzi,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingBlockPartiTableData(')
+          ..write('id: $id, ')
+          ..write('bloccoId: $bloccoId, ')
+          ..write('clubId: $clubId, ')
+          ..write('ordine: $ordine, ')
+          ..write('giri: $giri, ')
+          ..write('ripetizioni: $ripetizioni, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('durataS: $durataS, ')
+          ..write('stile: $stile, ')
+          ..write('esercizio: $esercizio, ')
+          ..write('zona: $zona, ')
+          ..write('esecuzione: $esecuzione, ')
+          ..write('recuperoS: $recuperoS, ')
+          ..write('attrezzi: $attrezzi, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bloccoId,
+    clubId,
+    ordine,
+    giri,
+    ripetizioni,
+    distanzaM,
+    durataS,
+    stile,
+    esercizio,
+    zona,
+    esecuzione,
+    recuperoS,
+    attrezzi,
+    note,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrainingBlockPartiTableData &&
+          other.id == this.id &&
+          other.bloccoId == this.bloccoId &&
+          other.clubId == this.clubId &&
+          other.ordine == this.ordine &&
+          other.giri == this.giri &&
+          other.ripetizioni == this.ripetizioni &&
+          other.distanzaM == this.distanzaM &&
+          other.durataS == this.durataS &&
+          other.stile == this.stile &&
+          other.esercizio == this.esercizio &&
+          other.zona == this.zona &&
+          other.esecuzione == this.esecuzione &&
+          other.recuperoS == this.recuperoS &&
+          other.attrezzi == this.attrezzi &&
+          other.note == this.note);
+}
+
+class TrainingBlockPartiTableCompanion
+    extends UpdateCompanion<TrainingBlockPartiTableData> {
+  final Value<String> id;
+  final Value<String> bloccoId;
+  final Value<String> clubId;
+  final Value<int> ordine;
+  final Value<int> giri;
+  final Value<int> ripetizioni;
+  final Value<int?> distanzaM;
+  final Value<int?> durataS;
+  final Value<String?> stile;
+  final Value<String?> esercizio;
+  final Value<String> zona;
+  final Value<String> esecuzione;
+  final Value<int?> recuperoS;
+  final Value<String?> attrezzi;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const TrainingBlockPartiTableCompanion({
+    this.id = const Value.absent(),
+    this.bloccoId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.giri = const Value.absent(),
+    this.ripetizioni = const Value.absent(),
+    this.distanzaM = const Value.absent(),
+    this.durataS = const Value.absent(),
+    this.stile = const Value.absent(),
+    this.esercizio = const Value.absent(),
+    this.zona = const Value.absent(),
+    this.esecuzione = const Value.absent(),
+    this.recuperoS = const Value.absent(),
+    this.attrezzi = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrainingBlockPartiTableCompanion.insert({
+    required String id,
+    required String bloccoId,
+    required String clubId,
+    this.ordine = const Value.absent(),
+    this.giri = const Value.absent(),
+    this.ripetizioni = const Value.absent(),
+    this.distanzaM = const Value.absent(),
+    this.durataS = const Value.absent(),
+    this.stile = const Value.absent(),
+    this.esercizio = const Value.absent(),
+    required String zona,
+    required String esecuzione,
+    this.recuperoS = const Value.absent(),
+    this.attrezzi = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bloccoId = Value(bloccoId),
+       clubId = Value(clubId),
+       zona = Value(zona),
+       esecuzione = Value(esecuzione);
+  static Insertable<TrainingBlockPartiTableData> custom({
+    Expression<String>? id,
+    Expression<String>? bloccoId,
+    Expression<String>? clubId,
+    Expression<int>? ordine,
+    Expression<int>? giri,
+    Expression<int>? ripetizioni,
+    Expression<int>? distanzaM,
+    Expression<int>? durataS,
+    Expression<String>? stile,
+    Expression<String>? esercizio,
+    Expression<String>? zona,
+    Expression<String>? esecuzione,
+    Expression<int>? recuperoS,
+    Expression<String>? attrezzi,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bloccoId != null) 'blocco_id': bloccoId,
+      if (clubId != null) 'club_id': clubId,
+      if (ordine != null) 'ordine': ordine,
+      if (giri != null) 'giri': giri,
+      if (ripetizioni != null) 'ripetizioni': ripetizioni,
+      if (distanzaM != null) 'distanza_m': distanzaM,
+      if (durataS != null) 'durata_s': durataS,
+      if (stile != null) 'stile': stile,
+      if (esercizio != null) 'esercizio': esercizio,
+      if (zona != null) 'zona': zona,
+      if (esecuzione != null) 'esecuzione': esecuzione,
+      if (recuperoS != null) 'recupero_s': recuperoS,
+      if (attrezzi != null) 'attrezzi': attrezzi,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrainingBlockPartiTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bloccoId,
+    Value<String>? clubId,
+    Value<int>? ordine,
+    Value<int>? giri,
+    Value<int>? ripetizioni,
+    Value<int?>? distanzaM,
+    Value<int?>? durataS,
+    Value<String?>? stile,
+    Value<String?>? esercizio,
+    Value<String>? zona,
+    Value<String>? esecuzione,
+    Value<int?>? recuperoS,
+    Value<String?>? attrezzi,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return TrainingBlockPartiTableCompanion(
+      id: id ?? this.id,
+      bloccoId: bloccoId ?? this.bloccoId,
+      clubId: clubId ?? this.clubId,
+      ordine: ordine ?? this.ordine,
+      giri: giri ?? this.giri,
+      ripetizioni: ripetizioni ?? this.ripetizioni,
+      distanzaM: distanzaM ?? this.distanzaM,
+      durataS: durataS ?? this.durataS,
+      stile: stile ?? this.stile,
+      esercizio: esercizio ?? this.esercizio,
+      zona: zona ?? this.zona,
+      esecuzione: esecuzione ?? this.esecuzione,
+      recuperoS: recuperoS ?? this.recuperoS,
+      attrezzi: attrezzi ?? this.attrezzi,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bloccoId.present) {
+      map['blocco_id'] = Variable<String>(bloccoId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (giri.present) {
+      map['giri'] = Variable<int>(giri.value);
+    }
+    if (ripetizioni.present) {
+      map['ripetizioni'] = Variable<int>(ripetizioni.value);
+    }
+    if (distanzaM.present) {
+      map['distanza_m'] = Variable<int>(distanzaM.value);
+    }
+    if (durataS.present) {
+      map['durata_s'] = Variable<int>(durataS.value);
+    }
+    if (stile.present) {
+      map['stile'] = Variable<String>(stile.value);
+    }
+    if (esercizio.present) {
+      map['esercizio'] = Variable<String>(esercizio.value);
+    }
+    if (zona.present) {
+      map['zona'] = Variable<String>(zona.value);
+    }
+    if (esecuzione.present) {
+      map['esecuzione'] = Variable<String>(esecuzione.value);
+    }
+    if (recuperoS.present) {
+      map['recupero_s'] = Variable<int>(recuperoS.value);
+    }
+    if (attrezzi.present) {
+      map['attrezzi'] = Variable<String>(attrezzi.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingBlockPartiTableCompanion(')
+          ..write('id: $id, ')
+          ..write('bloccoId: $bloccoId, ')
+          ..write('clubId: $clubId, ')
+          ..write('ordine: $ordine, ')
+          ..write('giri: $giri, ')
+          ..write('ripetizioni: $ripetizioni, ')
+          ..write('distanzaM: $distanzaM, ')
+          ..write('durataS: $durataS, ')
+          ..write('stile: $stile, ')
+          ..write('esercizio: $esercizio, ')
+          ..write('zona: $zona, ')
+          ..write('esecuzione: $esecuzione, ')
+          ..write('recuperoS: $recuperoS, ')
+          ..write('attrezzi: $attrezzi, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10903,6 +12811,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GareTableTable gareTable = $GareTableTable(this);
   late final $GaraIscrittiTableTable garaIscrittiTable =
       $GaraIscrittiTableTable(this);
+  late final $TrainingBlocksTableTable trainingBlocksTable =
+      $TrainingBlocksTableTable(this);
+  late final $TrainingBlockPartiTableTable trainingBlockPartiTable =
+      $TrainingBlockPartiTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10927,6 +12839,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     gruppiTable,
     gareTable,
     garaIscrittiTable,
+    trainingBlocksTable,
+    trainingBlockPartiTable,
   ];
 }
 
@@ -16644,6 +18558,939 @@ typedef $$GaraIscrittiTableTableProcessedTableManager =
       GaraIscrittiTableData,
       PrefetchHooks Function()
     >;
+typedef $$TrainingBlocksTableTableCreateCompanionBuilder =
+    TrainingBlocksTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String codice,
+      required String sport,
+      required String fase,
+      required String obiettivo,
+      required String zoneCoinvolte,
+      required String titolo,
+      required String descrizione,
+      Value<String?> stilePrincipale,
+      Value<String> livelli,
+      Value<String?> attrezzi,
+      Value<int> metriTotali,
+      Value<int> durataStimataMin,
+      Value<String?> note,
+      Value<String> stato,
+      Value<String> fonte,
+      Value<DateTime?> importatoIl,
+      Value<bool> modificatoInApp,
+      Value<int> rowid,
+    });
+typedef $$TrainingBlocksTableTableUpdateCompanionBuilder =
+    TrainingBlocksTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> codice,
+      Value<String> sport,
+      Value<String> fase,
+      Value<String> obiettivo,
+      Value<String> zoneCoinvolte,
+      Value<String> titolo,
+      Value<String> descrizione,
+      Value<String?> stilePrincipale,
+      Value<String> livelli,
+      Value<String?> attrezzi,
+      Value<int> metriTotali,
+      Value<int> durataStimataMin,
+      Value<String?> note,
+      Value<String> stato,
+      Value<String> fonte,
+      Value<DateTime?> importatoIl,
+      Value<bool> modificatoInApp,
+      Value<int> rowid,
+    });
+
+class $$TrainingBlocksTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TrainingBlocksTableTable> {
+  $$TrainingBlocksTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get codice => $composableBuilder(
+    column: $table.codice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sport => $composableBuilder(
+    column: $table.sport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fase => $composableBuilder(
+    column: $table.fase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get zoneCoinvolte => $composableBuilder(
+    column: $table.zoneCoinvolte,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get titolo => $composableBuilder(
+    column: $table.titolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stilePrincipale => $composableBuilder(
+    column: $table.stilePrincipale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get livelli => $composableBuilder(
+    column: $table.livelli,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attrezzi => $composableBuilder(
+    column: $table.attrezzi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get metriTotali => $composableBuilder(
+    column: $table.metriTotali,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durataStimataMin => $composableBuilder(
+    column: $table.durataStimataMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stato => $composableBuilder(
+    column: $table.stato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fonte => $composableBuilder(
+    column: $table.fonte,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get importatoIl => $composableBuilder(
+    column: $table.importatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get modificatoInApp => $composableBuilder(
+    column: $table.modificatoInApp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrainingBlocksTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrainingBlocksTableTable> {
+  $$TrainingBlocksTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get codice => $composableBuilder(
+    column: $table.codice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sport => $composableBuilder(
+    column: $table.sport,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fase => $composableBuilder(
+    column: $table.fase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get obiettivo => $composableBuilder(
+    column: $table.obiettivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get zoneCoinvolte => $composableBuilder(
+    column: $table.zoneCoinvolte,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get titolo => $composableBuilder(
+    column: $table.titolo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stilePrincipale => $composableBuilder(
+    column: $table.stilePrincipale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get livelli => $composableBuilder(
+    column: $table.livelli,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attrezzi => $composableBuilder(
+    column: $table.attrezzi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get metriTotali => $composableBuilder(
+    column: $table.metriTotali,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durataStimataMin => $composableBuilder(
+    column: $table.durataStimataMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stato => $composableBuilder(
+    column: $table.stato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fonte => $composableBuilder(
+    column: $table.fonte,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get importatoIl => $composableBuilder(
+    column: $table.importatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get modificatoInApp => $composableBuilder(
+    column: $table.modificatoInApp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrainingBlocksTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrainingBlocksTableTable> {
+  $$TrainingBlocksTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get codice =>
+      $composableBuilder(column: $table.codice, builder: (column) => column);
+
+  GeneratedColumn<String> get sport =>
+      $composableBuilder(column: $table.sport, builder: (column) => column);
+
+  GeneratedColumn<String> get fase =>
+      $composableBuilder(column: $table.fase, builder: (column) => column);
+
+  GeneratedColumn<String> get obiettivo =>
+      $composableBuilder(column: $table.obiettivo, builder: (column) => column);
+
+  GeneratedColumn<String> get zoneCoinvolte => $composableBuilder(
+    column: $table.zoneCoinvolte,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get titolo =>
+      $composableBuilder(column: $table.titolo, builder: (column) => column);
+
+  GeneratedColumn<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get stilePrincipale => $composableBuilder(
+    column: $table.stilePrincipale,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get livelli =>
+      $composableBuilder(column: $table.livelli, builder: (column) => column);
+
+  GeneratedColumn<String> get attrezzi =>
+      $composableBuilder(column: $table.attrezzi, builder: (column) => column);
+
+  GeneratedColumn<int> get metriTotali => $composableBuilder(
+    column: $table.metriTotali,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durataStimataMin => $composableBuilder(
+    column: $table.durataStimataMin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get stato =>
+      $composableBuilder(column: $table.stato, builder: (column) => column);
+
+  GeneratedColumn<String> get fonte =>
+      $composableBuilder(column: $table.fonte, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get importatoIl => $composableBuilder(
+    column: $table.importatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get modificatoInApp => $composableBuilder(
+    column: $table.modificatoInApp,
+    builder: (column) => column,
+  );
+}
+
+class $$TrainingBlocksTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrainingBlocksTableTable,
+          TrainingBlocksTableData,
+          $$TrainingBlocksTableTableFilterComposer,
+          $$TrainingBlocksTableTableOrderingComposer,
+          $$TrainingBlocksTableTableAnnotationComposer,
+          $$TrainingBlocksTableTableCreateCompanionBuilder,
+          $$TrainingBlocksTableTableUpdateCompanionBuilder,
+          (
+            TrainingBlocksTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TrainingBlocksTableTable,
+              TrainingBlocksTableData
+            >,
+          ),
+          TrainingBlocksTableData,
+          PrefetchHooks Function()
+        > {
+  $$TrainingBlocksTableTableTableManager(
+    _$AppDatabase db,
+    $TrainingBlocksTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrainingBlocksTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrainingBlocksTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$TrainingBlocksTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> codice = const Value.absent(),
+                Value<String> sport = const Value.absent(),
+                Value<String> fase = const Value.absent(),
+                Value<String> obiettivo = const Value.absent(),
+                Value<String> zoneCoinvolte = const Value.absent(),
+                Value<String> titolo = const Value.absent(),
+                Value<String> descrizione = const Value.absent(),
+                Value<String?> stilePrincipale = const Value.absent(),
+                Value<String> livelli = const Value.absent(),
+                Value<String?> attrezzi = const Value.absent(),
+                Value<int> metriTotali = const Value.absent(),
+                Value<int> durataStimataMin = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> stato = const Value.absent(),
+                Value<String> fonte = const Value.absent(),
+                Value<DateTime?> importatoIl = const Value.absent(),
+                Value<bool> modificatoInApp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingBlocksTableCompanion(
+                id: id,
+                clubId: clubId,
+                codice: codice,
+                sport: sport,
+                fase: fase,
+                obiettivo: obiettivo,
+                zoneCoinvolte: zoneCoinvolte,
+                titolo: titolo,
+                descrizione: descrizione,
+                stilePrincipale: stilePrincipale,
+                livelli: livelli,
+                attrezzi: attrezzi,
+                metriTotali: metriTotali,
+                durataStimataMin: durataStimataMin,
+                note: note,
+                stato: stato,
+                fonte: fonte,
+                importatoIl: importatoIl,
+                modificatoInApp: modificatoInApp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String codice,
+                required String sport,
+                required String fase,
+                required String obiettivo,
+                required String zoneCoinvolte,
+                required String titolo,
+                required String descrizione,
+                Value<String?> stilePrincipale = const Value.absent(),
+                Value<String> livelli = const Value.absent(),
+                Value<String?> attrezzi = const Value.absent(),
+                Value<int> metriTotali = const Value.absent(),
+                Value<int> durataStimataMin = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> stato = const Value.absent(),
+                Value<String> fonte = const Value.absent(),
+                Value<DateTime?> importatoIl = const Value.absent(),
+                Value<bool> modificatoInApp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingBlocksTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                codice: codice,
+                sport: sport,
+                fase: fase,
+                obiettivo: obiettivo,
+                zoneCoinvolte: zoneCoinvolte,
+                titolo: titolo,
+                descrizione: descrizione,
+                stilePrincipale: stilePrincipale,
+                livelli: livelli,
+                attrezzi: attrezzi,
+                metriTotali: metriTotali,
+                durataStimataMin: durataStimataMin,
+                note: note,
+                stato: stato,
+                fonte: fonte,
+                importatoIl: importatoIl,
+                modificatoInApp: modificatoInApp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $TrainingBlocksTableTable,
+                    TrainingBlocksTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TrainingBlocksTableTable,
+                    TrainingBlocksTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrainingBlocksTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrainingBlocksTableTable,
+      TrainingBlocksTableData,
+      $$TrainingBlocksTableTableFilterComposer,
+      $$TrainingBlocksTableTableOrderingComposer,
+      $$TrainingBlocksTableTableAnnotationComposer,
+      $$TrainingBlocksTableTableCreateCompanionBuilder,
+      $$TrainingBlocksTableTableUpdateCompanionBuilder,
+      (
+        TrainingBlocksTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $TrainingBlocksTableTable,
+          TrainingBlocksTableData
+        >,
+      ),
+      TrainingBlocksTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$TrainingBlockPartiTableTableCreateCompanionBuilder =
+    TrainingBlockPartiTableCompanion Function({
+      required String id,
+      required String bloccoId,
+      required String clubId,
+      Value<int> ordine,
+      Value<int> giri,
+      Value<int> ripetizioni,
+      Value<int?> distanzaM,
+      Value<int?> durataS,
+      Value<String?> stile,
+      Value<String?> esercizio,
+      required String zona,
+      required String esecuzione,
+      Value<int?> recuperoS,
+      Value<String?> attrezzi,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$TrainingBlockPartiTableTableUpdateCompanionBuilder =
+    TrainingBlockPartiTableCompanion Function({
+      Value<String> id,
+      Value<String> bloccoId,
+      Value<String> clubId,
+      Value<int> ordine,
+      Value<int> giri,
+      Value<int> ripetizioni,
+      Value<int?> distanzaM,
+      Value<int?> durataS,
+      Value<String?> stile,
+      Value<String?> esercizio,
+      Value<String> zona,
+      Value<String> esecuzione,
+      Value<int?> recuperoS,
+      Value<String?> attrezzi,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$TrainingBlockPartiTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TrainingBlockPartiTableTable> {
+  $$TrainingBlockPartiTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bloccoId => $composableBuilder(
+    column: $table.bloccoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get giri => $composableBuilder(
+    column: $table.giri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durataS => $composableBuilder(
+    column: $table.durataS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get esercizio => $composableBuilder(
+    column: $table.esercizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get zona => $composableBuilder(
+    column: $table.zona,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get esecuzione => $composableBuilder(
+    column: $table.esecuzione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recuperoS => $composableBuilder(
+    column: $table.recuperoS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attrezzi => $composableBuilder(
+    column: $table.attrezzi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrainingBlockPartiTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrainingBlockPartiTableTable> {
+  $$TrainingBlockPartiTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bloccoId => $composableBuilder(
+    column: $table.bloccoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get giri => $composableBuilder(
+    column: $table.giri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanzaM => $composableBuilder(
+    column: $table.distanzaM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durataS => $composableBuilder(
+    column: $table.durataS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stile => $composableBuilder(
+    column: $table.stile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get esercizio => $composableBuilder(
+    column: $table.esercizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get zona => $composableBuilder(
+    column: $table.zona,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get esecuzione => $composableBuilder(
+    column: $table.esecuzione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recuperoS => $composableBuilder(
+    column: $table.recuperoS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attrezzi => $composableBuilder(
+    column: $table.attrezzi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrainingBlockPartiTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrainingBlockPartiTableTable> {
+  $$TrainingBlockPartiTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bloccoId =>
+      $composableBuilder(column: $table.bloccoId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<int> get giri =>
+      $composableBuilder(column: $table.giri, builder: (column) => column);
+
+  GeneratedColumn<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get distanzaM =>
+      $composableBuilder(column: $table.distanzaM, builder: (column) => column);
+
+  GeneratedColumn<int> get durataS =>
+      $composableBuilder(column: $table.durataS, builder: (column) => column);
+
+  GeneratedColumn<String> get stile =>
+      $composableBuilder(column: $table.stile, builder: (column) => column);
+
+  GeneratedColumn<String> get esercizio =>
+      $composableBuilder(column: $table.esercizio, builder: (column) => column);
+
+  GeneratedColumn<String> get zona =>
+      $composableBuilder(column: $table.zona, builder: (column) => column);
+
+  GeneratedColumn<String> get esecuzione => $composableBuilder(
+    column: $table.esecuzione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recuperoS =>
+      $composableBuilder(column: $table.recuperoS, builder: (column) => column);
+
+  GeneratedColumn<String> get attrezzi =>
+      $composableBuilder(column: $table.attrezzi, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$TrainingBlockPartiTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrainingBlockPartiTableTable,
+          TrainingBlockPartiTableData,
+          $$TrainingBlockPartiTableTableFilterComposer,
+          $$TrainingBlockPartiTableTableOrderingComposer,
+          $$TrainingBlockPartiTableTableAnnotationComposer,
+          $$TrainingBlockPartiTableTableCreateCompanionBuilder,
+          $$TrainingBlockPartiTableTableUpdateCompanionBuilder,
+          (
+            TrainingBlockPartiTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TrainingBlockPartiTableTable,
+              TrainingBlockPartiTableData
+            >,
+          ),
+          TrainingBlockPartiTableData,
+          PrefetchHooks Function()
+        > {
+  $$TrainingBlockPartiTableTableTableManager(
+    _$AppDatabase db,
+    $TrainingBlockPartiTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrainingBlockPartiTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$TrainingBlockPartiTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$TrainingBlockPartiTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bloccoId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<int> giri = const Value.absent(),
+                Value<int> ripetizioni = const Value.absent(),
+                Value<int?> distanzaM = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
+                Value<String?> stile = const Value.absent(),
+                Value<String?> esercizio = const Value.absent(),
+                Value<String> zona = const Value.absent(),
+                Value<String> esecuzione = const Value.absent(),
+                Value<int?> recuperoS = const Value.absent(),
+                Value<String?> attrezzi = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingBlockPartiTableCompanion(
+                id: id,
+                bloccoId: bloccoId,
+                clubId: clubId,
+                ordine: ordine,
+                giri: giri,
+                ripetizioni: ripetizioni,
+                distanzaM: distanzaM,
+                durataS: durataS,
+                stile: stile,
+                esercizio: esercizio,
+                zona: zona,
+                esecuzione: esecuzione,
+                recuperoS: recuperoS,
+                attrezzi: attrezzi,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bloccoId,
+                required String clubId,
+                Value<int> ordine = const Value.absent(),
+                Value<int> giri = const Value.absent(),
+                Value<int> ripetizioni = const Value.absent(),
+                Value<int?> distanzaM = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
+                Value<String?> stile = const Value.absent(),
+                Value<String?> esercizio = const Value.absent(),
+                required String zona,
+                required String esecuzione,
+                Value<int?> recuperoS = const Value.absent(),
+                Value<String?> attrezzi = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingBlockPartiTableCompanion.insert(
+                id: id,
+                bloccoId: bloccoId,
+                clubId: clubId,
+                ordine: ordine,
+                giri: giri,
+                ripetizioni: ripetizioni,
+                distanzaM: distanzaM,
+                durataS: durataS,
+                stile: stile,
+                esercizio: esercizio,
+                zona: zona,
+                esecuzione: esecuzione,
+                recuperoS: recuperoS,
+                attrezzi: attrezzi,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $TrainingBlockPartiTableTable,
+                    TrainingBlockPartiTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TrainingBlockPartiTableTable,
+                    TrainingBlockPartiTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrainingBlockPartiTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrainingBlockPartiTableTable,
+      TrainingBlockPartiTableData,
+      $$TrainingBlockPartiTableTableFilterComposer,
+      $$TrainingBlockPartiTableTableOrderingComposer,
+      $$TrainingBlockPartiTableTableAnnotationComposer,
+      $$TrainingBlockPartiTableTableCreateCompanionBuilder,
+      $$TrainingBlockPartiTableTableUpdateCompanionBuilder,
+      (
+        TrainingBlockPartiTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $TrainingBlockPartiTableTable,
+          TrainingBlockPartiTableData
+        >,
+      ),
+      TrainingBlockPartiTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -16692,4 +19539,11 @@ class $AppDatabaseManager {
       $$GareTableTableTableManager(_db, _db.gareTable);
   $$GaraIscrittiTableTableTableManager get garaIscrittiTable =>
       $$GaraIscrittiTableTableTableManager(_db, _db.garaIscrittiTable);
+  $$TrainingBlocksTableTableTableManager get trainingBlocksTable =>
+      $$TrainingBlocksTableTableTableManager(_db, _db.trainingBlocksTable);
+  $$TrainingBlockPartiTableTableTableManager get trainingBlockPartiTable =>
+      $$TrainingBlockPartiTableTableTableManager(
+        _db,
+        _db.trainingBlockPartiTable,
+      );
 }

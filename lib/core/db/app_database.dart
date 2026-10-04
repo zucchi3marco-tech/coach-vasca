@@ -26,13 +26,15 @@ part 'app_database.g.dart';
     GruppiTable,
     GareTable,
     GaraIscrittiTable,
+    TrainingBlocksTable,
+    TrainingBlockPartiTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -334,6 +336,16 @@ class AppDatabase extends _$AppDatabase {
             FROM serie_table_old_v25
           ''');
           await m.database.customStatement('DROP TABLE serie_table_old_v25');
+        }
+      }
+      // v26 -> v27: libreria di blocchi di allenamento approvati
+      // (RIPROGETTAZIONE AI, FASE 1).
+      if (from < 27) {
+        if (!await _hasTable(m, 'training_blocks_table')) {
+          await m.createTable(trainingBlocksTable);
+        }
+        if (!await _hasTable(m, 'training_block_parti_table')) {
+          await m.createTable(trainingBlockPartiTable);
         }
       }
     },
