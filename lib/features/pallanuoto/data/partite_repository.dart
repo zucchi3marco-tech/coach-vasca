@@ -39,6 +39,7 @@ class PartiteRepository {
       tracciaTempo: row.tracciaTempo,
       modalitaSuperiorita: row.modalitaSuperiorita,
       nostraSquadra: row.nostraSquadra,
+      importanza: row.importanza,
     );
   }
 
@@ -62,6 +63,7 @@ class PartiteRepository {
         map['modalita_superiorita'] as String? ?? 'singolo',
       ),
       nostraSquadra: Value(map['nostra_squadra'] as String? ?? 'casa'),
+      importanza: Value(map['importanza'] as String? ?? 'media'),
     );
   }
 
@@ -153,6 +155,7 @@ class PartiteRepository {
     required bool tracciaTempo,
     required String modalitaSuperiorita,
     required String nostraSquadra,
+    String importanza = 'media',
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -173,6 +176,7 @@ class PartiteRepository {
       'traccia_tempo': tracciaTempo,
       'modalita_superiorita': modalitaSuperiorita,
       'nostra_squadra': nostraSquadra,
+      'importanza': importanza,
     };
     try {
       final row = await _client
@@ -216,6 +220,7 @@ class PartiteRepository {
     required bool tracciaTempo,
     required String modalitaSuperiorita,
     required String nostraSquadra,
+    String importanza = 'media',
   }) async {
     final payload = {
       'gruppo_id': gruppoId,
@@ -232,6 +237,7 @@ class PartiteRepository {
       'traccia_tempo': tracciaTempo,
       'modalita_superiorita': modalitaSuperiorita,
       'nostra_squadra': nostraSquadra,
+      'importanza': importanza,
     };
     try {
       final row = await _client
@@ -261,6 +267,7 @@ class PartiteRepository {
           tracciaTempo: Value(tracciaTempo),
           modalitaSuperiorita: Value(modalitaSuperiorita),
           nostraSquadra: Value(nostraSquadra),
+          importanza: Value(importanza),
         ),
       );
       await enqueueOperation(

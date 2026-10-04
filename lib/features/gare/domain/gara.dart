@@ -11,6 +11,7 @@ class Gara {
     this.ora,
     this.luogo,
     this.note,
+    this.importanza = 'media',
   });
 
   final String id;
@@ -24,6 +25,10 @@ class Gara {
   final String nome;
   final String? note;
 
+  /// bassa | media | alta — lo scarico pre-gara del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  final String importanza;
+
   bool get diClub => gruppoId == null;
 
   factory Gara.fromMap(Map<String, dynamic> map) {
@@ -36,6 +41,7 @@ class Gara {
       luogo: map['luogo'] as String?,
       nome: map['nome'] as String,
       note: map['note'] as String?,
+      importanza: map['importanza'] as String? ?? 'media',
     );
   }
 }

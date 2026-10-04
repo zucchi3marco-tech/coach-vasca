@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -346,6 +346,17 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'training_block_parti_table')) {
           await m.createTable(trainingBlockPartiTable);
+        }
+      }
+      // v27 -> v28: "importanza" su gare e partite (RIPROGETTAZIONE AI,
+      // FASE 3) — lo scarico pre-gara del generatore settimanale scatta
+      // solo per le "alta".
+      if (from < 28) {
+        if (!await _hasColumn(m, 'gare_table', 'importanza')) {
+          await m.addColumn(gareTable, gareTable.importanza);
+        }
+        if (!await _hasColumn(m, 'partite_table', 'importanza')) {
+          await m.addColumn(partiteTable, partiteTable.importanza);
         }
       }
     },

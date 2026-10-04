@@ -16,6 +16,7 @@ class Partita {
     this.tracciaTempo = true,
     this.modalitaSuperiorita = 'singolo',
     this.nostraSquadra = 'casa',
+    this.importanza = 'media',
   });
 
   final String id;
@@ -38,6 +39,10 @@ class Partita {
   final String modalitaSuperiorita; // singolo | inizio_fine
   final String nostraSquadra; // casa | trasferta
 
+  /// bassa | media | alta — lo scarico pre-partita del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  final String importanza;
+
   factory Partita.fromMap(Map<String, dynamic> map) {
     return Partita(
       id: map['id'] as String,
@@ -56,6 +61,7 @@ class Partita {
       tracciaTempo: map['traccia_tempo'] as bool? ?? true,
       modalitaSuperiorita: map['modalita_superiorita'] as String? ?? 'singolo',
       nostraSquadra: map['nostra_squadra'] as String? ?? 'casa',
+      importanza: map['importanza'] as String? ?? 'media',
     );
   }
 }

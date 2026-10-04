@@ -33,6 +33,7 @@ class GareRepository {
       luogo: row.luogo,
       nome: row.nome,
       note: row.note,
+      importanza: row.importanza,
     );
   }
 
@@ -46,6 +47,7 @@ class GareRepository {
       luogo: Value(map['luogo'] as String?),
       nome: map['nome'] as String,
       note: Value(map['note'] as String?),
+      importanza: Value(map['importanza'] as String? ?? 'media'),
     );
   }
 
@@ -88,6 +90,7 @@ class GareRepository {
     String? luogo,
     required String nome,
     String? note,
+    String importanza = 'media',
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -99,6 +102,7 @@ class GareRepository {
       if (luogo != null && luogo.isNotEmpty) 'luogo': luogo,
       'nome': nome,
       if (note != null && note.isNotEmpty) 'note': note,
+      'importanza': importanza,
     };
     try {
       final row = await _client.from('gare').insert(payload).select().single();
@@ -130,6 +134,7 @@ class GareRepository {
     String? luogo,
     required String nome,
     String? note,
+    String importanza = 'media',
   }) async {
     final payload = {
       'gruppo_id': gruppoId,
@@ -138,6 +143,7 @@ class GareRepository {
       'luogo': luogo,
       'nome': nome,
       'note': note,
+      'importanza': importanza,
     };
     try {
       final row = await _client
@@ -159,6 +165,7 @@ class GareRepository {
           luogo: Value(luogo),
           nome: Value(nome),
           note: Value(note),
+          importanza: Value(importanza),
         ),
       );
       await enqueueOperation(

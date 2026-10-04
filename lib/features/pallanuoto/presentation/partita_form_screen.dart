@@ -57,6 +57,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late String _dettaglioTiro;
   late bool _tracciaTempo;
   late String _nostraSquadra;
+  late String _importanza;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -86,6 +87,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
     _tracciaTempo = p?.tracciaTempo ?? true;
     _nostraSquadra = p?.nostraSquadra ?? 'casa';
+    _importanza = p?.importanza ?? 'media';
     _aggiornaCampionatoAnteprima();
     if (!_isEditing) {
       ref.read(currentClubProvider.future).then((club) {
@@ -233,6 +235,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
+          importanza: _importanza,
         );
       } else {
         await repository.createPartita(
@@ -251,6 +254,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
+          importanza: _importanza,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -349,6 +353,28 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       ],
                       selected: {_nostraSquadra},
                       onSelectionChanged: (s) => _cambiaNostraSquadra(s.first),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Importanza',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'bassa', label: Text('Bassa')),
+                        ButtonSegment(value: 'media', label: Text('Media')),
+                        ButtonSegment(value: 'alta', label: Text('Alta')),
+                      ],
+                      selected: {_importanza},
+                      onSelectionChanged: (s) =>
+                          setState(() => _importanza = s.first),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
@@ -48,6 +49,7 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
   late final TextEditingController _noteController;
   late DateTime _data;
   String? _gruppoId;
+  late String _importanza;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -65,6 +67,7 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
     _data = g?.data ?? widget.dataIniziale ?? DateTime.now();
     _dataController = TextEditingController(text: _formattaData(_data));
     _gruppoId = g != null ? g.gruppoId : widget.stagione?.gruppoId;
+    _importanza = g?.importanza ?? 'media';
   }
 
   @override
@@ -128,6 +131,7 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
           luogo: _luogoController.text.trim(),
           nome: _nomeController.text.trim(),
           note: _noteController.text.trim(),
+          importanza: _importanza,
         );
       } else {
         await repository.createGara(
@@ -138,6 +142,7 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
           luogo: _luogoController.text.trim(),
           nome: _nomeController.text.trim(),
           note: _noteController.text.trim(),
+          importanza: _importanza,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -240,6 +245,23 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
                   ),
               ],
               onChanged: (value) => setState(() => _gruppoId = value),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            Text(
+              'Importanza',
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'bassa', label: Text('Bassa')),
+                ButtonSegment(value: 'media', label: Text('Media')),
+                ButtonSegment(value: 'alta', label: Text('Alta')),
+              ],
+              selected: {_importanza},
+              onSelectionChanged: (s) => setState(() => _importanza = s.first),
             ),
             const SizedBox(height: AppSpacing.s16),
             AppTextField(

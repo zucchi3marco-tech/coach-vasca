@@ -245,6 +245,10 @@ class PartiteTable extends Table {
   TextColumn get nostraSquadra =>
       text().withDefault(const Constant('casa'))(); // casa | trasferta
 
+  /// bassa | media | alta — lo scarico pre-partita del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  TextColumn get importanza => text().withDefault(const Constant('media'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -344,6 +348,10 @@ class GareTable extends Table {
   TextColumn get luogo => text().nullable()();
   TextColumn get nome => text()();
   TextColumn get note => text().nullable()();
+
+  /// bassa | media | alta — lo scarico pre-gara del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  TextColumn get importanza => text().withDefault(const Constant('media'))();
 
   @override
   Set<Column> get primaryKey => {id};

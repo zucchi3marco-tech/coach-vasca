@@ -6917,6 +6917,18 @@ class $PartiteTableTable extends PartiteTable
     requiredDuringInsert: false,
     defaultValue: const Constant('casa'),
   );
+  static const VerificationMeta _importanzaMeta = const VerificationMeta(
+    'importanza',
+  );
+  @override
+  late final GeneratedColumn<String> importanza = GeneratedColumn<String>(
+    'importanza',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('media'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6935,6 +6947,7 @@ class $PartiteTableTable extends PartiteTable
     tracciaTempo,
     modalitaSuperiorita,
     nostraSquadra,
+    importanza,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7075,6 +7088,12 @@ class $PartiteTableTable extends PartiteTable
         ),
       );
     }
+    if (data.containsKey('importanza')) {
+      context.handle(
+        _importanzaMeta,
+        importanza.isAcceptableOrUnknown(data['importanza']!, _importanzaMeta),
+      );
+    }
     return context;
   }
 
@@ -7148,6 +7167,10 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.string,
         data['${effectivePrefix}nostra_squadra'],
       )!,
+      importanza: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}importanza'],
+      )!,
     );
   }
 
@@ -7178,6 +7201,10 @@ class PartiteTableData extends DataClass
   final bool tracciaTempo;
   final String modalitaSuperiorita;
   final String nostraSquadra;
+
+  /// bassa | media | alta — lo scarico pre-partita del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  final String importanza;
   const PartiteTableData({
     required this.id,
     required this.clubId,
@@ -7195,6 +7222,7 @@ class PartiteTableData extends DataClass
     required this.tracciaTempo,
     required this.modalitaSuperiorita,
     required this.nostraSquadra,
+    required this.importanza,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7227,6 +7255,7 @@ class PartiteTableData extends DataClass
     map['traccia_tempo'] = Variable<bool>(tracciaTempo);
     map['modalita_superiorita'] = Variable<String>(modalitaSuperiorita);
     map['nostra_squadra'] = Variable<String>(nostraSquadra);
+    map['importanza'] = Variable<String>(importanza);
     return map;
   }
 
@@ -7256,6 +7285,7 @@ class PartiteTableData extends DataClass
       tracciaTempo: Value(tracciaTempo),
       modalitaSuperiorita: Value(modalitaSuperiorita),
       nostraSquadra: Value(nostraSquadra),
+      importanza: Value(importanza),
     );
   }
 
@@ -7283,6 +7313,7 @@ class PartiteTableData extends DataClass
         json['modalitaSuperiorita'],
       ),
       nostraSquadra: serializer.fromJson<String>(json['nostraSquadra']),
+      importanza: serializer.fromJson<String>(json['importanza']),
     );
   }
   @override
@@ -7305,6 +7336,7 @@ class PartiteTableData extends DataClass
       'tracciaTempo': serializer.toJson<bool>(tracciaTempo),
       'modalitaSuperiorita': serializer.toJson<String>(modalitaSuperiorita),
       'nostraSquadra': serializer.toJson<String>(nostraSquadra),
+      'importanza': serializer.toJson<String>(importanza),
     };
   }
 
@@ -7325,6 +7357,7 @@ class PartiteTableData extends DataClass
     bool? tracciaTempo,
     String? modalitaSuperiorita,
     String? nostraSquadra,
+    String? importanza,
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -7344,6 +7377,7 @@ class PartiteTableData extends DataClass
     tracciaTempo: tracciaTempo ?? this.tracciaTempo,
     modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
     nostraSquadra: nostraSquadra ?? this.nostraSquadra,
+    importanza: importanza ?? this.importanza,
   );
   PartiteTableData copyWithCompanion(PartiteTableCompanion data) {
     return PartiteTableData(
@@ -7381,6 +7415,9 @@ class PartiteTableData extends DataClass
       nostraSquadra: data.nostraSquadra.present
           ? data.nostraSquadra.value
           : this.nostraSquadra,
+      importanza: data.importanza.present
+          ? data.importanza.value
+          : this.importanza,
     );
   }
 
@@ -7402,7 +7439,8 @@ class PartiteTableData extends DataClass
           ..write('dettaglioTiro: $dettaglioTiro, ')
           ..write('tracciaTempo: $tracciaTempo, ')
           ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
-          ..write('nostraSquadra: $nostraSquadra')
+          ..write('nostraSquadra: $nostraSquadra, ')
+          ..write('importanza: $importanza')
           ..write(')'))
         .toString();
   }
@@ -7425,6 +7463,7 @@ class PartiteTableData extends DataClass
     tracciaTempo,
     modalitaSuperiorita,
     nostraSquadra,
+    importanza,
   );
   @override
   bool operator ==(Object other) =>
@@ -7445,7 +7484,8 @@ class PartiteTableData extends DataClass
           other.dettaglioTiro == this.dettaglioTiro &&
           other.tracciaTempo == this.tracciaTempo &&
           other.modalitaSuperiorita == this.modalitaSuperiorita &&
-          other.nostraSquadra == this.nostraSquadra);
+          other.nostraSquadra == this.nostraSquadra &&
+          other.importanza == this.importanza);
 }
 
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
@@ -7465,6 +7505,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<bool> tracciaTempo;
   final Value<String> modalitaSuperiorita;
   final Value<String> nostraSquadra;
+  final Value<String> importanza;
   final Value<int> rowid;
   const PartiteTableCompanion({
     this.id = const Value.absent(),
@@ -7483,6 +7524,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.tracciaTempo = const Value.absent(),
     this.modalitaSuperiorita = const Value.absent(),
     this.nostraSquadra = const Value.absent(),
+    this.importanza = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PartiteTableCompanion.insert({
@@ -7502,6 +7544,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.tracciaTempo = const Value.absent(),
     this.modalitaSuperiorita = const Value.absent(),
     this.nostraSquadra = const Value.absent(),
+    this.importanza = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -7525,6 +7568,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Expression<bool>? tracciaTempo,
     Expression<String>? modalitaSuperiorita,
     Expression<String>? nostraSquadra,
+    Expression<String>? importanza,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7546,6 +7590,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       if (modalitaSuperiorita != null)
         'modalita_superiorita': modalitaSuperiorita,
       if (nostraSquadra != null) 'nostra_squadra': nostraSquadra,
+      if (importanza != null) 'importanza': importanza,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7567,6 +7612,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Value<bool>? tracciaTempo,
     Value<String>? modalitaSuperiorita,
     Value<String>? nostraSquadra,
+    Value<String>? importanza,
     Value<int>? rowid,
   }) {
     return PartiteTableCompanion(
@@ -7586,6 +7632,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       tracciaTempo: tracciaTempo ?? this.tracciaTempo,
       modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
       nostraSquadra: nostraSquadra ?? this.nostraSquadra,
+      importanza: importanza ?? this.importanza,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7641,6 +7688,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     if (nostraSquadra.present) {
       map['nostra_squadra'] = Variable<String>(nostraSquadra.value);
     }
+    if (importanza.present) {
+      map['importanza'] = Variable<String>(importanza.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7666,6 +7716,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
           ..write('tracciaTempo: $tracciaTempo, ')
           ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
           ..write('nostraSquadra: $nostraSquadra, ')
+          ..write('importanza: $importanza, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10148,6 +10199,18 @@ class $GareTableTable extends GareTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _importanzaMeta = const VerificationMeta(
+    'importanza',
+  );
+  @override
+  late final GeneratedColumn<String> importanza = GeneratedColumn<String>(
+    'importanza',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('media'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -10158,6 +10221,7 @@ class $GareTableTable extends GareTable
     luogo,
     nome,
     note,
+    importanza,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10224,6 +10288,12 @@ class $GareTableTable extends GareTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('importanza')) {
+      context.handle(
+        _importanzaMeta,
+        importanza.isAcceptableOrUnknown(data['importanza']!, _importanzaMeta),
+      );
+    }
     return context;
   }
 
@@ -10265,6 +10335,10 @@ class $GareTableTable extends GareTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      importanza: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}importanza'],
+      )!,
     );
   }
 
@@ -10285,6 +10359,10 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
   final String? luogo;
   final String nome;
   final String? note;
+
+  /// bassa | media | alta — lo scarico pre-gara del generatore
+  /// settimanale (FASE 3) scatta solo per "alta".
+  final String importanza;
   const GareTableData({
     required this.id,
     required this.clubId,
@@ -10294,6 +10372,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
     this.luogo,
     required this.nome,
     this.note,
+    required this.importanza,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10314,6 +10393,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    map['importanza'] = Variable<String>(importanza);
     return map;
   }
 
@@ -10331,6 +10411,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
           : Value(luogo),
       nome: Value(nome),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      importanza: Value(importanza),
     );
   }
 
@@ -10348,6 +10429,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
       luogo: serializer.fromJson<String?>(json['luogo']),
       nome: serializer.fromJson<String>(json['nome']),
       note: serializer.fromJson<String?>(json['note']),
+      importanza: serializer.fromJson<String>(json['importanza']),
     );
   }
   @override
@@ -10362,6 +10444,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
       'luogo': serializer.toJson<String?>(luogo),
       'nome': serializer.toJson<String>(nome),
       'note': serializer.toJson<String?>(note),
+      'importanza': serializer.toJson<String>(importanza),
     };
   }
 
@@ -10374,6 +10457,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
     Value<String?> luogo = const Value.absent(),
     String? nome,
     Value<String?> note = const Value.absent(),
+    String? importanza,
   }) => GareTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -10383,6 +10467,7 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
     luogo: luogo.present ? luogo.value : this.luogo,
     nome: nome ?? this.nome,
     note: note.present ? note.value : this.note,
+    importanza: importanza ?? this.importanza,
   );
   GareTableData copyWithCompanion(GareTableCompanion data) {
     return GareTableData(
@@ -10394,6 +10479,9 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
       luogo: data.luogo.present ? data.luogo.value : this.luogo,
       nome: data.nome.present ? data.nome.value : this.nome,
       note: data.note.present ? data.note.value : this.note,
+      importanza: data.importanza.present
+          ? data.importanza.value
+          : this.importanza,
     );
   }
 
@@ -10407,14 +10495,24 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
           ..write('ora: $ora, ')
           ..write('luogo: $luogo, ')
           ..write('nome: $nome, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('importanza: $importanza')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, clubId, gruppoId, data, ora, luogo, nome, note);
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    gruppoId,
+    data,
+    ora,
+    luogo,
+    nome,
+    note,
+    importanza,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -10426,7 +10524,8 @@ class GareTableData extends DataClass implements Insertable<GareTableData> {
           other.ora == this.ora &&
           other.luogo == this.luogo &&
           other.nome == this.nome &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.importanza == this.importanza);
 }
 
 class GareTableCompanion extends UpdateCompanion<GareTableData> {
@@ -10438,6 +10537,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
   final Value<String?> luogo;
   final Value<String> nome;
   final Value<String?> note;
+  final Value<String> importanza;
   final Value<int> rowid;
   const GareTableCompanion({
     this.id = const Value.absent(),
@@ -10448,6 +10548,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
     this.luogo = const Value.absent(),
     this.nome = const Value.absent(),
     this.note = const Value.absent(),
+    this.importanza = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GareTableCompanion.insert({
@@ -10459,6 +10560,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
     this.luogo = const Value.absent(),
     required String nome,
     this.note = const Value.absent(),
+    this.importanza = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -10473,6 +10575,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
     Expression<String>? luogo,
     Expression<String>? nome,
     Expression<String>? note,
+    Expression<String>? importanza,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10484,6 +10587,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
       if (luogo != null) 'luogo': luogo,
       if (nome != null) 'nome': nome,
       if (note != null) 'note': note,
+      if (importanza != null) 'importanza': importanza,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10497,6 +10601,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
     Value<String?>? luogo,
     Value<String>? nome,
     Value<String?>? note,
+    Value<String>? importanza,
     Value<int>? rowid,
   }) {
     return GareTableCompanion(
@@ -10508,6 +10613,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
       luogo: luogo ?? this.luogo,
       nome: nome ?? this.nome,
       note: note ?? this.note,
+      importanza: importanza ?? this.importanza,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10539,6 +10645,9 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (importanza.present) {
+      map['importanza'] = Variable<String>(importanza.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10556,6 +10665,7 @@ class GareTableCompanion extends UpdateCompanion<GareTableData> {
           ..write('luogo: $luogo, ')
           ..write('nome: $nome, ')
           ..write('note: $note, ')
+          ..write('importanza: $importanza, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16411,6 +16521,7 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
       Value<bool> tracciaTempo,
       Value<String> modalitaSuperiorita,
       Value<String> nostraSquadra,
+      Value<String> importanza,
       Value<int> rowid,
     });
 typedef $$PartiteTableTableUpdateCompanionBuilder =
@@ -16431,6 +16542,7 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
       Value<bool> tracciaTempo,
       Value<String> modalitaSuperiorita,
       Value<String> nostraSquadra,
+      Value<String> importanza,
       Value<int> rowid,
     });
 
@@ -16520,6 +16632,11 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<String> get nostraSquadra => $composableBuilder(
     column: $table.nostraSquadra,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get importanza => $composableBuilder(
+    column: $table.importanza,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -16612,6 +16729,11 @@ class $$PartiteTableTableOrderingComposer
     column: $table.nostraSquadra,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get importanza => $composableBuilder(
+    column: $table.importanza,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PartiteTableTableAnnotationComposer
@@ -16688,6 +16810,11 @@ class $$PartiteTableTableAnnotationComposer
     column: $table.nostraSquadra,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get importanza => $composableBuilder(
+    column: $table.importanza,
+    builder: (column) => column,
+  );
 }
 
 class $$PartiteTableTableTableManager
@@ -16737,6 +16864,7 @@ class $$PartiteTableTableTableManager
                 Value<bool> tracciaTempo = const Value.absent(),
                 Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<String> nostraSquadra = const Value.absent(),
+                Value<String> importanza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion(
                 id: id,
@@ -16755,6 +16883,7 @@ class $$PartiteTableTableTableManager
                 tracciaTempo: tracciaTempo,
                 modalitaSuperiorita: modalitaSuperiorita,
                 nostraSquadra: nostraSquadra,
+                importanza: importanza,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16775,6 +16904,7 @@ class $$PartiteTableTableTableManager
                 Value<bool> tracciaTempo = const Value.absent(),
                 Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<String> nostraSquadra = const Value.absent(),
+                Value<String> importanza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion.insert(
                 id: id,
@@ -16793,6 +16923,7 @@ class $$PartiteTableTableTableManager
                 tracciaTempo: tracciaTempo,
                 modalitaSuperiorita: modalitaSuperiorita,
                 nostraSquadra: nostraSquadra,
+                importanza: importanza,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -18098,6 +18229,7 @@ typedef $$GareTableTableCreateCompanionBuilder = GareTableCompanion Function({
   Value<String?> luogo,
   required String nome,
   Value<String?> note,
+  Value<String> importanza,
   Value<int> rowid,
 });
 typedef $$GareTableTableUpdateCompanionBuilder = GareTableCompanion Function({
@@ -18109,6 +18241,7 @@ typedef $$GareTableTableUpdateCompanionBuilder = GareTableCompanion Function({
   Value<String?> luogo,
   Value<String> nome,
   Value<String?> note,
+  Value<String> importanza,
   Value<int> rowid,
 });
 
@@ -18158,6 +18291,11 @@ class $$GareTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get importanza => $composableBuilder(
+    column: $table.importanza,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -18210,6 +18348,11 @@ class $$GareTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get importanza => $composableBuilder(
+    column: $table.importanza,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GareTableTableAnnotationComposer
@@ -18244,6 +18387,11 @@ class $$GareTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get importanza => $composableBuilder(
+    column: $table.importanza,
+    builder: (column) => column,
+  );
 }
 
 class $$GareTableTableTableManager
@@ -18285,6 +18433,7 @@ class $$GareTableTableTableManager
                 Value<String?> luogo = const Value.absent(),
                 Value<String> nome = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String> importanza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GareTableCompanion(
                 id: id,
@@ -18295,6 +18444,7 @@ class $$GareTableTableTableManager
                 luogo: luogo,
                 nome: nome,
                 note: note,
+                importanza: importanza,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18307,6 +18457,7 @@ class $$GareTableTableTableManager
                 Value<String?> luogo = const Value.absent(),
                 required String nome,
                 Value<String?> note = const Value.absent(),
+                Value<String> importanza = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GareTableCompanion.insert(
                 id: id,
@@ -18317,6 +18468,7 @@ class $$GareTableTableTableManager
                 luogo: luogo,
                 nome: nome,
                 note: note,
+                importanza: importanza,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
