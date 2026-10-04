@@ -72,7 +72,10 @@ class CaricoRepository {
     for (final r in righe) {
       final allenamentoId = r['allenamento_id'] as String;
       final ripetute = r['ripetute'] as int;
-      final distanzaM = r['distanza_m'] as int;
+      // Una serie "a tempo" (durata_s invece di distanza_m) non pesa nel
+      // carico basato sui metri: lo stesso principio di [VolumiAtleta],
+      // nessuna stima a caso.
+      final distanzaM = r['distanza_m'] as int? ?? 0;
       final peso = _pesoPerZona(r['zona'] as String?);
       carico[allenamentoId] =
           (carico[allenamentoId] ?? 0.0) + ripetute * distanzaM * peso;
@@ -193,7 +196,7 @@ class CaricoRepository {
     final perEsecuzione = <String, int>{};
     for (final r in serie) {
       if (!presenti.contains(r['allenamento_id'] as String)) continue;
-      final volume = (r['ripetute'] as int) * (r['distanza_m'] as int);
+      final volume = (r['ripetute'] as int) * (r['distanza_m'] as int? ?? 0);
       totale += volume;
       final zona = r['zona'] as String?;
       if (zona != null) {

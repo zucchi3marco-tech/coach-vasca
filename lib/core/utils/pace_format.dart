@@ -1,3 +1,24 @@
+/// Formatta una durata in secondi interi (es. 600) come testo compatto
+/// per una serie "a tempo": `30"` sotto il minuto, `10'` o `5'30"` da un
+/// minuto in su (mai i decimi, a differenza di [formatPaceSeconds]: qui è
+/// la durata di un esercizio, non un passo di nuoto).
+String formatDurataS(int secondi) {
+  if (secondi < 60) return "$secondi\"";
+  final minuti = secondi ~/ 60;
+  final resto = secondi % 60;
+  return resto == 0 ? "$minuti'" : "$minuti'${resto.toString().padLeft(2, '0')}\"";
+}
+
+/// Formatta una durata in secondi interi come 'm:ss' editabile (es. 630
+/// -> '10:30'), per il campo "Durata" di [SerieFormScreen] — si
+/// interpreta di nuovo con [parsePaceMmSs]. Diverso da [formatDurataS],
+/// pensato per la sola lettura.
+String formatDurataMmSs(int secondi) {
+  final minuti = secondi ~/ 60;
+  final resto = secondi % 60;
+  return '$minuti:${resto.toString().padLeft(2, '0')}';
+}
+
 /// Formatta un passo in secondi (es. 92.5) come 'm:ss.cc' (es. '1:32.50').
 String formatPaceSeconds(double totalSeconds) {
   final minutes = totalSeconds ~/ 60;

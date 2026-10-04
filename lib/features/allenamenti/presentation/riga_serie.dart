@@ -46,7 +46,7 @@ class RigaSerie extends StatelessWidget {
       rispetto: colori.linea,
     );
 
-    final titolo = StringBuffer('${s.ripetute}×${s.distanzaM} ')
+    final titolo = StringBuffer('${labelVolumeSerie(s)} ')
       ..write(labelStile(s.stile));
     if (s.esecuzione != 'nuoto') {
       titolo.write(' ${labelEsecuzione(s.esecuzione)}');

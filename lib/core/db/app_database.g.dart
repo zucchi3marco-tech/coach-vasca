@@ -5019,9 +5019,20 @@ class $SerieTableTable extends SerieTable
   late final GeneratedColumn<int> distanzaM = GeneratedColumn<int>(
     'distanza_m',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durataSMeta = const VerificationMeta(
+    'durataS',
+  );
+  @override
+  late final GeneratedColumn<int> durataS = GeneratedColumn<int>(
+    'durata_s',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _stileMeta = const VerificationMeta('stile');
   @override
@@ -5125,6 +5136,7 @@ class $SerieTableTable extends SerieTable
     blocco,
     ripetute,
     distanzaM,
+    durataS,
     stile,
     esecuzione,
     zona,
@@ -5200,8 +5212,12 @@ class $SerieTableTable extends SerieTable
         _distanzaMMeta,
         distanzaM.isAcceptableOrUnknown(data['distanza_m']!, _distanzaMMeta),
       );
-    } else if (isInserting) {
-      context.missing(_distanzaMMeta);
+    }
+    if (data.containsKey('durata_s')) {
+      context.handle(
+        _durataSMeta,
+        durataS.isAcceptableOrUnknown(data['durata_s']!, _durataSMeta),
+      );
     }
     if (data.containsKey('stile')) {
       context.handle(
@@ -5306,7 +5322,11 @@ class $SerieTableTable extends SerieTable
       distanzaM: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}distanza_m'],
-      )!,
+      ),
+      durataS: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}durata_s'],
+      ),
       stile: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}stile'],
@@ -5359,7 +5379,13 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
   final int ordine;
   final String blocco;
   final int ripetute;
-  final int distanzaM;
+
+  /// Una serie usa distanza o durata, mai entrambe — vedi [durataS].
+  final int? distanzaM;
+
+  /// Serie "a tempo" (es. lavoro a secco, tattica a tempo): alternativa
+  /// a [distanzaM], non un campo aggiuntivo.
+  final int? durataS;
   final String stile;
   final String esecuzione;
   final String? zona;
@@ -5380,7 +5406,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     required this.ordine,
     required this.blocco,
     required this.ripetute,
-    required this.distanzaM,
+    this.distanzaM,
+    this.durataS,
     required this.stile,
     required this.esecuzione,
     this.zona,
@@ -5400,7 +5427,12 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     map['ordine'] = Variable<int>(ordine);
     map['blocco'] = Variable<String>(blocco);
     map['ripetute'] = Variable<int>(ripetute);
-    map['distanza_m'] = Variable<int>(distanzaM);
+    if (!nullToAbsent || distanzaM != null) {
+      map['distanza_m'] = Variable<int>(distanzaM);
+    }
+    if (!nullToAbsent || durataS != null) {
+      map['durata_s'] = Variable<int>(durataS);
+    }
     map['stile'] = Variable<String>(stile);
     map['esecuzione'] = Variable<String>(esecuzione);
     if (!nullToAbsent || zona != null) {
@@ -5435,7 +5467,12 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       ordine: Value(ordine),
       blocco: Value(blocco),
       ripetute: Value(ripetute),
-      distanzaM: Value(distanzaM),
+      distanzaM: distanzaM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanzaM),
+      durataS: durataS == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durataS),
       stile: Value(stile),
       esecuzione: Value(esecuzione),
       zona: zona == null && nullToAbsent ? const Value.absent() : Value(zona),
@@ -5470,7 +5507,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       ordine: serializer.fromJson<int>(json['ordine']),
       blocco: serializer.fromJson<String>(json['blocco']),
       ripetute: serializer.fromJson<int>(json['ripetute']),
-      distanzaM: serializer.fromJson<int>(json['distanzaM']),
+      distanzaM: serializer.fromJson<int?>(json['distanzaM']),
+      durataS: serializer.fromJson<int?>(json['durataS']),
       stile: serializer.fromJson<String>(json['stile']),
       esecuzione: serializer.fromJson<String>(json['esecuzione']),
       zona: serializer.fromJson<String?>(json['zona']),
@@ -5492,7 +5530,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       'ordine': serializer.toJson<int>(ordine),
       'blocco': serializer.toJson<String>(blocco),
       'ripetute': serializer.toJson<int>(ripetute),
-      'distanzaM': serializer.toJson<int>(distanzaM),
+      'distanzaM': serializer.toJson<int?>(distanzaM),
+      'durataS': serializer.toJson<int?>(durataS),
       'stile': serializer.toJson<String>(stile),
       'esecuzione': serializer.toJson<String>(esecuzione),
       'zona': serializer.toJson<String?>(zona),
@@ -5512,7 +5551,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     int? ordine,
     String? blocco,
     int? ripetute,
-    int? distanzaM,
+    Value<int?> distanzaM = const Value.absent(),
+    Value<int?> durataS = const Value.absent(),
     String? stile,
     String? esecuzione,
     Value<String?> zona = const Value.absent(),
@@ -5529,7 +5569,8 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     ordine: ordine ?? this.ordine,
     blocco: blocco ?? this.blocco,
     ripetute: ripetute ?? this.ripetute,
-    distanzaM: distanzaM ?? this.distanzaM,
+    distanzaM: distanzaM.present ? distanzaM.value : this.distanzaM,
+    durataS: durataS.present ? durataS.value : this.durataS,
     stile: stile ?? this.stile,
     esecuzione: esecuzione ?? this.esecuzione,
     zona: zona.present ? zona.value : this.zona,
@@ -5553,6 +5594,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       blocco: data.blocco.present ? data.blocco.value : this.blocco,
       ripetute: data.ripetute.present ? data.ripetute.value : this.ripetute,
       distanzaM: data.distanzaM.present ? data.distanzaM.value : this.distanzaM,
+      durataS: data.durataS.present ? data.durataS.value : this.durataS,
       stile: data.stile.present ? data.stile.value : this.stile,
       esecuzione: data.esecuzione.present
           ? data.esecuzione.value
@@ -5585,6 +5627,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           ..write('blocco: $blocco, ')
           ..write('ripetute: $ripetute, ')
           ..write('distanzaM: $distanzaM, ')
+          ..write('durataS: $durataS, ')
           ..write('stile: $stile, ')
           ..write('esecuzione: $esecuzione, ')
           ..write('zona: $zona, ')
@@ -5607,6 +5650,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     blocco,
     ripetute,
     distanzaM,
+    durataS,
     stile,
     esecuzione,
     zona,
@@ -5628,6 +5672,7 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           other.blocco == this.blocco &&
           other.ripetute == this.ripetute &&
           other.distanzaM == this.distanzaM &&
+          other.durataS == this.durataS &&
           other.stile == this.stile &&
           other.esecuzione == this.esecuzione &&
           other.zona == this.zona &&
@@ -5646,7 +5691,8 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
   final Value<int> ordine;
   final Value<String> blocco;
   final Value<int> ripetute;
-  final Value<int> distanzaM;
+  final Value<int?> distanzaM;
+  final Value<int?> durataS;
   final Value<String> stile;
   final Value<String> esecuzione;
   final Value<String?> zona;
@@ -5665,6 +5711,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     this.blocco = const Value.absent(),
     this.ripetute = const Value.absent(),
     this.distanzaM = const Value.absent(),
+    this.durataS = const Value.absent(),
     this.stile = const Value.absent(),
     this.esecuzione = const Value.absent(),
     this.zona = const Value.absent(),
@@ -5683,7 +5730,8 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     required int ordine,
     required String blocco,
     required int ripetute,
-    required int distanzaM,
+    this.distanzaM = const Value.absent(),
+    this.durataS = const Value.absent(),
     required String stile,
     required String esecuzione,
     this.zona = const Value.absent(),
@@ -5700,7 +5748,6 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
        ordine = Value(ordine),
        blocco = Value(blocco),
        ripetute = Value(ripetute),
-       distanzaM = Value(distanzaM),
        stile = Value(stile),
        esecuzione = Value(esecuzione);
   static Insertable<SerieTableData> custom({
@@ -5711,6 +5758,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Expression<String>? blocco,
     Expression<int>? ripetute,
     Expression<int>? distanzaM,
+    Expression<int>? durataS,
     Expression<String>? stile,
     Expression<String>? esecuzione,
     Expression<String>? zona,
@@ -5730,6 +5778,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       if (blocco != null) 'blocco': blocco,
       if (ripetute != null) 'ripetute': ripetute,
       if (distanzaM != null) 'distanza_m': distanzaM,
+      if (durataS != null) 'durata_s': durataS,
       if (stile != null) 'stile': stile,
       if (esecuzione != null) 'esecuzione': esecuzione,
       if (zona != null) 'zona': zona,
@@ -5750,7 +5799,8 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Value<int>? ordine,
     Value<String>? blocco,
     Value<int>? ripetute,
-    Value<int>? distanzaM,
+    Value<int?>? distanzaM,
+    Value<int?>? durataS,
     Value<String>? stile,
     Value<String>? esecuzione,
     Value<String?>? zona,
@@ -5770,6 +5820,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       blocco: blocco ?? this.blocco,
       ripetute: ripetute ?? this.ripetute,
       distanzaM: distanzaM ?? this.distanzaM,
+      durataS: durataS ?? this.durataS,
       stile: stile ?? this.stile,
       esecuzione: esecuzione ?? this.esecuzione,
       zona: zona ?? this.zona,
@@ -5806,6 +5857,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     }
     if (distanzaM.present) {
       map['distanza_m'] = Variable<int>(distanzaM.value);
+    }
+    if (durataS.present) {
+      map['durata_s'] = Variable<int>(durataS.value);
     }
     if (stile.present) {
       map['stile'] = Variable<String>(stile.value);
@@ -5850,6 +5904,7 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
           ..write('blocco: $blocco, ')
           ..write('ripetute: $ripetute, ')
           ..write('distanzaM: $distanzaM, ')
+          ..write('durataS: $durataS, ')
           ..write('stile: $stile, ')
           ..write('esecuzione: $esecuzione, ')
           ..write('zona: $zona, ')
@@ -13502,7 +13557,8 @@ typedef $$SerieTableTableCreateCompanionBuilder = SerieTableCompanion Function({
   required int ordine,
   required String blocco,
   required int ripetute,
-  required int distanzaM,
+  Value<int?> distanzaM,
+  Value<int?> durataS,
   required String stile,
   required String esecuzione,
   Value<String?> zona,
@@ -13521,7 +13577,8 @@ typedef $$SerieTableTableUpdateCompanionBuilder = SerieTableCompanion Function({
   Value<int> ordine,
   Value<String> blocco,
   Value<int> ripetute,
-  Value<int> distanzaM,
+  Value<int?> distanzaM,
+  Value<int?> durataS,
   Value<String> stile,
   Value<String> esecuzione,
   Value<String?> zona,
@@ -13575,6 +13632,11 @@ class $$SerieTableTableFilterComposer
 
   ColumnFilters<int> get distanzaM => $composableBuilder(
     column: $table.distanzaM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durataS => $composableBuilder(
+    column: $table.durataS,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13668,6 +13730,11 @@ class $$SerieTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get durataS => $composableBuilder(
+    column: $table.durataS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get stile => $composableBuilder(
     column: $table.stile,
     builder: (column) => ColumnOrderings(column),
@@ -13746,6 +13813,9 @@ class $$SerieTableTableAnnotationComposer
   GeneratedColumn<int> get distanzaM =>
       $composableBuilder(column: $table.distanzaM, builder: (column) => column);
 
+  GeneratedColumn<int> get durataS =>
+      $composableBuilder(column: $table.durataS, builder: (column) => column);
+
   GeneratedColumn<String> get stile =>
       $composableBuilder(column: $table.stile, builder: (column) => column);
 
@@ -13821,7 +13891,8 @@ class $$SerieTableTableTableManager
                 Value<int> ordine = const Value.absent(),
                 Value<String> blocco = const Value.absent(),
                 Value<int> ripetute = const Value.absent(),
-                Value<int> distanzaM = const Value.absent(),
+                Value<int?> distanzaM = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
                 Value<String> stile = const Value.absent(),
                 Value<String> esecuzione = const Value.absent(),
                 Value<String?> zona = const Value.absent(),
@@ -13840,6 +13911,7 @@ class $$SerieTableTableTableManager
                 blocco: blocco,
                 ripetute: ripetute,
                 distanzaM: distanzaM,
+                durataS: durataS,
                 stile: stile,
                 esecuzione: esecuzione,
                 zona: zona,
@@ -13859,7 +13931,8 @@ class $$SerieTableTableTableManager
                 required int ordine,
                 required String blocco,
                 required int ripetute,
-                required int distanzaM,
+                Value<int?> distanzaM = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
                 required String stile,
                 required String esecuzione,
                 Value<String?> zona = const Value.absent(),
@@ -13878,6 +13951,7 @@ class $$SerieTableTableTableManager
                 blocco: blocco,
                 ripetute: ripetute,
                 distanzaM: distanzaM,
+                durataS: durataS,
                 stile: stile,
                 esecuzione: esecuzione,
                 zona: zona,

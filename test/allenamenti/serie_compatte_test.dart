@@ -153,10 +153,10 @@ void main() {
           ),
         );
         expect(tester.takeException(), isNull);
-        expect(find.textContaining('8×100 Libero'), findsOneWidget);
+        expect(find.textContaining('8×100m Libero'), findsOneWidget);
         expect(tester.getSize(find.byType(RigaSerie)).height, lessThan(90));
 
-        await tester.tap(find.textContaining('8×100 Libero'));
+        await tester.tap(find.textContaining('8×100m Libero'));
         expect(aperta, 1);
 
         await tester.tap(find.byType(PopupMenuButton<AzioneSerie>));

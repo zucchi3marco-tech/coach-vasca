@@ -1,3 +1,14 @@
+import '../../../core/utils/pace_format.dart';
+import '../domain/serie.dart';
+
+/// "8×100m" per una serie a distanza, "3×5'" per una a tempo — mai
+/// entrambe (vedi [Serie.aTempo]).
+String labelVolumeSerie(Serie s) {
+  final durata = s.durataS;
+  if (durata != null) return '${s.ripetute}×${formatDurataS(durata)}';
+  return '${s.ripetute}×${s.distanzaM}m';
+}
+
 String labelStile(String stile) => switch (stile) {
   'libero' => 'Libero',
   'dorso' => 'Dorso',
@@ -14,6 +25,8 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   'pull' => 'Pull',
   'tecnica' => 'Tecnica',
   'remate' => 'Remate',
+  'pallanuoto tecnico-tattico' => 'Tecnico-tattico',
+  'a secco' => 'A secco',
   _ => esecuzione,
 };
 

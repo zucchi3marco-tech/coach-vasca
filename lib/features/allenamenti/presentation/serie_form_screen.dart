@@ -43,6 +43,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _ripeteController;
   late final TextEditingController _distanzaController;
+  late final TextEditingController _durataController;
   late final TextEditingController _passoController;
   late final TextEditingController _recuperoController;
   late final TextEditingController _ripartenzaController;
@@ -53,6 +54,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   late String _stile;
   late String _esecuzione;
   String? _zona;
+  late bool _aTempo;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -66,8 +68,12 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     _ripeteController = TextEditingController(
       text: (s?.ripetute ?? 1).toString(),
     );
+    _aTempo = s?.aTempo ?? false;
     _distanzaController = TextEditingController(
-      text: s?.distanzaM.toString() ?? '',
+      text: s?.distanzaM?.toString() ?? '',
+    );
+    _durataController = TextEditingController(
+      text: s?.durataS == null ? '' : formatDurataMmSs(s!.durataS!),
     );
     final passo = s?.passoObiettivoS;
     _passoController = TextEditingController(
@@ -94,6 +100,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   void dispose() {
     _ripeteController.dispose();
     _distanzaController.dispose();
+    _durataController.dispose();
     _passoController.dispose();
     _recuperoController.dispose();
     _ripartenzaController.dispose();
@@ -116,7 +123,10 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     // il trascinamento nell'elenco).
     final ordine = widget.serie?.ordine ?? widget.ordineSuccessivo;
     final ripetute = int.parse(_ripeteController.text.trim());
-    final distanzaM = int.parse(_distanzaController.text.trim());
+    final distanzaM = _aTempo ? null : int.parse(_distanzaController.text.trim());
+    final durataS = _aTempo
+        ? parsePaceMmSs(_durataController.text)?.round()
+        : null;
     final passoObiettivoS = parsePaceMmSs(_passoController.text);
     final recuperoS = int.tryParse(_recuperoController.text.trim());
     final ripartenzaS = parsePaceMmSs(_ripartenzaController.text);
@@ -131,6 +141,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           blocco: _blocco,
           ripetute: ripetute,
           distanzaM: distanzaM,
+          durataS: durataS,
           stile: _stile,
           esecuzione: _esecuzione,
           zona: _zona,
@@ -147,6 +158,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           blocco: _blocco,
           ripetute: ripetute,
           distanzaM: distanzaM,
+          durataS: durataS,
           stile: _stile,
           esecuzione: _esecuzione,
           zona: _zona,
@@ -287,6 +299,11 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                     DropdownMenuItem(value: 'pull', child: Text('Pull')),
                     DropdownMenuItem(value: 'tecnica', child: Text('Tecnica')),
                     DropdownMenuItem(value: 'remate', child: Text('Remate')),
+                    DropdownMenuItem(
+                      value: 'pallanuoto tecnico-tattico',
+                      child: Text('Tecnico-tattico'),
+                    ),
+                    DropdownMenuItem(value: 'a secco', child: Text('A secco')),
                   ],
                   onChanged: (value) =>
                       setState(() => _esecuzione = value ?? 'nuoto'),
@@ -309,6 +326,16 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
             FormGroup(
               titolo: 'Volume',
               campi: [
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('Distanza')),
+                    ButtonSegment(value: true, label: Text('A tempo')),
+                  ],
+                  selected: {_aTempo},
+                  onSelectionChanged: (s) =>
+                      setState(() => _aTempo = s.first),
+                ),
+                const SizedBox(height: AppSpacing.s12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -324,17 +351,30 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Distanza (m)',
-                        controller: _distanzaController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final n = int.tryParse(v?.trim() ?? '');
-                          return (n == null || n <= 0) ? '> 0' : null;
-                        },
+                    if (!_aTempo)
+                      Expanded(
+                        child: AppTextField(
+                          etichetta: 'Distanza (m)',
+                          controller: _distanzaController,
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            final n = int.tryParse(v?.trim() ?? '');
+                            return (n == null || n <= 0) ? '> 0' : null;
+                          },
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: AppTextField(
+                          etichetta: 'Durata',
+                          controller: _durataController,
+                          aiuto: 'min:sec',
+                          validator: (v) {
+                            final s = parsePaceMmSs(v ?? '');
+                            return (s == null || s <= 0) ? 'min:sec' : null;
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

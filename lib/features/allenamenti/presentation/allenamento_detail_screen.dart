@@ -138,6 +138,7 @@ class _AllenamentoDetailScreenState
           blocco: blocco ?? s.blocco,
           ripetute: s.ripetute,
           distanzaM: s.distanzaM,
+          durataS: s.durataS,
           stile: s.stile,
           esecuzione: s.esecuzione,
           zona: s.zona,
@@ -253,6 +254,7 @@ class _AllenamentoDetailScreenState
             blocco: s.blocco,
             ripetute: s.ripetute,
             distanzaM: s.distanzaM,
+            durataS: s.durataS,
             stile: s.stile,
             esecuzione: s.esecuzione,
             zona: s.zona,
@@ -289,7 +291,7 @@ class _AllenamentoDetailScreenState
               ? 'Eliminare le ${gruppo.length} distanze di questa piramide '
                     '(${gruppo.map((s) => s.distanzaM).join('-')})? '
                     "L'operazione non si può annullare."
-              : 'Eliminare ${prima.ripetute}×${prima.distanzaM} '
+              : 'Eliminare ${labelVolumeSerie(prima)} '
                     '${labelStile(prima.stile)}? '
                     "L'operazione non si può annullare.",
         ),

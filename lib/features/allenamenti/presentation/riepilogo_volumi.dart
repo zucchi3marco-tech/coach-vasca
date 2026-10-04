@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -37,6 +38,9 @@ class RiepilogoVolumi extends StatelessWidget {
         if (perBlocco[b] != null)
           '${labelBloccoBreve(b)} ${formattaMetri(perBlocco[b]!)}',
     ];
+    final totaleDurataS = serie
+        .where((s) => s.aTempo)
+        .fold<int>(0, (t, s) => t + s.ripetute * s.durataS!);
     final materiale = {
       for (final s in serie)
         if (s.attrezzatura != null && s.attrezzatura!.trim().isNotEmpty)
@@ -56,6 +60,14 @@ class RiepilogoVolumi extends StatelessWidget {
               if (blocchi.isNotEmpty)
                 TextSpan(
                   text: '   ${blocchi.join(' · ')}',
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+              if (totaleDurataS > 0)
+                TextSpan(
+                  text: '   + ${formatDurataS(totaleDurataS)} a tempo '
+                      '(non contati nei metri)',
                   style: AppTypography.piccolo.copyWith(
                     color: colori.testoSecondario,
                   ),

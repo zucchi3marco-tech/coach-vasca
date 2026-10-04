@@ -6,7 +6,8 @@ class Serie {
     required this.ordine,
     required this.blocco,
     required this.ripetute,
-    required this.distanzaM,
+    this.distanzaM,
+    this.durataS,
     required this.stile,
     required this.esecuzione,
     this.zona,
@@ -24,7 +25,10 @@ class Serie {
   final int ordine;
   final String blocco; // riscaldamento | principale | defaticamento | altro
   final int ripetute;
-  final int distanzaM;
+
+  /// Una serie usa l'una o l'altra, mai entrambe — vedi [aTempo].
+  final int? distanzaM;
+  final int? durataS;
   final String stile; // libero | dorso | rana | delfino | misti
   final String esecuzione; // nuoto | gambe | braccia | pull | tecnica | remate
   final String? zona; // A1 | A2 | B1 | B2 | C1 | C2 | C3 | D (C: storico)
@@ -39,7 +43,11 @@ class Serie {
   /// serie normale.
   final String? piramideId;
 
-  int get distanzaTotaleM => ripetute * distanzaM;
+  /// Metri totali di nuoto — 0 per una serie a tempo: non si stima una
+  /// distanza, i riepiloghi la segnalano a parte (vedi [aTempo]).
+  int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
+
+  bool get aTempo => durataS != null;
 
   factory Serie.fromMap(Map<String, dynamic> map) {
     return Serie(
@@ -49,7 +57,8 @@ class Serie {
       ordine: map['ordine'] as int,
       blocco: map['blocco'] as String,
       ripetute: map['ripetute'] as int,
-      distanzaM: map['distanza_m'] as int,
+      distanzaM: map['distanza_m'] as int?,
+      durataS: map['durata_s'] as int?,
       stile: map['stile'] as String,
       esecuzione: map['esecuzione'] as String,
       zona: map['zona'] as String?,

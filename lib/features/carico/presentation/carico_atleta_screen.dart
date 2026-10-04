@@ -34,6 +34,8 @@ const _ordineEsecuzionePerVolume = [
   'pull',
   'tecnica',
   'remate',
+  'pallanuoto tecnico-tattico',
+  'a secco',
 ];
 
 String _formattaVolume(int metri) =>

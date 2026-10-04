@@ -68,7 +68,7 @@ List<String> _rigaTabella(Serie s) {
   return [
     '${s.ordine}',
     labelBlocco(s.blocco),
-    '${s.ripetute}×${s.distanzaM}m',
+    labelVolumeSerie(s),
     labelStile(s.stile),
     labelEsecuzione(s.esecuzione),
     s.zona ?? '',

@@ -160,7 +160,7 @@ class _SchedaBordoVascaScreenState
                           ),
                           const SizedBox(height: AppSpacing.s8),
                           Text(
-                            '${s.ripetute}×${s.distanzaM}m '
+                            '${labelVolumeSerie(s)} '
                             '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
                             style: AppTypography.display.copyWith(
                               color: colori.testo,

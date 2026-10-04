@@ -183,7 +183,13 @@ class SerieTable extends Table {
   IntColumn get ordine => integer()();
   TextColumn get blocco => text()();
   IntColumn get ripetute => integer()();
-  IntColumn get distanzaM => integer()();
+
+  /// Una serie usa distanza o durata, mai entrambe — vedi [durataS].
+  IntColumn get distanzaM => integer().nullable()();
+
+  /// Serie "a tempo" (es. lavoro a secco, tattica a tempo): alternativa
+  /// a [distanzaM], non un campo aggiuntivo.
+  IntColumn get durataS => integer().nullable()();
   TextColumn get stile => text()();
   TextColumn get esecuzione => text()();
   TextColumn get zona => text().nullable()();

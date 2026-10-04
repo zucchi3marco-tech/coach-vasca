@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -306,6 +306,34 @@ class AppDatabase extends _$AppDatabase {
       if (from < 25) {
         if (!await _hasColumn(m, 'serie_table', 'piramide_id')) {
           await m.addColumn(serieTable, serieTable.piramideId);
+        }
+      }
+      // v25 -> v26: campo "durata in secondi" sulla serie (RIPROGETTAZIONE
+      // AI, FASE 1), alternativa alla distanza. SQLite non supporta
+      // rilassare un NOT NULL con ALTER COLUMN: si ricrea la tabella
+      // (sempre e solo una cache, non la fonte di verita') copiando i
+      // dati esistenti, tutti ancora a distanza.
+      if (from < 26) {
+        if (!await _hasColumn(m, 'serie_table', 'durata_s')) {
+          await m.database.customStatement(
+            'ALTER TABLE serie_table RENAME TO serie_table_old_v25',
+          );
+          await m.createTable(serieTable);
+          await m.database.customStatement('''
+            INSERT INTO serie_table (
+              id, allenamento_id, club_id, ordine, blocco, ripetute,
+              distanza_m, durata_s, stile, esecuzione, zona,
+              passo_obiettivo_s, recupero_s, ripartenza_s, attrezzatura,
+              note, piramide_id
+            )
+            SELECT
+              id, allenamento_id, club_id, ordine, blocco, ripetute,
+              distanza_m, NULL, stile, esecuzione, zona,
+              passo_obiettivo_s, recupero_s, ripartenza_s, attrezzatura,
+              note, piramide_id
+            FROM serie_table_old_v25
+          ''');
+          await m.database.customStatement('DROP TABLE serie_table_old_v25');
         }
       }
     },

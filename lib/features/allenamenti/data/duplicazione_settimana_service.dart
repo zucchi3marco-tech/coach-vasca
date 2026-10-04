@@ -41,6 +41,7 @@ class DuplicazioneSettimanaService {
           blocco: s.blocco,
           ripetute: s.ripetute,
           distanzaM: s.distanzaM,
+          durataS: s.durataS,
           stile: s.stile,
           esecuzione: s.esecuzione,
           zona: s.zona,
