@@ -1,15 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/pace_format.dart';
+import '../../ripartenze/domain/calcolo_ripartenze.dart' as calcolo;
 import '../../atleti/application/personal_best_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/personal_best.dart';
+import '../../tabelle_passi/application/tabelle_passi_providers.dart';
+import '../../tabelle_passi/domain/tabella_passo.dart';
+import '../../test/application/test_providers.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 
 /// Come il gruppo si divide in corsie di ripartenza, e chi sta in quale.
+///
+/// RIPROGETTAZIONE AI, FASE 3: porta anche i dati grezzi per atleta (PB
+/// di ogni stile, passi dal test di soglia) così le ripartenze finali si
+/// possono calcolare per OGNI serie con lo stile e la zona giuste
+/// (vedi [ripartenzaPerSerie]), invece di usare una sola coppia
+/// passo100S/differenzialeS sempre in stile libero per l'intera scheda.
 class AssegnazioneCorsie {
-  const AssegnazioneCorsie({required this.corsie, this.senzaTempo = const []});
+  const AssegnazioneCorsie({
+    required this.corsie,
+    this.senzaTempo = const [],
+    this.pbPerAtleta = const {},
+    this.passiSogliaPerAtleta = const {},
+    this.senzaTestSoglia = const [],
+  });
 
   /// Vuota se nessun atleta ha il PB sui 100 stile libero.
   final List<CorsiaGenerazione> corsie;
@@ -17,6 +33,17 @@ class AssegnazioneCorsie {
   /// Atleti del gruppo senza PB sui 100 sl: non si sa in che corsia
   /// metterli, li decide l'allenatore.
   final List<String> senzaTempo;
+
+  /// Tutti i personal best (tutti gli stili) di ogni atleta del gruppo.
+  final Map<String, List<PersonalBest>> pbPerAtleta;
+
+  /// Passo (s/100) per zona (A1/A2/B1) dal test di soglia più recente di
+  /// ogni atleta, se esiste e ha le tabelle passi generate.
+  final Map<String, Map<String, double>> passiSogliaPerAtleta;
+
+  /// Atleti del gruppo senza un test di soglia valido: per A1/A2/B1 si
+  /// ricade sul modello dai primati, segnalato in UI.
+  final List<String> senzaTestSoglia;
 
   bool get divisoInDue => corsie.length > 1;
 
@@ -122,16 +149,138 @@ AssegnazioneCorsie assegnaCorsie(
   );
 }
 
-/// Come [assegnaCorsie], leggendo i PB di ogni atleta dal provider.
+/// Come [assegnaCorsie], leggendo i PB di ogni atleta dal provider — più
+/// i passi dal test di soglia più recente di ognuno, quando esiste e ha
+/// le tabelle passi generate (FASE 3): servono a [ripartenzaPerSerie]
+/// per le zone A1/A2/B1.
 Future<AssegnazioneCorsie> calcolaAssegnazioneCorsie(
   WidgetRef ref,
   List<Atleta> atleti,
 ) async {
   final pb = <String, List<PersonalBest>>{};
+  final passiSoglia = <String, Map<String, double>>{};
+  final senzaTestSoglia = <String>[];
   for (final atleta in atleti) {
     pb[atleta.id] = await ref.read(personalBestListProvider(atleta.id).future);
+
+    final test = await ref.read(testListProvider(atleta.id).future);
+    final ultimo = test.isEmpty ? null : test.first;
+    final tabelle = ultimo == null
+        ? const <TabellaPasso>[]
+        : await ref.read(tabellePassiProvider(ultimo.id).future);
+    if (tabelle.isEmpty) {
+      senzaTestSoglia.add(atleta.id);
+    } else {
+      passiSoglia[atleta.id] = {for (final t in tabelle) t.zona: t.passo100S};
+    }
   }
-  return assegnaCorsie(atleti, pb);
+  final base = assegnaCorsie(atleti, pb);
+  return AssegnazioneCorsie(
+    corsie: base.corsie,
+    senzaTempo: base.senzaTempo,
+    pbPerAtleta: pb,
+    passiSogliaPerAtleta: passiSoglia,
+    senzaTestSoglia: senzaTestSoglia,
+  );
+}
+
+/// Media di [passiSogliaPerAtleta] per [zona] sugli atleti indicati che
+/// hanno un test valido — `null` se nessuno di loro ne ha uno (si ricade
+/// sul modello dai primati in [ripartenzaPerSerie]).
+double? _passoSogliaMedioGruppo(
+  String zona,
+  List<String> atletiIds,
+  Map<String, Map<String, double>> passiSogliaPerAtleta,
+) {
+  final valori = [
+    for (final id in atletiIds)
+      if (passiSogliaPerAtleta[id]?[zona] != null)
+        passiSogliaPerAtleta[id]![zona]!,
+  ];
+  if (valori.isEmpty) return null;
+  return valori.reduce((a, b) => a + b) / valori.length;
+}
+
+/// Primato (e differenziale T200-T100, se c'è) di un atleta nello
+/// [stile] indicato — ricade sul libero se non ce l'ha in quello stile
+/// (FASE 3, richiesta del coach: "il primato nello stesso stile della
+/// serie se l'atleta ce l'ha, altrimenti sul libero").
+({double? passo100S, double? differenzialeS, double? tempo200S}) _pbPerStile(
+  List<PersonalBest> pb,
+  String stile,
+) {
+  double? cerca(String s, int distanza) => pbDelloSlot(pb, s, distanza)?.tempoS;
+  final passo100 = cerca(stile, 100) ?? cerca('libero', 100);
+  final stileUsato = cerca(stile, 100) != null ? stile : 'libero';
+  final passo200 = cerca(stileUsato, 200);
+  return (
+    passo100S: passo100,
+    differenzialeS: (passo200 != null && passo100 != null)
+        ? passo200 - passo100
+        : null,
+    tempo200S: passo200,
+  );
+}
+
+/// Ripartenza (e passo) per una serie generata, nella sua zona e stile
+/// reali, per il gruppo di atleti [atletiIds] — FASE 3: le zone A1/A2/B1
+/// usano il passo del test di soglia quando disponibile (media del
+/// gruppo), le altre il modello dai primati **nello stile della serie**
+/// invece che sempre in stile libero. Se non c'è nulla (né test né PB
+/// nello stile o nel libero), torna `(null, null)`: si ricade su quanto
+/// proposto dall'AI, mai un buco silenzioso.
+({double? passoS, double? ripartenzaS}) ripartenzaPerSerie({
+  required String zona,
+  required String stile,
+  required int distanzaM,
+  required List<String> atletiIds,
+  required AssegnazioneCorsie assegnazione,
+}) {
+  if (zona == 'A1' || zona == 'A2' || zona == 'B1') {
+    final passoSoglia = _passoSogliaMedioGruppo(
+      zona,
+      atletiIds,
+      assegnazione.passiSogliaPerAtleta,
+    );
+    if (passoSoglia != null) {
+      return calcolo.ripartenzaEPasso(
+        zona: zona,
+        passo100S: null,
+        differenzialeS: null,
+        distanzaM: distanzaM,
+        passoBaseOverride: passoSoglia,
+      );
+    }
+  }
+
+  // Nessun test di soglia (o zona B2+): modello dai primati, nello
+  // stile della serie quando disponibile.
+  final datiPerAtleta = [
+    for (final id in atletiIds)
+      _pbPerStile(assegnazione.pbPerAtleta[id] ?? const [], stile),
+  ].where((d) => d.passo100S != null).toList();
+  if (datiPerAtleta.isEmpty) {
+    // Nessun PB nello stile né nel libero per questo gruppo: userà il
+    // valore (eventualmente libero) già in CorsiaGenerazione, se c'è.
+    return (passoS: null, ripartenzaS: null);
+  }
+  double media(Iterable<double> v) => v.reduce((a, b) => a + b) / v.length;
+  final passo100S = media(datiPerAtleta.map((d) => d.passo100S!));
+  final differenziali = datiPerAtleta
+      .map((d) => d.differenzialeS)
+      .whereType<double>()
+      .toList();
+  final tempi200 = datiPerAtleta
+      .map((d) => d.tempo200S)
+      .whereType<double>()
+      .toList();
+  return calcolo.ripartenzaEPasso(
+    zona: zona,
+    passo100S: passo100S,
+    differenzialeS: differenziali.isEmpty ? null : media(differenziali),
+    tempo200S: tempi200.isEmpty ? null : media(tempi200),
+    distanzaM: distanzaM,
+  );
 }
 
 Future<List<CorsiaGenerazione>> calcolaCorsie(

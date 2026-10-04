@@ -234,5 +234,31 @@ void main() {
       // passo C2 = passo100 = 48 -> tempo target 50m = 24s, +180s = 204
       expect(r.ripartenzaS, arrotondaSu5s(24 + 180));
     });
+
+    test('passoBaseOverride (FASE 3, passo da test di soglia) sostituisce il '
+        'modello dai primati per A1/A2/B1', () {
+      final r = ripartenzaEPasso(
+        zona: 'B1',
+        passo100S: null,
+        differenzialeS: null,
+        distanzaM: 100,
+        passoBaseOverride: 90.0,
+      );
+      // Stessa tabella B1 100m del test sopra (coefficiente 0.950,
+      // recupero 15s), ma sul passo del test invece che sul differenziale.
+      expect(r.passoS, closeTo(90.0 * 0.950, 0.001));
+      expect(r.ripartenzaS, arrotondaSu5s(90.0 * 0.950 + 15));
+    });
+
+    test('passoBaseOverride ignorato per B2 (solo A1/A2/B1)', () {
+      final r = ripartenzaEPasso(
+        zona: 'B2',
+        passo100S: null,
+        differenzialeS: 60.0,
+        distanzaM: 200,
+        passoBaseOverride: 999.0,
+      );
+      expect(r.passoS, 60.0);
+    });
   });
 }

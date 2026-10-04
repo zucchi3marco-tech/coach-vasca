@@ -83,7 +83,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   }
 
   String _ripartenzeSerie(SerieGenerata s) =>
-      formattaRipartenzeCorsia(s.ripartenzePerCorsia);
+      formattaRipartenzeCorsia(_ripartenzePerSerie(s));
 
   Future<void> _scegliData() async {
     final scelta = await showDatePicker(
@@ -98,6 +98,37 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
         _dataController.text = _formattaData(scelta);
       });
     }
+  }
+
+  /// Ripartenze "vere" per questa serie, ricalcolate dal codice invece di
+  /// quelle proposte dall'AI (RIPROGETTAZIONE AI, FASE 3): per ogni
+  /// corsia, il passo del test di soglia (A1/A2/B1, quando c'è) o il
+  /// modello dai primati nello stile della serie (le altre zone). Se per
+  /// una corsia non c'è alcun dato, resta quella eventualmente proposta
+  /// dall'AI per quella stessa corsia — mai un buco silenzioso.
+  List<RipartenzaCorsia> _ripartenzePerSerie(SerieGenerata s) {
+    final assegnazione = widget.assegnazione;
+    if (assegnazione == null || s.zona == null) return s.ripartenzePerCorsia;
+
+    final risultato = <RipartenzaCorsia>[];
+    for (final c in assegnazione.corsie) {
+      final calcolato = ripartenzaPerSerie(
+        zona: s.zona!,
+        stile: s.stile,
+        distanzaM: s.distanzaM,
+        atletiIds: c.atletiIds,
+        assegnazione: assegnazione,
+      );
+      if (calcolato.ripartenzaS != null) {
+        risultato.add(
+          RipartenzaCorsia(nome: c.nome, ripartenzaS: calcolato.ripartenzaS!),
+        );
+        continue;
+      }
+      final daAi = s.ripartenzePerCorsia.where((r) => r.nome == c.nome);
+      if (daAi.isNotEmpty) risultato.add(daAi.first);
+    }
+    return risultato;
   }
 
   Future<void> _salva() async {
@@ -115,7 +146,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
           );
       final serieRepository = ref.read(serieRepositoryProvider);
       for (final s in scheda.serie) {
-        final risolto = risolviRipartenza(s.ripartenzePerCorsia, s.note);
+        final risolto = risolviRipartenza(_ripartenzePerSerie(s), s.note);
         await serieRepository.createSerie(
           allenamentoId: allenamento.id,
           ordine: s.ordine,
@@ -177,6 +208,14 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
             Text(
               scheda.note!,
               style: AppTypography.corpo.copyWith(color: colori.testo),
+            ),
+          ],
+          if (widget.assegnazione != null &&
+              widget.assegnazione!.senzaTestSoglia.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s16),
+            _AvvisoSenzaTestSoglia(
+              atletiIds: widget.assegnazione!.senzaTestSoglia,
+              clubId: widget.clubId,
             ),
           ],
           if (widget.assegnazione != null &&
@@ -251,6 +290,46 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
 }
 
 /// I due gruppi di ripartenza con i nomi degli atleti, per dividerli in
+/// Avviso (FASE 3): per gli atleti elencati, le zone A1/A2/B1 di questa
+/// scheda usano il modello dai primati invece del passo del test di
+/// soglia (nessun test BVS/T30 valido registrato) — niente blocca la
+/// generazione, ma il coach deve saperlo.
+class _AvvisoSenzaTestSoglia extends ConsumerWidget {
+  const _AvvisoSenzaTestSoglia({required this.atletiIds, required this.clubId});
+
+  final List<String> atletiIds;
+  final String clubId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final atleti =
+        ref
+            .watch(atletiListProvider((clubId: clubId, includeInactive: false)))
+            .value ??
+        const [];
+    final nomi = {for (final a in atleti) a.id: a.nomeCompleto};
+    final elenco = atletiIds.map((id) => nomi[id]).whereType<String>().toList()
+      ..sort();
+    final messaggio = elenco.isEmpty
+        ? 'Nessun test di soglia registrato: uso i primati per le zone A1/A2/B1.'
+        : 'Nessun test di soglia registrato per ${elenco.join(', ')}: '
+              'per loro uso i primati per le zone A1/A2/B1.';
+    return Container(
+      decoration: BoxDecoration(
+        color: colori.attenzioneTenue,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border(left: BorderSide(color: colori.attenzione, width: 3)),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      child: Text(
+        messaggio,
+        style: AppTypography.corpo.copyWith(color: colori.testo),
+      ),
+    );
+  }
+}
+
 /// vasca (in Presenze ogni atleta ha lo stesso numero, 1 o 2).
 class _PannelloCorsie extends ConsumerWidget {
   const _PannelloCorsie({required this.assegnazione, required this.clubId});

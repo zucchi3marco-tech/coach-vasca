@@ -172,6 +172,12 @@ double tempoGaraStimato({
   required double? differenzialeS,
   double? tempo200S,
   required int distanzaM,
+  // Passo (s/100) già calcolato altrove (es. da un test di soglia
+  // BVS/T30, FASE 3) per questa zona specifica: quando presente,
+  // sostituisce il calcolo dal differenziale di gara ma usa lo stesso
+  // recupero/arrotondamento — serve solo per A1/A2/B1, dove un test di
+  // soglia è più preciso dei primati. Ignorato per B2/C1/C2/C3/D.
+  double? passoBaseOverride,
 }) {
   if (zona == 'C3') return (passoS: null, ripartenzaS: null);
 
@@ -191,11 +197,14 @@ double tempoGaraStimato({
     );
   }
 
-  final passoBase = passoBasePerZona(
-    zona,
-    passo100S: passo100S,
-    differenzialeS: differenzialeS,
-  );
+  final passoBase =
+      (passoBaseOverride != null && ['A1', 'A2', 'B1'].contains(zona))
+      ? passoBaseOverride
+      : passoBasePerZona(
+          zona,
+          passo100S: passo100S,
+          differenzialeS: differenzialeS,
+        );
   if (passoBase == null) return (passoS: null, ripartenzaS: null);
 
   final distanza = _distanzaPiuVicina(distanzaM);
