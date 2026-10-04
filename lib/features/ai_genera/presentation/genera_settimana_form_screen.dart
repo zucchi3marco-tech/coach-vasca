@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -21,9 +22,13 @@ import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../gare/application/gare_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
+import '../../libreria_blocchi/data/training_blocks_repository.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../application/controlli_settimana_service.dart';
 import '../application/corsie_service.dart';
 import '../application/settimana_ai_providers.dart';
 import '../data/generazione_ai_repository.dart';
@@ -342,6 +347,95 @@ class _GeneraSettimanaFormScreenState
     });
   }
 
+  /// Dati per i controlli sulla settimana intera (RIPROGETTAZIONE AI,
+  /// FASE 3): c'è una gara/partita "alta" entro 10 giorni dalla fine
+  /// della settimana generata, la media di volume delle ultime 4
+  /// settimane (null se non ce n'è storico) e se il gruppo è di
+  /// pallanuoto (per il tetto del 50% di nuoto puro). Un fallimento in
+  /// una di queste letture non blocca la generazione: i controlli
+  /// restano solo meno precisi, mai bloccanti di per sé.
+  Future<
+    ({
+      bool garaAltaImminente,
+      double? mediaUltimeSettimane,
+      bool sportPallanuoto,
+    })
+  >
+  _calcolaContestoControlli({
+    required String? gruppoId,
+    required DateTime dataFineSettimana,
+    required String? sportClub,
+  }) async {
+    var garaAltaImminente = false;
+    try {
+      final fineFinestra = dataFineSettimana.add(const Duration(days: 10));
+      final gare = await ref.read(gareListProvider(widget.clubId).future);
+      final partite = await ref.read(partiteListProvider(widget.clubId).future);
+      garaAltaImminente =
+          gare.any(
+            (g) =>
+                g.importanza == 'alta' &&
+                !g.data.isBefore(dataFineSettimana) &&
+                !g.data.isAfter(fineFinestra) &&
+                visibileNelGruppo(
+                  gruppoDelRecord: g.gruppoId,
+                  gruppoSelezionato: gruppoId,
+                ),
+          ) ||
+          partite.any(
+            (p) =>
+                p.importanza == 'alta' &&
+                !p.data.isBefore(dataFineSettimana) &&
+                !p.data.isAfter(fineFinestra) &&
+                visibileNelGruppo(
+                  gruppoDelRecord: p.gruppoId,
+                  gruppoSelezionato: gruppoId,
+                ),
+          );
+    } catch (_) {
+      // Nessuna gara/partita trovata: nessuno scarico richiesto.
+    }
+
+    double? mediaUltimeSettimane;
+    try {
+      final oggi = DateTime.now();
+      final allenamenti = await ref
+          .read(allenamentiRepositoryProvider)
+          .fetchPerClubEPeriodo(
+            clubId: widget.clubId,
+            dataInizio: oggi.subtract(const Duration(days: 28)),
+            dataFine: oggi,
+          );
+      final delGruppo = gruppoId == null
+          ? allenamenti
+          : allenamenti.where((a) => a.gruppoId == gruppoId).toList();
+      final serie = await ref.read(serieRepositoryProvider).fetchPerAllenamenti(
+        [for (final a in delGruppo) a.id],
+      );
+      if (delGruppo.isNotEmpty) {
+        final volumeTotale = serie.fold<int>(
+          0,
+          (t, s) => t + s.distanzaTotaleM,
+        );
+        mediaUltimeSettimane = volumeTotale / 4;
+      }
+    } catch (_) {
+      // Nessuno storico: il controllo sul carico resta disattivato.
+    }
+
+    final gruppi = ref.read(gruppiListProvider(widget.clubId)).value ?? [];
+    final sportGruppo = gruppoId == null
+        ? null
+        : gruppi.where((g) => g.id == gruppoId).firstOrNull?.sport;
+    final sportPallanuoto = (sportGruppo ?? sportClub) == 'pallanuoto';
+
+    return (
+      garaAltaImminente: garaAltaImminente,
+      mediaUltimeSettimane: mediaUltimeSettimane,
+      sportPallanuoto: sportPallanuoto,
+    );
+  }
+
   Future<void> _conferma(String? gruppoId) async {
     if (!_formKey.currentState!.validate()) return;
     if (_giorniSelezionati.isEmpty) {
@@ -361,7 +455,7 @@ class _GeneraSettimanaFormScreenState
         .value
         ?.riassunto;
 
-    var corsie = const <CorsiaGenerazione>[];
+    var assegnazione = const AssegnazioneCorsie(corsie: []);
     try {
       final tuttiGliAtleti = await ref.read(
         atletiListProvider((clubId: widget.clubId, includeInactive: false))
@@ -370,10 +464,11 @@ class _GeneraSettimanaFormScreenState
       final atletiDelGruppo = gruppoId == null
           ? tuttiGliAtleti
           : tuttiGliAtleti.where((a) => a.gruppoId == gruppoId).toList();
-      corsie = await calcolaCorsie(ref, atletiDelGruppo);
+      assegnazione = await calcolaAssegnazioneCorsie(ref, atletiDelGruppo);
     } catch (_) {
       // Le corsie migliorano la generazione, ma non sono indispensabili.
     }
+    final corsie = assegnazione.corsie;
 
     final Map<String, String> nomiGruppi = {
       for (final g in ref.read(gruppiListProvider(widget.clubId)).value ?? [])
@@ -382,8 +477,10 @@ class _GeneraSettimanaFormScreenState
     final gruppoLabel = nomiGruppi[gruppoId] ?? 'Tutti gli atleti';
 
     var blocchi = const <BloccoDisponibile>[];
+    String? sportClub;
     try {
       final club = await ref.read(currentClubProvider.future);
+      sportClub = club?.sport;
       blocchi = await blocchiCompatibili(
         ref,
         clubId: widget.clubId,
@@ -542,6 +639,15 @@ class _GeneraSettimanaFormScreenState
         );
       }
 
+      final dataFineSettimana = _dataInizio.add(
+        Duration(days: giorniOrdinati.last),
+      );
+      final contesto = await _calcolaContestoControlli(
+        gruppoId: gruppoId,
+        dataFineSettimana: dataFineSettimana,
+        sportClub: sportClub,
+      );
+
       if (!mounted) return;
       final salvata = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
@@ -550,7 +656,12 @@ class _GeneraSettimanaFormScreenState
             gruppoId: gruppoId,
             gruppoLabel: gruppoLabel,
             corsie: corsie,
+            assegnazione: assegnazione,
             blocchi: blocchi,
+            volumeSettimanaleRichiesto: _volumeSettimanale.round(),
+            garaAltaImminente: contesto.garaAltaImminente,
+            mediaUltimeSettimane: contesto.mediaUltimeSettimane,
+            sportPallanuoto: contesto.sportPallanuoto,
             vincoliUtente: vincoliUtente,
             attrezzaturaLavoroCentrale: attrezzaturaCentrale,
             minutiMax: minutiMax,
@@ -997,7 +1108,12 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
     required this.gruppoId,
     required this.gruppoLabel,
     required this.corsie,
+    this.assegnazione = const AssegnazioneCorsie(corsie: []),
     this.blocchi = const [],
+    this.volumeSettimanaleRichiesto = 0,
+    this.garaAltaImminente = false,
+    this.mediaUltimeSettimane,
+    this.sportPallanuoto = false,
     required this.vincoliUtente,
     required this.attrezzaturaLavoroCentrale,
     required this.minutiMax,
@@ -1010,7 +1126,16 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   final String? gruppoId;
   final String gruppoLabel;
   final List<CorsiaGenerazione> corsie;
+  final AssegnazioneCorsie assegnazione;
   final List<BloccoDisponibile> blocchi;
+
+  /// Per i controlli sulla settimana intera (FASE 3) — vedi
+  /// `controlli_settimana_service.dart`.
+  final int volumeSettimanaleRichiesto;
+  final bool garaAltaImminente;
+  final double? mediaUltimeSettimane;
+  final bool sportPallanuoto;
+
   final String vincoliUtente;
   final List<String> attrezzaturaLavoroCentrale;
   final int minutiMax;
@@ -1032,6 +1157,53 @@ class _RevisioneSettimanaScreenState
   late final List<SedutaConScheda> _sedute = List.of(widget.sedute);
   bool _salvataggioInCorso = false;
   int? _rigenerandoIndice;
+  List<String> _avvisi = const [];
+  bool _controlliFatti = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Un solo giro di controlli automatici all'apertura della revisione
+    // (FASE 3): se emerge un problema attribuibile a UNA seduta, la si
+    // rigenera una sola volta con un vincolo che spiega cosa correggere,
+    // poi si rivalutano gli avvisi col risultato — mai una seconda
+    // rigenerazione automatica.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _eseguiControlli());
+  }
+
+  List<SedutaPerControllo> get _sedutePerControllo => [
+    for (final s in _sedute) (s.data, s.scheda),
+  ];
+
+  Future<void> _eseguiControlli() async {
+    final esito = controllaSettimana(
+      sedute: _sedutePerControllo,
+      volumeSettimanaleRichiesto: widget.volumeSettimanaleRichiesto,
+      mediaUltimeSettimane: widget.mediaUltimeSettimane,
+      garaAltaImminente: widget.garaAltaImminente,
+      sportPallanuoto: widget.sportPallanuoto,
+    );
+    if (!mounted) return;
+    if (!_controlliFatti && esito.indiceDaRigenerare != null) {
+      _controlliFatti = true;
+      await _rigenera(
+        esito.indiceDaRigenerare!,
+        vincoloExtra: esito.vincoloExtra,
+      );
+      if (!mounted) return;
+      final esitoFinale = controllaSettimana(
+        sedute: _sedutePerControllo,
+        volumeSettimanaleRichiesto: widget.volumeSettimanaleRichiesto,
+        mediaUltimeSettimane: widget.mediaUltimeSettimane,
+        garaAltaImminente: widget.garaAltaImminente,
+        sportPallanuoto: widget.sportPallanuoto,
+      );
+      setState(() => _avvisi = esitoFinale.avvisi);
+    } else {
+      _controlliFatti = true;
+      setState(() => _avvisi = esito.avvisi);
+    }
+  }
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -1072,13 +1244,14 @@ class _RevisioneSettimanaScreenState
     }
   }
 
-  Future<void> _rigenera(int indice) async {
+  Future<void> _rigenera(int indice, {String? vincoloExtra}) async {
     setState(() => _rigenerandoIndice = indice);
     final voce = _sedute[indice];
     try {
       final vincoliGiorno = [
         'Enfasi di questa seduta: ${voce.seduta.codice}.',
         if (widget.vincoliUtente.isNotEmpty) widget.vincoliUtente,
+        ?vincoloExtra,
       ].join(' ');
       final nuovaScheda = await ref
           .read(generazioneAiRepositoryProvider)
@@ -1134,6 +1307,33 @@ class _RevisioneSettimanaScreenState
     }
   }
 
+  /// Ripartenze "vere" per questa serie, ricalcolate dal codice invece di
+  /// quelle proposte dall'AI (RIPROGETTAZIONE AI, FASE 3) — stessa logica
+  /// di `SchedaGenerataScreen._ripartenzePerSerie`, duplicata perché le
+  /// due schermate non condividono una classe base.
+  List<RipartenzaCorsia> _ripartenzePerSerie(SerieGenerata s) {
+    if (s.zona == null) return s.ripartenzePerCorsia;
+    final risultato = <RipartenzaCorsia>[];
+    for (final c in widget.assegnazione.corsie) {
+      final calcolato = ripartenzaPerSerie(
+        zona: s.zona!,
+        stile: s.stile,
+        distanzaM: s.distanzaM,
+        atletiIds: c.atletiIds,
+        assegnazione: widget.assegnazione,
+      );
+      if (calcolato.ripartenzaS != null) {
+        risultato.add(
+          RipartenzaCorsia(nome: c.nome, ripartenzaS: calcolato.ripartenzaS!),
+        );
+        continue;
+      }
+      final daAi = s.ripartenzePerCorsia.where((r) => r.nome == c.nome);
+      if (daAi.isNotEmpty) risultato.add(daAi.first);
+    }
+    return risultato;
+  }
+
   Future<void> _salva() async {
     setState(() => _salvataggioInCorso = true);
     try {
@@ -1160,8 +1360,8 @@ class _RevisioneSettimanaScreenState
           } catch (_) {}
         }
         for (final s in voce.scheda.serie) {
-          final risolto = risolviRipartenza(s.ripartenzePerCorsia, s.note);
-          await serieRepository.createSerie(
+          final risolto = risolviRipartenza(_ripartenzePerSerie(s), s.note);
+          final serieCreata = await serieRepository.createSerie(
             allenamentoId: allenamento.id,
             ordine: s.ordine,
             blocco: s.blocco,
@@ -1175,6 +1375,23 @@ class _RevisioneSettimanaScreenState
             attrezzatura: s.attrezzatura,
             note: risolto.note,
           );
+          // Come in SchedaGenerataScreen: una serie "nuovo" (nessun
+          // blocco di libreria adatto trovato dall'AI) finisce in
+          // libreria come bozza da approvare — un fallimento qui non
+          // deve bloccare un salvataggio già riuscito.
+          if (s.nuovo) {
+            try {
+              await ref
+                  .read(trainingBlocksRepositoryProvider)
+                  .salvaSerieComeBlocco(
+                    clubId: widget.clubId,
+                    codice: 'IA-${serieCreata.id.substring(0, 8)}',
+                    sport: 'entrambi',
+                    titolo: voce.scheda.titolo,
+                    serieGruppo: [serieCreata],
+                  );
+            } catch (_) {}
+          }
         }
       }
       if (!mounted) return;
@@ -1209,6 +1426,35 @@ class _RevisioneSettimanaScreenState
             'Totale settimanale: $totaleMetri m',
             style: AppTypography.corpoForte.copyWith(color: colori.testo),
           ),
+          if (_avvisi.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s12),
+            Container(
+              decoration: BoxDecoration(
+                color: colori.attenzioneTenue,
+                borderRadius: BorderRadius.circular(AppRadius.pannello),
+                border: Border(
+                  left: BorderSide(color: colori.attenzione, width: 3),
+                ),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.s16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final avviso in _avvisi)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                      child: Text(
+                        avviso,
+                        style: AppTypography.corpo.copyWith(
+                          color: colori.testo,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.s16),
           for (var i = 0; i < _sedute.length; i++) ...[
             _CardSeduta(
