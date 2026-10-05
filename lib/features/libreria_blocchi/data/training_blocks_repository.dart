@@ -454,6 +454,131 @@ class TrainingBlocksRepository {
     });
   }
 
+  /// Passo medio di fabbrica (s/100m) per stimare la durata di un
+  /// blocco dai suoi metri — stesso valore di default usato
+  /// dall'importatore Excel quando il foglio Legenda non lo specifica
+  /// (vedi `excel_import.dart`): qui non c'è un file da cui leggerlo,
+  /// quindi si usa sempre questo.
+  static const _passoMedioS100 = 110;
+
+  /// Ricalcola "metri totali" e "durata stimata" di un blocco dalle sue
+  /// parti attuali — stessa formula dell'importatore Excel (FASE 1):
+  /// va richiamato dopo ogni aggiunta/modifica/eliminazione di una
+  /// parte, mai lasciato "sporco" rispetto al contenuto vero.
+  Future<void> _ricalcolaAggregatiBlocco(String bloccoId) async {
+    final parti = await fetchParti(bloccoId);
+    final metriTotali = parti.fold<int>(
+      0,
+      (t, p) => t + p.giri * p.ripetizioni * (p.distanzaM ?? 0),
+    );
+    final secondiRecuperoETempo = parti.fold<int>(
+      0,
+      (t, p) =>
+          t + p.giri * p.ripetizioni * ((p.durataS ?? 0) + (p.recuperoS ?? 0)),
+    );
+    final durataStimataMin =
+        ((metriTotali * _passoMedioS100 / 100 + secondiRecuperoETempo) / 60)
+            .round();
+    await updateBlocco(bloccoId, {
+      'metri_totali': metriTotali,
+      'durata_stimata_min': durataStimataMin,
+    });
+  }
+
+  /// Aggiunge una parte a un blocco esistente, in fondo (o alla
+  /// posizione [ordine] se indicata) — dalla schermata del blocco, non
+  /// solo da import Excel o "Salva come blocco" (FASE 1, rifinitura).
+  Future<void> createParte({
+    required String bloccoId,
+    required String clubId,
+    int? ordine,
+    int giri = 1,
+    required int ripetizioni,
+    int? distanzaM,
+    int? durataS,
+    String? stile,
+    String? esercizio,
+    required String zona,
+    required String esecuzione,
+    int? recuperoS,
+    String? attrezzi,
+    String? note,
+  }) async {
+    final attuali = await fetchParti(bloccoId);
+    await _inserisciParti(bloccoId, clubId, [
+      TrainingBlockParte(
+        id: '',
+        bloccoId: bloccoId,
+        clubId: clubId,
+        ordine: ordine ?? attuali.length + 1,
+        giri: giri,
+        ripetizioni: ripetizioni,
+        distanzaM: distanzaM,
+        durataS: durataS,
+        stile: stile,
+        esercizio: esercizio,
+        zona: zona,
+        esecuzione: esecuzione,
+        recuperoS: recuperoS,
+        attrezzi: attrezzi,
+        note: note,
+      ),
+    ]);
+    await _ricalcolaAggregatiBlocco(bloccoId);
+  }
+
+  Future<void> updateParte(
+    String id, {
+    required String bloccoId,
+    required int ordine,
+    required int giri,
+    required int ripetizioni,
+    int? distanzaM,
+    int? durataS,
+    String? stile,
+    String? esercizio,
+    required String zona,
+    required String esecuzione,
+    int? recuperoS,
+    String? attrezzi,
+    String? note,
+  }) async {
+    final payload = {
+      'ordine': ordine,
+      'giri': giri,
+      'ripetizioni': ripetizioni,
+      'distanza_m': distanzaM,
+      'durata_s': durataS,
+      'stile': stile,
+      'esercizio': esercizio,
+      'zona': zona,
+      'esecuzione': esecuzione,
+      'recupero_s': recuperoS,
+      'attrezzi': attrezzi,
+      'note': note,
+    };
+    final row = await _client
+        .from('training_block_parti')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+    await _db
+        .into(_db.trainingBlockPartiTable)
+        .insertOnConflictUpdate(_parteCompanionFromMap(row));
+    // _ricalcolaAggregatiBlocco chiama updateBlocco, che marca sempre
+    // modificato_in_app=true: non serve un'altra chiamata solo per quello.
+    await _ricalcolaAggregatiBlocco(bloccoId);
+  }
+
+  Future<void> deleteParte(String id, {required String bloccoId}) async {
+    await _client.from('training_block_parti').delete().eq('id', id);
+    await (_db.delete(
+      _db.trainingBlockPartiTable,
+    )..where((t) => t.id.equals(id))).go();
+    await _ricalcolaAggregatiBlocco(bloccoId);
+  }
+
   /// Crea un blocco in libreria (stato "bozza") a partire da una o più
   /// serie vere già salvate — "Salva come blocco" sulla scheda
   /// allenamento. Un gruppo di più righe (es. una piramide) diventa un
