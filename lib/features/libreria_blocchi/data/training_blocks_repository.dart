@@ -201,6 +201,27 @@ class TrainingBlocksRepository {
     return rows.map(TrainingBlockParte.fromMap).toList();
   }
 
+  /// Le parti di più blocchi in un colpo solo (es. per l'esportazione
+  /// Excel di tutta la libreria): una richiesta sola, non una per
+  /// blocco in sequenza — lo stesso errore corretto in
+  /// `selezione_blocchi_service.dart` dopo il blocco trovato dal coach.
+  Future<Map<String, List<TrainingBlockParte>>> fetchPartiPerBlocchi(
+    List<String> bloccoIds,
+  ) async {
+    if (bloccoIds.isEmpty) return {};
+    final rows = await _client
+        .from('training_block_parti')
+        .select()
+        .inFilter('blocco_id', bloccoIds)
+        .order('ordine');
+    final risultato = <String, List<TrainingBlockParte>>{};
+    for (final r in rows) {
+      final parte = TrainingBlockParte.fromMap(r);
+      (risultato[parte.bloccoId] ??= []).add(parte);
+    }
+    return risultato;
+  }
+
   /// Sostituzione totale per questo club (non insertOrReplace): un
   /// blocco eliminato fuori dall'app resterebbe altrimenti in cache.
   Future<void> refreshFromRemote(String clubId) async {

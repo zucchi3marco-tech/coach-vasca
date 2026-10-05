@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/scarica_file.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -15,6 +16,7 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../application/excel_export.dart';
 import '../application/excel_import.dart';
 import '../application/libreria_blocchi_providers.dart';
 import '../data/training_blocks_repository.dart';
@@ -44,6 +46,7 @@ class _LibreriaBlocchiScreenState extends ConsumerState<LibreriaBlocchiScreen> {
   String? _filtroSport;
   String? _filtroStato;
   bool _importando = false;
+  bool _esportando = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +56,17 @@ class _LibreriaBlocchiScreenState extends ConsumerState<LibreriaBlocchiScreen> {
       appBar: AppBar(
         title: const Text('Libreria blocchi'),
         actions: [
+          IconButton(
+            tooltip: 'Esporta in Excel',
+            onPressed: _esportando ? null : _esportaInExcel,
+            icon: _esportando
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_outlined),
+          ),
           IconButton(
             tooltip: 'Importa da Excel',
             onPressed: _importando ? null : _importaDaExcel,
@@ -214,6 +228,38 @@ class _LibreriaBlocchiScreenState extends ConsumerState<LibreriaBlocchiScreen> {
   void _mostraErrore(Object e) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+  }
+
+  Future<void> _esportaInExcel() async {
+    if (!scaricaFileDisponibile) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esportazione disponibile solo da browser.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _esportando = true);
+    try {
+      final repository = ref.read(trainingBlocksRepositoryProvider);
+      final blocchi = await ref.read(
+        trainingBlocksListProvider(widget.clubId).future,
+      );
+      final parti = await repository.fetchPartiPerBlocchi([
+        for (final b in blocchi) b.id,
+      ]);
+      final bytes = generaExcelLibreria(blocchi, parti);
+      scaricaFile(
+        bytes,
+        'libreria_blocchi.xlsx',
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    } catch (e) {
+      if (mounted) _mostraErrore(e);
+    } finally {
+      if (mounted) setState(() => _esportando = false);
+    }
   }
 
   Future<void> _importaDaExcel() async {
