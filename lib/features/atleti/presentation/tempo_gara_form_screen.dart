@@ -284,6 +284,10 @@ class _TempoGaraFormScreenState extends ConsumerState<TempoGaraFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 25, label: Text('25m')),
                         ButtonSegment(value: 50, label: Text('50m')),

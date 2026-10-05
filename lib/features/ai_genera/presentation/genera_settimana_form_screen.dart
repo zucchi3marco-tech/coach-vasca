@@ -1,3 +1,5 @@
+import '../../../core/utils/giorni.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -163,14 +165,14 @@ class _GeneraSettimanaFormScreenState
   }
 
   String _etichettaGiornoBreve(int offset) {
-    final data = _dataInizio.add(Duration(days: offset));
+    final data = aggiungiGiorni(_dataInizio, offset);
     return '${_abbreviazioniGiorni[data.weekday - 1]} '
         '${data.day.toString().padLeft(2, '0')}/'
         '${data.month.toString().padLeft(2, '0')}';
   }
 
   String _etichettaGiornoCompleta(int offset) {
-    final data = _dataInizio.add(Duration(days: offset));
+    final data = aggiungiGiorni(_dataInizio, offset);
     return '${_nomiGiorni[data.weekday - 1]} '
         '${data.day.toString().padLeft(2, '0')}/'
         '${data.month.toString().padLeft(2, '0')}';
@@ -629,7 +631,7 @@ class _GeneraSettimanaFormScreenState
           SedutaConScheda(
             seduta: seduta,
             scheda: scheda,
-            data: _dataInizio.add(Duration(days: offset)),
+            data: aggiungiGiorni(_dataInizio, offset),
             focus: focusSeduta,
             dettaglioBraccia: dettagli.braccia,
             dettaglioGambe: dettagli.gambe,
@@ -876,6 +878,10 @@ class _GeneraSettimanaFormScreenState
                   const EtichettaCampo('Vasca'),
                   const SizedBox(height: AppSpacing.s8),
                   SegmentedButton<int>(
+                    // Senza spunta: la scelta e' gia' evidenziata dal
+                    // colore, e la spunta toglieva spazio all'etichetta
+                    // che su telefono andava a capo a meta' parola.
+                    showSelectedIcon: false,
                     segments: const [
                       ButtonSegment(value: 25, label: Text('25 m')),
                       ButtonSegment(value: 50, label: Text('50 m')),

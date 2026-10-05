@@ -11,6 +11,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
@@ -58,7 +59,12 @@ class CaricoAtletaScreen extends ConsumerWidget {
     final colori = context.colori;
 
     return AppScaffold(
-      appBar: AppBar(title: Text('Carico — ${atleta.nomeCompleto}')),
+      appBar: AppBar(
+        title: TitoloDueRighe(
+          titolo: 'Carico',
+          sottotitolo: atleta.nomeCompleto,
+        ),
+      ),
       body: puntiAsync.when(
         data: (punti) => punti.isEmpty
             ? EmptyState(

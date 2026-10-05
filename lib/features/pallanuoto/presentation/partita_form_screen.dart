@@ -344,6 +344,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 'casa', label: Text('Casa')),
                         ButtonSegment(
@@ -367,6 +371,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 'bassa', label: Text('Bassa')),
                         ButtonSegment(value: 'media', label: Text('Media')),
@@ -473,6 +481,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 14, label: Text('14')),
                         ButtonSegment(value: 15, label: Text('15')),
@@ -499,6 +511,10 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(
                           value: 'semplice',

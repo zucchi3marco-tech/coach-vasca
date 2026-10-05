@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import '../../../core/utils/giorni.dart';
+
 /// Un giorno della curva Banister: carico di quel giorno e i tre valori
 /// derivati (fitness, fatica, forma = fitness - fatica).
 class PuntoBanister {
@@ -19,8 +21,8 @@ class PuntoBanister {
 }
 
 /// Modello Fitness-Fatigue di Banister (lo stesso principio di CTL/ATL/TSB
-/// usato da TrainingPeaks): ogni giorno la fitness e la fatica del giorno
-/// prima decadono in modo esponenziale e si somma il carico del giorno.
+/// usato da TrainingPeaks): fitness e fatica sono medie mobili
+/// esponenziali del carico giornaliero, con costanti di tempo diverse.
 /// Costanti di tempo classiche: 42 giorni per la fitness (adattamento
 /// lento), 7 giorni per la fatica (recupero rapido).
 ///
@@ -51,13 +53,25 @@ List<PuntoBanister> calcolaBanister(
   for (
     var giorno = giorni.first;
     !giorno.isAfter(fine);
-    giorno = giorno.add(const Duration(days: 1))
+    // Giorno di calendario, non +24 ore: al cambio dell'ora la mezzanotte
+    // diventava le 23:00 e da li' i carichi non si trovavano piu'.
+    giorno = aggiungiGiorni(giorno, 1)
   ) {
     final carico = caricoPerGiorno[giorno] ?? 0.0;
-    fitness = fitness * decayFitness + carico;
-    fatica = fatica * decayFatica + carico;
+    // Media mobile esponenziale (come CTL/ATL): il carico del giorno entra
+    // pesato per (1 - decadimento). Con la somma piena la fitness valeva
+    // ~6 volte la fatica e la forma calava anche nello scarico pre-gara;
+    // cosi' a carico costante fitness e fatica si equivalgono (forma 0) e
+    // nei giorni di riposo la forma sale, come deve.
+    fitness = fitness * decayFitness + carico * (1 - decayFitness);
+    fatica = fatica * decayFatica + carico * (1 - decayFatica);
     punti.add(
-      PuntoBanister(data: giorno, carico: carico, fitness: fitness, fatica: fatica),
+      PuntoBanister(
+        data: giorno,
+        carico: carico,
+        fitness: fitness,
+        fatica: fatica,
+      ),
     );
   }
   return punti;

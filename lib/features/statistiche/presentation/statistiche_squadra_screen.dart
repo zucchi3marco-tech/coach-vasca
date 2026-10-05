@@ -53,23 +53,40 @@ class _StatisticheSquadraScreenState
           ),
           if (_stagione != null) ...[
             const SizedBox(height: AppSpacing.s16),
-            SegmentedButton<_FonteStatistiche>(
-              segments: const [
-                ButtonSegment(
-                  value: _FonteStatistiche.referti,
-                  label: Text('Da referti'),
-                ),
-                ButtonSegment(
-                  value: _FonteStatistiche.eventi,
-                  label: Text('Da eventi live'),
-                ),
-                ButtonSegment(
-                  value: _FonteStatistiche.confronto,
-                  label: Text('Confronto'),
-                ),
-              ],
-              selected: {_fonte},
-              onSelectionChanged: (s) => setState(() => _fonte = s.first),
+            LayoutBuilder(
+              builder: (context, vincoli) {
+                // Su telefono le etichette lunghe andavano a capo: sotto
+                // ~480 px si usano le forme brevi.
+                final breve = vincoli.maxWidth < 480;
+                Widget etichetta(String testo) => FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(testo, maxLines: 1),
+                );
+                return SegmentedButton<_FonteStatistiche>(
+                  // Senza spunta: la scelta e' gia' evidenziata dal
+                  // colore, e la spunta toglieva spazio all'etichetta
+                  // che su telefono andava a capo a meta' parola.
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(
+                      value: _FonteStatistiche.referti,
+                      label: etichetta(breve ? 'Referti' : 'Da referti'),
+                      tooltip: 'Statistiche dai referti',
+                    ),
+                    ButtonSegment(
+                      value: _FonteStatistiche.eventi,
+                      label: etichetta(breve ? 'Live' : 'Da eventi live'),
+                      tooltip: 'Statistiche dagli eventi live',
+                    ),
+                    ButtonSegment(
+                      value: _FonteStatistiche.confronto,
+                      label: etichetta('Confronto'),
+                    ),
+                  ],
+                  selected: {_fonte},
+                  onSelectionChanged: (s) => setState(() => _fonte = s.first),
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.s16),
             Expanded(

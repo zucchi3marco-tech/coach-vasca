@@ -154,7 +154,10 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         expect(find.textContaining('8×100m Libero'), findsOneWidget);
-        expect(tester.getSize(find.byType(RigaSerie)).height, lessThan(90));
+        // Il titolo puo' andare su due righe (prima era tagliato a una e
+        // nascondeva il tipo di lavoro): con il font dei test, piu' largo
+        // di quello vero, qui va a capo, quindi la soglia lo comprende.
+        expect(tester.getSize(find.byType(RigaSerie)).height, lessThan(120));
 
         await tester.tap(find.textContaining('8×100m Libero'));
         expect(aperta, 1);

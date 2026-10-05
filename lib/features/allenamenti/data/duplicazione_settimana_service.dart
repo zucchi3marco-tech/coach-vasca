@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/giorni.dart';
 import '../domain/allenamento.dart';
 import 'allenamenti_repository.dart';
 import 'serie_repository.dart';
@@ -23,10 +24,13 @@ class DuplicazioneSettimanaService {
     required DateTime dataInizioSorgente,
     required DateTime nuovaDataInizio,
   }) async {
-    final offsetGiorni = sorgente.data.difference(dataInizioSorgente).inDays;
+    // Stesso spostamento in giorni di calendario per ogni seduta, tenendo
+    // l'orario: con "+N x 24 ore" la settimana del cambio dell'ora finiva
+    // su un giorno sbagliato e l'ora della seduta si perdeva.
+    final spostamento = giorniTra(dataInizioSorgente, nuovaDataInizio);
     final nuovo = await _allenamenti.createAllenamento(
       clubId: clubId,
-      data: nuovaDataInizio.add(Duration(days: offsetGiorni)),
+      data: aggiungiGiorni(sorgente.data, spostamento),
       titolo: sorgente.titolo,
       gruppoId: sorgente.gruppoId,
       note: sorgente.note,

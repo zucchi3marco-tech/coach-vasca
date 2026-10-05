@@ -273,44 +273,70 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _squadraCasaCtrl,
-                decoration: const InputDecoration(labelText: 'Squadra casa'),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.s8),
-            SizedBox(
-              width: 48,
-              child: TextFormField(
-                controller: _risultatoCasaCtrl,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                style: stileCifre,
-              ),
-            ),
-            Text(' - ', style: stileCorpo),
-            SizedBox(
-              width: 48,
-              child: TextFormField(
-                controller: _risultatoTrasfertaCtrl,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                style: stileCifre,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.s8),
-            Expanded(
-              child: TextFormField(
-                controller: _squadraTrasfertaCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Squadra trasferta',
-                ),
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, vincoli) {
+            Widget campoGol(TextEditingController ctrl, {String? etichetta}) =>
+                TextFormField(
+                  controller: ctrl,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: stileCifre,
+                  decoration: InputDecoration(labelText: etichetta),
+                );
+            final campoCasa = TextFormField(
+              controller: _squadraCasaCtrl,
+              decoration: const InputDecoration(labelText: 'Squadra casa'),
+            );
+            final campoTrasferta = TextFormField(
+              controller: _squadraTrasfertaCtrl,
+              decoration: const InputDecoration(labelText: 'Squadra trasferta'),
+            );
+            // Su telefono due nomi di squadra e due punteggi affiancati
+            // non ci stanno: una riga per squadra, ognuna col suo
+            // punteggio.
+            if (vincoli.maxWidth < 480) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: campoCasa),
+                      const SizedBox(width: AppSpacing.s8),
+                      SizedBox(
+                        width: 64,
+                        child: campoGol(_risultatoCasaCtrl, etichetta: 'Gol'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  Row(
+                    children: [
+                      Expanded(child: campoTrasferta),
+                      const SizedBox(width: AppSpacing.s8),
+                      SizedBox(
+                        width: 64,
+                        child: campoGol(
+                          _risultatoTrasfertaCtrl,
+                          etichetta: 'Gol',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: campoCasa),
+                const SizedBox(width: AppSpacing.s8),
+                SizedBox(width: 48, child: campoGol(_risultatoCasaCtrl)),
+                Text(' - ', style: stileCorpo),
+                SizedBox(width: 48, child: campoGol(_risultatoTrasfertaCtrl)),
+                const SizedBox(width: AppSpacing.s8),
+                Expanded(child: campoTrasferta),
+              ],
+            );
+          },
         ),
         const SizedBox(height: AppSpacing.s16),
         const SectionHeader('Parziali'),
@@ -596,44 +622,71 @@ class _DialogCollegaAtletiState extends ConsumerState<_DialogCollegaAtleti> {
                             padding: const EdgeInsets.symmetric(
                               vertical: AppSpacing.s4,
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    '${g.numero.text}  ${g.nome.text}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.corpo.copyWith(
-                                      color: colori.testo,
-                                    ),
+                            child: LayoutBuilder(
+                              builder: (context, vincoli) {
+                                final nome = Text(
+                                  '${g.numero.text}  ${g.nome.text}',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.corpo.copyWith(
+                                    color: colori.testo,
                                   ),
-                                ),
-                                const SizedBox(width: AppSpacing.s8),
-                                Expanded(
-                                  flex: 3,
-                                  child: DropdownButtonFormField<String?>(
-                                    initialValue: g.atletaId,
-                                    isExpanded: true,
-                                    isDense: true,
-                                    hint: const Text('Nessuno'),
-                                    items: [
-                                      const DropdownMenuItem<String?>(
-                                        child: Text('Nessuno'),
+                                );
+                                final scelta = DropdownButtonFormField<String?>(
+                                  initialValue: g.atletaId,
+                                  isExpanded: true,
+                                  isDense: true,
+                                  hint: const Text('Nessuno'),
+                                  // Il valore scelto resta su una riga
+                                  // (il campo e' compatto), nel menu i
+                                  // nomi lunghi vanno su due.
+                                  selectedItemBuilder: (context) => [
+                                    const Text('Nessuno'),
+                                    for (final a in ordinati)
+                                      Text(
+                                        a.nomeCompleto,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      for (final a in ordinati)
-                                        DropdownMenuItem<String?>(
-                                          value: a.id,
-                                          child: Text(
-                                            a.nomeCompleto,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                  ],
+                                  items: [
+                                    const DropdownMenuItem<String?>(
+                                      child: Text('Nessuno'),
+                                    ),
+                                    for (final a in ordinati)
+                                      DropdownMenuItem<String?>(
+                                        value: a.id,
+                                        child: Text(
+                                          a.nomeCompleto,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
+                                      ),
+                                  ],
+                                  onChanged: (v) =>
+                                      setState(() => g.atletaId = v),
+                                );
+                                // Nel dialog su telefono il nome letto
+                                // sta sopra la scelta, a tutta larghezza.
+                                if (vincoli.maxWidth < 400) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      nome,
+                                      const SizedBox(height: AppSpacing.s4),
+                                      scelta,
                                     ],
-                                    onChanged: (v) =>
-                                        setState(() => g.atletaId = v),
-                                  ),
-                                ),
-                              ],
+                                  );
+                                }
+                                return Row(
+                                  children: [
+                                    Expanded(flex: 2, child: nome),
+                                    const SizedBox(width: AppSpacing.s8),
+                                    Expanded(flex: 3, child: scelta),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         if (nonCollegati > 0) ...[
@@ -720,55 +773,77 @@ class _TabellaSquadraModificabile extends StatelessWidget {
         for (final g in giocatori)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 44,
-                  child: TextFormField(
-                    controller: g.numero,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: stileCifre,
-                    decoration: const InputDecoration(isDense: true),
+            child: LayoutBuilder(
+              builder: (context, vincoli) {
+                final stretto = vincoli.maxWidth < 480;
+                Widget campoCifre(
+                  TextEditingController ctrl, {
+                  String? etichetta,
+                }) => TextFormField(
+                  controller: ctrl,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: stileCifre,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    labelText: etichetta,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.s8),
-                Expanded(
-                  child: TextFormField(
-                    controller: g.nome,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                    decoration: const InputDecoration(isDense: true),
+                );
+                final nome = TextFormField(
+                  controller: g.nome,
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    labelText: stretto ? 'Giocatore' : null,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.s8),
-                SizedBox(
-                  width: 56,
-                  child: TextFormField(
-                    controller: g.reti,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: stileCifre,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      labelText: 'Reti',
+                );
+                // Su telefono il nome prende tutta la prima riga; numero,
+                // reti ed espulsioni scendono sotto.
+                if (stretto) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      nome,
+                      const SizedBox(height: AppSpacing.s8),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 64,
+                            child: campoCifre(g.numero, etichetta: 'N.'),
+                          ),
+                          const SizedBox(width: AppSpacing.s8),
+                          SizedBox(
+                            width: 64,
+                            child: campoCifre(g.reti, etichetta: 'Reti'),
+                          ),
+                          const SizedBox(width: AppSpacing.s8),
+                          SizedBox(
+                            width: 64,
+                            child: campoCifre(g.espulsioni, etichetta: 'Esp.'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    SizedBox(width: 44, child: campoCifre(g.numero)),
+                    const SizedBox(width: AppSpacing.s8),
+                    Expanded(child: nome),
+                    const SizedBox(width: AppSpacing.s8),
+                    SizedBox(
+                      width: 56,
+                      child: campoCifre(g.reti, etichetta: 'Reti'),
                     ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.s8),
-                SizedBox(
-                  width: 56,
-                  child: TextFormField(
-                    controller: g.espulsioni,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: stileCifre,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      labelText: 'Esp.',
+                    const SizedBox(width: AppSpacing.s8),
+                    SizedBox(
+                      width: 56,
+                      child: campoCifre(g.espulsioni, etichetta: 'Esp.'),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
       ],

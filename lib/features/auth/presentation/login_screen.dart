@@ -196,32 +196,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: const Text('Password dimenticata?'),
                   ),
                   const SizedBox(height: AppSpacing.s12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: PrimaryButton(
-                          label: 'Accedi',
-                          isLoading: _isSubmitting,
-                          onPressed: _isSubmitting ? null : _submit,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.s12),
-                      Expanded(
-                        child: SecondaryButton(
-                          label: 'Registrati',
-                          onPressed: _isSubmitting
-                              ? null
-                              : () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => SignUpScreen(
-                                      emailIniziale: _emailController.text
-                                          .trim(),
-                                    ),
+                  Builder(
+                    builder: (context) {
+                      final accedi = PrimaryButton(
+                        label: 'Accedi',
+                        isLoading: _isSubmitting,
+                        onPressed: _isSubmitting ? null : _submit,
+                      );
+                      final registrati = SecondaryButton(
+                        label: 'Registrati',
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => SignUpScreen(
+                                    emailIniziale: _emailController.text.trim(),
                                   ),
                                 ),
-                        ),
-                      ),
-                    ],
+                              ),
+                      );
+                      // Sotto i 340 px di schermo i due pulsanti affiancati
+                      // non hanno spazio per l'etichetta: uno sopra l'altro.
+                      if (MediaQuery.sizeOf(context).width < 340) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            accedi,
+                            const SizedBox(height: AppSpacing.s12),
+                            registrati,
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: accedi),
+                          const SizedBox(width: AppSpacing.s12),
+                          Expanded(child: registrati),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: AppSpacing.s16),
                   Row(

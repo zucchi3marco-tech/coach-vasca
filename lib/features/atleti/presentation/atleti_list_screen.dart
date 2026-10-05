@@ -19,6 +19,7 @@ import '../../../widgets/icon_badge.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
+import '../../benessere/presentation/benessere_squadra.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -74,6 +75,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           _RiepilogoClub(
             clubId: widget.clubId,
             filtroGruppoId: widget.filtroGruppoId,
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          CardBenessereSquadra(
+            clubId: widget.clubId,
+            gruppoId: widget.filtroGruppoId,
           ),
           const SizedBox(height: AppSpacing.s16),
           Row(
@@ -287,27 +293,35 @@ class _RiepilogoClub extends ConsumerWidget {
         horizontal: AppSpacing.s12,
         vertical: AppSpacing.s12,
       ),
-      child: Row(
-        children: [
-          _VoceRiepilogo(
-            icona: Icons.groups_outlined,
-            colore: dominio.evidenzaCiano,
-            etichetta: 'Atleti attivi',
-            valore: atletiAttivi == null ? '—' : '$atletiAttivi',
-          ),
-          _VoceRiepilogo(
-            icona: Icons.calendar_month_outlined,
-            colore: dominio.evidenzaVerde,
-            etichetta: 'Prossimo allenamento',
-            valore: dataProssimoAllenamento,
-          ),
-          _VoceRiepilogo(
-            icona: Icons.event_available_outlined,
-            colore: dominio.evidenzaAmbra,
-            etichetta: 'Nei prossimi 7 giorni',
-            valore: '$prossimi7Giorni',
-          ),
-        ],
+      // Su telefono le didascalie lunghe andrebbero a capo, e le tre
+      // colonne avrebbero altezze diverse: sotto i ~140 px per colonna
+      // si usa la versione breve, sempre su una riga.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final breve = constraints.maxWidth / 3 < 140;
+          return Row(
+            children: [
+              _VoceRiepilogo(
+                icona: Icons.groups_outlined,
+                colore: dominio.evidenzaCiano,
+                etichetta: 'Atleti attivi',
+                valore: atletiAttivi == null ? '—' : '$atletiAttivi',
+              ),
+              _VoceRiepilogo(
+                icona: Icons.calendar_month_outlined,
+                colore: dominio.evidenzaVerde,
+                etichetta: breve ? 'Prossimo' : 'Prossimo allenamento',
+                valore: dataProssimoAllenamento,
+              ),
+              _VoceRiepilogo(
+                icona: Icons.event_available_outlined,
+                colore: dominio.evidenzaAmbra,
+                etichetta: breve ? 'In 7 giorni' : 'Nei prossimi 7 giorni',
+                valore: '$prossimi7Giorni',
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -349,7 +363,7 @@ class _VoceRiepilogo extends StatelessWidget {
             Text(
               etichetta,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTypography.piccolo.copyWith(
                 color: colori.testoSecondario,
@@ -474,18 +488,22 @@ class _AtletiList extends StatelessWidget {
             AppListRow(
               leading: _AvatarAtleta(atleta: atleta),
               titolo: atleta.nomeCompleto,
-              extraTitolo: _BadgePercentualePresenze(
-                percentuale: _percentuale(atleta),
-              ),
+              // La percentuale sta nella riga sotto, non accanto al nome:
+              // su telefono il nome ha cosi' tutta la larghezza.
               sottotitolo:
                   [
                     atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
                     ?nomeGruppo[atleta.gruppoId],
+                    _etichettaPresenze(_percentuale(atleta)),
                   ].join(' · ') +
                   (atleta.attivo ? '' : ' · inattivo'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  IndicatoreBenessere(
+                    clubId: atleta.clubId,
+                    atletaId: atleta.id,
+                  ),
                   if (atleta.visitaMedicaScaduta)
                     Tooltip(
                       message: 'Visita medica scaduta',
@@ -568,23 +586,11 @@ class _VoceMenu extends StatelessWidget {
   }
 }
 
-/// Percentuale di presenze accanto al nome, nella lista atleti. `null`
-/// (nessun allenamento rilevante su cui calcolarla) mostra "—" invece di
-/// un fuorviante 0%.
-class _BadgePercentualePresenze extends StatelessWidget {
-  const _BadgePercentualePresenze({required this.percentuale});
-
-  final double? percentuale;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Text(
-      percentuale == null ? '—' : '${percentuale!.round()}%',
-      style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
-    );
-  }
-}
+/// Percentuale di presenze nella riga dei metadati. `null` (nessun
+/// allenamento rilevante su cui calcolarla) mostra "—" invece di un
+/// fuorviante 0%.
+String _etichettaPresenze(double? percentuale) =>
+    'presenze ${percentuale == null ? '—' : '${percentuale.round()}%'}';
 
 class _AvatarAtleta extends StatelessWidget {
   const _AvatarAtleta({required this.atleta});

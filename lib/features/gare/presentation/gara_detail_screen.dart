@@ -82,7 +82,8 @@ class GaraDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(g.nome),
         actions: [
-          TextButton.icon(
+          IconButton(
+            tooltip: 'Modifica',
             onPressed: () async {
               final esito = await Navigator.of(context).push<Object?>(
                 MaterialPageRoute(
@@ -95,7 +96,6 @@ class GaraDetailScreen extends ConsumerWidget {
               }
             },
             icon: const Icon(Icons.edit_outlined),
-            label: const Text('Modifica'),
           ),
         ],
       ),

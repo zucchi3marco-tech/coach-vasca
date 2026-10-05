@@ -9,6 +9,7 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../atleti/domain/atleta.dart';
 import '../data/test_repository.dart';
 
@@ -116,7 +117,10 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text('Nuovo test BVS — ${widget.atleta.nomeCompleto}'),
+        title: TitoloDueRighe(
+          titolo: 'Nuovo test BVS',
+          sottotitolo: widget.atleta.nomeCompleto,
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -170,11 +174,8 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
                         ),
                         validator: (value) {
                           final minuti =
-                              int.tryParse(_minutiController.text.trim()) ??
-                              0;
-                          final secondi = double.tryParse(
-                            value?.trim() ?? '',
-                          );
+                              int.tryParse(_minutiController.text.trim()) ?? 0;
+                          final secondi = double.tryParse(value?.trim() ?? '');
                           if (minuti == 0 &&
                               (secondi == null || secondi <= 0)) {
                             return 'Inserisci il tempo totale';

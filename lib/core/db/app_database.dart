@@ -28,13 +28,14 @@ part 'app_database.g.dart';
     GaraIscrittiTable,
     TrainingBlocksTable,
     TrainingBlockPartiTable,
+    SchedeBenessereTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 30;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -357,6 +358,28 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'partite_table', 'importanza')) {
           await m.addColumn(partiteTable, partiteTable.importanza);
+        }
+      }
+      // v28 -> v29: scheda benessere dell'atleta (dolori, ore di sonno).
+      if (from < 29) {
+        if (!await _hasTable(m, 'schede_benessere_table')) {
+          await m.createTable(schedeBenessereTable);
+        }
+      }
+      // v29 -> v30: scheda benessere con le voci del questionario McLean.
+      if (from < 30 && from >= 29) {
+        final t = schedeBenessereTable;
+        for (final (nome, colonna) in [
+          ('qualita_sonno', t.qualitaSonno),
+          ('energia', t.energia),
+          ('muscoli', t.muscoli),
+          ('stress', t.stress),
+          ('umore', t.umore),
+          ('sintomi_json', t.sintomiJson),
+        ]) {
+          if (!await _hasColumn(m, 'schede_benessere_table', nome)) {
+            await m.addColumn(t, colonna);
+          }
         }
       }
     },

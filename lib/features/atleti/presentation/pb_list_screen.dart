@@ -12,6 +12,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
 import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../../test/application/test_providers.dart';
@@ -92,7 +93,12 @@ class PbListScreen extends ConsumerWidget {
     ).push(MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)));
 
     return AppScaffold(
-      appBar: AppBar(title: Text('Personal best — ${atleta.nomeCompleto}')),
+      appBar: AppBar(
+        title: TitoloDueRighe(
+          titolo: 'Personal best',
+          sottotitolo: atleta.nomeCompleto,
+        ),
+      ),
       body: pbAsync.when(
         data: (righe) {
           // Il piu' veloce, se per qualche motivo ci fosse piu' di un

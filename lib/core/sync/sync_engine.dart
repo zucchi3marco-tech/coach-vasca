@@ -35,6 +35,7 @@ class SyncEngine {
     'presenze': 'allenamento_id,atleta_id',
     'tabelle_passi': 'test_id,zona',
     'referti_partita': 'partita_id',
+    'schede_benessere': 'atleta_id,data',
   };
 
   Future<void> processQueue() async {
@@ -51,9 +52,7 @@ class SyncEngine {
             case 'insert':
               await _client
                   .from(op.tabella)
-                  .insert(
-                    jsonDecode(op.payloadJson!) as Map<String, dynamic>,
-                  );
+                  .insert(jsonDecode(op.payloadJson!) as Map<String, dynamic>);
             case 'update':
               await _client
                   .from(op.tabella)
@@ -107,5 +106,8 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
 /// coda" in UI.
 final pendingOperationsCountProvider = StreamProvider<int>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return db.select(db.pendingOperationsTable).watch().map((rows) => rows.length);
+  return db
+      .select(db.pendingOperationsTable)
+      .watch()
+      .map((rows) => rows.length);
 });

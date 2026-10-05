@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../theme/colori_app.dart';
 import '../../theme/tokens_dominio.dart';
@@ -8,9 +8,10 @@ import '../../theme/tokens_dominio.dart';
 /// la pallanuoto e "Gare" per il nuoto (sport nullo, cioè club vecchi
 /// senza sport: pallanuoto). Un'unica lista alimenta barra, tour e corpo
 /// delle tab, così restano sempre allineati.
-enum VoceHome { atleti, allenamenti, schemi, stagioni, eventi }
+enum VoceHome { oggi, atleti, allenamenti, schemi, stagioni, eventi }
 
 List<VoceHome> vociHome(String? sport) => [
+  VoceHome.oggi,
   VoceHome.atleti,
   VoceHome.allenamenti,
   if (sport != 'nuoto') VoceHome.schemi,
@@ -22,15 +23,30 @@ typedef DestinazioneHome = ({
   IconData icona,
   IconData iconaSelezionata,
   String etichetta,
+
+  /// Una parola sola, per la barra in basso del telefono: con 6 voci in
+  /// 360 px le etichette lunghe andavano a capo.
+  String etichettaBreve,
   String guida,
 });
 
 DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
     switch (voce) {
+      VoceHome.oggi => (
+        icona: Icons.wb_sunny_outlined,
+        iconaSelezionata: Icons.wb_sunny,
+        etichetta: 'Oggi',
+        etichettaBreve: 'Oggi',
+        guida:
+            'Il tuo cruscotto: la squadra, cosa c\'è in programma, chi sta '
+            'male e cosa c\'è da sistemare. Le azioni di tutti i giorni '
+            'sono a un tocco.',
+      ),
       VoceHome.atleti => (
         icona: Icons.groups_outlined,
         iconaSelezionata: Icons.groups,
         etichetta: 'Atleti',
+        etichettaBreve: 'Atleti',
         guida:
             'La tua home: il riepilogo del gruppo e l\'elenco dei suoi '
             'atleti, con profili, personal best, presenze e carico di '
@@ -46,6 +62,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         // non serve indica un punto migliore ("Allena-menti"); su rail e
         // guida, dove la parola sta su una riga sola, non si vede.
         etichetta: 'Allena­menti',
+        etichettaBreve: 'Allenamenti',
         guida:
             'Pianifica le sedute con le loro serie; a bordo vasca le '
             'apri in grande e segni le presenze.',
@@ -54,6 +71,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         icona: Icons.sports_outlined,
         iconaSelezionata: Icons.sports,
         etichetta: 'Schemi tattici',
+        etichettaBreve: 'Schemi',
         guida:
             'Pallanuoto: disegna gli schemi sulla lavagna tattica, anche in '
             'più passi, e condividili con gli atleti.',
@@ -62,6 +80,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         icona: Icons.event_note_outlined,
         iconaSelezionata: Icons.event_note,
         etichetta: 'Stagioni',
+        etichettaBreve: 'Stagioni',
         guida:
             'Una stagione per gruppo (o per tutti gli atleti) con il suo '
             'calendario: tocca un giorno per aggiungere una partita o una '
@@ -71,6 +90,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         icona: Icons.emoji_events_outlined,
         iconaSelezionata: Icons.emoji_events,
         etichetta: 'Gare',
+        etichettaBreve: 'Gare',
         guida:
             'Le gare della stagione in corso, in ordine di data. Si '
             'aggiungono dal calendario della stagione; aprendone una '
@@ -80,6 +100,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         icona: Icons.sports_handball_outlined,
         iconaSelezionata: Icons.sports_handball,
         etichetta: 'Partite',
+        etichettaBreve: 'Partite',
         guida:
             'Le partite della stagione in corso, in ordine di data. Si '
             'aggiungono dal calendario della stagione; aprendone una trovi '
@@ -91,6 +112,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
 /// DESIGN.md "Dove spendere l'audacia"): Atleti resta sul colore d'azione,
 /// l'ancora neutra; le altre hanno un colore vivace ciascuna.
 Color coloreVoceHome(BuildContext context, VoceHome voce) => switch (voce) {
+  VoceHome.oggi => context.colori.azione,
   VoceHome.atleti => context.colori.azione,
   VoceHome.allenamenti => context.dominio.evidenzaCiano,
   VoceHome.schemi => context.dominio.evidenzaViola,

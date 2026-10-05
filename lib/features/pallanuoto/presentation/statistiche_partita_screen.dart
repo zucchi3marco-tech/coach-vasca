@@ -12,6 +12,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/nomi_squadra_repository.dart';
 import '../domain/distinta_giocatore.dart';
@@ -70,8 +71,11 @@ class StatistichePartitaScreen extends ConsumerWidget {
 
     return AppScaffold(
       appBar: AppBar(
-        title: Text(
-          'Statistiche — ${partita.squadraCasa} - ${partita.squadraTrasferta}',
+        toolbarHeight: TitoloDueRighe.altezzaBarraDueRighe,
+        title: TitoloDueRighe(
+          titolo: 'Statistiche',
+          sottotitolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
+          righeSottotitolo: 2,
         ),
       ),
       body: eventiAsync.when(

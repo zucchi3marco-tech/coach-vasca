@@ -59,8 +59,11 @@ class AppListRow extends StatelessWidget {
                     Row(
                       children: [
                         Flexible(
+                          // Fino a due righe: su telefono un nome lungo
+                          // va a capo intero invece di perdere le lettere.
                           child: Text(
                             titolo,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.corpoForte.copyWith(
                               color: colori.testo,
@@ -77,6 +80,8 @@ class AppListRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         sottotitolo!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTypography.piccolo.copyWith(
                           color: colori.testoSecondario,
                         ),

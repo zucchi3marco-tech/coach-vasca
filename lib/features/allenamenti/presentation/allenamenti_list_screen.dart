@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -58,6 +60,10 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
           Padding(
             padding: const EdgeInsets.all(AppSpacing.s8),
             child: SegmentedButton<_Vista>(
+              // Senza spunta: la scelta e' gia' evidenziata dal
+              // colore, e la spunta toglieva spazio all'etichetta
+              // che su telefono andava a capo a meta' parola.
+              showSelectedIcon: false,
               segments: const [
                 ButtonSegment(value: _Vista.elenco, label: Text('Elenco')),
                 ButtonSegment(
@@ -169,32 +175,68 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                 ),
               ],
             )
-          : SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.s16),
-              child: AppListPanel(
-                righe: [
-                  for (final a in allenamenti)
-                    AppListRow(
-                      titolo: a.titolo != null && a.titolo!.isNotEmpty
-                          ? a.titolo!
-                          : 'Allenamento',
-                      sottotitolo:
-                          '${a.data.day.toString().padLeft(2, '0')}/'
-                          '${a.data.month.toString().padLeft(2, '0')}/'
-                          '${a.data.year}'
-                          '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AllenamentoDetailScreen(allenamento: a),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          : _elencoDivisoPerOggi(allenamenti, nomiGruppi),
+    );
+  }
+
+  /// Prima oggi e i prossimi (dal piu' vicino), poi quelli gia' svolti
+  /// (dal piu' recente). Con una stagione programmata in anticipo,
+  /// l'ordine unico dal piu' lontano costringeva a scorrere mesi di sedute
+  /// future per trovare quella di oggi.
+  Widget _elencoDivisoPerOggi(
+    List<Allenamento> allenamenti,
+    Map<String, String> nomiGruppi,
+  ) {
+    final adesso = DateTime.now();
+    final oggi = DateTime(adesso.year, adesso.month, adesso.day);
+    final prossimi = allenamenti.where((a) => !a.data.isBefore(oggi)).toList()
+      ..sort((a, b) => a.data.compareTo(b.data));
+    final svolti = allenamenti.where((a) => a.data.isBefore(oggi)).toList()
+      ..sort((a, b) => b.data.compareTo(a.data));
+    final colori = context.colori;
+
+    AppListRow riga(Allenamento a) => AppListRow(
+      titolo: a.titolo != null && a.titolo!.isNotEmpty
+          ? a.titolo!
+          : 'Allenamento',
+      sottotitolo:
+          '${a.data.day.toString().padLeft(2, '0')}/'
+          '${a.data.month.toString().padLeft(2, '0')}/'
+          '${a.data.year}'
+          '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AllenamentoDetailScreen(allenamento: a),
+        ),
+      ),
+    );
+
+    Widget titolo(String testo, int quanti) => Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, AppSpacing.s8),
+      child: Text(
+        '$testo · $quanti',
+        style: AppTypography.sezione.copyWith(
+          color: colori.testo,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      children: [
+        if (prossimi.isNotEmpty) ...[
+          titolo('Oggi e prossimi', prossimi.length),
+          AppListPanel(righe: [for (final a in prossimi) riga(a)]),
+        ],
+        if (svolti.isNotEmpty) ...[
+          if (prossimi.isNotEmpty) const SizedBox(height: AppSpacing.s24),
+          titolo('Già svolti', svolti.length),
+          AppListPanel(righe: [for (final a in svolti) riga(a)]),
+        ],
+      ],
     );
   }
 

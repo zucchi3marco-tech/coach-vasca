@@ -1,3 +1,5 @@
+import '../../../../core/utils/giorni.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,7 +49,7 @@ class _CalendarioSettimanaleViewState
   void initState() {
     super.initState();
     final oggi = DateTime.now();
-    final lunedi = oggi.subtract(Duration(days: oggi.weekday - 1));
+    final lunedi = aggiungiGiorni(oggi, -(oggi.weekday - 1));
     _inizioSettimana = DateTime(lunedi.year, lunedi.month, lunedi.day);
   }
 
@@ -64,8 +66,8 @@ class _CalendarioSettimanaleViewState
 
   Future<void> _duplicaSettimana(int numeroAllenamenti) async {
     final colori = context.colori;
-    final fineSettimana = _inizioSettimana.add(const Duration(days: 6));
-    var nuovaDataInizio = _inizioSettimana.add(const Duration(days: 7));
+    final fineSettimana = aggiungiGiorni(_inizioSettimana, 6);
+    var nuovaDataInizio = aggiungiGiorni(_inizioSettimana, 7);
 
     final confermata = await showDialog<bool>(
       context: context,
@@ -159,13 +161,13 @@ class _CalendarioSettimanaleViewState
   Widget build(BuildContext context) {
     final colori = context.colori;
     final perGiorno = raggruppaPerGiorno(widget.allenamenti);
-    final fineSettimana = _inizioSettimana.add(const Duration(days: 6));
+    final fineSettimana = aggiungiGiorni(_inizioSettimana, 6);
     final oggi = DateTime.now();
 
     final metriPerGiorno = <DateTime, int>{};
     var numeroAllenamentiSettimana = 0;
     for (var index = 0; index < 7; index++) {
-      final data = _inizioSettimana.add(Duration(days: index));
+      final data = aggiungiGiorni(_inizioSettimana, index);
       final sessioni = perGiorno[data] ?? const [];
       numeroAllenamentiSettimana += sessioni.length;
       metriPerGiorno[data] = sessioni.fold<int>(
@@ -195,8 +197,9 @@ class _CalendarioSettimanaleViewState
                       color: colori.testoSecondario,
                     ),
                     onPressed: () => setState(
-                      () => _inizioSettimana = _inizioSettimana.subtract(
-                        const Duration(days: 7),
+                      () => _inizioSettimana = aggiungiGiorni(
+                        _inizioSettimana,
+                        -7,
                       ),
                     ),
                   ),
@@ -216,8 +219,9 @@ class _CalendarioSettimanaleViewState
                       color: colori.testoSecondario,
                     ),
                     onPressed: () => setState(
-                      () => _inizioSettimana = _inizioSettimana.add(
-                        const Duration(days: 7),
+                      () => _inizioSettimana = aggiungiGiorni(
+                        _inizioSettimana,
+                        7,
                       ),
                     ),
                   ),
@@ -248,7 +252,7 @@ class _CalendarioSettimanaleViewState
                 for (var index = 0; index < 7; index++)
                   Builder(
                     builder: (context) {
-                      final data = _inizioSettimana.add(Duration(days: index));
+                      final data = aggiungiGiorni(_inizioSettimana, index);
                       final sessioni = perGiorno[data] ?? const [];
                       final oggiStesso = isStessoGiorno(data, oggi);
                       final metriGiorno = metriPerGiorno[data] ?? 0;

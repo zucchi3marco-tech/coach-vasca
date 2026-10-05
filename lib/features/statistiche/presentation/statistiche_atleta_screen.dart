@@ -15,6 +15,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../atleti/application/tempi_gara_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/pb_slots.dart';
@@ -46,7 +47,10 @@ class _StatisticheAtletaScreenState
     final isPallanuoto = widget.atleta.sport == 'pallanuoto';
     return AppScaffold(
       appBar: AppBar(
-        title: Text('Statistiche — ${widget.atleta.nomeCompleto}'),
+        title: TitoloDueRighe(
+          titolo: 'Statistiche',
+          sottotitolo: widget.atleta.nomeCompleto,
+        ),
       ),
       body: isPallanuoto
           ? Column(
@@ -392,6 +396,10 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
             ),
             const SizedBox(height: AppSpacing.s8),
             SegmentedButton<int>(
+              // Senza spunta: la scelta e' gia' evidenziata dal
+              // colore, e la spunta toglieva spazio all'etichetta
+              // che su telefono andava a capo a meta' parola.
+              showSelectedIcon: false,
               segments: const [
                 ButtonSegment(value: 25, label: Text('25m')),
                 ButtonSegment(value: 50, label: Text('50m')),

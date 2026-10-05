@@ -9,6 +9,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../../widgets/zone_chip.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../test/domain/test_ingresso.dart';
@@ -114,7 +115,10 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text('Tabella passi — ${widget.atleta.nomeCompleto}'),
+        title: TitoloDueRighe(
+          titolo: 'Tabella passi',
+          sottotitolo: widget.atleta.nomeCompleto,
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

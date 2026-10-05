@@ -12,6 +12,7 @@ import '../../../widgets/cap_badge.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
@@ -64,7 +65,12 @@ class DistintaScreen extends ConsumerWidget {
 
     return AppScaffold(
       appBar: AppBar(
-        title: Text('${partita.squadraCasa} - ${partita.squadraTrasferta}'),
+        toolbarHeight: TitoloDueRighe.altezzaBarraDueRighe,
+        title: TitoloDueRighe(
+          titolo: 'Distinta',
+          sottotitolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
+          righeSottotitolo: 2,
+        ),
         actions: [
           PopupMenuButton<VoidCallback>(
             icon: const Icon(Icons.more_vert),

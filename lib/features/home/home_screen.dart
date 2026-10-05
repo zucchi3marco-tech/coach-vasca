@@ -5,6 +5,8 @@ import '../../core/navigation/barra_club_providers.dart';
 import '../../core/onboarding/onboarding_coach.dart';
 import '../../core/utils/error_messages.dart';
 import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
+import '../../theme/colori_app.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_skeleton.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
@@ -22,6 +24,7 @@ import '../gruppi/presentation/gruppi_onboarding_screen.dart';
 import '../pallanuoto/presentation/partite_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
+import 'allenatore/cruscotto_allenatore_screen.dart';
 import 'area_atleta_home_screen.dart';
 import 'tour_coach.dart';
 import 'voci_home.dart';
@@ -103,6 +106,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             for (final voce in voci)
               switch (voce) {
+                VoceHome.oggi => CruscottoAllenatoreScreen(
+                  club: club,
+                  gruppoId: selezione.gruppoId,
+                  onVaiATab: (t) => _vaiAllaTab(
+                    voci.indexOf(switch (t) {
+                      TabCruscotto.atleti => VoceHome.atleti,
+                      TabCruscotto.allenamenti => VoceHome.allenamenti,
+                      TabCruscotto.eventi => VoceHome.eventi,
+                    }),
+                  ),
+                ),
                 VoceHome.atleti => AtletiListScreen(
                   clubId: club.id,
                   filtroGruppoId: selezione.gruppoId,
@@ -220,34 +234,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } else {
       corpo = corpoPrincipale;
       barraInferiore = mostraTab
-          // NavigationDestination.label vuole una String, non un widget: non
-          // si può passare un Text(textAlign: center) per singola voce. La
-          // barra Material disegna l'etichetta con un Text semplice che, se
-          // va a capo su due righe ("Schemi tattici"), eredita l'allineamento
-          // dall'ambiente — di default a sinistra, storta rispetto
-          // all'icona sopra. DefaultTextStyle.merge lo corregge per tutta la
-          // barra senza toccare nient'altro dello stile.
-          ? DefaultTextStyle.merge(
-              textAlign: TextAlign.center,
-              child: NavigationBar(
-                selectedIndex: indiceTab,
-                onDestinationSelected: _vaiAllaTab,
-                destinations: [
-                  for (var i = 0; i < destinazioni.length; i++)
-                    NavigationDestination(
-                      icon: Icon(destinazioni[i].icona),
-                      selectedIcon: Icon(
-                        destinazioni[i].iconaSelezionata,
-                        color: coloriTab[i],
-                      ),
-                      label: destinazioni[i].etichetta,
-                    ),
-                ],
-              ),
+          ? BarraSchedeTelefono(
+              destinazioni: destinazioni,
+              colori: coloriTab,
+              selezionata: indiceTab,
+              onSeleziona: _vaiAllaTab,
             )
           : null;
     }
 
     return Scaffold(body: corpo, bottomNavigationBar: barraInferiore);
+  }
+}
+
+/// Barra in basso del telefono. Al posto della NavigationBar di Material,
+/// che con 6 voci in 360 px mandava a capo "Allenamenti" e "Schemi
+/// tattici": qui ogni etichetta sta sempre su una riga e, se proprio non
+/// ci sta, si rimpicciolisce un poco invece di spezzarsi.
+class BarraSchedeTelefono extends StatelessWidget {
+  const BarraSchedeTelefono({
+    required this.destinazioni,
+    required this.colori,
+    required this.selezionata,
+    required this.onSeleziona,
+    super.key,
+  });
+
+  final List<DestinazioneHome> destinazioni;
+  final List<Color> colori;
+  final int selezionata;
+  final ValueChanged<int> onSeleziona;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colori;
+    return Material(
+      color: c.superficie,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: c.linea)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 68,
+            child: Row(
+              children: [
+                for (var i = 0; i < destinazioni.length; i++)
+                  Expanded(
+                    child: Semantics(
+                      selected: i == selezionata,
+                      button: true,
+                      label: destinazioni[i].etichetta.replaceAll('\u00AD', ''),
+                      excludeSemantics: true,
+                      child: InkWell(
+                        onTap: () => onSeleziona(i),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOutCubic,
+                              width: 48,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: i == selezionata
+                                    ? colori[i].withValues(alpha: 0.16)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Icon(
+                                i == selezionata
+                                    ? destinazioni[i].iconaSelezionata
+                                    : destinazioni[i].icona,
+                                size: 22,
+                                color: i == selezionata
+                                    ? colori[i]
+                                    : c.testoSecondario,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  destinazioni[i].etichettaBreve,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: AppTypography.etichetta.copyWith(
+                                    fontSize: 12,
+                                    color: i == selezionata
+                                        ? colori[i]
+                                        : c.testoSecondario,
+                                    fontWeight: i == selezionata
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

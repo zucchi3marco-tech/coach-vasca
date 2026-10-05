@@ -66,7 +66,8 @@ class RiepilogoVolumi extends StatelessWidget {
                 ),
               if (totaleDurataS > 0)
                 TextSpan(
-                  text: '   + ${formatDurataS(totaleDurataS)} a tempo '
+                  text:
+                      '   + ${formatDurataS(totaleDurataS)} a tempo '
                       '(non contati nei metri)',
                   style: AppTypography.piccolo.copyWith(
                     color: colori.testoSecondario,
@@ -79,7 +80,7 @@ class RiepilogoVolumi extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           Text(
             'Materiale: ${materiale.join(', ')}',
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.piccolo.copyWith(
               color: colori.testoSecondario,

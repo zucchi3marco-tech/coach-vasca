@@ -367,6 +367,39 @@ class GaraIscrittiTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Scheda benessere compilata dall'atleta prima di allenamento/partita:
+/// una per atleta al giorno (chiave naturale atletaId + data, come
+/// `schede_benessere` lato Supabase).
+class SchedeBenessereTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  DateTimeColumn get data => dateTime()();
+  TextColumn get eventoTipo => text().nullable()(); // allenamento | partita
+  TextColumn get eventoId => text().nullable()();
+  BoolColumn get dolori => boolean()();
+
+  /// Zone del corpo come lista JSON (es. `["spalla","ginocchio"]`).
+  TextColumn get zoneDoloreJson => text().withDefault(const Constant('[]'))();
+  IntColumn get intensitaDolore => integer().nullable()();
+  RealColumn get oreSonno => real()();
+  DateTimeColumn get compilataIl => dateTime()();
+
+  /// Voci del questionario di McLean (1-5, 5 = meglio): null per le
+  /// schede compilate prima della seconda versione.
+  IntColumn get qualitaSonno => integer().nullable()();
+  IntColumn get energia => integer().nullable()();
+  IntColumn get muscoli => integer().nullable()();
+  IntColumn get stress => integer().nullable()();
+  IntColumn get umore => integer().nullable()();
+
+  /// Sintomi di malattia come lista JSON (es. `["febbre"]`).
+  TextColumn get sintomiJson => text().withDefault(const Constant('[]'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Libreria di blocchi di allenamento approvati (RIPROGETTAZIONE AI,
 /// FASE 1) — cache locale, stesso pattern di [SerieTable]/[AllenamentiTable].
 class TrainingBlocksTable extends Table {

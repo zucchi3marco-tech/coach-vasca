@@ -12,6 +12,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../atleti/domain/atleta.dart';
 
 const _durataClip = Duration(seconds: 15);
@@ -268,7 +269,12 @@ class _StrokeRateScreenState extends State<StrokeRateScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(title: Text('Bracciate — ${widget.atleta.nomeCompleto}')),
+      appBar: AppBar(
+        title: TitoloDueRighe(
+          titolo: 'Bracciate',
+          sottotitolo: widget.atleta.nomeCompleto,
+        ),
+      ),
       body: _buildBody(context),
     );
   }

@@ -187,6 +187,16 @@ abstract final class AppTheme {
         side: BorderSide(color: colori.linea),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
         shape: const StadiumBorder(),
+        // Selezionata: fondo tinta tenue e testo nel colore azione. Prima
+        // il fondo era l'azione piena con il testo grigio sopra, e
+        // l'etichetta scelta non si leggeva.
+        selectedColor: colori.azioneTenue,
+        secondarySelectedColor: colori.azioneTenue,
+        checkmarkColor: colori.azione,
+        secondaryLabelStyle: AppTypography.piccolo.copyWith(
+          fontWeight: FontWeight.w700,
+          color: colori.azione,
+        ),
       ),
 
       // Livello 3, filetto sinistro ok applicato dal widget che la

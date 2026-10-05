@@ -15,6 +15,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -105,8 +106,11 @@ class EventiPartitaScreen extends ConsumerWidget {
 
     return AppScaffold(
       appBar: AppBar(
-        title: Text(
-          'Eventi — ${partita.squadraCasa} - ${partita.squadraTrasferta}',
+        toolbarHeight: TitoloDueRighe.altezzaBarraDueRighe,
+        title: TitoloDueRighe(
+          titolo: 'Eventi',
+          sottotitolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
+          righeSottotitolo: 2,
         ),
       ),
       body: Column(

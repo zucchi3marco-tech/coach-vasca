@@ -7,18 +7,31 @@ import 'gruppo_visibilita.dart';
 /// usata altrove per isolare i record per gruppo). `null` = nessun
 /// allenamento rilevante su cui calcolarla (non 0%, che vorrebbe dire
 /// "sempre assente").
+///
+/// Contano solo gli allenamenti gia' passati (o con una presenza gia'
+/// segnata): quelli programmati nelle settimane successive non sono
+/// assenze, e contarli faceva crollare la percentuale a chi pianifica in
+/// anticipo.
 double? percentualePresenze({
   required List<Allenamento> allenamenti,
   required List<Presenza> presenze,
   required String atletaId,
   required String? gruppoAtleta,
+  DateTime? adesso,
 }) {
+  final ora = adesso ?? DateTime.now();
+  final conPresenza = {
+    for (final p in presenze)
+      if (p.atletaId == atletaId) p.allenamentoId,
+  };
   final rilevanti = allenamenti
       .where(
-        (a) => visibileNelGruppo(
-          gruppoDelRecord: a.gruppoId,
-          gruppoSelezionato: gruppoAtleta,
-        ),
+        (a) =>
+            (a.data.isBefore(ora) || conPresenza.contains(a.id)) &&
+            visibileNelGruppo(
+              gruppoDelRecord: a.gruppoId,
+              gruppoSelezionato: gruppoAtleta,
+            ),
       )
       .toList();
   if (rilevanti.isEmpty) return null;

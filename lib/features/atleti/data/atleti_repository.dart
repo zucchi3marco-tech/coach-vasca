@@ -1,10 +1,11 @@
-import 'package:drift/drift.dart';
+﻿import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/demo/modalita_demo.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -127,7 +128,9 @@ class AtletiRepository {
   /// su `atleti` lascia leggere il proprio record via `user_id` anche a
   /// chi non e' membro di nessun club.
   Future<Atleta?> fetchAtletaCollegato() async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = modalitaDemo
+        ? idUtenteDemoCorrente
+        : _client.auth.currentUser?.id;
     if (userId == null) return null;
     try {
       final rows = await _client.from('atleti').select().eq('user_id', userId);

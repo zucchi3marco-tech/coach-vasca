@@ -54,8 +54,27 @@ class GraficoBanister extends StatelessWidget {
           rightTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              // Sempre su una riga: "5.2K" andava a capo come "5.2 / K".
+              getTitlesWidget: (value, meta) => Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    meta.formattedValue,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppTypography.etichetta.copyWith(
+                      color: context.colori.testoSecondario,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(

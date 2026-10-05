@@ -191,13 +191,31 @@ class BarraClub extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppSpacing.s8),
                 Expanded(
-                  child: Text(
-                    nome ?? 'WaterTactics',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.corpoForte.copyWith(
-                      color: colori.testo,
-                    ),
+                  // Un nome di club lungo su telefono: invece di troncarlo
+                  // a metà parola passa su due righe, un po' più piccolo.
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final testo = nome ?? 'WaterTactics';
+                      final stile = AppTypography.corpoForte.copyWith(
+                        color: colori.testo,
+                      );
+                      final unaRiga = TextPainter(
+                        text: TextSpan(text: testo, style: stile),
+                        maxLines: 1,
+                        textDirection: Directionality.of(context),
+                        textScaler: MediaQuery.textScalerOf(context),
+                      )..layout(maxWidth: constraints.maxWidth);
+                      final entra = !unaRiga.didExceedMaxLines;
+                      unaRiga.dispose();
+                      return Text(
+                        testo,
+                        maxLines: entra ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: entra
+                            ? stile
+                            : stile.copyWith(fontSize: 13, height: 1.2),
+                      );
+                    },
                   ),
                 ),
                 Builder(

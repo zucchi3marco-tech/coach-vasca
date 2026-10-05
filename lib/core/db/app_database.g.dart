@@ -12888,6 +12888,990 @@ class TrainingBlockPartiTableCompanion
   }
 }
 
+class $SchedeBenessereTableTable extends SchedeBenessereTable
+    with TableInfo<$SchedeBenessereTableTable, SchedeBenessereTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchedeBenessereTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventoTipoMeta = const VerificationMeta(
+    'eventoTipo',
+  );
+  @override
+  late final GeneratedColumn<String> eventoTipo = GeneratedColumn<String>(
+    'evento_tipo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _eventoIdMeta = const VerificationMeta(
+    'eventoId',
+  );
+  @override
+  late final GeneratedColumn<String> eventoId = GeneratedColumn<String>(
+    'evento_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _doloriMeta = const VerificationMeta('dolori');
+  @override
+  late final GeneratedColumn<bool> dolori = GeneratedColumn<bool>(
+    'dolori',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dolori" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _zoneDoloreJsonMeta = const VerificationMeta(
+    'zoneDoloreJson',
+  );
+  @override
+  late final GeneratedColumn<String> zoneDoloreJson = GeneratedColumn<String>(
+    'zone_dolore_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _intensitaDoloreMeta = const VerificationMeta(
+    'intensitaDolore',
+  );
+  @override
+  late final GeneratedColumn<int> intensitaDolore = GeneratedColumn<int>(
+    'intensita_dolore',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _oreSonnoMeta = const VerificationMeta(
+    'oreSonno',
+  );
+  @override
+  late final GeneratedColumn<double> oreSonno = GeneratedColumn<double>(
+    'ore_sonno',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _compilataIlMeta = const VerificationMeta(
+    'compilataIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> compilataIl = GeneratedColumn<DateTime>(
+    'compilata_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _qualitaSonnoMeta = const VerificationMeta(
+    'qualitaSonno',
+  );
+  @override
+  late final GeneratedColumn<int> qualitaSonno = GeneratedColumn<int>(
+    'qualita_sonno',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _energiaMeta = const VerificationMeta(
+    'energia',
+  );
+  @override
+  late final GeneratedColumn<int> energia = GeneratedColumn<int>(
+    'energia',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _muscoliMeta = const VerificationMeta(
+    'muscoli',
+  );
+  @override
+  late final GeneratedColumn<int> muscoli = GeneratedColumn<int>(
+    'muscoli',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stressMeta = const VerificationMeta('stress');
+  @override
+  late final GeneratedColumn<int> stress = GeneratedColumn<int>(
+    'stress',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _umoreMeta = const VerificationMeta('umore');
+  @override
+  late final GeneratedColumn<int> umore = GeneratedColumn<int>(
+    'umore',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sintomiJsonMeta = const VerificationMeta(
+    'sintomiJson',
+  );
+  @override
+  late final GeneratedColumn<String> sintomiJson = GeneratedColumn<String>(
+    'sintomi_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    atletaId,
+    clubId,
+    data,
+    eventoTipo,
+    eventoId,
+    dolori,
+    zoneDoloreJson,
+    intensitaDolore,
+    oreSonno,
+    compilataIl,
+    qualitaSonno,
+    energia,
+    muscoli,
+    stress,
+    umore,
+    sintomiJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schede_benessere_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SchedeBenessereTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('evento_tipo')) {
+      context.handle(
+        _eventoTipoMeta,
+        eventoTipo.isAcceptableOrUnknown(data['evento_tipo']!, _eventoTipoMeta),
+      );
+    }
+    if (data.containsKey('evento_id')) {
+      context.handle(
+        _eventoIdMeta,
+        eventoId.isAcceptableOrUnknown(data['evento_id']!, _eventoIdMeta),
+      );
+    }
+    if (data.containsKey('dolori')) {
+      context.handle(
+        _doloriMeta,
+        dolori.isAcceptableOrUnknown(data['dolori']!, _doloriMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_doloriMeta);
+    }
+    if (data.containsKey('zone_dolore_json')) {
+      context.handle(
+        _zoneDoloreJsonMeta,
+        zoneDoloreJson.isAcceptableOrUnknown(
+          data['zone_dolore_json']!,
+          _zoneDoloreJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('intensita_dolore')) {
+      context.handle(
+        _intensitaDoloreMeta,
+        intensitaDolore.isAcceptableOrUnknown(
+          data['intensita_dolore']!,
+          _intensitaDoloreMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ore_sonno')) {
+      context.handle(
+        _oreSonnoMeta,
+        oreSonno.isAcceptableOrUnknown(data['ore_sonno']!, _oreSonnoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_oreSonnoMeta);
+    }
+    if (data.containsKey('compilata_il')) {
+      context.handle(
+        _compilataIlMeta,
+        compilataIl.isAcceptableOrUnknown(
+          data['compilata_il']!,
+          _compilataIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_compilataIlMeta);
+    }
+    if (data.containsKey('qualita_sonno')) {
+      context.handle(
+        _qualitaSonnoMeta,
+        qualitaSonno.isAcceptableOrUnknown(
+          data['qualita_sonno']!,
+          _qualitaSonnoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('energia')) {
+      context.handle(
+        _energiaMeta,
+        energia.isAcceptableOrUnknown(data['energia']!, _energiaMeta),
+      );
+    }
+    if (data.containsKey('muscoli')) {
+      context.handle(
+        _muscoliMeta,
+        muscoli.isAcceptableOrUnknown(data['muscoli']!, _muscoliMeta),
+      );
+    }
+    if (data.containsKey('stress')) {
+      context.handle(
+        _stressMeta,
+        stress.isAcceptableOrUnknown(data['stress']!, _stressMeta),
+      );
+    }
+    if (data.containsKey('umore')) {
+      context.handle(
+        _umoreMeta,
+        umore.isAcceptableOrUnknown(data['umore']!, _umoreMeta),
+      );
+    }
+    if (data.containsKey('sintomi_json')) {
+      context.handle(
+        _sintomiJsonMeta,
+        sintomiJson.isAcceptableOrUnknown(
+          data['sintomi_json']!,
+          _sintomiJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SchedeBenessereTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SchedeBenessereTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      )!,
+      eventoTipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evento_tipo'],
+      ),
+      eventoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evento_id'],
+      ),
+      dolori: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dolori'],
+      )!,
+      zoneDoloreJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}zone_dolore_json'],
+      )!,
+      intensitaDolore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}intensita_dolore'],
+      ),
+      oreSonno: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ore_sonno'],
+      )!,
+      compilataIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}compilata_il'],
+      )!,
+      qualitaSonno: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}qualita_sonno'],
+      ),
+      energia: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}energia'],
+      ),
+      muscoli: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}muscoli'],
+      ),
+      stress: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stress'],
+      ),
+      umore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}umore'],
+      ),
+      sintomiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sintomi_json'],
+      )!,
+    );
+  }
+
+  @override
+  $SchedeBenessereTableTable createAlias(String alias) {
+    return $SchedeBenessereTableTable(attachedDatabase, alias);
+  }
+}
+
+class SchedeBenessereTableData extends DataClass
+    implements Insertable<SchedeBenessereTableData> {
+  final String id;
+  final String atletaId;
+  final String clubId;
+  final DateTime data;
+  final String? eventoTipo;
+  final String? eventoId;
+  final bool dolori;
+
+  /// Zone del corpo come lista JSON (es. `["spalla","ginocchio"]`).
+  final String zoneDoloreJson;
+  final int? intensitaDolore;
+  final double oreSonno;
+  final DateTime compilataIl;
+
+  /// Voci del questionario di McLean (1-5, 5 = meglio): null per le
+  /// schede compilate prima della seconda versione.
+  final int? qualitaSonno;
+  final int? energia;
+  final int? muscoli;
+  final int? stress;
+  final int? umore;
+
+  /// Sintomi di malattia come lista JSON (es. `["febbre"]`).
+  final String sintomiJson;
+  const SchedeBenessereTableData({
+    required this.id,
+    required this.atletaId,
+    required this.clubId,
+    required this.data,
+    this.eventoTipo,
+    this.eventoId,
+    required this.dolori,
+    required this.zoneDoloreJson,
+    this.intensitaDolore,
+    required this.oreSonno,
+    required this.compilataIl,
+    this.qualitaSonno,
+    this.energia,
+    this.muscoli,
+    this.stress,
+    this.umore,
+    required this.sintomiJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['data'] = Variable<DateTime>(data);
+    if (!nullToAbsent || eventoTipo != null) {
+      map['evento_tipo'] = Variable<String>(eventoTipo);
+    }
+    if (!nullToAbsent || eventoId != null) {
+      map['evento_id'] = Variable<String>(eventoId);
+    }
+    map['dolori'] = Variable<bool>(dolori);
+    map['zone_dolore_json'] = Variable<String>(zoneDoloreJson);
+    if (!nullToAbsent || intensitaDolore != null) {
+      map['intensita_dolore'] = Variable<int>(intensitaDolore);
+    }
+    map['ore_sonno'] = Variable<double>(oreSonno);
+    map['compilata_il'] = Variable<DateTime>(compilataIl);
+    if (!nullToAbsent || qualitaSonno != null) {
+      map['qualita_sonno'] = Variable<int>(qualitaSonno);
+    }
+    if (!nullToAbsent || energia != null) {
+      map['energia'] = Variable<int>(energia);
+    }
+    if (!nullToAbsent || muscoli != null) {
+      map['muscoli'] = Variable<int>(muscoli);
+    }
+    if (!nullToAbsent || stress != null) {
+      map['stress'] = Variable<int>(stress);
+    }
+    if (!nullToAbsent || umore != null) {
+      map['umore'] = Variable<int>(umore);
+    }
+    map['sintomi_json'] = Variable<String>(sintomiJson);
+    return map;
+  }
+
+  SchedeBenessereTableCompanion toCompanion(bool nullToAbsent) {
+    return SchedeBenessereTableCompanion(
+      id: Value(id),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      data: Value(data),
+      eventoTipo: eventoTipo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eventoTipo),
+      eventoId: eventoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eventoId),
+      dolori: Value(dolori),
+      zoneDoloreJson: Value(zoneDoloreJson),
+      intensitaDolore: intensitaDolore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intensitaDolore),
+      oreSonno: Value(oreSonno),
+      compilataIl: Value(compilataIl),
+      qualitaSonno: qualitaSonno == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qualitaSonno),
+      energia: energia == null && nullToAbsent
+          ? const Value.absent()
+          : Value(energia),
+      muscoli: muscoli == null && nullToAbsent
+          ? const Value.absent()
+          : Value(muscoli),
+      stress: stress == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stress),
+      umore: umore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(umore),
+      sintomiJson: Value(sintomiJson),
+    );
+  }
+
+  factory SchedeBenessereTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SchedeBenessereTableData(
+      id: serializer.fromJson<String>(json['id']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      data: serializer.fromJson<DateTime>(json['data']),
+      eventoTipo: serializer.fromJson<String?>(json['eventoTipo']),
+      eventoId: serializer.fromJson<String?>(json['eventoId']),
+      dolori: serializer.fromJson<bool>(json['dolori']),
+      zoneDoloreJson: serializer.fromJson<String>(json['zoneDoloreJson']),
+      intensitaDolore: serializer.fromJson<int?>(json['intensitaDolore']),
+      oreSonno: serializer.fromJson<double>(json['oreSonno']),
+      compilataIl: serializer.fromJson<DateTime>(json['compilataIl']),
+      qualitaSonno: serializer.fromJson<int?>(json['qualitaSonno']),
+      energia: serializer.fromJson<int?>(json['energia']),
+      muscoli: serializer.fromJson<int?>(json['muscoli']),
+      stress: serializer.fromJson<int?>(json['stress']),
+      umore: serializer.fromJson<int?>(json['umore']),
+      sintomiJson: serializer.fromJson<String>(json['sintomiJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'data': serializer.toJson<DateTime>(data),
+      'eventoTipo': serializer.toJson<String?>(eventoTipo),
+      'eventoId': serializer.toJson<String?>(eventoId),
+      'dolori': serializer.toJson<bool>(dolori),
+      'zoneDoloreJson': serializer.toJson<String>(zoneDoloreJson),
+      'intensitaDolore': serializer.toJson<int?>(intensitaDolore),
+      'oreSonno': serializer.toJson<double>(oreSonno),
+      'compilataIl': serializer.toJson<DateTime>(compilataIl),
+      'qualitaSonno': serializer.toJson<int?>(qualitaSonno),
+      'energia': serializer.toJson<int?>(energia),
+      'muscoli': serializer.toJson<int?>(muscoli),
+      'stress': serializer.toJson<int?>(stress),
+      'umore': serializer.toJson<int?>(umore),
+      'sintomiJson': serializer.toJson<String>(sintomiJson),
+    };
+  }
+
+  SchedeBenessereTableData copyWith({
+    String? id,
+    String? atletaId,
+    String? clubId,
+    DateTime? data,
+    Value<String?> eventoTipo = const Value.absent(),
+    Value<String?> eventoId = const Value.absent(),
+    bool? dolori,
+    String? zoneDoloreJson,
+    Value<int?> intensitaDolore = const Value.absent(),
+    double? oreSonno,
+    DateTime? compilataIl,
+    Value<int?> qualitaSonno = const Value.absent(),
+    Value<int?> energia = const Value.absent(),
+    Value<int?> muscoli = const Value.absent(),
+    Value<int?> stress = const Value.absent(),
+    Value<int?> umore = const Value.absent(),
+    String? sintomiJson,
+  }) => SchedeBenessereTableData(
+    id: id ?? this.id,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    data: data ?? this.data,
+    eventoTipo: eventoTipo.present ? eventoTipo.value : this.eventoTipo,
+    eventoId: eventoId.present ? eventoId.value : this.eventoId,
+    dolori: dolori ?? this.dolori,
+    zoneDoloreJson: zoneDoloreJson ?? this.zoneDoloreJson,
+    intensitaDolore: intensitaDolore.present
+        ? intensitaDolore.value
+        : this.intensitaDolore,
+    oreSonno: oreSonno ?? this.oreSonno,
+    compilataIl: compilataIl ?? this.compilataIl,
+    qualitaSonno: qualitaSonno.present ? qualitaSonno.value : this.qualitaSonno,
+    energia: energia.present ? energia.value : this.energia,
+    muscoli: muscoli.present ? muscoli.value : this.muscoli,
+    stress: stress.present ? stress.value : this.stress,
+    umore: umore.present ? umore.value : this.umore,
+    sintomiJson: sintomiJson ?? this.sintomiJson,
+  );
+  SchedeBenessereTableData copyWithCompanion(
+    SchedeBenessereTableCompanion data,
+  ) {
+    return SchedeBenessereTableData(
+      id: data.id.present ? data.id.value : this.id,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      data: data.data.present ? data.data.value : this.data,
+      eventoTipo: data.eventoTipo.present
+          ? data.eventoTipo.value
+          : this.eventoTipo,
+      eventoId: data.eventoId.present ? data.eventoId.value : this.eventoId,
+      dolori: data.dolori.present ? data.dolori.value : this.dolori,
+      zoneDoloreJson: data.zoneDoloreJson.present
+          ? data.zoneDoloreJson.value
+          : this.zoneDoloreJson,
+      intensitaDolore: data.intensitaDolore.present
+          ? data.intensitaDolore.value
+          : this.intensitaDolore,
+      oreSonno: data.oreSonno.present ? data.oreSonno.value : this.oreSonno,
+      compilataIl: data.compilataIl.present
+          ? data.compilataIl.value
+          : this.compilataIl,
+      qualitaSonno: data.qualitaSonno.present
+          ? data.qualitaSonno.value
+          : this.qualitaSonno,
+      energia: data.energia.present ? data.energia.value : this.energia,
+      muscoli: data.muscoli.present ? data.muscoli.value : this.muscoli,
+      stress: data.stress.present ? data.stress.value : this.stress,
+      umore: data.umore.present ? data.umore.value : this.umore,
+      sintomiJson: data.sintomiJson.present
+          ? data.sintomiJson.value
+          : this.sintomiJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedeBenessereTableData(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('data: $data, ')
+          ..write('eventoTipo: $eventoTipo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('dolori: $dolori, ')
+          ..write('zoneDoloreJson: $zoneDoloreJson, ')
+          ..write('intensitaDolore: $intensitaDolore, ')
+          ..write('oreSonno: $oreSonno, ')
+          ..write('compilataIl: $compilataIl, ')
+          ..write('qualitaSonno: $qualitaSonno, ')
+          ..write('energia: $energia, ')
+          ..write('muscoli: $muscoli, ')
+          ..write('stress: $stress, ')
+          ..write('umore: $umore, ')
+          ..write('sintomiJson: $sintomiJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    atletaId,
+    clubId,
+    data,
+    eventoTipo,
+    eventoId,
+    dolori,
+    zoneDoloreJson,
+    intensitaDolore,
+    oreSonno,
+    compilataIl,
+    qualitaSonno,
+    energia,
+    muscoli,
+    stress,
+    umore,
+    sintomiJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SchedeBenessereTableData &&
+          other.id == this.id &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.data == this.data &&
+          other.eventoTipo == this.eventoTipo &&
+          other.eventoId == this.eventoId &&
+          other.dolori == this.dolori &&
+          other.zoneDoloreJson == this.zoneDoloreJson &&
+          other.intensitaDolore == this.intensitaDolore &&
+          other.oreSonno == this.oreSonno &&
+          other.compilataIl == this.compilataIl &&
+          other.qualitaSonno == this.qualitaSonno &&
+          other.energia == this.energia &&
+          other.muscoli == this.muscoli &&
+          other.stress == this.stress &&
+          other.umore == this.umore &&
+          other.sintomiJson == this.sintomiJson);
+}
+
+class SchedeBenessereTableCompanion
+    extends UpdateCompanion<SchedeBenessereTableData> {
+  final Value<String> id;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<DateTime> data;
+  final Value<String?> eventoTipo;
+  final Value<String?> eventoId;
+  final Value<bool> dolori;
+  final Value<String> zoneDoloreJson;
+  final Value<int?> intensitaDolore;
+  final Value<double> oreSonno;
+  final Value<DateTime> compilataIl;
+  final Value<int?> qualitaSonno;
+  final Value<int?> energia;
+  final Value<int?> muscoli;
+  final Value<int?> stress;
+  final Value<int?> umore;
+  final Value<String> sintomiJson;
+  final Value<int> rowid;
+  const SchedeBenessereTableCompanion({
+    this.id = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.data = const Value.absent(),
+    this.eventoTipo = const Value.absent(),
+    this.eventoId = const Value.absent(),
+    this.dolori = const Value.absent(),
+    this.zoneDoloreJson = const Value.absent(),
+    this.intensitaDolore = const Value.absent(),
+    this.oreSonno = const Value.absent(),
+    this.compilataIl = const Value.absent(),
+    this.qualitaSonno = const Value.absent(),
+    this.energia = const Value.absent(),
+    this.muscoli = const Value.absent(),
+    this.stress = const Value.absent(),
+    this.umore = const Value.absent(),
+    this.sintomiJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchedeBenessereTableCompanion.insert({
+    required String id,
+    required String atletaId,
+    required String clubId,
+    required DateTime data,
+    this.eventoTipo = const Value.absent(),
+    this.eventoId = const Value.absent(),
+    required bool dolori,
+    this.zoneDoloreJson = const Value.absent(),
+    this.intensitaDolore = const Value.absent(),
+    required double oreSonno,
+    required DateTime compilataIl,
+    this.qualitaSonno = const Value.absent(),
+    this.energia = const Value.absent(),
+    this.muscoli = const Value.absent(),
+    this.stress = const Value.absent(),
+    this.umore = const Value.absent(),
+    this.sintomiJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       data = Value(data),
+       dolori = Value(dolori),
+       oreSonno = Value(oreSonno),
+       compilataIl = Value(compilataIl);
+  static Insertable<SchedeBenessereTableData> custom({
+    Expression<String>? id,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<DateTime>? data,
+    Expression<String>? eventoTipo,
+    Expression<String>? eventoId,
+    Expression<bool>? dolori,
+    Expression<String>? zoneDoloreJson,
+    Expression<int>? intensitaDolore,
+    Expression<double>? oreSonno,
+    Expression<DateTime>? compilataIl,
+    Expression<int>? qualitaSonno,
+    Expression<int>? energia,
+    Expression<int>? muscoli,
+    Expression<int>? stress,
+    Expression<int>? umore,
+    Expression<String>? sintomiJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (data != null) 'data': data,
+      if (eventoTipo != null) 'evento_tipo': eventoTipo,
+      if (eventoId != null) 'evento_id': eventoId,
+      if (dolori != null) 'dolori': dolori,
+      if (zoneDoloreJson != null) 'zone_dolore_json': zoneDoloreJson,
+      if (intensitaDolore != null) 'intensita_dolore': intensitaDolore,
+      if (oreSonno != null) 'ore_sonno': oreSonno,
+      if (compilataIl != null) 'compilata_il': compilataIl,
+      if (qualitaSonno != null) 'qualita_sonno': qualitaSonno,
+      if (energia != null) 'energia': energia,
+      if (muscoli != null) 'muscoli': muscoli,
+      if (stress != null) 'stress': stress,
+      if (umore != null) 'umore': umore,
+      if (sintomiJson != null) 'sintomi_json': sintomiJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchedeBenessereTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<DateTime>? data,
+    Value<String?>? eventoTipo,
+    Value<String?>? eventoId,
+    Value<bool>? dolori,
+    Value<String>? zoneDoloreJson,
+    Value<int?>? intensitaDolore,
+    Value<double>? oreSonno,
+    Value<DateTime>? compilataIl,
+    Value<int?>? qualitaSonno,
+    Value<int?>? energia,
+    Value<int?>? muscoli,
+    Value<int?>? stress,
+    Value<int?>? umore,
+    Value<String>? sintomiJson,
+    Value<int>? rowid,
+  }) {
+    return SchedeBenessereTableCompanion(
+      id: id ?? this.id,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      data: data ?? this.data,
+      eventoTipo: eventoTipo ?? this.eventoTipo,
+      eventoId: eventoId ?? this.eventoId,
+      dolori: dolori ?? this.dolori,
+      zoneDoloreJson: zoneDoloreJson ?? this.zoneDoloreJson,
+      intensitaDolore: intensitaDolore ?? this.intensitaDolore,
+      oreSonno: oreSonno ?? this.oreSonno,
+      compilataIl: compilataIl ?? this.compilataIl,
+      qualitaSonno: qualitaSonno ?? this.qualitaSonno,
+      energia: energia ?? this.energia,
+      muscoli: muscoli ?? this.muscoli,
+      stress: stress ?? this.stress,
+      umore: umore ?? this.umore,
+      sintomiJson: sintomiJson ?? this.sintomiJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (eventoTipo.present) {
+      map['evento_tipo'] = Variable<String>(eventoTipo.value);
+    }
+    if (eventoId.present) {
+      map['evento_id'] = Variable<String>(eventoId.value);
+    }
+    if (dolori.present) {
+      map['dolori'] = Variable<bool>(dolori.value);
+    }
+    if (zoneDoloreJson.present) {
+      map['zone_dolore_json'] = Variable<String>(zoneDoloreJson.value);
+    }
+    if (intensitaDolore.present) {
+      map['intensita_dolore'] = Variable<int>(intensitaDolore.value);
+    }
+    if (oreSonno.present) {
+      map['ore_sonno'] = Variable<double>(oreSonno.value);
+    }
+    if (compilataIl.present) {
+      map['compilata_il'] = Variable<DateTime>(compilataIl.value);
+    }
+    if (qualitaSonno.present) {
+      map['qualita_sonno'] = Variable<int>(qualitaSonno.value);
+    }
+    if (energia.present) {
+      map['energia'] = Variable<int>(energia.value);
+    }
+    if (muscoli.present) {
+      map['muscoli'] = Variable<int>(muscoli.value);
+    }
+    if (stress.present) {
+      map['stress'] = Variable<int>(stress.value);
+    }
+    if (umore.present) {
+      map['umore'] = Variable<int>(umore.value);
+    }
+    if (sintomiJson.present) {
+      map['sintomi_json'] = Variable<String>(sintomiJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedeBenessereTableCompanion(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('data: $data, ')
+          ..write('eventoTipo: $eventoTipo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('dolori: $dolori, ')
+          ..write('zoneDoloreJson: $zoneDoloreJson, ')
+          ..write('intensitaDolore: $intensitaDolore, ')
+          ..write('oreSonno: $oreSonno, ')
+          ..write('compilataIl: $compilataIl, ')
+          ..write('qualitaSonno: $qualitaSonno, ')
+          ..write('energia: $energia, ')
+          ..write('muscoli: $muscoli, ')
+          ..write('stress: $stress, ')
+          ..write('umore: $umore, ')
+          ..write('sintomiJson: $sintomiJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12925,6 +13909,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $TrainingBlocksTableTable(this);
   late final $TrainingBlockPartiTableTable trainingBlockPartiTable =
       $TrainingBlockPartiTableTable(this);
+  late final $SchedeBenessereTableTable schedeBenessereTable =
+      $SchedeBenessereTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12951,6 +13937,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     garaIscrittiTable,
     trainingBlocksTable,
     trainingBlockPartiTable,
+    schedeBenessereTable,
   ];
 }
 
@@ -19643,6 +20630,474 @@ typedef $$TrainingBlockPartiTableTableProcessedTableManager =
       TrainingBlockPartiTableData,
       PrefetchHooks Function()
     >;
+typedef $$SchedeBenessereTableTableCreateCompanionBuilder =
+    SchedeBenessereTableCompanion Function({
+      required String id,
+      required String atletaId,
+      required String clubId,
+      required DateTime data,
+      Value<String?> eventoTipo,
+      Value<String?> eventoId,
+      required bool dolori,
+      Value<String> zoneDoloreJson,
+      Value<int?> intensitaDolore,
+      required double oreSonno,
+      required DateTime compilataIl,
+      Value<int?> qualitaSonno,
+      Value<int?> energia,
+      Value<int?> muscoli,
+      Value<int?> stress,
+      Value<int?> umore,
+      Value<String> sintomiJson,
+      Value<int> rowid,
+    });
+typedef $$SchedeBenessereTableTableUpdateCompanionBuilder =
+    SchedeBenessereTableCompanion Function({
+      Value<String> id,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<DateTime> data,
+      Value<String?> eventoTipo,
+      Value<String?> eventoId,
+      Value<bool> dolori,
+      Value<String> zoneDoloreJson,
+      Value<int?> intensitaDolore,
+      Value<double> oreSonno,
+      Value<DateTime> compilataIl,
+      Value<int?> qualitaSonno,
+      Value<int?> energia,
+      Value<int?> muscoli,
+      Value<int?> stress,
+      Value<int?> umore,
+      Value<String> sintomiJson,
+      Value<int> rowid,
+    });
+
+class $$SchedeBenessereTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SchedeBenessereTableTable> {
+  $$SchedeBenessereTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dolori => $composableBuilder(
+    column: $table.dolori,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get zoneDoloreJson => $composableBuilder(
+    column: $table.zoneDoloreJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intensitaDolore => $composableBuilder(
+    column: $table.intensitaDolore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get oreSonno => $composableBuilder(
+    column: $table.oreSonno,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get compilataIl => $composableBuilder(
+    column: $table.compilataIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get qualitaSonno => $composableBuilder(
+    column: $table.qualitaSonno,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get energia => $composableBuilder(
+    column: $table.energia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get muscoli => $composableBuilder(
+    column: $table.muscoli,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stress => $composableBuilder(
+    column: $table.stress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get umore => $composableBuilder(
+    column: $table.umore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sintomiJson => $composableBuilder(
+    column: $table.sintomiJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SchedeBenessereTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchedeBenessereTableTable> {
+  $$SchedeBenessereTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dolori => $composableBuilder(
+    column: $table.dolori,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get zoneDoloreJson => $composableBuilder(
+    column: $table.zoneDoloreJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intensitaDolore => $composableBuilder(
+    column: $table.intensitaDolore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get oreSonno => $composableBuilder(
+    column: $table.oreSonno,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get compilataIl => $composableBuilder(
+    column: $table.compilataIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get qualitaSonno => $composableBuilder(
+    column: $table.qualitaSonno,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get energia => $composableBuilder(
+    column: $table.energia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get muscoli => $composableBuilder(
+    column: $table.muscoli,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stress => $composableBuilder(
+    column: $table.stress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get umore => $composableBuilder(
+    column: $table.umore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sintomiJson => $composableBuilder(
+    column: $table.sintomiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SchedeBenessereTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchedeBenessereTableTable> {
+  $$SchedeBenessereTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get eventoId =>
+      $composableBuilder(column: $table.eventoId, builder: (column) => column);
+
+  GeneratedColumn<bool> get dolori =>
+      $composableBuilder(column: $table.dolori, builder: (column) => column);
+
+  GeneratedColumn<String> get zoneDoloreJson => $composableBuilder(
+    column: $table.zoneDoloreJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intensitaDolore => $composableBuilder(
+    column: $table.intensitaDolore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get oreSonno =>
+      $composableBuilder(column: $table.oreSonno, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get compilataIl => $composableBuilder(
+    column: $table.compilataIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get qualitaSonno => $composableBuilder(
+    column: $table.qualitaSonno,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get energia =>
+      $composableBuilder(column: $table.energia, builder: (column) => column);
+
+  GeneratedColumn<int> get muscoli =>
+      $composableBuilder(column: $table.muscoli, builder: (column) => column);
+
+  GeneratedColumn<int> get stress =>
+      $composableBuilder(column: $table.stress, builder: (column) => column);
+
+  GeneratedColumn<int> get umore =>
+      $composableBuilder(column: $table.umore, builder: (column) => column);
+
+  GeneratedColumn<String> get sintomiJson => $composableBuilder(
+    column: $table.sintomiJson,
+    builder: (column) => column,
+  );
+}
+
+class $$SchedeBenessereTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SchedeBenessereTableTable,
+          SchedeBenessereTableData,
+          $$SchedeBenessereTableTableFilterComposer,
+          $$SchedeBenessereTableTableOrderingComposer,
+          $$SchedeBenessereTableTableAnnotationComposer,
+          $$SchedeBenessereTableTableCreateCompanionBuilder,
+          $$SchedeBenessereTableTableUpdateCompanionBuilder,
+          (
+            SchedeBenessereTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $SchedeBenessereTableTable,
+              SchedeBenessereTableData
+            >,
+          ),
+          SchedeBenessereTableData,
+          PrefetchHooks Function()
+        > {
+  $$SchedeBenessereTableTableTableManager(
+    _$AppDatabase db,
+    $SchedeBenessereTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SchedeBenessereTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchedeBenessereTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SchedeBenessereTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<DateTime> data = const Value.absent(),
+                Value<String?> eventoTipo = const Value.absent(),
+                Value<String?> eventoId = const Value.absent(),
+                Value<bool> dolori = const Value.absent(),
+                Value<String> zoneDoloreJson = const Value.absent(),
+                Value<int?> intensitaDolore = const Value.absent(),
+                Value<double> oreSonno = const Value.absent(),
+                Value<DateTime> compilataIl = const Value.absent(),
+                Value<int?> qualitaSonno = const Value.absent(),
+                Value<int?> energia = const Value.absent(),
+                Value<int?> muscoli = const Value.absent(),
+                Value<int?> stress = const Value.absent(),
+                Value<int?> umore = const Value.absent(),
+                Value<String> sintomiJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchedeBenessereTableCompanion(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                data: data,
+                eventoTipo: eventoTipo,
+                eventoId: eventoId,
+                dolori: dolori,
+                zoneDoloreJson: zoneDoloreJson,
+                intensitaDolore: intensitaDolore,
+                oreSonno: oreSonno,
+                compilataIl: compilataIl,
+                qualitaSonno: qualitaSonno,
+                energia: energia,
+                muscoli: muscoli,
+                stress: stress,
+                umore: umore,
+                sintomiJson: sintomiJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String atletaId,
+                required String clubId,
+                required DateTime data,
+                Value<String?> eventoTipo = const Value.absent(),
+                Value<String?> eventoId = const Value.absent(),
+                required bool dolori,
+                Value<String> zoneDoloreJson = const Value.absent(),
+                Value<int?> intensitaDolore = const Value.absent(),
+                required double oreSonno,
+                required DateTime compilataIl,
+                Value<int?> qualitaSonno = const Value.absent(),
+                Value<int?> energia = const Value.absent(),
+                Value<int?> muscoli = const Value.absent(),
+                Value<int?> stress = const Value.absent(),
+                Value<int?> umore = const Value.absent(),
+                Value<String> sintomiJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchedeBenessereTableCompanion.insert(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                data: data,
+                eventoTipo: eventoTipo,
+                eventoId: eventoId,
+                dolori: dolori,
+                zoneDoloreJson: zoneDoloreJson,
+                intensitaDolore: intensitaDolore,
+                oreSonno: oreSonno,
+                compilataIl: compilataIl,
+                qualitaSonno: qualitaSonno,
+                energia: energia,
+                muscoli: muscoli,
+                stress: stress,
+                umore: umore,
+                sintomiJson: sintomiJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $SchedeBenessereTableTable,
+                    SchedeBenessereTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SchedeBenessereTableTable,
+                    SchedeBenessereTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SchedeBenessereTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SchedeBenessereTableTable,
+      SchedeBenessereTableData,
+      $$SchedeBenessereTableTableFilterComposer,
+      $$SchedeBenessereTableTableOrderingComposer,
+      $$SchedeBenessereTableTableAnnotationComposer,
+      $$SchedeBenessereTableTableCreateCompanionBuilder,
+      $$SchedeBenessereTableTableUpdateCompanionBuilder,
+      (
+        SchedeBenessereTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $SchedeBenessereTableTable,
+          SchedeBenessereTableData
+        >,
+      ),
+      SchedeBenessereTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19698,4 +21153,6 @@ class $AppDatabaseManager {
         _db,
         _db.trainingBlockPartiTable,
       );
+  $$SchedeBenessereTableTableTableManager get schedeBenessereTable =>
+      $$SchedeBenessereTableTableTableManager(_db, _db.schedeBenessereTable);
 }

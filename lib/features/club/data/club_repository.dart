@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
+import '../../../core/demo/modalita_demo.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/club.dart';
@@ -111,6 +113,18 @@ class ClubRepository {
     String? sport,
     List<String> categorie = const [],
   }) async {
+    if (modalitaDemo) {
+      // In demo non c'e' server: il club nasce solo nella cache locale.
+      return _salvaInLocale(
+        Club(
+          id: const Uuid().v4(),
+          nome: nome,
+          citta: (citta == null || citta.isEmpty) ? null : citta,
+          sport: sport,
+          categorie: categorie,
+        ),
+      );
+    }
     final row = await _client.rpc(
       'create_club',
       params: {
@@ -120,7 +134,10 @@ class ClubRepository {
         'p_categorie': categorie,
       },
     ) as Map<String, dynamic>;
-    final club = Club.fromMap(row);
+    return _salvaInLocale(Club.fromMap(row));
+  }
+
+  Future<Club> _salvaInLocale(Club club) async {
     await _db
         .into(_db.clubTable)
         .insertOnConflictUpdate(

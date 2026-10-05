@@ -123,7 +123,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     // il trascinamento nell'elenco).
     final ordine = widget.serie?.ordine ?? widget.ordineSuccessivo;
     final ripetute = int.parse(_ripeteController.text.trim());
-    final distanzaM = _aTempo ? null : int.parse(_distanzaController.text.trim());
+    final distanzaM = _aTempo
+        ? null
+        : int.parse(_distanzaController.text.trim());
     final durataS = _aTempo
         ? parsePaceMmSs(_durataController.text)?.round()
         : null;
@@ -327,13 +329,16 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
               titolo: 'Volume',
               campi: [
                 SegmentedButton<bool>(
+                  // Senza spunta: la scelta e' gia' evidenziata dal
+                  // colore, e la spunta toglieva spazio all'etichetta
+                  // che su telefono andava a capo a meta' parola.
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(value: false, label: Text('Distanza')),
                     ButtonSegment(value: true, label: Text('A tempo')),
                   ],
                   selected: {_aTempo},
-                  onSelectionChanged: (s) =>
-                      setState(() => _aTempo = s.first),
+                  onSelectionChanged: (s) => setState(() => _aTempo = s.first),
                 ),
                 const SizedBox(height: AppSpacing.s12),
                 Row(
@@ -382,45 +387,77 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
             FormGroup(
               titolo: 'Ritmo',
               campi: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Passo /100m (facoltativo)',
-                        controller: _passoController,
-                        aiuto: 'm:ss',
-                        validator: (v) =>
-                            (v != null &&
-                                v.trim().isNotEmpty &&
-                                parsePaceMmSs(v) == null)
-                            ? 'Formato m:ss'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Recupero, s (facoltativo)',
-                        controller: _recuperoController,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Ripartenza (facoltativo)',
-                        controller: _ripartenzaController,
-                        aiuto: 'm:ss',
-                        validator: (v) =>
-                            (v != null &&
-                                v.trim().isNotEmpty &&
-                                parsePaceMmSs(v) == null)
-                            ? 'Formato m:ss'
-                            : null,
-                      ),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, vincoli) {
+                    // Su telefono tre campi affiancati spezzavano le
+                    // etichette: due + uno per riga, e "facoltativo"
+                    // passa nel testo d'aiuto sotto il campo.
+                    final stretto = vincoli.maxWidth < 560;
+                    String? validaMmSs(String? v) =>
+                        (v != null &&
+                            v.trim().isNotEmpty &&
+                            parsePaceMmSs(v) == null)
+                        ? 'Formato m:ss'
+                        : null;
+                    final passo = AppTextField(
+                      etichetta: stretto
+                          ? 'Passo /100m'
+                          : 'Passo /100m (facoltativo)',
+                      controller: _passoController,
+                      aiuto: stretto ? 'm:ss, facoltativo' : 'm:ss',
+                      validator: validaMmSs,
+                    );
+                    final recupero = AppTextField(
+                      etichetta: stretto
+                          ? 'Recupero, s'
+                          : 'Recupero, s (facoltativo)',
+                      controller: _recuperoController,
+                      aiuto: stretto ? 'facoltativo' : null,
+                      keyboardType: TextInputType.number,
+                    );
+                    final ripartenza = AppTextField(
+                      etichetta: stretto
+                          ? 'Ripartenza'
+                          : 'Ripartenza (facoltativo)',
+                      controller: _ripartenzaController,
+                      aiuto: stretto ? 'm:ss, facoltativo' : 'm:ss',
+                      validator: validaMmSs,
+                    );
+                    if (stretto) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: passo),
+                              const SizedBox(width: AppSpacing.s12),
+                              Expanded(child: recupero),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.spazioCampiForm),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: ripartenza),
+                              const SizedBox(width: AppSpacing.s12),
+                              const Spacer(),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: passo),
+                        const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: recupero),
+                        const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: ripartenza),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

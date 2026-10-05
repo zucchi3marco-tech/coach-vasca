@@ -274,11 +274,23 @@ class _BottoneStato extends StatelessWidget {
               color: selezionato ? colori.azioneInk : colori.testoSecondario,
             ),
             const SizedBox(height: 4),
-            Text(
-              etichetta,
-              style: AppTypography.piccolo.copyWith(
-                color: selezionato ? colori.azioneInk : colori.testoSecondario,
-                fontWeight: FontWeight.w600,
+            // Una riga sola, rimpicciolita se serve: a 320 px
+            // "Giustificato" andava a capo a meta' parola.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  etichetta,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: AppTypography.piccolo.copyWith(
+                    color: selezionato
+                        ? colori.azioneInk
+                        : colori.testoSecondario,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],

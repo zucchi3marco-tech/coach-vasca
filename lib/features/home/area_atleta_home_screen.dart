@@ -1,129 +1,294 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/gruppo_visibilita.dart';
-import '../../core/utils/pace_format.dart';
-import '../../theme/app_layout.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/colori_app.dart';
 import '../../theme/tokens_dominio.dart';
-import '../../widgets/app_list_panel.dart';
-import '../../widgets/app_list_row.dart';
-import '../../widgets/athlete_avatar_circle.dart';
-import '../../widgets/icon_badge.dart';
-import '../../widgets/pool_card.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/stat_panel.dart';
-import '../allenamenti/application/allenamenti_providers.dart';
-import '../allenamenti/domain/allenamento.dart';
-import '../allenamenti/domain/prossimo_allenamento.dart';
-import '../allenamenti/presentation/scheda_bordo_vasca_screen.dart';
 import '../atleti/application/personal_best_providers.dart';
 import '../atleti/domain/atleta.dart';
-import '../atleti/domain/pb_slots.dart';
 import '../atleti/presentation/pb_list_screen.dart';
 import '../carico/application/carico_providers.dart';
 import '../carico/presentation/carico_atleta_screen.dart';
 import '../carico/presentation/grafico_banister.dart';
-import '../club/application/current_club_provider.dart';
-import '../gare/application/gare_providers.dart';
-import '../gare/domain/gara.dart';
-import '../pallanuoto/application/pallanuoto_providers.dart';
 import '../pallanuoto/application/schemi_tattici_providers.dart';
-import '../pallanuoto/domain/partita.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
-import '../presenze/application/presenze_providers.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
-import '../stagioni/domain/evento_calendario.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
+import '../allenamenti/domain/allenamento.dart';
+import '../benessere/presentation/card_benessere.dart';
+import '../benessere/presentation/scheda_benessere_screen.dart';
+import '../pallanuoto/domain/partita.dart';
+import 'atleta/dati_home_atleta.dart';
+import 'atleta/grafica_pallanuoto.dart';
+import 'atleta/home_atleta_widgets.dart';
 
-String _formattaData(DateTime data) =>
-    '${data.day.toString().padLeft(2, '0')}/'
-    '${data.month.toString().padLeft(2, '0')}/'
-    '${data.year}';
-
-String _etichettaSport(String? sport) => switch (sport) {
-  'pallanuoto' => 'Pallanuoto',
-  _ => 'Nuoto',
-};
-
-/// Home/dashboard dell'atleta collegato (FASE 9, ridisegnata FASE 16):
-/// mostrata da HomeScreen al posto delle tab da coach quando l'account
-/// autenticato non e' membro di nessun club ma e' collegato a un record
+/// Home/dashboard dell'atleta collegato (FASE 9, ridisegnata FASE 16 e
+/// poi di nuovo per la pallanuoto): mostrata da HomeScreen al posto delle
+/// tab da coach quando l'account autenticato e' collegato a un record
 /// atleti. Nessun Scaffold proprio: e' incorporata nel body di
 /// HomeScreen (in alto c'e' la barra fissa con logo, nome del club e menu
-/// con "Esci"). Vedi anche
-/// [AtletaDashboardScreen], che la incornicia con una AppBar propria
-/// per raggiungerla anche dall'account allenatore.
+/// con "Esci"). Vedi anche [AtletaDashboardScreen].
 ///
-/// Tre fasce (DESIGN.md sezione 10, `Breakpoint.of(context)` — mai
-/// `MediaQuery` a mano): affiancate da `medio` in su, impilate su
-/// telefono verticale.
-/// 1. Andamento (grafico Banister) + Lavagna tattica (solo pallanuoto).
-/// 2. Profilo atleta + I miei tempi (personal best).
-/// 3. Riepilogo club + KPI (% presenze, prossimi allenamenti, gol per
-///    pallanuoto).
+/// Dall'alto:
+/// 1. Testata con la foto della vasca, calottina col numero, nome e i
+///    numeri chiave (toccabili).
+/// 2. Scheda benessere del giorno, prossima partita (tabellone) e
+///    prossimo allenamento.
+/// 3. Andamento (grafico Banister).
+/// 4. Riquadri illustrati verso tutte le altre sezioni.
 class AreaAtletaHomeScreen extends ConsumerWidget {
-  const AreaAtletaHomeScreen({required this.atleta, super.key});
+  const AreaAtletaHomeScreen({
+    required this.atleta,
+    this.vistaAllenatore = false,
+    super.key,
+  });
 
   final Atleta atleta;
+
+  /// true quando e' l'allenatore ad aprire l'atleta dal proprio elenco:
+  /// la scheda benessere si legge soltanto, con gli ultimi giorni.
+  final bool vistaAllenatore;
+
+  /// Il primo impegno in arrivo fra allenamento e partita, a cui si
+  /// riferisce la scheda benessere.
+  ImpegnoBenessere? _impegno(Allenamento? allenamento, Partita? partita) {
+    ImpegnoBenessere? daAllenamento() => allenamento == null
+        ? null
+        : (
+            tipo: 'allenamento',
+            id: allenamento.id,
+            descrizione:
+                'dell\'allenamento di ${traQuanto(allenamento.data).toLowerCase() == 'oggi' ? 'oggi' : dataEstesa(allenamento.data)}',
+          );
+    ImpegnoBenessere? daPartita() => partita == null
+        ? null
+        : (
+            tipo: 'partita',
+            id: partita.id,
+            descrizione:
+                'della partita di ${traQuanto(partita.data).toLowerCase() == 'oggi' ? 'oggi' : dataEstesa(partita.data)}',
+          );
+    if (allenamento == null) return daPartita();
+    if (partita == null) return daAllenamento();
+    return partita.data.isBefore(allenamento.data)
+        ? daPartita()
+        : daAllenamento();
+  }
+
+  void _apri(BuildContext context, Widget schermata) =>
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => schermata));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pallanuoto = atleta.sport == 'pallanuoto';
-    final affiancate = Breakpoint.of(context) != Breakpoint.compatto;
+    final dominio = context.dominio;
+    final golTiri = ref.watch(golTiriAtletaProvider(atleta.id));
+    final allenamenti = ref.watch(riepilogoAllenamentiAtletaProvider(atleta));
+    final partita = pallanuoto
+        ? ref.watch(prossimaPartitaAtletaProvider(atleta))
+        : null;
+    final pb = ref.watch(personalBestListProvider(atleta.id)).value;
+    final schemi = pallanuoto
+        ? ref
+              .watch(schemiTatticiListProvider(atleta.clubId))
+              .value
+              ?.where(
+                (s) => visibileNelGruppoMultiplo(
+                  gruppiDelRecord: s.gruppoIds,
+                  gruppoSelezionato: atleta.gruppoId,
+                ),
+              )
+              .length
+        : null;
 
-    Widget fascia(Widget primo, Widget? secondo) {
-      if (secondo == null) return primo;
-      if (!affiancate) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            primo,
-            const SizedBox(height: AppSpacing.s16),
-            secondo,
-          ],
-        );
-      }
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: primo),
-          const SizedBox(width: AppSpacing.s16),
-          Expanded(child: secondo),
-        ],
-      );
-    }
+    final presenze = allenamenti?.percentualePresenze;
+    final gol = golTiri?.gol;
+    final tiri = golTiri?.tiri;
+    final precisione = (gol == null || tiri == null || tiri == 0)
+        ? null
+        : (gol / tiri * 100).round();
+
+    final statistiche = pallanuoto
+        ? [
+            (
+              etichetta: 'Gol',
+              valore: gol == null ? '—' : '$gol',
+              onTap: () =>
+                  _apri(context, StatisticheAtletaScreen(atleta: atleta)),
+            ),
+            (
+              etichetta: 'Tiri',
+              valore: tiri == null ? '—' : '$tiri',
+              onTap: () =>
+                  _apri(context, StatisticheAtletaScreen(atleta: atleta)),
+            ),
+            (
+              etichetta: 'Precisione',
+              valore: precisione == null ? '—' : '$precisione%',
+              onTap: () =>
+                  _apri(context, StatisticheAtletaScreen(atleta: atleta)),
+            ),
+            (
+              etichetta: 'Presenze',
+              valore: presenze == null ? '—' : '$presenze%',
+              onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+            ),
+          ]
+        : [
+            (
+              etichetta: 'Personal best',
+              valore: pb == null ? '—' : '${pb.length}',
+              onTap: () => _apri(context, PbListScreen(atleta: atleta)),
+            ),
+            (
+              etichetta: 'Presenze',
+              valore: presenze == null ? '—' : '$presenze%',
+              onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+            ),
+          ];
+
+    final riquadri = <VoceRiquadro>[
+      if (pallanuoto) ...[
+        VoceRiquadro(
+          soggetto: SoggettoRiquadro.schemi,
+          titolo: 'Schemi tattici',
+          descrizione: 'Le azioni preparate dall\'allenatore',
+          valore: schemi == null || schemi == 0 ? null : '$schemi',
+          accento: dominio.evidenzaVerde,
+          onTap: () => _apri(
+            context,
+            SchemiTatticiListScreen(
+              clubId: atleta.clubId,
+              soloLettura: true,
+              filtroGruppoId: atleta.gruppoId,
+            ),
+          ),
+        ),
+        VoceRiquadro(
+          soggetto: SoggettoRiquadro.partite,
+          titolo: 'Le mie partite',
+          descrizione: 'Calendario, risultati e referti',
+          accento: dominio.evidenzaViola,
+          onTap: () => _apri(
+            context,
+            PartiteAtletaListScreen(
+              clubId: atleta.clubId,
+              filtroGruppoId: atleta.gruppoId,
+            ),
+          ),
+        ),
+      ],
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.statistiche,
+        titolo: 'Le mie statistiche',
+        descrizione: pallanuoto
+            ? 'Tiri, gol e dove segni di più'
+            : 'Tempi di gara e progressi',
+        valore: precisione == null ? null : '$precisione%',
+        accento: dominio.evidenzaCiano,
+        onTap: () => _apri(context, StatisticheAtletaScreen(atleta: atleta)),
+      ),
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.tempi,
+        titolo: 'I miei tempi',
+        descrizione: 'Personal best a nuoto',
+        valore: pb == null || pb.isEmpty ? null : '${pb.length}',
+        accento: dominio.evidenzaAmbra,
+        onTap: () => _apri(context, PbListScreen(atleta: atleta)),
+      ),
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.presenze,
+        titolo: 'Le mie presenze',
+        descrizione: allenamenti == null || allenamenti.fatti == 0
+            ? 'Gli allenamenti a cui hai partecipato'
+            : '${allenamenti.presente} su ${allenamenti.fatti} allenamenti',
+        valore: presenze == null ? null : '$presenze%',
+        accento: dominio.evidenzaVerde,
+        onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+      ),
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.stagione,
+        titolo: 'La mia stagione',
+        descrizione: 'Calendario e obiettivi della squadra',
+        accento: dominio.evidenzaAmbra,
+        onTap: () => _apri(context, StagioneAtletaScreen(atleta: atleta)),
+      ),
+    ];
+
+    var i = 0;
+    Widget blocco(Widget figlio) => EntrataACascata(indice: i++, child: figlio);
 
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.s16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            fascia(
-              _CardAndamento(atleta: atleta),
-              pallanuoto
-                  ? _CardLavagnaTattica(
-                      clubId: atleta.clubId,
-                      gruppoId: atleta.gruppoId,
-                    )
-                  : null,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final largo = constraints.maxWidth >= 840;
+                final prossimi = [
+                  if (partita != null)
+                    CardProssimaPartita(
+                      partita: partita,
+                      onTap: () => _apri(
+                        context,
+                        PartiteAtletaListScreen(
+                          clubId: atleta.clubId,
+                          filtroGruppoId: atleta.gruppoId,
+                        ),
+                      ),
+                    ),
+                  CardProssimoAllenamento(atleta: atleta),
+                ];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    blocco(
+                      TestataAtleta(atleta: atleta, statistiche: statistiche),
+                    ),
+                    const SizedBox(height: 20),
+                    blocco(const TitoloSezione('In programma')),
+                    blocco(
+                      CardBenessere(
+                        atleta: atleta,
+                        vistaAllenatore: vistaAllenatore,
+                        impegno: _impegno(allenamenti?.prossimo, partita),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (largo && prossimi.length == 2)
+                      blocco(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: prossimi[0]),
+                            const SizedBox(width: 12),
+                            Expanded(flex: 2, child: prossimi[1]),
+                          ],
+                        ),
+                      )
+                    else
+                      for (final (k, card) in prossimi.indexed) ...[
+                        if (k > 0) const SizedBox(height: 12),
+                        blocco(card),
+                      ],
+                    const SizedBox(height: 20),
+                    blocco(_CardAndamento(atleta: atleta)),
+                    const SizedBox(height: 20),
+                    blocco(const TitoloSezione('Tutto il tuo mondo')),
+                    GrigliaRiquadri(voci: riquadri),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: AppSpacing.s16),
-            fascia(
-              _CardProfiloAtleta(atleta: atleta),
-              _CardTempiRecenti(atleta: atleta),
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            _CardRiepilogoClub(atleta: atleta),
-            _ProssimiEventi(atleta: atleta),
-            const SizedBox(height: AppSpacing.s24),
-            _AltriCollegamenti(atleta: atleta),
-          ],
+          ),
         ),
       ),
     );
@@ -133,9 +298,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
 /// Incornicia [AreaAtletaHomeScreen] con una AppBar propria (titolo e
 /// pulsante indietro), per raggiungerla come schermata a parte —
 /// dall'account allenatore, toccando il nome di un atleta in
-/// `AtletiListScreen`. [AreaAtletaHomeScreen] da sola non ha Scaffold
-/// perché è pensata per stare già dentro quello di `HomeScreen`
-/// (usato invece quando è l'atleta stesso ad autenticarsi).
+/// `AtletiListScreen`.
 class AtletaDashboardScreen extends StatelessWidget {
   const AtletaDashboardScreen({required this.atleta, super.key});
 
@@ -145,14 +308,13 @@ class AtletaDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(atleta.nomeCompleto)),
-      body: AreaAtletaHomeScreen(atleta: atleta),
+      body: AreaAtletaHomeScreen(atleta: atleta, vistaAllenatore: true),
     );
   }
 }
 
 /// Card "Andamento": grafico Banister compatto, tocco apre il dettaglio
-/// completo (`CaricoAtletaScreen`, con anche la scomposizione per
-/// volume).
+/// completo (`CaricoAtletaScreen`).
 class _CardAndamento extends ConsumerWidget {
   const _CardAndamento({required this.atleta});
 
@@ -164,33 +326,45 @@ class _CardAndamento extends ConsumerWidget {
       andamentoCaricoProvider((atletaId: atleta.id, clubId: atleta.clubId)),
     );
     final colori = context.colori;
+    final accento = context.dominio.evidenzaCiano;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.pannello),
+    return Premibile(
+      etichetta: 'Andamento della forma: apri il dettaglio',
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => CaricoAtletaScreen(atleta: atleta)),
       ),
-      child: PoolCard(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colori.superficie,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: colori.linea),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                IconBadge(
-                  Icons.show_chart,
-                  colore: context.dominio.evidenzaCiano,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accento.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.show_chart, color: accento),
                 ),
                 const SizedBox(width: AppSpacing.s12),
                 const Expanded(
                   child: SectionHeader(
-                    'Andamento',
+                    'La tua forma',
                     spiegazione:
                         'Il grafico Banister: tre curve calcolate dagli '
                         'allenamenti a cui hai partecipato. Fitness cresce '
                         'con il carico accumulato nel tempo, Fatica cresce '
                         'più in fretta ma si scarica anche più in fretta, '
                         'Forma è la differenza fra le due — più alta è, '
-                        'più sei pronto per una prestazione.',
+                        'più sei pronto per una partita.',
                   ),
                 ),
                 Icon(Icons.chevron_right, color: colori.testoSecondario),
@@ -199,18 +373,9 @@ class _CardAndamento extends ConsumerWidget {
             const SizedBox(height: AppSpacing.s12),
             puntiAsync.when(
               data: (punti) => punti.isEmpty
-                  ? Text(
-                      'Nessun dato ancora: si calcola dagli allenamenti con '
-                      'presenza segnata.',
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    )
-                  : SizedBox(height: 160, child: GraficoBanister(punti: punti)),
-              loading: () => const SizedBox(
-                height: 160,
-                child: Center(child: CircularProgressIndicator()),
-              ),
+                  ? _FormaVuota(accento: accento)
+                  : SizedBox(height: 180, child: GraficoBanister(punti: punti)),
+              loading: () => const SizedBox(height: 120),
               error: (_, _) => Text(
                 'Non disponibile al momento.',
                 style: AppTypography.piccolo.copyWith(
@@ -225,645 +390,42 @@ class _CardAndamento extends ConsumerWidget {
   }
 }
 
-/// Anteprima degli schemi tattici salvati dall'allenatore: a differenza
-/// della vecchia lavagna libera (locale, effimera), qui l'atleta
-/// sfoglia in sola lettura ciò che l'allenatore ha disegnato e salvato
-/// — il tocco sulla card apre l'elenco completo
-/// (`SchemiTatticiListScreen` con `soloLettura: true`).
-class _CardLavagnaTattica extends ConsumerWidget {
-  const _CardLavagnaTattica({required this.clubId, this.gruppoId});
+/// Grafico ancora vuoto: un'anteprima disegnata e cosa serve per
+/// riempirlo, invece di una riga grigia da sola.
+class _FormaVuota extends StatelessWidget {
+  const _FormaVuota({required this.accento});
 
-  final String clubId;
-  final String? gruppoId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tuttiGliSchemi = ref.watch(schemiTatticiListProvider(clubId));
-    // Stessa regola di isolamento per gruppo delle liste del coach: uno
-    // schema senza gruppo resta visibile a tutti.
-    final schemiAsync = gruppoId == null
-        ? tuttiGliSchemi
-        : tuttiGliSchemi.whenData(
-            (schemi) => schemi
-                .where(
-                  (s) => visibileNelGruppoMultiplo(
-                    gruppiDelRecord: s.gruppoIds,
-                    gruppoSelezionato: gruppoId,
-                  ),
-                )
-                .toList(),
-          );
-    final colori = context.colori;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.pannello),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => SchemiTatticiListScreen(
-            clubId: clubId,
-            soloLettura: true,
-            filtroGruppoId: gruppoId,
-          ),
-        ),
-      ),
-      child: PoolCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconBadge(
-                  Icons.route_outlined,
-                  colore: context.dominio.evidenzaVerde,
-                ),
-                const SizedBox(width: AppSpacing.s12),
-                const Expanded(
-                  child: SectionHeader(
-                    'Schemi tattici',
-                    spiegazione:
-                        'Gli schemi che il tuo allenatore ha disegnato e '
-                        'salvato per il tuo gruppo o per tutto il club: '
-                        'posizioni dei '
-                        'giocatori e frecce di movimento, anche in più '
-                        'passi in sequenza. Tocca per sfogliarli.',
-                  ),
-                ),
-                Icon(Icons.chevron_right, color: colori.testoSecondario),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            schemiAsync.when(
-              data: (schemi) => Text(
-                schemi.isEmpty
-                    ? 'L\'allenatore non ha ancora salvato nessuno schema.'
-                    : schemi.length == 1
-                    ? '1 schema salvato dall\'allenatore.'
-                    : '${schemi.length} schemi salvati dall\'allenatore.',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-              loading: () => Text(
-                'Caricamento...',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-              error: (_, _) => Text(
-                'Non è stato possibile caricare gli schemi.',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Card profilo: avatar a iniziali, nome, sport, e le metriche chiave —
-/// personal best per il nuoto, gol/tiri per la pallanuoto (le uniche
-/// tracciate davvero: l'app non registra assist/steal né uno storico
-/// dello stroke rate, vedi ROADMAP.md FASE 16).
-class _CardProfiloAtleta extends StatelessWidget {
-  const _CardProfiloAtleta({required this.atleta});
-
-  final Atleta atleta;
+  final Color accento;
 
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final pallanuoto = atleta.sport == 'pallanuoto';
-
-    return PoolCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AthleteAvatarCircle(nome: atleta.nome, cognome: atleta.cognome),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      atleta.nomeCompleto,
-                      style: AppTypography.corpoForte.copyWith(
-                        color: colori.testo,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.s8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colori.azioneTenue,
-                        borderRadius: BorderRadius.circular(AppRadius.pillola),
-                      ),
-                      child: Text(
-                        _etichettaSport(atleta.sport),
-                        style: AppTypography.etichetta.copyWith(
-                          color: colori.azione,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+    return Row(
+      children: [
+        SizedBox(
+          width: 120,
+          height: 72,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CustomPaint(
+              painter: IllustrazioneRiquadroPainter(
+                soggetto: SoggettoRiquadro.andamento,
+                accento: accento,
+                fondo: colori.superficie,
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.s16),
-          if (pallanuoto)
-            _MetricheWaterPolo(atleta: atleta)
-          else
-            _MetricheNuoto(atleta: atleta),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricheNuoto extends ConsumerWidget {
-  const _MetricheNuoto({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pbAsync = ref.watch(personalBestListProvider(atleta.id));
-    final colori = context.colori;
-
-    return pbAsync.when(
-      data: (pb) {
-        if (pb.isEmpty) {
-          return Text(
-            'Nessun personal best registrato ancora.',
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            'La curva compare dopo i primi allenamenti con la presenza '
+            'segnata dall\'allenatore.',
             style: AppTypography.piccolo.copyWith(
               color: colori.testoSecondario,
             ),
-          );
-        }
-        final ordinati = [...pb]..sort((a, b) => a.stile.compareTo(b.stile));
-        return Wrap(
-          spacing: AppSpacing.s24,
-          runSpacing: AppSpacing.s12,
-          children: [
-            for (final p in ordinati.take(2))
-              StatPanel(
-                etichetta: '${p.distanzaM}m ${capitalizzaParola(p.stile)}',
-                valore: formatPaceSeconds(p.tempoS),
-              ),
-          ],
-        );
-      },
-      loading: () => const SizedBox(
-        height: 40,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => Text(
-        'Non disponibile al momento.',
-        style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
-      ),
-    );
-  }
-}
-
-class _MetricheWaterPolo extends ConsumerWidget {
-  const _MetricheWaterPolo({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tiriAsync = ref.watch(tiriAtletaProvider(atleta.id));
-
-    return tiriAsync.when(
-      data: (tiri) {
-        final gol = tiri
-            .where((e) => e.tipo == 'tiro' && e.esito == 'gol')
-            .length;
-        return Wrap(
-          spacing: AppSpacing.s24,
-          runSpacing: AppSpacing.s12,
-          children: [
-            StatPanel(etichetta: 'Gol', valore: '$gol'),
-            StatPanel(etichetta: 'Tiri', valore: '${tiri.length}'),
-          ],
-        );
-      },
-      loading: () => const SizedBox(
-        height: 40,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => Text(
-        'Non disponibile al momento.',
-        style: AppTypography.piccolo.copyWith(
-          color: context.colori.testoSecondario,
-        ),
-      ),
-    );
-  }
-}
-
-/// Card "I miei tempi": i cinque personal best più recenti in
-/// ordine di stile/distanza, formato compatto per tablet. Tocco apre
-/// l'elenco completo (`PbListScreen`, con tutte le combinazioni
-/// possibili per lo sport, registrate o no).
-class _CardTempiRecenti extends ConsumerWidget {
-  const _CardTempiRecenti({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pbAsync = ref.watch(personalBestListProvider(atleta.id));
-    final colori = context.colori;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.pannello),
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => PbListScreen(atleta: atleta))),
-      child: PoolCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconBadge(
-                  Icons.timer_outlined,
-                  colore: context.dominio.evidenzaAmbra,
-                ),
-                const SizedBox(width: AppSpacing.s12),
-                const Expanded(
-                  child: SectionHeader(
-                    'I miei tempi',
-                    spiegazione:
-                        'I tuoi ultimi personal best registrati, per stile '
-                        'e distanza. Tocca per vedere l\'elenco completo e '
-                        'aggiungerne di nuovi.',
-                  ),
-                ),
-                Icon(Icons.chevron_right, color: colori.testoSecondario),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            pbAsync.when(
-              data: (pb) {
-                if (pb.isEmpty) {
-                  return Text(
-                    'Nessun tempo registrato ancora.',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  );
-                }
-                final ordinati = [...pb]
-                  ..sort((a, b) {
-                    final perStile = a.stile.compareTo(b.stile);
-                    return perStile != 0
-                        ? perStile
-                        : a.distanzaM.compareTo(b.distanzaM);
-                  });
-                return Column(
-                  children: [
-                    for (final p in ordinati.take(5))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.s4,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${p.distanzaM}m ${capitalizzaParola(p.stile)}',
-                                style: AppTypography.corpo.copyWith(
-                                  color: colori.testo,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              formatPaceSeconds(p.tempoS),
-                              style: AppTypography.corpoForte.copyWith(
-                                color: colori.testo,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                );
-              },
-              loading: () => const SizedBox(
-                height: 40,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (_, _) => Text(
-                'Non disponibile al momento.',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Riepilogo del club (nome, sport) e KPI — % presenze e prossimi
-/// allenamenti già calcolati come nella versione precedente di questa
-/// schermata, più i gol totali per la pallanuoto.
-class _CardRiepilogoClub extends ConsumerWidget {
-  const _CardRiepilogoClub({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final clubAsync = ref.watch(clubAtletaProvider(atleta.clubId));
-    final presenzeAsync = ref.watch(presenzePerAtletaProvider(atleta.id));
-    final allenamentiAsync = ref.watch(
-      allenamentiAtletaProvider(atleta.clubId),
-    );
-    final colori = context.colori;
-
-    String? percentuale;
-    Allenamento? prossimo;
-    if (allenamentiAsync.hasValue) {
-      final allenamenti = allenamentiAsync.value!;
-      // Gli allenamenti dell'atleta: del suo gruppo o senza gruppo (di
-      // tutto il club). Gli stessi contano per la % presenze e per il
-      // prossimo allenamento.
-      final rilevanti = allenamenti
-          .where(
-            (a) => visibileNelGruppo(
-              gruppoDelRecord: a.gruppoId,
-              gruppoSelezionato: atleta.gruppoId,
-            ),
-          )
-          .toList();
-      prossimo = prossimoAllenamento(rilevanti, atleta.gruppoId);
-      if (presenzeAsync.hasValue && rilevanti.isNotEmpty) {
-        final idRilevanti = rilevanti.map((a) => a.id).toSet();
-        final presenti = presenzeAsync.value!
-            .where(
-              (p) =>
-                  p.stato == 'presente' &&
-                  idRilevanti.contains(p.allenamentoId),
-            )
-            .length;
-        percentuale = '${(presenti / rilevanti.length * 100).round()}%';
-      }
-    }
-
-    return PoolCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const IconBadge(Icons.pool_outlined),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: clubAsync.when(
-                  data: (club) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        club?.nome ?? 'Il tuo club',
-                        style: AppTypography.corpoForte.copyWith(
-                          color: colori.testo,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _etichettaSport(club?.sport),
-                        style: AppTypography.piccolo.copyWith(
-                          color: colori.testoSecondario,
-                        ),
-                      ),
-                    ],
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          Wrap(
-            spacing: AppSpacing.s24,
-            runSpacing: AppSpacing.s12,
-            children: [
-              StatPanel(etichetta: '% presenze', valore: percentuale ?? '—'),
-              _ProssimoAllenamentoStat(atleta: atleta, allenamento: prossimo),
-              if (atleta.sport == 'pallanuoto') _GolTotaliStat(atleta: atleta),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// «Prossimo allenamento»: i metri totali della scheda del primo
-/// allenamento in programma; al tocco si apre in modalità vasca (senza
-/// «Segna presenze», che è dell'allenatore).
-class _ProssimoAllenamentoStat extends ConsumerWidget {
-  const _ProssimoAllenamentoStat({
-    required this.atleta,
-    required this.allenamento,
-  });
-
-  final Atleta atleta;
-  final Allenamento? allenamento;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final prossimo = allenamento;
-    if (prossimo == null) {
-      return const StatPanel(
-        etichetta: 'Prossimo allenamento',
-        valore: '—',
-        confronto: 'Nessuno in programma',
-      );
-    }
-    final serie = ref.watch(serieAtletaProvider(prossimo.id));
-    final metri = serie.hasValue ? metriTotaliSerie(serie.value!) : null;
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppSpacing.s8),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              SchedaBordoVascaScreen(allenamento: prossimo, perAtleta: true),
-        ),
-      ),
-      child: StatPanel(
-        etichetta: 'Prossimo allenamento',
-        valore: metri == null || metri == 0 ? '—' : formattaMetri(metri),
-        confronto: '${_formattaData(prossimo.data)} · tocca per aprire',
-      ),
-    );
-  }
-}
-
-class _GolTotaliStat extends ConsumerWidget {
-  const _GolTotaliStat({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tiriAsync = ref.watch(tiriAtletaProvider(atleta.id));
-    final gol =
-        tiriAsync.value
-            ?.where((e) => e.tipo == 'tiro' && e.esito == 'gol')
-            .length ??
-        0;
-    return StatPanel(etichetta: 'Gol totali', valore: '$gol');
-  }
-}
-
-/// Prossima partita in agenda per il club (solo atleti di pallanuoto).
-class _ProssimiEventi extends ConsumerWidget {
-  const _ProssimiEventi({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pallanuoto = atleta.sport == 'pallanuoto';
-    final eventi = pallanuoto
-        ? [
-            for (final p
-                in ref.watch(partiteListProvider(atleta.clubId)).value ??
-                    const <Partita>[])
-              EventoCalendario.daPartita(p),
-          ]
-        : [
-            for (final g
-                in ref.watch(gareListProvider(atleta.clubId)).value ??
-                    const <Gara>[])
-              EventoCalendario.daGara(g),
-          ];
-    final prossimi = prossimiEventi(eventi, atleta.gruppoId, DateTime.now());
-    if (prossimi.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.s16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Prossimi eventi',
-            style: AppTypography.etichetta.copyWith(
-              color: context.colori.testoSecondario,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          AppListPanel(
-            righe: [
-              for (final e in prossimi)
-                AppListRow(
-                  leading: IconBadge(
-                    pallanuoto
-                        ? Icons.sports_outlined
-                        : Icons.emoji_events_outlined,
-                    colore: context.dominio.evidenzaViola,
-                    dimensione: 40,
-                  ),
-                  titolo: e.titolo,
-                  sottotitolo:
-                      '${_formattaData(e.data)}'
-                      '${e.sottotitolo != null ? ' · ${e.sottotitolo}' : ''}'
-                      '${e.diClub ? ' · Tutto il club' : ''}',
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Collegamenti non già raggiungibili dalle card sopra.
-class _AltriCollegamenti extends StatelessWidget {
-  const _AltriCollegamenti({required this.atleta});
-
-  final Atleta atleta;
-
-  @override
-  Widget build(BuildContext context) {
-    final pallanuoto = atleta.sport == 'pallanuoto';
-    return AppListPanel(
-      righe: [
-        AppListRow(
-          leading: IconBadge(
-            Icons.how_to_reg_outlined,
-            colore: context.dominio.evidenzaVerde,
-            dimensione: 40,
-          ),
-          titolo: 'Le mie presenze',
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MiePresenzeScreen(atleta: atleta),
-            ),
           ),
         ),
-        AppListRow(
-          leading: IconBadge(
-            Icons.event_note_outlined,
-            colore: context.dominio.evidenzaAmbra,
-            dimensione: 40,
-          ),
-          titolo: 'La mia stagione',
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => StagioneAtletaScreen(atleta: atleta),
-            ),
-          ),
-        ),
-        AppListRow(
-          leading: IconBadge(
-            Icons.bar_chart_outlined,
-            colore: context.dominio.evidenzaCiano,
-            dimensione: 40,
-          ),
-          titolo: 'Le mie statistiche',
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => StatisticheAtletaScreen(atleta: atleta),
-            ),
-          ),
-        ),
-        if (pallanuoto)
-          AppListRow(
-            leading: IconBadge(
-              Icons.sports_outlined,
-              colore: context.dominio.evidenzaViola,
-              dimensione: 40,
-            ),
-            titolo: 'Le mie partite',
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PartiteAtletaListScreen(
-                  clubId: atleta.clubId,
-                  filtroGruppoId: atleta.gruppoId,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

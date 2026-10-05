@@ -412,62 +412,95 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.modificabile) ...[
-          Row(
-            children: [
-              Expanded(
-                child: SegmentedButton<_ModalitaLavagna>(
-                  style: const ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  segments: const [
-                    ButtonSegment(
-                      value: _ModalitaLavagna.giocatori,
-                      label: Text('Giocatori'),
-                      icon: Icon(Icons.circle_outlined, size: 18),
+          LayoutBuilder(
+            builder: (context, vincoli) {
+              final modalita = SegmentedButton<_ModalitaLavagna>(
+                // Senza spunta: la scelta e' gia' evidenziata dal
+                // colore, e la spunta toglieva spazio all'etichetta
+                // che su telefono andava a capo a meta' parola.
+                showSelectedIcon: false,
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                segments: const [
+                  ButtonSegment(
+                    value: _ModalitaLavagna.giocatori,
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Giocatori', maxLines: 1),
                     ),
-                    ButtonSegment(
-                      value: _ModalitaLavagna.frecce,
-                      label: Text('Frecce'),
-                      icon: Icon(Icons.north_east, size: 18),
+                    icon: Icon(Icons.circle_outlined, size: 18),
+                  ),
+                  ButtonSegment(
+                    value: _ModalitaLavagna.frecce,
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Frecce', maxLines: 1),
+                    ),
+                    icon: Icon(Icons.north_east, size: 18),
+                  ),
+                ],
+                selected: {_modalita},
+                onSelectionChanged: (s) => setState(() {
+                  _modalita = s.first;
+                  _selezionato = null;
+                }),
+              );
+              final strumenti = <Widget>[
+                const PulsanteSpiegazione(
+                  titolo: 'Lavagna tattica',
+                  spiegazione: _spiegazioneLavagna,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.undo),
+                  tooltip: 'Annulla l\'ultima modifica',
+                  onPressed: _cronologia.isEmpty ? null : _annulla,
+                ),
+                IconButton(
+                  icon: Icon(
+                    widget.bloccata ? Icons.lock : Icons.lock_open_outlined,
+                  ),
+                  tooltip: widget.bloccata
+                      ? 'Sblocca lo scorrimento della pagina'
+                      : 'Blocca lo scorrimento della pagina (utile mentre '
+                            'disegni una freccia)',
+                  onPressed: () =>
+                      widget.onBloccataCambiato?.call(!widget.bloccata),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Cancella tutto',
+                  onPressed: vuoto ? null : _cancellaTutto,
+                ),
+              ];
+              // Sotto ~400 px quattro pulsanti da 48 lasciano al selettore
+              // meno di 70 px per segmento: gli strumenti scendono sotto.
+              if (vincoli.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    modalita,
+                    const SizedBox(height: AppSpacing.s4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: strumenti,
                     ),
                   ],
-                  selected: {_modalita},
-                  onSelectionChanged: (s) => setState(() {
-                    _modalita = s.first;
-                    _selezionato = null;
-                  }),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s8),
-              const PulsanteSpiegazione(
-                titolo: 'Lavagna tattica',
-                spiegazione: _spiegazioneLavagna,
-              ),
-              IconButton(
-                icon: const Icon(Icons.undo),
-                tooltip: 'Annulla l\'ultima modifica',
-                onPressed: _cronologia.isEmpty ? null : _annulla,
-              ),
-              IconButton(
-                icon: Icon(
-                  widget.bloccata ? Icons.lock : Icons.lock_open_outlined,
-                ),
-                tooltip: widget.bloccata
-                    ? 'Sblocca lo scorrimento della pagina'
-                    : 'Blocca lo scorrimento della pagina (utile mentre '
-                          'disegni una freccia)',
-                onPressed: () =>
-                    widget.onBloccataCambiato?.call(!widget.bloccata),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Cancella tutto',
-                onPressed: vuoto ? null : _cancellaTutto,
-              ),
-            ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: modalita),
+                  const SizedBox(width: AppSpacing.s8),
+                  ...strumenti,
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.s8),
           SegmentedButton<CampoLavagna>(
+            // Senza spunta: la scelta e' gia' evidenziata dal
+            // colore, e la spunta toglieva spazio all'etichetta
+            // che su telefono andava a capo a meta' parola.
+            showSelectedIcon: false,
             style: const ButtonStyle(visualDensity: VisualDensity.compact),
             segments: [
               for (final c in CampoLavagna.values)

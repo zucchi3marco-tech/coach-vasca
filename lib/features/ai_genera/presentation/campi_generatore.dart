@@ -189,10 +189,13 @@ class TileTipoLavoro extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.raggioPannello),
         onTap: () => onSelezionato(!selezionato),
-        child: SizedBox(
-          height: 56,
+        // Altezza minima, non fissa: le etichette lunghe ("Resistenza
+        // aerobica (...)") vanno su piu' righe invece di essere tagliate.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.s12),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4)
+                .copyWith(left: AppSpacing.s12),
             child: Row(
               children: [
                 Container(
@@ -207,7 +210,7 @@ class TileTipoLavoro extends StatelessWidget {
                 Expanded(
                   child: Text(
                     etichettaTipoLavoro(zona, mostraCodici: mostraCodici),
-                    maxLines: 2,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.piccolo.copyWith(
                       fontWeight: selezionato
@@ -257,23 +260,45 @@ class GrigliaTipiLavoro extends StatelessWidget {
       mostraCodici: mostraCodici,
       onSelezionato: (s) => onCambia(zona, s),
     );
-    return Column(
-      children: [
-        for (var i = 0; i < ordineTipiLavoro.length; i += 2) ...[
-          if (i > 0) const SizedBox(height: AppSpacing.s8),
-          Row(
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        // Sotto ~400 px due colonne lasciano all'etichetta meno di 100 px:
+        // un riquadro per riga.
+        if (vincoli.maxWidth < 400) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: tile(ordineTipiLavoro[i])),
-              const SizedBox(width: AppSpacing.s8),
-              Expanded(
-                child: i + 1 < ordineTipiLavoro.length
-                    ? tile(ordineTipiLavoro[i + 1])
-                    : const SizedBox.shrink(),
+              for (var i = 0; i < ordineTipiLavoro.length; i++) ...[
+                if (i > 0) const SizedBox(height: AppSpacing.s8),
+                tile(ordineTipiLavoro[i]),
+              ],
+            ],
+          );
+        }
+        return Column(
+          children: [
+            for (var i = 0; i < ordineTipiLavoro.length; i += 2) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.s8),
+              // Stessa altezza per i due riquadri della riga anche se
+              // un'etichetta va su piu' righe.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: tile(ordineTipiLavoro[i])),
+                    const SizedBox(width: AppSpacing.s8),
+                    Expanded(
+                      child: i + 1 < ordineTipiLavoro.length
+                          ? tile(ordineTipiLavoro[i + 1])
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-        ],
-      ],
+          ],
+        );
+      },
     );
   }
 }

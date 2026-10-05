@@ -66,10 +66,10 @@ class RefertoPartitaScreen extends ConsumerWidget {
         title: const Text('Referto'),
         actions: [
           if (refertoAsync.value != null)
-            TextButton.icon(
+            IconButton(
+              tooltip: 'Rileggi referto',
               onPressed: () => _rileggiReferto(context),
               icon: const Icon(Icons.document_scanner_outlined),
-              label: const Text('Rileggi referto'),
             ),
         ],
       ),

@@ -12,6 +12,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../data/codici_gruppo_repository.dart';
 import '../domain/codice_gruppo.dart';
@@ -92,7 +93,12 @@ class _CodiciGruppoScreenState extends ConsumerState<CodiciGruppoScreen> {
     final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: Text('Codice — ${widget.gruppo.nome}')),
+      appBar: AppBar(
+        title: TitoloDueRighe(
+          titolo: 'Codice',
+          sottotitolo: widget.gruppo.nome,
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

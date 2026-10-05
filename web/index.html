@@ -36,6 +36,11 @@
 
   <title>WaterTactics</title>
   <link rel="manifest" href="manifest.json">
+  <!-- Copia di prova: in modalita' demo l'albero di accessibilita' e'
+       sempre attivo (main.dart). Rendere "toccabili" anche i nodi di solo
+       testo permette di selezionare col mouse il singolo testo o pulsante
+       da segnalare; i tocchi risalgono comunque fino a flutter-view. -->
+  <style>flt-semantics { pointer-events: auto !important; }</style>
 </head>
 <body>
   <!--

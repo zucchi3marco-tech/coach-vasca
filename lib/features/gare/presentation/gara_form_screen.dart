@@ -255,6 +255,10 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
             ),
             const SizedBox(height: AppSpacing.s8),
             SegmentedButton<String>(
+              // Senza spunta: la scelta e' gia' evidenziata dal
+              // colore, e la spunta toglieva spazio all'etichetta
+              // che su telefono andava a capo a meta' parola.
+              showSelectedIcon: false,
               segments: const [
                 ButtonSegment(value: 'bassa', label: Text('Bassa')),
                 ButtonSegment(value: 'media', label: Text('Media')),
