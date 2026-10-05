@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/pace_format.dart';
@@ -6,8 +8,8 @@ import '../../atleti/application/personal_best_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/personal_best.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
-import '../../tabelle_passi/domain/tabella_passo.dart';
 import '../../test/application/test_providers.dart';
+import '../../test/domain/test_ingresso.dart';
 import '../domain/parametri_generazione.dart';
 import '../domain/scheda_generata.dart';
 
@@ -149,31 +151,68 @@ AssegnazioneCorsie assegnaCorsie(
   );
 }
 
+/// Oltre questa attesa, un singolo atleta senza risposta (rete lenta o
+/// bloccata) non deve far restare l'intera generazione "in caricamento"
+/// all'infinito: si procede senza i suoi dati, come se non li avesse.
+const _timeoutDatiAtleta = Duration(seconds: 8);
+
+/// PB (tutti gli stili) e passi dal test di soglia più recente di un
+/// atleta — letti in parallelo fra loro (non uno in attesa dell'altro),
+/// con un timeout: una rete lenta rallenta, non blocca indefinitamente.
+Future<({List<PersonalBest> pb, Map<String, double>? passiSoglia})> _datiAtleta(
+  WidgetRef ref,
+  String atletaId,
+) async {
+  try {
+    final risultati = await Future.wait([
+      ref.read(personalBestListProvider(atletaId).future),
+      ref.read(testListProvider(atletaId).future),
+    ]).timeout(_timeoutDatiAtleta);
+    final pb = risultati[0] as List<PersonalBest>;
+    final test = risultati[1] as List<TestIngresso>;
+    final ultimo = test.isEmpty ? null : test.first;
+    if (ultimo == null) return (pb: pb, passiSoglia: null);
+
+    final tabelle = await ref
+        .read(tabellePassiProvider(ultimo.id).future)
+        .timeout(_timeoutDatiAtleta);
+    if (tabelle.isEmpty) return (pb: pb, passiSoglia: null);
+    return (
+      pb: pb,
+      passiSoglia: {for (final t in tabelle) t.zona: t.passo100S},
+    );
+  } on TimeoutException {
+    return (pb: const <PersonalBest>[], passiSoglia: null);
+  }
+}
+
 /// Come [assegnaCorsie], leggendo i PB di ogni atleta dal provider — più
 /// i passi dal test di soglia più recente di ognuno, quando esiste e ha
 /// le tabelle passi generate (FASE 3): servono a [ripartenzaPerSerie]
-/// per le zone A1/A2/B1.
+/// per le zone A1/A2/B1. Un atleta per volta sarebbe lento con gruppi
+/// numerosi (due richieste di rete ciascuno): letti tutti in parallelo.
 Future<AssegnazioneCorsie> calcolaAssegnazioneCorsie(
   WidgetRef ref,
   List<Atleta> atleti,
 ) async {
+  final datiPerAtleta = await Future.wait([
+    for (final atleta in atleti) _datiAtleta(ref, atleta.id),
+  ]);
+
   final pb = <String, List<PersonalBest>>{};
   final passiSoglia = <String, Map<String, double>>{};
   final senzaTestSoglia = <String>[];
-  for (final atleta in atleti) {
-    pb[atleta.id] = await ref.read(personalBestListProvider(atleta.id).future);
-
-    final test = await ref.read(testListProvider(atleta.id).future);
-    final ultimo = test.isEmpty ? null : test.first;
-    final tabelle = ultimo == null
-        ? const <TabellaPasso>[]
-        : await ref.read(tabellePassiProvider(ultimo.id).future);
-    if (tabelle.isEmpty) {
-      senzaTestSoglia.add(atleta.id);
+  for (var i = 0; i < atleti.length; i++) {
+    final id = atleti[i].id;
+    pb[id] = datiPerAtleta[i].pb;
+    final passi = datiPerAtleta[i].passiSoglia;
+    if (passi == null) {
+      senzaTestSoglia.add(id);
     } else {
-      passiSoglia[atleta.id] = {for (final t in tabelle) t.zona: t.passo100S};
+      passiSoglia[id] = passi;
     }
   }
+
   final base = assegnaCorsie(atleti, pb);
   return AssegnazioneCorsie(
     corsie: base.corsie,

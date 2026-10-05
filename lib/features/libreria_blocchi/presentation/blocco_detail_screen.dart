@@ -15,6 +15,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../application/libreria_blocchi_providers.dart';
 import '../domain/training_block.dart';
 import 'blocco_form_screen.dart';
+import 'parte_form_screen.dart';
 
 String _labelVolume(TrainingBlockParte p) {
   final durata = p.durataS;
@@ -101,11 +102,19 @@ class BloccoDetailScreen extends ConsumerWidget {
           Expanded(
             child: partiAsync.when(
               data: (parti) => parti.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icona: Icons.list_alt_outlined,
                       titolo: 'Nessuna parte',
-                      descrizione: 'Questo blocco non ha ancora serie: modificalo per aggiungerne, o re-importa il file Excel.',
-                      azionePrincipale: 'Ho capito',
+                      descrizione: 'Questo blocco non ha ancora serie: aggiungine una, o re-importa il file Excel.',
+                      azionePrincipale: 'Aggiungi parte',
+                      onAzionePrincipale: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ParteFormScreen(
+                            bloccoId: blocco.id,
+                            clubId: blocco.clubId,
+                          ),
+                        ),
+                      ),
                     )
                   : SingleChildScrollView(
                       child: AppListPanel(
@@ -120,6 +129,15 @@ class BloccoDetailScreen extends ConsumerWidget {
                                 p.esecuzione,
                                 if (p.recuperoS != null) "rec ${p.recuperoS}''",
                               ].join(' · '),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ParteFormScreen(
+                                    bloccoId: blocco.id,
+                                    clubId: blocco.clubId,
+                                    parte: p,
+                                  ),
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -132,6 +150,22 @@ class BloccoDetailScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Nuova parte',
+        onPressed: () {
+          final parti = partiAsync.value ?? const <TrainingBlockParte>[];
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ParteFormScreen(
+                bloccoId: blocco.id,
+                clubId: blocco.clubId,
+                ordineSuccessivo: parti.length + 1,
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

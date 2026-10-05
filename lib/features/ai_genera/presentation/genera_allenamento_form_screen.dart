@@ -34,6 +34,13 @@ import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
 
+// Oltre questa attesa, il calcolo delle corsie/della libreria blocchi
+// (migliorano la generazione ma non sono indispensabili) smette di
+// bloccare la schermata: si procede con la generazione "libera" di
+// sempre invece di restare a caricare all'infinito se la rete è lenta
+// o un gruppo ha molti atleti.
+const _timeoutPreparazione = Duration(seconds: 12);
+
 const _attrezzaturaBraccia = ['pull', 'palette'];
 const _attrezzaturaGambe = ['pinne', 'tavola', 'boccaglio'];
 const _attrezzaturaLavoroCentraleDisponibile = [
@@ -757,11 +764,15 @@ class _GeneraAllenamentoFormScreenState
       final atletiDelGruppo = gruppoId == null
           ? tuttiGliAtleti
           : tuttiGliAtleti.where((a) => a.gruppoId == gruppoId).toList();
-      assegnazione = await calcolaAssegnazioneCorsie(ref, atletiDelGruppo);
+      assegnazione = await calcolaAssegnazioneCorsie(
+        ref,
+        atletiDelGruppo,
+      ).timeout(_timeoutPreparazione);
     } catch (_) {
       // Le corsie migliorano la generazione (ripartenze sui passi reali),
-      // ma non sono indispensabili: se il calcolo fallisce si procede
-      // comunque, senza passi di riferimento.
+      // ma non sono indispensabili: se il calcolo fallisce (o va per le
+      // lunghe: vedi _timeoutPreparazione) si procede comunque, senza
+      // passi di riferimento — mai la schermata bloccata in attesa.
     }
 
     final Map<String, String> nomiGruppi = {
@@ -777,11 +788,11 @@ class _GeneraAllenamentoFormScreenState
         clubId: widget.clubId,
         sportRichiesto: sportRichiestoDaClub(club?.sport),
         nomeGruppo: nomiGruppi[gruppoId],
-      );
+      ).timeout(_timeoutPreparazione);
     } catch (_) {
       // La libreria blocchi migliora la generazione, ma non è
-      // indispensabile: se il calcolo fallisce si procede comunque con
-      // la generazione "libera" di sempre.
+      // indispensabile: se il calcolo fallisce o va per le lunghe si
+      // procede comunque con la generazione "libera" di sempre.
     }
 
     final parametri = ParametriGenerazione(
