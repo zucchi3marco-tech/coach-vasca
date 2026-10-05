@@ -152,9 +152,16 @@ Future<List<BloccoDisponibile>> blocchiCompatibili(
 
   final scelti = compatibili.take(massimo).toList();
   final repository = ref.read(trainingBlocksRepositoryProvider);
+  // Una richiesta di rete per blocco (fino a 40): una per volta sarebbe
+  // lento, qui tutte insieme in parallelo.
+  final tutteLeParti = await Future.wait([
+    for (final blocco in scelti) repository.fetchParti(blocco.id),
+  ]);
+
   final risultato = <BloccoDisponibile>[];
-  for (final blocco in scelti) {
-    final parti = await repository.fetchParti(blocco.id);
+  for (var i = 0; i < scelti.length; i++) {
+    final blocco = scelti[i];
+    final parti = tutteLeParti[i];
     if (parti.isEmpty) continue;
     risultato.add(
       BloccoDisponibile(

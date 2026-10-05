@@ -40,6 +40,12 @@ import '../domain/scheda_generata.dart';
 import '../domain/settimana_generata.dart';
 import 'campi_generatore.dart';
 
+// Oltre questa attesa, un calcolo "di contorno" (corsie, libreria
+// blocchi, contesto dei controlli settimanali) smette di bloccare la
+// schermata — migliorano la generazione ma non sono indispensabili, mai
+// un caricamento infinito per rete lenta o un gruppo con molti atleti.
+const _timeoutPreparazione = Duration(seconds: 12);
+
 const _tipiSettimana = ['carico', 'scarico', 'gara', 'recupero', 'test'];
 const _abbreviazioniGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const _nomiGiorni = [
@@ -464,9 +470,14 @@ class _GeneraSettimanaFormScreenState
       final atletiDelGruppo = gruppoId == null
           ? tuttiGliAtleti
           : tuttiGliAtleti.where((a) => a.gruppoId == gruppoId).toList();
-      assegnazione = await calcolaAssegnazioneCorsie(ref, atletiDelGruppo);
+      assegnazione = await calcolaAssegnazioneCorsie(
+        ref,
+        atletiDelGruppo,
+      ).timeout(_timeoutPreparazione);
     } catch (_) {
-      // Le corsie migliorano la generazione, ma non sono indispensabili.
+      // Le corsie migliorano la generazione, ma non sono indispensabili:
+      // se vanno per le lunghe (rete lenta, gruppo numeroso) non devono
+      // bloccare la schermata all'infinito.
     }
     final corsie = assegnazione.corsie;
 
@@ -486,7 +497,7 @@ class _GeneraSettimanaFormScreenState
         clubId: widget.clubId,
         sportRichiesto: sportRichiestoDaClub(club?.sport),
         nomeGruppo: nomiGruppi[gruppoId],
-      );
+      ).timeout(_timeoutPreparazione);
     } catch (_) {
       // Come le corsie: migliora la generazione, non è indispensabile.
     }
@@ -642,11 +653,21 @@ class _GeneraSettimanaFormScreenState
       final dataFineSettimana = _dataInizio.add(
         Duration(days: giorniOrdinati.last),
       );
-      final contesto = await _calcolaContestoControlli(
-        gruppoId: gruppoId,
-        dataFineSettimana: dataFineSettimana,
-        sportClub: sportClub,
+      var contesto = (
+        garaAltaImminente: false,
+        mediaUltimeSettimane: null as double?,
+        sportPallanuoto: false,
       );
+      try {
+        contesto = await _calcolaContestoControlli(
+          gruppoId: gruppoId,
+          dataFineSettimana: dataFineSettimana,
+          sportClub: sportClub,
+        ).timeout(_timeoutPreparazione);
+      } catch (_) {
+        // I controlli settimanali restano solo meno precisi, non devono
+        // bloccare la schermata di revisione.
+      }
 
       if (!mounted) return;
       final salvata = await Navigator.of(context).push<bool>(
