@@ -35,8 +35,10 @@ class RiepilogoVolumi extends StatelessWidget {
     }
     final blocchi = [
       for (final b in ordineBlocchi)
-        if (perBlocco[b] != null)
-          '${labelBloccoBreve(b)} ${formattaMetri(perBlocco[b]!)}',
+        // Fasi solo a tempo (0 m) non si elencano; spazio fisso tra
+        // etichetta e metri, cosi' "Altro" e il suo numero non si separano.
+        if ((perBlocco[b] ?? 0) > 0)
+          '${labelBloccoBreve(b)} ${formattaMetri(perBlocco[b]!)}',
     ];
     final totaleDurataS = serie
         .where((s) => s.aTempo)

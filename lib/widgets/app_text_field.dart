@@ -82,6 +82,8 @@ class AppTextField extends StatelessWidget {
           style: AppTypography.corpo.copyWith(color: colori.testo),
           decoration: InputDecoration(
             helperText: aiuto,
+            // Il suggerimento va a capo invece di finire in "...".
+            helperMaxLines: 4,
             suffixIcon: suffixIcon,
           ),
         ),

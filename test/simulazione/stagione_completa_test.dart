@@ -220,28 +220,31 @@ void main() {
       expect(soloData(dopoNatale.data), DateTime(2027, 1, 7));
     });
 
-    test('gli allenamenti futuri gia\' programmati non contano come assenze', () {
-      final adesso = DateTime(2026, 11, 15, 12);
-      final passati = allenamenti.where((a) => a.data.isBefore(adesso));
-      final presenze = [
-        for (final a in passati)
-          Presenza(
-            id: 'p-${a.id}',
-            allenamentoId: a.id,
-            atletaId: 'atleta-0',
-            clubId: 'club',
-            stato: 'presente',
-          ),
-      ];
-      final percentuale = percentualePresenze(
-        allenamenti: allenamenti,
-        presenze: presenze,
-        atletaId: 'atleta-0',
-        gruppoAtleta: 'u14',
-        adesso: adesso,
-      );
-      expect(percentuale, 100);
-    });
+    test(
+      'gli allenamenti futuri gia\' programmati non contano come assenze',
+      () {
+        final adesso = DateTime(2026, 11, 15, 12);
+        final passati = allenamenti.where((a) => a.data.isBefore(adesso));
+        final presenze = [
+          for (final a in passati)
+            Presenza(
+              id: 'p-${a.id}',
+              allenamentoId: a.id,
+              atletaId: 'atleta-0',
+              clubId: 'club',
+              stato: 'presente',
+            ),
+        ];
+        final percentuale = percentualePresenze(
+          allenamenti: allenamenti,
+          presenze: presenze,
+          atletaId: 'atleta-0',
+          gruppoAtleta: 'u14',
+          adesso: adesso,
+        );
+        expect(percentuale, 100);
+      },
+    );
   });
 
   group('Carico e grafico della forma su tutta la stagione', () {
@@ -258,9 +261,7 @@ void main() {
         expect(p.data.hour, 0, reason: '${p.data}');
       }
       final totaleIn = carico.values.reduce((a, b) => a + b);
-      final totaleOut = punti
-          .map((p) => p.carico)
-          .reduce((a, b) => a + b);
+      final totaleOut = punti.map((p) => p.carico).reduce((a, b) => a + b);
       expect(totaleOut, totaleIn);
       // Il lunedi dopo il cambio dell'ora il carico c'e'.
       expect(perGiorno[DateTime(2026, 10, 26)]!.carico, 450);
@@ -278,7 +279,8 @@ void main() {
   group('Prontezza, un anno di schede', () {
     final giorni = giorniStagione();
     final schede = {
-      for (var a = 0; a < 12; a++) a: [for (final g in giorni) schedaDelGiorno(a, g)],
+      for (var a = 0; a < 12; a++)
+        a: [for (final g in giorni) schedaDelGiorno(a, g)],
     };
 
     PunteggioBenessere punteggio(int a, DateTime g) {
@@ -287,18 +289,20 @@ void main() {
       return calcolaPunteggio(s, dataNascita: nascita(a), storico: tutte);
     }
 
-    test('ogni giorno, ogni atleta: punteggio fra 0 e 100 e semaforo coerente',
-        () {
-      for (var a = 0; a < 12; a++) {
-        for (final g in giorni) {
-          final p = punteggio(a, g);
-          expect(p.valore, inInclusiveRange(0, 100));
-          if (p.motivi.any((m) => m.critico)) {
-            expect(p.livello, 2, reason: 'atleta $a il $g');
+    test(
+      'ogni giorno, ogni atleta: punteggio fra 0 e 100 e semaforo coerente',
+      () {
+        for (var a = 0; a < 12; a++) {
+          for (final g in giorni) {
+            final p = punteggio(a, g);
+            expect(p.valore, inInclusiveRange(0, 100));
+            if (p.motivi.any((m) => m.critico)) {
+              expect(p.livello, 2, reason: 'atleta $a il $g');
+            }
           }
         }
-      }
-    });
+      },
+    );
 
     test('il confronto col suo solito parte solo dopo 5 schede', () {
       expect(punteggio(0, giorni[3]).mediaPersonale, isNull);

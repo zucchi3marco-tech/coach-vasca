@@ -124,8 +124,8 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         expect(find.textContaining('2.800 m'), findsOneWidget);
-        expect(find.textContaining('Risc. 400'), findsOneWidget);
-        expect(find.textContaining('Princ. 2.400'), findsOneWidget);
+        expect(find.textContaining('Risc.\u00A0400'), findsOneWidget);
+        expect(find.textContaining('Princ.\u00A02.400'), findsOneWidget);
         expect(find.textContaining('Defat.'), findsNothing);
         expect(find.textContaining('Materiale: pull'), findsOneWidget);
       });

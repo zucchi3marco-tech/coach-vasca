@@ -33,7 +33,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 5;
+const _versioneDati = 6;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -734,7 +734,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 luogo: Value(
                   casa == noi
                       ? 'Piscina Comunale "Ettore Bulgarelli", vasca coperta'
-                      : 'In trasferta · ${trasferta == noi ? casa : trasferta}',
+                      : 'Piscina della squadra ospitante',
                 ),
                 campionato: const Value('Campionato Under 14 Emilia-Romagna'),
                 coloreCalottina: const Value('bianca'),

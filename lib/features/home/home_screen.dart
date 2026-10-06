@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -278,74 +280,120 @@ class BarraSchedeTelefono extends StatelessWidget {
           top: false,
           child: SizedBox(
             height: 68,
-            child: Row(
-              children: [
-                for (var i = 0; i < destinazioni.length; i++)
-                  Expanded(
-                    child: Semantics(
-                      selected: i == selezionata,
-                      button: true,
-                      label: destinazioni[i].etichetta.replaceAll('\u00AD', ''),
-                      excludeSemantics: true,
-                      child: InkWell(
-                        onTap: () => onSeleziona(i),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeOutCubic,
-                              width: 48,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: i == selezionata
-                                    ? colori[i].withValues(alpha: 0.16)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                              child: Icon(
-                                i == selezionata
-                                    ? destinazioni[i].iconaSelezionata
-                                    : destinazioni[i].icona,
-                                size: 22,
-                                color: i == selezionata
-                                    ? colori[i]
-                                    : c.testoSecondario,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 2,
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  destinazioni[i].etichettaBreve,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: AppTypography.etichetta.copyWith(
-                                    fontSize: 12,
+            child: LayoutBuilder(
+              builder: (context, vincoli) {
+                final larghezze = _larghezzeCelle(context, vincoli.maxWidth);
+                return Row(
+                  children: [
+                    for (var i = 0; i < destinazioni.length; i++)
+                      SizedBox(
+                        width: larghezze[i],
+                        child: Semantics(
+                          selected: i == selezionata,
+                          button: true,
+                          label: destinazioni[i].etichetta.replaceAll(
+                            '\u00AD',
+                            '',
+                          ),
+                          excludeSemantics: true,
+                          child: InkWell(
+                            onTap: () => onSeleziona(i),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  width: 48,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color: i == selezionata
+                                        ? colori[i].withValues(alpha: 0.16)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: Icon(
+                                    i == selezionata
+                                        ? destinazioni[i].iconaSelezionata
+                                        : destinazioni[i].icona,
+                                    size: 22,
                                     color: i == selezionata
                                         ? colori[i]
                                         : c.testoSecondario,
-                                    fontWeight: i == selezionata
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      destinazioni[i].etichettaBreve,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: _stileEtichetta(i == selezionata)
+                                          .copyWith(
+                                            color: i == selezionata
+                                                ? colori[i]
+                                                : c.testoSecondario,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
         ),
       ),
     );
+  }
+
+  static const _dimensioneEtichetta = 12.0;
+
+  TextStyle _stileEtichetta(bool selezionata) =>
+      AppTypography.etichetta.copyWith(
+        fontSize: _dimensioneEtichetta,
+        fontWeight: selezionata ? FontWeight.w700 : FontWeight.w500,
+      );
+
+  /// Celle larghe quanto serve alla loro etichetta: con sei celle uguali
+  /// "Allenamenti" doveva rimpicciolirsi e su 360 px risultava piu'
+  /// piccola delle altre. Cosi' tutte le etichette hanno la stessa misura
+  /// e lo spazio avanzato si divide in parti uguali.
+  List<double> _larghezzeCelle(BuildContext context, double totale) {
+    final n = destinazioni.length;
+    final scala = MediaQuery.textScalerOf(context);
+    final minime = <double>[
+      for (final d in destinazioni)
+        math.max(
+          52,
+          (TextPainter(
+                text: TextSpan(
+                  text: d.etichettaBreve,
+                  style: _stileEtichetta(true),
+                ),
+                textScaler: scala,
+                maxLines: 1,
+                textDirection: TextDirection.ltr,
+              )..layout()).width +
+              10,
+        ),
+    ];
+    final somma = minime.fold<double>(0, (a, b) => a + b);
+    // Se non ci stanno neanche cosi' (testo di sistema molto grande),
+    // celle uguali: il FittedBox rimpicciolisce l'etichetta senza
+    // spezzarla.
+    if (somma > totale) return List.filled(n, totale / n);
+    final extra = (totale - somma) / n;
+    return [for (final m in minime) m + extra];
   }
 }

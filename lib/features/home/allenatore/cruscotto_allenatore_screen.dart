@@ -140,7 +140,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
       _Azione(
         icona: Icons.add_task,
         titolo: 'Nuovo allenamento',
-        sottotitolo: 'Programma una seduta',
+        sottotitolo: 'Mettilo in calendario',
         colore: dominio.evidenzaCiano,
         onTap: () => _apri(context, AllenamentoFormScreen(clubId: club.id)),
       ),

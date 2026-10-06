@@ -43,6 +43,13 @@ class Partita {
   /// settimanale (FASE 3) scatta solo per "alta".
   final String importanza;
 
+  bool get inCasa => nostraSquadra != 'trasferta';
+
+  /// La squadra contro cui giochiamo: negli elenchi e' l'informazione
+  /// che conta, mentre "Casa - Trasferta" per intero su telefono veniva
+  /// troncato proprio prima del nome dell'avversario.
+  String get avversario => inCasa ? squadraTrasferta : squadraCasa;
+
   factory Partita.fromMap(Map<String, dynamic> map) {
     return Partita(
       id: map['id'] as String,

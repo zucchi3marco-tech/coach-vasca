@@ -125,6 +125,11 @@ class _ParteFormScreenState extends ConsumerState<ParteFormScreen> {
     super.dispose();
   }
 
+  String? _maggioreDiZero(String? v) {
+    final n = int.tryParse(v?.trim() ?? '');
+    return (n == null || n <= 0) ? '> 0' : null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -226,11 +231,13 @@ class _ParteFormScreenState extends ConsumerState<ParteFormScreen> {
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica parte' : 'Nuova parte'),
         actions: [
+          // Icona invece di "Elimina" scritto: su telefono il testo toglieva
+          // spazio al titolo della barra.
           if (_isEditing)
-            TextButton.icon(
+            IconButton(
+              tooltip: 'Elimina parte',
               onPressed: _elimina,
               icon: Icon(Icons.delete_outline, color: colori.rosso),
-              label: Text('Elimina', style: TextStyle(color: colori.rosso)),
             ),
         ],
       ),
@@ -247,6 +254,10 @@ class _ParteFormScreenState extends ConsumerState<ParteFormScreen> {
               titolo: 'Volume',
               campi: [
                 SegmentedButton<bool>(
+                  // Senza spunta: la scelta e' gia' evidenziata dal
+                  // colore, e la spunta toglieva spazio all'etichetta
+                  // che su telefono andava a capo a meta' parola.
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(value: false, label: Text('Distanza')),
                     ButtonSegment(value: true, label: Text('A tempo')),
@@ -255,58 +266,66 @@ class _ParteFormScreenState extends ConsumerState<ParteFormScreen> {
                   onSelectionChanged: (s) => setState(() => _aTempo = s.first),
                 ),
                 const SizedBox(height: AppSpacing.s12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Giri',
-                        controller: _giriController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final n = int.tryParse(v?.trim() ?? '');
-                          return (n == null || n <= 0) ? '> 0' : null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: AppTextField(
-                        etichetta: 'Ripetizioni',
-                        controller: _ripetizioniController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final n = int.tryParse(v?.trim() ?? '');
-                          return (n == null || n <= 0) ? '> 0' : null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    if (!_aTempo)
-                      Expanded(
-                        child: AppTextField(
-                          etichetta: 'Distanza (m)',
-                          controller: _distanzaController,
-                          keyboardType: TextInputType.number,
-                          validator: (v) {
-                            final n = int.tryParse(v?.trim() ?? '');
-                            return (n == null || n <= 0) ? '> 0' : null;
-                          },
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: AppTextField(
-                          etichetta: 'Durata',
-                          controller: _durataController,
-                          aiuto: 'min:sec',
-                          validator: (v) {
-                            final s = parsePaceMmSs(v ?? '');
-                            return (s == null || s <= 0) ? 'min:sec' : null;
-                          },
-                        ),
-                      ),
-                  ],
+                // Su telefono i tre campi in fila troncavano le etichette
+                // ("Ripetiz…"): sotto i 560 px Giri e Ripetizioni stanno
+                // insieme e la misura va sulla riga sotto.
+                LayoutBuilder(
+                  builder: (context, vincoli) {
+                    final giri = AppTextField(
+                      etichetta: 'Giri',
+                      controller: _giriController,
+                      keyboardType: TextInputType.number,
+                      validator: _maggioreDiZero,
+                    );
+                    final ripetizioni = AppTextField(
+                      etichetta: 'Ripetizioni',
+                      controller: _ripetizioniController,
+                      keyboardType: TextInputType.number,
+                      validator: _maggioreDiZero,
+                    );
+                    final misura = _aTempo
+                        ? AppTextField(
+                            etichetta: 'Durata',
+                            controller: _durataController,
+                            aiuto: 'min:sec',
+                            validator: (v) {
+                              final s = parsePaceMmSs(v ?? '');
+                              return (s == null || s <= 0) ? 'min:sec' : null;
+                            },
+                          )
+                        : AppTextField(
+                            etichetta: 'Distanza (m)',
+                            controller: _distanzaController,
+                            keyboardType: TextInputType.number,
+                            validator: _maggioreDiZero,
+                          );
+                    final coppia = Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: giri),
+                        const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: ripetizioni),
+                      ],
+                    );
+                    if (vincoli.maxWidth < 560) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          coppia,
+                          const SizedBox(height: AppSpacing.s12),
+                          misura,
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: coppia),
+                        const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: misura),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

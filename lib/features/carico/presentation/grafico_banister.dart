@@ -35,75 +35,86 @@ class GraficoBanister extends StatelessWidget {
       dotData: const FlDotData(show: false),
     );
 
-    final intervalloEtichette = (punti.length / 5).ceil().clamp(
-      1,
-      punti.length,
-    );
-
-    return LineChart(
-      LineChartData(
-        lineBarsData: [
-          linea(spot((p) => p.fitness), dominio.curvaFitness(colori)),
-          linea(spot((p) => p.fatica), dominio.curvaFatica(colori)),
-          linea(spot((p) => p.forma), dominio.curvaForma(colori)),
-        ],
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 40,
-              // Sempre su una riga: "5.2K" andava a capo come "5.2 / K".
-              getTitlesWidget: (value, meta) => Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    meta.formattedValue,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: AppTypography.etichetta.copyWith(
-                      color: context.colori.testoSecondario,
+    // Quante date ci stanno sotto il grafico senza toccarsi: su telefono
+    // cinque etichette "gg/mm" finivano una addosso all'altra.
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        final quanteDate = ((vincoli.maxWidth - 40) / 64).floor().clamp(2, 6);
+        final intervalloEtichette = (punti.length / quanteDate).ceil().clamp(
+          1,
+          punti.length,
+        );
+        return LineChart(
+          LineChartData(
+            lineBarsData: [
+              linea(spot((p) => p.fitness), dominio.curvaFitness(colori)),
+              linea(spot((p) => p.fatica), dominio.curvaFatica(colori)),
+              linea(spot((p) => p.forma), dominio.curvaForma(colori)),
+            ],
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  // Niente minimo e massimo esatti ("618.7", "-395.9"): si
+                  // sovrapponevano alle tacche tonde vicine.
+                  minIncluded: false,
+                  maxIncluded: false,
+                  // Sempre su una riga: "5.2K" andava a capo come "5.2 / K".
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        meta.formattedValue,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: AppTypography.etichetta.copyWith(
+                          color: context.colori.testoSecondario,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  interval: intervalloEtichette.toDouble(),
+                  maxIncluded: false,
+                  getTitlesWidget: (value, meta) {
+                    final indice = value.round();
+                    if (indice < 0 || indice >= punti.length) {
+                      return const SizedBox.shrink();
+                    }
+                    final data = punti[indice].data;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.s4),
+                      child: Text(
+                        '${data.day.toString().padLeft(2, '0')}/'
+                        '${data.month.toString().padLeft(2, '0')}',
+                        style: AppTypography.piccolo.copyWith(
+                          color: colori.testoSecondario,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
+            gridData: const FlGridData(show: true),
+            borderData: FlBorderData(show: false),
           ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 28,
-              interval: intervalloEtichette.toDouble(),
-              getTitlesWidget: (value, meta) {
-                final indice = value.round();
-                if (indice < 0 || indice >= punti.length) {
-                  return const SizedBox.shrink();
-                }
-                final data = punti[indice].data;
-                return Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.s4),
-                  child: Text(
-                    '${data.day.toString().padLeft(2, '0')}/'
-                    '${data.month.toString().padLeft(2, '0')}',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        gridData: const FlGridData(show: true),
-        borderData: FlBorderData(show: false),
-      ),
+        );
+      },
     );
   }
 }

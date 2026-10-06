@@ -251,7 +251,11 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     blocco(
-                      TestataAtleta(atleta: atleta, statistiche: statistiche),
+                      TestataAtleta(
+                        atleta: atleta,
+                        statistiche: statistiche,
+                        vistaAllenatore: vistaAllenatore,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     blocco(const TitoloSezione('In programma')),
@@ -280,9 +284,20 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                         blocco(card),
                       ],
                     const SizedBox(height: 20),
-                    blocco(_CardAndamento(atleta: atleta)),
+                    blocco(
+                      _CardAndamento(
+                        atleta: atleta,
+                        vistaAllenatore: vistaAllenatore,
+                      ),
+                    ),
                     const SizedBox(height: 20),
-                    blocco(const TitoloSezione('Tutto il tuo mondo')),
+                    blocco(
+                      TitoloSezione(
+                        vistaAllenatore
+                            ? 'Tutto su ${atleta.nome}'
+                            : 'Tutto il tuo mondo',
+                      ),
+                    ),
                     GrigliaRiquadri(voci: riquadri),
                   ],
                 );
@@ -316,9 +331,10 @@ class AtletaDashboardScreen extends StatelessWidget {
 /// Card "Andamento": grafico Banister compatto, tocco apre il dettaglio
 /// completo (`CaricoAtletaScreen`).
 class _CardAndamento extends ConsumerWidget {
-  const _CardAndamento({required this.atleta});
+  const _CardAndamento({required this.atleta, this.vistaAllenatore = false});
 
   final Atleta atleta;
+  final bool vistaAllenatore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -355,16 +371,16 @@ class _CardAndamento extends ConsumerWidget {
                   child: Icon(Icons.show_chart, color: accento),
                 ),
                 const SizedBox(width: AppSpacing.s12),
-                const Expanded(
+                Expanded(
                   child: SectionHeader(
-                    'La tua forma',
+                    vistaAllenatore ? 'Forma' : 'La tua forma',
                     spiegazione:
                         'Il grafico Banister: tre curve calcolate dagli '
-                        'allenamenti a cui hai partecipato. Fitness cresce '
+                        'allenamenti ${vistaAllenatore ? 'svolti' : 'a cui hai partecipato'}. Fitness cresce '
                         'con il carico accumulato nel tempo, Fatica cresce '
                         'più in fretta ma si scarica anche più in fretta, '
                         'Forma è la differenza fra le due — più alta è, '
-                        'più sei pronto per una partita.',
+                        'più ${vistaAllenatore ? 'è pronto' : 'sei pronto'} per una partita.',
                   ),
                 ),
                 Icon(Icons.chevron_right, color: colori.testoSecondario),

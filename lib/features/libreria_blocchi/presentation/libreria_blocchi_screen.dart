@@ -416,9 +416,12 @@ class _Elenco extends StatelessWidget {
           for (final b in filtrati)
             AppListRow(
               titolo: b.titolo,
-              sottotitolo:
-                  '${_labelSport(b.sport)} · ${b.fase}'
-                  '${b.metriTotali > 0 ? ' · ${b.metriTotali} m' : ''}',
+              // Senza fase (blocco scritto a mano) restava un "·" appeso.
+              sottotitolo: [
+                _labelSport(b.sport),
+                if (b.fase.trim().isNotEmpty) b.fase.trim(),
+                if (b.metriTotali > 0) '${b.metriTotali} m',
+              ].join(' · '),
               extraTitolo: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(

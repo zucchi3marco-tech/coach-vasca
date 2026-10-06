@@ -80,10 +80,12 @@ class PartiteListScreen extends ConsumerWidget {
             righe: [
               for (final p in partite)
                 AppListRow(
-                  titolo: '${p.squadraCasa} - ${p.squadraTrasferta}',
+                  titolo: 'vs ${p.avversario}',
                   sottotitolo:
+                      '${p.inCasa ? 'In casa' : 'In trasferta'} · '
+                      // Data e ora legate: l'ora non va a capo da sola.
                       '${_formattaData(p.data)}'
-                      '${p.ora != null && p.ora!.isNotEmpty ? ' · ${p.ora}' : ''}'
+                      '${p.ora != null && p.ora!.isNotEmpty ? '\u00A0·\u00A0${p.ora}' : ''}'
                       '${p.gruppoId == null ? ' · Tutto il club' : ''}',
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

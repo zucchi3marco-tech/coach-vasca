@@ -139,8 +139,9 @@ class _RigaPartita extends ConsumerWidget {
 
     return AppListRow(
       leading: const Icon(Icons.sports_outlined),
-      titolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
+      titolo: 'vs ${partita.avversario}',
       sottotitolo:
+          '${partita.inCasa ? 'In casa' : 'In trasferta'} · '
           '${_formattaData(partita.data)}'
           '${partita.luogo != null ? ' · ${partita.luogo}' : ''}',
       trailing: risultato == null

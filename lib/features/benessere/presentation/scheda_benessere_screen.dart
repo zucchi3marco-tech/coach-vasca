@@ -297,13 +297,18 @@ class _SchedaBenessereScreenState extends ConsumerState<SchedaBenessereScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _AnteprimaPunteggio(
-                  punteggio: calcolaPunteggio(
-                    _bozza,
-                    dataNascita: widget.atleta.dataNascita,
+                // Prima di rispondere non c'e' nulla da stimare: un "80 —
+                // Pronto" a scheda vuota sembrava gia' un risultato.
+                if (_risposte == 0)
+                  const _AnteprimaVuota()
+                else
+                  _AnteprimaPunteggio(
+                    punteggio: calcolaPunteggio(
+                      _bozza,
+                      dataNascita: widget.atleta.dataNascita,
+                    ),
+                    completa: _completa,
                   ),
-                  completa: _completa,
-                ),
               ],
             ),
           ),
@@ -743,9 +748,12 @@ class _Sonno extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SliderTheme(
+          // Binario vuoto visibile: senza, la barra sembrava gia' piena
+          // fino in fondo. Finche' non si sceglie, tutto e' sbiadito.
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: accento,
-            thumbColor: accento,
+            activeTrackColor: accento.withValues(alpha: toccato ? 1 : 0.35),
+            inactiveTrackColor: accento.withValues(alpha: 0.14),
+            thumbColor: accento.withValues(alpha: toccato ? 1 : 0.5),
             overlayColor: accento.withValues(alpha: 0.15),
             trackHeight: 8,
           ),
@@ -928,6 +936,37 @@ class _Scala5 extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _AnteprimaVuota extends StatelessWidget {
+  const _AnteprimaVuota();
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colori.linea),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.insights_outlined, color: colori.testoSecondario),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'La tua prontezza compare qui mentre rispondi.',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

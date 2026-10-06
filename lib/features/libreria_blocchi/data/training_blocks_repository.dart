@@ -192,13 +192,27 @@ class TrainingBlocksRepository {
     return query.watch().map((rows) => rows.map(_parteFromRow).toList());
   }
 
+  /// Senza rete legge le parti dalla copia locale: prima, senza
+  /// connessione, aggiungere o modificare una parte falliva sempre.
   Future<List<TrainingBlockParte>> fetchParti(String bloccoId) async {
-    final rows = await _client
-        .from('training_block_parti')
-        .select()
-        .eq('blocco_id', bloccoId)
-        .order('ordine');
-    return rows.map(TrainingBlockParte.fromMap).toList();
+    try {
+      final rows = await _client
+          .from('training_block_parti')
+          .select()
+          .eq('blocco_id', bloccoId)
+          .order('ordine');
+      return rows.map(TrainingBlockParte.fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      return _partiLocali([bloccoId]);
+    }
+  }
+
+  Future<List<TrainingBlockParte>> _partiLocali(List<String> bloccoIds) async {
+    final query = _db.select(_db.trainingBlockPartiTable)
+      ..where((t) => t.bloccoId.isIn(bloccoIds))
+      ..orderBy([(t) => OrderingTerm.asc(t.ordine)]);
+    return (await query.get()).map(_parteFromRow).toList();
   }
 
   /// Le parti di più blocchi in un colpo solo (es. per l'esportazione
@@ -209,14 +223,20 @@ class TrainingBlocksRepository {
     List<String> bloccoIds,
   ) async {
     if (bloccoIds.isEmpty) return {};
-    final rows = await _client
-        .from('training_block_parti')
-        .select()
-        .inFilter('blocco_id', bloccoIds)
-        .order('ordine');
+    List<TrainingBlockParte> parti;
+    try {
+      final rows = await _client
+          .from('training_block_parti')
+          .select()
+          .inFilter('blocco_id', bloccoIds)
+          .order('ordine');
+      parti = rows.map(TrainingBlockParte.fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      parti = await _partiLocali(bloccoIds);
+    }
     final risultato = <String, List<TrainingBlockParte>>{};
-    for (final r in rows) {
-      final parte = TrainingBlockParte.fromMap(r);
+    for (final parte in parti) {
       (risultato[parte.bloccoId] ??= []).add(parte);
     }
     return risultato;
@@ -384,11 +404,20 @@ class TrainingBlocksRepository {
   Future<TrainingBlock> duplicaBlocco(TrainingBlock originale) async {
     final parti = await fetchParti(originale.id);
     var codiceCopia = '${originale.codice}-copia';
-    final esistenti = await _client
-        .from('training_blocks')
-        .select('codice')
-        .eq('club_id', originale.clubId);
-    final codiciEsistenti = {for (final r in esistenti) r['codice'] as String};
+    Set<String> codiciEsistenti;
+    try {
+      final esistenti = await _client
+          .from('training_blocks')
+          .select('codice')
+          .eq('club_id', originale.clubId);
+      codiciEsistenti = {for (final r in esistenti) r['codice'] as String};
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.trainingBlocksTable,
+      )..where((t) => t.clubId.equals(originale.clubId))).get();
+      codiciEsistenti = {for (final b in locali) b.codice};
+    }
     var n = 2;
     while (codiciEsistenti.contains(codiceCopia)) {
       codiceCopia = '${originale.codice}-copia$n';
@@ -422,9 +451,12 @@ class TrainingBlocksRepository {
     List<TrainingBlockParte> parti,
   ) async {
     if (parti.isEmpty) return;
+    // Id scelto qui (non dal server): serve per salvare in locale e
+    // mettere in coda la stessa riga quando manca la rete.
     final payload = [
       for (final p in parti)
         {
+          'id': _uuid.v4(),
           'blocco_id': bloccoId,
           'ordine': p.ordine,
           'giri': p.giri,
@@ -440,15 +472,34 @@ class TrainingBlocksRepository {
           'note': p.note,
         },
     ];
-    final righe = await _client
-        .from('training_block_parti')
-        .insert(payload)
-        .select();
+    List<Map<String, dynamic>> righe;
+    try {
+      righe = await _client
+          .from('training_block_parti')
+          .insert(payload)
+          .select();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      // club_id lo mette il trigger sul server: in coda va la riga
+      // cosi' come la si sarebbe inviata adesso.
+      for (final riga in payload) {
+        await enqueueOperation(
+          _db,
+          tabella: 'training_block_parti',
+          operazione: 'insert',
+          rigaId: riga['id'] as String,
+          payload: riga,
+        );
+      }
+      _syncEngine.processQueue();
+      righe = payload;
+    }
     await _db.batch((batch) {
       for (final r in righe) {
         batch.insert(
           _db.trainingBlockPartiTable,
           _parteCompanionFromMap({...r, 'club_id': clubId}),
+          mode: InsertMode.insertOrReplace,
         );
       }
     });
@@ -557,22 +608,63 @@ class TrainingBlocksRepository {
       'attrezzi': attrezzi,
       'note': note,
     };
-    final row = await _client
-        .from('training_block_parti')
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single();
-    await _db
-        .into(_db.trainingBlockPartiTable)
-        .insertOnConflictUpdate(_parteCompanionFromMap(row));
+    try {
+      final row = await _client
+          .from('training_block_parti')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db
+          .into(_db.trainingBlockPartiTable)
+          .insertOnConflictUpdate(_parteCompanionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(
+        _db.trainingBlockPartiTable,
+      )..where((t) => t.id.equals(id))).write(
+        TrainingBlockPartiTableCompanion(
+          ordine: Value(ordine),
+          giri: Value(giri),
+          ripetizioni: Value(ripetizioni),
+          distanzaM: Value(distanzaM),
+          durataS: Value(durataS),
+          stile: Value(stile),
+          esercizio: Value(esercizio),
+          zona: Value(zona),
+          esecuzione: Value(esecuzione),
+          recuperoS: Value(recuperoS),
+          attrezzi: Value(attrezzi),
+          note: Value(note),
+        ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'training_block_parti',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
     // _ricalcolaAggregatiBlocco chiama updateBlocco, che marca sempre
     // modificato_in_app=true: non serve un'altra chiamata solo per quello.
     await _ricalcolaAggregatiBlocco(bloccoId);
   }
 
   Future<void> deleteParte(String id, {required String bloccoId}) async {
-    await _client.from('training_block_parti').delete().eq('id', id);
+    try {
+      await _client.from('training_block_parti').delete().eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'training_block_parti',
+        operazione: 'delete',
+        rigaId: id,
+      );
+      _syncEngine.processQueue();
+    }
     await (_db.delete(
       _db.trainingBlockPartiTable,
     )..where((t) => t.id.equals(id))).go();

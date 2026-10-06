@@ -429,14 +429,16 @@ class _GeneraAllenamentoFormScreenState
             ),
             icon: const Icon(Icons.view_list_outlined),
           ),
-          TextButton.icon(
+          // Icona e non "Storico" scritto: su telefono il testo riduceva
+          // il titolo a "Genera co...".
+          IconButton(
+            tooltip: 'Storico generazioni',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => StoricoGenerazioniScreen(clubId: widget.clubId),
               ),
             ),
-            icon: const Icon(Icons.history, size: 20),
-            label: const Text('Storico'),
+            icon: const Icon(Icons.history),
           ),
         ],
       ),

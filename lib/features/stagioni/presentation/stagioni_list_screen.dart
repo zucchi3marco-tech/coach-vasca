@@ -91,8 +91,10 @@ class StagioniListScreen extends ConsumerWidget {
                           titolo: s.nome,
                           sottotitolo:
                               '${_formattaData(s.dataInizio)} — '
-                              '${_formattaData(s.dataFine)}'
-                              ' · ${s.gruppoId == null ? etichettaTuttiGliAtleti : (nomiGruppi[s.gruppoId] ?? '')}'
+                              '${_formattaData(s.dataFine)}\n'
+                              // Spazi fissi nel nome della squadra: "Under
+                              // 14" non si spezza mai tra le due righe.
+                              '${(s.gruppoId == null ? etichettaTuttiGliAtleti : (nomiGruppi[s.gruppoId] ?? '')).replaceAll(' ', '\u00A0')}'
                               '${s.campionato != null && s.campionato!.isNotEmpty ? ' · ${s.campionato}' : ''}',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(

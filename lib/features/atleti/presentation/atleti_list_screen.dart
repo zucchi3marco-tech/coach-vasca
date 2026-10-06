@@ -490,13 +490,12 @@ class _AtletiList extends StatelessWidget {
               titolo: atleta.nomeCompleto,
               // La percentuale sta nella riga sotto, non accanto al nome:
               // su telefono il nome ha cosi' tutta la larghezza.
+              // Squadra sulla prima riga, presenze sulla seconda: prima
+              // "· presenze 58%" andava a capo da solo su telefono.
               sottotitolo:
-                  [
-                    atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto',
-                    ?nomeGruppo[atleta.gruppoId],
-                    _etichettaPresenze(_percentuale(atleta)),
-                  ].join(' · ') +
-                  (atleta.attivo ? '' : ' · inattivo'),
+                  '${[atleta.sport == 'nuoto' ? 'Nuoto' : 'Pallanuoto', ?nomeGruppo[atleta.gruppoId]?.replaceAll(' ', '\u00A0')].join(' · ')}\n'
+                  '${_etichettaPresenze(_percentuale(atleta))}'
+                  '${atleta.attivo ? '' : ' · inattivo'}',
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -590,7 +589,7 @@ class _VoceMenu extends StatelessWidget {
 /// allenamento rilevante su cui calcolarla) mostra "—" invece di un
 /// fuorviante 0%.
 String _etichettaPresenze(double? percentuale) =>
-    'presenze ${percentuale == null ? '—' : '${percentuale.round()}%'}';
+    'Presenze ${percentuale == null ? '—' : '${percentuale.round()}%'}';
 
 class _AvatarAtleta extends StatelessWidget {
   const _AvatarAtleta({required this.atleta});

@@ -376,7 +376,7 @@ class _GeneraSettimanaFormScreenState
   }) async {
     var garaAltaImminente = false;
     try {
-      final fineFinestra = dataFineSettimana.add(const Duration(days: 10));
+      final fineFinestra = aggiungiGiorni(dataFineSettimana, 10);
       final gare = await ref.read(gareListProvider(widget.clubId).future);
       final partite = await ref.read(partiteListProvider(widget.clubId).future);
       garaAltaImminente =
@@ -411,7 +411,7 @@ class _GeneraSettimanaFormScreenState
           .read(allenamentiRepositoryProvider)
           .fetchPerClubEPeriodo(
             clubId: widget.clubId,
-            dataInizio: oggi.subtract(const Duration(days: 28)),
+            dataInizio: aggiungiGiorni(oggi, -28),
             dataFine: oggi,
           );
       final delGruppo = gruppoId == null
@@ -652,8 +652,9 @@ class _GeneraSettimanaFormScreenState
         );
       }
 
-      final dataFineSettimana = _dataInizio.add(
-        Duration(days: giorniOrdinati.last),
+      final dataFineSettimana = aggiungiGiorni(
+        _dataInizio,
+        giorniOrdinati.last,
       );
       var contesto = (
         garaAltaImminente: false,

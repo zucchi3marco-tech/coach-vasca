@@ -24,6 +24,7 @@ import '../data/duplicazione_stagione_service.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/evento_calendario.dart';
 import '../domain/stagione.dart';
+import '../../../widgets/titolo_due_righe.dart';
 import 'calendario_stagione_view.dart';
 import 'elimina_dialogs.dart';
 import 'stagione_form_screen.dart';
@@ -218,7 +219,9 @@ class StagioneDetailScreen extends ConsumerWidget {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(stagione.nome),
+        // "Stagione agonistica 2026/2027" su telefono veniva troncato:
+        // il nome intero sta nella seconda riga.
+        title: TitoloDueRighe(titolo: 'Stagione', sottotitolo: stagione.nome),
         actions: [
           PopupMenuButton<_AzioneStagione>(
             icon: const Icon(Icons.more_vert),

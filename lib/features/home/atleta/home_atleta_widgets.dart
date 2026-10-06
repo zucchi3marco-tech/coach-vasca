@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -160,10 +160,15 @@ class TestataAtleta extends ConsumerWidget {
   const TestataAtleta({
     required this.atleta,
     required this.statistiche,
+    this.vistaAllenatore = false,
     super.key,
   });
 
   final Atleta atleta;
+
+  /// Aperta dall'allenatore: niente saluto ("Buon pomeriggio," senza
+  /// nessuno a cui dirlo), al suo posto cosa sta guardando.
+  final bool vistaAllenatore;
 
   /// Le "piastrelle" numeriche in basso (etichetta, valore, al tocco).
   final List<({String etichetta, String valore, VoidCallback? onTap})>
@@ -279,7 +284,7 @@ class TestataAtleta extends ConsumerWidget {
           )
         : null;
     final saluto = Text(
-      _saluto(),
+      vistaAllenatore ? 'Scheda atleta' : _saluto(),
       style: AppTypography.piccolo.copyWith(
         color: AcquaPalette.schiuma.withValues(alpha: 0.75),
       ),
@@ -373,6 +378,14 @@ class _FotoTestataState extends State<_FotoTestata>
     }
   }
 
+  // La foto si chiede solo se e' davvero tra gli asset: finche' il file
+  // non c'e', niente richiesta a vuoto (errore 404 in console).
+  static final Future<bool> _fotoPresente =
+      AssetManifest.loadFromAssetBundle(rootBundle).then(
+        (m) => m.listAssets().contains(fotoTestataAtleta),
+        onError: (_) => false,
+      );
+
   @override
   void dispose() {
     _c.dispose();
@@ -381,6 +394,14 @@ class _FotoTestataState extends State<_FotoTestata>
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _fotoPresente,
+      builder: (context, presente) =>
+          presente.data == true ? _foto() : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _foto() {
     return AnimatedBuilder(
       animation: _c,
       builder: (context, child) => Transform.scale(
@@ -1030,7 +1051,7 @@ class _Riquadro extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           voce.descrizione,
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.etichetta.copyWith(
                             color: colori.testoSecondario,
