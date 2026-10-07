@@ -419,11 +419,7 @@ class _AllenamentoDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TestataPagina(
-          occhiello: [
-            traQuanto(allenamento.data),
-            dataEstesa(allenamento.data),
-            ?nomeGruppo,
-          ].join(' · '),
+          occhiello: [quandoEsteso(allenamento.data), ?nomeGruppo].join(' · '),
           titolo: titolo,
           numeri: serieCaricate.isEmpty
               ? const []

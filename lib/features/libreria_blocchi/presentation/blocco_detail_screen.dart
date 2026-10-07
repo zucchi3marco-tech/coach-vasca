@@ -71,9 +71,10 @@ class BloccoDetailScreen extends ConsumerWidget {
         children: [
           TestataPagina(
             occhiello: [
-              blocco.codice,
+              blocco.stato == 'approvato'
+                  ? blocco.codice
+                  : '${blocco.codice} (bozza)',
               if (blocco.fase.trim().isNotEmpty) blocco.fase.trim(),
-              if (blocco.stato != 'approvato') 'bozza',
             ].join(' · '),
             titolo: blocco.titolo,
             sottotitolo: blocco.obiettivo.trim().isEmpty

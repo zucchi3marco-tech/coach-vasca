@@ -11,6 +11,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/schemi_tattici_providers.dart';
@@ -283,8 +284,55 @@ class _SchemaTatticoFormScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // La lavagna prima di tutto: è quello che si apre la pagina per
+            // fare. Titolo, categoria e gruppi stanno sotto.
+            TitoloSezione(
+              'Passi',
+              conteggio: _passi.length,
+              spiegazione:
+                  'Ogni passo è una schermata a sé: es. passo 1 le '
+                  'posizioni di partenza, passo 2 le frecce di movimento, '
+                  'passo 3 le posizioni finali. Non serve usarli tutti '
+                  '(massimo ${SchemaTattico.massimoPassi}).',
+              azione: 'Anteprima',
+              onAzione: _apriAnteprima,
+            ),
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (var i = 0; i < _passi.length; i++)
+                  TonalChip(
+                    etichetta: '${i + 1}',
+                    selezionato: i == _passoAttuale,
+                    onSelezionato: (_) => _vaiAPasso(i),
+                    onEliminato: _passi.length > 1
+                        ? () => _eliminaPasso(i)
+                        : null,
+                  ),
+                if (_passi.length < SchemaTattico.massimoPassi)
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: const Text('Passo'),
+                    onPressed: _aggiungiPasso,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            WaterPoloTacticsBoard(
+              key: ValueKey(_passoAttuale),
+              giocatoriIniziali: passoAttuale.giocatori,
+              frecceIniziali: passoAttuale.frecce,
+              passoFantasma: passoFantasma,
+              campo: _campo,
+              bloccata: _bloccata,
+              onCampoCambiato: _cambiaCampo,
+              onBloccataCambiato: (b) => setState(() => _bloccata = b),
+              onCambiato: _onCambiato,
+            ),
+            const SizedBox(height: AppSpacing.s24),
             FormGroup(
-              titolo: 'Schema',
+              titolo: 'Dettagli dello schema',
               isUltimo: true,
               campi: [
                 AppTextField(
@@ -351,68 +399,11 @@ class _SchemaTatticoFormScreenState
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.s16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Passi (${_passi.length}/${SchemaTattico.massimoPassi})',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _apriAnteprima,
-                  icon: const Icon(Icons.play_circle_outline),
-                  label: const Text('Anteprima'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            Text(
-              'Ogni passo è una schermata a sé: es. passo 1 le posizioni '
-              'di partenza, passo 2 le frecce di movimento, passo 3 le '
-              'posizioni finali. Non serve usarli tutti.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            Wrap(
-              spacing: AppSpacing.s8,
-              runSpacing: AppSpacing.s8,
-              children: [
-                for (var i = 0; i < _passi.length; i++)
-                  TonalChip(
-                    etichetta: '${i + 1}',
-                    selezionato: i == _passoAttuale,
-                    onSelezionato: (_) => _vaiAPasso(i),
-                    onEliminato: _passi.length > 1
-                        ? () => _eliminaPasso(i)
-                        : null,
-                  ),
-                if (_passi.length < SchemaTattico.massimoPassi)
-                  ActionChip(
-                    avatar: const Icon(Icons.add, size: 18),
-                    label: const Text('Passo'),
-                    onPressed: _aggiungiPasso,
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            WaterPoloTacticsBoard(
-              key: ValueKey(_passoAttuale),
-              giocatoriIniziali: passoAttuale.giocatori,
-              frecceIniziali: passoAttuale.frecce,
-              passoFantasma: passoFantasma,
-              campo: _campo,
-              bloccata: _bloccata,
-              onCampoCambiato: _cambiaCampo,
-              onBloccataCambiato: (b) => setState(() => _bloccata = b),
-              onCambiato: _onCambiato,
-            ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s16),
               ErrorBanner(messaggio: _errorMessage!),
             ],
-            const SizedBox(height: AppSpacing.s16),
+            const SizedBox(height: AppSpacing.s24),
             PrimaryButton(
               label: 'Salva schema',
               isLoading: _isSubmitting,

@@ -80,19 +80,24 @@ class DistintaScreen extends ConsumerWidget {
     // erano nel menu ⋮ — e sotto c'e' la distinta.
     final testata = TestataPagina(
       occhiello: [
-        traQuanto(partita.data),
-        dataEstesa(partita.data),
-        if (partita.ora != null && partita.ora!.isNotEmpty) partita.ora!,
+        quandoEsteso(partita.data),
+        if (partita.ora != null && partita.ora!.isNotEmpty)
+          'ore ${partita.ora}',
       ].join(' · '),
       titolo: '${partita.squadraCasa} – ${partita.squadraTrasferta}',
+      // Luogo e campionato; la calottina accanto al luogo, dove serve
+      // saperla (in vasca).
       sottotitolo: [
-        if (partita.luogo != null && partita.luogo!.isNotEmpty) partita.luogo!,
+        [
+          if (partita.luogo != null && partita.luogo!.isNotEmpty)
+            partita.luogo!,
+          if (partita.coloreCalottina != null &&
+              partita.coloreCalottina!.isNotEmpty)
+            'calottina ${partita.coloreCalottina == 'blu' ? 'blu' : 'bianca'}',
+        ].join(', '),
         if (partita.campionato != null && partita.campionato!.isNotEmpty)
           partita.campionato!,
-        if (partita.coloreCalottina != null &&
-            partita.coloreCalottina!.isNotEmpty)
-          'calottina ${partita.coloreCalottina == 'blu' ? 'blu' : 'bianca'}',
-      ].join(' · '),
+      ].where((t) => t.isNotEmpty).join(' · '),
       azioni: [
         AzioneTestata(
           icona: Icons.play_circle_fill,

@@ -438,13 +438,27 @@ class _Elenco extends StatelessWidget {
         titolo: b.titolo,
         sottotitolo: [
           b.codice,
-          if (filtroSport == null) _labelSport(b.sport),
-          if (b.metriTotali > 0) '${b.metriTotali} m',
-          if (b.durataStimataMin > 0) '~${b.durataStimataMin} min',
-        ].join(' · '),
+          [
+            if (b.metriTotali > 0) '${b.metriTotali} m',
+            if (b.durataStimataMin > 0) '~${b.durataStimataMin} min',
+          ].join(', '),
+        ].where((t) => t.isNotEmpty).join(' · '),
         // Solo le bozze hanno l'etichetta: "Approvato" su centinaia di
-        // schede era rumore.
-        sotto: approvato ? null : Pastiglia('Bozza', colore: colori.attenzione),
+        // schede era rumore. Lo sport solo se non si sta gia' filtrando.
+        sotto: approvato && filtroSport != null
+            ? null
+            : Wrap(
+                spacing: AppSpacing.s4,
+                runSpacing: AppSpacing.s4,
+                children: [
+                  if (!approvato) Pastiglia('Bozza', colore: colori.attenzione),
+                  if (filtroSport == null)
+                    Pastiglia(
+                      _labelSport(b.sport),
+                      colore: colori.testoSecondario,
+                    ),
+                ],
+              ),
         mostraFreccia: false,
         trailing: PopupMenuButton<VoidCallback>(
           icon: Icon(Icons.more_vert, color: colori.testoSecondario),

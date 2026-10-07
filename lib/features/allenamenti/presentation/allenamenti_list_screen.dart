@@ -227,8 +227,9 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
             ? a.titolo!
             : 'Allenamento',
         sottotitolo: [
-          if (!oggi) traQuanto(a.data),
-          giornoSettimana(a.data),
+          oggi
+              ? giornoSettimana(a.data)
+              : '${traQuanto(a.data)}, ${giornoSettimana(a.data)}',
           ?gruppo,
         ].join(' · '),
         attenuata: passato,

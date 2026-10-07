@@ -117,11 +117,8 @@ class _RefertoSalvatoView extends StatelessWidget {
               '${referto.risultatoTrasferta}  ${referto.squadraTrasferta}',
           sottotitolo: referto.parziali.isEmpty
               ? null
-              : [
-                  for (var i = 0; i < referto.parziali.length; i++)
-                    '${i + 1}° tempo ${referto.parziali[i].casa}-'
-                        '${referto.parziali[i].trasferta}',
-                ].join(' · '),
+              : 'Parziali '
+                    '${[for (final p in referto.parziali) '${p.casa}-${p.trasferta}'].join(', ')}',
           azioni: [
             AzioneTestata(
               icona: Icons.document_scanner_outlined,

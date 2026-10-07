@@ -76,9 +76,8 @@ class GaraDetailScreen extends ConsumerWidget {
         children: [
           TestataPagina(
             occhiello: [
-              traQuanto(g.data),
-              dataEstesa(g.data),
-              if (g.ora != null && g.ora!.isNotEmpty) g.ora!,
+              quandoEsteso(g.data),
+              if (g.ora != null && g.ora!.isNotEmpty) 'ore ${g.ora}',
             ].join(' · '),
             titolo: g.nome,
             sottotitolo: [

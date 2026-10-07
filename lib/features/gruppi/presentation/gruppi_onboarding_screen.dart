@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../club/application/current_club_provider.dart';
@@ -93,60 +95,77 @@ class _GruppiOnboardingScreenState
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    // Colonna centrata: a tutta larghezza su schermo largo il form era
+    // scomodo da leggere (DESIGN.md sezione 19).
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.s16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Crea i gruppi di allenamento',
-              style: AppTypography.titoloXl.copyWith(color: colori.testo),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppLayout.larghezzaMassimaForm,
             ),
-            const SizedBox(height: AppSpacing.s8),
-            Text(
-              'Servono per organizzare atleti e allenamenti per gruppo (es. '
-              '"U14", "Agonisti"). Ne puoi aggiungere altri in qualsiasi '
-              'momento.',
-              style: AppTypography.piccolo.copyWith(
-                color: colori.testoSecondario,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s24),
-            for (var i = 0; i < _controller.length; i++) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: AppTextField(
-                      etichetta: 'Nome gruppo',
-                      controller: _controller[i],
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Crea i gruppi di allenamento',
+                  style: AppTypography.titoloXl.copyWith(color: colori.testo),
+                ),
+                const SizedBox(height: AppSpacing.s8),
+                Text(
+                  'Servono per organizzare atleti e allenamenti per gruppo (es. '
+                  '"U14", "Agonisti"). Ne puoi aggiungere altri in qualsiasi '
+                  'momento.',
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
                   ),
-                  if (_controller.length > 1)
-                    IconButton(
-                      icon: Icon(Icons.close, color: colori.testoSecondario),
-                      tooltip: 'Rimuovi',
-                      onPressed: () => _rimuoviRiga(i),
+                ),
+                const SizedBox(height: AppSpacing.s24),
+                FormGroup(
+                  titolo: 'I tuoi gruppi',
+                  isUltimo: true,
+                  campi: [
+                    for (var i = 0; i < _controller.length; i++)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppTextField(
+                              etichetta: 'Nome gruppo',
+                              controller: _controller[i],
+                            ),
+                          ),
+                          if (_controller.length > 1)
+                            IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                color: colori.testoSecondario,
+                              ),
+                              tooltip: 'Rimuovi',
+                              onPressed: () => _rimuoviRiga(i),
+                            ),
+                        ],
+                      ),
+                    SecondaryButton(
+                      label: 'Aggiungi un altro gruppo',
+                      icon: Icons.add,
+                      onPressed: _aggiungiRiga,
                     ),
+                  ],
+                ),
+                if (_errore != null) ...[
+                  const SizedBox(height: AppSpacing.s12),
+                  ErrorBanner(messaggio: _errore!),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.s12),
-            ],
-            SecondaryButton(
-              label: 'Aggiungi un altro gruppo',
-              onPressed: _aggiungiRiga,
+                const SizedBox(height: AppSpacing.s24),
+                PrimaryButton(
+                  label: 'Continua',
+                  isLoading: _isSubmitting,
+                  onPressed: _isSubmitting ? null : _continua,
+                ),
+              ],
             ),
-            if (_errore != null) ...[
-              const SizedBox(height: AppSpacing.s12),
-              ErrorBanner(messaggio: _errore!),
-            ],
-            const SizedBox(height: AppSpacing.s24),
-            PrimaryButton(
-              label: 'Continua',
-              isLoading: _isSubmitting,
-              onPressed: _isSubmitting ? null : _continua,
-            ),
-          ],
+          ),
         ),
       ),
     );

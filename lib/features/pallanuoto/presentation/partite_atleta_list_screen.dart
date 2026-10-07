@@ -102,10 +102,15 @@ class PartiteAtletaListScreen extends ConsumerWidget {
         evidenza: oggiStesso ? ambra : null,
         titolo: 'vs ${p.avversario}',
         sottotitolo: [
-          if (!oggiStesso) traQuanto(p.data),
-          if (p.ora != null && p.ora!.isNotEmpty) p.ora!,
-          p.inCasa ? 'In casa' : 'In trasferta',
-          if (p.luogo != null && p.luogo!.isNotEmpty) p.luogo!,
+          // Oggi lo dice gia' l'etichetta sopra: resta l'ora.
+          if (!oggiStesso)
+            quandoConOra(p.data, p.ora)
+          else if (p.ora != null && p.ora!.isNotEmpty)
+            'ore ${p.ora}',
+          [
+            p.inCasa ? 'in casa' : 'in trasferta',
+            if (p.luogo != null && p.luogo!.isNotEmpty) p.luogo!,
+          ].join(', '),
         ].join(' · '),
         trailing: giocata ? ChipRisultato(partita: p) : null,
         mostraFreccia: giocata,

@@ -9,9 +9,10 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
-import '../../../widgets/secondary_button.dart';
+import '../../../widgets/riquadri.dart';
 import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -120,60 +121,79 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Carica la foto di un referto FIN già compilato: un modello '
-            'AI proverà a leggere punteggio, parziali e giocatori. '
-            'Controlla sempre i dati letti prima di salvarli: non vengono '
-            'salvati automaticamente da nessuna parte.',
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
+          const TitoloSezione(
+            '1 · La foto del referto',
+            spiegazione:
+                'Carica la foto di un referto FIN già compilato: un modello '
+                'AI prova a leggere punteggio, parziali e giocatori. '
+                'Controlla sempre i dati letti prima di salvarli.',
+          ),
+          // Senza foto, tutta la scheda è il bersaglio per sceglierla.
+          InkWell(
+            onTap: _isLoading ? null : _mostraSceltaFonte,
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+            child: Container(
+              height: _immagineBytes == null ? 160 : 220,
+              decoration: BoxDecoration(
+                color: colori.superficie,
+                borderRadius: BorderRadius.circular(AppRadius.pannello),
+                border: Border.all(color: colori.lineaForte),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _immagineBytes == null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const IconaRiquadro(
+                          Icons.add_a_photo_outlined,
+                          dimensione: 56,
+                        ),
+                        const SizedBox(height: AppSpacing.s12),
+                        Text(
+                          'Scatta o scegli la foto',
+                          style: AppTypography.corpoForte.copyWith(
+                            color: colori.testo,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Image.memory(_immagineBytes!, fit: BoxFit.cover),
             ),
           ),
-          const SizedBox(height: AppSpacing.s16),
           if (_immagineBytes != null) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.controllo),
-              child: Image.memory(
-                _immagineBytes!,
-                height: 220,
-                fit: BoxFit.cover,
+            const SizedBox(height: AppSpacing.s8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _isLoading ? null : _mostraSceltaFonte,
+                icon: const Icon(Icons.swap_horiz),
+                label: const Text('Cambia foto'),
               ),
             ),
-            const SizedBox(height: AppSpacing.s12),
           ],
-          SecondaryButton(
-            onPressed: _isLoading ? null : _mostraSceltaFonte,
-            icon: Icons.add_a_photo_outlined,
-            label: _immagineBytes == null ? 'Scegli foto' : 'Cambia foto',
-          ),
           const SizedBox(height: AppSpacing.s12),
+          // "Riprova" dopo un errore faceva la stessa cosa di "Analizza":
+          // resta solo questo, sempre attivo con una foto scelta.
           PrimaryButton(
-            label: 'Analizza',
+            label: _isLoading ? 'Sto leggendo...' : 'Analizza',
             isLoading: _isLoading,
             onPressed: (_immagineBytes == null || _isLoading)
                 ? null
                 : _analizza,
           ),
+          if (_isLoading) const AttesaAiHint(),
           if (_errore != null) ...[
             const SizedBox(height: AppSpacing.s16),
             ErrorBanner(messaggio: _errore!),
-            const SizedBox(height: AppSpacing.s8),
-            SecondaryButton(
-              onPressed: _isLoading ? null : _analizza,
-              icon: Icons.refresh,
-              label: 'Riprova',
-            ),
           ],
           if (_risultato != null) ...[
-            const SizedBox(height: AppSpacing.s24),
-            Text(
-              'Correggi qui sotto eventuali errori di lettura (soprattutto '
-              'i nomi) prima di usare questi dati.',
-              style: AppTypography.piccolo.copyWith(
-                color: colori.testoSecondario,
-              ),
+            const SizedBox(height: AppSpacing.s32),
+            const TitoloSezione(
+              '2 · Controlla e salva',
+              spiegazione:
+                  'Correggi qui sotto eventuali errori di lettura '
+                  '(soprattutto i nomi) prima di salvare.',
             ),
-            const SizedBox(height: AppSpacing.s12),
             _RefertoModificabile(
               key: ObjectKey(_risultato),
               referto: _risultato!,

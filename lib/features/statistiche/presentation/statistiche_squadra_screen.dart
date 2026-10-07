@@ -287,7 +287,9 @@ class _SezioneEventi extends ConsumerWidget {
               const TitoloSezione('Per atleta'),
               const SizedBox(height: AppSpacing.s16),
               if (righe.isEmpty)
-                const RiquadroVuoto('Nessun evento registrato in questa stagione.')
+                const RiquadroVuoto(
+                  'Nessun evento registrato in questa stagione.',
+                )
               else
                 AppListPanel(
                   righe: [

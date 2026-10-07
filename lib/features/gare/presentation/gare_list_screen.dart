@@ -65,8 +65,11 @@ class GareListScreen extends ConsumerWidget {
         attenuata: passata,
         titolo: g.nome,
         sottotitolo: [
-          if (!oggiStesso) traQuanto(g.data),
-          if (g.ora != null && g.ora!.isNotEmpty) g.ora!,
+          // Oggi lo dice gia' l'etichetta sopra: resta l'ora.
+          if (!oggiStesso)
+            quandoConOra(g.data, g.ora)
+          else if (g.ora != null && g.ora!.isNotEmpty)
+            'ore ${g.ora}',
           if (g.luogo != null && g.luogo!.isNotEmpty) g.luogo!,
         ].join(' · '),
         sotto: g.diClub || g.importanza == 'alta'

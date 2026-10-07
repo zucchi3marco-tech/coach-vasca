@@ -81,8 +81,9 @@ class SchemiTatticiListScreen extends ConsumerWidget {
       leading: IconaRiquadro(Icons.sports, colore: viola, dimensione: 48),
       titolo: s.titolo,
       sottotitolo: [
-        _etichettaCampo(s.campo),
-        if (s.passi.length > 1) '${s.passi.length} passi',
+        s.passi.length > 1
+            ? '${_etichettaCampo(s.campo)}, ${s.passi.length} passi'
+            : _etichettaCampo(s.campo),
         'aggiornato ${dataCompatta(s.aggiornatoIl)}',
       ].join(' · '),
       onTap: () => Navigator.of(context).push(

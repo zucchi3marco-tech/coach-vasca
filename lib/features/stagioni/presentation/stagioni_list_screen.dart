@@ -99,9 +99,11 @@ class StagioniListScreen extends ConsumerWidget {
         titolo: s.nome,
         sottotitolo: [
           _periodo(s),
-          ?gruppo,
           if (s.campionato != null && s.campionato!.isNotEmpty) s.campionato!,
         ].join(' · '),
+        sotto: gruppo == null
+            ? null
+            : Pastiglia(gruppo, colore: colori.testoSecondario),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => StagioneDetailScreen(stagione: s)),
         ),

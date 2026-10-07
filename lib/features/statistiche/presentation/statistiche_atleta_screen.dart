@@ -119,7 +119,9 @@ class _DatiAtleta extends ConsumerWidget {
                 spiegazione: 'Non include i tiri sbagliati (non registrati nel referto).',
               ),
               if (rigaReferti == null)
-                const RiquadroVuoto('Nessun dato da referto in questa stagione.')
+                const RiquadroVuoto(
+                  'Nessun dato da referto in questa stagione.',
+                )
               else
                 GrigliaNumeri(
                   children: [
@@ -145,7 +147,9 @@ class _DatiAtleta extends ConsumerWidget {
                     'Solo dalle partite seguite dal vivo con "Eventi partita".',
               ),
               if (rigaEventi == null)
-                const RiquadroVuoto('Nessun evento registrato in questa stagione.')
+                const RiquadroVuoto(
+                  'Nessun evento registrato in questa stagione.',
+                )
               else ...[
                 GrigliaNumeri(
                   children: [

@@ -56,3 +56,13 @@ String traQuanto(DateTime d, {DateTime? oggi}) {
 
 /// "giovedì".
 String giornoSettimana(DateTime d) => _giorni[d.weekday - 1];
+
+/// "Domani, ore 15:00" (o solo "Domani" senza ora): quando e a che ora
+/// sono una sola informazione, non due da separare con un puntino.
+String quandoConOra(DateTime d, String? ora) =>
+    ora == null || ora.trim().isEmpty
+    ? traQuanto(d)
+    : '${traQuanto(d)}, ore ${ora.trim()}';
+
+/// "Domani, giovedì 8 ott".
+String quandoEsteso(DateTime d) => '${traQuanto(d)}, ${dataEstesa(d)}';

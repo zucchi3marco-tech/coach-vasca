@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
-import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
-import '../../../widgets/titolo_due_righe.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
@@ -56,15 +55,9 @@ class CaricoAtletaScreen extends ConsumerWidget {
     final puntiAsync = ref.watch(
       andamentoCaricoProvider((atletaId: atleta.id, clubId: atleta.clubId)),
     );
-    final colori = context.colori;
 
     return AppScaffold(
-      appBar: AppBar(
-        title: TitoloDueRighe(
-          titolo: 'Carico',
-          sottotitolo: atleta.nomeCompleto,
-        ),
-      ),
+      appBar: AppBar(),
       body: puntiAsync.when(
         data: (punti) => punti.isEmpty
             ? EmptyState(
@@ -77,48 +70,58 @@ class CaricoAtletaScreen extends ConsumerWidget {
                 azionePrincipale: 'Torna indietro',
                 onAzionePrincipale: () => Navigator.of(context).pop(),
               )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Modello Banister (fitness/fatica/forma) calcolato '
-                      'dal volume di allenamento pesato per zona di '
-                      'intensità, contato solo nei giorni in cui l\'atleta '
-                      'era presente. È un indice relativo utile per '
-                      'valutare l\'andamento nel tempo, non un valore '
-                      'fisiologico assoluto.',
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
+            : ListView(
+                padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+                children: [
+                  // I tre valori di oggi in testata; la spiegazione del
+                  // modello dietro la "i" del grafico.
+                  TestataPagina(
+                    occhiello: atleta.nomeCompleto,
+                    titolo: 'Forma e carico',
+                    numeri: [
+                      NumeroTestata(
+                        valore: punti.last.forma.round().toString(),
+                        etichetta: 'Forma',
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.s16),
-                    GrigliaNumeri(
+                      NumeroTestata(
+                        valore: punti.last.fitness.round().toString(),
+                        etichetta: 'Fitness',
+                      ),
+                      NumeroTestata(
+                        valore: punti.last.fatica.round().toString(),
+                        etichetta: 'Fatica',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s24),
+                  const TitoloSezione(
+                    'Andamento',
+                    spiegazione:
+                        'Modello Banister (fitness/fatica/forma) calcolato '
+                        'dal volume di allenamento pesato per zona di '
+                        'intensità, contato solo nei giorni in cui '
+                        'l\'atleta era presente. È un indice relativo utile '
+                        'per valutare l\'andamento nel tempo, non un valore '
+                        'fisiologico assoluto.',
+                  ),
+                  PoolCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        StatPanel(
-                          etichetta: 'Fitness',
-                          valore: punti.last.fitness.round().toString(),
+                        SizedBox(
+                          height: 280,
+                          child: GraficoBanister(punti: punti),
                         ),
-                        StatPanel(
-                          etichetta: 'Fatica',
-                          valore: punti.last.fatica.round().toString(),
-                        ),
-                        StatPanel(
-                          etichetta: 'Forma',
-                          valore: punti.last.forma.round().toString(),
-                        ),
+                        const SizedBox(height: AppSpacing.s12),
+                        const LegendaBanister(),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.s16),
-                    SizedBox(height: 280, child: GraficoBanister(punti: punti)),
-                    const SizedBox(height: AppSpacing.s12),
-                    const LegendaBanister(),
-                    const SizedBox(height: AppSpacing.s28),
-                    _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.s28),
+                  _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
+                ],
               ),
+
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),
           child: LoadingSkeleton(height: 280),
@@ -151,7 +154,6 @@ class _SezioneVolumi extends ConsumerWidget {
     final volumiAsync = ref.watch(
       volumiAtletaProvider((atletaId: atletaId, clubId: clubId)),
     );
-    final colori = context.colori;
 
     return volumiAsync.when(
       data: (volumi) {
@@ -166,27 +168,19 @@ class _SezioneVolumi extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionHeader('Volume'),
-            const SizedBox(height: AppSpacing.s16),
-            StatPanel(
-              etichetta: 'Volume totale',
-              valore: _formattaVolume(volumi.volumeTotaleM),
+            const TitoloSezione('Volume'),
+            GrigliaNumeri(
+              children: [
+                StatPanel(
+                  etichetta: 'Volume totale',
+                  valore: _formattaVolume(volumi.volumeTotaleM),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.s24),
-            Text(
-              'Per zona',
-              style: AppTypography.etichetta.copyWith(
-                color: colori.testoSecondario,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s16),
+            const TitoloSezione('Per zona'),
             if (zoneOrdinate.isEmpty)
-              Text(
-                'Nessuna serie con zona indicata.',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              )
+              const RiquadroVuoto('Nessuna serie con zona indicata.')
             else
               GrigliaNumeri(
                 children: [
@@ -198,20 +192,9 @@ class _SezioneVolumi extends ConsumerWidget {
                 ],
               ),
             const SizedBox(height: AppSpacing.s24),
-            Text(
-              'Per tipo di lavoro',
-              style: AppTypography.etichetta.copyWith(
-                color: colori.testoSecondario,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s16),
+            const TitoloSezione('Per tipo di lavoro'),
             if (esecuzioniOrdinate.isEmpty)
-              Text(
-                'Nessuna serie registrata.',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              )
+              const RiquadroVuoto('Nessuna serie registrata.')
             else
               GrigliaNumeri(
                 children: [
