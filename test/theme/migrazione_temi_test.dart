@@ -73,19 +73,6 @@ void main() {
       'features/pallanuoto/presentation/partita_live_screen.dart': {
         'color: Colors.black54,',
       },
-      // Tavolozza fissa "da pennarello" della lavagna tattica (vedi il
-      // doc comment di ColoreLavagna nel sorgente): è l'inchiostro
-      // scelto dall'allenatore, non un colore di interfaccia — per
-      // questo sono valori letterali, non context.colori.
-      'features/pallanuoto/presentation/water_polo_tactics_board.dart': {
-        'ColoreLavagna.blu => const Color(0xFF1565C0),',
-        'ColoreLavagna.bianco => const Color(0xFFFFFFFF),',
-        'ColoreLavagna.nero => const Color(0xFF000000),',
-        'ColoreLavagna.rosso => const Color(0xFFD32F2F),',
-        'ColoreLavagna.giallo => const Color(0xFFFBC02D),',
-        'ColoreLavagna.bianco || ColoreLavagna.giallo => const Color(0xFF000000),',
-        'ColoreLavagna.rosso => const Color(0xFFFFFFFF),',
-      },
     };
 
     final colpevoli = <String>[];

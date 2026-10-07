@@ -77,57 +77,14 @@ class _SchemaTatticoFormScreenState
     List<GiocatoreLavagna> giocatori,
     List<FrecciaLavagna> frecce,
   ) {
-    _passi[_passoAttuale] = (
-      giocatori: [
-        for (final g in giocatori)
-          (
-            punto: (g.posizione.dx, g.posizione.dy),
-            colore: g.colore.name,
-            portatore: switch (g.portatore) {
-              (final colore, final numero) => (colore.name, numero),
-              null => null,
-            },
-          ),
-      ],
-      frecce: [
-        for (final f in frecce)
-          (
-            inizio: (f.inizio.dx, f.inizio.dy),
-            fine: (f.fine.dx, f.fine.dy),
-            colore: f.colore.name,
-          ),
-      ],
-    );
+    _passi[_passoAttuale] = passoSchemaDaLavagna(giocatori, frecce);
   }
 
   void _cambiaCampo(CampoLavagna nuovo) => setState(() => _campo = nuovo);
 
   void _vaiAPasso(int indice) => setState(() => _passoAttuale = indice);
 
-  PassoLavagna _passoAWidget(PassoSchema p) => (
-    giocatori: [
-      for (final g in p.giocatori)
-        GiocatoreLavagna(
-          posizione: Offset(g.punto.$1, g.punto.$2),
-          colore: ColoreLavagna.values.byName(g.colore),
-          portatore: switch (g.portatore) {
-            (final colore, final numero) => (
-              ColoreLavagna.values.byName(colore),
-              numero,
-            ),
-            null => null,
-          },
-        ),
-    ],
-    frecce: [
-      for (final f in p.frecce)
-        FrecciaLavagna(
-          inizio: Offset(f.inizio.$1, f.inizio.$2),
-          fine: Offset(f.fine.$1, f.fine.$2),
-          colore: ColoreLavagna.values.byName(f.colore),
-        ),
-    ],
-  );
+  PassoLavagna _passoAWidget(PassoSchema p) => passoLavagnaDaSchema(p);
 
   void _apriAnteprima() {
     final titolo = _titoloController.text.trim();

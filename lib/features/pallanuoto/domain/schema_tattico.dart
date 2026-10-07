@@ -15,7 +15,18 @@ typedef GiocatoreSchema = ({
   String colore,
   (String, int)? portatore,
 });
-typedef FrecciaSchema = ({PuntoSchema inizio, PuntoSchema fine, String colore});
+
+/// [tipo]: 'nuotata' (linea piena) | 'passaggio' (tratteggiata) |
+/// 'conPalla' (ondulata) | 'tiro' (doppia) — vedi `TipoFreccia` in
+/// `WaterPoloTacticsBoard`. [controllo]: punto di controllo della curva
+/// (Bézier quadratica), `null` = freccia dritta.
+typedef FrecciaSchema = ({
+  PuntoSchema inizio,
+  PuntoSchema fine,
+  String colore,
+  String tipo,
+  PuntoSchema? controllo,
+});
 
 /// Un fotogramma dello schema: una disposizione di giocatori/frecce
 /// indipendente dagli altri passi — es. passo 1 "posizioni di

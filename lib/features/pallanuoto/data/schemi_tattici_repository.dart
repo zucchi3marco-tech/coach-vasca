@@ -43,6 +43,12 @@ List<FrecciaSchema> _frecceFromDati(Map<String, dynamic> dati) {
         inizio: _puntoDaLista(f['inizio'] as List),
         fine: _puntoDaLista(f['fine'] as List),
         colore: f['colore'] as String? ?? 'blu',
+        // Schemi salvati prima dei tipi di freccia e delle curve: tutte
+        // frecce di nuotata, dritte.
+        tipo: f['tipo'] as String? ?? 'nuotata',
+        controllo: f['controllo'] == null
+            ? null
+            : _puntoDaLista(f['controllo'] as List),
       ),
   ];
 }
@@ -63,6 +69,8 @@ Map<String, dynamic> _passoToMap(PassoSchema passo) => {
         'inizio': [f.inizio.$1, f.inizio.$2],
         'fine': [f.fine.$1, f.fine.$2],
         'colore': f.colore,
+        'tipo': f.tipo,
+        if (f.controllo case (final x, final y)) 'controllo': [x, y],
       },
   ],
 };
@@ -70,11 +78,14 @@ Map<String, dynamic> _passoToMap(PassoSchema passo) => {
 PassoSchema _passoFromMap(Map<String, dynamic> map) =>
     (giocatori: _giocatoriFromDati(map), frecce: _frecceFromDati(map));
 
-Map<String, dynamic> _datiToMap(List<PassoSchema> passi) => {
+/// Il campo `dati` (jsonb) di uno schema: i passi con giocatori e frecce.
+Map<String, dynamic> datiSchemaInMappa(List<PassoSchema> passi) => {
   'passi': [for (final p in passi) _passoToMap(p)],
 };
 
-List<PassoSchema> _passiFromDati(Map<String, dynamic> dati) {
+/// L'inverso di [datiSchemaInMappa], tollerante verso gli schemi salvati
+/// con versioni precedenti dell'app.
+List<PassoSchema> passiSchemaDaMappa(Map<String, dynamic> dati) {
   final passiRaw = dati['passi'] as List?;
   if (passiRaw == null) {
     // Compatibilita' con gli schemi salvati prima dell'introduzione dei
@@ -104,7 +115,7 @@ class SchemiTatticiRepository {
       titolo: row.titolo,
       categoria: row.categoria,
       campo: row.campo,
-      passi: _passiFromDati(dati),
+      passi: passiSchemaDaMappa(dati),
       aggiornatoIl: row.aggiornatoIl,
     );
   }
@@ -172,7 +183,7 @@ class SchemiTatticiRepository {
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
-      'dati': _datiToMap(passi),
+      'dati': datiSchemaInMappa(passi),
     };
     try {
       final row = await _client
@@ -209,7 +220,7 @@ class SchemiTatticiRepository {
       'titolo': titolo,
       'categoria': categoria,
       'campo': campo,
-      'dati': _datiToMap(passi),
+      'dati': datiSchemaInMappa(passi),
     };
     try {
       final row = await _client
@@ -229,7 +240,7 @@ class SchemiTatticiRepository {
           titolo: Value(titolo),
           categoria: Value(categoria),
           campo: Value(campo),
-          dati: Value(jsonEncode(_datiToMap(passi))),
+          dati: Value(jsonEncode(datiSchemaInMappa(passi))),
           aggiornatoIl: Value(ora),
         ),
       );

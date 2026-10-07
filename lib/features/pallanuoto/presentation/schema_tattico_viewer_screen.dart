@@ -27,24 +27,7 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
         child: SchemaTatticoPlayer(
           campo: CampoLavagna.values.byName(schema.campo),
           passi: [
-            for (final passo in schema.passi)
-              (
-                giocatori: [
-                  for (final g in passo.giocatori)
-                    GiocatoreLavagna(
-                      posizione: Offset(g.punto.$1, g.punto.$2),
-                      colore: ColoreLavagna.values.byName(g.colore),
-                    ),
-                ],
-                frecce: [
-                  for (final f in passo.frecce)
-                    FrecciaLavagna(
-                      inizio: Offset(f.inizio.$1, f.inizio.$2),
-                      fine: Offset(f.fine.$1, f.fine.$2),
-                      colore: ColoreLavagna.values.byName(f.colore),
-                    ),
-                ],
-              ),
+            for (final passo in schema.passi) passoLavagnaDaSchema(passo),
           ],
         ),
       ),

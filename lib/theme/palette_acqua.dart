@@ -21,6 +21,20 @@ abstract final class AcquaPalette {
   static const nero = Color(0xFF000000);
 }
 
+/// Colori della vasca della lavagna tattica: acqua chiara di piscina vista
+/// dall'alto, come un campo disegnato, e i segni di regolamento ai bordi
+/// (rosso fino ai 2 m, giallo fino ai 5 m, verde fino a metà campo).
+/// Uguali nei due temi: è il disegno di una piscina, non una superficie
+/// dell'app.
+abstract final class VascaPalette {
+  static const acqua = Color(0xFF2B9BE0);
+  static const acquaFonda = Color(0xFF1C80C6);
+  static const bordo = Color(0xFF0B4C7C);
+  static const segnoRosso = Color(0xFFE5484D);
+  static const segnoGiallo = Color(0xFFF5C518);
+  static const segnoVerde = Color(0xFF2FBF71);
+}
+
 /// Colori della calottina: bianca o blu come da regolamento, piu' la
 /// rossa del portiere.
 enum ColoreCalottina {

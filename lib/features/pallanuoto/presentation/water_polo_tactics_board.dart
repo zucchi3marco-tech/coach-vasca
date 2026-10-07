@@ -1,36 +1,47 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../theme/palette_acqua.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../home/atleta/grafica_pallanuoto.dart' show disegnaPalla;
+import '../domain/schema_tattico.dart';
+import 'geometria_frecce.dart';
 
 enum _ModalitaLavagna { giocatori, frecce }
 
 const _spiegazioneLavagna =
-    'Modalità "Giocatori": tocca il campo vuoto per piazzare un pallino, '
-    'doppio tocco per rimuoverlo. Per spostarne uno: trascinalo, oppure '
-    'toccalo (si evidenzia) e poi tocca il punto di arrivo. Modalità '
-    '"Frecce": trascina per disegnare una freccia di movimento.\n\n'
-    'Scegli il colore prima di disegnare: al massimo 7 pallini per '
-    'colore (i giocatori in acqua), numerati in ordine di piazzamento. '
-    'Il giallo è riservato alla palla: una sola, più piccola e senza '
-    'numero. Tocca la palla e poi il giocatore che la riceve per '
-    'agganciargliela: lo seguirà finché non la riassegni a un altro. '
-    'Quando non è agganciata si sposta come un giocatore qualunque.\n\n'
-    'Il lucchetto blocca lo scorrimento della pagina mentre disegni una '
-    'freccia (utile se trascinando ti si sposta lo schermo).';
+    'Modalità "Giocatori": scegli cosa mettere in acqua (calottina '
+    'bianca, blu, portiere o palla) e tocca la vasca per piazzarlo; '
+    'doppio tocco per toglierlo. Per spostarlo trascinalo, oppure '
+    'toccalo (si evidenzia) e poi tocca il punto di arrivo. Al massimo 7 '
+    'calottine per colore, numerate in ordine di piazzamento, e 2 '
+    'portieri.\n\n'
+    'La palla è una sola: toccala e poi tocca il giocatore che la riceve '
+    'per agganciargliela, lo seguirà finché non la riassegni. Quando non '
+    'è agganciata si sposta come un giocatore.\n\n'
+    'Modalità "Frecce": scegli il tipo (nuotata, passaggio, con palla, '
+    'tiro) e disegna la traiettoria col dito: la freccia la segue, dritta '
+    'o curva. Tocca una freccia per sceglierla: trascina il pallino al '
+    'centro per curvarla (doppio tocco per raddrizzarla) e quelli agli '
+    'estremi per spostarla. Con una freccia scelta, tipo e colore valgono '
+    'per lei e il cestino elimina solo lei.\n\n'
+    'Il lucchetto blocca lo scorrimento della pagina mentre disegni '
+    '(utile se trascinando ti si sposta lo schermo).';
 
 const _spiegazionePlayer =
     'Uno schema può avere più passi: ogni passo è una disposizione a sé '
     '(es. passo 1 le posizioni di partenza, passo 2 le frecce di '
     'movimento, passo 3 le posizioni finali). Tocca un numero per '
     'saltare a quel passo, oppure premi play per vedere i giocatori '
-    'muoversi in sequenza da un passo all\'altro.';
+    'muoversi in sequenza da un passo all\'altro: giocatori e palla '
+    'seguono le frecce disegnate, anche quelle curve.';
 
 /// Numero (1-7) di un giocatore nel proprio colore: conta quanti
 /// giocatori dello stesso colore lo precedono (se stesso incluso)
@@ -41,10 +52,10 @@ int _numeroPerColore(List<GiocatoreLavagna> giocatori, int indice) => giocatori
     .where((g) => g.colore == giocatori[indice].colore)
     .length;
 
-/// Colore scelto dall'allenatore per un giocatore o una freccia — una
-/// tavolozza fissa di 5 colori "da pennarello", non i colori del tema:
-/// qui è l'inchiostro scelto da chi disegna, non un token semantico
-/// dell'app (per questo sono valori letterali, non `context.colori`).
+/// Colore di un pezzo o di una freccia. Per i pezzi è la calottina
+/// (bianca e blu come da regolamento, rossa del portiere) o la palla
+/// (giallo); per le frecce è l'inchiostro scelto da chi disegna. Il nero
+/// resta solo come inchiostro: in acqua non ci sono calottine nere.
 enum ColoreLavagna {
   blu,
   bianco,
@@ -52,23 +63,77 @@ enum ColoreLavagna {
   rosso,
   giallo;
 
+  static final _grafite = Color.lerp(
+    AcquaPalette.nero,
+    AcquaPalette.bianco,
+    0.18,
+  )!;
+
+  /// I pezzi che si possono mettere in acqua, nell'ordine dei pulsanti.
+  static const pezzi = [bianco, blu, rosso, giallo];
+
+  /// Gli inchiostri delle frecce: il nero per primo, il più leggibile
+  /// sull'acqua chiara.
+  static const inchiostri = [nero, bianco, giallo, rosso, blu];
+
+  /// Inchiostro della freccia (e pallino del selettore).
   Color get colore => switch (this) {
-    ColoreLavagna.blu => const Color(0xFF1565C0),
-    ColoreLavagna.bianco => const Color(0xFFFFFFFF),
-    ColoreLavagna.nero => const Color(0xFF000000),
-    ColoreLavagna.rosso => const Color(0xFFD32F2F),
-    ColoreLavagna.giallo => const Color(0xFFFBC02D),
+    ColoreLavagna.blu => ColoreCalottina.blu.tessuto,
+    ColoreLavagna.bianco => AcquaPalette.bianco,
+    ColoreLavagna.nero => AcquaPalette.nero,
+    ColoreLavagna.rosso => ColoreCalottina.rossa.tessuto,
+    ColoreLavagna.giallo => AcquaPalette.palla,
   };
 
-  /// Testo/contorno leggibile sopra [colore]: nero sulle tinte chiare
-  /// (bianco, giallo), bianco su quelle scure.
+  /// Leggibile sopra [colore]: scuro sulle tinte chiare, chiaro sulle
+  /// scure. Fa anche da alone attorno alle frecce, per staccarle
+  /// dall'acqua.
   Color get controcolore => switch (this) {
-    ColoreLavagna.bianco || ColoreLavagna.giallo => const Color(0xFF000000),
+    ColoreLavagna.bianco || ColoreLavagna.giallo => AcquaPalette.nero,
     ColoreLavagna.blu ||
     ColoreLavagna.nero ||
-    ColoreLavagna.rosso => const Color(0xFFFFFFFF),
+    ColoreLavagna.rosso => AcquaPalette.bianco,
   };
 
+  /// Tessuto, numero e ombra della calottina.
+  ({Color tessuto, Color numero, Color ombra}) get calottina => switch (this) {
+    ColoreLavagna.bianco => _daCalottina(ColoreCalottina.bianca),
+    ColoreLavagna.blu => _daCalottina(ColoreCalottina.blu),
+    ColoreLavagna.rosso => _daCalottina(ColoreCalottina.rossa),
+    ColoreLavagna.nero => (
+      tessuto: _grafite,
+      numero: AcquaPalette.bianco,
+      ombra: AcquaPalette.nero,
+    ),
+    ColoreLavagna.giallo => (
+      tessuto: AcquaPalette.palla,
+      numero: AcquaPalette.nero,
+      ombra: AcquaPalette.pallaRighe,
+    ),
+  };
+
+  static ({Color tessuto, Color numero, Color ombra}) _daCalottina(
+    ColoreCalottina c,
+  ) => (tessuto: c.tessuto, numero: c.numero, ombra: c.ombra);
+
+  bool get palla => this == ColoreLavagna.giallo;
+
+  /// Quanti pezzi di questo colore possono stare in acqua.
+  int get massimoInAcqua => switch (this) {
+    ColoreLavagna.giallo => 1,
+    ColoreLavagna.rosso => 2,
+    _ => WaterPoloTacticsBoard.massimoGiocatoriPerColore,
+  };
+
+  /// Cosa c'è scritto sulla calottina: il numero, "P" per il portiere,
+  /// niente sulla palla.
+  String? etichetta(int numero) => switch (this) {
+    ColoreLavagna.giallo => null,
+    ColoreLavagna.rosso => 'P',
+    _ => '$numero',
+  };
+
+  /// Nome dell'inchiostro.
   String get nome => switch (this) {
     ColoreLavagna.blu => 'Blu',
     ColoreLavagna.bianco => 'Bianco',
@@ -76,6 +141,53 @@ enum ColoreLavagna {
     ColoreLavagna.rosso => 'Rosso',
     ColoreLavagna.giallo => 'Giallo',
   };
+
+  /// Nome del pezzo, sul pulsante della modalità "Giocatori".
+  String get nomePezzo => switch (this) {
+    ColoreLavagna.bianco => 'Bianchi',
+    ColoreLavagna.blu => 'Blu',
+    ColoreLavagna.rosso => 'Portiere',
+    ColoreLavagna.giallo => 'Palla',
+    ColoreLavagna.nero => 'Neri',
+  };
+
+  /// Descrizione per chi usa un lettore di schermo.
+  String descrizionePezzo(int numero) => switch (this) {
+    ColoreLavagna.giallo => 'Palla',
+    ColoreLavagna.rosso => 'Portiere $numero',
+    ColoreLavagna.bianco => 'Calottina bianca $numero',
+    ColoreLavagna.blu => 'Calottina blu $numero',
+    ColoreLavagna.nero => 'Calottina nera $numero',
+  };
+}
+
+/// Il tipo di freccia, come nei disegni tattici di pallanuoto: si
+/// distingue dal tratto, non dal colore (che resta libero).
+enum TipoFreccia {
+  /// Linea piena: spostamento senza palla.
+  nuotata('Nuotata'),
+
+  /// Tratteggiata: la palla passa da un giocatore all'altro.
+  passaggio('Passaggio'),
+
+  /// Ondulata: nuotata con la palla.
+  conPalla('Con palla'),
+
+  /// Doppia: tiro in porta.
+  tiro('Tiro');
+
+  const TipoFreccia(this.nome);
+  final String nome;
+
+  /// Le frecce salvate prima dei tipi sono tutte di nuotata.
+  static TipoFreccia daNome(String? nome) => TipoFreccia.values.firstWhere(
+    (t) => t.name == nome,
+    orElse: () => TipoFreccia.nuotata,
+  );
+
+  /// Passaggio e tiro muovono la palla, non un giocatore.
+  bool get muoveLaPalla =>
+      this == TipoFreccia.passaggio || this == TipoFreccia.tiro;
 }
 
 /// Campo intero (entrambe le porte, per schemi che coinvolgono tutta la
@@ -89,11 +201,25 @@ enum CampoLavagna {
     CampoLavagna.intero => 'Campo intero',
     CampoLavagna.meta => 'Metà campo',
   };
+
+  /// Larghezza su altezza della vasca disegnata: 20 m di larghezza, 30 m
+  /// fra le porte più un metro dietro ciascuna (il campo intero), oppure
+  /// 15 m più quello dietro la porta (metà campo).
+  double get proporzioni => switch (this) {
+    CampoLavagna.intero => 20 / 32,
+    CampoLavagna.meta => 20 / 16,
+  };
+
+  /// Metri d'acqua disegnati dalla testata in alto al bordo in basso.
+  double get metriInAltezza => switch (this) {
+    CampoLavagna.intero => 32,
+    CampoLavagna.meta => 16,
+  };
 }
 
 /// Un giocatore piazzato sulla lavagna: posizione frazionaria (0-1 su
 /// entrambi gli assi, così resta corretta a qualunque dimensione della
-/// card) e colore del pallino.
+/// card) e colore della calottina.
 class GiocatoreLavagna {
   const GiocatoreLavagna({
     required this.posizione,
@@ -125,18 +251,43 @@ class GiocatoreLavagna {
       );
 }
 
-/// Una freccia di movimento disegnata sulla lavagna: inizio/fine
-/// frazionari e colore del tratto.
+/// Una freccia disegnata sulla lavagna: inizio/fine frazionari, colore
+/// del tratto, tipo e, se è curva, il punto di controllo della curva
+/// (vedi `geometria_frecce.dart`).
 class FrecciaLavagna {
   const FrecciaLavagna({
     required this.inizio,
     required this.fine,
     required this.colore,
+    this.tipo = TipoFreccia.nuotata,
+    this.controllo,
   });
 
   final Offset inizio;
   final Offset fine;
   final ColoreLavagna colore;
+  final TipoFreccia tipo;
+
+  /// In frazioni del campo, può cadere anche fuori dal campo (una curva
+  /// ampia vicino al bordo). `null` = freccia dritta.
+  final Offset? controllo;
+
+  Offset get puntoMedio => puntoSuCurva(inizio, controllo, fine, 0.5);
+
+  FrecciaLavagna copiaCon({
+    Offset? inizio,
+    Offset? fine,
+    ColoreLavagna? colore,
+    TipoFreccia? tipo,
+    Offset? controllo,
+    bool dritta = false,
+  }) => FrecciaLavagna(
+    inizio: inizio ?? this.inizio,
+    fine: fine ?? this.fine,
+    colore: colore ?? this.colore,
+    tipo: tipo ?? this.tipo,
+    controllo: dritta ? null : (controllo ?? this.controllo),
+  );
 }
 
 /// Un passo della sequenza (vedi `SchemaTatticoPlayer`): stessa forma
@@ -147,19 +298,112 @@ typedef PassoLavagna = ({
   List<FrecciaLavagna> frecce,
 });
 
-/// Lavagna tattica per pallanuoto: campo disegnato (stesso stile
-/// grafico di `CampoTiro`, DESIGN.md sezione 9 — il tocco è l'input,
-/// non c'è un form), con due modalità:
-/// - **Giocatori**: tocca per piazzare un pallino numerato (sempre
-///   della stessa dimensione), trascinalo per spostarlo, doppio tocco
-///   per rimuoverlo;
-/// - **Frecce**: trascina per disegnare una freccia di movimento
-///   (tratto dritto e punta calcolati, non un segno a mano libera: ogni
-///   freccia è sempre uguale e precisa).
+/// Da un passo salvato a quello disegnato dalla lavagna.
+PassoLavagna passoLavagnaDaSchema(PassoSchema p) => (
+  giocatori: [
+    for (final g in p.giocatori)
+      GiocatoreLavagna(
+        posizione: Offset(g.punto.$1, g.punto.$2),
+        colore: ColoreLavagna.values.byName(g.colore),
+        portatore: switch (g.portatore) {
+          (final colore, final numero) => (
+            ColoreLavagna.values.byName(colore),
+            numero,
+          ),
+          null => null,
+        },
+      ),
+  ],
+  frecce: [
+    for (final f in p.frecce)
+      FrecciaLavagna(
+        inizio: Offset(f.inizio.$1, f.inizio.$2),
+        fine: Offset(f.fine.$1, f.fine.$2),
+        colore: ColoreLavagna.values.byName(f.colore),
+        tipo: TipoFreccia.daNome(f.tipo),
+        controllo: switch (f.controllo) {
+          (final x, final y) => Offset(x, y),
+          null => null,
+        },
+      ),
+  ],
+);
+
+/// L'inverso di [passoLavagnaDaSchema], per salvare.
+PassoSchema passoSchemaDaLavagna(
+  List<GiocatoreLavagna> giocatori,
+  List<FrecciaLavagna> frecce,
+) => (
+  giocatori: [
+    for (final g in giocatori)
+      (
+        punto: (g.posizione.dx, g.posizione.dy),
+        colore: g.colore.name,
+        portatore: switch (g.portatore) {
+          (final colore, final numero) => (colore.name, numero),
+          null => null,
+        },
+      ),
+  ],
+  frecce: [
+    for (final f in frecce)
+      (
+        inizio: (f.inizio.dx, f.inizio.dy),
+        fine: (f.fine.dx, f.fine.dy),
+        colore: f.colore.name,
+        tipo: f.tipo.name,
+        controllo: switch (f.controllo) {
+          final c? => (c.dx, c.dy),
+          null => null,
+        },
+      ),
+  ],
+);
+
+/// La freccia che descrive lo spostamento da [da] ad [a]: parte vicino a
+/// [da] e arriva vicino ad [a] (entro [tolleranza], in frazioni del
+/// campo). Fra più candidate la più aderente; `null` se nessuna.
+FrecciaLavagna? frecciaPerSpostamento(
+  List<FrecciaLavagna> frecce,
+  Offset da,
+  Offset a, {
+  double tolleranza = 0.06,
+}) {
+  FrecciaLavagna? migliore;
+  var costoMigliore = double.infinity;
+  for (final f in frecce) {
+    final scartoInizio = (f.inizio - da).distance;
+    final scartoFine = (f.fine - a).distance;
+    if (scartoInizio > tolleranza || scartoFine > tolleranza) continue;
+    if (scartoInizio + scartoFine < costoMigliore) {
+      migliore = f;
+      costoMigliore = scartoInizio + scartoFine;
+    }
+  }
+  return migliore;
+}
+
+/// Il punto di controllo per far seguire a chi va da [da] ad [a] la curva
+/// di [freccia]: stessa piega, spostata quanto basta perché parta e
+/// arrivi esattamente lì. `null` se la freccia è dritta.
+Offset? controlloPerSpostamento(FrecciaLavagna freccia, Offset da, Offset a) {
+  final controllo = freccia.controllo;
+  if (controllo == null) return null;
+  return controllo + ((da - freccia.inizio) + (a - freccia.fine)) / 2;
+}
+
+/// Lavagna tattica per pallanuoto: una vasca vista dall'alto, con i segni
+/// di regolamento ai bordi, e due modalità:
+/// - **Giocatori**: tocca per piazzare una calottina numerata (bianca,
+///   blu, del portiere) o la palla, trascinala per spostarla, doppio
+///   tocco per rimuoverla;
+/// - **Frecce**: disegna col dito una freccia del tipo scelto (nuotata,
+///   passaggio, con palla, tiro). Il tratto disegnato diventa una curva
+///   regolare (o una retta, se il dito è andato quasi dritto); toccata
+///   una freccia, la si piega e la si sposta con le maniglie.
 ///
-/// Entrambi si disegnano nel colore scelto dalla tavolozza sopra il
-/// campo (blu/bianco/nero/rosso/giallo), su campo intero o solo metà
-/// campo ([CampoLavagna]) a scelta.
+/// Su campo intero o solo metà campo ([CampoLavagna]) a scelta: la vasca
+/// si ridimensiona per stare tutta nello schermo.
 ///
 /// Con [modificabile] a `false` (schema salvato, sfogliato da un
 /// atleta) il campo mostra solo `giocatoriIniziali`/`frecceIniziali`
@@ -222,7 +466,9 @@ class WaterPoloTacticsBoard extends StatefulWidget {
 
 class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   _ModalitaLavagna _modalita = _ModalitaLavagna.giocatori;
-  ColoreLavagna _coloreSelezionato = ColoreLavagna.blu;
+  ColoreLavagna _pezzo = ColoreLavagna.bianco;
+  ColoreLavagna _inchiostro = ColoreLavagna.nero;
+  TipoFreccia _tipo = TipoFreccia.nuotata;
 
   late final List<GiocatoreLavagna> _giocatori = List.of(
     widget.giocatoriIniziali,
@@ -230,13 +476,18 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   late final List<FrecciaLavagna> _frecce = List.of(widget.frecceIniziali);
 
   /// Uno stato precedente per ogni azione che modifica il disegno
-  /// (piazzare/spostare/rimuovere un giocatore, disegnare una freccia,
-  /// cancellare tutto): "Annulla" ripristina l'ultimo. Si svuota quando
-  /// cambia il campo, perché le posizioni salvate lì non varrebbero più.
+  /// (piazzare/spostare/rimuovere un giocatore, disegnare o modificare
+  /// una freccia, cancellare tutto): "Annulla" ripristina l'ultimo. Si
+  /// svuota quando cambia il campo, perché le posizioni salvate lì non
+  /// varrebbero più.
   final List<PassoLavagna> _cronologia = [];
 
-  Offset? _freccitaInizio;
-  Offset? _freccitaAnteprima;
+  /// Il tratto che il dito sta disegnando, in pixel.
+  List<Offset>? _traccia;
+
+  /// Indice in [_frecce] della freccia toccata: mostra le maniglie per
+  /// piegarla e spostarla, e tipo/colore scelti valgono per lei.
+  int? _frecciaSelezionata;
 
   /// Il giocatore (o la palla) toccato in attesa di un secondo tocco: su
   /// un punto libero del campo lo sposta lì, su un altro giocatore — solo
@@ -256,6 +507,11 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     return null;
   }
 
+  FrecciaLavagna? get _freccia {
+    final i = _frecciaSelezionata;
+    return i == null || i >= _frecce.length ? null : _frecce[i];
+  }
+
   /// Sposta il giocatore/palla all'indice [i] in [nuova]: se è lui stesso
   /// a portare la palla, la trascina con sé; se è la palla a essere
   /// spostata direttamente, si stacca dal portatore (altrimenti al primo
@@ -264,7 +520,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   void _muoviGiocatore(int i, Offset nuova) {
     final chiave = _chiave(i);
     final giocatore = _giocatori[i];
-    _giocatori[i] = giocatore.colore == ColoreLavagna.giallo
+    _giocatori[i] = giocatore.colore.palla
         ? giocatore.spostato(nuova).conPortatore(null)
         : giocatore.spostato(nuova);
     for (var j = 0; j < _giocatori.length; j++) {
@@ -284,7 +540,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     }
     final indiceSelezionato = _indiceDaChiave(_selezionato);
     if (indiceSelezionato != null &&
-        _giocatori[indiceSelezionato].colore == ColoreLavagna.giallo) {
+        _giocatori[indiceSelezionato].colore.palla) {
       // La palla era selezionata: questo secondo tocco su un giocatore
       // gliela assegna come portatore.
       _registraCronologia();
@@ -317,20 +573,68 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     _notifica();
   }
 
-  /// Le frecce disegnate per il passo corrente sono annotazioni libere,
-  /// senza un legame esplicito con un giocatore. Una volta che il
-  /// giocatore è stato davvero trascinato fino al punto indicato dalla
-  /// freccia (stessa soglia di distanza usata per riconoscere un
-  /// trascinamento valido, vedi sopra), la freccia ha fatto il suo
-  /// lavoro e sparisce: è un'euristica di prossimità, non un vincolo
-  /// esatto.
-  List<FrecciaLavagna> get _frecceVisibili => _frecce.where((freccia) {
-    return !_giocatori.any(
-      (g) =>
-          g.colore == freccia.colore &&
-          (g.posizione - freccia.fine).distance <= 0.02,
+  void _piazzaPezzo(Offset punto) {
+    // Un tocco sul campo vuoto mentre un giocatore (o la palla) e'
+    // selezionato lo sposta li', invece di piazzarne uno nuovo.
+    if (_selezionato != null) {
+      _muoviSelezionatoIn(punto);
+      return;
+    }
+    final giaPresenti = _giocatori.where((g) => g.colore == _pezzo).length;
+    if (giaPresenti >= _pezzo.massimoInAcqua) {
+      final messaggio = switch (_pezzo) {
+        ColoreLavagna.giallo =>
+          'Puoi avere una sola palla: tocca quella già piazzata per '
+              'riassegnarla a un altro giocatore.',
+        ColoreLavagna.rosso => 'Al massimo 2 portieri, uno per squadra.',
+        _ =>
+          'Massimo ${WaterPoloTacticsBoard.massimoGiocatoriPerColore} '
+              'calottine ${_pezzo.nomePezzo.toLowerCase()}: scegli l\'altra '
+              'squadra per aggiungerne altre.',
+      };
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(messaggio)));
+      return;
+    }
+    _registraCronologia();
+    setState(
+      () => _giocatori.add(GiocatoreLavagna(posizione: punto, colore: _pezzo)),
     );
-  }).toList();
+    _notifica();
+  }
+
+  void _rimuoviGiocatore(int i) {
+    _registraCronologia();
+    final chiave = _chiave(i);
+    setState(() {
+      _giocatori.removeAt(i);
+      // Un giocatore rimosso non puo' restare il portatore della palla:
+      // resta dov'e', non agganciata a nessuno.
+      for (var j = 0; j < _giocatori.length; j++) {
+        if (_giocatori[j].portatore == chiave) {
+          _giocatori[j] = _giocatori[j].conPortatore(null);
+        }
+      }
+      if (_selezionato == chiave) _selezionato = null;
+    });
+    _notifica();
+  }
+
+  /// Le frecce sono annotazioni libere, senza un legame esplicito con un
+  /// giocatore. Una volta che lo spostamento indicato è stato davvero
+  /// fatto nello stesso passo — per una nuotata, un giocatore è arrivato
+  /// alla punta e nessuno è rimasto alla partenza; per un passaggio o un
+  /// tiro, lo stesso con la palla — la freccia ha fatto il suo lavoro e
+  /// sparisce. È un'euristica di prossimità, non un vincolo esatto; la
+  /// freccia scelta resta sempre visibile, per poterla modificare.
+  bool _compiuta(FrecciaLavagna f) {
+    if (identical(f, _freccia)) return false;
+    final palla = f.tipo.muoveLaPalla;
+    bool occupato(Offset p) => _giocatori.any(
+      (g) => g.colore.palla == palla && (g.posizione - p).distance <= 0.02,
+    );
+    return occupato(f.fine) && !occupato(f.inizio);
+  }
 
   void _notifica() =>
       widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
@@ -351,6 +655,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         ..clear()
         ..addAll(precedente.frecce);
       _selezionato = null;
+      _frecciaSelezionata = null;
     });
     _notifica();
   }
@@ -361,8 +666,46 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       _giocatori.clear();
       _frecce.clear();
       _selezionato = null;
+      _frecciaSelezionata = null;
     });
     _notifica();
+  }
+
+  void _eliminaFrecciaSelezionata() {
+    final i = _frecciaSelezionata;
+    if (i == null) return;
+    _registraCronologia();
+    setState(() {
+      _frecce.removeAt(i);
+      _frecciaSelezionata = null;
+    });
+    _notifica();
+  }
+
+  /// Applica [modifica] alla freccia scelta, se c'è.
+  void _modificaFreccia(
+    FrecciaLavagna Function(FrecciaLavagna) modifica, {
+    bool registra = true,
+  }) {
+    final i = _frecciaSelezionata;
+    if (i == null) return;
+    if (registra) _registraCronologia();
+    setState(() => _frecce[i] = modifica(_frecce[i]));
+    _notifica();
+  }
+
+  void _scegliTipo(TipoFreccia tipo) {
+    setState(() => _tipo = tipo);
+    if (_freccia case final f? when f.tipo != tipo) {
+      _modificaFreccia((f) => f.copiaCon(tipo: tipo));
+    }
+  }
+
+  void _scegliInchiostro(ColoreLavagna colore) {
+    setState(() => _inchiostro = colore);
+    if (_freccia case final f? when f.colore != colore) {
+      _modificaFreccia((f) => f.copiaCon(colore: colore));
+    }
   }
 
   Future<void> _cambiaCampo(CampoLavagna nuovo) async {
@@ -397,109 +740,119 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         // precedente: non avrebbero più senso qui.
         _cronologia.clear();
         _selezionato = null;
+        _frecciaSelezionata = null;
       });
       _notifica();
     }
     widget.onCampoCambiato?.call(nuovo);
   }
 
+  Widget _barraStrumenti(bool vuoto) => LayoutBuilder(
+    builder: (context, vincoli) {
+      final modalita = SegmentedButton<_ModalitaLavagna>(
+        // Senza spunta: la scelta e' gia' evidenziata dal colore, e la
+        // spunta toglieva spazio all'etichetta che su telefono andava a
+        // capo a meta' parola.
+        showSelectedIcon: false,
+        style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        segments: const [
+          ButtonSegment(
+            value: _ModalitaLavagna.giocatori,
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Giocatori', maxLines: 1),
+            ),
+            icon: Icon(Icons.circle_outlined, size: 18),
+          ),
+          ButtonSegment(
+            value: _ModalitaLavagna.frecce,
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Frecce', maxLines: 1),
+            ),
+            icon: Icon(Icons.north_east, size: 18),
+          ),
+        ],
+        selected: {_modalita},
+        onSelectionChanged: (s) => setState(() {
+          _modalita = s.first;
+          _selezionato = null;
+          _frecciaSelezionata = null;
+        }),
+      );
+      final conFreccia = _freccia != null;
+      final strumenti = <Widget>[
+        const PulsanteSpiegazione(
+          titolo: 'Lavagna tattica',
+          spiegazione: _spiegazioneLavagna,
+        ),
+        IconButton(
+          icon: const Icon(Icons.undo),
+          tooltip: 'Annulla l\'ultima modifica',
+          onPressed: _cronologia.isEmpty ? null : _annulla,
+        ),
+        IconButton(
+          icon: Icon(widget.bloccata ? Icons.lock : Icons.lock_open_outlined),
+          tooltip: widget.bloccata
+              ? 'Sblocca lo scorrimento della pagina'
+              : 'Blocca lo scorrimento della pagina (utile mentre '
+                    'disegni una freccia)',
+          onPressed: () => widget.onBloccataCambiato?.call(!widget.bloccata),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: conFreccia ? 'Elimina la freccia scelta' : 'Cancella tutto',
+          onPressed: conFreccia
+              ? _eliminaFrecciaSelezionata
+              : (vuoto ? null : _cancellaTutto),
+        ),
+      ];
+      // Sotto ~400 px quattro pulsanti da 48 lasciano al selettore meno
+      // di 70 px per segmento: gli strumenti scendono sotto.
+      if (vincoli.maxWidth < 400) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            modalita,
+            const SizedBox(height: AppSpacing.s4),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: strumenti),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: modalita),
+          const SizedBox(width: AppSpacing.s8),
+          ...strumenti,
+        ],
+      );
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
     final vuoto = _giocatori.isEmpty && _frecce.isEmpty;
+    final frecciaScelta = _freccia;
+    final suggerimento = switch (_modalita) {
+      _ModalitaLavagna.giocatori =>
+        'Tocca l\'acqua per mettere ${_pezzo.palla ? 'la palla' : 'una calottina'}, '
+            'trascina per spostare, doppio tocco per togliere.',
+      _ModalitaLavagna.frecce when frecciaScelta != null =>
+        'Trascina il pallino al centro per curvarla, quelli agli estremi '
+            'per spostarla. Doppio tocco sul centro la raddrizza.',
+      _ModalitaLavagna.frecce =>
+        'Disegna la traiettoria col dito: la freccia la segue. Tocca una '
+            'freccia per modificarla.',
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.modificabile) ...[
-          LayoutBuilder(
-            builder: (context, vincoli) {
-              final modalita = SegmentedButton<_ModalitaLavagna>(
-                // Senza spunta: la scelta e' gia' evidenziata dal
-                // colore, e la spunta toglieva spazio all'etichetta
-                // che su telefono andava a capo a meta' parola.
-                showSelectedIcon: false,
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                segments: const [
-                  ButtonSegment(
-                    value: _ModalitaLavagna.giocatori,
-                    label: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text('Giocatori', maxLines: 1),
-                    ),
-                    icon: Icon(Icons.circle_outlined, size: 18),
-                  ),
-                  ButtonSegment(
-                    value: _ModalitaLavagna.frecce,
-                    label: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text('Frecce', maxLines: 1),
-                    ),
-                    icon: Icon(Icons.north_east, size: 18),
-                  ),
-                ],
-                selected: {_modalita},
-                onSelectionChanged: (s) => setState(() {
-                  _modalita = s.first;
-                  _selezionato = null;
-                }),
-              );
-              final strumenti = <Widget>[
-                const PulsanteSpiegazione(
-                  titolo: 'Lavagna tattica',
-                  spiegazione: _spiegazioneLavagna,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.undo),
-                  tooltip: 'Annulla l\'ultima modifica',
-                  onPressed: _cronologia.isEmpty ? null : _annulla,
-                ),
-                IconButton(
-                  icon: Icon(
-                    widget.bloccata ? Icons.lock : Icons.lock_open_outlined,
-                  ),
-                  tooltip: widget.bloccata
-                      ? 'Sblocca lo scorrimento della pagina'
-                      : 'Blocca lo scorrimento della pagina (utile mentre '
-                            'disegni una freccia)',
-                  onPressed: () =>
-                      widget.onBloccataCambiato?.call(!widget.bloccata),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Cancella tutto',
-                  onPressed: vuoto ? null : _cancellaTutto,
-                ),
-              ];
-              // Sotto ~400 px quattro pulsanti da 48 lasciano al selettore
-              // meno di 70 px per segmento: gli strumenti scendono sotto.
-              if (vincoli.maxWidth < 400) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    modalita,
-                    const SizedBox(height: AppSpacing.s4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: strumenti,
-                    ),
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  Expanded(child: modalita),
-                  const SizedBox(width: AppSpacing.s8),
-                  ...strumenti,
-                ],
-              );
-            },
-          ),
+          _barraStrumenti(vuoto),
           const SizedBox(height: AppSpacing.s8),
           SegmentedButton<CampoLavagna>(
-            // Senza spunta: la scelta e' gia' evidenziata dal
-            // colore, e la spunta toglieva spazio all'etichetta
-            // che su telefono andava a capo a meta' parola.
             showSelectedIcon: false,
             style: const ButtonStyle(visualDensity: VisualDensity.compact),
             segments: [
@@ -510,293 +863,440 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
             onSelectionChanged: (s) => _cambiaCampo(s.first),
           ),
           const SizedBox(height: AppSpacing.s8),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppSpacing.s8,
-            children: [
-              Text(
-                'Colore:',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-              for (final c in ColoreLavagna.values)
-                _SwatchColore(
-                  colore: c,
-                  selezionato: c == _coloreSelezionato,
-                  onTap: () => setState(() => _coloreSelezionato = c),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s8),
-        ],
-        AspectRatio(
-          aspectRatio: widget.campo == CampoLavagna.intero ? 3 / 4 : 4 / 3,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pannello),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final larghezza = constraints.maxWidth;
-                final altezza = constraints.maxHeight;
-
-                Offset relativa(Offset locale) => Offset(
-                  (locale.dx / larghezza).clamp(0.0, 1.0),
-                  (locale.dy / altezza).clamp(0.0, 1.0),
-                );
-
-                return GestureDetector(
-                  onTapDown:
-                      !widget.modificabile ||
-                          _modalita != _ModalitaLavagna.giocatori
-                      ? null
-                      : (d) {
-                          // Un tocco sul campo vuoto mentre un giocatore
-                          // (o la palla) e' selezionato lo sposta li',
-                          // invece di piazzarne uno nuovo.
-                          if (_selezionato != null) {
-                            _muoviSelezionatoIn(relativa(d.localPosition));
-                            return;
-                          }
-                          // Il giallo e' riservato alla palla: al
-                          // massimo una (non conta per il tetto dei 7
-                          // dei giocatori di movimento, che ha un tetto
-                          // a parte).
-                          final giaPresenti = _giocatori
-                              .where((g) => g.colore == _coloreSelezionato)
-                              .length;
-                          final tetto =
-                              _coloreSelezionato == ColoreLavagna.giallo
-                              ? 1
-                              : WaterPoloTacticsBoard.massimoGiocatoriPerColore;
-                          if (giaPresenti >= tetto) {
-                            if (_coloreSelezionato == ColoreLavagna.giallo) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Puoi avere una sola palla: tocca '
-                                    'quella già piazzata per riassegnarla '
-                                    'a un altro giocatore.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Massimo '
-                                  '${WaterPoloTacticsBoard.massimoGiocatoriPerColore} '
-                                  'giocatori ${_coloreSelezionato.nome.toLowerCase()}: '
-                                  'cambia colore per aggiungerne altri.',
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-                          _registraCronologia();
-                          setState(
-                            () => _giocatori.add(
-                              GiocatoreLavagna(
-                                posizione: relativa(d.localPosition),
-                                colore: _coloreSelezionato,
-                              ),
-                            ),
-                          );
-                          _notifica();
-                        },
-                  onPanStart:
-                      !widget.modificabile ||
-                          _modalita != _ModalitaLavagna.frecce
-                      ? null
-                      : (d) => setState(() {
-                          _freccitaInizio = relativa(d.localPosition);
-                          _freccitaAnteprima = _freccitaInizio;
-                        }),
-                  onPanUpdate:
-                      !widget.modificabile ||
-                          _modalita != _ModalitaLavagna.frecce
-                      ? null
-                      : (d) => setState(
-                          () => _freccitaAnteprima = relativa(d.localPosition),
+          if (_modalita == _ModalitaLavagna.giocatori)
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (final p in ColoreLavagna.pezzi)
+                  _ChipStrumento(
+                    etichetta: p.nomePezzo,
+                    selezionato: p == _pezzo,
+                    onTap: () => setState(() {
+                      _pezzo = p;
+                      _selezionato = null;
+                    }),
+                    icona: SizedBox(
+                      width: 26,
+                      height: 22,
+                      child: CustomPaint(
+                        painter: _PezzoPainter(
+                          colore: p,
+                          etichetta: p.etichetta(1),
                         ),
-                  onPanEnd:
-                      !widget.modificabile ||
-                          _modalita != _ModalitaLavagna.frecce
-                      ? null
-                      : (_) {
-                          final inizio = _freccitaInizio;
-                          final fine = _freccitaAnteprima;
-                          final daAggiungere =
-                              inizio != null &&
-                              fine != null &&
-                              (inizio - fine).distance > 0.02;
-                          if (daAggiungere) _registraCronologia();
-                          setState(() {
-                            if (daAggiungere) {
-                              _frecce.add(
-                                FrecciaLavagna(
-                                  inizio: inizio,
-                                  fine: fine,
-                                  colore: _coloreSelezionato,
-                                ),
-                              );
-                            }
-                            _freccitaInizio = null;
-                            _freccitaAnteprima = null;
-                          });
-                          _notifica();
-                        },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colori.azioneTenue,
-                      border: Border.all(color: colori.linea),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _CampoCompletoPainter(
-                              colori: colori,
-                              campo: widget.campo,
-                              frecce: _frecceVisibili,
-                              anteprimaFreccia:
-                                  _freccitaInizio != null &&
-                                      _freccitaAnteprima != null
-                                  ? FrecciaLavagna(
-                                      inizio: _freccitaInizio!,
-                                      fine: _freccitaAnteprima!,
-                                      colore: _coloreSelezionato,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        if (widget.passoFantasma != null)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: Opacity(
-                                opacity: 0.3,
-                                child: Stack(
-                                  children: [
-                                    Positioned.fill(
-                                      child: CustomPaint(
-                                        painter: _CampoCompletoPainter(
-                                          colori: colori,
-                                          campo: widget.campo,
-                                          // Il fantasma mostra solo i
-                                          // giocatori: le frecce sono
-                                          // del passo in cui sono state
-                                          // disegnate, non devono
-                                          // restare visibili dopo.
-                                          frecce: const [],
-                                          disegnaCampo: false,
-                                        ),
-                                      ),
-                                    ),
-                                    for (
-                                      var i = 0;
-                                      i <
-                                          widget
-                                              .passoFantasma!
-                                              .giocatori
-                                              .length;
-                                      i++
-                                    )
-                                      // La palla non si mostra nel
-                                      // fantasma: senza numero, una
-                                      // seconda in trasparenza vicino a
-                                      // quella vera sembra un secondo
-                                      // pallone invece di un riferimento
-                                      // al passo precedente.
-                                      if (widget
-                                              .passoFantasma!
-                                              .giocatori[i]
-                                              .colore !=
-                                          ColoreLavagna.giallo)
-                                        _TokenGiocatore(
-                                          giocatore: widget
-                                              .passoFantasma!
-                                              .giocatori[i],
-                                          numero: _numeroPerColore(
-                                            widget.passoFantasma!.giocatori,
-                                            i,
-                                          ),
-                                          larghezza: larghezza,
-                                          altezza: altezza,
-                                          attivo: false,
-                                          onSposta: (_) {},
-                                          onRimuovi: () {},
-                                        ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        for (var i = 0; i < _giocatori.length; i++)
-                          _TokenGiocatore(
-                            giocatore: _giocatori[i],
-                            // Numerato per colore (1-7), non in ordine
-                            // assoluto di piazzamento: al cambio colore
-                            // riparte da 1.
-                            numero: _numeroPerColore(_giocatori, i),
-                            larghezza: larghezza,
-                            altezza: altezza,
-                            attivo:
-                                widget.modificabile &&
-                                _modalita == _ModalitaLavagna.giocatori,
-                            evidenziato: _chiave(i) == _selezionato,
-                            onTap: () => _onTapGiocatore(i),
-                            onInizioTrascinamento: () {
-                              _registraCronologia();
-                              _selezionato = null;
-                            },
-                            onSposta: (nuova) {
-                              setState(() => _muoviGiocatore(i, nuova));
-                              _notifica();
-                            },
-                            onRimuovi: () {
-                              _registraCronologia();
-                              final chiave = _chiave(i);
-                              setState(() {
-                                _giocatori.removeAt(i);
-                                // Un giocatore rimosso non puo' restare
-                                // il portatore della palla: resta dov'e',
-                                // non agganciata a nessuno.
-                                for (var j = 0; j < _giocatori.length; j++) {
-                                  if (_giocatori[j].portatore == chiave) {
-                                    _giocatori[j] = _giocatori[j].conPortatore(
-                                      null,
-                                    );
-                                  }
-                                }
-                                if (_selezionato == chiave) {
-                                  _selezionato = null;
-                                }
-                              });
-                              _notifica();
-                            },
-                          ),
-                      ],
+                      ),
                     ),
                   ),
-                );
-              },
+              ],
+            )
+          else ...[
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (final t in TipoFreccia.values)
+                  _ChipStrumento(
+                    etichetta: t.nome,
+                    selezionato: t == (frecciaScelta?.tipo ?? _tipo),
+                    onTap: () => _scegliTipo(t),
+                    icona: SizedBox(
+                      width: 30,
+                      height: 14,
+                      child: CustomPaint(
+                        painter: _AnteprimaTipoPainter(
+                          tipo: t,
+                          colore: colori.testo,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-        ),
-        if (widget.modificabile) ...[
-          const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s8),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: AppSpacing.s8,
+              children: [
+                Text(
+                  'Colore:',
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+                for (final c in ColoreLavagna.inchiostri)
+                  _SwatchColore(
+                    colore: c,
+                    selezionato: c == (frecciaScelta?.colore ?? _inchiostro),
+                    onTap: () => _scegliInchiostro(c),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: AppSpacing.s8),
           Text(
-            _modalita == _ModalitaLavagna.giocatori
-                ? 'Tocca per aggiungere un giocatore, trascina per spostarlo, '
-                      'doppio tocco per rimuoverlo.'
-                : 'Trascina per disegnare una freccia di movimento.',
+            suggerimento,
             style: AppTypography.piccolo.copyWith(
               color: colori.testoSecondario,
             ),
           ),
+          const SizedBox(height: AppSpacing.s8),
         ],
+        _RiquadroVasca(
+          campo: widget.campo,
+          builder: (larghezza, altezza) => _vasca(context, larghezza, altezza),
+        ),
       ],
+    );
+  }
+
+  Widget _vasca(BuildContext context, double larghezza, double altezza) {
+    final colori = context.colori;
+    final modificabile = widget.modificabile;
+    final inGiocatori = _modalita == _ModalitaLavagna.giocatori;
+    final inFrecce = modificabile && !inGiocatori;
+
+    Offset relativa(Offset locale) => Offset(
+      (locale.dx / larghezza).clamp(0.0, 1.0),
+      (locale.dy / altezza).clamp(0.0, 1.0),
+    );
+    Offset inPixel(Offset frazione) =>
+        Offset(frazione.dx * larghezza, frazione.dy * altezza);
+    // Il controllo di una curva può stare fuori dal campo: non va
+    // schiacciato sul bordo come un punto toccato.
+    Offset inFrazione(Offset pixel) =>
+        Offset(pixel.dx / larghezza, pixel.dy / altezza);
+
+    final visibili = <int>[
+      for (var i = 0; i < _frecce.length; i++)
+        if (!_compiuta(_frecce[i])) i,
+    ];
+
+    int? frecciaToccata(Offset punto) {
+      int? migliore;
+      var distanzaMigliore = 18.0;
+      for (final i in visibili) {
+        final f = _frecce[i];
+        final d = distanzaDaCurva(
+          punto,
+          inPixel(f.inizio),
+          f.controllo == null ? null : inPixel(f.controllo!),
+          inPixel(f.fine),
+        );
+        if (d < distanzaMigliore) {
+          migliore = i;
+          distanzaMigliore = d;
+        }
+      }
+      return migliore;
+    }
+
+    final traccia = _traccia;
+    FrecciaLavagna? anteprima;
+    if (traccia != null && traccia.length > 1) {
+      final controllo = controlloDaTraccia(traccia);
+      anteprima = FrecciaLavagna(
+        inizio: relativa(traccia.first),
+        fine: relativa(traccia.last),
+        colore: _inchiostro,
+        tipo: _tipo,
+        controllo: controllo == null ? null : inFrazione(controllo),
+      );
+    }
+
+    final frecciaScelta = inFrecce ? _freccia : null;
+
+    return GestureDetector(
+      // La freccia parte dal punto toccato, non da dove il trascinamento
+      // viene riconosciuto (qualche decina di pixel più in là).
+      dragStartBehavior: DragStartBehavior.down,
+      // Un "tocco" dell'accessibilità non ha un punto preciso: con
+      // l'albero di accessibilità attivo, ogni tocco sulla vasca piazzava
+      // la calottina sempre nello stesso posto.
+      excludeFromSemantics: true,
+      onTapDown: modificabile && inGiocatori
+          ? (d) => _piazzaPezzo(relativa(d.localPosition))
+          : null,
+      onTapUp: inFrecce
+          ? (d) => setState(
+              () => _frecciaSelezionata = frecciaToccata(d.localPosition),
+            )
+          : null,
+      onPanStart: inFrecce
+          ? (d) => setState(() {
+              _frecciaSelezionata = null;
+              _traccia = [d.localPosition];
+            })
+          : null,
+      onPanUpdate: inFrecce
+          ? (d) => setState(() => _traccia?.add(d.localPosition))
+          : null,
+      onPanEnd: inFrecce
+          ? (_) {
+              final tratto = _traccia;
+              setState(() => _traccia = null);
+              if (tratto == null ||
+                  (tratto.last - tratto.first).distance < 16) {
+                return;
+              }
+              final controllo = controlloDaTraccia(tratto);
+              _registraCronologia();
+              setState(() {
+                _frecce.add(
+                  FrecciaLavagna(
+                    inizio: relativa(tratto.first),
+                    fine: relativa(tratto.last),
+                    colore: _inchiostro,
+                    tipo: _tipo,
+                    controllo: controllo == null ? null : inFrazione(controllo),
+                  ),
+                );
+                // Appena disegnata resta scelta: si può subito piegarla
+                // o cambiarle tipo.
+                _frecciaSelezionata = _frecce.length - 1;
+              });
+              _notifica();
+            }
+          : null,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: _VascaPainter(campo: widget.campo)),
+          ),
+          if (widget.passoFantasma case final fantasma?)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: 0.3,
+                  child: Stack(
+                    children: [
+                      for (var i = 0; i < fantasma.giocatori.length; i++)
+                        // La palla non si mostra nel fantasma: una
+                        // seconda in trasparenza vicino a quella vera
+                        // sembra un secondo pallone invece di un
+                        // riferimento al passo precedente.
+                        if (!fantasma.giocatori[i].colore.palla)
+                          _TokenGiocatore(
+                            giocatore: fantasma.giocatori[i],
+                            numero: _numeroPerColore(fantasma.giocatori, i),
+                            larghezza: larghezza,
+                            altezza: altezza,
+                            attivo: false,
+                            onTrascina: (_) {},
+                            onRimuovi: () {},
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _FreccePainter(
+                  frecce: [for (final i in visibili) _frecce[i]],
+                  anteprima: anteprima,
+                  evidenziata: frecciaScelta,
+                  coloreEvidenza: colori.azione,
+                  pezzi: _ingombri(_giocatori),
+                ),
+              ),
+            ),
+          ),
+          for (var i = 0; i < _giocatori.length; i++)
+            _TokenGiocatore(
+              giocatore: _giocatori[i],
+              // Numerato per colore (1-7), non in ordine assoluto di
+              // piazzamento: al cambio colore riparte da 1.
+              numero: _numeroPerColore(_giocatori, i),
+              larghezza: larghezza,
+              altezza: altezza,
+              attivo: modificabile && inGiocatori,
+              evidenziato: _chiave(i) == _selezionato,
+              onTap: () => _onTapGiocatore(i),
+              onInizioTrascinamento: () {
+                _registraCronologia();
+                _selezionato = null;
+              },
+              onTrascina: (delta) {
+                final attuale = _giocatori[i].posizione;
+                final nuova = Offset(
+                  (attuale.dx + delta.dx / larghezza).clamp(0.0, 1.0),
+                  (attuale.dy + delta.dy / altezza).clamp(0.0, 1.0),
+                );
+                setState(() => _muoviGiocatore(i, nuova));
+                _notifica();
+              },
+              onRimuovi: () => _rimuoviGiocatore(i),
+            ),
+          if (frecciaScelta != null) ...[
+            _Maniglia(
+              centro: inPixel(frecciaScelta.puntoMedio),
+              diametro: 20,
+              etichetta: 'Curva la freccia',
+              onInizio: _registraCronologia,
+              onTrascina: (delta) => _modificaFreccia(registra: false, (f) {
+                final medio = inPixel(f.puntoMedio) + delta;
+                final controllo = controlloPerPuntoMedio(
+                  inPixel(f.inizio),
+                  medio,
+                  inPixel(f.fine),
+                );
+                return f.copiaCon(controllo: inFrazione(controllo));
+              }),
+              onFine: () => _modificaFreccia(registra: false, (f) {
+                // Quasi dritta: si raddrizza del tutto, una piega di
+                // pochi pixel sembra un errore.
+                final c = f.controllo;
+                if (c == null) return f;
+                final scarto = inPixel(c) - inPixel((f.inizio + f.fine) / 2);
+                return scarto.distance < 8 ? f.copiaCon(dritta: true) : f;
+              }),
+              onDoppioTocco: () =>
+                  _modificaFreccia((f) => f.copiaCon(dritta: true)),
+            ),
+            for (final estremo in [true, false])
+              _Maniglia(
+                centro: inPixel(
+                  estremo ? frecciaScelta.inizio : frecciaScelta.fine,
+                ),
+                diametro: 14,
+                etichetta: estremo
+                    ? 'Sposta l\'inizio della freccia'
+                    : 'Sposta la punta della freccia',
+                onInizio: _registraCronologia,
+                onTrascina: (delta) => _modificaFreccia(registra: false, (f) {
+                  final punto = relativa(
+                    inPixel(estremo ? f.inizio : f.fine) + delta,
+                  );
+                  return estremo
+                      ? f.copiaCon(inizio: punto)
+                      : f.copiaCon(fine: punto);
+                }),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Centri (frazioni del campo) e raggi in pixel dei pezzi in acqua: una
+/// freccia che arriva su un giocatore si ferma al bordo della calottina,
+/// invece di finire nascosta sotto.
+List<(Offset, double)> _ingombri(List<GiocatoreLavagna> giocatori) => [
+  for (final g in giocatori)
+    (g.posizione, g.colore.palla ? _raggioPalla + 1 : _raggioCalottina + 1),
+];
+
+const _altezzaCalottina = 30.0;
+const _raggioCalottina = _altezzaCalottina * 0.42;
+const _diametroPalla = 18.0;
+const _raggioPalla = _diametroPalla / 2 - 1;
+
+Size _dimensionePezzo(ColoreLavagna colore) => colore.palla
+    ? const Size(_diametroPalla, _diametroPalla)
+    : const Size(36, _altezzaCalottina);
+
+/// La vasca della lavagna, grande quanto lo spazio disponibile ma mai più
+/// alta del 70% dello schermo: il campo intero in verticale, a tutta
+/// larghezza, costringeva a scorrere la pagina per vederlo tutto.
+class _RiquadroVasca extends StatelessWidget {
+  const _RiquadroVasca({required this.campo, required this.builder});
+
+  final CampoLavagna campo;
+  final Widget Function(double larghezza, double altezza) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final altezzaMassima = math.max(
+      280.0,
+      MediaQuery.sizeOf(context).height * 0.7,
+    );
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        var larghezza = vincoli.maxWidth;
+        var altezza = larghezza / campo.proporzioni;
+        if (altezza > altezzaMassima) {
+          altezza = altezzaMassima;
+          larghezza = altezza * campo.proporzioni;
+        }
+        return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+            child: SizedBox(
+              key: const Key('vasca-lavagna'),
+              width: larghezza,
+              height: altezza,
+              child: builder(larghezza, altezza),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Pulsante di scelta dello strumento (pezzo da piazzare, tipo di
+/// freccia): figura e nome, evidenziato quando è quello in uso.
+class _ChipStrumento extends StatelessWidget {
+  const _ChipStrumento({
+    required this.etichetta,
+    required this.selezionato,
+    required this.onTap,
+    required this.icona,
+  });
+
+  final String etichetta;
+  final bool selezionato;
+  final VoidCallback onTap;
+  final Widget icona;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Semantics(
+      button: true,
+      selected: selezionato,
+      label: etichetta,
+      excludeSemantics: true,
+      child: Material(
+        color: selezionato ? colori.azioneTenue : colori.superficie,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pannello),
+          side: BorderSide(
+            color: selezionato ? colori.azione : colori.linea,
+            width: selezionato ? 2 : 1,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  icona,
+                  const SizedBox(width: AppSpacing.s8),
+                  Text(
+                    etichetta,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testo,
+                      fontWeight: selezionato
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -819,23 +1319,96 @@ class _SwatchColore extends StatelessWidget {
     final coloriApp = context.colori;
     return Tooltip(
       message: colore.nome,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: _diametro,
-          height: _diametro,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: colore.colore,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selezionato ? coloriApp.azione : coloriApp.linea,
-              width: selezionato ? 3 : 1,
+      child: Semantics(
+        button: true,
+        selected: selezionato,
+        label: 'Colore ${colore.nome.toLowerCase()}',
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: _diametro,
+            height: _diametro,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colore.colore,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selezionato ? coloriApp.azione : coloriApp.linea,
+                width: selezionato ? 3 : 1,
+              ),
+            ),
+            child: selezionato
+                ? Icon(Icons.check, size: 14, color: colore.controcolore)
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Maniglia di una freccia scelta: un pallino da trascinare, con un'area
+/// di tocco più grande del disegno (difficile centrarlo col dito).
+class _Maniglia extends StatelessWidget {
+  const _Maniglia({
+    required this.centro,
+    required this.diametro,
+    required this.etichetta,
+    required this.onInizio,
+    required this.onTrascina,
+    this.onFine,
+    this.onDoppioTocco,
+  });
+
+  final Offset centro;
+  final double diametro;
+  final String etichetta;
+  final VoidCallback onInizio;
+  final ValueChanged<Offset> onTrascina;
+  final VoidCallback? onFine;
+  final VoidCallback? onDoppioTocco;
+
+  static const _area = 44.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Positioned(
+      left: centro.dx - _area / 2,
+      top: centro.dy - _area / 2,
+      child: Semantics(
+        label: etichetta,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          // La maniglia segue il dito da subito, senza perdere il primo
+          // tratto del trascinamento.
+          dragStartBehavior: DragStartBehavior.down,
+          onPanStart: (_) => onInizio(),
+          onPanUpdate: (d) => onTrascina(d.delta),
+          onPanEnd: (_) => onFine?.call(),
+          onDoubleTap: onDoppioTocco,
+          child: SizedBox(
+            width: _area,
+            height: _area,
+            child: Center(
+              child: Container(
+                width: diametro,
+                height: diametro,
+                decoration: BoxDecoration(
+                  color: AcquaPalette.bianco,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colori.azione, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AcquaPalette.nero.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          child: selezionato
-              ? Icon(Icons.check, size: 14, color: colore.controcolore)
-              : null,
         ),
       ),
     );
@@ -849,7 +1422,7 @@ class _TokenGiocatore extends StatelessWidget {
     required this.larghezza,
     required this.altezza,
     required this.attivo,
-    required this.onSposta,
+    required this.onTrascina,
     required this.onRimuovi,
     this.onInizioTrascinamento,
     this.onTap,
@@ -861,15 +1434,22 @@ class _TokenGiocatore extends StatelessWidget {
   final double larghezza;
   final double altezza;
 
-  /// Solo in modalità "Giocatori" il pallino risponde al trascinamento:
-  /// in modalità "Frecce" il gesto deve arrivare al campo sotto, per
-  /// poter disegnare una freccia che parte proprio da un giocatore.
+  /// Solo in modalità "Giocatori" la calottina risponde al
+  /// trascinamento: in modalità "Frecce" il gesto deve arrivare al campo
+  /// sotto, per poter disegnare una freccia che parte proprio da un
+  /// giocatore.
   final bool attivo;
-  final ValueChanged<Offset> onSposta;
+
+  /// Lo spostamento del dito in pixel: chi contiene la calottina lo somma
+  /// alla posizione *attuale*. Calcolare qui la nuova posizione dalla
+  /// [giocatore] ricevuta all'ultima build perdeva strada quando più
+  /// movimenti arrivavano nello stesso fotogramma (dito veloce): ognuno
+  /// ripartiva dalla stessa posizione vecchia.
+  final ValueChanged<Offset> onTrascina;
   final VoidCallback onRimuovi;
 
   /// Chiamato una sola volta all'inizio del trascinamento (non a ogni
-  /// pixel di movimento, a differenza di [onSposta]): usato per
+  /// pixel di movimento, a differenza di [onTrascina]): usato per
   /// registrare la posizione di partenza nella cronologia di "Annulla".
   final VoidCallback? onInizioTrascinamento;
 
@@ -877,66 +1457,36 @@ class _TokenGiocatore extends StatelessWidget {
   /// con la palla già armata, per assegnarla a questo giocatore.
   final VoidCallback? onTap;
 
-  /// true sulla palla mentre è "armata" (in attesa del giocatore che la
-  /// riceve): un bordo evidenziato segnala lo stato in attesa.
+  /// true sul pezzo toccato, in attesa del punto d'arrivo o del
+  /// giocatore che riceve la palla: un anello lo segnala.
   final bool evidenziato;
-
-  static const _diametro = 32.0;
-
-  /// La palla (giallo) e' meta' del diametro degli altri pallini —
-  /// non e' un giocatore, deve distinguersi a colpo d'occhio anche
-  /// dalla sola dimensione, non solo dall'assenza del numero.
-  double get _diametroEffettivo =>
-      giocatore.colore == ColoreLavagna.giallo ? _diametro / 2 : _diametro;
 
   @override
   Widget build(BuildContext context) {
-    final colori = context.colori;
     final posizione = giocatore.posizione;
-    final diametro = _diametroEffettivo;
+    final dimensione = _dimensionePezzo(giocatore.colore);
     return Positioned(
-      left: posizione.dx * larghezza - diametro / 2,
-      top: posizione.dy * altezza - diametro / 2,
+      left: posizione.dx * larghezza - dimensione.width / 2,
+      top: posizione.dy * altezza - dimensione.height / 2,
       child: IgnorePointer(
         ignoring: !attivo,
-        child: GestureDetector(
-          onTap: onTap,
-          onPanStart: (_) => onInizioTrascinamento?.call(),
-          onPanUpdate: (d) {
-            final nuovaX =
-                (((posizione.dx * larghezza) + d.delta.dx) / larghezza).clamp(
-                  0.0,
-                  1.0,
-                );
-            final nuovaY = (((posizione.dy * altezza) + d.delta.dy) / altezza)
-                .clamp(0.0, 1.0);
-            onSposta(Offset(nuovaX, nuovaY));
-          },
-          onDoubleTap: onRimuovi,
-          child: Container(
-            width: diametro,
-            height: diametro,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: giocatore.colore.colore,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: evidenziato ? colori.azione : colori.superficie,
-                width: evidenziato ? 3 : 2,
+        child: Semantics(
+          label: giocatore.colore.descrizionePezzo(numero),
+          selected: evidenziato,
+          child: GestureDetector(
+            dragStartBehavior: DragStartBehavior.down,
+            onTap: onTap,
+            onPanStart: (_) => onInizioTrascinamento?.call(),
+            onPanUpdate: (d) => onTrascina(d.delta),
+            onDoubleTap: onRimuovi,
+            child: CustomPaint(
+              size: dimensione,
+              painter: _PezzoPainter(
+                colore: giocatore.colore,
+                etichetta: giocatore.colore.etichetta(numero),
+                evidenza: evidenziato ? context.colori.azione : null,
               ),
             ),
-            // Il giallo e' riservato alla palla: nessun numero sopra,
-            // cosi' si distingue a colpo d'occhio dai giocatori e si
-            // identificano i passaggi.
-            child: giocatore.colore == ColoreLavagna.giallo
-                ? null
-                : Text(
-                    '$numero',
-                    style: AppTypography.piccolo.copyWith(
-                      color: giocatore.colore.controcolore,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
           ),
         ),
       ),
@@ -944,201 +1494,564 @@ class _TokenGiocatore extends StatelessWidget {
   }
 }
 
-class _CampoCompletoPainter extends CustomPainter {
-  _CampoCompletoPainter({
-    required this.colori,
-    required this.campo,
-    required this.frecce,
-    this.anteprimaFreccia,
-    this.disegnaCampo = true,
-  });
+/// Una calottina vista dall'alto (cupola, paraorecchie ai lati e numero)
+/// o la palla a spicchi: stessi colori delle calottine del resto
+/// dell'app.
+class _PezzoPainter extends CustomPainter {
+  _PezzoPainter({required this.colore, this.etichetta, this.evidenza});
 
-  final ColoriApp colori;
-  final CampoLavagna campo;
-  final List<FrecciaLavagna> frecce;
-  final FrecciaLavagna? anteprimaFreccia;
-
-  /// `false` per disegnare solo le frecce, senza le linee del campo —
-  /// usato per il fantasma del passo precedente (le linee del campo
-  /// sono già disegnate dal livello reale sotto, ridisegnarle due volte
-  /// non serve).
-  final bool disegnaCampo;
+  final ColoreLavagna colore;
+  final String? etichetta;
+  final Color? evidenza;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final larghezzaPorta = size.width * 0.24;
-    final altezzaPorta = size.height * 0.05;
-    final centroX = size.width / 2;
+    final centro = size.center(Offset.zero);
+    final ombra = Paint()
+      ..color = AcquaPalette.nero.withValues(alpha: 0.32)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
 
-    if (disegnaCampo) {
-      // `colori.testo` (non `colori.linea`, pensato per bordi discreti
-      // fra superfici): il disegno del campo deve restare ben
-      // leggibile sopra `azioneTenue` in entrambi i temi, non essere
-      // un dettaglio sfumato.
-      final trattoCampo = Paint()
-        ..color = colori.testo
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke;
-
-      canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        trattoCampo,
+    if (colore.palla) {
+      final raggio = size.shortestSide / 2 - 1;
+      canvas.drawCircle(centro.translate(0, 1.2), raggio, ombra);
+      disegnaPalla(canvas, centro, raggio);
+      canvas.drawCircle(
+        centro,
+        raggio,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = AcquaPalette.pallaRighe,
       );
+      _anello(canvas, centro, raggio + 3);
+      return;
+    }
 
-      // Porta in alto, sempre presente.
-      canvas.drawRect(
-        Rect.fromLTWH(
-          centroX - larghezzaPorta / 2,
-          0,
-          larghezzaPorta,
-          altezzaPorta,
+    final c = colore.calottina;
+    final raggio = size.height * 0.42;
+    canvas.drawCircle(centro.translate(0, 1.5), raggio + 1, ombra);
+
+    // Paraorecchie: due ovali ai lati, dietro la cupola.
+    for (final lato in [-1.0, 1.0]) {
+      final orecchio = Rect.fromCenter(
+        center: centro.translate(lato * raggio * 0.98, raggio * 0.1),
+        width: raggio * 0.46,
+        height: raggio * 0.7,
+      );
+      canvas.drawOval(orecchio, Paint()..color = c.ombra);
+      canvas.drawOval(
+        orecchio.deflate(raggio * 0.08),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8
+          ..color = c.tessuto.withValues(alpha: 0.6),
+      );
+    }
+
+    // Cupola con luce dall'alto a sinistra.
+    final cupola = Rect.fromCircle(center: centro, radius: raggio);
+    canvas.drawCircle(
+      centro,
+      raggio,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.45),
+          radius: 0.95,
+          colors: [
+            Color.lerp(c.tessuto, AcquaPalette.bianco, 0.35)!,
+            c.tessuto,
+            c.ombra,
+          ],
+          stops: const [0, 0.62, 1],
+        ).createShader(cupola),
+    );
+    canvas.drawCircle(
+      centro,
+      raggio,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = c.ombra,
+    );
+
+    final testo = etichetta;
+    if (testo != null && testo.isNotEmpty) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: testo,
+          style: TextStyle(
+            color: c.numero,
+            fontSize: raggio * (testo.length > 1 ? 0.85 : 1.05),
+            fontWeight: FontWeight.w800,
+            height: 1,
+          ),
         ),
-        trattoCampo,
-      );
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, centro - Offset(tp.width / 2, tp.height / 2));
+      tp.dispose();
+    }
+    _anello(canvas, centro, raggio + 3.5);
+  }
 
-      // Righe di regolamento 2m/6m (come in "eventi live partita",
-      // CampoTiro — 5m volutamente omessa), verso il centro campo a
-      // partire da ogni porta disegnata.
-      final centroY = size.height / 2;
-      _disegnaLineeRegolamento(
+  void _anello(Canvas canvas, Offset centro, double raggio) {
+    final colore = evidenza;
+    if (colore == null) return;
+    canvas.drawCircle(
+      centro,
+      raggio,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = colore,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PezzoPainter old) =>
+      old.colore != colore ||
+      old.etichetta != etichetta ||
+      old.evidenza != evidenza;
+}
+
+/// La vasca vista dall'alto: acqua chiara, la porta in alto (e in basso
+/// sul campo intero), i segni colorati ai bordi come le boe vere (rosso
+/// fino ai 2 m, giallo fino ai 5 m, verde fino a metà campo) e, per
+/// leggere le distanze in mezzo all'acqua, le righe tratteggiate dei 2 e
+/// dei 5 m. Proporzioni di un campo da 30 x 20 m.
+class _VascaPainter extends CustomPainter {
+  const _VascaPainter({required this.campo});
+
+  final CampoLavagna campo;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rettangolo = Offset.zero & size;
+    canvas.drawRect(rettangolo, Paint()..color = VascaPalette.bordo);
+
+    final margine = size.shortestSide * 0.025;
+    final acqua = rettangolo.deflate(margine);
+    final acquaArrotondata = RRect.fromRectAndRadius(
+      acqua,
+      Radius.circular(margine),
+    );
+    canvas.drawRRect(
+      acquaArrotondata,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [VascaPalette.acqua, VascaPalette.acquaFonda],
+        ).createShader(acqua),
+    );
+
+    canvas.save();
+    canvas.clipRRect(acquaArrotondata);
+    _riflessi(canvas, acqua);
+
+    final metro = acqua.height / campo.metriInAltezza;
+    final yPortaAlta = acqua.top + metro;
+    final intero = campo == CampoLavagna.intero;
+    final yMeta = intero ? acqua.top + metro * 16 : acqua.bottom;
+
+    _metaVasca(canvas, acqua, yPorta: yPortaAlta, verso: 1, yMeta: yMeta);
+    if (intero) {
+      _metaVasca(
+        canvas,
+        acqua,
+        yPorta: acqua.bottom - metro,
+        verso: -1,
+        yMeta: yMeta,
+      );
+    }
+
+    // Metà campo: riga bianca da bordo a bordo (sul campo a metà è il
+    // fondo del disegno).
+    final rigaMeta = Paint()
+      ..color = AcquaPalette.bianco.withValues(alpha: 0.6)
+      ..strokeWidth = 2;
+    final yRigaMeta = intero ? yMeta : acqua.bottom - 1;
+    canvas.drawLine(
+      Offset(acqua.left, yRigaMeta),
+      Offset(acqua.right, yRigaMeta),
+      rigaMeta,
+    );
+    canvas.restore();
+
+    canvas.drawRRect(
+      acquaArrotondata,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = AcquaPalette.bianco.withValues(alpha: 0.3),
+    );
+  }
+
+  /// Una metà vasca, dalla linea di porta [yPorta] verso [yMeta]:
+  /// [verso] +1 se la porta è in alto, -1 se è in basso.
+  void _metaVasca(
+    Canvas canvas,
+    Rect acqua, {
+    required double yPorta,
+    required double verso,
+    required double yMeta,
+  }) {
+    final metro = (yMeta - yPorta).abs() / 15;
+    double aMetri(double m) => yPorta + verso * metro * m;
+
+    // Segni ai bordi: rosso, giallo, verde.
+    final spessore = math.max(4.0, acqua.width * 0.014);
+    for (final (da, a, colore) in [
+      (0.0, 2.0, VascaPalette.segnoRosso),
+      (2.0, 5.0, VascaPalette.segnoGiallo),
+      (5.0, 15.0, VascaPalette.segnoVerde),
+    ]) {
+      final y1 = aMetri(da);
+      final y2 = aMetri(a);
+      final pennello = Paint()..color = colore;
+      canvas.drawRect(
+        Rect.fromLTRB(
+          acqua.left,
+          math.min(y1, y2),
+          acqua.left + spessore,
+          math.max(y1, y2),
+        ),
+        pennello,
+      );
+      canvas.drawRect(
+        Rect.fromLTRB(
+          acqua.right - spessore,
+          math.min(y1, y2),
+          acqua.right,
+          math.max(y1, y2),
+        ),
+        pennello,
+      );
+    }
+
+    // Righe dei 2 e dei 5 m in mezzo all'acqua, tratteggiate e tenui:
+    // in vasca non ci sono, ma aiutano a leggere le distanze.
+    for (final (metri, colore) in [
+      (2.0, VascaPalette.segnoRosso),
+      (5.0, VascaPalette.segnoGiallo),
+    ]) {
+      _rigaTratteggiata(
+        canvas,
+        acqua.left + spessore,
+        acqua.right - spessore,
+        aMetri(metri),
+        Paint()
+          ..color = colore.withValues(alpha: 0.7)
+          ..strokeWidth = 1.5,
+      );
+    }
+
+    // Linea di porta.
+    canvas.drawLine(
+      Offset(acqua.left, yPorta),
+      Offset(acqua.right, yPorta),
+      Paint()
+        ..color = AcquaPalette.bianco.withValues(alpha: 0.85)
+        ..strokeWidth = 1.5,
+    );
+
+    // Porta: 3 m fra i pali, con la rete dietro la linea.
+    final centroX = acqua.center.dx;
+    final mezzaLuce = acqua.width * 1.5 / 20;
+    final fondoRete = yPorta - verso * metro * 0.8;
+    final rete = Rect.fromLTRB(
+      centroX - mezzaLuce,
+      math.min(yPorta, fondoRete),
+      centroX + mezzaLuce,
+      math.max(yPorta, fondoRete),
+    );
+    canvas.drawRect(
+      rete,
+      Paint()..color = AcquaPalette.bianco.withValues(alpha: 0.22),
+    );
+    final maglia = Paint()
+      ..color = AcquaPalette.bianco.withValues(alpha: 0.4)
+      ..strokeWidth = 0.8;
+    for (var i = 1; i < 8; i++) {
+      final x = rete.left + rete.width * i / 8;
+      canvas.drawLine(Offset(x, rete.top), Offset(x, rete.bottom), maglia);
+    }
+    canvas.drawLine(
+      Offset(rete.left, (rete.top + rete.bottom) / 2),
+      Offset(rete.right, (rete.top + rete.bottom) / 2),
+      maglia,
+    );
+    final pali = Paint()
+      ..color = AcquaPalette.bianco
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(rete.left, yPorta),
+      Offset(rete.right, yPorta),
+      pali,
+    );
+    canvas.drawLine(
+      Offset(rete.left, yPorta),
+      Offset(rete.left, fondoRete),
+      pali..strokeWidth = 2,
+    );
+    canvas.drawLine(
+      Offset(rete.right, yPorta),
+      Offset(rete.right, fondoRete),
+      pali,
+    );
+  }
+
+  void _rigaTratteggiata(
+    Canvas canvas,
+    double da,
+    double a,
+    double y,
+    Paint pennello,
+  ) {
+    for (var x = da; x < a; x += 14) {
+      canvas.drawLine(Offset(x, y), Offset(math.min(x + 8, a), y), pennello);
+    }
+  }
+
+  /// Le "caustiche": poche righe ondulate chiare, la luce sul fondo.
+  /// Ferme: la lavagna è un foglio su cui disegnare, non uno sfondo.
+  void _riflessi(Canvas canvas, Rect acqua) {
+    final pennello = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = AcquaPalette.schiuma.withValues(alpha: 0.08);
+    const passo = 30.0;
+    for (var riga = 0; riga < acqua.height / passo + 1; riga++) {
+      final path = Path();
+      final y0 = acqua.top + riga * passo;
+      for (var x = acqua.left; x <= acqua.right; x += 8) {
+        final y = y0 + math.sin(x / 38 + riga * 0.9) * 5 + math.sin(x / 17) * 2;
+        x == acqua.left ? path.moveTo(x, y) : path.lineTo(x, y);
+      }
+      canvas.drawPath(path, pennello);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_VascaPainter old) => old.campo != campo;
+}
+
+/// Disegna una freccia: tratto del suo tipo, punta piena e un alone del
+/// colore opposto che la stacca dall'acqua.
+void _disegnaFreccia(
+  Canvas canvas,
+  Size size,
+  FrecciaLavagna f, {
+  List<(Offset, double)> pezzi = const [],
+  Color? evidenza,
+  double opacita = 1,
+}) {
+  Offset inPixel(Offset p) => Offset(p.dx * size.width, p.dy * size.height);
+  final inizio = inPixel(f.inizio);
+  final fine = inPixel(f.fine);
+  final controllo = f.controllo == null ? null : inPixel(f.controllo!);
+
+  // Se la punta cade su una calottina, la freccia si ferma al suo bordo.
+  var rientro = 0.0;
+  for (final (centro, raggio) in pezzi) {
+    final c = inPixel(centro);
+    final dallaFine = (fine - c).distance;
+    if (dallaFine < raggio + 2 && (inizio - c).distance > raggio + 2) {
+      rientro = math.max(rientro, raggio + 3 - dallaFine);
+    }
+  }
+
+  final punti = campionaCurva(inizio, controllo, fine, segmenti: 48);
+  final troncati = percorsoTroncato(punti, rientro);
+  if (troncati.length < 2) return;
+  final vertice = troncati.last;
+  final direzione = vertice - troncati[troncati.length - 2];
+  final tiro = f.tipo == TipoFreccia.tiro;
+  final lunghezzaPunta = tiro ? 14.0 : 11.0;
+
+  final tratti = [
+    for (final scostamento in tiro ? [-2.6, 2.6] : [0.0])
+      percorsoFreccia(
+        troncati,
+        accorciamento: lunghezzaPunta * 0.7,
+        tratteggiata: f.tipo == TipoFreccia.passaggio,
+        ondulata: f.tipo == TipoFreccia.conPalla,
+        scostamento: scostamento,
+      ),
+  ];
+  final punta = puntaFreccia(
+    vertice,
+    direzione,
+    lunghezza: lunghezzaPunta,
+    semiApertura: tiro ? 0.55 : 0.48,
+  );
+
+  Paint tratto(Color colore, double spessore) => Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = spessore
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round
+    ..color = colore;
+
+  if (evidenza != null) {
+    final alone = tratto(evidenza.withValues(alpha: 0.45), 10);
+    for (final t in tratti) {
+      canvas.drawPath(t, alone);
+    }
+    canvas.drawPath(punta, alone);
+  }
+
+  final contorno = tratto(
+    f.colore.controcolore.withValues(alpha: 0.45 * opacita),
+    tiro ? 4.5 : 5.5,
+  );
+  for (final t in tratti) {
+    canvas.drawPath(t, contorno);
+  }
+  canvas.drawPath(punta, contorno..strokeWidth = 3);
+
+  final inchiostro = f.colore.colore.withValues(alpha: opacita);
+  for (final t in tratti) {
+    canvas.drawPath(t, tratto(inchiostro, tiro ? 2 : 2.6));
+  }
+  canvas.drawPath(punta, Paint()..color = inchiostro);
+}
+
+class _FreccePainter extends CustomPainter {
+  _FreccePainter({
+    required this.frecce,
+    this.anteprima,
+    this.evidenziata,
+    this.coloreEvidenza,
+    this.pezzi = const [],
+  });
+
+  final List<FrecciaLavagna> frecce;
+
+  /// Il tratto che il dito sta disegnando, già come diventerà.
+  final FrecciaLavagna? anteprima;
+  final FrecciaLavagna? evidenziata;
+  final Color? coloreEvidenza;
+  final List<(Offset, double)> pezzi;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final f in frecce) {
+      _disegnaFreccia(
         canvas,
         size,
-        yBaseGoal: altezzaPorta,
-        yLimite: campo == CampoLavagna.intero ? centroY : size.height,
-      );
-
-      if (campo == CampoLavagna.intero) {
-        // Campo intero: anche la porta in basso, linea e cerchio di
-        // centrocampo — per schemi che coinvolgono tutta la vasca (es.
-        // transizioni).
-        canvas.drawRect(
-          Rect.fromLTWH(
-            centroX - larghezzaPorta / 2,
-            size.height - altezzaPorta,
-            larghezzaPorta,
-            altezzaPorta,
-          ),
-          trattoCampo,
-        );
-        _disegnaLineeRegolamento(
-          canvas,
-          size,
-          yBaseGoal: size.height - altezzaPorta,
-          yLimite: centroY,
-        );
-        canvas.drawLine(
-          Offset(0, centroY),
-          Offset(size.width, centroY),
-          trattoCampo,
-        );
-        canvas.drawCircle(
-          Offset(centroX, centroY),
-          size.width * 0.12,
-          trattoCampo,
-        );
-      }
-    }
-
-    for (final f in frecce) {
-      final trattoFreccia = Paint()
-        ..color = f.colore.colore
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      _disegnaFreccia(
-        canvas,
-        Offset(f.inizio.dx * size.width, f.inizio.dy * size.height),
-        Offset(f.fine.dx * size.width, f.fine.dy * size.height),
-        trattoFreccia,
+        f,
+        pezzi: pezzi,
+        evidenza: identical(f, evidenziata) ? coloreEvidenza : null,
       );
     }
-    final anteprima = anteprimaFreccia;
-    if (anteprima != null) {
-      final trattoAnteprima = Paint()
-        ..color = anteprima.colore.colore.withValues(alpha: 0.5)
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      _disegnaFreccia(
-        canvas,
-        Offset(
-          anteprima.inizio.dx * size.width,
-          anteprima.inizio.dy * size.height,
-        ),
-        Offset(anteprima.fine.dx * size.width, anteprima.fine.dy * size.height),
-        trattoAnteprima,
-      );
-    }
+    final a = anteprima;
+    if (a != null) _disegnaFreccia(canvas, size, a, opacita: 0.6);
   }
 
-  void _disegnaFreccia(Canvas canvas, Offset da, Offset a, Paint tratto) {
-    canvas.drawLine(da, a, tratto);
-    final direzione = a - da;
-    if (direzione.distance == 0) return;
-    final angolo = direzione.direction;
-    const angoloPunta = 0.45;
-    const lunghezzaPunta = 10.0;
-    final p1 =
-        a -
-        Offset(
-          lunghezzaPunta * math.cos(angolo - angoloPunta),
-          lunghezzaPunta * math.sin(angolo - angoloPunta),
-        );
-    final p2 =
-        a -
-        Offset(
-          lunghezzaPunta * math.cos(angolo + angoloPunta),
-          lunghezzaPunta * math.sin(angolo + angoloPunta),
-        );
-    canvas.drawLine(a, p1, tratto);
-    canvas.drawLine(a, p2, tratto);
-  }
-
-  /// Righe dei 2m e 6m dalla porta verso [yLimite] (il centro campo, o
-  /// il fondo/inizio opposto per il campo a metà) — stesse proporzioni
-  /// e colori di `CampoTiro` (`colori.rosso`/`colori.attenzione`), 5m
-  /// volutamente omessa qui.
-  void _disegnaLineeRegolamento(
-    Canvas canvas,
-    Size size, {
-    required double yBaseGoal,
-    required double yLimite,
-  }) {
-    final profondita = yLimite - yBaseGoal;
-    final tratto2m = Paint()
-      ..color = colori.rosso
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    final tratto6m = Paint()
-      ..color = colori.attenzione
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(0, yBaseGoal + profondita * (1.0 / 8.0)),
-      Offset(size.width, yBaseGoal + profondita * (1.0 / 8.0)),
-      tratto2m,
-    );
-    canvas.drawLine(
-      Offset(0, yBaseGoal + profondita * (4.4 / 8.0)),
-      Offset(size.width, yBaseGoal + profondita * (4.4 / 8.0)),
-      tratto6m,
-    );
-  }
-
-  // Sempre true: la lista frecce e' lo stesso oggetto mutato in place tra
-  // una build e l'altra (mai riassegnato), quindi un confronto per
-  // identita' qui sarebbe sempre "invariato" anche quando il contenuto
-  // e' cambiato (es. dopo "Cancella tutto") — il campo e' comunque
-  // leggero da ridisegnare.
+  // Sempre true: le liste arrivano nuove a ogni build e il confronto
+  // profondo costerebbe quanto ridisegnare poche frecce.
   @override
-  bool shouldRepaint(covariant _CampoCompletoPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _FreccePainter oldDelegate) => true;
+}
+
+/// Il tratto di un tipo di freccia, in piccolo: sui pulsanti di scelta e
+/// nella legenda.
+class _AnteprimaTipoPainter extends CustomPainter {
+  _AnteprimaTipoPainter({required this.tipo, required this.colore});
+
+  final TipoFreccia tipo;
+  final Color colore;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final y = size.height / 2;
+    final punti = campionaCurva(
+      Offset(1, y),
+      null,
+      Offset(size.width - 1, y),
+      segmenti: 24,
+    );
+    final tiro = tipo == TipoFreccia.tiro;
+    final pennello = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = tiro ? 1.4 : 1.8
+      ..strokeCap = StrokeCap.round
+      ..color = colore;
+    for (final scostamento in tiro ? [-2.0, 2.0] : [0.0]) {
+      canvas.drawPath(
+        percorsoFreccia(
+          punti,
+          accorciamento: 5,
+          tratteggiata: tipo == TipoFreccia.passaggio,
+          ondulata: tipo == TipoFreccia.conPalla,
+          scostamento: scostamento,
+        ),
+        pennello,
+      );
+    }
+    canvas.drawPath(
+      puntaFreccia(punti.last, const Offset(1, 0), lunghezza: 7),
+      Paint()..color = colore,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_AnteprimaTipoPainter old) =>
+      old.tipo != tipo || old.colore != colore;
+}
+
+/// Che cosa vuol dire ogni tratto, sotto lo schema che lo usa: chi lo
+/// sfoglia non deve conoscere la convenzione.
+class _LegendaFrecce extends StatelessWidget {
+  const _LegendaFrecce({required this.tipi});
+
+  final Set<TipoFreccia> tipi;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: AppSpacing.s16,
+      runSpacing: AppSpacing.s8,
+      children: [
+        for (final t in TipoFreccia.values)
+          if (tipi.contains(t))
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 30,
+                  height: 12,
+                  child: CustomPaint(
+                    painter: _AnteprimaTipoPainter(
+                      tipo: t,
+                      colore: colori.testoSecondario,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s4),
+                Text(
+                  t.nome,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+              ],
+            ),
+      ],
+    );
+  }
 }
 
 /// Un giocatore abbinato fra due passi consecutivi, per l'animazione:
 /// abbinato per (colore, numero-nel-colore), non per posizione nella
 /// lista. Chi non ha corrispondenza nel passo di arrivo resta fermo e
 /// sfuma; chi compare solo nel passo di arrivo appare sfumando dentro,
-/// nella sua posizione finale.
+/// nella sua posizione finale. Chi si sposta lungo una freccia curva
+/// del passo di partenza ne segue la curva ([controllo]).
 class _TokenSequenza {
   const _TokenSequenza({
     required this.colore,
@@ -1147,6 +2060,7 @@ class _TokenSequenza {
     required this.posizioneFinale,
     required this.opacitaIniziale,
     required this.opacitaFinale,
+    this.controllo,
   });
 
   final ColoreLavagna colore;
@@ -1155,12 +2069,14 @@ class _TokenSequenza {
   final Offset posizioneFinale;
   final double opacitaIniziale;
   final double opacitaFinale;
+  final Offset? controllo;
 }
 
 List<_TokenSequenza> _abbinaGiocatori(
   List<GiocatoreLavagna> da,
-  List<GiocatoreLavagna> a,
-) {
+  List<GiocatoreLavagna> a, {
+  List<FrecciaLavagna> frecce = const [],
+}) {
   Map<(ColoreLavagna, int), GiocatoreLavagna> mappaPerChiave(
     List<GiocatoreLavagna> giocatori,
   ) {
@@ -1172,6 +2088,14 @@ List<_TokenSequenza> _abbinaGiocatori(
       mappa[(g.colore, n)] = g;
     }
     return mappa;
+  }
+
+  Offset? curva(Offset inizio, Offset fine) {
+    if ((fine - inizio).distance < 0.01) return null;
+    final freccia = frecciaPerSpostamento(frecce, inizio, fine);
+    return freccia == null
+        ? null
+        : controlloPerSpostamento(freccia, inizio, fine);
   }
 
   final mappaDa = mappaPerChiave(da);
@@ -1187,6 +2111,10 @@ List<_TokenSequenza> _abbinaGiocatori(
           posizioneFinale: mappaA[chiave]!.posizione,
           opacitaIniziale: 1,
           opacitaFinale: 1,
+          controllo: curva(
+            mappaDa[chiave]!.posizione,
+            mappaA[chiave]!.posizione,
+          ),
         )
       else if (mappaDa[chiave] != null)
         _TokenSequenza(
@@ -1222,48 +2150,29 @@ class _TokenAnimato extends StatelessWidget {
   final double larghezza;
   final double altezza;
 
-  static const _diametro = 32.0;
-
-  /// Stessa regola di [_TokenGiocatore._diametroEffettivo]: la palla
-  /// (giallo) e' meta' del diametro degli altri pallini.
-  double get _diametroEffettivo =>
-      token.colore == ColoreLavagna.giallo ? _diametro / 2 : _diametro;
-
   @override
   Widget build(BuildContext context) {
-    final colori = context.colori;
-    final posizione = Offset.lerp(
+    final posizione = puntoSuCurva(
       token.posizioneIniziale,
+      token.controllo,
       token.posizioneFinale,
       t,
-    )!;
+    );
     final opacita =
         token.opacitaIniziale +
         (token.opacitaFinale - token.opacitaIniziale) * t;
-    final diametro = _diametroEffettivo;
+    final dimensione = _dimensionePezzo(token.colore);
     return Positioned(
-      left: posizione.dx * larghezza - diametro / 2,
-      top: posizione.dy * altezza - diametro / 2,
+      left: posizione.dx * larghezza - dimensione.width / 2,
+      top: posizione.dy * altezza - dimensione.height / 2,
       child: Opacity(
         opacity: opacita,
-        child: Container(
-          width: diametro,
-          height: diametro,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: token.colore.colore,
-            shape: BoxShape.circle,
-            border: Border.all(color: colori.superficie, width: 2),
+        child: CustomPaint(
+          size: dimensione,
+          painter: _PezzoPainter(
+            colore: token.colore,
+            etichetta: token.colore.etichetta(token.numero),
           ),
-          child: token.colore == ColoreLavagna.giallo
-              ? null
-              : Text(
-                  '${token.numero}',
-                  style: AppTypography.piccolo.copyWith(
-                    color: token.colore.controcolore,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
         ),
       ),
     );
@@ -1275,9 +2184,10 @@ class _TokenAnimato extends StatelessWidget {
 /// frecce (stessa resa di [WaterPoloTacticsBoard] in sola lettura); il
 /// tasto play anima lo spostamento verso il passo successivo —
 /// giocatori abbinati per colore+numero (vedi [_abbinaGiocatori]),
-/// frecce nascoste durante il movimento — in sequenza fino all'ultimo
-/// passo. Usato sia dal visualizzatore (schema salvato) sia
-/// dall'anteprima nell'editor (schema ancora in bozza, non salvato).
+/// lungo le frecce del passo se ce ne sono, frecce nascoste durante il
+/// movimento — in sequenza fino all'ultimo passo. Usato sia dal
+/// visualizzatore (schema salvato) sia dall'anteprima nell'editor
+/// (schema ancora in bozza, non salvato).
 class SchemaTatticoPlayer extends StatefulWidget {
   const SchemaTatticoPlayer({
     required this.passi,
@@ -1371,6 +2281,10 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
     final colori = context.colori;
     final passi = widget.passi;
     final passoSuccessivo = _passoSuccessivo;
+    final tipiUsati = {
+      for (final p in passi)
+        for (final f in p.frecce) f.tipo,
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1443,99 +2357,78 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
           ),
           const SizedBox(height: AppSpacing.s16),
         ],
-        AspectRatio(
-          aspectRatio: widget.campo == CampoLavagna.intero ? 3 / 4 : 4 / 3,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pannello),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final larghezza = constraints.maxWidth;
-                final altezza = constraints.maxHeight;
+        _RiquadroVasca(
+          campo: widget.campo,
+          builder: (larghezza, altezza) {
+            final vasca = Positioned.fill(
+              child: CustomPaint(painter: _VascaPainter(campo: widget.campo)),
+            );
 
-                if (passoSuccessivo == null) {
-                  final passo = passi[_passoAttuale];
-                  // A fine riproduzione (non su uno stop manuale o su un
-                  // salto a un passo) si rivedono insieme le frecce di
-                  // tutti i passi, non solo quelle dell'ultimo.
-                  final mostraRiepilogoFrecce =
-                      _mostraTutteLeFrecce && _passoAttuale == passi.length - 1;
-                  final frecceDaMostrare = mostraRiepilogoFrecce
-                      ? [for (final p in passi) ...p.frecce]
-                      : passo.frecce;
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: colori.azioneTenue,
-                      border: Border.all(color: colori.linea),
+            if (passoSuccessivo == null) {
+              final passo = passi[_passoAttuale];
+              // A fine riproduzione (non su uno stop manuale o su un
+              // salto a un passo) si rivedono insieme le frecce di tutti
+              // i passi, non solo quelle dell'ultimo.
+              final mostraRiepilogoFrecce =
+                  _mostraTutteLeFrecce && _passoAttuale == passi.length - 1;
+              final frecceDaMostrare = mostraRiepilogoFrecce
+                  ? [for (final p in passi) ...p.frecce]
+                  : passo.frecce;
+              return Stack(
+                children: [
+                  vasca,
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _FreccePainter(
+                        frecce: frecceDaMostrare,
+                        pezzi: _ingombri(passo.giocatori),
+                      ),
                     ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _CampoCompletoPainter(
-                              colori: colori,
-                              campo: widget.campo,
-                              frecce: frecceDaMostrare,
-                            ),
-                          ),
-                        ),
-                        for (var i = 0; i < passo.giocatori.length; i++)
-                          _TokenGiocatore(
-                            giocatore: passo.giocatori[i],
-                            numero: _numeroPerColore(passo.giocatori, i),
-                            larghezza: larghezza,
-                            altezza: altezza,
-                            attivo: false,
-                            onSposta: (_) {},
-                            onRimuovi: () {},
-                          ),
-                      ],
+                  ),
+                  for (var i = 0; i < passo.giocatori.length; i++)
+                    _TokenGiocatore(
+                      giocatore: passo.giocatori[i],
+                      numero: _numeroPerColore(passo.giocatori, i),
+                      larghezza: larghezza,
+                      altezza: altezza,
+                      attivo: false,
+                      onTrascina: (_) {},
+                      onRimuovi: () {},
                     ),
-                  );
-                }
+                ],
+              );
+            }
 
-                // In movimento verso il passo successivo: nessuna
-                // freccia visibile (si rivedono ferme sul passo
-                // d'arrivo), solo i giocatori che scivolano da una
-                // posizione all'altra.
-                final tokenAnimati = _abbinaGiocatori(
-                  passi[_passoAttuale].giocatori,
-                  passi[passoSuccessivo].giocatori,
-                );
-                return AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, _) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: colori.azioneTenue,
-                        border: Border.all(color: colori.linea),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _CampoCompletoPainter(
-                                colori: colori,
-                                campo: widget.campo,
-                                frecce: const [],
-                              ),
-                            ),
-                          ),
-                          for (final token in tokenAnimati)
-                            _TokenAnimato(
-                              token: token,
-                              t: _controller.value,
-                              larghezza: larghezza,
-                              altezza: altezza,
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
+            // In movimento verso il passo successivo: nessuna freccia
+            // visibile (si rivedono ferme sul passo d'arrivo), solo i
+            // giocatori che scivolano da una posizione all'altra, lungo
+            // le frecce del passo di partenza.
+            final tokenAnimati = _abbinaGiocatori(
+              passi[_passoAttuale].giocatori,
+              passi[passoSuccessivo].giocatori,
+              frecce: passi[_passoAttuale].frecce,
+            );
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => Stack(
+                children: [
+                  vasca,
+                  for (final token in tokenAnimati)
+                    _TokenAnimato(
+                      token: token,
+                      t: _controller.value,
+                      larghezza: larghezza,
+                      altezza: altezza,
+                    ),
+                ],
+              ),
+            );
+          },
         ),
+        if (tipiUsati.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s12),
+          _LegendaFrecce(tipi: tipiUsati),
+        ],
       ],
     );
   }
