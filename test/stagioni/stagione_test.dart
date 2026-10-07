@@ -110,6 +110,27 @@ void main() {
     });
   });
 
+  group('stagioniDiAtleta', () {
+    final u14 = _stagione('u14', 'g-u14', DateTime(2026, 9), DateTime(2027, 6));
+    final u16 = _stagione('u16', 'g-u16', DateTime(2026, 9), DateTime(2027, 6));
+    final club = _stagione('club', null, DateTime(2026, 9), DateTime(2027, 6));
+
+    test('un U16 vede la sua stagione e quella di club, non quella U14', () {
+      expect(stagioniDiAtleta([u14, u16, club], 'g-u16').map((s) => s.id), [
+        'u16',
+        'club',
+      ]);
+    });
+
+    test("se nel club c'è solo la stagione U14, un U16 non ne vede", () {
+      expect(stagioniDiAtleta([u14], 'g-u16'), isEmpty);
+    });
+
+    test('atleta senza gruppo: solo le stagioni di club', () {
+      expect(stagioniDiAtleta([u14, club], null).map((s) => s.id), ['club']);
+    });
+  });
+
   group('campionatoPerData', () {
     Stagione conCampionato(String id, String? gruppoId, String campionato) =>
         Stagione(

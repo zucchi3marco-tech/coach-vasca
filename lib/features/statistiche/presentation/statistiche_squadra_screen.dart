@@ -27,9 +27,17 @@ enum _FonteStatistiche { referti, eventi, confronto }
 /// le partite seguite dal vivo dall'app). "Confronto" le affianca per
 /// atleta, senza sommarle (fonti diverse, numeri non sempre comparabili).
 class StatisticheSquadraScreen extends ConsumerStatefulWidget {
-  const StatisticheSquadraScreen({required this.clubId, super.key});
+  const StatisticheSquadraScreen({
+    required this.clubId,
+    this.stagioneId,
+    super.key,
+  });
 
   final String clubId;
+
+  /// La stagione da cui si arriva: va preselezionata, non quella di un
+  /// altro gruppo in corso nelle stesse date.
+  final String? stagioneId;
 
   @override
   ConsumerState<StatisticheSquadraScreen> createState() =>
@@ -50,6 +58,7 @@ class _StatisticheSquadraScreenState
         children: [
           SelettoreStagione(
             clubId: widget.clubId,
+            idIniziale: widget.stagioneId,
             onCambiata: (s) => setState(() => _stagione = s),
           ),
           if (_stagione != null) ...[

@@ -332,8 +332,10 @@ class StagioneDetailScreen extends ConsumerWidget {
                   etichetta: 'Statistiche',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          StatisticheSquadraScreen(clubId: stagione.clubId),
+                      builder: (_) => StatisticheSquadraScreen(
+                        clubId: stagione.clubId,
+                        stagioneId: stagione.id,
+                      ),
                     ),
                   ),
                 ),

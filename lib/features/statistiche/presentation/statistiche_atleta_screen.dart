@@ -59,6 +59,7 @@ class _StatisticheAtletaScreenState
               children: [
                 SelettoreStagione(
                   clubId: widget.atleta.clubId,
+                  atleta: widget.atleta,
                   onCambiata: (s) => setState(() => _stagione = s),
                 ),
                 if (_stagione != null) ...[

@@ -68,6 +68,14 @@ Stagione? stagioneCorrenteDiGruppo(
   return null;
 }
 
+/// Le stagioni che riguardano un atleta del gruppo [gruppoId]: quelle del
+/// suo gruppo e quelle di club (senza gruppo), mai quelle di un altro
+/// gruppo. [gruppoId] null = atleta senza gruppo: solo quelle di club.
+List<Stagione> stagioniDiAtleta(List<Stagione> stagioni, String? gruppoId) => [
+  for (final s in stagioni)
+    if (s.gruppoId == null || s.gruppoId == gruppoId) s,
+];
+
 /// Il campionato che una partita eredita dalla stagione che ne comprende la
 /// data: preferisce una stagione del suo gruppo, poi una di club (senza
 /// gruppo). Una partita di club (senza gruppo) usa una stagione di club e,
