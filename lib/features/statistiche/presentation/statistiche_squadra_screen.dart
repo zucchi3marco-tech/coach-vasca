@@ -7,6 +7,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
@@ -164,13 +165,12 @@ class _SezioneReferti extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s24),
-              const SectionHeader('Per atleta'),
+              const TitoloSezione('Per atleta'),
               const SizedBox(height: AppSpacing.s16),
               if (righe.isEmpty)
-                Text(
+                const RiquadroVuoto(
                   'Nessun dato per atleta in questa stagione: collega i '
                   'giocatori agli atleti salvando i referti.',
-                  style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else
                 AppListPanel(
@@ -284,13 +284,10 @@ class _SezioneEventi extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s24),
-              const SectionHeader('Per atleta'),
+              const TitoloSezione('Per atleta'),
               const SizedBox(height: AppSpacing.s16),
               if (righe.isEmpty)
-                Text(
-                  'Nessun evento registrato in questa stagione.',
-                  style: AppTypography.corpo.copyWith(color: colori.testo),
-                )
+                const RiquadroVuoto('Nessun evento registrato in questa stagione.')
               else
                 AppListPanel(
                   righe: [
@@ -309,16 +306,13 @@ class _SezioneEventi extends ConsumerWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.s24),
-              const SectionHeader('Shot chart dei tiri'),
+              const TitoloSezione('Shot chart dei tiri'),
               const SizedBox(height: AppSpacing.s16),
               tiriMappaAsync.when(
                 data: (tiri) => tiri.isEmpty
-                    ? Text(
+                    ? const RiquadroVuoto(
                         'Nessun tiro con posizione registrata in questa '
                         'stagione.',
-                        style: AppTypography.corpo.copyWith(
-                          color: colori.testo,
-                        ),
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,10 +408,9 @@ class _SezioneConfronto extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.s24),
                 if (tuttiGliId.isEmpty)
-                  Text(
+                  const RiquadroVuoto(
                     'Nessun dato da nessuna delle due fonti in questa '
                     'stagione.',
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
                   )
                 else
                   AppListPanel(

@@ -94,3 +94,40 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
+
+/// Una sezione senza dati dentro una pagina che ne ha altri: una scheda
+/// bassa con l'icona e la frase, al posto di una riga grigia da sola
+/// (DESIGN.md sezione 19). Per una pagina intera vuota c'è [EmptyState].
+class RiquadroVuoto extends StatelessWidget {
+  const RiquadroVuoto(this.testo, {this.icona = Icons.info_outline, super.key});
+
+  final String testo;
+  final IconData icona;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      decoration: BoxDecoration(
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border.all(color: colori.linea),
+      ),
+      child: Row(
+        children: [
+          IconaRiquadro(icona, colore: colori.testoSecondario, dimensione: 40),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Text(
+              testo,
+              style: AppTypography.corpo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

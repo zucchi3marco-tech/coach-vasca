@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
@@ -50,6 +51,12 @@ const _attrezzaturaLavoroCentraleDisponibile = [
   'pinne',
 ];
 
+/// I tre modi di creare un allenamento: ognuno mostra solo i suoi campi e
+/// ha un solo pulsante principale (DESIGN.md sezione 19).
+enum _Modo { scrivi, genera, vuoto }
+
+const _chiaveModo = 'nuovo_allenamento_modo';
+
 class GeneraAllenamentoFormScreen extends ConsumerStatefulWidget {
   const GeneraAllenamentoFormScreen({
     required this.clubId,
@@ -77,6 +84,28 @@ class _GeneraAllenamentoFormScreenState
   );
   bool _serieDaTestoInCorso = false;
   bool _creazioneVuotaInCorso = false;
+
+  /// Chi scrive le sue serie non deve passare ogni volta dal generatore:
+  /// si riapre nell'ultimo modo usato su questo dispositivo.
+  _Modo _modo = _Modo.scrivi;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      final salvato = prefs.getString(_chiaveModo);
+      final modo = _Modo.values.where((m) => m.name == salvato).firstOrNull;
+      if (modo != null && mounted) setState(() => _modo = modo);
+    });
+  }
+
+  void _cambiaModo(_Modo modo) {
+    _casellaKey.currentState?.ferma();
+    setState(() => _modo = modo);
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString(_chiaveModo, modo.name),
+    );
+  }
 
   double _volumeMetri = 3000;
   double? _volumeLavoroCentraleMetri;
@@ -447,6 +476,38 @@ class _GeneraAllenamentoFormScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Tre strade, una alla volta: prima tutte e tre stavano sulla
+            // stessa pagina lunga, con due pulsanti principali.
+            SegmentedButton<_Modo>(
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                minimumSize: WidgetStatePropertyAll(
+                  Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
+                ),
+              ),
+              segments: const [
+                ButtonSegment(
+                  value: _Modo.scrivi,
+                  icon: Icon(Icons.edit_note),
+                  label: Text('Scrivi o detta'),
+                ),
+                ButtonSegment(
+                  value: _Modo.genera,
+                  icon: Icon(Icons.auto_awesome),
+                  label: Text('Con l\'AI'),
+                ),
+                ButtonSegment(
+                  value: _Modo.vuoto,
+                  icon: Icon(Icons.add_box_outlined),
+                  label: Text('Vuoto'),
+                ),
+              ],
+              selected: {_modo},
+              onSelectionChanged: _occupato
+                  ? null
+                  : (scelta) => _cambiaModo(scelta.first),
+            ),
+            const SizedBox(height: AppSpacing.s24),
             FormGroup(
               titolo: 'Quando',
               campi: [
@@ -457,264 +518,299 @@ class _GeneraAllenamentoFormScreenState
                   onTap: _occupato ? null : _scegliData,
                   suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Scrivi o detta il tuo allenamento',
-              campi: [
-                CasellaDettatura(
-                  key: _casellaKey,
-                  controller: _testoController,
-                  etichetta: 'Descrivilo a parole',
-                  aiuto:
-                      'Se scrivi le serie (es. "400 riscaldamento, 8x100 sl '
-                      'soglia rec 20, 200 defaticamento") premi "Crea le '
-                      'serie". Se descrivi solo cosa vuoi (es. "5 km con 3 '
-                      'km di aerobico, no rana") premi "Compila il '
-                      'modulo": poi lo rivedi e generi.',
-                ),
-                PrimaryButton(
-                  label: _serieDaTestoInCorso
-                      ? 'Sto leggendo...'
-                      : 'Crea le serie da questo testo',
-                  isLoading: _serieDaTestoInCorso,
-                  onPressed: _occupato ? null : _creaSerieDaTesto,
-                ),
-                SecondaryButton(
-                  label: _compilazioneInCorso
-                      ? 'Sto leggendo...'
-                      : 'Compila il modulo',
-                  icon: Icons.auto_fix_high,
-                  onPressed: _occupato ? null : _compilaDalTesto,
-                ),
-                if (_serieDaTestoInCorso) const AttesaAiHint(),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Sessione',
-              campi: [
                 Text(
                   'Gruppo: $nomeGruppo',
                   style: AppTypography.corpo.copyWith(
                     color: colori.testoSecondario,
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const EtichettaCampo('Vasca'),
-                    const SizedBox(height: AppSpacing.s8),
-                    SegmentedButton<int>(
-                      // Senza spunta: la scelta e' gia' evidenziata dal
-                      // colore, e la spunta toglieva spazio all'etichetta
-                      // che su telefono andava a capo a meta' parola.
-                      showSelectedIcon: false,
-                      segments: const [
-                        ButtonSegment(value: 25, label: Text('25 m')),
-                        ButtonSegment(value: 50, label: Text('50 m')),
-                      ],
-                      selected: {_vascaM},
-                      onSelectionChanged: (s) =>
-                          setState(() => _vascaM = s.first),
-                    ),
-                  ],
-                ),
-                SliderConValore(
-                  etichetta: 'Minuti max di lavoro',
-                  valore: _minutiMax,
-                  min: 20,
-                  max: 180,
-                  divisioni: 32,
-                  testoValore: '${_minutiMax.round()} min',
-                  onChanged: (value) => setState(() => _minutiMax = value),
-                  azione: const PulsanteSpiegazione(
-                    titolo: 'Minuti max di lavoro',
-                    spiegazione:
-                        'La scheda generata non deve superare questo '
-                        "tempo, stimato su nuoto + recuperi dell'atleta "
-                        'più lento del gruppo (è quello che finisce per '
-                        'ultimo). La stima non tiene conto dei tempi di '
-                        'virata né della lunghezza della vasca: è '
-                        "un'approssimazione, non un cronometro.",
-                  ),
-                ),
               ],
             ),
-            FormGroup(
-              titolo: 'Tipo di lavoro',
-              campi: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => setState(
-                      () => _mostraCodiciTipoLavoro = !_mostraCodiciTipoLavoro,
-                    ),
-                    child: Text(
-                      _mostraCodiciTipoLavoro ? 'Mostra nomi' : 'Mostra sigle',
+            if (_modo == _Modo.scrivi)
+              FormGroup(
+                titolo: 'Le serie',
+                isUltimo: true,
+                campi: [
+                  CasellaDettatura(
+                    key: _casellaKey,
+                    controller: _testoController,
+                    etichetta: 'Scrivi o detta le serie',
+                    aiuto:
+                        'Es. "400 riscaldamento, 8x100 sl soglia rec 20, '
+                        '200 defaticamento": le trascrivo così come sono.',
+                  ),
+                  PrimaryButton(
+                    label: _serieDaTestoInCorso
+                        ? 'Sto leggendo...'
+                        : 'Crea le serie',
+                    isLoading: _serieDaTestoInCorso,
+                    onPressed: _occupato ? null : _creaSerieDaTesto,
+                  ),
+                  if (_serieDaTestoInCorso) const AttesaAiHint(),
+                ],
+              ),
+            if (_modo == _Modo.vuoto)
+              FormGroup(
+                titolo: 'Allenamento vuoto',
+                isUltimo: true,
+                campi: [
+                  Text(
+                    'Creo l\'allenamento in questa data e apro la scheda: '
+                    'le serie le aggiungi tu, una alla volta.',
+                    style: AppTypography.corpo.copyWith(
+                      color: colori.testoSecondario,
                     ),
                   ),
-                ),
-                GrigliaTipiLavoro(
-                  selezionati: _regimiSelezionati,
-                  mostraCodici: _mostraCodiciTipoLavoro,
-                  onCambia: (zona, selezionato) => setState(() {
-                    if (selezionato) {
-                      _regimiSelezionati.add(zona);
-                    } else {
-                      _regimiSelezionati.remove(zona);
-                    }
-                  }),
-                ),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Focus',
-              campi: [
-                GruppoChip(
-                  etichetta: 'Su cosa si concentra la seduta (più scelte)',
-                  chip: [
-                    for (final f in focusLavoro)
-                      TonalChip(
-                        etichetta: etichettaFocusLavoro(f),
-                        selezionato: _haFocus(f),
-                        onSelezionato: (_) => _alternaFocus(f),
+                  PrimaryButton(
+                    label: _creazioneVuotaInCorso
+                        ? 'Sto creando...'
+                        : 'Crea e apri la scheda',
+                    isLoading: _creazioneVuotaInCorso,
+                    onPressed: _occupato ? null : _creaVuoto,
+                  ),
+                ],
+              ),
+            if (_modo == _Modo.genera) ...[
+              FormGroup(
+                titolo: 'Descrivi cosa vuoi',
+                spiegazione:
+                    'Facoltativo. Scrivi o detta cosa ti serve (es. "5 km con '
+                    '3 km di aerobico, no rana") e premi "Compila i campi": '
+                    'li rivedi qui sotto e poi generi.',
+                campi: [
+                  CasellaDettatura(
+                    key: _casellaKey,
+                    controller: _testoController,
+                    etichetta: 'Es. 5 km con 3 km di aerobico, no rana',
+                  ),
+                  SecondaryButton(
+                    label: _compilazioneInCorso
+                        ? 'Sto leggendo...'
+                        : 'Compila i campi',
+                    icon: Icons.auto_fix_high,
+                    onPressed: _occupato ? null : _compilaDalTesto,
+                  ),
+                ],
+              ),
+              FormGroup(
+                titolo: 'Sessione',
+                campi: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const EtichettaCampo('Vasca'),
+                      const SizedBox(height: AppSpacing.s8),
+                      SegmentedButton<int>(
+                        // Senza spunta: la scelta e' gia' evidenziata dal
+                        // colore, e la spunta toglieva spazio all'etichetta
+                        // che su telefono andava a capo a meta' parola.
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(value: 25, label: Text('25 m')),
+                          ButtonSegment(value: 50, label: Text('50 m')),
+                        ],
+                        selected: {_vascaM},
+                        onSelectionChanged: (s) =>
+                            setState(() => _vascaM = s.first),
                       ),
-                  ],
-                ),
-                if (_haFocus('tecnica'))
-                  PannelloCampi(
-                    titolo: 'Stile tecnica principale',
-                    figli: [
-                      GruppoChip(
-                        etichetta: 'Facoltativo: se non scegli, decide l\'AI',
-                        chip: [
-                          for (final s in stiliNuoto)
-                            TonalChip(
-                              etichetta: labelStile(s),
-                              selezionato: _stileTecnica == s,
-                              onSelezionato: (selezionato) => setState(
-                                () => _stileTecnica = selezionato ? s : null,
+                    ],
+                  ),
+                  SliderConValore(
+                    etichetta: 'Minuti max di lavoro',
+                    valore: _minutiMax,
+                    min: 20,
+                    max: 180,
+                    divisioni: 32,
+                    testoValore: '${_minutiMax.round()} min',
+                    onChanged: (value) => setState(() => _minutiMax = value),
+                    azione: const PulsanteSpiegazione(
+                      titolo: 'Minuti max di lavoro',
+                      spiegazione:
+                          'La scheda generata non deve superare questo '
+                          "tempo, stimato su nuoto + recuperi dell'atleta "
+                          'più lento del gruppo (è quello che finisce per '
+                          'ultimo). La stima non tiene conto dei tempi di '
+                          'virata né della lunghezza della vasca: è '
+                          "un'approssimazione, non un cronometro.",
+                    ),
+                  ),
+                ],
+              ),
+              FormGroup(
+                titolo: 'Tipo di lavoro',
+                campi: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => setState(
+                        () =>
+                            _mostraCodiciTipoLavoro = !_mostraCodiciTipoLavoro,
+                      ),
+                      child: Text(
+                        _mostraCodiciTipoLavoro
+                            ? 'Mostra nomi'
+                            : 'Mostra sigle',
+                      ),
+                    ),
+                  ),
+                  GrigliaTipiLavoro(
+                    selezionati: _regimiSelezionati,
+                    mostraCodici: _mostraCodiciTipoLavoro,
+                    onCambia: (zona, selezionato) => setState(() {
+                      if (selezionato) {
+                        _regimiSelezionati.add(zona);
+                      } else {
+                        _regimiSelezionati.remove(zona);
+                      }
+                    }),
+                  ),
+                ],
+              ),
+              FormGroup(
+                titolo: 'Focus',
+                campi: [
+                  GruppoChip(
+                    etichetta: 'Su cosa si concentra la seduta (più scelte)',
+                    chip: [
+                      for (final f in focusLavoro)
+                        TonalChip(
+                          etichetta: etichettaFocusLavoro(f),
+                          selezionato: _haFocus(f),
+                          onSelezionato: (_) => _alternaFocus(f),
+                        ),
+                    ],
+                  ),
+                  if (_haFocus('tecnica'))
+                    PannelloCampi(
+                      titolo: 'Stile tecnica principale',
+                      figli: [
+                        GruppoChip(
+                          etichetta: 'Facoltativo: se non scegli, decide l\'AI',
+                          chip: [
+                            for (final s in stiliNuoto)
+                              TonalChip(
+                                etichetta: labelStile(s),
+                                selezionato: _stileTecnica == s,
+                                onSelezionato: (selezionato) => setState(
+                                  () => _stileTecnica = selezionato ? s : null,
+                                ),
                               ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  if (_haFocus('braccia'))
+                    PannelloFocusDettaglio(
+                      titolo: 'Braccia',
+                      etichettaMetri: 'Braccia — metri',
+                      metri: _metriBraccia,
+                      maxMetri: _volumeMetri,
+                      onMetri: (v) => setState(() => _metriBraccia = v),
+                      attrezziDisponibili: _attrezzaturaBraccia,
+                      attrezziSelezionati: _attrezziBraccia,
+                      onAttrezzo: (a, sel) => setState(() {
+                        if (sel) {
+                          _attrezziBraccia.add(a);
+                        } else {
+                          _attrezziBraccia.remove(a);
+                        }
+                      }),
+                      stile: _stileBraccia,
+                      onStile: (st) => setState(() => _stileBraccia = st),
+                    ),
+                  if (_haFocus('gambe'))
+                    PannelloFocusDettaglio(
+                      titolo: 'Gambe',
+                      etichettaMetri: 'Gambe — metri',
+                      metri: _metriGambe,
+                      maxMetri: _volumeMetri,
+                      onMetri: (v) => setState(() => _metriGambe = v),
+                      attrezziDisponibili: _attrezzaturaGambe,
+                      attrezziSelezionati: _attrezziGambe,
+                      onAttrezzo: (a, sel) => setState(() {
+                        if (sel) {
+                          _attrezziGambe.add(a);
+                        } else {
+                          _attrezziGambe.remove(a);
+                        }
+                      }),
+                      stile: _stileGambe,
+                      onStile: (st) => setState(() => _stileGambe = st),
+                    ),
+                ],
+              ),
+              FormGroup(
+                titolo: 'Volume e attrezzi',
+                isUltimo: true,
+                campi: [
+                  PannelloCampi(
+                    titolo: 'Attrezzi lavoro centrale',
+                    figli: [
+                      Wrap(
+                        spacing: AppSpacing.s8,
+                        runSpacing: AppSpacing.s8,
+                        children: [
+                          for (final a
+                              in _attrezzaturaLavoroCentraleDisponibile)
+                            TonalChip(
+                              etichetta: etichettaAttrezzo(a),
+                              selezionato:
+                                  _attrezzaturaLavoroCentraleSelezionata
+                                      .contains(a),
+                              onSelezionato: (selezionato) => setState(() {
+                                if (selezionato) {
+                                  _attrezzaturaLavoroCentraleSelezionata.add(a);
+                                } else {
+                                  _attrezzaturaLavoroCentraleSelezionata.remove(
+                                    a,
+                                  );
+                                }
+                              }),
                             ),
                         ],
                       ),
                     ],
                   ),
-                if (_haFocus('braccia'))
-                  PannelloFocusDettaglio(
-                    titolo: 'Braccia',
-                    etichettaMetri: 'Braccia — metri',
-                    metri: _metriBraccia,
-                    maxMetri: _volumeMetri,
-                    onMetri: (v) => setState(() => _metriBraccia = v),
-                    attrezziDisponibili: _attrezzaturaBraccia,
-                    attrezziSelezionati: _attrezziBraccia,
-                    onAttrezzo: (a, sel) => setState(() {
-                      if (sel) {
-                        _attrezziBraccia.add(a);
-                      } else {
-                        _attrezziBraccia.remove(a);
-                      }
-                    }),
-                    stile: _stileBraccia,
-                    onStile: (st) => setState(() => _stileBraccia = st),
+                  SliderConValore(
+                    etichetta: 'Volume totale (m)',
+                    valore: _volumeMetri,
+                    min: 500,
+                    max: 6000,
+                    divisioni: 55,
+                    onChanged: _cambiaVolumeTotale,
                   ),
-                if (_haFocus('gambe'))
-                  PannelloFocusDettaglio(
-                    titolo: 'Gambe',
-                    etichettaMetri: 'Gambe — metri',
-                    metri: _metriGambe,
-                    maxMetri: _volumeMetri,
-                    onMetri: (v) => setState(() => _metriGambe = v),
-                    attrezziDisponibili: _attrezzaturaGambe,
-                    attrezziSelezionati: _attrezziGambe,
-                    onAttrezzo: (a, sel) => setState(() {
-                      if (sel) {
-                        _attrezziGambe.add(a);
-                      } else {
-                        _attrezziGambe.remove(a);
-                      }
-                    }),
-                    stile: _stileGambe,
-                    onStile: (st) => setState(() => _stileGambe = st),
+                  SliderConValore(
+                    etichetta: _volumeLavoroCentraleMetri == null
+                        ? "Volume lavoro centrale (m) — se non lo muovi decide l'AI"
+                        : 'Volume lavoro centrale (m)',
+                    valore: volumeLavoroCentraleClampato,
+                    min: 0,
+                    max: _volumeMetri,
+                    divisioni: (_volumeMetri / 100).round().clamp(1, 999),
+                    testoValore: _volumeLavoroCentraleMetri == null
+                        ? 'Auto'
+                        : null,
+                    onChanged: (value) =>
+                        setState(() => _volumeLavoroCentraleMetri = value),
                   ),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Volume e attrezzi',
-              isUltimo: true,
-              campi: [
-                PannelloCampi(
-                  titolo: 'Attrezzi lavoro centrale',
-                  figli: [
-                    Wrap(
-                      spacing: AppSpacing.s8,
-                      runSpacing: AppSpacing.s8,
-                      children: [
-                        for (final a in _attrezzaturaLavoroCentraleDisponibile)
-                          TonalChip(
-                            etichetta: etichettaAttrezzo(a),
-                            selezionato: _attrezzaturaLavoroCentraleSelezionata
-                                .contains(a),
-                            onSelezionato: (selezionato) => setState(() {
-                              if (selezionato) {
-                                _attrezzaturaLavoroCentraleSelezionata.add(a);
-                              } else {
-                                _attrezzaturaLavoroCentraleSelezionata.remove(
-                                  a,
-                                );
-                              }
-                            }),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                SliderConValore(
-                  etichetta: 'Volume totale (m)',
-                  valore: _volumeMetri,
-                  min: 500,
-                  max: 6000,
-                  divisioni: 55,
-                  onChanged: _cambiaVolumeTotale,
-                ),
-                SliderConValore(
-                  etichetta: _volumeLavoroCentraleMetri == null
-                      ? "Volume lavoro centrale (m) — se non lo muovi decide l'AI"
-                      : 'Volume lavoro centrale (m)',
-                  valore: volumeLavoroCentraleClampato,
-                  min: 0,
-                  max: _volumeMetri,
-                  divisioni: (_volumeMetri / 100).round().clamp(1, 999),
-                  testoValore: _volumeLavoroCentraleMetri == null
-                      ? 'Auto'
-                      : null,
-                  onChanged: (value) =>
-                      setState(() => _volumeLavoroCentraleMetri = value),
-                ),
-                AppTextField(
-                  etichetta: 'Vincoli (facoltativo)',
-                  controller: _vincoliController,
-                  maxLines: 3,
-                  aiuto: 'Es. niente pinne di gomma, riscaldamento breve',
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s28),
-            PrimaryButton(
-              label: _generazioneInCorso ? 'Sto generando...' : 'Genera',
-              isLoading: _generazioneInCorso,
-              onPressed: _occupato ? null : _conferma,
-            ),
-            if (_generazioneInCorso) const AttesaAiHint(),
-            const SizedBox(height: AppSpacing.s12),
-            SecondaryButton(
-              label: _creazioneVuotaInCorso
-                  ? 'Sto creando...'
-                  : 'Crea vuoto e aggiungo le serie a mano',
-              icon: Icons.edit_outlined,
-              onPressed: _occupato ? null : _creaVuoto,
-            ),
+                  AppTextField(
+                    etichetta: 'Vincoli (facoltativo)',
+                    controller: _vincoliController,
+                    maxLines: 3,
+                    aiuto: 'Es. niente pinne di gomma, riscaldamento breve',
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s28),
+              PrimaryButton(
+                label: _generazioneInCorso
+                    ? 'Sto generando...'
+                    : 'Genera l\'allenamento',
+                isLoading: _generazioneInCorso,
+                onPressed: _occupato ? null : _conferma,
+              ),
+              if (_generazioneInCorso) const AttesaAiHint(),
+            ],
           ],
         ),
       ),

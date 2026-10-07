@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/text_format.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -212,8 +214,24 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
     }
   }
 
+  /// Il passo attuale e quanti ce ne sono: col codice di un atleta già
+  /// in anagrafica sono tre (codice, conferma, account), col codice di un
+  /// gruppo quattro (in più l'anagrafica).
+  (int, int) get _avanzamento {
+    final daGruppo = _gruppoInvitato != null;
+    final totale = daGruppo ? 4 : 3;
+    return switch (_passo) {
+      _Passo.codice => (1, _invitato == null && !daGruppo ? 3 : totale),
+      _Passo.confermaAtleta || _Passo.confermaGruppo => (2, totale),
+      _Passo.anagrafica => (3, totale),
+      _Passo.account => (totale, totale),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final (passo, totale) = _avanzamento;
+    final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: const Text('Sei un atleta?')),
@@ -223,6 +241,25 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Dove si e' nella registrazione: senza, ogni "Continua"
+              // portava a un'altra pagina senza sapere quante ne mancano.
+              Text(
+                'Passo $passo di $totale',
+                style: AppTypography.etichetta.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.pillola),
+                child: LinearProgressIndicator(
+                  value: passo / totale,
+                  minHeight: 6,
+                  color: colori.azione,
+                  backgroundColor: colori.superficieAlt,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s24),
               switch (_passo) {
                 _Passo.codice => _PassoCodice(
                   controller: _codiceController,

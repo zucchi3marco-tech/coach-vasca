@@ -317,7 +317,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormGroup(
-              titolo: 'Partita',
+              titolo: 'Quando',
               campi: [
                 AppTextField(
                   etichetta: 'Data',
@@ -333,11 +333,16 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   onTap: _pickOra,
                   suffixIcon: const Icon(Icons.access_time),
                 ),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Le squadre',
+              campi: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'La mia squadra',
+                      'Noi giochiamo',
                       style: AppTypography.etichetta.copyWith(
                         color: colori.testoSecondario,
                       ),
@@ -349,40 +354,14 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       // che su telefono andava a capo a meta' parola.
                       showSelectedIcon: false,
                       segments: const [
-                        ButtonSegment(value: 'casa', label: Text('Casa')),
+                        ButtonSegment(value: 'casa', label: Text('In casa')),
                         ButtonSegment(
                           value: 'trasferta',
-                          label: Text('Trasferta'),
+                          label: Text('In trasferta'),
                         ),
                       ],
                       selected: {_nostraSquadra},
                       onSelectionChanged: (s) => _cambiaNostraSquadra(s.first),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Importanza',
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    SegmentedButton<String>(
-                      // Senza spunta: la scelta e' gia' evidenziata dal
-                      // colore, e la spunta toglieva spazio all'etichetta
-                      // che su telefono andava a capo a meta' parola.
-                      showSelectedIcon: false,
-                      segments: const [
-                        ButtonSegment(value: 'bassa', label: Text('Bassa')),
-                        ButtonSegment(value: 'media', label: Text('Media')),
-                        ButtonSegment(value: 'alta', label: Text('Alta')),
-                      ],
-                      selected: {_importanza},
-                      onSelectionChanged: (s) =>
-                          setState(() => _importanza = s.first),
                     ),
                   ],
                 ),
@@ -397,6 +376,15 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   controller: _squadraTrasfertaController,
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
+                ),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Dove e per chi',
+              campi: [
+                AppTextField(
+                  etichetta: 'Luogo (facoltativo)',
+                  controller: _luogoController,
                 ),
                 AppSelect<String?>(
                   etichetta: 'Gruppo (facoltativo)',
@@ -420,15 +408,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     setState(() => _gruppoId = value);
                     _aggiornaCampionatoAnteprima();
                   },
-                ),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Dettagli',
-              campi: [
-                AppTextField(
-                  etichetta: 'Luogo (facoltativo)',
-                  controller: _luogoController,
                 ),
                 if (_campionatoAnteprima != null &&
                     _campionatoAnteprima!.isNotEmpty)
@@ -474,6 +453,43 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      'Importanza',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(value: 'bassa', label: Text('Bassa')),
+                        ButtonSegment(value: 'media', label: Text('Media')),
+                        ButtonSegment(value: 'alta', label: Text('Alta')),
+                      ],
+                      selected: {_importanza},
+                      onSelectionChanged: (s) =>
+                          setState(() => _importanza = s.first),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            // Impostazioni che si toccano di rado: chiuse, con il
+            // riassunto delle scelte attuali.
+            FormGroupComprimibile(
+              titolo: 'Distinta e dal vivo',
+              riassunto: [
+                'max $_numeroMaxConvocati convocati',
+                _dettaglioTiro == 'dettagliato'
+                    ? 'tiro dettagliato'
+                    : 'tiro semplice',
+                _tracciaTempo ? 'tempo tracciato' : 'tempo non tracciato',
+              ].join(' · '),
+              campi: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       'Numero massimo convocati',
                       style: AppTypography.etichetta.copyWith(
                         color: colori.testoSecondario,
@@ -481,9 +497,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<int>(
-                      // Senza spunta: la scelta e' gia' evidenziata dal
-                      // colore, e la spunta toglieva spazio all'etichetta
-                      // che su telefono andava a capo a meta' parola.
                       showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 14, label: Text('14')),
@@ -495,11 +508,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                   ],
                 ),
-              ],
-            ),
-            FormGroup(
-              titolo: 'Impostazioni eventi (per questa partita)',
-              campi: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -511,9 +519,6 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     SegmentedButton<String>(
-                      // Senza spunta: la scelta e' gia' evidenziata dal
-                      // colore, e la spunta toglieva spazio all'etichetta
-                      // che su telefono andava a capo a meta' parola.
                       showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(

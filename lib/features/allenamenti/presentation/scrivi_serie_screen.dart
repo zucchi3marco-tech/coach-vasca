@@ -7,12 +7,15 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/attesa_ai_hint.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/section_header.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../ai_genera/application/corsie_service.dart';
 import '../../ai_genera/data/generazione_ai_repository.dart';
@@ -310,37 +313,31 @@ class _ScriviSerieScreenState extends ConsumerState<ScriviSerieScreen> {
             ),
             if (_interpretazioneInCorso) const AttesaAiHint(),
           ] else ...[
-            Text(
-              '${anteprima.serie.length} serie interpretate. Controllale, '
-              'poi «Aggiungi»: se qualcosa non torna, «Torna indietro» e '
-              'correggi il testo.',
-              style: AppTypography.piccolo.copyWith(
-                color: colori.testoSecondario,
-              ),
+            TitoloSezione(
+              '${anteprima.serie.length} serie interpretate',
+              spiegazione:
+                  'Controllale, poi «Aggiungi»: se qualcosa non torna, '
+                  '«Torna indietro» e correggi il testo.',
             ),
-            const SizedBox(height: AppSpacing.s16),
-            for (final s in anteprima.serie)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
-                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                      style: AppTypography.corpoForte.copyWith(
-                        color: colori.testo,
+            AppListPanel(
+              righe: [
+                for (final s in anteprima.serie)
+                  AppListRow(
+                    leading: Text(
+                      '${s.ordine}',
+                      style: AppTypography.numerica(
+                        AppTypography.corpoForte.copyWith(
+                          color: colori.testoSecondario,
+                        ),
                       ),
                     ),
-                    Text(
-                      _sottotitoloSerie(s),
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                    titolo:
+                        '${s.ripetute}×${s.distanzaM}m '
+                        '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                    sottotitolo: _sottotitoloSerie(s),
+                  ),
+              ],
+            ),
             if (_errore != null) ...[
               const SizedBox(height: AppSpacing.s12),
               ErrorBanner(messaggio: _errore!),

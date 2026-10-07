@@ -3,11 +3,13 @@ import '../../../core/utils/giorni.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/attesa_ai_hint.dart';
@@ -16,11 +18,14 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/riquadri.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
+import '../../allenamenti/presentation/riepilogo_volumi.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../club/application/current_club_provider.dart';
@@ -737,7 +742,7 @@ class _GeneraSettimanaFormScreenState
 
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: const Text('Genera settimana con AI')),
+      appBar: AppBar(title: const Text('Genera la settimana')),
       body: gateAsync.when(
         data: (gate) => gate.sbloccato
             ? _corpoForm(context, gruppoId)
@@ -1233,11 +1238,6 @@ class _RevisioneSettimanaScreenState
     }
   }
 
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year}';
-
   String _sottotitoloSerie(SerieGenerata s) {
     final parti = <String>[labelBlocco(s.blocco)];
     if (s.zona != null) parti.add('zona ${s.zona}');
@@ -1444,18 +1444,27 @@ class _RevisioneSettimanaScreenState
     final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(
-        title: Text('Settimana proposta (${_sedute.length} sedute)'),
-      ),
+      appBar: AppBar(title: const Text('Proposta dell\'AI')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Totale settimanale: $totaleMetri m',
-            style: AppTypography.corpoForte.copyWith(color: colori.testo),
+          TestataPagina(
+            titolo: 'La settimana proposta',
+            numeri: [
+              NumeroTestata(valore: '${_sedute.length}', etichetta: 'Sedute'),
+              NumeroTestata(
+                valore: formattaMetri(totaleMetri),
+                etichetta: 'Metri in tutto',
+              ),
+              if (_sedute.isNotEmpty)
+                NumeroTestata(
+                  valore: formattaMetri((totaleMetri / _sedute.length).round()),
+                  etichetta: 'Per seduta',
+                ),
+            ],
           ),
           if (_avvisi.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s12),
+            const SizedBox(height: AppSpacing.s16),
             Container(
               decoration: BoxDecoration(
                 color: colori.attenzioneTenue,
@@ -1483,11 +1492,18 @@ class _RevisioneSettimanaScreenState
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.s16),
+          const SizedBox(height: AppSpacing.s24),
+          TitoloSezione(
+            'Le sedute',
+            conteggio: _sedute.length,
+            spiegazione:
+                'Tocca la data di una seduta per spostarla, la freccia per '
+                'vederne le serie. Puoi rigenerarne una sola o toglierla '
+                'dal piano prima di salvare.',
+          ),
           for (var i = 0; i < _sedute.length; i++) ...[
             _CardSeduta(
               voce: _sedute[i],
-              formattaData: _formattaData,
               sottotitoloSerie: _sottotitoloSerie,
               onCambiaData: () => _cambiaData(i),
               onRigenera: _rigenerandoIndice == null
@@ -1498,8 +1514,9 @@ class _RevisioneSettimanaScreenState
                   ? () => setState(() => _sedute.removeAt(i))
                   : null,
             ),
-            const SizedBox(height: AppSpacing.s16),
+            const SizedBox(height: AppSpacing.s12),
           ],
+          const SizedBox(height: AppSpacing.s12),
           PrimaryButton(
             label: 'Salva ${_sedute.length} sedute',
             isLoading: _salvataggioInCorso,
@@ -1511,10 +1528,11 @@ class _RevisioneSettimanaScreenState
   }
 }
 
-class _CardSeduta extends StatelessWidget {
+/// Una seduta della settimana proposta: chiusa mostra data, titolo e
+/// metri (per confrontare le sedute a colpo d'occhio), aperta le serie.
+class _CardSeduta extends StatefulWidget {
   const _CardSeduta({
     required this.voce,
-    required this.formattaData,
     required this.sottotitoloSerie,
     required this.onCambiaData,
     required this.onRigenera,
@@ -1523,7 +1541,6 @@ class _CardSeduta extends StatelessWidget {
   });
 
   final SedutaConScheda voce;
-  final String Function(DateTime) formattaData;
   final String Function(SerieGenerata) sottotitoloSerie;
   final VoidCallback onCambiaData;
   final VoidCallback? onRigenera;
@@ -1531,111 +1548,133 @@ class _CardSeduta extends StatelessWidget {
   final VoidCallback? onRimuovi;
 
   @override
+  State<_CardSeduta> createState() => _CardSedutaState();
+}
+
+class _CardSedutaState extends State<_CardSeduta> {
+  bool _aperta = false;
+
+  @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    final voce = widget.voce;
     return Container(
       decoration: BoxDecoration(
         color: colori.superficie,
         borderRadius: BorderRadius.circular(AppRadius.pannello),
         border: Border.all(color: colori.linea),
       ),
-      padding: const EdgeInsets.all(AppSpacing.paddingPannello),
+      clipBehavior: Clip.antiAlias,
       child: Opacity(
-        opacity: rigenerandoQuesta ? 0.5 : 1,
+        opacity: widget.rigenerandoQuesta ? 0.5 : 1,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    voce.scheda.titolo,
-                    style: AppTypography.titolo.copyWith(color: colori.testo),
-                  ),
-                ),
-                IconButton(
-                  icon: rigenerandoQuesta
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(Icons.refresh, color: colori.azione),
-                  tooltip: 'Rigenera questa seduta',
-                  onPressed: onRigenera,
-                ),
-                if (onRimuovi != null)
-                  IconButton(
-                    icon: Icon(Icons.close, color: colori.testoSecondario),
-                    tooltip: 'Rimuovi questa seduta dal piano',
-                    onPressed: rigenerandoQuesta ? null : onRimuovi,
-                  ),
-              ],
-            ),
-            InkWell(
-              onTap: rigenerandoQuesta ? null : onCambiaData,
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.s12),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 16,
-                    color: colori.azione,
-                  ),
-                  const SizedBox(width: AppSpacing.s4),
-                  Text(
-                    formattaData(voce.data),
-                    style: AppTypography.corpoForte.copyWith(
-                      color: colori.azione,
+                  Tooltip(
+                    message: 'Cambia giorno',
+                    child: InkWell(
+                      onTap: widget.rigenerandoQuesta
+                          ? null
+                          : widget.onCambiaData,
+                      borderRadius: BorderRadius.circular(16),
+                      child: RiquadroData(voce.data),
                     ),
+                  ),
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          voce.scheda.titolo,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.corpoForte.copyWith(
+                            color: colori.testo,
+                          ),
+                        ),
+                        Text(
+                          '${giornoSettimana(voce.data)} · '
+                          '${formattaMetri(voce.scheda.volumeTotaleM)} m',
+                          style: AppTypography.piccolo.copyWith(
+                            color: colori.testoSecondario,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: widget.rigenerandoQuesta
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(Icons.refresh, color: colori.azione),
+                    tooltip: 'Rigenera questa seduta',
+                    onPressed: widget.onRigenera,
+                  ),
+                  if (widget.onRimuovi != null)
+                    IconButton(
+                      icon: Icon(Icons.close, color: colori.testoSecondario),
+                      tooltip: 'Togli questa seduta dal piano',
+                      onPressed: widget.rigenerandoQuesta
+                          ? null
+                          : widget.onRimuovi,
+                    ),
+                  IconButton(
+                    icon: Icon(
+                      _aperta ? Icons.expand_less : Icons.expand_more,
+                      color: colori.testoSecondario,
+                    ),
+                    tooltip: _aperta ? 'Nascondi le serie' : 'Mostra le serie',
+                    onPressed: () => setState(() => _aperta = !_aperta),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              '${voce.seduta.codice} · ${voce.scheda.volumeTotaleM} m · '
-              'centrale ${voce.scheda.volumeLavoroCentraleM} m',
-              style: AppTypography.piccolo.copyWith(
-                color: colori.testoSecondario,
-              ),
-            ),
-            const Divider(height: AppSpacing.s24),
-            for (final s in voce.scheda.serie)
+            if (_aperta) ...[
+              Divider(height: 1, color: colori.linea),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
-                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                      style: AppTypography.corpoForte.copyWith(
-                        color: colori.testo,
-                      ),
-                    ),
-                    Text(
-                      sottotitoloSerie(s),
-                      style: AppTypography.piccolo.copyWith(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.s16,
+                  AppSpacing.s8,
+                  AppSpacing.s16,
+                  AppSpacing.s4,
+                ),
+                child: Text(
+                  '${voce.seduta.codice} · lavoro centrale '
+                  '${formattaMetri(voce.scheda.volumeLavoroCentraleM)} m',
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+              ),
+              for (final s in voce.scheda.serie)
+                AppListRow(
+                  leading: Text(
+                    '${s.ordine}',
+                    style: AppTypography.numerica(
+                      AppTypography.corpoForte.copyWith(
                         color: colori.testoSecondario,
                       ),
                     ),
+                  ),
+                  titolo:
+                      '${s.ripetute}×${s.distanzaM}m '
+                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                  sottotitolo: [
+                    widget.sottotitoloSerie(s),
                     if (s.ripartenzePerCorsia.isNotEmpty)
-                      Text(
-                        formattaRipartenzeCorsia(s.ripartenzePerCorsia),
-                        style: AppTypography.piccolo.copyWith(
-                          color: colori.azione,
-                        ),
-                      ),
-                    if (s.note != null && s.note!.isNotEmpty)
-                      Text(
-                        s.note!,
-                        style: AppTypography.piccolo.copyWith(
-                          color: colori.testoSecondario,
-                        ),
-                      ),
-                  ],
+                      formattaRipartenzeCorsia(s.ripartenzePerCorsia),
+                    if (s.note != null && s.note!.isNotEmpty) s.note!,
+                  ].join('\n'),
                 ),
-              ),
+            ],
           ],
         ),
       ),

@@ -11,6 +11,7 @@ import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
@@ -105,7 +106,6 @@ class _DatiAtleta extends ConsumerWidget {
     );
     final refertiAsync = ref.watch(riepilogoRefertiProvider(chiave));
     final eventiAsync = ref.watch(riepilogoEventiProvider(chiave));
-    final colori = context.colori;
 
     return refertiAsync.when(
       data: (r) => eventiAsync.when(
@@ -114,20 +114,12 @@ class _DatiAtleta extends ConsumerWidget {
           final rigaEventi = _trovaEventi(e.perAtleta);
           return ListView(
             children: [
-              const SectionHeader('Da referti'),
-              const SizedBox(height: AppSpacing.s8),
-              Text(
-                'Non include i tiri sbagliati (non registrati nel referto).',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
+              const TitoloSezione(
+                'Da referti',
+                spiegazione: 'Non include i tiri sbagliati (non registrati nel referto).',
               ),
-              const SizedBox(height: AppSpacing.s16),
               if (rigaReferti == null)
-                Text(
-                  'Nessun dato da referto in questa stagione.',
-                  style: AppTypography.corpo.copyWith(color: colori.testo),
-                )
+                const RiquadroVuoto('Nessun dato da referto in questa stagione.')
               else
                 GrigliaNumeri(
                   children: [
@@ -147,20 +139,13 @@ class _DatiAtleta extends ConsumerWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.s28),
-              const SectionHeader('Da eventi live'),
-              const SizedBox(height: AppSpacing.s8),
-              Text(
-                'Solo dalle partite seguite dal vivo con "Eventi partita".',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
+              const TitoloSezione(
+                'Da eventi live',
+                spiegazione:
+                    'Solo dalle partite seguite dal vivo con "Eventi partita".',
               ),
-              const SizedBox(height: AppSpacing.s16),
               if (rigaEventi == null)
-                Text(
-                  'Nessun evento registrato in questa stagione.',
-                  style: AppTypography.corpo.copyWith(color: colori.testo),
-                )
+                const RiquadroVuoto('Nessun evento registrato in questa stagione.')
               else ...[
                 GrigliaNumeri(
                   children: [
@@ -235,7 +220,7 @@ class _SezioneMappaTiri extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
+        const TitoloSezione(
           'Shot chart dei tiri',
           spiegazione:
               'La mappa di tutti i tiri registrati, nella posizione da cui '
@@ -402,7 +387,7 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
               onSelectionChanged: (s) => setState(() => _vascaM = s.first),
             ),
             const SizedBox(height: AppSpacing.s28),
-            const SectionHeader(
+            const TitoloSezione(
               'Curva delle prestazioni',
               spiegazione:
                   'Tutti i tempi registrati per lo stile, la distanza e la '
@@ -421,7 +406,7 @@ class _StoricoTempiNuotoState extends ConsumerState<_StoricoTempiNuoto> {
             else
               SizedBox(height: 220, child: _GraficoTempi(punti: filtrati)),
             const SizedBox(height: AppSpacing.s28),
-            const SectionHeader('Storico'),
+            const TitoloSezione('Storico'),
             const SizedBox(height: AppSpacing.s16),
             AppListPanel(
               righe: [
