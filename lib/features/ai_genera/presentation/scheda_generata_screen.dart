@@ -233,7 +233,8 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
                 etichetta: 'Lavoro centrale',
               ),
               NumeroTestata(
-                valore: '~${stimaMinutiSessione(scheda.serie)}',
+                valore:
+                    '~${scheda.minutiStimati ?? stimaMinutiSessione(scheda.serie)}',
                 etichetta: 'Minuti',
               ),
             ],

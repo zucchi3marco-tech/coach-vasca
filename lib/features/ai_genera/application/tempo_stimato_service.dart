@@ -1,19 +1,19 @@
 import '../domain/scheda_generata.dart';
 
-/// Stima i minuti di lavoro di una scheda: tempo di nuoto (dalla
-/// ripartenza più lenta fra le corsie di ogni serie — è l'atleta che
-/// finisce per ultimo) più i recuperi, sommati su tutte le serie.
+/// Passo medio della libreria di blocchi (s/100m, foglio Legenda
+/// dell'Excel): lo stesso che usa la Edge Function senza corsie.
+const _passoMedioS = 110.0;
+
+/// Stima di riserva dei minuti di lavoro di una scheda, per quelle senza
+/// la stima della Edge Function ([SchedaGenerata.minutiStimati], es. una
+/// dettatura): la generazione calcola la sua, più precisa, con il passo
+/// della corsia più lenta zona per zona (`stimaMinutiSessione` in
+/// `supabase/functions/genera-allenamento/index.ts`).
 ///
-/// Stessa formula, tenuta manualmente sincronizzata, della funzione
-/// `stimaMinutiSessione` dentro `supabase/functions/genera-allenamento/
-/// index.ts` (che è la fonte di verità per il vincolo bloccante: qui
-/// serve solo a mostrare una stima informativa in `SchedaGenerataScreen`).
-///
-/// Una serie senza `ripartenzePerCorsia` (niente corsie calcolate, es.
-/// nessun atleta del gruppo con i PB necessari) non ha un passo noto: la
-/// sua parte di nuoto non entra nella stima, che diventa quindi
-/// un'approssimazione **per difetto** in quel caso — mai un rifiuto
-/// ingiustificato per mancanza di dati.
+/// Per ogni serie: se ha ripartenze, ripetute × la ripartenza più lenta
+/// fra le corsie (è l'atleta che finisce per ultimo, e la ripartenza
+/// comprende già il recupero); altrimenti ripetute × (nuoto al passo
+/// medio + recupero).
 int stimaMinutiSessione(List<SerieGenerata> serie) {
   var secondiTotali = 0.0;
   for (final s in serie) {
@@ -21,9 +21,11 @@ int stimaMinutiSessione(List<SerieGenerata> serie) {
       final ripartenzaPiuLenta = s.ripartenzePerCorsia
           .map((r) => r.ripartenzaS)
           .reduce((a, b) => a > b ? a : b);
-      secondiTotali += s.ripetute * (s.distanzaM / 100) * ripartenzaPiuLenta;
+      secondiTotali += s.ripetute * ripartenzaPiuLenta;
+    } else {
+      secondiTotali +=
+          s.ripetute * (s.distanzaM / 100 * _passoMedioS + (s.recuperoS ?? 0));
     }
-    secondiTotali += s.ripetute * (s.recuperoS ?? 0);
   }
   return (secondiTotali / 60).round();
 }

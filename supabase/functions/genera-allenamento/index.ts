@@ -36,7 +36,7 @@ const NOME_FUNZIONE = "genera-allenamento";
 
 // Scarto ammesso fra i metri della scheda e il volume richiesto (stesso
 // margine dei controlli sulla settimana, `controlli_settimana_service.dart`):
-// vedi adattaVolume.
+// vedi adattaScheda.
 const TOLLERANZA_VOLUME = 0.1;
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
@@ -103,8 +103,7 @@ interface ParametriGenerazione {
   dettaglioGambe?: DettaglioFocus | null;
   stileTecnica?: string | null;
   attrezzaturaLavoroCentrale?: string[];
-  // Vincolo stretto: vedi stimaMinutiSessione() e il controllo dopo la
-  // validazione, sotto.
+  // Vincolo stretto: vedi stimaMinutiSessione() e adattaScheda(), sotto.
   minutiMax?: number | null;
   // 25 o 50: solo contesto per il prompt (evitare distanze scomode).
   vascaM?: number | null;
@@ -144,6 +143,9 @@ interface SchedaGenerata {
   titolo: string;
   note?: string | null;
   serie: SerieGenerata[];
+  // La stima usata per il vincolo dei minuti massimi: l'app mostra
+  // questa, così il coach vede lo stesso numero che è stato controllato.
+  minutiStimati?: number;
 }
 
 // Il browser (Flutter Web) chiama questa funzione da un'origine diversa
@@ -543,28 +545,106 @@ function costruisciSchemaOpenAi(blocchiDisponibili: BloccoDisponibile[]) {
   };
 }
 
-// Stessa formula, tenuta manualmente sincronizzata, della funzione
-// `stimaMinutiSessione` in `lib/features/ai_genera/application/
-// tempo_stimato_service.dart` (lì è solo informativa; qui è il
-// riferimento per il vincolo bloccante). Una serie senza ripartenze non
-// ha un passo noto: la sua parte di nuoto non entra nella stima — che
-// resta quindi un'approssimazione per difetto, mai un rifiuto per
-// mancanza di dati.
-function stimaMinutiSessione(serie: SerieGenerata[]): number {
-  let secondiTotali = 0;
-  for (const s of serie) {
-    const ripartenze = s.ripartenzePerCorsia ?? [];
-    if (ripartenze.length > 0) {
-      const ripartenzaPiuLenta = Math.max(...ripartenze.map((r) => r.ripartenzaS));
-      secondiTotali += s.ripetute * (s.distanzaM / 100) * ripartenzaPiuLenta;
-    }
-    secondiTotali += s.ripetute * (s.recuperoS ?? 0);
+// Tempo della seduta calcolato dal codice, non dalle ripartenze dell'AI
+// (inaffidabili: nelle prove scriveva il passo sui 100 al posto della
+// ripartenza, o 0, e spesso non le dava per riscaldamento e
+// defaticamento, che restavano a tempo zero). Per ogni serie:
+// ripetute × (nuoto + recupero), con il passo della corsia più lenta — è
+// l'atleta che finisce per ultimo — nella zona della serie, secondo lo
+// stesso modello delle ripartenze dell'app (`passoBasePerZona` in
+// `lib/features/ripartenze/domain/calcolo_ripartenze.dart`: tenere
+// allineato). Senza corsie, il passo medio della libreria di blocchi.
+const PASSO_MEDIO_LIBRERIA_S = 110; // s/100m, foglio Legenda dell'Excel
+const OFFSET_SOGLIA_B1_S = 3.5;
+
+// Gambe e tecnica sono più lente del nuoto completo: stima di partenza,
+// non una formula del coach — da calibrare con l'uso reale.
+const FATTORE_ESECUZIONE: Record<string, number> = {
+  gambe: 1.3,
+  tecnica: 1.15,
+  braccia: 1.05,
+  pull: 1.05,
+};
+
+// Recupero fra le ripetute quando l'AI non lo indica: stessi valori di
+// `_recuperoFissoDefaultPerZona` e `distanzeFrazionamento` in
+// calcolo_ripartenze.dart (B1 e D usano la tabella per distanza).
+const RECUPERO_PER_ZONA: Record<string, number> = {
+  A1: 20,
+  A2: 15,
+  B2: 60,
+  C1: 60,
+  C2: 180,
+  C3: 60,
+};
+const RECUPERO_PER_DISTANZA: [number, number][] = [
+  [50, 12],
+  [100, 15],
+  [150, 18],
+  [200, 20],
+  [300, 25],
+  [400, 30],
+  [500, 30],
+];
+
+function recuperoPredefinito(zona: string, distanzaM: number): number {
+  const perZona = RECUPERO_PER_ZONA[zona];
+  if (perZona != null) return perZona;
+  return RECUPERO_PER_DISTANZA.reduce((a, b) =>
+    Math.abs(b[0] - distanzaM) < Math.abs(a[0] - distanzaM) ? b : a
+  )[1];
+}
+
+/// Passo di nuoto (s/100m) nella zona indicata.
+function passoPerZona(zona: string, corsia: CorsiaGenerazione | null): number {
+  if (corsia == null) return PASSO_MEDIO_LIBRERIA_S;
+  const passo100 = corsia.passo100S;
+  // T200-T100: senza il primato sui 200 (o con un valore incoerente,
+  // più veloce del passo sui 100) si stima dal 100.
+  const differenziale = corsia.differenzialeS != null &&
+      corsia.differenzialeS >= passo100
+    ? corsia.differenzialeS
+    : passo100 * 1.15;
+  switch (zona) {
+    case "A1":
+      return differenziale + OFFSET_SOGLIA_B1_S + 12;
+    case "A2":
+      return differenziale + OFFSET_SOGLIA_B1_S + 5;
+    case "B1":
+      return differenziale + OFFSET_SOGLIA_B1_S;
+    case "B2":
+      return differenziale;
+    case "C1":
+    case "D":
+      return passo100 + 1.5;
+    default: // C2, C3: vicino al massimale
+      return passo100;
   }
-  return secondiTotali / 60;
+}
+
+function stimaMinutiSessione(
+  serie: SerieGenerata[],
+  corsie: CorsiaGenerazione[],
+): number {
+  const piuLenta = corsie.length > 0
+    ? corsie.reduce((a, b) => (b.passo100S > a.passo100S ? b : a))
+    : null;
+  let secondi = 0;
+  for (const s of serie) {
+    const passo = passoPerZona(s.zona, piuLenta) *
+      (FATTORE_ESECUZIONE[s.esecuzione] ?? 1);
+    const recupero = s.recuperoS ?? recuperoPredefinito(s.zona, s.distanzaM);
+    secondi += s.ripetute * (passo * s.distanzaM / 100 + recupero);
+  }
+  return secondi / 60;
+}
+
+function metriSerie(serie: SerieGenerata[]): number {
+  return serie.reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
 }
 
 function metriScheda(scheda: SchedaGenerata): number {
-  return scheda.serie.reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+  return metriSerie(scheda.serie);
 }
 
 function scartoVolume(scheda: SchedaGenerata, volumeRichiesto: number): number {
@@ -625,50 +705,58 @@ function scalaSerie(
   return scalate;
 }
 
-/// Il volume lo garantisce il codice, non l'AI: nelle prove sia
-/// gpt-4o-mini sia gpt-4.1-mini sbagliavano le somme del 10-30% (in meno
-/// il primo, in più il secondo) anche con un secondo tentativo guidato.
-/// Il lavoro centrale va al volume indicato dal coach, se c'è, e il resto
-/// della seduta copre la differenza (rispetto ai metri centrali reali,
-/// dopo gli arrotondamenti); altrimenti si scala tutto insieme.
-/// Se la scheda così corretta sfora il tempo massimo resta quella
-/// dell'AI, che il limite di tempo lo rispettava già.
-function adattaVolume(
+/// Volume e tempo li garantisce il codice, non l'AI: nelle prove sia
+/// gpt-4o-mini sia gpt-4.1-mini sbagliavano le somme dei metri del 10-30%
+/// (in meno il primo, in più il secondo) anche con un secondo tentativo
+/// guidato, e il tempo non lo sapevano stimare.
+/// 1. Metri: il lavoro centrale va al volume indicato dal coach, se c'è,
+///    e il resto della seduta copre la differenza (rispetto ai metri
+///    centrali reali, dopo gli arrotondamenti); altrimenti si scala tutto
+///    insieme.
+/// 2. Tempo: se la scheda non sta nei minuti massimi (stima sull'atleta
+///    più lento, vedi stimaMinutiSessione) la si accorcia tutta in
+///    proporzione — il tempo in vasca è un limite fisso, il volume no.
+function adattaScheda(
   scheda: SchedaGenerata,
   parametri: ParametriGenerazione,
 ): SchedaGenerata {
+  let serie = scheda.serie;
+
   const totale = parametri.volumeMetri;
-  if (!totale || scartoVolume(scheda, totale) <= TOLLERANZA_VOLUME / 2) {
-    return scheda;
-  }
   const centrale = parametri.volumeLavoroCentraleMetri;
   const principale = (s: SerieGenerata) => s.blocco === "principale";
-  const haPrincipale = scheda.serie.some(principale);
-  const haAltro = scheda.serie.some((s) => !principale(s));
-
-  let serie: SerieGenerata[];
-  if (centrale != null && centrale > 0 && centrale < totale && haPrincipale && haAltro) {
-    serie = scalaSerie(scheda.serie, principale, centrale);
-    const metriCentrali = serie
-      .filter(principale)
-      .reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
-    serie = scalaSerie(serie, (s) => !principale(s), totale - metriCentrali);
-  } else {
-    serie = scalaSerie(scheda.serie, () => true, totale);
+  const metriCentraliAi = metriSerie(serie.filter(principale));
+  const centraleFuori = centrale != null && centrale > 0 &&
+    Math.abs(metriCentraliAi - centrale) / centrale > TOLLERANZA_VOLUME;
+  if (totale && (scartoVolume(scheda, totale) > TOLLERANZA_VOLUME / 2 || centraleFuori)) {
+    const haAltro = serie.some((s) => !principale(s));
+    if (centrale != null && centrale > 0 && centrale < totale && haAltro) {
+      serie = scalaSerie(serie, principale, centrale);
+      const metriCentrali = metriSerie(serie.filter(principale));
+      serie = scalaSerie(serie, (s) => !principale(s), totale - metriCentrali);
+    } else {
+      serie = scalaSerie(serie, () => true, totale);
+    }
   }
 
-  if (
-    parametri.minutiMax != null &&
-    stimaMinutiSessione(serie) > parametri.minutiMax * 1.1
-  ) {
-    return scheda;
+  const minutiMax = parametri.minutiMax;
+  if (minutiMax != null && minutiMax > 0) {
+    const corsie = Array.isArray(parametri.corsie) ? parametri.corsie : [];
+    // Più giri perché gli arrotondamenti (ripetute intere, passi di 50m)
+    // possono lasciare la scheda appena sopra il limite.
+    for (let giro = 0; giro < 4; giro++) {
+      const minuti = stimaMinutiSessione(serie, corsie);
+      if (minuti <= minutiMax) break;
+      const obiettivo = Math.floor(metriSerie(serie) * (minutiMax / minuti) * 0.97);
+      serie = scalaSerie(serie, () => true, obiettivo);
+    }
   }
   return { ...scheda, serie };
 }
 
 /// Le misure stanno già in ripetute/distanza: una nota che le ripete
 /// (spesso il titolo del blocco di libreria, "200 sciolto") smentirebbe la
-/// serie non appena adattaVolume ne cambia i metri.
+/// serie non appena adattaScheda ne cambia i metri.
 function pulisciNota(nota: string): string | null {
   const pulita = nota.replace(/^\s*(\d+\s*[x×]\s*)?\d+(m\b)?\s*/i, "").trim();
   return pulita.length > 0 ? pulita : null;
@@ -855,18 +943,6 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
   // riscaldamento: non è una scheda da adattare, va richiesta.
   if (!serieValidate.some((s) => s.blocco === "principale")) {
     throw new Error("manca la parte principale");
-  }
-
-  if (parametri.minutiMax != null) {
-    const minutiStimati = stimaMinutiSessione(serieValidate);
-    const limiteConTolleranza = parametri.minutiMax * 1.1;
-    if (minutiStimati > limiteConTolleranza) {
-      throw new Error(
-        `la scheda generata richiede circa ${Math.round(minutiStimati)} minuti, ` +
-          `oltre il limite di ${parametri.minutiMax} richiesto (stima sull'atleta ` +
-          "più lento del gruppo): riprova, magari riducendo il volume",
-      );
-    }
   }
 
   return {
@@ -1218,23 +1294,38 @@ Deno.serve(async (req) => {
   const inizio = Date.now();
   let esito = await generaScheda(prompt, parametri);
   // Una risposta arrivata ma inutilizzabile (JSON rotto, seduta
-  // incompleta, tempo massimo sforato) si richiede una volta, se c'è
+  // incompleta) si richiede una volta, se c'è
   // ancora tempo; un errore del servizio no, ha già i suoi ritentativi.
   if (!esito.ok && esito.daRichiedere && Date.now() - inizio < 25_000) {
     esito = await generaScheda(prompt, parametri);
   }
   if (!esito.ok) return jsonResponse({ error: esito.errore }, 502);
 
-  // Se anche dopo l'adattamento i metri restano fuori margine (succede
-  // solo quando il tempo massimo non lascia spazio), la scheda arriva
-  // comunque, con un avviso: mai un errore per una scheda utilizzabile.
-  let scheda = adattaVolume(esito.scheda, parametri);
+  let scheda = adattaScheda(esito.scheda, parametri);
+  const corsie = Array.isArray(parametri.corsie) ? parametri.corsie : [];
+  const minuti = Math.round(stimaMinutiSessione(scheda.serie, corsie));
+
+  // Quando metri e tempo non si possono rispettare insieme la scheda
+  // arriva comunque, con un avviso: mai un errore per una scheda
+  // utilizzabile.
   const volume = parametri.volumeMetri;
-  if (volume && scartoVolume(scheda, volume) > TOLLERANZA_VOLUME) {
-    const avviso = `Attenzione: questa scheda fa ${metriScheda(scheda)} m ` +
-      `invece dei ${volume} richiesti.`;
-    scheda = { ...scheda, note: scheda.note ? `${avviso} ${scheda.note}` : avviso };
+  const minutiMax = parametri.minutiMax;
+  let avviso: string | null = null;
+  if (minutiMax != null && minuti > minutiMax) {
+    avviso = `Attenzione: servono circa ${minuti} minuti, più dei ` +
+      `${minutiMax} indicati.`;
+  } else if (volume && scartoVolume(scheda, volume) > TOLLERANZA_VOLUME) {
+    avviso = minutiMax != null && metriScheda(scheda) < volume
+      ? `Per stare in ${minutiMax} minuti la scheda fa ` +
+        `${metriScheda(scheda)} m invece dei ${volume} richiesti.`
+      : `Attenzione: questa scheda fa ${metriScheda(scheda)} m invece dei ` +
+        `${volume} richiesti.`;
   }
+  scheda = {
+    ...scheda,
+    note: avviso ? (scheda.note ? `${avviso} ${scheda.note}` : avviso) : scheda.note,
+    minutiStimati: minuti,
+  };
 
   if (userId) {
     await registraUsoAi({

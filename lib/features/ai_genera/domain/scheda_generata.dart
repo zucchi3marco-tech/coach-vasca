@@ -3,11 +3,21 @@
 /// zona. Non è ancora un `Allenamento` salvato: la conferma manuale del
 /// coach (prossimo punto della roadmap) la trasforma in righe reali.
 class SchedaGenerata {
-  const SchedaGenerata({required this.titolo, this.note, required this.serie});
+  const SchedaGenerata({
+    required this.titolo,
+    this.note,
+    required this.serie,
+    this.minutiStimati,
+  });
 
   final String titolo;
   final String? note;
   final List<SerieGenerata> serie;
+
+  /// Minuti stimati dalla Edge Function, gli stessi usati per rispettare
+  /// i minuti massimi richiesti: `null` per le schede che non passano dal
+  /// generatore (es. dettatura), dove si ricade su `stimaMinutiSessione`.
+  final int? minutiStimati;
 
   int get volumeTotaleM =>
       serie.fold(0, (totale, s) => totale + s.distanzaTotaleM);
@@ -24,6 +34,7 @@ class SchedaGenerata {
       serie: (map['serie'] as List)
           .map((voce) => SerieGenerata.fromMap(voce as Map<String, dynamic>))
           .toList(),
+      minutiStimati: (map['minutiStimati'] as num?)?.round(),
     );
   }
 
@@ -32,6 +43,7 @@ class SchedaGenerata {
       'titolo': titolo,
       'note': note,
       'serie': serie.map((s) => s.toMap()).toList(),
+      'minutiStimati': minutiStimati,
     };
   }
 }
