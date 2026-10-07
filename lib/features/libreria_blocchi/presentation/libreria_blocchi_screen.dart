@@ -109,42 +109,47 @@ class _LibreriaBlocchiScreenState extends ConsumerState<LibreriaBlocchiScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.s16),
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Cerca per titolo o codice',
-                prefixIcon: Icon(Icons.search),
+            // Ricerca e filtri solo quando c'e' qualcosa da cercare.
+            if (blocchi.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.s16),
+              TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Cerca per titolo o codice',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) => setState(() => _ricerca = value),
               ),
-              onChanged: (value) => setState(() => _ricerca = value),
-            ),
-            const SizedBox(height: AppSpacing.s12),
-            Wrap(
-              spacing: AppSpacing.s8,
-              runSpacing: AppSpacing.s8,
-              children: [
-                for (final (valore, etichetta) in const [
-                  (null, 'Tutti gli sport'),
-                  ('nuoto', 'Nuoto'),
-                  ('pallanuoto', 'Pallanuoto'),
-                  ('entrambi', 'Entrambi'),
-                ])
-                  TonalChip(
-                    etichetta: etichetta,
-                    selezionato: _filtroSport == valore,
-                    onSelezionato: (_) => setState(() => _filtroSport = valore),
-                  ),
-                for (final (valore, etichetta) in const [
-                  (null, 'Tutti gli stati'),
-                  ('approvato', 'Approvati'),
-                  ('bozza', 'Bozze'),
-                ])
-                  TonalChip(
-                    etichetta: etichetta,
-                    selezionato: _filtroStato == valore,
-                    onSelezionato: (_) => setState(() => _filtroStato = valore),
-                  ),
-              ],
-            ),
+              const SizedBox(height: AppSpacing.s12),
+              Wrap(
+                spacing: AppSpacing.s8,
+                runSpacing: AppSpacing.s8,
+                children: [
+                  for (final (valore, etichetta) in const [
+                    (null, 'Tutti gli sport'),
+                    ('nuoto', 'Nuoto'),
+                    ('pallanuoto', 'Pallanuoto'),
+                    ('entrambi', 'Entrambi'),
+                  ])
+                    TonalChip(
+                      etichetta: etichetta,
+                      selezionato: _filtroSport == valore,
+                      onSelezionato: (_) =>
+                          setState(() => _filtroSport = valore),
+                    ),
+                  for (final (valore, etichetta) in const [
+                    (null, 'Tutti gli stati'),
+                    ('approvato', 'Approvati'),
+                    ('bozza', 'Bozze'),
+                  ])
+                    TonalChip(
+                      etichetta: etichetta,
+                      selezionato: _filtroStato == valore,
+                      onSelezionato: (_) =>
+                          setState(() => _filtroStato = valore),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.s24),
             blocchiAsync.when(
               data: (blocchi) => _Elenco(

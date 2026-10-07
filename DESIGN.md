@@ -69,6 +69,8 @@ La schermata "Oggi" dell'allenatore è il riferimento visivo di tutta l'app. Ogn
 | Titolo di sezione | `TitoloSezione` (grassetto, senza filetto, con conteggio e "Mostra tutti" facoltativi); `SectionHeader` ha lo stesso aspetto | sopra ogni gruppo di schede o campi |
 | Gruppo di campi | `FormGroup`: titolo di sezione e campi dentro una scheda | ogni form |
 | Griglia di azioni | `GrigliaAzioni` / `AzioneRapida` | "Cosa vuoi fare?" di Oggi |
+| Sezione lunga | `SezioneSchede` (titolo, conteggio, prime 8 voci e "Mostra tutti") | allenamenti, partite, gare, blocchi |
+| Numeri | `GrigliaNumeri` con `StatPanel` | statistiche, carico, presenze |
 | Tocco | `Premibile` (si abbassa sotto il dito), `EntrataACascata` | schede e azioni |
 
 Le regole:
@@ -79,7 +81,9 @@ Le regole:
 4. **Le date si leggono come le dice un allenatore**: riquadro data a sinistra, poi "Domani · giovedì", "Tra 5 giorni", "3 giorni fa" (`core/utils/date_italiane.dart`). Il formato `08/10/2026` resta solo nei campi dei form.
 5. **Prima quello che viene, poi quello che è stato.** Gli elenchi con le date si dividono in "Oggi" (scheda in evidenza), "Prossimi" e "Già svolti/disputati"; oltre 8 voci per sezione, "Mostra tutti".
 6. Le tab della home e "Oggi" usano la stessa larghezza massima (`AppLayout.larghezzaMassimaCruscotto`) e gli stessi margini (`AppScaffold`), così passando da una all'altra testata e schede restano allineate. Dettagli e form restano a 760.
-7. L'acqua delle testate è animata; con "Riduci movimento" resta ferma. Nei test di widget si attiva `disableAnimations`, altrimenti `pumpAndSettle` non finisce mai.
+7. **Pagine secondarie** (libreria blocchi, personal best, record, presenze e partite dell'atleta, codici, referto...): se la testata porta il titolo, la barra in alto resta vuota (solo la freccia indietro) per non scriverlo due volte; nei dettagli la barra dice la categoria ("Allenamento", "Partita", "Blocco") e la testata il nome. I numeri delle statistiche stanno in `GrigliaNumeri` (schede pari, 2 per riga su telefono); i tempi in `SchedaTempo` (il "tabellone"). Le pagine aperte dall'allenatore dalla scheda di un atleta non parlano in prima persona ("Presenze", non "Le mie presenze").
+8. Uno stato vuoto senza un'azione vera non mostra pulsanti: un "Torna indietro" disattivato è peggio di niente.
+9. L'acqua delle testate è animata; con "Riduci movimento" resta ferma. Nei test di widget si attiva `disableAnimations`, altrimenti `pumpAndSettle` non finisce mai.
 
 ---
 
