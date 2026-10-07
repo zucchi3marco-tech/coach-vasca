@@ -15,6 +15,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/schermo_acceso.dart';
 import '../../ai_genera/application/corsie_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
@@ -35,7 +36,7 @@ class PresenzeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      NascondiBarraClub(child: _costruisci(context, ref));
+      NascondiBarraClub(child: SchermoAcceso(child: _costruisci(context, ref)));
 
   Widget _costruisci(BuildContext context, WidgetRef ref) {
     final filter = (clubId: allenamento.clubId, includeInactive: false);

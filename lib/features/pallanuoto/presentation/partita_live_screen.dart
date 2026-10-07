@@ -11,6 +11,7 @@ import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/schermo_acceso.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../application/pallanuoto_providers.dart';
@@ -317,7 +318,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
 
   @override
   Widget build(BuildContext context) =>
-      NascondiBarraClub(child: _costruisci(context));
+      NascondiBarraClub(child: SchermoAcceso(child: _costruisci(context)));
 
   Widget _costruisci(BuildContext context) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(widget.partita.id));
@@ -395,9 +396,8 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
 
     Widget content = Builder(
       // Builder per un context che veda gia' l'eventuale Theme impostato
-      // sotto (serve a context.colori piu' sotto).
+      // sotto (i widget figli leggono context.colori da qui).
       builder: (context) {
-        final colori = context.colori;
         return PopScope(
           canPop: !attiva,
           onPopInvokedWithResult: (didPop, _) {
@@ -453,17 +453,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             ),
                             const BottoneTemaBordoVasca(),
                             Expanded(
-                              child: Center(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    '$golCasa - $golTrasferta',
-                                    maxLines: 1,
-                                    style: AppTypography.display.copyWith(
-                                      color: colori.testo,
-                                    ),
-                                  ),
-                                ),
+                              child: _Tabellone(
+                                partita: widget.partita,
+                                golCasa: golCasa,
+                                golTrasferta: golTrasferta,
                               ),
                             ),
                             if (widget.partita.tracciaTempo && !tempiSotto)
@@ -525,6 +518,20 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                                           });
                                         },
                                 ),
+                                // Il tiro si registra toccando il campo: va
+                                // detto, non e' un gesto che si indovina.
+                                if (!attiva)
+                                  Positioned(
+                                    top: AppSpacing.s8,
+                                    child: _Suggerimento(
+                                      convocati.isEmpty
+                                          ? 'Nessun convocato: prepara prima '
+                                                'la distinta per registrare i '
+                                                'tiri'
+                                          : 'Tocca il campo dove è partito '
+                                                'il tiro',
+                                    ),
+                                  ),
                                 if (attiva)
                                   Positioned.fill(
                                     child: GestureDetector(
@@ -673,8 +680,8 @@ class _ChipTempo extends StatelessWidget {
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: SizedBox(
-          width: 40,
-          height: 40,
+          width: 56,
+          height: 56,
           child: Center(
             child: Text(
               'T$tempo',
@@ -683,6 +690,95 @@ class _ChipTempo extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Squadre e punteggio: la nostra in grassetto, cosi' a colpo d'occhio si
+/// sa quale numero e' il nostro.
+class _Tabellone extends StatelessWidget {
+  const _Tabellone({
+    required this.partita,
+    required this.golCasa,
+    required this.golTrasferta,
+  });
+
+  final Partita partita;
+  final int golCasa;
+  final int golTrasferta;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final noiInCasa = partita.nostraSquadra == 'casa';
+    Text nome(String testo, {required bool nostra, required TextAlign verso}) =>
+        Text(
+          testo,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: verso,
+          style: (nostra ? AppTypography.corpoForte : AppTypography.corpo)
+              .copyWith(
+                color: nostra ? colori.testo : colori.testoSecondario,
+                height: 1.15,
+              ),
+        );
+    return Row(
+      children: [
+        Expanded(
+          child: nome(
+            partita.squadraCasa,
+            nostra: noiInCasa,
+            verso: TextAlign.end,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s12),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '$golCasa - $golTrasferta',
+            maxLines: 1,
+            style: AppTypography.numerica(
+              AppTypography.display.copyWith(color: colori.testo),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s12),
+        Expanded(
+          child: nome(
+            partita.squadraTrasferta,
+            nostra: !noiInCasa,
+            verso: TextAlign.start,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Suggerimento extends StatelessWidget {
+  const _Suggerimento(this.testo);
+
+  final String testo;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return IgnorePointer(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s12,
+          vertical: AppSpacing.s4,
+        ),
+        decoration: BoxDecoration(
+          color: colori.superficie.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(AppRadius.pillola),
+        ),
+        child: Text(
+          testo,
+          style: AppTypography.piccolo.copyWith(color: colori.testo),
         ),
       ),
     );

@@ -6,7 +6,6 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
@@ -14,9 +13,9 @@ import '../../../widgets/lane_rule.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/schermo_acceso.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/titolo_due_righe.dart';
-import '../../../widgets/tonal_chip.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
@@ -77,9 +76,13 @@ class EventiPartitaScreen extends ConsumerWidget {
     EventoPartita evento,
   ) async {
     if (evento.tipo == 'superiorita' && evento.esito == null) {
-      await showDialog<void>(
+      await showModalBottomSheet<void>(
         context: context,
-        builder: (_) => _DialogConcludiSuperiorita(evento: evento),
+        builder: (_) => _FoglioSuperiorita(
+          partita: partita,
+          squadra: evento.squadra,
+          daConcludere: evento,
+        ),
       );
       return;
     }
@@ -91,7 +94,7 @@ class EventiPartitaScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      NascondiBarraClub(child: _costruisci(context, ref));
+      NascondiBarraClub(child: SchermoAcceso(child: _costruisci(context, ref)));
 
   Widget _costruisci(BuildContext context, WidgetRef ref) {
     final eventiAsync = ref.watch(eventiPartitaListProvider(partita.id));
@@ -108,7 +111,7 @@ class EventiPartitaScreen extends ConsumerWidget {
       appBar: AppBar(
         toolbarHeight: TitoloDueRighe.altezzaBarraDueRighe,
         title: TitoloDueRighe(
-          titolo: 'Eventi',
+          titolo: 'Cronologia',
           sottotitolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
           righeSottotitolo: 2,
         ),
@@ -210,9 +213,9 @@ class EventiPartitaScreen extends ConsumerWidget {
                       label: 'Sup. nostra',
                       icon: Icons.trending_up,
                       expanded: false,
-                      onPressed: () => showDialog<void>(
+                      onPressed: () => showModalBottomSheet<void>(
                         context: context,
-                        builder: (_) => _DialogRegistraSuperiorita(
+                        builder: (_) => _FoglioSuperiorita(
                           partita: partita,
                           squadra: 'nostra',
                         ),
@@ -225,9 +228,9 @@ class EventiPartitaScreen extends ConsumerWidget {
                       label: 'Sup. avversaria',
                       icon: Icons.trending_down,
                       expanded: false,
-                      onPressed: () => showDialog<void>(
+                      onPressed: () => showModalBottomSheet<void>(
                         context: context,
-                        builder: (_) => _DialogRegistraSuperiorita(
+                        builder: (_) => _FoglioSuperiorita(
                           partita: partita,
                           squadra: 'avversaria',
                         ),
@@ -244,207 +247,142 @@ class EventiPartitaScreen extends ConsumerWidget {
   }
 }
 
-/// Selettore di tempo (1-4), mostrato solo se la partita traccia il tempo.
-class _SelettorePeriodo extends StatelessWidget {
-  const _SelettorePeriodo({required this.value, required this.onChanged});
+/// L'ultimo tempo scelto: resta per la superiorità successiva, che quasi
+/// sempre è nello stesso tempo.
+int? _ultimoPeriodo;
 
-  final int? value;
-  final ValueChanged<int?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSelect<int>(
-      etichetta: 'Tempo',
-      value: value,
-      items: [
-        for (var t = 1; t <= 4; t++)
-          DropdownMenuItem(value: t, child: Text('Tempo $t')),
-      ],
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _DialogRegistraSuperiorita extends ConsumerStatefulWidget {
-  const _DialogRegistraSuperiorita({
+/// Registrare o concludere una superiorità a bordo vasca (DESIGN.md 14):
+/// niente form né menu a tendina, bottoni grandi e un tocco sull'esito
+/// salva subito.
+class _FoglioSuperiorita extends ConsumerStatefulWidget {
+  const _FoglioSuperiorita({
     required this.partita,
     required this.squadra,
+    this.daConcludere,
   });
 
   final Partita partita;
   final String squadra; // nostra | avversaria
 
+  /// La superiorità "in corso" da concludere; null = se ne registra una.
+  final EventoPartita? daConcludere;
+
   @override
-  ConsumerState<_DialogRegistraSuperiorita> createState() =>
-      _DialogRegistraSuperioritaState();
+  ConsumerState<_FoglioSuperiorita> createState() => _FoglioSuperioritaState();
 }
 
-class _DialogRegistraSuperioritaState
-    extends ConsumerState<_DialogRegistraSuperiorita> {
-  String? _esito;
-  int? _periodo;
-  bool _isSubmitting = false;
+class _FoglioSuperioritaState extends ConsumerState<_FoglioSuperiorita> {
+  int? _periodo = _ultimoPeriodo;
+  bool _inCorso = false;
   String? _errore;
 
-  bool get _esitoSubito => widget.partita.modalitaSuperiorita == 'singolo';
+  /// Esito subito (modalità "singolo") o da dare alla fine.
+  bool get _chiediEsito =>
+      widget.daConcludere != null ||
+      widget.partita.modalitaSuperiorita == 'singolo';
 
-  Future<void> _salva() async {
-    if (_esitoSubito && _esito == null) {
-      setState(() => _errore = 'Seleziona l\'esito');
-      return;
-    }
+  Future<void> _registra(String? esito) async {
     setState(() {
-      _isSubmitting = true;
+      _inCorso = true;
       _errore = null;
     });
     try {
-      await ref
-          .read(eventiPartitaRepositoryProvider)
-          .registraSuperiorita(
-            partitaId: widget.partita.id,
-            squadra: widget.squadra,
-            esito: _esitoSubito ? _esito : null,
-            periodo: _periodo,
-          );
+      final repository = ref.read(eventiPartitaRepositoryProvider);
+      final evento = widget.daConcludere;
+      if (evento != null) {
+        await repository.concludiSuperiorita(id: evento.id, esito: esito!);
+      } else {
+        _ultimoPeriodo = _periodo;
+        await repository.registraSuperiorita(
+          partitaId: widget.partita.id,
+          squadra: widget.squadra,
+          esito: esito,
+          periodo: _periodo,
+        );
+      }
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (mounted) setState(() => _errore = messaggioErrore(e));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() {
+          _inCorso = false;
+          _errore = messaggioErrore(e);
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final titolo = widget.squadra == 'nostra'
+    final colori = context.colori;
+    final titolo = widget.daConcludere != null
+        ? 'Com\'è finita la superiorità?'
+        : widget.squadra == 'nostra'
         ? 'Superiorità nostra'
         : 'Superiorità avversaria';
-    return AlertDialog(
-      title: Text(titolo),
-      content: SingleChildScrollView(
+    Widget bottone(String etichetta, VoidCallback onTap) => Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s12),
+      child: SizedBox(
+        height: AppSpacing.altezzaMinimaBersaglioVasca,
+        child: PrimaryButton(
+          label: etichetta,
+          isLoading: _inCorso,
+          onPressed: _inCorso ? null : onTap,
+        ),
+      ),
+    );
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_esitoSubito)
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final (valore, etichetta) in esitiSuperiorita)
-                    TonalChip(
-                      etichetta: etichetta,
-                      selezionato: _esito == valore,
-                      onSelezionato: (_) => setState(() => _esito = valore),
-                    ),
-                ],
-              )
-            else
-              const Text(
-                'Registrata come "in corso": la concludi più tardi '
-                'toccandola nella lista.',
+            Text(
+              titolo,
+              style: AppTypography.sezione.copyWith(
+                color: colori.testo,
+                fontWeight: FontWeight.w700,
               ),
-            if (widget.partita.tracciaTempo) ...[
-              const SizedBox(height: 12),
-              _SelettorePeriodo(
-                value: _periodo,
-                onChanged: (v) => setState(() => _periodo = v),
+            ),
+            if (widget.daConcludere == null && widget.partita.tracciaTempo) ...[
+              const SizedBox(height: AppSpacing.s12),
+              SegmentedButton<int>(
+                showSelectedIcon: false,
+                emptySelectionAllowed: true,
+                style: const ButtonStyle(
+                  minimumSize: WidgetStatePropertyAll(
+                    Size.fromHeight(AppSpacing.altezzaMinimaBersaglioVasca),
+                  ),
+                ),
+                segments: [
+                  for (var t = 1; t <= 4; t++)
+                    ButtonSegment(value: t, label: Text('T$t')),
+                ],
+                selected: {?_periodo},
+                onSelectionChanged: (scelta) =>
+                    setState(() => _periodo = scelta.firstOrNull),
+              ),
+            ],
+            if (_chiediEsito)
+              for (final (valore, etichetta) in esitiSuperiorita)
+                bottone(etichetta, () => _registra(valore))
+            else ...[
+              bottone('Inizia la superiorità', () => _registra(null)),
+              const SizedBox(height: AppSpacing.s8),
+              Text(
+                'La concludi toccandola nella cronologia.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
             ],
             if (_errore != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s12),
               ErrorBanner(messaggio: _errore!),
             ],
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _salva,
-          child: const Text('Salva'),
-        ),
-      ],
-    );
-  }
-}
-
-class _DialogConcludiSuperiorita extends ConsumerStatefulWidget {
-  const _DialogConcludiSuperiorita({required this.evento});
-
-  final EventoPartita evento;
-
-  @override
-  ConsumerState<_DialogConcludiSuperiorita> createState() =>
-      _DialogConcludiSuperioritaState();
-}
-
-class _DialogConcludiSuperioritaState
-    extends ConsumerState<_DialogConcludiSuperiorita> {
-  String? _esito;
-  bool _isSubmitting = false;
-  String? _errore;
-
-  Future<void> _salva() async {
-    if (_esito == null) {
-      setState(() => _errore = 'Seleziona l\'esito');
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _errore = null;
-    });
-    try {
-      await ref
-          .read(eventiPartitaRepositoryProvider)
-          .concludiSuperiorita(id: widget.evento.id, esito: _esito!);
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted) setState(() => _errore = messaggioErrore(e));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Concludi superiorità'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final (valore, etichetta) in esitiSuperiorita)
-                TonalChip(
-                  etichetta: etichetta,
-                  selezionato: _esito == valore,
-                  onSelezionato: (_) => setState(() => _esito = valore),
-                ),
-            ],
-          ),
-          if (_errore != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _errore!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _salva,
-          child: const Text('Salva'),
-        ),
-      ],
     );
   }
 }
