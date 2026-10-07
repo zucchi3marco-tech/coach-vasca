@@ -82,8 +82,11 @@ Le regole:
 5. **Prima quello che viene, poi quello che è stato.** Gli elenchi con le date si dividono in "Oggi" (scheda in evidenza), "Prossimi" e "Già svolti/disputati"; oltre 8 voci per sezione, "Mostra tutti".
 6. Le tab della home e "Oggi" usano la stessa larghezza massima (`AppLayout.larghezzaMassimaCruscotto`) e gli stessi margini (`AppScaffold`), così passando da una all'altra testata e schede restano allineate. Dettagli e form restano a 760.
 7. **Pagine secondarie** (libreria blocchi, personal best, record, presenze e partite dell'atleta, codici, referto...): se la testata porta il titolo, la barra in alto resta vuota (solo la freccia indietro) per non scriverlo due volte; nei dettagli la barra dice la categoria ("Allenamento", "Partita", "Blocco") e la testata il nome. I numeri delle statistiche stanno in `GrigliaNumeri` (schede pari, 2 per riga su telefono); i tempi in `SchedaTempo` (il "tabellone"). Le pagine aperte dall'allenatore dalla scheda di un atleta non parlano in prima persona ("Presenze", non "Le mie presenze").
-8. Uno stato vuoto senza un'azione vera non mostra pulsanti: un "Torna indietro" disattivato è peggio di niente.
+8. Uno stato vuoto senza un'azione vera non mostra pulsanti: un "Torna indietro" disattivato è peggio di niente. Una sezione senza dati dentro una pagina che ne ha altri è un `RiquadroVuoto`, mai una riga grigia da sola.
 9. L'acqua delle testate è animata; con "Riduci movimento" resta ferma. Nei test di widget si attiva `disableAnimations`, altrimenti `pumpAndSettle` non finisce mai.
+10. **Un form, una strada.** Quando una pagina offre più modi di fare la stessa cosa (es. "Nuovo allenamento": scrivi o detta, con l'AI, vuoto), si sceglie la strada in alto con un `SegmentedButton` e la pagina mostra solo i campi e l'unico pulsante principale di quella strada; si ricorda l'ultima usata. Le impostazioni che si toccano di rado stanno in un `FormGroupComprimibile` chiuso con il riassunto delle scelte.
+11. **Le scelte ovvie sono già fatte.** Un elemento nuovo eredita quello che si sa già: lo sport del club, la squadra scelta in alto, la stagione in corso. Un campo che avrebbe sempre lo stesso valore non si mostra.
+12. **Al massimo due informazioni per riga** separate da "·": quando e ora sono una sola ("Domani, ore 15:00"), sport e gruppo diventano etichette (`Pastiglia`).
 
 ---
 
@@ -796,7 +799,9 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
 - **Nessun form.** Se serve inserire un dato, si fa con bottoni grandi o un bottom sheet con al massimo tre scelte.
   **Eccezione:** scegliere una persona dentro un'intera rosa (13+ convocati) non ci sta in tre bottoni né in un menu a tendina (vietato a bordo vasca). Pattern accettato: una fascia di calottine numerate sui bordi dello schermo (bianche a sinistra/casa, blu a destra/trasferta), sempre visibili, che diventano toccabili solo quando serve scegliere un giocatore.
 - Nessuna azione distruttiva raggiungibile con un tap solo.
-- Lo schermo non si spegne mentre una sessione è attiva.
+- Lo schermo non si spegne mentre una sessione è attiva: le schermate da bordo vasca sono avvolte in `SchermoAcceso` (Screen Wake Lock del browser).
+- **Scheda bordo vasca, "una serie alla volta"** (il modo predefinito per l'allenatore): a sinistra "Serie 3 di 8" con barra e metri fatti, al centro la serie in `displayTablet` con ripartenza, recupero e passo in grande e "Poi:" la serie dopo, a destra "Avanti" (72, pieno) e "Indietro" (64); il centro si sfoglia col dito. "Tutte le serie" resta a un tocco nella barra in alto. Ripartenze e recuperi si scrivono come al pace clock: `1'40"`, `40"`, mai `0:40.00`.
+- Le scelte di un evento dal vivo (esito di una superiorità, tempo di gioco) sono bottoni da 64 in un bottom sheet: un tocco sull'esito salva, il tempo scelto resta per l'evento dopo.
 - Nessuna animazione oltre al punto rosso che pulsa e al cambio delle cifre.
 
 ---
