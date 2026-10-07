@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/gruppo_visibilita.dart';
+import '../../../theme/app_layout.dart';
+import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
+import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/griglia_azioni.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
@@ -15,6 +20,10 @@ import '../../atleti/domain/atleta.dart';
 import '../../atleti/presentation/atleta_form_screen.dart';
 import '../../benessere/presentation/benessere_squadra.dart';
 import '../../club/domain/club.dart';
+import '../../gare/application/gare_providers.dart';
+import '../../gare/domain/gara.dart';
+import '../../gare/presentation/gara_detail_screen.dart';
+import '../../gare/presentation/gara_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
@@ -22,6 +31,8 @@ import '../../pallanuoto/presentation/distinta_screen.dart';
 import '../../pallanuoto/presentation/partita_form_screen.dart';
 import '../../pallanuoto/presentation/partita_live_screen.dart';
 import '../../presenze/presentation/presenze_screen.dart';
+import '../../stagioni/application/stagioni_providers.dart';
+import '../../stagioni/domain/stagione.dart';
 import '../atleta/grafica_pallanuoto.dart';
 import '../atleta/home_atleta_widgets.dart';
 
@@ -110,6 +121,28 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         .where((p) => _stessoGiorno(p.data, oggi))
         .firstOrNull;
 
+    final gare = pallanuoto
+        ? const <Gara>[]
+        : ((ref.watch(gareListProvider(club.id)).value ?? const <Gara>[])
+              .where(
+                (g) =>
+                    !g.data.isBefore(inizio) &&
+                    visibileNelGruppo(
+                      gruppoDelRecord: g.gruppoId,
+                      gruppoSelezionato: gruppoId,
+                    ),
+              )
+              .toList()
+            ..sort((a, b) => a.data.compareTo(b.data)));
+    final prossimaGara = gare.firstOrNull;
+
+    // Partite e gare nuove nascono nella stagione in corso della squadra
+    // (gruppo e campionato vengono da li'), come dal calendario.
+    final stagioni = ref.watch(stagioniListProvider(club.id)).value;
+    final stagione = stagioni == null
+        ? null
+        : stagionePerElenco(stagioni, gruppoId);
+
     final visiteScadute = atleti.where((a) => a.visitaMedicaScaduta).toList();
     final visiteInScadenza = atleti
         .where((a) => !a.visitaMedicaScaduta && a.visitaMedicaInScadenza)
@@ -152,15 +185,21 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
           titolo: 'Nuova partita',
           sottotitolo: 'Data, avversario, piscina',
           colore: dominio.evidenzaAmbra,
-          onTap: () => _apri(context, PartitaFormScreen(clubId: club.id)),
-        ),
-      if (pallanuoto && prossimaPartita != null && partitaOggi == null)
+          onTap: () => _apri(
+            context,
+            PartitaFormScreen(clubId: club.id, stagione: stagione),
+          ),
+        )
+      else
         AzioneRapida(
-          icona: Icons.format_list_numbered,
-          titolo: 'Convocazioni',
-          sottotitolo: 'Distinta della prossima partita',
-          colore: dominio.evidenzaViola,
-          onTap: () => _apri(context, DistintaScreen(partita: prossimaPartita)),
+          icona: Icons.emoji_events_outlined,
+          titolo: 'Nuova gara',
+          sottotitolo: 'Manifestazione, data, luogo',
+          colore: dominio.evidenzaAmbra,
+          onTap: () => _apri(
+            context,
+            GaraFormScreen(clubId: club.id, stagione: stagione),
+          ),
         ),
       AzioneRapida(
         icona: Icons.person_add_alt_1,
@@ -174,87 +213,129 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
     var i = 0;
     Widget blocco(Widget figlio) => EntrataACascata(indice: i++, child: figlio);
 
-    return SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            children: [
-              blocco(
-                _TestataSquadra(
-                  club: club,
-                  nomeSquadra: nomeSquadra,
-                  atleti: atleti.length,
-                  allenamentiSettimana: allenamenti
+    // Stessa impaginazione delle altre tab (AppScaffold): passando da una
+    // all'altra testata e schede restano allineate.
+    return AppScaffold(
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+        children: [
+          blocco(
+            _TestataSquadra(
+              club: club,
+              nomeSquadra: nomeSquadra,
+              atleti: atleti.length,
+              allenamentiSettimana: allenamenti
+                  .where(
+                    (a) => a.data.isBefore(inizio.add(const Duration(days: 7))),
+                  )
+                  .length,
+              eventiMese:
+                  (pallanuoto
+                          ? partite.map((p) => p.data)
+                          : gare.map((g) => g.data))
                       .where(
-                        (a) => a.data.isBefore(
-                          inizio.add(const Duration(days: 7)),
-                        ),
+                        (d) => d.isBefore(inizio.add(const Duration(days: 30))),
                       )
                       .length,
-                  partiteMese: partite
-                      .where(
-                        (p) => p.data.isBefore(
-                          inizio.add(const Duration(days: 30)),
-                        ),
-                      )
-                      .length,
-                  pallanuoto: pallanuoto,
-                  onAtleti: () => onVaiATab(TabCruscotto.atleti),
-                  onAllenamenti: () => onVaiATab(TabCruscotto.allenamenti),
-                  onPartite: () => onVaiATab(TabCruscotto.eventi),
-                ),
-              ),
-              const SizedBox(height: 20),
-              blocco(const TitoloSezione('Cosa vuoi fare?')),
-              blocco(GrigliaAzioni(azioni: azioni)),
-              const SizedBox(height: 20),
-              blocco(const TitoloSezione('In programma')),
-              if (prossimaPartita != null) ...[
-                blocco(
-                  CardProssimaPartita(
-                    partita: prossimaPartita,
-                    onTap: () => onVaiATab(TabCruscotto.eventi),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              blocco(
-                _CardAllenamentoAllenatore(
-                  allenamento: prossimoAllenamento,
-                  onApri: prossimoAllenamento == null
-                      ? () => _apri(
-                          context,
-                          GeneraAllenamentoFormScreen(clubId: club.id),
-                        )
-                      : () => _apri(
-                          context,
-                          AllenamentoDetailScreen(
-                            allenamento: prossimoAllenamento,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              blocco(const TitoloSezione('La squadra oggi')),
-              blocco(CardBenessereSquadra(clubId: club.id, gruppoId: gruppoId)),
-              if (visiteScadute.isNotEmpty ||
-                  visiteInScadenza.isNotEmpty ||
-                  senzaConsenso.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                blocco(
-                  _CardDaSistemare(
-                    clubId: club.id,
-                    visiteScadute: visiteScadute,
-                    visiteInScadenza: visiteInScadenza,
-                    senzaConsenso: senzaConsenso,
-                  ),
-                ),
-              ],
-            ],
+              pallanuoto: pallanuoto,
+              onAtleti: () => onVaiATab(TabCruscotto.atleti),
+              onAllenamenti: () => onVaiATab(TabCruscotto.allenamenti),
+              onPartite: () => onVaiATab(TabCruscotto.eventi),
+            ),
           ),
-        ),
+          const SizedBox(height: 20),
+          blocco(const TitoloSezione('Cosa vuoi fare?')),
+          blocco(GrigliaAzioni(azioni: azioni)),
+          const SizedBox(height: 20),
+          blocco(const TitoloSezione('In programma')),
+          if (prossimaPartita != null) ...[
+            // Apre la partita (testata con dal vivo/statistiche/referto
+            // e la distinta): prima portava solo alla tab Partite.
+            blocco(
+              CardProssimaPartita(
+                partita: prossimaPartita,
+                onTap: () =>
+                    _apri(context, DistintaScreen(partita: prossimaPartita)),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (prossimaGara != null) ...[
+            blocco(
+              SchedaElenco(
+                leading: RiquadroData(
+                  prossimaGara.data,
+                  colore: dominio.evidenzaAmbra,
+                ),
+                occhiello: 'Prossima gara',
+                titolo: prossimaGara.nome,
+                sottotitolo: [
+                  traQuanto(prossimaGara.data),
+                  if (prossimaGara.luogo != null &&
+                      prossimaGara.luogo!.isNotEmpty)
+                    prossimaGara.luogo!,
+                ].join(' · '),
+                onTap: () =>
+                    _apri(context, GaraDetailScreen(gara: prossimaGara)),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          blocco(
+            prossimoAllenamento == null
+                ? SchedaElenco(
+                    leading: IconaRiquadro(
+                      Icons.add,
+                      colore: dominio.evidenzaCiano,
+                      dimensione: 56,
+                    ),
+                    occhiello: 'Prossimo allenamento',
+                    titolo: 'Nessuno in programma',
+                    sottotitolo: 'Tocca per programmarne uno',
+                    onTap: () => _apri(
+                      context,
+                      GeneraAllenamentoFormScreen(clubId: club.id),
+                    ),
+                  )
+                : SchedaElenco(
+                    leading: RiquadroData(
+                      prossimoAllenamento.data,
+                      colore: dominio.evidenzaCiano,
+                    ),
+                    occhiello: allenamentoOggi != null
+                        ? 'Allenamento di oggi'
+                        : 'Prossimo allenamento',
+                    evidenza: allenamentoOggi != null
+                        ? dominio.evidenzaCiano
+                        : null,
+                    titolo: prossimoAllenamento.titolo ?? 'Allenamento',
+                    sottotitolo:
+                        '${traQuanto(prossimoAllenamento.data)}, '
+                        '${dataEstesa(prossimoAllenamento.data)}',
+                    onTap: () => _apri(
+                      context,
+                      AllenamentoDetailScreen(allenamento: prossimoAllenamento),
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 20),
+          blocco(const TitoloSezione('La squadra oggi')),
+          blocco(CardBenessereSquadra(clubId: club.id, gruppoId: gruppoId)),
+          if (visiteScadute.isNotEmpty ||
+              visiteInScadenza.isNotEmpty ||
+              senzaConsenso.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            blocco(
+              _CardDaSistemare(
+                clubId: club.id,
+                visiteScadute: visiteScadute,
+                visiteInScadenza: visiteInScadenza,
+                senzaConsenso: senzaConsenso,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -270,7 +351,7 @@ class _TestataSquadra extends StatelessWidget {
     required this.nomeSquadra,
     required this.atleti,
     required this.allenamentiSettimana,
-    required this.partiteMese,
+    required this.eventiMese,
     required this.pallanuoto,
     required this.onAtleti,
     required this.onAllenamenti,
@@ -281,7 +362,9 @@ class _TestataSquadra extends StatelessWidget {
   final String nomeSquadra;
   final int atleti;
   final int allenamentiSettimana;
-  final int partiteMese;
+
+  /// Partite (pallanuoto) o gare (nuoto) nei prossimi 30 giorni.
+  final int eventiMese;
   final bool pallanuoto;
   final VoidCallback onAtleti;
   final VoidCallback onAllenamenti;
@@ -353,7 +436,10 @@ class _TestataSquadra extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          const Positioned.fill(child: AcquaAnimata(conCorsia: false)),
+          // La porta da pallanuoto solo per la pallanuoto.
+          Positioned.fill(
+            child: AcquaAnimata(conCorsia: false, conPorta: pallanuoto),
+          ),
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -444,13 +530,12 @@ class _TestataSquadra extends StatelessWidget {
                         onAllenamenti,
                         periodo: 'prossimi 7 giorni',
                       ),
-                      if (pallanuoto)
-                        numero(
-                          '$partiteMese',
-                          'Partite',
-                          onPartite,
-                          periodo: 'prossimi 30 giorni',
-                        ),
+                      numero(
+                        '$eventiMese',
+                        pallanuoto ? 'Partite' : 'Gare',
+                        onPartite,
+                        periodo: 'prossimi 30 giorni',
+                      ),
                     ],
                   ),
                 ),
@@ -458,107 +543,6 @@ class _TestataSquadra extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CardAllenamentoAllenatore extends ConsumerWidget {
-  const _CardAllenamentoAllenatore({
-    required this.allenamento,
-    required this.onApri,
-  });
-
-  final Allenamento? allenamento;
-  final VoidCallback onApri;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colori = context.colori;
-    final a = allenamento;
-    final accento = context.dominio.evidenzaCiano;
-    return Premibile(
-      onTap: onApri,
-      etichetta: a == null
-          ? 'Nessun allenamento in programma: creane uno'
-          : 'Prossimo allenamento ${dataEstesa(a.data)}: apri',
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colori.superficie,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: colori.linea),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: accento.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: a == null
-                  ? Icon(Icons.add, color: accento)
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          dataEstesa(a.data).split(' ').last.toUpperCase(),
-                          style: AppTypography.etichetta.copyWith(
-                            color: accento,
-                            fontWeight: FontWeight.w700,
-                            height: 1,
-                          ),
-                        ),
-                        Text(
-                          '${a.data.day}',
-                          style: AppTypography.numerica(
-                            AppTypography.titolo.copyWith(
-                              color: accento,
-                              height: 1.1,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Prossimo allenamento',
-                    style: AppTypography.etichetta.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  Text(
-                    a == null
-                        ? 'Nessuno in programma'
-                        : a.titolo ?? 'Allenamento',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.corpoForte.copyWith(
-                      color: colori.testo,
-                    ),
-                  ),
-                  Text(
-                    a == null
-                        ? 'Tocca per programmarne uno'
-                        : '${traQuanto(a.data)}, ${dataEstesa(a.data)}',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: colori.testoSecondario),
-          ],
-        ),
       ),
     );
   }

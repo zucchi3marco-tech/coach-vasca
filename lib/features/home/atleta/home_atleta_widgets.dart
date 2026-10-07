@@ -159,7 +159,7 @@ class TestataAtleta extends ConsumerWidget {
           )
         : null;
     final saluto = Text(
-      vistaAllenatore ? 'Scheda atleta' : _saluto(),
+      vistaAllenatore ? 'Classe ${atleta.dataNascita.year}' : _saluto(),
       style: AppTypography.piccolo.copyWith(
         color: AcquaPalette.schiuma.withValues(alpha: 0.75),
       ),

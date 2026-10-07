@@ -50,6 +50,12 @@ Widget _app(_RepositoryFinto repository) => ProviderScope(
   ],
   child: MaterialApp(
     theme: AppTheme.chiaro,
+    // Come "Riduci movimento": l'acqua della testata e' animata senza fine
+    // e pumpAndSettle non arriverebbe mai alla quiete.
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: true),
+      child: child!,
+    ),
     home: const AtletiListScreen(clubId: 'c1'),
   ),
 );

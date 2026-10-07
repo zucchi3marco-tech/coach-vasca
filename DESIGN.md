@@ -4,6 +4,8 @@ Sistema di design dell'app. Questo file è **vincolante**: ogni schermata nuova 
 
 Versione 2 — riscrittura con tema chiaro e tema scuro su tutta l'app, architettura dei token a tre livelli e sistema di layout esplicito.
 
+Versione 3 — il linguaggio della schermata "Oggi" (testata ad acqua, schede arrotondate, azioni in vista) esteso a tutta l'app: vedi la sezione 2bis. Dove questo file più sotto dice altro (raggi 8/12, intestazioni con filetto, azioni solo nel "+"), vale la 2bis.
+
 ## 0. Come usare questo file (istruzioni per Claude Code)
 
 - Leggi questo file all'inizio di ogni sessione che tocca l'interfaccia.
@@ -49,9 +51,35 @@ Questo è il motivo per cui i due temi non condividono un solo valore esadecimal
 
 **Seconda eccezione, la dashboard atleta.** È la schermata-vetrina dell'atleta — il primo (e spesso unico) punto su cui gira tutto il suo account, l'equivalente per lui della pagina bordo vasca per l'allenatore — quindi ha una sua tavolozza dedicata: `TokenDominio.evidenzaCiano`/`evidenzaVerde`/`evidenzaAmbra`, un colore diverso per l'icona di ogni scheda invece del solo `azione`, più lo stesso duo ciano/verde sul grafico Banister ovunque appaia (anche fuori dalla dashboard, es. `CaricoAtletaScreen`). Resta legata al tema chiaro/scuro dell'utente come tutto il resto dell'app — nessuna schermata "sempre scura" a parte. **Delimitata**: sfondi dei pannelli, titoli e i valori degli `StatPanel` restano neutri, il colore arriva solo dalle icone e dal grafico. Vale anche per le righe sotto le card (Le mie presenze `evidenzaVerde`, La mia stagione `evidenzaAmbra`, Le mie statistiche `evidenzaCiano`, Le mie partite e Prossimi eventi `evidenzaViola`), con `IconBadge` da 40; la tavolozza `evidenza*` non si estende ad altre schermate senza deciderlo di nuovo esplicitamente qui.
 
-**Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 5 tab Atleti/Allenamenti/Schemi tattici/Stagioni/Partite, o 4 per il nuoto: niente Schemi tattici, l'ultima si chiama Gare) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaViola`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e una card di riepilogo sopra l'elenco atleti (`_RiepilogoClub`, `atleti_list_screen.dart`) mostra 3 dati rapidi del club con la stessa tavolozza, in forma compatta: solo l'icona (`IconBadge` 36) con il dato sotto (`numeroMedio`), tre colonne uguali in una riga; sotto il dato una didascalia piccola (`piccolo`, `testoSecondario`, al massimo due righe) che dice cosa si sta contando. **Delimitata** allo stesso modo: nessun altro sfondo/titolo/testo cambia colore, la card di riepilogo è un `PoolCard` neutro come tutti gli altri, il colore arriva solo dalle icone.
+**Terza eccezione, la home dell'allenatore.** Estendendo la stessa logica, la sua schermata principale (le 5 tab Atleti/Allenamenti/Schemi tattici/Stagioni/Partite, o 4 per il nuoto: niente Schemi tattici, l'ultima si chiama Gare) riceve lo stesso colpo d'occhio a colori: le icone delle tab usano `evidenzaCiano`/`evidenzaViola`/`evidenzaVerde`/`evidenzaAmbra` quando selezionate (Atleti resta su `azione`, l'ancora neutra — stesso ruolo di "Il tuo club" nella dashboard atleta), e ogni tab ha un colore della stessa tavolozza per i riquadri data e le icone delle sue schede (Allenamenti `evidenzaCiano`, Stagioni `evidenzaVerde`, Gare/Partite `evidenzaAmbra`, Schemi `evidenzaViola`). Il riepilogo della squadra sta nella testata di "Oggi" (versione 3: la vecchia card `_RiepilogoClub` sopra l'elenco atleti è stata tolta perché ripeteva gli stessi numeri). **Delimitata** allo stesso modo: il colore arriva dalle icone, dai riquadri data e dalle schede "di oggi" in evidenza, mai da titoli o testi.
 
 **Quarta eccezione, il calendario della stagione.** Nel dettaglio di una stagione (`calendario_stagione_view.dart`) i giorni con una partita o una gara sono riquadri pieni ad alto contrasto, perché il coach deve vederli a colpo d'occhio: `azione` per gli eventi del gruppo, `evidenzaAmbra` per quelli di tutto il club (stagione «Tutti gli atleti»), con una legenda di due voci sotto il calendario (un giorno con entrambi: `azione` con un punto ambra). Nessun altro colore: i giorni senza eventi restano neutri, i giorni fuori stagione disattivati.
+
+---
+
+## 2bis. Il linguaggio "Oggi" (versione 3)
+
+La schermata "Oggi" dell'allenatore è il riferimento visivo di tutta l'app. Ogni schermata nuova o rifatta usa gli stessi pezzi, che vivono in `lib/widgets/`:
+
+| Pezzo | Widget | Dove |
+| --- | --- | --- |
+| Testata ad acqua | `TestataPagina` (occhiello, titolo, sottotitolo, `NumeroTestata`, `AzioneTestata`) | in cima alle tab (Atleti, Allenamenti, Stagioni, Gare/Partite, Schemi) e ai dettagli (allenamento, stagione, gara, partita) |
+| Scheda di elenco | `SchedaElenco` dentro `GrigliaSchede` (1-3 colonne, righe di altezza pari, entrata a cascata) | ogni elenco di cose che si aprono |
+| Riquadro data / icona | `RiquadroData` ("OTT / 8"), `IconaRiquadro`, `Pastiglia` | a sinistra delle schede, stati |
+| Titolo di sezione | `TitoloSezione` (grassetto, senza filetto, con conteggio e "Mostra tutti" facoltativi); `SectionHeader` ha lo stesso aspetto | sopra ogni gruppo di schede o campi |
+| Gruppo di campi | `FormGroup`: titolo di sezione e campi dentro una scheda | ogni form |
+| Griglia di azioni | `GrigliaAzioni` / `AzioneRapida` | "Cosa vuoi fare?" di Oggi |
+| Tocco | `Premibile` (si abbassa sotto il dito), `EntrataACascata` | schede e azioni |
+
+Le regole:
+
+1. **Le azioni della pagina si vedono.** Le due o tre cose che si fanno in una pagina sono pulsanti nella testata (`AzioneTestata`, la prima piena), non voci nascoste dietro il "+" o nel menu ⋮. Il menu ⋮ resta per modifica ed eliminazione; il "+" per aggiungere elementi a un elenco lungo (serie, convocati).
+2. **Un dato si dice una volta sola per schermata.** Se un numero è in testata, le schede sotto non lo ripetono. Il riepilogo della squadra e il benessere stanno in "Oggi", non anche nella tab Atleti.
+3. **Il contesto non si ripete su ogni riga.** Con una squadra scelta in alto, il suo nome è l'occhiello della testata e non compare sulle schede; compare solo guardando "Tutti gli atleti" o per i record di tutto il club ("Tutto il club"). Lo sport è quello del club: non si scrive mai sulle righe.
+4. **Le date si leggono come le dice un allenatore**: riquadro data a sinistra, poi "Domani · giovedì", "Tra 5 giorni", "3 giorni fa" (`core/utils/date_italiane.dart`). Il formato `08/10/2026` resta solo nei campi dei form.
+5. **Prima quello che viene, poi quello che è stato.** Gli elenchi con le date si dividono in "Oggi" (scheda in evidenza), "Prossimi" e "Già svolti/disputati"; oltre 8 voci per sezione, "Mostra tutti".
+6. Le tab della home e "Oggi" usano la stessa larghezza massima (`AppLayout.larghezzaMassimaCruscotto`) e gli stessi margini (`AppScaffold`), così passando da una all'altra testata e schede restano allineate. Dettagli e form restano a 760.
+7. L'acqua delle testate è animata; con "Riduci movimento" resta ferma. Nei test di widget si attiva `disableAnimations`, altrimenti `pumpAndSettle` non finisce mai.
 
 ---
 
@@ -488,7 +516,7 @@ Il campo di ricerca e la fila di chip restano fissi sopra la lista, non scorrono
 └──────────────────────────────────────┘
 ```
 
-L'azione principale di una pagina di dettaglio non sta nell'intestazione: sta nella barra fissa in basso, o è un `FabAzioni`. Nell'intestazione stanno solo azioni secondarie.
+L'azione principale di una pagina di dettaglio sta nella testata ad acqua (`AzioneTestata`, vedi 2bis): ad esempio "Bordo vasca" e "Presenze" nel dettaglio allenamento, "Dal vivo", "Statistiche" e "Referto" nella partita. Il "+" resta per aggiungere elementi all'elenco della pagina; nella barra in alto solo esporta, modifica ed elimina.
 
 **C. Pagina form**
 
@@ -562,14 +590,14 @@ Orizzontale, tre bande verticali. Descritta in sezione 13.
 
 | Elemento | Raggio |
 | --- | --- |
-| Pulsante, campo di testo, scheletro di caricamento | 8 |
-| Pannello, riga di elenco raggruppata, chip rettangolare | 12 |
-| Blocco in evidenza, pannello statistica, blocco vasca | 16 |
+| Pulsante, campo di testo, scheletro di caricamento | 12 |
+| Scheda, pannello, riga di elenco raggruppata, chip rettangolare | 20 |
+| Testata ad acqua, blocco in evidenza, pannello statistica, blocco vasca | 24 |
 | Bottom sheet, dialog | 24 (solo angoli superiori per gli sheet) |
 | Chip a pillola, badge, punto, avatar, cerchio calottina | pieno |
 | Separatori a tutta larghezza | nessuno |
 
-Quattro raggi diversi in una schermata sono troppi. In pratica ne convivono due: 8 per i controlli, 12 per i contenitori.
+Quattro raggi diversi in una schermata sono troppi. In pratica ne convivono due: 12 per i controlli, 20 per i contenitori (24 solo per la testata). Valori in `AppRadius`.
 
 ### I cinque livelli di profondità
 
@@ -669,13 +697,13 @@ Un campo che serve solo in casi rari sta dentro un blocco espandibile chiuso di 
 
 ### Elenchi
 
-Righe raggruppate dentro un pannello `superficie` con bordo `linea` e raggio 12, separate da filetti `linea` di 1px che partono dopo l'eventuale icona e arrivano al bordo destro interno. **Niente `ListTile` nudi appoggiati direttamente sul fondo.**
+Le cose che si aprono (atleti, allenamenti, stagioni, gare, partite, schemi) sono `SchedaElenco` in `GrigliaSchede` (sezione 2bis). Le righe di dettaglio (serie, convocati, iscritti) restano righe raggruppate dentro un pannello `superficie` con bordo `linea` e raggio 20, separate da filetti `linea` di 1px che partono dopo l'eventuale icona e arrivano al bordo destro interno. **Niente `ListTile` nudi appoggiati direttamente sul fondo.**
 
 Ogni riga: titolo `corpoForte`, riga di metadati sotto in `piccolo` / `testoSecondario`, eventuale valore numerico a destra in `numeroMedio` con cifre tabulari.
 
 Per i metadati preferisci l'allineamento e il peso del testo alla stringa unita da puntini. Se un separatore serve davvero, al massimo due informazioni per riga.
 
-Il primo e l'ultimo elemento del pannello ereditano il raggio 12 sugli angoli esterni: nessun angolo quadrato che sporge dal contenitore arrotondato.
+Il primo e l'ultimo elemento del pannello ereditano il raggio 20 sugli angoli esterni: nessun angolo quadrato che sporge dal contenitore arrotondato.
 
 ### Pannelli statistica
 
@@ -952,7 +980,7 @@ Tutto il resto (`superficieAlt` con il suo nome, `testoTenue`, `ok`, `attenzione
 
 Vivono in `lib/widgets/`. Una schermata nuova si compone con questi, non ricostruisce nulla da zero.
 
-Esistenti: `AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`, `FabAzioni`.
+Esistenti: `TestataPagina`, `SchedaElenco`, `GrigliaSchede`, `RiquadroData`, `IconaRiquadro`, `Pastiglia`, `TitoloSezione`, `GrigliaAzioni`, `Premibile`, `EntrataACascata`, `AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`, `FabAzioni`.
 
 Da aggiungere per il layout e il tema:
 

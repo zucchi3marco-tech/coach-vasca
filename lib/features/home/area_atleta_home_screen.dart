@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/gruppo_visibilita.dart';
@@ -9,6 +9,7 @@ import '../../theme/tokens_dominio.dart';
 import '../../widgets/section_header.dart';
 import '../atleti/application/personal_best_providers.dart';
 import '../atleti/domain/atleta.dart';
+import '../atleti/presentation/atleta_form_screen.dart';
 import '../atleti/presentation/pb_list_screen.dart';
 import '../carico/application/carico_providers.dart';
 import '../carico/presentation/carico_atleta_screen.dart';
@@ -190,7 +191,6 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         descrizione: pallanuoto
             ? 'Tiri, gol e dove segni di più'
             : 'Tempi di gara e progressi',
-        valore: precisione == null ? null : '$precisione%',
         accento: dominio.evidenzaCiano,
         onTap: () => _apri(context, StatisticheAtletaScreen(atleta: atleta)),
       ),
@@ -198,7 +198,8 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         soggetto: SoggettoRiquadro.tempi,
         titolo: 'I miei tempi',
         descrizione: 'Personal best a nuoto',
-        valore: pb == null || pb.isEmpty ? null : '${pb.length}',
+        // Nel nuoto il numero dei personal best e' gia' in testata.
+        valore: !pallanuoto || pb == null || pb.isEmpty ? null : '${pb.length}',
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, PbListScreen(atleta: atleta)),
       ),
@@ -208,7 +209,6 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         descrizione: allenamenti == null || allenamenti.fatti == 0
             ? 'Gli allenamenti a cui hai partecipato'
             : '${allenamenti.presente} su ${allenamenti.fatti} allenamenti',
-        valore: presenze == null ? null : '$presenze%',
         accento: dominio.evidenzaVerde,
         onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
       ),
@@ -322,7 +322,24 @@ class AtletaDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(atleta.nomeCompleto)),
+      // Il nome e' gia' in grande nella testata: qui solo cosa si guarda
+      // e la modifica dell'anagrafica, prima raggiungibile solo dal menu
+      // dell'elenco atleti.
+      appBar: AppBar(
+        title: const Text('Scheda atleta'),
+        actions: [
+          IconButton(
+            tooltip: 'Modifica anagrafica',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    AtletaFormScreen(clubId: atleta.clubId, atleta: atleta),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: AreaAtletaHomeScreen(atleta: atleta, vistaAllenatore: true),
     );
   }
