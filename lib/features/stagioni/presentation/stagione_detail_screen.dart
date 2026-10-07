@@ -359,12 +359,19 @@ class StagioneDetailScreen extends ConsumerWidget {
           ),
           PoolCard(
             padding: const EdgeInsets.all(AppSpacing.s8),
-            child: CalendarioStagioneView(
-              primoGiorno: stagione.dataInizio,
-              ultimoGiorno: stagione.dataFine,
-              eventi: eventi,
-              onGiornoSelezionato: (giorno, eventiDelGiorno) =>
-                  _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
+            // Larghezza contenuta: su schermo largo le celle quadrate di
+            // sette colonne diventavano enormi.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: CalendarioStagioneView(
+                  primoGiorno: stagione.dataInizio,
+                  ultimoGiorno: stagione.dataFine,
+                  eventi: eventi,
+                  onGiornoSelezionato: (giorno, eventiDelGiorno) =>
+                      _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
+                ),
+              ),
             ),
           ),
         ],

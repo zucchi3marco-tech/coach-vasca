@@ -7,6 +7,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
@@ -200,42 +201,54 @@ class _StagioneFormScreenState extends ConsumerState<StagioneFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppTextField(
-              etichetta: 'Data inizio',
-              controller: _dataInizioController,
-              readOnly: true,
-              onTap: _pickDataInizio,
-              suffixIcon: const Icon(Icons.calendar_today_outlined),
+            FormGroup(
+              titolo: 'Periodo',
+              campi: [
+                AppTextField(
+                  etichetta: 'Data inizio',
+                  controller: _dataInizioController,
+                  readOnly: true,
+                  onTap: _pickDataInizio,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
+                AppTextField(
+                  etichetta: 'Data fine',
+                  controller: _dataFineController,
+                  readOnly: true,
+                  onTap: _pickDataFine,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Data fine',
-              controller: _dataFineController,
-              readOnly: true,
-              onTap: _pickDataFine,
-              suffixIcon: const Icon(Icons.calendar_today_outlined),
+            FormGroup(
+              titolo: 'Campionato e obiettivo',
+              campi: [
+                AppTextField(
+                  etichetta: 'Campionato (facoltativo)',
+                  controller: _campionatoController,
+                ),
+                AppTextField(
+                  etichetta: 'Obiettivo (facoltativo)',
+                  controller: _obiettivoController,
+                  maxLines: 2,
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Obiettivo (facoltativo)',
-              controller: _obiettivoController,
-              maxLines: 2,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Campionato (facoltativo)',
-              controller: _campionatoController,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              key: ValueKey('categoria-${_categoria(gruppi)}'),
-              etichetta: 'Categoria',
-              valoreIniziale: _categoria(gruppi),
-              readOnly: true,
-              abilitato: false,
-              aiuto:
-                  'È il gruppo su cui stai lavorando: il titolo della '
-                  'stagione si compone da solo.',
+            FormGroup(
+              titolo: 'Per chi',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  key: ValueKey('categoria-${_categoria(gruppi)}'),
+                  etichetta: 'Categoria',
+                  valoreIniziale: _categoria(gruppi),
+                  readOnly: true,
+                  abilitato: false,
+                  aiuto:
+                      'È il gruppo su cui stai lavorando: il titolo della '
+                      'stagione si compone da solo.',
+                ),
+              ],
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s12),

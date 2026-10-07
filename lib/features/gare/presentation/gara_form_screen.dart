@@ -10,6 +10,7 @@ import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/domain/stagione.dart';
@@ -199,79 +200,96 @@ class _GaraFormScreenState extends ConsumerState<GaraFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppTextField(
-              etichetta: 'Nome della manifestazione',
-              controller: _nomeController,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Data',
-              controller: _dataController,
-              readOnly: true,
-              onTap: _pickData,
-              suffixIcon: const Icon(Icons.calendar_today_outlined),
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Ora (facoltativo)',
-              controller: _oraController,
-              readOnly: true,
-              onTap: _pickOra,
-              suffixIcon: const Icon(Icons.access_time),
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Luogo (facoltativo)',
-              controller: _luogoController,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppSelect<String?>(
-              etichetta: 'Gruppo',
-              value: _gruppoId,
-              hint: 'Tutto il club',
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Tutto il club'),
+            FormGroup(
+              titolo: 'La gara',
+              campi: [
+                AppTextField(
+                  etichetta: 'Nome della manifestazione',
+                  controller: _nomeController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
-                for (final g in gruppi)
-                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
-                if (_gruppoId != null && !gruppi.any((g) => g.id == _gruppoId))
-                  DropdownMenuItem(
-                    value: _gruppoId,
-                    child: const Text('Gruppo non trovato'),
-                  ),
+                AppTextField(
+                  etichetta: 'Data',
+                  controller: _dataController,
+                  readOnly: true,
+                  onTap: _pickData,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
+                AppTextField(
+                  etichetta: 'Ora (facoltativo)',
+                  controller: _oraController,
+                  readOnly: true,
+                  onTap: _pickOra,
+                  suffixIcon: const Icon(Icons.access_time),
+                ),
+                AppTextField(
+                  etichetta: 'Luogo (facoltativo)',
+                  controller: _luogoController,
+                ),
               ],
-              onChanged: (value) => setState(() => _gruppoId = value),
             ),
-            const SizedBox(height: AppSpacing.s16),
-            Text(
-              'Importanza',
-              style: AppTypography.etichetta.copyWith(
-                color: colori.testoSecondario,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            SegmentedButton<String>(
-              // Senza spunta: la scelta e' gia' evidenziata dal
-              // colore, e la spunta toglieva spazio all'etichetta
-              // che su telefono andava a capo a meta' parola.
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 'bassa', label: Text('Bassa')),
-                ButtonSegment(value: 'media', label: Text('Media')),
-                ButtonSegment(value: 'alta', label: Text('Alta')),
+            FormGroup(
+              titolo: 'Per chi',
+              campi: [
+                AppSelect<String?>(
+                  etichetta: 'Gruppo',
+                  value: _gruppoId,
+                  hint: 'Tutto il club',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Tutto il club'),
+                    ),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    if (_gruppoId != null &&
+                        !gruppi.any((g) => g.id == _gruppoId))
+                      DropdownMenuItem(
+                        value: _gruppoId,
+                        child: const Text('Gruppo non trovato'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _gruppoId = value),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Importanza',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      // Senza spunta: la scelta e' gia' evidenziata dal
+                      // colore, e la spunta toglieva spazio all'etichetta
+                      // che su telefono andava a capo a meta' parola.
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(value: 'bassa', label: Text('Bassa')),
+                        ButtonSegment(value: 'media', label: Text('Media')),
+                        ButtonSegment(value: 'alta', label: Text('Alta')),
+                      ],
+                      selected: {_importanza},
+                      onSelectionChanged: (s) =>
+                          setState(() => _importanza = s.first),
+                    ),
+                  ],
+                ),
               ],
-              selected: {_importanza},
-              onSelectionChanged: (s) => setState(() => _importanza = s.first),
             ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Note (facoltativo)',
-              controller: _noteController,
-              maxLines: 3,
+            FormGroup(
+              titolo: 'Note',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
+                  controller: _noteController,
+                  maxLines: 3,
+                ),
+              ],
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s12),

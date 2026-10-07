@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
@@ -25,10 +28,10 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
   final String clubId;
   final DateTime data;
 
-  String get _titolo =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year}';
+  String get _titolo {
+    final giorno = dataEstesa(data);
+    return '${giorno[0].toUpperCase()}${giorno.substring(1)} ${data.year}';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,31 +60,41 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
               icona: Icons.calendar_month_outlined,
               titolo: 'Nessun allenamento in questo giorno',
               descrizione:
-                  'Descrivi il primo allenamento di questa data o impostane '
-                  'i parametri: verrà salvato in questo giorno.',
+                  'Scrivi, detta o genera il primo allenamento di questa '
+                  'data: verrà salvato in questo giorno.',
               azionePrincipale: 'Nuovo allenamento',
               onAzionePrincipale: apriNuovo,
             );
           }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: AppListPanel(
-              righe: [
-                for (final a in delGiorno)
-                  AppListRow(
-                    titolo: a.titolo != null && a.titolo!.isNotEmpty
-                        ? a.titolo!
-                        : 'Allenamento',
-                    sottotitolo: nomiGruppi[a.gruppoId],
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => AllenamentoDetailScreen(allenamento: a),
+          return ListView(
+            children: [
+              TitoloSezione(traQuanto(data), conteggio: delGiorno.length),
+              GrigliaSchede(
+                colonneMassime: 1,
+                figli: [
+                  for (final a in delGiorno)
+                    SchedaElenco(
+                      leading: IconaRiquadro(
+                        Icons.pool,
+                        colore: context.dominio.evidenzaCiano,
+                        dimensione: 48,
+                      ),
+                      titolo: a.titolo != null && a.titolo!.isNotEmpty
+                          ? a.titolo!
+                          : 'Allenamento',
+                      sottotitolo: a.gruppoId == null
+                          ? 'Tutto il club'
+                          : nomiGruppi[a.gruppoId],
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AllenamentoDetailScreen(allenamento: a),
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
+            ],
           );
         },
         loading: () => const Padding(
@@ -102,7 +115,7 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
         heroTag: 'fab-giorno-allenamenti',
         onPressed: apriNuovo,
         tooltip: 'Nuovo allenamento',
-        child: const Icon(Icons.auto_awesome),
+        child: const Icon(Icons.add),
       ),
     );
   }

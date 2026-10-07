@@ -7,6 +7,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../data/allenamenti_repository.dart';
@@ -133,43 +134,57 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppTextField(
-              etichetta: 'Data',
-              controller: _dataController,
-              readOnly: true,
-              onTap: _pickData,
-              suffixIcon: const Icon(Icons.calendar_today_outlined),
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Titolo (facoltativo)',
-              controller: _titoloController,
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            AppSelect<String?>(
-              etichetta: 'Gruppo (facoltativo)',
-              value: _gruppoId,
-              hint: 'Nessun gruppo',
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Nessun gruppo'),
+            FormGroup(
+              titolo: 'Quando e cosa',
+              campi: [
+                AppTextField(
+                  etichetta: 'Data',
+                  controller: _dataController,
+                  readOnly: true,
+                  onTap: _pickData,
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                for (final g in gruppi)
-                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
-                if (_gruppoId != null && !gruppi.any((g) => g.id == _gruppoId))
-                  DropdownMenuItem(
-                    value: _gruppoId,
-                    child: const Text('Gruppo non trovato'),
-                  ),
+                AppTextField(
+                  etichetta: 'Titolo (facoltativo)',
+                  controller: _titoloController,
+                ),
               ],
-              onChanged: (value) => setState(() => _gruppoId = value),
             ),
-            const SizedBox(height: AppSpacing.s16),
-            AppTextField(
-              etichetta: 'Note (facoltativo)',
-              controller: _noteController,
-              maxLines: 3,
+            FormGroup(
+              titolo: 'Per chi',
+              campi: [
+                AppSelect<String?>(
+                  etichetta: 'Gruppo (facoltativo)',
+                  value: _gruppoId,
+                  hint: 'Nessun gruppo',
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Nessun gruppo'),
+                    ),
+                    for (final g in gruppi)
+                      DropdownMenuItem(value: g.id, child: Text(g.nome)),
+                    if (_gruppoId != null &&
+                        !gruppi.any((g) => g.id == _gruppoId))
+                      DropdownMenuItem(
+                        value: _gruppoId,
+                        child: const Text('Gruppo non trovato'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _gruppoId = value),
+                ),
+              ],
+            ),
+            FormGroup(
+              titolo: 'Note',
+              isUltimo: true,
+              campi: [
+                AppTextField(
+                  etichetta: 'Note (facoltativo)',
+                  controller: _noteController,
+                  maxLines: 3,
+                ),
+              ],
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: AppSpacing.s12),

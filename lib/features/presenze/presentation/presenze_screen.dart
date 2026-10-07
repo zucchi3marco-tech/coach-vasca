@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -12,6 +13,8 @@ import '../../../widgets/bottone_tema_bordo_vasca.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/primary_button.dart';
 import '../../ai_genera/application/corsie_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
@@ -44,11 +47,7 @@ class PresenzeScreen extends ConsumerWidget {
     final scaffold = AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(
-          'Presenze — ${allenamento.data.day.toString().padLeft(2, '0')}/'
-          '${allenamento.data.month.toString().padLeft(2, '0')}/'
-          '${allenamento.data.year}',
-        ),
+        title: Text('Presenze · ${dataCompatta(allenamento.data)}'),
         actions: const [BottoneTemaBordoVasca()],
       ),
       body: atletiAsync.when(
@@ -98,9 +97,39 @@ class PresenzeScreen extends ConsumerWidget {
               }
               final corsie = assegnaCorsie(atleti, pbPerAtleta);
 
+              final daSegnare = [
+                for (final a in atleti)
+                  if (statoPerAtleta[a.id] == null) a,
+              ];
+              int quanti(String stato) =>
+                  atleti.where((a) => statoPerAtleta[a.id] == stato).length;
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _RiepilogoPresenze(
+                    presenti: quanti('presente'),
+                    assenti: quanti('assente'),
+                    giustificati: quanti('giustificato'),
+                    daSegnare: daSegnare.length,
+                    // Il caso di ogni giorno: quasi tutti presenti. Si
+                    // segnano prima le eccezioni, poi gli altri in un tocco.
+                    onTuttiPresenti: daSegnare.isEmpty
+                        ? null
+                        : () async {
+                            final repository = ref.read(
+                              presenzeRepositoryProvider,
+                            );
+                            for (final a in daSegnare) {
+                              await repository.segnaPresenza(
+                                allenamentoId: allenamento.id,
+                                atletaId: a.id,
+                                stato: 'presente',
+                              );
+                            }
+                          },
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
                   if (corsie.divisoInDue)
                     _AvvisoCorsie(
                       senzaTempo: corsie.senzaTempo
@@ -148,6 +177,78 @@ class PresenzeScreen extends ConsumerWidget {
 
     if (temaVasca == null) return scaffold;
     return Theme(data: temaVasca, child: scaffold);
+  }
+}
+
+/// Quanti presenti, assenti, giustificati e ancora da segnare, con il
+/// pulsante che segna presenti tutti quelli non ancora segnati.
+class _RiepilogoPresenze extends StatelessWidget {
+  const _RiepilogoPresenze({
+    required this.presenti,
+    required this.assenti,
+    required this.giustificati,
+    required this.daSegnare,
+    required this.onTuttiPresenti,
+  });
+
+  final int presenti;
+  final int assenti;
+  final int giustificati;
+  final int daSegnare;
+  final VoidCallback? onTuttiPresenti;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    Widget numero(int valore, String etichetta, Color colore) => Expanded(
+      child: Column(
+        children: [
+          Text(
+            '$valore',
+            style: AppTypography.numerica(
+              AppTypography.numeroMedio.copyWith(
+                color: colore,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              etichetta,
+              maxLines: 1,
+              style: AppTypography.etichetta.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return PoolCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              numero(presenti, 'Presenti', colori.ok),
+              numero(assenti, 'Assenti', colori.testoSecondario),
+              numero(giustificati, 'Giustificati', colori.attenzione),
+              numero(daSegnare, 'Da segnare', colori.testo),
+            ],
+          ),
+          if (onTuttiPresenti != null) ...[
+            const SizedBox(height: AppSpacing.s12),
+            PrimaryButton(
+              label: daSegnare == 1
+                  ? 'Segna presente l\'ultimo'
+                  : 'Segna presenti gli altri $daSegnare',
+              onPressed: onTuttiPresenti,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
