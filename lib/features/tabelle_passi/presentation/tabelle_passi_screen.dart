@@ -9,7 +9,8 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
-import '../../../widgets/titolo_due_righe.dart';
+import '../../../widgets/form_group.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/zone_chip.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../test/domain/test_ingresso.dart';
@@ -114,70 +115,69 @@ class _TabellePassiScreenState extends ConsumerState<TabellePassiScreen> {
 
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(
-        title: TitoloDueRighe(
-          titolo: 'Tabella passi',
-          sottotitolo: widget.atleta.nomeCompleto,
-        ),
-      ),
+      appBar: AppBar(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            '${widget.test.tipo} · passo medio '
-            '${formatPaceSeconds(widget.test.passoMedio100S)}/100m',
-            style: AppTypography.numerica(
-              AppTypography.corpo.copyWith(color: colori.testo),
-            ),
+          TestataPagina(
+            occhiello: widget.atleta.nomeCompleto,
+            titolo: 'Tabella passi',
+            numeri: [
+              NumeroTestata(
+                valore: formatPaceSeconds(widget.test.passoMedio100S),
+                etichetta: 'Passo medio /100m',
+              ),
+              NumeroTestata(valore: widget.test.tipo, etichetta: 'Test'),
+            ],
           ),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            'Percentuali di partenza generiche: modificale liberamente in '
-            'base alla tua metodologia prima di generare.',
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          for (final zona in ordineZone) ...[
-            Row(
-              children: [
-                ZoneChip(sigla: zona),
-                const SizedBox(width: AppSpacing.s12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _percentualeControllers[zona],
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    style: AppTypography.condensata(
-                      AppTypography.numerica(
-                        AppTypography.corpo.copyWith(color: colori.testo),
+          const SizedBox(height: AppSpacing.s24),
+          FormGroup(
+            titolo: 'Passo per zona',
+            spiegazione:
+                'Percentuali di partenza generiche: modificale liberamente '
+                'in base alla tua metodologia prima di generare.',
+            campi: [
+              for (final zona in ordineZone)
+                Row(
+                  children: [
+                    ZoneChip(sigla: zona),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _percentualeControllers[zona],
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: AppTypography.condensata(
+                          AppTypography.numerica(
+                            AppTypography.corpo.copyWith(color: colori.testo),
+                          ),
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: '% del passo medio',
+                        ),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
-                    decoration: const InputDecoration(
-                      labelText: '% del passo medio',
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.s12),
-                SizedBox(
-                  width: 90,
-                  child: Text(
-                    '${formatPaceSeconds(_passoPerZona(zona))}/100m',
-                    textAlign: TextAlign.end,
-                    style: AppTypography.condensata(
-                      AppTypography.numerica(
-                        AppTypography.corpoForte.copyWith(color: colori.testo),
+                    const SizedBox(width: AppSpacing.s12),
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        '${formatPaceSeconds(_passoPerZona(zona))}/100m',
+                        textAlign: TextAlign.end,
+                        style: AppTypography.condensata(
+                          AppTypography.numerica(
+                            AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s8),
-          ],
+            ],
+          ),
           if (_errorMessage != null) ...[
             const SizedBox(height: AppSpacing.s8),
             ErrorBanner(messaggio: _errorMessage!),

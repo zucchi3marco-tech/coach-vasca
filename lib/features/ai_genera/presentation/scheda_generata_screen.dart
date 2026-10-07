@@ -5,12 +5,17 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/serie_repository.dart';
+import '../../allenamenti/presentation/riepilogo_volumi.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../libreria_blocchi/data/training_blocks_repository.dart';
@@ -209,25 +214,30 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
     final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: Text(scheda.titolo)),
+      appBar: AppBar(title: const Text('Proposta dell\'AI')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Volume totale: ${scheda.volumeTotaleM} m · '
-            'Lavoro centrale: ${scheda.volumeLavoroCentraleM} m · '
-            'Stima: ${stimaMinutiSessione(scheda.serie)} min',
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
-            ),
+          TestataPagina(
+            titolo: scheda.titolo,
+            sottotitolo: scheda.note != null && scheda.note!.isNotEmpty
+                ? scheda.note
+                : null,
+            numeri: [
+              NumeroTestata(
+                valore: formattaMetri(scheda.volumeTotaleM),
+                etichetta: 'Metri',
+              ),
+              NumeroTestata(
+                valore: formattaMetri(scheda.volumeLavoroCentraleM),
+                etichetta: 'Lavoro centrale',
+              ),
+              NumeroTestata(
+                valore: '~${stimaMinutiSessione(scheda.serie)}',
+                etichetta: 'Minuti',
+              ),
+            ],
           ),
-          if (scheda.note != null && scheda.note!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              scheda.note!,
-              style: AppTypography.corpo.copyWith(color: colori.testo),
-            ),
-          ],
           if (widget.assegnazione != null &&
               widget.assegnazione!.senzaTestSoglia.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.s16),
@@ -244,9 +254,45 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
               clubId: widget.clubId,
             ),
           ],
-          const SizedBox(height: AppSpacing.s16),
+          const SizedBox(height: AppSpacing.s24),
+          TitoloSezione('Serie', conteggio: scheda.serie.length),
+          AppListPanel(
+            righe: [
+              for (final s in scheda.serie)
+                AppListRow(
+                  leading: Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colori.superficieAlt,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${s.ordine}',
+                      style: AppTypography.numerica(
+                        AppTypography.etichetta.copyWith(
+                          color: colori.testoSecondario,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  titolo:
+                      '${s.ripetute}×${s.distanzaM}m '
+                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                  sottotitolo: [
+                    _sottotitoloSerie(s),
+                    if (s.ripartenzePerCorsia.isNotEmpty) _ripartenzeSerie(s),
+                    if (s.note != null && s.note!.isNotEmpty) s.note!,
+                  ].join('\n'),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s24),
+          // Prima si legge la proposta, poi si sceglie il giorno e si salva.
           FormGroup(
-            titolo: 'Quando',
+            titolo: 'Salva come allenamento',
             isUltimo: true,
             campi: [
               AppTextField(
@@ -256,50 +302,12 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
                 onTap: _salvataggioInCorso ? null : _scegliData,
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          for (final s in scheda.serie)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${s.ordine}. ${s.ripetute}×${s.distanzaM}m '
-                    '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
-                    style: AppTypography.corpoForte.copyWith(
-                      color: colori.testo,
-                    ),
-                  ),
-                  Text(
-                    _sottotitoloSerie(s),
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  if (s.ripartenzePerCorsia.isNotEmpty)
-                    Text(
-                      _ripartenzeSerie(s),
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.azione,
-                      ),
-                    ),
-                  if (s.note != null && s.note!.isNotEmpty)
-                    Text(
-                      s.note!,
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                ],
+              PrimaryButton(
+                label: 'Salva',
+                isLoading: _salvataggioInCorso,
+                onPressed: _salvataggioInCorso ? null : _salva,
               ),
-            ),
-          const SizedBox(height: AppSpacing.s24),
-          PrimaryButton(
-            label: 'Salva',
-            isLoading: _salvataggioInCorso,
-            onPressed: _salvataggioInCorso ? null : _salva,
+            ],
           ),
         ],
       ),
@@ -307,7 +315,6 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   }
 }
 
-/// I due gruppi di ripartenza con i nomi degli atleti, per dividerli in
 /// Avviso (FASE 3): per gli atleti elencati, le zone A1/A2/B1 di questa
 /// scheda usano il modello dai primati invece del passo del test di
 /// soglia (nessun test BVS/T30 valido registrato) — niente blocca la
@@ -348,6 +355,7 @@ class _AvvisoSenzaTestSoglia extends ConsumerWidget {
   }
 }
 
+/// I due gruppi di ripartenza con i nomi degli atleti, per dividerli in
 /// vasca (in Presenze ogni atleta ha lo stesso numero, 1 o 2).
 class _PannelloCorsie extends ConsumerWidget {
   const _PannelloCorsie({required this.assegnazione, required this.clubId});

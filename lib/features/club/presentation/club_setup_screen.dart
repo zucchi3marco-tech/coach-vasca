@@ -8,6 +8,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../gruppi/data/gruppi_repository.dart';
@@ -150,68 +151,83 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                   ),
                   const SizedBox(height: AppSpacing.s4),
                   Text(
-                    'Sarai impostato automaticamente come owner.',
+                    'Ne sarai l\'amministratore: poi aggiungi gruppi e '
+                    'atleti.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.s24),
-                  AppTextField(
-                    etichetta: 'Nome del club',
-                    controller: _nomeController,
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Inserisci un nome'
-                        : null,
-                  ),
-                  const SizedBox(height: AppSpacing.s16),
-                  AppTextField(
-                    etichetta: 'Città (facoltativo)',
-                    controller: _cittaController,
-                  ),
-                  const SizedBox(height: AppSpacing.s16),
-                  AppSelect<String?>(
-                    etichetta: 'Sport',
-                    value: _sport,
-                    hint: 'Scegli lo sport',
-                    items: [
-                      for (final (valore, etichetta) in _sportOptions)
-                        DropdownMenuItem(value: valore, child: Text(etichetta)),
-                    ],
-                    onChanged: (value) => setState(() {
-                      _sport = value;
-                      _categorieSelezionate.clear();
-                    }),
-                  ),
-                  if (_categorieDisponibili.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.s16),
-                    Text(
-                      'Categorie allenate (facoltativo)',
-                      style: AppTypography.etichetta.copyWith(
-                        color: context.colori.testoSecondario,
+                  FormGroup(
+                    titolo: 'Il club',
+                    isUltimo: true,
+                    campi: [
+                      AppTextField(
+                        etichetta: 'Nome del club',
+                        controller: _nomeController,
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? 'Inserisci un nome'
+                            : null,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    Wrap(
-                      spacing: AppSpacing.s8,
-                      runSpacing: AppSpacing.s8,
-                      children: [
-                        for (final categoria in _categorieDisponibili)
-                          TonalChip(
-                            etichetta: categoria,
-                            selezionato: _categorieSelezionate.contains(
-                              categoria,
+                      AppTextField(
+                        etichetta: 'Città (facoltativo)',
+                        controller: _cittaController,
+                      ),
+                      AppSelect<String?>(
+                        etichetta: 'Sport',
+                        value: _sport,
+                        hint: 'Scegli lo sport',
+                        items: [
+                          for (final (valore, etichetta) in _sportOptions)
+                            DropdownMenuItem(
+                              value: valore,
+                              child: Text(etichetta),
                             ),
-                            onSelezionato: (selezionata) => setState(() {
-                              if (selezionata) {
-                                _categorieSelezionate.add(categoria);
-                              } else {
-                                _categorieSelezionate.remove(categoria);
-                              }
-                            }),
-                          ),
-                      ],
-                    ),
-                  ],
+                        ],
+                        onChanged: (value) => setState(() {
+                          _sport = value;
+                          _categorieSelezionate.clear();
+                        }),
+                      ),
+                      if (_categorieDisponibili.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Categorie allenate (facoltativo)',
+                              style: AppTypography.etichetta.copyWith(
+                                color: context.colori.testoSecondario,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.s8),
+                            Wrap(
+                              spacing: AppSpacing.s8,
+                              runSpacing: AppSpacing.s8,
+                              children: [
+                                for (final categoria in _categorieDisponibili)
+                                  TonalChip(
+                                    etichetta: categoria,
+                                    selezionato: _categorieSelezionate.contains(
+                                      categoria,
+                                    ),
+                                    onSelezionato: (selezionata) => setState(
+                                      () {
+                                        if (selezionata) {
+                                          _categorieSelezionate.add(categoria);
+                                        } else {
+                                          _categorieSelezionate.remove(
+                                            categoria,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                   if (_errorMessage != null) ...[
                     const SizedBox(height: AppSpacing.s12),
                     ErrorBanner(messaggio: _errorMessage!),

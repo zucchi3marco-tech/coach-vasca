@@ -6,15 +6,17 @@ import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/pool_card.dart';
+import '../../../widgets/riquadri.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/stat_panel.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../ai_genera/application/corsie_service.dart';
 import '../../ai_genera/domain/parametri_generazione.dart';
@@ -74,7 +76,18 @@ class _RipartenzeScreenState extends ConsumerState<RipartenzeScreen> {
 
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: const Text('Ripartenze')),
+      appBar: AppBar(
+        title: const Text('Ripartenze'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: AppSpacing.s12),
+            child: PulsanteSpiegazione(
+              titolo: 'Ripartenze',
+              spiegazione: _spiegazioneMetodologia,
+            ),
+          ),
+        ],
+      ),
       body: atletiAsync.when(
         data: (tuttiGliAtleti) => pbAsync.when(
           data: (tuttiIPb) => _corpo(context, tuttiGliAtleti, tuttiIPb, gruppi),
@@ -120,56 +133,64 @@ class _RipartenzeScreenState extends ConsumerState<RipartenzeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader('Ripartenze', spiegazione: _spiegazioneMetodologia),
-        const SizedBox(height: AppSpacing.s12),
-        AppSelect<String?>(
-          etichetta: 'Gruppo',
-          value: _gruppoId,
-          hint: 'Tutti gli atleti',
-          items: [
-            const DropdownMenuItem(
-              value: null,
-              child: Text('Tutti gli atleti'),
+        FormGroup(
+          titolo: 'Calcola per',
+          campi: [
+            AppSelect<String?>(
+              etichetta: 'Gruppo',
+              value: _gruppoId,
+              hint: 'Tutti gli atleti',
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Tutti gli atleti'),
+                ),
+                for (final g in gruppi)
+                  DropdownMenuItem(value: g.id, child: Text(g.nome)),
+              ],
+              onChanged: (valore) => setState(() => _gruppoId = valore),
             ),
-            for (final g in gruppi)
-              DropdownMenuItem(value: g.id, child: Text(g.nome)),
+            AppSelect<String>(
+              etichetta: 'Tipo di lavoro',
+              value: _zona,
+              items: [
+                for (final zona in ordineTipiLavoro)
+                  DropdownMenuItem(
+                    value: zona,
+                    child: Text('$zona — ${tipiLavoro[zona]?.nome ?? ''}'),
+                  ),
+              ],
+              onChanged: (valore) => setState(() => _zona = valore ?? 'B1'),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Distanza',
+                  style: AppTypography.etichetta.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s8),
+                Wrap(
+                  spacing: AppSpacing.s8,
+                  runSpacing: AppSpacing.s8,
+                  children: [
+                    for (final d in distanzeFrazionamento)
+                      TonalChip(
+                        etichetta: '${d.distanzaM}m',
+                        selezionato: _distanzaM == d.distanzaM,
+                        onSelezionato: (_) =>
+                            setState(() => _distanzaM = d.distanzaM),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ],
-          onChanged: (valore) => setState(() => _gruppoId = valore),
         ),
-        const SizedBox(height: AppSpacing.s12),
-        AppSelect<String>(
-          etichetta: 'Tipo di lavoro',
-          value: _zona,
-          items: [
-            for (final zona in ordineTipiLavoro)
-              DropdownMenuItem(
-                value: zona,
-                child: Text('$zona — ${tipiLavoro[zona]?.nome ?? ''}'),
-              ),
-          ],
-          onChanged: (valore) => setState(() => _zona = valore ?? 'B1'),
-        ),
-        const SizedBox(height: AppSpacing.s12),
-        Text(
-          'Distanza',
-          style: AppTypography.etichetta.copyWith(
-            color: colori.testoSecondario,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.s8),
-        Wrap(
-          spacing: AppSpacing.s8,
-          runSpacing: AppSpacing.s8,
-          children: [
-            for (final d in distanzeFrazionamento)
-              TonalChip(
-                etichetta: '${d.distanzaM}m',
-                selezionato: _distanzaM == d.distanzaM,
-                onSelezionato: (_) => setState(() => _distanzaM = d.distanzaM),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.s16),
+        if (atleti.isNotEmpty)
+          TitoloSezione('Corsie', conteggio: assegnazione.corsie.length),
         if (atleti.isEmpty)
           EmptyState(
             icona: Icons.groups_outlined,
@@ -239,11 +260,26 @@ class _RiquadroCorsia extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            corsia.nome,
-            style: AppTypography.sezione.copyWith(color: colori.testo),
+          Row(
+            children: [
+              IconaRiquadro(
+                Icons.pool,
+                colore: context.dominio.evidenzaCiano,
+                dimensione: 40,
+              ),
+              const SizedBox(width: AppSpacing.s12),
+              Expanded(
+                child: Text(
+                  corsia.nome,
+                  style: AppTypography.sezione.copyWith(
+                    color: colori.testo,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.s8),
+          const SizedBox(height: AppSpacing.s12),
           if (zona == 'C3')
             Text(
               'Lavoro di velocità pura: nessuna ripartenza calcolata dal '
@@ -261,31 +297,58 @@ class _RiquadroCorsia extends StatelessWidget {
               ),
             )
           else
-            Row(
+            // La ripartenza e' il numero che si legge da bordo vasca: in
+            // grande; il passo accanto, piu' piccolo.
+            Wrap(
+              spacing: AppSpacing.s32,
+              runSpacing: AppSpacing.s8,
+              crossAxisAlignment: WrapCrossAlignment.end,
               children: [
-                Expanded(
-                  child: _Stat(
-                    etichetta: 'Passo /100m',
-                    valore: formatPaceSeconds(risultato.passoS!),
-                  ),
+                StatPanel(
+                  etichetta: 'Ripartenza ${distanzaM}m',
+                  valore: formatPaceSeconds(risultato.ripartenzaS!),
                 ),
-                Expanded(
-                  child: _Stat(
-                    etichetta: 'Ripartenza ${distanzaM}m',
-                    valore: formatPaceSeconds(risultato.ripartenzaS!),
-                  ),
+                _Stat(
+                  etichetta: 'Passo /100m',
+                  valore: formatPaceSeconds(risultato.passoS!),
                 ),
               ],
             ),
           const SizedBox(height: AppSpacing.s12),
-          AppListPanel(
-            righe: [
-              for (final atleta in atletiCorsia)
-                AppListRow(titolo: atleta.nomeCompleto),
-            ],
-          ),
+          _NomiAtleti(atleti: atletiCorsia),
         ],
       ),
+    );
+  }
+}
+
+/// I nomi degli atleti di una corsia, in fila: prima erano un elenco
+/// dentro la scheda, lungo quanto il gruppo.
+class _NomiAtleti extends StatelessWidget {
+  const _NomiAtleti({required this.atleti});
+
+  final List<Atleta> atleti;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Wrap(
+      spacing: AppSpacing.s8,
+      runSpacing: AppSpacing.s8,
+      children: [
+        for (final a in atleti)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: colori.superficieAlt,
+              borderRadius: BorderRadius.circular(AppRadius.pillola),
+            ),
+            child: Text(
+              a.nomeCompleto,
+              style: AppTypography.piccolo.copyWith(color: colori.testo),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -311,9 +374,24 @@ class _RiquadroSenzaTempo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Senza personal best sui 100 stile libero',
-            style: AppTypography.sezione.copyWith(color: colori.testo),
+          Row(
+            children: [
+              IconaRiquadro(
+                Icons.timer_off_outlined,
+                colore: colori.attenzione,
+                dimensione: 40,
+              ),
+              const SizedBox(width: AppSpacing.s12),
+              Expanded(
+                child: Text(
+                  'Senza personal best sui 100 stile libero',
+                  style: AppTypography.sezione.copyWith(
+                    color: colori.testo,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.s8),
           Text(
@@ -322,12 +400,7 @@ class _RiquadroSenzaTempo extends StatelessWidget {
             style: AppTypography.corpo.copyWith(color: colori.testoSecondario),
           ),
           const SizedBox(height: AppSpacing.s12),
-          AppListPanel(
-            righe: [
-              for (final atleta in atleti)
-                AppListRow(titolo: atleta.nomeCompleto),
-            ],
-          ),
+          _NomiAtleti(atleti: atleti),
         ],
       ),
     );

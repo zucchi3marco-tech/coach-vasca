@@ -13,6 +13,8 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../domain/referto_letto.dart';
@@ -62,17 +64,7 @@ class RefertoPartitaScreen extends ConsumerWidget {
     final refertoAsync = ref.watch(refertoPerPartitaProvider(partita.id));
 
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Referto'),
-        actions: [
-          if (refertoAsync.value != null)
-            IconButton(
-              tooltip: 'Rileggi referto',
-              onPressed: () => _rileggiReferto(context),
-              icon: const Icon(Icons.document_scanner_outlined),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Referto')),
       body: refertoAsync.when(
         data: (referto) => referto == null
             ? EmptyState(
@@ -84,7 +76,10 @@ class RefertoPartitaScreen extends ConsumerWidget {
                 azionePrincipale: 'Leggi referto',
                 onAzionePrincipale: () => _leggiReferto(context),
               )
-            : _RefertoSalvatoView(referto: referto),
+            : _RefertoSalvatoView(
+                referto: referto,
+                onRileggi: () => _rileggiReferto(context),
+              ),
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),
           child: LoadingSkeletonList(righe: 6),
@@ -104,62 +99,48 @@ class RefertoPartitaScreen extends ConsumerWidget {
 }
 
 class _RefertoSalvatoView extends StatelessWidget {
-  const _RefertoSalvatoView({required this.referto});
+  const _RefertoSalvatoView({required this.referto, required this.onRileggi});
 
   final RefertoPartita referto;
+  final VoidCallback onRileggi;
 
   @override
   Widget build(BuildContext context) {
-    final colori = context.colori;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  '${referto.squadraCasa}   '
-                  '${referto.risultatoCasa} - ${referto.risultatoTrasferta}'
-                  '   ${referto.squadraTrasferta}',
-                  style: AppTypography.condensata(
-                    AppTypography.numerica(
-                      AppTypography.titoloXl.copyWith(color: colori.testo),
-                    ),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                if (referto.parziali.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s8),
-                  Text(
-                    [
-                      for (var i = 0; i < referto.parziali.length; i++)
-                        'T${i + 1}: ${referto.parziali[i].casa}-'
-                            '${referto.parziali[i].trasferta}',
-                    ].join('   '),
-                    style: AppTypography.condensata(
-                      AppTypography.numerica(
-                        AppTypography.corpo.copyWith(color: colori.testo),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+      children: [
+        // Il tabellone: squadre e risultato in grande, i parziali sotto.
+        TestataPagina(
+          occhiello: 'Risultato finale',
+          titolo:
+              '${referto.squadraCasa}  ${referto.risultatoCasa}–'
+              '${referto.risultatoTrasferta}  ${referto.squadraTrasferta}',
+          sottotitolo: referto.parziali.isEmpty
+              ? null
+              : [
+                  for (var i = 0; i < referto.parziali.length; i++)
+                    '${i + 1}° tempo ${referto.parziali[i].casa}-'
+                        '${referto.parziali[i].trasferta}',
+                ].join(' · '),
+          azioni: [
+            AzioneTestata(
+              icona: Icons.document_scanner_outlined,
+              etichetta: 'Rileggi da una foto',
+              onTap: onRileggi,
             ),
-          ),
-          const SizedBox(height: AppSpacing.s24),
-          _TabellaGiocatoriSalvata(
-            titolo: referto.squadraCasa,
-            giocatori: referto.giocatoriCasa,
-          ),
-          const SizedBox(height: AppSpacing.s24),
-          _TabellaGiocatoriSalvata(
-            titolo: referto.squadraTrasferta,
-            giocatori: referto.giocatoriTrasferta,
-          ),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        _TabellaGiocatoriSalvata(
+          titolo: referto.squadraCasa,
+          giocatori: referto.giocatoriCasa,
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        _TabellaGiocatoriSalvata(
+          titolo: referto.squadraTrasferta,
+          giocatori: referto.giocatoriTrasferta,
+        ),
+      ],
     );
   }
 }
@@ -179,11 +160,7 @@ class _TabellaGiocatoriSalvata extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          titolo,
-          style: AppTypography.sezione.copyWith(color: colori.testo),
-        ),
-        const SizedBox(height: AppSpacing.s8),
+        TitoloSezione(titolo, conteggio: giocatori.length),
         AppListPanel(
           righe: [
             for (final g in giocatori)

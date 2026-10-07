@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
@@ -113,7 +114,7 @@ class CardBenessereSquadra extends ConsumerWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colori.superficie,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.pannello),
           border: Border.all(color: colori.linea),
         ),
         child: Row(
@@ -496,7 +497,7 @@ class _RigaAtleta extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colori.superficie,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.pannello),
           border: Border.all(color: colori.linea),
         ),
         child: largo
