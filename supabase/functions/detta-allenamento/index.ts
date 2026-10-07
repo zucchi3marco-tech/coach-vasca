@@ -358,11 +358,21 @@ function messaggioErroreOpenAi(status: number, corpoGrezzo: string): string {
   } catch {
     // corpo non JSON: si usa il messaggio generico sotto.
   }
+  // Con il credito dell'account esaurito OpenAI risponde 429 come per le
+  // troppe richieste, ma aspettare non serve: va detto chiaramente.
+  if (codiceOpenAi === "insufficient_quota") {
+    return "Il credito del servizio AI è esaurito: va ricaricato l'account " +
+      "OpenAI prima di poter usare di nuovo l'AI.";
+  }
+  if (status === 401) {
+    return "La chiave del servizio AI non è valida: va controllata nelle " +
+      "impostazioni del server.";
+  }
   if (status === 429 || codiceOpenAi === "rate_limit_exceeded") {
     return "Troppe richieste al servizio AI in poco tempo. Aspetta un minuto " +
       "e riprova.";
   }
-  if (status === 503 || status === 500) {
+  if (status >= 500) {
     return "Il servizio AI è momentaneamente sovraccarico. Riprova tra " +
       "qualche istante.";
   }
@@ -375,13 +385,20 @@ type RispostaProvider =
   | { ok: false; errorMessage: string };
 
 // Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo,
-// OpenAI 429/500/503 per gli stessi motivi — senza un ritentativo qui,
-// questi picchi si vedevano come "il generatore non funziona" lato
+// OpenAI 429/500/502/503 per gli stessi motivi — senza un ritentativo
+// qui, questi picchi si vedevano come "il generatore non funziona" lato
 // coach, pur essendo transitori.
 const TENTATIVI_MASSIMI = 3;
 const ATTESE_MS = [1500, 3000];
 
-async function chiamaGemini(prompt: string): Promise<RispostaProvider> {
+// L'app smette di aspettare dopo 60 secondi, e OpenAI ogni tanto impiega
+// oltre un minuto a rispondere a una richiesta che di solito chiude in
+// 10: ogni tentativo ha un tetto, e un nuovo tentativo parte solo se c'è
+// ancora il tempo per farlo finire prima che l'app abbia rinunciato.
+const TEMPO_MASSIMO_MS = 55_000;
+const LIMITE_TENTATIVO_MS = 30_000;
+
+async function chiamaGemini(prompt: string, schema: unknown): Promise<RispostaProvider> {
   if (!GEMINI_API_KEY) {
     return { ok: false, errorMessage: "GEMINI_API_KEY non configurata sul server" };
   }
@@ -399,7 +416,7 @@ async function chiamaGemini(prompt: string): Promise<RispostaProvider> {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               responseMimeType: "application/json",
-              responseSchema: geminiResponseSchema,
+              responseSchema: schema,
             },
           }),
         },
@@ -427,17 +444,26 @@ async function chiamaGemini(prompt: string): Promise<RispostaProvider> {
   return { ok: true, testoJson, gettoni: dati?.usageMetadata?.totalTokenCount ?? null };
 }
 
-async function chiamaOpenAi(prompt: string): Promise<RispostaProvider> {
+async function chiamaOpenAi(
+  prompt: string,
+  nomeSchema: string,
+  schema: unknown,
+): Promise<RispostaProvider> {
   if (!OPENAI_API_KEY) {
     return { ok: false, errorMessage: "OPENAI_API_KEY non configurata sul server" };
   }
 
+  const inizio = Date.now();
   let risposta: Response | undefined;
+  let corpoErrore = "";
   let erroreRete: unknown;
   for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
     try {
       risposta = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(
+          Math.min(LIMITE_TENTATIVO_MS, TEMPO_MASSIMO_MS - (Date.now() - inizio)),
+        ),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${OPENAI_API_KEY}`,
@@ -447,11 +473,7 @@ async function chiamaOpenAi(prompt: string): Promise<RispostaProvider> {
           messages: [{ role: "user", content: prompt }],
           response_format: {
             type: "json_schema",
-            json_schema: {
-              name: "scheda_generata",
-              strict: true,
-              schema: openAiResponseSchema,
-            },
+            json_schema: { name: nomeSchema, strict: true, schema },
           },
         }),
       });
@@ -460,24 +482,48 @@ async function chiamaOpenAi(prompt: string): Promise<RispostaProvider> {
       erroreRete = errore;
       risposta = undefined;
     }
-    const daRiprovare =
-      (risposta !== undefined && [429, 500, 503].includes(risposta.status)) ||
-      erroreRete !== undefined;
-    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
-    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+    corpoErrore = risposta !== undefined && !risposta.ok ? await risposta.text() : "";
+    const daRiprovare = erroreRete !== undefined ||
+      (risposta !== undefined &&
+        [429, 500, 502, 503].includes(risposta.status) &&
+        !corpoErrore.includes("insufficient_quota"));
+    const attesa = ATTESE_MS[tentativo - 1];
+    const tempoRimasto = TEMPO_MASSIMO_MS - (Date.now() - inizio) - (attesa ?? 0);
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI || tempoRimasto < 10_000) break;
+    await new Promise((r) => setTimeout(r, attesa));
   }
 
+  if (erroreRete instanceof DOMException && erroreRete.name === "TimeoutError") {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI sta impiegando troppo a rispondere. Riprova " +
+        "tra qualche istante.",
+    };
+  }
   if (erroreRete !== undefined || risposta === undefined) {
     return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
   }
   if (!risposta.ok) {
-    const dettaglio = await risposta.text();
-    return { ok: false, errorMessage: messaggioErroreOpenAi(risposta.status, dettaglio) };
+    return { ok: false, errorMessage: messaggioErroreOpenAi(risposta.status, corpoErrore) };
   }
 
   const dati = await risposta.json();
-  const testoJson = dati?.choices?.[0]?.message?.content ?? "";
-  return { ok: true, testoJson, gettoni: dati?.usage?.total_tokens ?? null };
+  const messaggio = dati?.choices?.[0]?.message;
+  // Con gli structured outputs il modello può rifiutarsi di rispondere
+  // (campo `refusal` al posto del contenuto): meglio dirlo che lasciarlo
+  // diventare un generico "JSON non valido".
+  if (typeof messaggio?.refusal === "string" && messaggio.refusal.length > 0) {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI non ha voluto rispondere a questa richiesta: " +
+        "prova a riformularla.",
+    };
+  }
+  return {
+    ok: true,
+    testoJson: messaggio?.content ?? "",
+    gettoni: dati?.usage?.total_tokens ?? null,
+  };
 }
 
 /// Decodifica il payload del JWT (già verificato dal gateway Supabase
@@ -595,8 +641,8 @@ Deno.serve(async (req) => {
   const prompt = costruisciPrompt(richiesta);
 
   const risultato = PROVIDER_ATTIVO === "openai"
-    ? await chiamaOpenAi(prompt)
-    : await chiamaGemini(prompt);
+    ? await chiamaOpenAi(prompt, "scheda_generata", openAiResponseSchema)
+    : await chiamaGemini(prompt, geminiResponseSchema);
 
   if (!risultato.ok) {
     return jsonResponse({ error: risultato.errorMessage }, 502);

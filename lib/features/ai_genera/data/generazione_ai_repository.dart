@@ -17,7 +17,7 @@ import '../domain/settimana_generata.dart';
 const _timeoutGenerazione = Duration(seconds: 60);
 
 /// Chiama la Edge Function `genera-allenamento`, che tiene la chiave del
-/// provider AI lato server e la inoltra a Gemini. Così il provider si può
+/// provider AI lato server e la inoltra a OpenAI. Così il provider si può
 /// cambiare in futuro riscrivendo solo la Edge Function, senza toccare
 /// l'app. La Edge Function valida già la scheda contro i valori noti
 /// (blocco/stile/esecuzione/zona): qui ci si fida della forma dei dati.
@@ -49,7 +49,7 @@ class GenerazioneAiRepository {
 
   /// Chiama la Edge Function `detta-allenamento`: a differenza di
   /// [generaAllenamento] (che *inventa* una scheda da parametri), qui
-  /// Gemini deve solo *trascrivere fedelmente* in JSON strutturato quello
+  /// l'AI deve solo *trascrivere fedelmente* in JSON strutturato quello
   /// che il coach ha dettato — stessa forma di output ([SchedaGenerata]),
   /// stessa Edge Function del "genera con AI" nel senso di isolare la
   /// chiave del provider lato server, ma un prompt diverso.

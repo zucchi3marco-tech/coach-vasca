@@ -1,7 +1,7 @@
 // Edge Function: compila-modulo
 //
 // Riceve il testo libero scritto dal coach nella casella "Scrivi il tuo
-// allenamento" del form "Genera con AI" e chiede a Gemini di ricavarne i
+// allenamento" del form "Genera con AI" e chiede al provider AI di ricavarne i
 // VALORI DEI CAMPI del form (vasca, volumi, tipi di lavoro, focus, attrezzi,
 // vincoli). Non genera nessuna scheda: il coach rivede il modulo compilato e
 // poi preme Genera. Ogni campo è opzionale: si restituisce solo quello che
@@ -12,8 +12,16 @@
 // fra le funzioni): le costanti sono duplicate a mano — tenere allineate a
 // `lib/features/ai_genera/domain/tipo_lavoro.dart` e `focus_lavoro.dart`.
 
+// RIPROGETTAZIONE AI: provider passato da Gemini a OpenAI come
+// `genera-allenamento`. `chiamaGemini` resta nel file, spenta dietro
+// PROVIDER_ATTIVO, per tornare indietro in un attimo.
+const PROVIDER_ATTIVO: "openai" | "gemini" = "openai";
+
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-3.6-flash";
+
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const TEXT_MODEL = Deno.env.get("TEXT_MODEL") ?? "gpt-4o-mini";
 
 const ZONE = ["A1", "A2", "B1", "B2", "C1", "C2", "C3", "D"];
 const FOCUS = ["completo", "braccia", "gambe", "tecnica"];
@@ -70,7 +78,7 @@ function costruisciPrompt(testo: string): string {
     "Regole importanti:",
     "- Compila un campo SOLO se il testo lo dice o lo implica chiaramente. " +
       "Non inventare valori per completare il modulo: un campo non " +
-      "menzionato va lasciato fuori.",
+      "menzionato va lasciato vuoto.",
     "- volumeMetri è il volume totale della seduta; volumeLavoroCentraleMetri " +
       "è la sola parte centrale/principale (es. \"3 km di aerobico\" dentro " +
       "un totale di 5 km).",
@@ -87,7 +95,7 @@ function costruisciPrompt(testo: string): string {
   ].join("\n");
 }
 
-const responseSchema = {
+const schemaGemini = {
   type: "OBJECT",
   properties: {
     vascaM: { type: "INTEGER" },
@@ -116,6 +124,44 @@ const responseSchema = {
     vincoli: { type: "STRING" },
   },
 };
+
+// Lo stesso modulo per gli "structured outputs" di OpenAI: in modalità
+// strict ogni proprietà deve stare in `required`, quindi i campi restano
+// facoltativi diventando nullable (gli elenchi vuoti valgono già come
+// "non detto"). Ricavato dallo schema Gemini per non tenerne due copie.
+function schemaOpenAiDa(schema: Record<string, unknown>, facoltativo = false): unknown {
+  const tipo = String(schema.type).toLowerCase();
+  if (tipo === "object") {
+    const proprieta = schema.properties as Record<string, Record<string, unknown>>;
+    const richieste = (schema.required as string[] | undefined) ?? [];
+    return {
+      type: "object",
+      additionalProperties: false,
+      properties: Object.fromEntries(
+        Object.entries(proprieta).map(([nome, figlio]) => [
+          nome,
+          schemaOpenAiDa(figlio, !richieste.includes(nome)),
+        ]),
+      ),
+      required: Object.keys(proprieta),
+    };
+  }
+  if (tipo === "array") {
+    return {
+      type: "array",
+      items: schemaOpenAiDa(schema.items as Record<string, unknown>),
+    };
+  }
+  const enumerato = schema.enum as unknown[] | undefined;
+  if (!facoltativo) {
+    return enumerato ? { type: tipo, enum: enumerato } : { type: tipo };
+  }
+  return enumerato
+    ? { type: [tipo, "null"], enum: [...enumerato, null] }
+    : { type: [tipo, "null"] };
+}
+
+const schemaOpenAi = schemaOpenAiDa(schemaGemini);
 
 function arrotonda(n: number, passo: number): number {
   return Math.round(n / passo) * passo;
@@ -213,10 +259,17 @@ function validaModulo(dati: unknown): Record<string, unknown> {
   return out;
 }
 
-function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
+// Il messaggio grezzo di Gemini e' JSON tecnico in inglese (es. "quota
+// exceeded... RESOURCE_EXHAUSTED" o "model overloaded... UNAVAILABLE"):
+// qui si traduce nei due casi piu' comuni (limite di richieste al minuto
+// del piano gratuito, modello momentaneamente sovraccarico) in un
+// messaggio comprensibile, e in un messaggio generico altrimenti — mai
+// il JSON grezzo mostrato al coach.
+function messaggioErroreGemini(status: number, corpoGrezzo: string): string {
   let statoGemini: string | undefined;
   try {
-    statoGemini = JSON.parse(corpoGrezzo)?.error?.status;
+    const corpo = JSON.parse(corpoGrezzo);
+    statoGemini = corpo?.error?.status;
   } catch {
     // corpo non JSON: si usa il messaggio generico sotto.
   }
@@ -232,18 +285,188 @@ function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
     "Riprova tra qualche istante.";
 }
 
+function messaggioErroreOpenAi(status: number, corpoGrezzo: string): string {
+  let codiceOpenAi: string | undefined;
+  try {
+    const corpo = JSON.parse(corpoGrezzo);
+    codiceOpenAi = corpo?.error?.code ?? corpo?.error?.type;
+  } catch {
+    // corpo non JSON: si usa il messaggio generico sotto.
+  }
+  // Con il credito dell'account esaurito OpenAI risponde 429 come per le
+  // troppe richieste, ma aspettare non serve: va detto chiaramente.
+  if (codiceOpenAi === "insufficient_quota") {
+    return "Il credito del servizio AI è esaurito: va ricaricato l'account " +
+      "OpenAI prima di poter usare di nuovo l'AI.";
+  }
+  if (status === 401) {
+    return "La chiave del servizio AI non è valida: va controllata nelle " +
+      "impostazioni del server.";
+  }
+  if (status === 429 || codiceOpenAi === "rate_limit_exceeded") {
+    return "Troppe richieste al servizio AI in poco tempo. Aspetta un minuto " +
+      "e riprova.";
+  }
+  if (status >= 500) {
+    return "Il servizio AI è momentaneamente sovraccarico. Riprova tra " +
+      "qualche istante.";
+  }
+  return `Il servizio AI non ha risposto correttamente (errore ${status}). ` +
+    "Riprova tra qualche istante.";
+}
+
+type RispostaProvider =
+  | { ok: true; testoJson: string; gettoni: number | null }
+  | { ok: false; errorMessage: string };
+
+// Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo,
+// OpenAI 429/500/502/503 per gli stessi motivi — senza un ritentativo
+// qui, questi picchi si vedevano come "il generatore non funziona" lato
+// coach, pur essendo transitori.
+const TENTATIVI_MASSIMI = 3;
+const ATTESE_MS = [1500, 3000];
+
+// L'app smette di aspettare dopo 60 secondi, e OpenAI ogni tanto impiega
+// oltre un minuto a rispondere a una richiesta che di solito chiude in
+// 10: ogni tentativo ha un tetto, e un nuovo tentativo parte solo se c'è
+// ancora il tempo per farlo finire prima che l'app abbia rinunciato.
+const TEMPO_MASSIMO_MS = 55_000;
+const LIMITE_TENTATIVO_MS = 30_000;
+
+async function chiamaGemini(prompt: string, schema: unknown): Promise<RispostaProvider> {
+  if (!GEMINI_API_KEY) {
+    return { ok: false, errorMessage: "GEMINI_API_KEY non configurata sul server" };
+  }
+
+  let risposta: Response | undefined;
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: schema,
+            },
+          }),
+        },
+      );
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    const daRiprovare = risposta?.status === 503 || erroreRete !== undefined;
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
+    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  }
+
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    const dettaglio = await risposta.text();
+    return { ok: false, errorMessage: messaggioErroreGemini(risposta.status, dettaglio) };
+  }
+
+  const dati = await risposta.json();
+  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return { ok: true, testoJson, gettoni: dati?.usageMetadata?.totalTokenCount ?? null };
+}
+
+async function chiamaOpenAi(
+  prompt: string,
+  nomeSchema: string,
+  schema: unknown,
+): Promise<RispostaProvider> {
+  if (!OPENAI_API_KEY) {
+    return { ok: false, errorMessage: "OPENAI_API_KEY non configurata sul server" };
+  }
+
+  const inizio = Date.now();
+  let risposta: Response | undefined;
+  let corpoErrore = "";
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: AbortSignal.timeout(
+          Math.min(LIMITE_TENTATIVO_MS, TEMPO_MASSIMO_MS - (Date.now() - inizio)),
+        ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: TEXT_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: nomeSchema, strict: true, schema },
+          },
+        }),
+      });
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    corpoErrore = risposta !== undefined && !risposta.ok ? await risposta.text() : "";
+    const daRiprovare = erroreRete !== undefined ||
+      (risposta !== undefined &&
+        [429, 500, 502, 503].includes(risposta.status) &&
+        !corpoErrore.includes("insufficient_quota"));
+    const attesa = ATTESE_MS[tentativo - 1];
+    const tempoRimasto = TEMPO_MASSIMO_MS - (Date.now() - inizio) - (attesa ?? 0);
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI || tempoRimasto < 10_000) break;
+    await new Promise((r) => setTimeout(r, attesa));
+  }
+
+  if (erroreRete instanceof DOMException && erroreRete.name === "TimeoutError") {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI sta impiegando troppo a rispondere. Riprova " +
+        "tra qualche istante.",
+    };
+  }
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    return { ok: false, errorMessage: messaggioErroreOpenAi(risposta.status, corpoErrore) };
+  }
+
+  const dati = await risposta.json();
+  const messaggio = dati?.choices?.[0]?.message;
+  // Con gli structured outputs il modello può rifiutarsi di rispondere
+  // (campo `refusal` al posto del contenuto): meglio dirlo che lasciarlo
+  // diventare un generico "JSON non valido".
+  if (typeof messaggio?.refusal === "string" && messaggio.refusal.length > 0) {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI non ha voluto rispondere a questa richiesta: " +
+        "prova a riformularla.",
+    };
+  }
+  return {
+    ok: true,
+    testoJson: messaggio?.content ?? "",
+    gettoni: dati?.usage?.total_tokens ?? null,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   if (req.method !== "POST") {
     return jsonResponse({ error: "Metodo non supportato" }, 405);
-  }
-  if (!GEMINI_API_KEY) {
-    return jsonResponse(
-      { error: "GEMINI_API_KEY non configurata sul server" },
-      500,
-    );
   }
 
   let richiesta: { testo?: string };
@@ -264,58 +487,17 @@ Deno.serve(async (req) => {
 
   const prompt = costruisciPrompt(richiesta.testo);
 
-  // Gemini risponde spesso 503 per sovraccarico momentaneo: si ritenta.
-  const TENTATIVI_MASSIMI = 3;
-  const ATTESE_MS = [1500, 3000];
+  const risultato = PROVIDER_ATTIVO === "openai"
+    ? await chiamaOpenAi(prompt, "modulo_compilato", schemaOpenAi)
+    : await chiamaGemini(prompt, schemaGemini);
 
-  let rispostaGemini: Response | undefined;
-  let erroreRete: unknown;
-  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
-    try {
-      rispostaGemini = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema,
-            },
-          }),
-        },
-      );
-      erroreRete = undefined;
-    } catch (errore) {
-      erroreRete = errore;
-      rispostaGemini = undefined;
-    }
-    const daRiprovare = rispostaGemini?.status === 503 || erroreRete !== undefined;
-    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
-    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  if (!risultato.ok) {
+    return jsonResponse({ error: risultato.errorMessage }, 502);
   }
-
-  if (erroreRete !== undefined || rispostaGemini === undefined) {
-    return jsonResponse(
-      { error: `Impossibile contattare il provider AI: ${erroreRete}` },
-      502,
-    );
-  }
-  if (!rispostaGemini.ok) {
-    const dettaglio = await rispostaGemini.text();
-    return jsonResponse(
-      { error: messaggioErroreProvider(rispostaGemini.status, dettaglio) },
-      502,
-    );
-  }
-
-  const dati = await rispostaGemini.json();
-  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
   let grezzo: unknown;
   try {
-    grezzo = JSON.parse(testoJson);
+    grezzo = JSON.parse(risultato.testoJson);
   } catch {
     return jsonResponse(
       { error: "Il provider AI non ha restituito un JSON valido" },

@@ -1,17 +1,43 @@
 // Edge Function: genera-allenamento
 //
 // Riceve i parametri raccolti dal form "Genera con AI" (o, seduta per
-// seduta, da "Genera settimana con AI") e li inoltra a Gemini, tenendo la
-// API key lato server (mai esposta al client Flutter). Chiede output JSON
-// strutturato (responseSchema) e lo rivalida qui prima di restituirlo,
-// così l'app riceve sempre una scheda con campi noti o un errore
-// esplicito, mai testo libero da interpretare.
+// seduta, da "Genera settimana con AI") e li inoltra al provider AI,
+// tenendo la API key lato server (mai esposta al client Flutter). Chiede
+// output JSON strutturato e lo rivalida qui prima di restituirlo, così
+// l'app riceve sempre una scheda con campi noti o un errore esplicito,
+// mai testo libero da interpretare.
 // Se in futuro si cambia provider AI, si riscrive solo questo file: il
 // contratto verso l'app (corpo della richiesta e { scheda } in risposta)
 // resta invariato.
+//
+// RIPROGETTAZIONE AI: provider passato da Gemini a OpenAI come già
+// `detta-allenamento` (Gemini restava spesso "sovraccarico" anche dopo i
+// ritentativi). `chiamaGemini` resta nel file, spenta dietro
+// PROVIDER_ATTIVO, per tornare indietro in un attimo. Infrastruttura
+// ai_usage/tetto settimanale copiata a mano da `detta-allenamento`
+// (nessuna cartella `_shared/` in questo repo): tenerle allineate.
+
+const PROVIDER_ATTIVO: "openai" | "gemini" = "openai";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-3.6-flash";
+
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const TEXT_MODEL = Deno.env.get("TEXT_MODEL") ?? "gpt-4o-mini";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+// Tetto di richieste AI (qualunque funzione scriva su ai_usage) per
+// persona a settimana — stesso numero di `detta-allenamento`.
+const LIMITE_SETTIMANALE_PER_PERSONA = 30;
+
+const NOME_FUNZIONE = "genera-allenamento";
+
+// Scarto ammesso fra i metri della scheda e il volume richiesto (stesso
+// margine dei controlli sulla settimana, `controlli_settimana_service.dart`):
+// vedi adattaVolume.
+const TOLLERANZA_VOLUME = 0.1;
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
 const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
@@ -265,15 +291,20 @@ function istruzioniLibreria(blocchi: BloccoDisponibile[]): string {
   });
   return [
     "Hai a disposizione una libreria di blocchi di allenamento già " +
-      "approvati da questo coach, elencati sotto con il loro ID. Per le " +
-      "serie del blocco \"principale\" (e, se ce n'è uno adatto, anche " +
-      "per riscaldamento/defaticamento), SCEGLI fra questi quello più " +
-      "adatto al volume/focus/regimi richiesti invece di inventare da " +
-      "zero: puoi adattare ripetute e distanza (o durata) fino al 25% in " +
-      "più o in meno rispetto all'originale, indicando il suo ID in " +
+      "approvati da questo coach, elencati sotto con il loro ID. Costruisci " +
+      "la seduta con questi blocchi invece di inventare da zero: per ogni " +
+      "parte (riscaldamento, principale, defaticamento) SCEGLI UNO O PIÙ " +
+      "blocchi adatti a focus/regimi richiesti e mettili in sequenza " +
+      "(anche lo stesso blocco più volte, se serve). Di ogni blocco puoi " +
+      "adattare ripetute e distanza (o durata) fino al 25% in più o in " +
+      "meno rispetto all'originale, indicando il suo ID in " +
       "bloccoLibreriaId per OGNI serie che ne deriva. Se un blocco ha più " +
       "parti, usa tutte le sue parti in sequenza (stessa zona/esecuzione/ " +
       "stile di ciascuna), tutte con lo stesso bloccoLibreriaId.",
+    "Il volume richiesto viene PRIMA della fedeltà ai blocchi: un blocco " +
+      "da solo raramente basta a coprire una parte della seduta. Se i " +
+      "blocchi scelti, anche adattati, non arrivano ai metri richiesti, " +
+      "aggiungine altri finché li raggiungi.",
     "Inventa una serie nuova SOLO se davvero nessun blocco disponibile è " +
       "adatto: in quel caso lascia bloccoLibreriaId vuoto e segna " +
       "nuovo=true. Per ogni altra serie, nuovo deve essere false.",
@@ -292,6 +323,26 @@ function istruzioniLibreria(blocchi: BloccoDisponibile[]): string {
     "Blocchi disponibili:",
     ...elenco,
   ].join("\n");
+}
+
+// Metri indicativi per parte: con il solo totale il modello tendeva a
+// prendere un blocco per parte e a fermarsi molto sotto il volume
+// richiesto (osservato nelle prove con OpenAI).
+function ripartizioneVolume(p: ParametriGenerazione): string {
+  const totale = p.volumeMetri;
+  if (!totale) return "";
+  const arrotonda50 = (n: number) => Math.round(n / 50) * 50;
+  const principale = Math.min(
+    totale,
+    p.volumeLavoroCentraleMetri ?? arrotonda50(totale * 0.6),
+  );
+  const resto = totale - principale;
+  const riscaldamento = arrotonda50(resto * 0.65);
+  const defaticamento = resto - riscaldamento;
+  return `Ripartizione indicativa dei metri: riscaldamento circa ` +
+    `${riscaldamento}, principale circa ${principale}, defaticamento circa ` +
+    `${defaticamento} (le eventuali serie di tecnica, gambe o braccia ` +
+    "rientrano nella parte in cui le metti).";
 }
 
 function costruisciPrompt(p: ParametriGenerazione): string {
@@ -317,6 +368,7 @@ function costruisciPrompt(p: ParametriGenerazione): string {
     p.volumeLavoroCentraleMetri != null
       ? `Volume del blocco "principale" (lavoro centrale): circa ${p.volumeLavoroCentraleMetri} metri, il resto (riscaldamento, defaticamento, eventuale tecnica) copre la differenza rispetto al volume totale.`
       : "",
+    ripartizioneVolume(p),
     istruzioniFocus(p),
     attrezziCentrale.length > 0
       ? `Per le serie del blocco "principale", quando prevedi attrezzatura preferisci fra: ${attrezziCentrale.join(", ")}.`
@@ -328,7 +380,12 @@ function costruisciPrompt(p: ParametriGenerazione): string {
       : "",
     "Dividi la scheda in riscaldamento, parte principale e defaticamento. " +
       "La somma di ripetute*distanza di tutte le serie deve avvicinarsi il " +
-      "più possibile al volume totale richiesto. Usa solo zone tra quelle " +
+      "più possibile al volume totale richiesto" +
+      (p.volumeMetri
+        ? ` (fra ${Math.round(p.volumeMetri * (1 - TOLLERANZA_VOLUME))} e ` +
+          `${Math.round(p.volumeMetri * (1 + TOLLERANZA_VOLUME))} metri)`
+        : "") +
+      ". Usa solo zone tra quelle " +
       "ammesse indicate sopra. OGNI serie deve avere una zona assegnata " +
       "(mai vuota): il riscaldamento è sempre zona A1.",
     p.minutiMax != null
@@ -357,6 +414,10 @@ function costruisciPrompt(p: ParametriGenerazione): string {
         ].join("\n")
       : "",
     istruzioniLibreria(blocchiDisponibili),
+    "Nel campo note di una serie scrivi solo indicazioni brevi su COME " +
+      "eseguirla (es. \"respirazione ogni 3\", \"progressivi\"), oppure " +
+      "lascialo vuoto: MAI distanze, ripetute, stili o il titolo di un " +
+      "blocco, che stanno già negli altri campi.",
   ]
     .filter((riga) => riga.length > 0)
     .join("\n");
@@ -368,7 +429,7 @@ function costruisciPrompt(p: ParametriGenerazione): string {
 // semplice campo STRING libero (osservato nei test): elenca gli ID
 // scelti lasciando all'AI, come più oneroso, lasciarlo vuoto per
 // "nuovo".
-function costruisciResponseSchema(blocchiDisponibili: BloccoDisponibile[]) {
+function costruisciSchemaGemini(blocchiDisponibili: BloccoDisponibile[]) {
   const idDisponibili = blocchiDisponibili.map((b) => b.id);
   return {
     type: "OBJECT",
@@ -422,6 +483,66 @@ function costruisciResponseSchema(blocchiDisponibili: BloccoDisponibile[]) {
   };
 }
 
+// Stesso contenuto per gli "structured outputs" di OpenAI
+// (response_format json_schema, strict: true): in modalità strict OGNI
+// proprietà deve stare in `required` e ogni oggetto deve dichiarare
+// additionalProperties: false — i campi facoltativi diventano nullable
+// (`type: [tipo, "null"]`) invece di assenti.
+function costruisciSchemaOpenAi(blocchiDisponibili: BloccoDisponibile[]) {
+  const idDisponibili = blocchiDisponibili.map((b) => b.id);
+  const proprietaSerie: Record<string, unknown> = {
+    ordine: { type: "integer" },
+    blocco: { type: "string", enum: BLOCCHI },
+    ripetute: { type: "integer" },
+    distanzaM: { type: "integer" },
+    stile: { type: "string", enum: STILI },
+    esecuzione: { type: "string", enum: ESECUZIONI },
+    zona: { type: "string", enum: ZONE },
+    recuperoS: { type: ["integer", "null"] },
+    attrezzatura: { type: ["string", "null"] },
+    note: { type: ["string", "null"] },
+    ...(idDisponibili.length > 0
+      ? {
+        bloccoLibreriaId: {
+          type: ["string", "null"],
+          enum: [...idDisponibili, null],
+        },
+      }
+      : {}),
+    nuovo: { type: "boolean" },
+    ripartenzePerCorsia: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          nome: { type: "string" },
+          ripartenzaS: { type: "number" },
+        },
+        required: ["nome", "ripartenzaS"],
+      },
+    },
+  };
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      titolo: { type: "string" },
+      note: { type: ["string", "null"] },
+      serie: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: proprietaSerie,
+          required: Object.keys(proprietaSerie),
+        },
+      },
+    },
+    required: ["titolo", "note", "serie"],
+  };
+}
+
 // Stessa formula, tenuta manualmente sincronizzata, della funzione
 // `stimaMinutiSessione` in `lib/features/ai_genera/application/
 // tempo_stimato_service.dart` (lì è solo informativa; qui è il
@@ -440,6 +561,117 @@ function stimaMinutiSessione(serie: SerieGenerata[]): number {
     secondiTotali += s.ripetute * (s.recuperoS ?? 0);
   }
   return secondiTotali / 60;
+}
+
+function metriScheda(scheda: SchedaGenerata): number {
+  return scheda.serie.reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+}
+
+function scartoVolume(scheda: SchedaGenerata, volumeRichiesto: number): number {
+  return Math.abs(metriScheda(scheda) - volumeRichiesto) / volumeRichiesto;
+}
+
+/// Porta le serie scelte da `scala` a circa `obiettivo` metri senza
+/// cambiare la struttura della scheda, tutte nella stessa proporzione:
+/// una serie con più ripetute cambia il numero di ripetute, una serie
+/// singola (un "400 sciolti", i gradini di una piramide) la distanza, a
+/// passi di 50m. Il resto lasciato dagli arrotondamenti lo assorbe la
+/// serie a ripetute la cui distanza ci sta meglio.
+function scalaSerie(
+  serie: SerieGenerata[],
+  scala: (s: SerieGenerata) => boolean,
+  obiettivo: number,
+): SerieGenerata[] {
+  const metri = (elenco: SerieGenerata[]) =>
+    elenco.filter(scala).reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+  const attuali = metri(serie);
+  if (attuali === 0 || obiettivo <= 0) return serie;
+  const fattore = obiettivo / attuali;
+  const scalate = serie.map((s) => {
+    if (!scala(s)) return s;
+    if (s.ripetute > 1) {
+      return { ...s, ripetute: Math.max(1, Math.round(s.ripetute * fattore)) };
+    }
+    if (s.distanzaM < 50) return s;
+    const distanza = s.distanzaM * fattore;
+    const passo = distanza >= 400 ? 100 : 50;
+    return {
+      ...s,
+      distanzaM: Math.max(50, Math.round(distanza / passo) * passo),
+    };
+  });
+
+  const resto = obiettivo - metri(scalate);
+  let migliore = -1;
+  let ripetuteInPiu = 0;
+  let restoMinimo = Math.abs(resto);
+  scalate.forEach((s, indice) => {
+    if (!scala(s) || s.ripetute < 2) return;
+    const k = Math.round(resto / s.distanzaM);
+    if (k === 0 || s.ripetute + k < 1) return;
+    const residuo = Math.abs(resto - k * s.distanzaM);
+    if (residuo < restoMinimo) {
+      migliore = indice;
+      ripetuteInPiu = k;
+      restoMinimo = residuo;
+    }
+  });
+  if (migliore >= 0) {
+    scalate[migliore] = {
+      ...scalate[migliore],
+      ripetute: scalate[migliore].ripetute + ripetuteInPiu,
+    };
+  }
+  return scalate;
+}
+
+/// Il volume lo garantisce il codice, non l'AI: nelle prove sia
+/// gpt-4o-mini sia gpt-4.1-mini sbagliavano le somme del 10-30% (in meno
+/// il primo, in più il secondo) anche con un secondo tentativo guidato.
+/// Il lavoro centrale va al volume indicato dal coach, se c'è, e il resto
+/// della seduta copre la differenza (rispetto ai metri centrali reali,
+/// dopo gli arrotondamenti); altrimenti si scala tutto insieme.
+/// Se la scheda così corretta sfora il tempo massimo resta quella
+/// dell'AI, che il limite di tempo lo rispettava già.
+function adattaVolume(
+  scheda: SchedaGenerata,
+  parametri: ParametriGenerazione,
+): SchedaGenerata {
+  const totale = parametri.volumeMetri;
+  if (!totale || scartoVolume(scheda, totale) <= TOLLERANZA_VOLUME / 2) {
+    return scheda;
+  }
+  const centrale = parametri.volumeLavoroCentraleMetri;
+  const principale = (s: SerieGenerata) => s.blocco === "principale";
+  const haPrincipale = scheda.serie.some(principale);
+  const haAltro = scheda.serie.some((s) => !principale(s));
+
+  let serie: SerieGenerata[];
+  if (centrale != null && centrale > 0 && centrale < totale && haPrincipale && haAltro) {
+    serie = scalaSerie(scheda.serie, principale, centrale);
+    const metriCentrali = serie
+      .filter(principale)
+      .reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+    serie = scalaSerie(serie, (s) => !principale(s), totale - metriCentrali);
+  } else {
+    serie = scalaSerie(scheda.serie, () => true, totale);
+  }
+
+  if (
+    parametri.minutiMax != null &&
+    stimaMinutiSessione(serie) > parametri.minutiMax * 1.1
+  ) {
+    return scheda;
+  }
+  return { ...scheda, serie };
+}
+
+/// Le misure stanno già in ripetute/distanza: una nota che le ripete
+/// (spesso il titolo del blocco di libreria, "200 sciolto") smentirebbe la
+/// serie non appena adattaVolume ne cambia i metri.
+function pulisciNota(nota: string): string | null {
+  const pulita = nota.replace(/^\s*(\d+\s*[x×]\s*)?\d+(m\b)?\s*/i, "").trim();
+  return pulita.length > 0 ? pulita : null;
 }
 
 /// `null` se l'AI non ha indicato un bloccoLibreriaId, se l'ID non
@@ -579,30 +811,20 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       recuperoS = valore;
     }
 
+    // Le ripartenze dell'AI sono solo un ripiego (l'app le ricalcola dal
+    // codice quando conosce i passi): una voce senza senso si scarta
+    // invece di buttare l'intera scheda. Con gli structured outputs di
+    // OpenAI il campo è sempre presente, e per le serie dove non serve
+    // (riscaldamento A1, tecnica) il modello mette spesso 0.
     let ripartenzePerCorsia: RipartenzaCorsia[] = [];
-    if (s.ripartenzePerCorsia !== undefined && s.ripartenzePerCorsia !== null) {
-      if (!Array.isArray(s.ripartenzePerCorsia)) {
-        throw new Error(`serie #${indice + 1}: ripartenzePerCorsia non valido`);
-      }
-      ripartenzePerCorsia = s.ripartenzePerCorsia.map((voceRip, indiceRip) => {
-        if (typeof voceRip !== "object" || voceRip === null) {
-          throw new Error(
-            `serie #${indice + 1}: ripartenza #${indiceRip + 1} non valida`,
-          );
-        }
+    if (Array.isArray(s.ripartenzePerCorsia)) {
+      ripartenzePerCorsia = s.ripartenzePerCorsia.flatMap((voceRip) => {
+        if (typeof voceRip !== "object" || voceRip === null) return [];
         const r = voceRip as Record<string, unknown>;
-        if (typeof r.nome !== "string" || r.nome.trim() === "") {
-          throw new Error(
-            `serie #${indice + 1}: nome corsia mancante nella ripartenza #${indiceRip + 1}`,
-          );
-        }
         const ripartenzaS = Number(r.ripartenzaS);
-        if (!Number.isFinite(ripartenzaS) || ripartenzaS <= 0) {
-          throw new Error(
-            `serie #${indice + 1}: ripartenzaS non valida per la corsia "${r.nome}"`,
-          );
-        }
-        return { nome: r.nome, ripartenzaS };
+        if (typeof r.nome !== "string" || r.nome.trim() === "") return [];
+        if (!Number.isFinite(ripartenzaS) || ripartenzaS <= 0) return [];
+        return [{ nome: r.nome, ripartenzaS }];
       });
     }
 
@@ -616,7 +838,7 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       zona,
       recuperoS,
       attrezzatura: typeof s.attrezzatura === "string" ? s.attrezzatura : null,
-      note: typeof s.note === "string" ? s.note : null,
+      note: typeof s.note === "string" ? pulisciNota(s.note) : null,
       ripartenzePerCorsia,
       // RIPROGETTAZIONE AI, FASE 3: "nuovo" è semplicemente "non
       // riconducibile a nessun blocco della libreria", per etichetta o
@@ -628,6 +850,12 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       nuovo: blocchiPerId.size > 0 && bloccoLibreriaId == null,
     };
   });
+
+  // Nelle prove OpenAI ha restituito una volta una seduta fatta solo di
+  // riscaldamento: non è una scheda da adattare, va richiesta.
+  if (!serieValidate.some((s) => s.blocco === "principale")) {
+    throw new Error("manca la parte principale");
+  }
 
   if (parametri.minutiMax != null) {
     const minutiStimati = stimaMinutiSessione(serieValidate);
@@ -654,7 +882,7 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
 // del piano gratuito, modello momentaneamente sovraccarico) in un
 // messaggio comprensibile, e in un messaggio generico altrimenti — mai
 // il JSON grezzo mostrato al coach.
-function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
+function messaggioErroreGemini(status: number, corpoGrezzo: string): string {
   let statoGemini: string | undefined;
   try {
     const corpo = JSON.parse(corpoGrezzo);
@@ -674,6 +902,297 @@ function messaggioErroreProvider(status: number, corpoGrezzo: string): string {
     "Riprova tra qualche istante.";
 }
 
+function messaggioErroreOpenAi(status: number, corpoGrezzo: string): string {
+  let codiceOpenAi: string | undefined;
+  try {
+    const corpo = JSON.parse(corpoGrezzo);
+    codiceOpenAi = corpo?.error?.code ?? corpo?.error?.type;
+  } catch {
+    // corpo non JSON: si usa il messaggio generico sotto.
+  }
+  // Con il credito dell'account esaurito OpenAI risponde 429 come per le
+  // troppe richieste, ma aspettare non serve: va detto chiaramente.
+  if (codiceOpenAi === "insufficient_quota") {
+    return "Il credito del servizio AI è esaurito: va ricaricato l'account " +
+      "OpenAI prima di poter usare di nuovo l'AI.";
+  }
+  if (status === 401) {
+    return "La chiave del servizio AI non è valida: va controllata nelle " +
+      "impostazioni del server.";
+  }
+  if (status === 429 || codiceOpenAi === "rate_limit_exceeded") {
+    return "Troppe richieste al servizio AI in poco tempo. Aspetta un minuto " +
+      "e riprova.";
+  }
+  if (status >= 500) {
+    return "Il servizio AI è momentaneamente sovraccarico. Riprova tra " +
+      "qualche istante.";
+  }
+  return `Il servizio AI non ha risposto correttamente (errore ${status}). ` +
+    "Riprova tra qualche istante.";
+}
+
+type RispostaProvider =
+  | { ok: true; testoJson: string; gettoni: number | null }
+  | { ok: false; errorMessage: string };
+
+// Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo,
+// OpenAI 429/500/502/503 per gli stessi motivi — senza un ritentativo
+// qui, questi picchi si vedevano come "il generatore non funziona" lato
+// coach, pur essendo transitori.
+const TENTATIVI_MASSIMI = 3;
+const ATTESE_MS = [1500, 3000];
+
+// L'app smette di aspettare dopo 60 secondi, e OpenAI ogni tanto impiega
+// oltre un minuto a rispondere a una richiesta che di solito chiude in
+// 10: ogni tentativo ha un tetto, e un nuovo tentativo parte solo se c'è
+// ancora il tempo per farlo finire prima che l'app abbia rinunciato.
+const TEMPO_MASSIMO_MS = 55_000;
+const LIMITE_TENTATIVO_MS = 30_000;
+
+async function chiamaGemini(prompt: string, schema: unknown): Promise<RispostaProvider> {
+  if (!GEMINI_API_KEY) {
+    return { ok: false, errorMessage: "GEMINI_API_KEY non configurata sul server" };
+  }
+
+  let risposta: Response | undefined;
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: schema,
+            },
+          }),
+        },
+      );
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    const daRiprovare = risposta?.status === 503 || erroreRete !== undefined;
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
+    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  }
+
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    const dettaglio = await risposta.text();
+    return { ok: false, errorMessage: messaggioErroreGemini(risposta.status, dettaglio) };
+  }
+
+  const dati = await risposta.json();
+  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return { ok: true, testoJson, gettoni: dati?.usageMetadata?.totalTokenCount ?? null };
+}
+
+async function chiamaOpenAi(
+  prompt: string,
+  nomeSchema: string,
+  schema: unknown,
+): Promise<RispostaProvider> {
+  if (!OPENAI_API_KEY) {
+    return { ok: false, errorMessage: "OPENAI_API_KEY non configurata sul server" };
+  }
+
+  const inizio = Date.now();
+  let risposta: Response | undefined;
+  let corpoErrore = "";
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: AbortSignal.timeout(
+          Math.min(LIMITE_TENTATIVO_MS, TEMPO_MASSIMO_MS - (Date.now() - inizio)),
+        ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: TEXT_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: nomeSchema, strict: true, schema },
+          },
+        }),
+      });
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    corpoErrore = risposta !== undefined && !risposta.ok ? await risposta.text() : "";
+    const daRiprovare = erroreRete !== undefined ||
+      (risposta !== undefined &&
+        [429, 500, 502, 503].includes(risposta.status) &&
+        !corpoErrore.includes("insufficient_quota"));
+    const attesa = ATTESE_MS[tentativo - 1];
+    const tempoRimasto = TEMPO_MASSIMO_MS - (Date.now() - inizio) - (attesa ?? 0);
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI || tempoRimasto < 10_000) break;
+    await new Promise((r) => setTimeout(r, attesa));
+  }
+
+  if (erroreRete instanceof DOMException && erroreRete.name === "TimeoutError") {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI sta impiegando troppo a rispondere. Riprova " +
+        "tra qualche istante.",
+    };
+  }
+  if (erroreRete !== undefined || risposta === undefined) {
+    return { ok: false, errorMessage: `Impossibile contattare il provider AI: ${erroreRete}` };
+  }
+  if (!risposta.ok) {
+    return { ok: false, errorMessage: messaggioErroreOpenAi(risposta.status, corpoErrore) };
+  }
+
+  const dati = await risposta.json();
+  const messaggio = dati?.choices?.[0]?.message;
+  // Con gli structured outputs il modello può rifiutarsi di rispondere
+  // (campo `refusal` al posto del contenuto): meglio dirlo che lasciarlo
+  // diventare un generico "JSON non valido".
+  if (typeof messaggio?.refusal === "string" && messaggio.refusal.length > 0) {
+    return {
+      ok: false,
+      errorMessage: "Il servizio AI non ha voluto rispondere a questa richiesta: " +
+        "prova a riformularla.",
+    };
+  }
+  return {
+    ok: true,
+    testoJson: messaggio?.content ?? "",
+    gettoni: dati?.usage?.total_tokens ?? null,
+  };
+}
+
+/// Decodifica il payload del JWT (già verificato dal gateway Supabase
+/// prima che la richiesta arrivasse qui: non serve riverificarlo) per
+/// sapere chi ha chiamato — serve per il tetto settimanale e per
+/// ai_usage. `null` se l'header manca o non è un JWT valido.
+function idUtenteDaRichiesta(req: Request): string | null {
+  const header = req.headers.get("Authorization");
+  if (!header?.startsWith("Bearer ")) return null;
+  const jwt = header.slice("Bearer ".length);
+  const parti = jwt.split(".");
+  if (parti.length !== 3) return null;
+  try {
+    const payload = JSON.parse(atob(parti[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/// Quante chiamate AI (qualunque funzione) ha già fatto questo utente
+/// negli ultimi 7 giorni. In caso di errore di rete verso il database
+/// non blocca la richiesta per un problema che non è dell'utente:
+/// torna 0 (fail-open), diversamente da un tetto superato per davvero.
+async function richiesteUltimaSettimana(userId: string): Promise<number> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return 0;
+  const seiGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    const risposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/ai_usage?select=id&user_id=eq.${userId}&creato_il=gte.${seiGiorniFa}`,
+      {
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: "count=exact",
+        },
+      },
+    );
+    const header = risposta.headers.get("content-range");
+    const totale = header?.split("/")[1];
+    if (totale && totale !== "*") return Number(totale);
+    const righe = await risposta.json();
+    return Array.isArray(righe) ? righe.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/// Il club a cui attribuire la chiamata: l'app non lo manda a questa
+/// funzione, quindi si legge dalle iscrizioni dell'utente (in V1 un
+/// coach opera su un solo club). `null` se non si trova.
+async function clubDiUtente(userId: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    const risposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/club_membri?select=club_id&user_id=eq.${userId}&limit=1`,
+      {
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      },
+    );
+    const righe = await risposta.json();
+    const clubId = Array.isArray(righe) ? righe[0]?.club_id : null;
+    return typeof clubId === "string" ? clubId : null;
+  } catch {
+    return null;
+  }
+}
+
+/// Registra la chiamata — se fallisce, lo scrive solo nei log: non deve
+/// far fallire una generazione già andata a buon fine.
+async function registraUsoAi(
+  params: { userId: string; modello: string; gettoni: number | null },
+): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    const clubId = await clubDiUtente(params.userId);
+    if (clubId == null) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        club_id: clubId,
+        user_id: params.userId,
+        funzione: NOME_FUNZIONE,
+        modello: params.modello,
+        gettoni: params.gettoni,
+      }),
+    });
+  } catch (errore) {
+    console.error("registraUsoAi fallita:", errore);
+  }
+}
+
+/// Risposta 429 pronta se l'utente ha già raggiunto il tetto settimanale,
+/// `null` se può procedere (o se non si sa chi è).
+async function tettoSuperato(userId: string | null): Promise<Response | null> {
+  if (!userId) return null;
+  const richiesteFatte = await richiesteUltimaSettimana(userId);
+  if (richiesteFatte < LIMITE_SETTIMANALE_PER_PERSONA) return null;
+  return jsonResponse(
+    {
+      error: `Hai raggiunto il limite di ${LIMITE_SETTIMANALE_PER_PERSONA} ` +
+        "richieste AI per questa settimana. Riprova la settimana prossima, " +
+        "o scrivi la scheda a mano.",
+    },
+    429,
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -683,13 +1202,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Metodo non supportato" }, 405);
   }
 
-  if (!GEMINI_API_KEY) {
-    return jsonResponse(
-      { error: "GEMINI_API_KEY non configurata sul server" },
-      500,
-    );
-  }
-
   let parametri: ParametriGenerazione;
   try {
     parametri = await req.json();
@@ -697,82 +1209,83 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
 
+  const userId = idUtenteDaRichiesta(req);
+  const rifiuto = await tettoSuperato(userId);
+  if (rifiuto) return rifiuto;
+
   const prompt = costruisciPrompt(parametri);
 
-  // Gemini risponde spesso 503 "UNAVAILABLE" per sovraccarico momentaneo
-  // (il messaggio stesso dice "usually temporary, please try again later")
-  // — senza un ritentativo qui, questi picchi si vedevano come "il
-  // generatore non funziona" lato coach, pur essendo transitori.
-  const TENTATIVI_MASSIMI = 3;
-  const ATTESE_MS = [1500, 3000];
+  const inizio = Date.now();
+  let esito = await generaScheda(prompt, parametri);
+  // Una risposta arrivata ma inutilizzabile (JSON rotto, seduta
+  // incompleta, tempo massimo sforato) si richiede una volta, se c'è
+  // ancora tempo; un errore del servizio no, ha già i suoi ritentativi.
+  if (!esito.ok && esito.daRichiedere && Date.now() - inizio < 25_000) {
+    esito = await generaScheda(prompt, parametri);
+  }
+  if (!esito.ok) return jsonResponse({ error: esito.errore }, 502);
 
-  let rispostaGemini: Response | undefined;
-  let erroreRete: unknown;
-  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
-    try {
-      rispostaGemini = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: costruisciResponseSchema(
-                Array.isArray(parametri.blocchiDisponibili)
-                  ? parametri.blocchiDisponibili
-                  : [],
-              ),
-            },
-          }),
-        },
-      );
-      erroreRete = undefined;
-    } catch (errore) {
-      erroreRete = errore;
-      rispostaGemini = undefined;
-    }
-    const daRiprovare = rispostaGemini?.status === 503 || erroreRete !== undefined;
-    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI) break;
-    await new Promise((r) => setTimeout(r, ATTESE_MS[tentativo - 1]));
+  // Se anche dopo l'adattamento i metri restano fuori margine (succede
+  // solo quando il tempo massimo non lascia spazio), la scheda arriva
+  // comunque, con un avviso: mai un errore per una scheda utilizzabile.
+  let scheda = adattaVolume(esito.scheda, parametri);
+  const volume = parametri.volumeMetri;
+  if (volume && scartoVolume(scheda, volume) > TOLLERANZA_VOLUME) {
+    const avviso = `Attenzione: questa scheda fa ${metriScheda(scheda)} m ` +
+      `invece dei ${volume} richiesti.`;
+    scheda = { ...scheda, note: scheda.note ? `${avviso} ${scheda.note}` : avviso };
   }
 
-  if (erroreRete !== undefined || rispostaGemini === undefined) {
-    return jsonResponse(
-      { error: `Impossibile contattare il provider AI: ${erroreRete}` },
-      502,
-    );
+  if (userId) {
+    await registraUsoAi({
+      userId,
+      modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+      gettoni: esito.gettoni,
+    });
   }
+  return jsonResponse({ scheda });
+});
 
-  if (!rispostaGemini.ok) {
-    const dettaglio = await rispostaGemini.text();
-    return jsonResponse(
-      { error: messaggioErroreProvider(rispostaGemini.status, dettaglio) },
-      502,
-    );
+type EsitoGenerazione =
+  | { ok: true; scheda: SchedaGenerata; gettoni: number | null }
+  | { ok: false; errore: string; daRichiedere: boolean };
+
+/// Una richiesta al provider, con la risposta già rivalidata.
+async function generaScheda(
+  prompt: string,
+  parametri: ParametriGenerazione,
+): Promise<EsitoGenerazione> {
+  const blocchiDisponibili = Array.isArray(parametri.blocchiDisponibili)
+    ? parametri.blocchiDisponibili
+    : [];
+  const risultato = PROVIDER_ATTIVO === "openai"
+    ? await chiamaOpenAi(prompt, "scheda_generata", costruisciSchemaOpenAi(blocchiDisponibili))
+    : await chiamaGemini(prompt, costruisciSchemaGemini(blocchiDisponibili));
+  if (!risultato.ok) {
+    return { ok: false, errore: risultato.errorMessage, daRichiedere: false };
   }
-
-  const dati = await rispostaGemini.json();
-  const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
   let schedaGrezza: unknown;
   try {
-    schedaGrezza = JSON.parse(testoJson);
+    schedaGrezza = JSON.parse(risultato.testoJson);
   } catch {
-    return jsonResponse(
-      { error: "Il provider AI non ha restituito un JSON valido" },
-      502,
-    );
+    return {
+      ok: false,
+      errore: "Il provider AI non ha restituito un JSON valido",
+      daRichiedere: true,
+    };
   }
-
   try {
-    const scheda = validaScheda(schedaGrezza, parametri);
-    return jsonResponse({ scheda });
+    return {
+      ok: true,
+      scheda: validaScheda(schedaGrezza, parametri),
+      gettoni: risultato.gettoni,
+    };
   } catch (errore) {
-    return jsonResponse(
-      { error: `Scheda generata non valida: ${(errore as Error).message}` },
-      502,
-    );
+    return {
+      ok: false,
+      errore: `Scheda generata non valida: ${(errore as Error).message}`,
+      daRichiedere: true,
+    };
   }
-});
+}
