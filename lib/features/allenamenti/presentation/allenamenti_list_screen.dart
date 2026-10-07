@@ -32,10 +32,6 @@ import 'giorno_allenamenti_screen.dart';
 
 enum _Vista { elenco, settimana, mese }
 
-/// Quante voci mostrare per sezione prima di "Mostra tutti": con una
-/// stagione programmata in anticipo gli allenamenti futuri sono decine.
-const _vociIniziali = 8;
-
 class AllenamentiListScreen extends ConsumerStatefulWidget {
   const AllenamentiListScreen({
     required this.clubId,
@@ -55,8 +51,6 @@ class AllenamentiListScreen extends ConsumerStatefulWidget {
 
 class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
   _Vista _vista = _Vista.elenco;
-  bool _tuttiProssimi = false;
-  bool _tuttiSvolti = false;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +93,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
               child: TestataPagina(
                 occhiello: nomeSquadra,
                 titolo: 'Allenamenti',
-                sottotitolo: allenamenti == null
+                sottotitolo: allenamenti == null || allenamenti.isEmpty
                     ? null
                     : '$inProgramma in programma · $svolti già svolti',
                 azioni: [
@@ -246,51 +240,24 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
       );
     }
 
-    List<Widget> sezione({
-      required String titolo,
-      required List<Allenamento> voci,
-      required bool tutti,
-      required VoidCallback onAlterna,
-      bool passato = false,
-    }) {
-      final visibili = tutti ? voci : voci.take(_vociIniziali).toList();
-      return [
-        const SizedBox(height: AppSpacing.s8),
-        TitoloSezione(
-          titolo,
-          conteggio: voci.length,
-          azione: voci.length > _vociIniziali
-              ? (tutti ? 'Mostra meno' : 'Mostra tutti')
-              : null,
-          onAzione: onAlterna,
-        ),
-        GrigliaSchede(
-          figli: [for (final a in visibili) scheda(a, passato: passato)],
-        ),
-        const SizedBox(height: AppSpacing.s16),
-      ];
-    }
-
     return [
       if (diOggi.isNotEmpty) ...[
         const TitoloSezione('Oggi'),
         GrigliaSchede(figli: [for (final a in diOggi) scheda(a, oggi: true)]),
         const SizedBox(height: AppSpacing.s16),
       ],
-      if (prossimi.isNotEmpty)
-        ...sezione(
+      if (prossimi.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.s8),
+        SezioneSchede(
           titolo: 'Prossimi',
-          voci: prossimi,
-          tutti: _tuttiProssimi,
-          onAlterna: () => setState(() => _tuttiProssimi = !_tuttiProssimi),
+          figli: [for (final a in prossimi) scheda(a)],
         ),
+        const SizedBox(height: AppSpacing.s24),
+      ],
       if (svolti.isNotEmpty)
-        ...sezione(
+        SezioneSchede(
           titolo: 'Già svolti',
-          voci: svolti,
-          tutti: _tuttiSvolti,
-          passato: true,
-          onAlterna: () => setState(() => _tuttiSvolti = !_tuttiSvolti),
+          figli: [for (final a in svolti) scheda(a, passato: true)],
         ),
     ];
   }

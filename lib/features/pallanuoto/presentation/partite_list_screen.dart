@@ -16,7 +16,6 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
-import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
@@ -104,18 +103,17 @@ class PartiteListScreen extends ConsumerWidget {
 
     return [
       if (prossime.isNotEmpty) ...[
-        TitoloSezione('Prossime', conteggio: prossime.length),
-        GrigliaSchede(
+        SezioneSchede(
+          titolo: 'Prossime',
           figli: [for (final p in prossime) scheda(p, giocata: false)],
         ),
         const SizedBox(height: AppSpacing.s24),
       ],
-      if (giocate.isNotEmpty) ...[
-        TitoloSezione('Giocate', conteggio: giocate.length),
-        GrigliaSchede(
+      if (giocate.isNotEmpty)
+        SezioneSchede(
+          titolo: 'Giocate',
           figli: [for (final p in giocate) scheda(p, giocata: true)],
         ),
-      ],
     ];
   }
 

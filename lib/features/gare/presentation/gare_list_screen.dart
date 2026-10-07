@@ -15,7 +15,6 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
-import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
@@ -89,18 +88,17 @@ class GareListScreen extends ConsumerWidget {
 
     return [
       if (prossime.isNotEmpty) ...[
-        TitoloSezione('Prossime', conteggio: prossime.length),
-        GrigliaSchede(
+        SezioneSchede(
+          titolo: 'Prossime',
           figli: [for (final g in prossime) scheda(g, passata: false)],
         ),
         const SizedBox(height: AppSpacing.s24),
       ],
-      if (disputate.isNotEmpty) ...[
-        TitoloSezione('Già disputate', conteggio: disputate.length),
-        GrigliaSchede(
+      if (disputate.isNotEmpty)
+        SezioneSchede(
+          titolo: 'Già disputate',
           figli: [for (final g in disputate) scheda(g, passata: true)],
         ),
-      ],
     ];
   }
 

@@ -66,7 +66,10 @@ class TestataAtleta extends ConsumerWidget {
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          const Positioned.fill(child: AcquaAnimata(conCorsia: false)),
+          // La porta da pallanuoto solo per chi gioca a pallanuoto.
+          Positioned.fill(
+            child: AcquaAnimata(conCorsia: false, conPorta: pallanuoto),
+          ),
           Positioned.fill(child: _FotoTestata()),
           // Velo scuro: a sinistra e in basso il testo resta leggibile
           // anche sulla foto piu' chiara.

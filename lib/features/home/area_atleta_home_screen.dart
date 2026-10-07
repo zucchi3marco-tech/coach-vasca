@@ -154,6 +154,10 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             ),
           ];
 
+    // Aperta dall'allenatore ("Tutto su Sofia") i titoli non sono in prima
+    // persona: "Statistiche", non "Le mie statistiche".
+    String titolo(String mio, String suo) => vistaAllenatore ? suo : mio;
+
     final riquadri = <VoceRiquadro>[
       if (pallanuoto) ...[
         VoceRiquadro(
@@ -173,7 +177,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ),
         VoceRiquadro(
           soggetto: SoggettoRiquadro.partite,
-          titolo: 'Le mie partite',
+          titolo: titolo('Le mie partite', 'Partite'),
           descrizione: 'Calendario, risultati e referti',
           accento: dominio.evidenzaViola,
           onTap: () => _apri(
@@ -186,8 +190,11 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ),
       ],
       VoceRiquadro(
-        soggetto: SoggettoRiquadro.statistiche,
-        titolo: 'Le mie statistiche',
+        // Il disegno del campo con i tiri e' della pallanuoto.
+        soggetto: pallanuoto
+            ? SoggettoRiquadro.statistiche
+            : SoggettoRiquadro.andamento,
+        titolo: titolo('Le mie statistiche', 'Statistiche'),
         descrizione: pallanuoto
             ? 'Tiri, gol e dove segni di più'
             : 'Tempi di gara e progressi',
@@ -196,7 +203,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
       ),
       VoceRiquadro(
         soggetto: SoggettoRiquadro.tempi,
-        titolo: 'I miei tempi',
+        titolo: titolo('I miei tempi', 'Tempi'),
         descrizione: 'Personal best a nuoto',
         // Nel nuoto il numero dei personal best e' gia' in testata.
         valore: !pallanuoto || pb == null || pb.isEmpty ? null : '${pb.length}',
@@ -205,7 +212,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
       ),
       VoceRiquadro(
         soggetto: SoggettoRiquadro.presenze,
-        titolo: 'Le mie presenze',
+        titolo: titolo('Le mie presenze', 'Presenze'),
         descrizione: allenamenti == null || allenamenti.fatti == 0
             ? 'Gli allenamenti a cui hai partecipato'
             : '${allenamenti.presente} su ${allenamenti.fatti} allenamenti',
@@ -214,7 +221,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
       ),
       VoceRiquadro(
         soggetto: SoggettoRiquadro.stagione,
-        titolo: 'La mia stagione',
+        titolo: titolo('La mia stagione', 'Stagione'),
         descrizione: 'Calendario e obiettivi della squadra',
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, StagioneAtletaScreen(atleta: atleta)),

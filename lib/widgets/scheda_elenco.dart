@@ -5,6 +5,7 @@ import '../theme/app_typography.dart';
 import '../theme/colori_app.dart';
 import 'entrata_a_cascata.dart';
 import 'premibile.dart';
+import 'section_header.dart';
 
 /// Una voce di elenco in stile "Oggi": scheda arrotondata con un
 /// riquadro a sinistra (icona, data, avatar), titolo, una riga sotto e
@@ -207,6 +208,50 @@ class GrigliaSchede extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Una sezione di schede con titolo e conteggio che, oltre [vociIniziali]
+/// voci, mostra le prime e un "Mostra tutti": con una stagione
+/// programmata in anticipo allenamenti e partite futuri sono decine.
+class SezioneSchede extends StatefulWidget {
+  const SezioneSchede({
+    required this.titolo,
+    required this.figli,
+    this.vociIniziali = 8,
+    super.key,
+  });
+
+  final String titolo;
+  final List<Widget> figli;
+  final int vociIniziali;
+
+  @override
+  State<SezioneSchede> createState() => _SezioneSchedeState();
+}
+
+class _SezioneSchedeState extends State<SezioneSchede> {
+  bool _tutti = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final lunga = widget.figli.length > widget.vociIniziali;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TitoloSezione(
+          widget.titolo,
+          conteggio: widget.figli.length,
+          azione: lunga ? (_tutti ? 'Mostra meno' : 'Mostra tutti') : null,
+          onAzione: () => setState(() => _tutti = !_tutti),
+        ),
+        GrigliaSchede(
+          figli: _tutti || !lunga
+              ? widget.figli
+              : widget.figli.take(widget.vociIniziali).toList(),
+        ),
+      ],
     );
   }
 }

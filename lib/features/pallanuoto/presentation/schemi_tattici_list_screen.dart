@@ -108,7 +108,7 @@ class SchemiTatticiListScreen extends ConsumerWidget {
                 occhiello: nomeSquadra,
                 titolo: 'Schemi tattici',
                 sottotitolo: switch (schemiAsync.value?.length) {
-                  null => null,
+                  null || 0 => null,
                   1 => '1 schema sulla lavagna',
                   final n => '$n schemi sulla lavagna',
                 },
