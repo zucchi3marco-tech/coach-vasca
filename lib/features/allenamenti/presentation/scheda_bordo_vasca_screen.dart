@@ -196,11 +196,22 @@ class _SchedaBordoVascaScreenState
 /// bordo vasca, in grande.
 List<({String etichetta, String valore})> _numeriSerie(Serie s) => [
   if (s.ripartenzaS != null)
-    (etichetta: 'Ripartenza', valore: formatPaceSeconds(s.ripartenzaS!)),
-  if (s.recuperoS != null) (etichetta: 'Recupero', valore: "${s.recuperoS}''"),
+    (etichetta: 'Ripartenza', valore: _comeAlCronometro(s.ripartenzaS!)),
+  if (s.recuperoS != null)
+    (etichetta: 'Recupero', valore: _comeAlCronometro(s.recuperoS!)),
   if (s.passoObiettivoS != null)
     (etichetta: 'Passo /100m', valore: formatPaceSeconds(s.passoObiettivoS!)),
 ];
+
+/// Una ripartenza o un recupero come li dice l'allenatore guardando il
+/// pace clock: 1'40" o 40", senza centesimi (0:40.00 non si legge da
+/// lontano e i centesimi non servono a nessuno).
+String _comeAlCronometro(num secondi) {
+  final s = secondi.round();
+  final m = s ~/ 60;
+  final resto = (s % 60).toString().padLeft(m > 0 ? 2 : 1, '0');
+  return m > 0 ? '$m\'$resto"' : '$resto"';
+}
 
 String _testoSerie(Serie s) =>
     '${labelVolumeSerie(s)} ${labelStile(s.stile)} '

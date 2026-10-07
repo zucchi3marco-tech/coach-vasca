@@ -10,7 +10,9 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 
@@ -57,7 +59,11 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _dataNascitaController = TextEditingController(
       text: _formattaData(_dataNascita),
     );
-    _gruppoId = atleta?.gruppoId;
+    // Un atleta nuovo nasce nella squadra scelta in alto: lo si aggiunge
+    // quasi sempre guardando proprio quella.
+    _gruppoId = atleta != null
+        ? atleta.gruppoId
+        : ref.read(selezioneGruppoProvider)?.gruppoId;
     _emailGenitoreController = TextEditingController(
       text: atleta?.emailGenitore ?? '',
     );
@@ -73,7 +79,14 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       text: _formattaData(_visitaMedicaScadenza),
     );
     _sesso = atleta?.sesso;
-    _sport = atleta?.sport ?? 'nuoto';
+    // Lo sport di un atleta nuovo e' quello del club: prima partiva sempre
+    // da "nuoto", anche in un club di pallanuoto.
+    final sportClub = ref.read(currentClubProvider).value?.sport;
+    _sport =
+        atleta?.sport ??
+        (sportClub == 'pallanuoto' || sportClub == 'nuoto'
+            ? sportClub!
+            : 'nuoto');
     _consensoPrivacy = atleta?.consensoPrivacyFirmato ?? false;
   }
 
@@ -257,6 +270,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sportClub = ref.watch(currentClubProvider).value?.sport;
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
@@ -307,19 +321,23 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
             FormGroup(
               titolo: 'Attività',
               campi: [
-                AppSelect<String>(
-                  etichetta: 'Sport',
-                  value: _sport,
-                  items: const [
-                    DropdownMenuItem(value: 'nuoto', child: Text('Nuoto')),
-                    DropdownMenuItem(
-                      value: 'pallanuoto',
-                      child: Text('Pallanuoto'),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _sport = value ?? 'nuoto'),
-                ),
+                // Lo sport si chiede solo se il club non ne ha uno o se
+                // questo atleta ne fa un altro: altrimenti e' sempre lo
+                // stesso e non serve sceglierlo ogni volta.
+                if (sportClub == null || sportClub != _sport)
+                  AppSelect<String>(
+                    etichetta: 'Sport',
+                    value: _sport,
+                    items: const [
+                      DropdownMenuItem(value: 'nuoto', child: Text('Nuoto')),
+                      DropdownMenuItem(
+                        value: 'pallanuoto',
+                        child: Text('Pallanuoto'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _sport = value ?? 'nuoto'),
+                  ),
                 if (_sport == 'pallanuoto')
                   AppTextField(
                     etichetta: 'N. tessera FIN (facoltativo)',
