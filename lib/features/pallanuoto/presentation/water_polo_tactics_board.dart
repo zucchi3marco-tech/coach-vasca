@@ -202,19 +202,23 @@ enum CampoLavagna {
     CampoLavagna.meta => 'Metà campo',
   };
 
-  /// Larghezza su altezza della vasca disegnata: 20 m di larghezza, 30 m
+  /// Larghezza su altezza della vasca disegnata: 20 m di larghezza, 25 m
   /// fra le porte più un metro dietro ciascuna (il campo intero), oppure
-  /// 15 m più quello dietro la porta (metà campo).
-  double get proporzioni => switch (this) {
-    CampoLavagna.intero => 20 / 32,
-    CampoLavagna.meta => 20 / 16,
-  };
+  /// 12,5 m più quello dietro la porta (metà campo).
+  double get proporzioni => 20 / metriInAltezza;
 
   /// Metri d'acqua disegnati dalla testata in alto al bordo in basso.
   double get metriInAltezza => switch (this) {
-    CampoLavagna.intero => 32,
-    CampoLavagna.meta => 16,
+    CampoLavagna.intero => lunghezzaCampo + 2 * metriDietroPorta,
+    CampoLavagna.meta => lunghezzaCampo / 2 + metriDietroPorta,
   };
+
+  /// Distanza fra le due linee di porta: il campo da 25 x 20 m delle
+  /// vasche in cui si gioca di più (giovanili e femminile).
+  static const lunghezzaCampo = 25.0;
+
+  /// Acqua disegnata dietro ogni linea di porta, dove sta la rete.
+  static const metriDietroPorta = 1.0;
 }
 
 /// Un giocatore piazzato sulla lavagna: posizione frazionaria (0-1 su
@@ -425,6 +429,7 @@ class WaterPoloTacticsBoard extends StatefulWidget {
     this.onCambiato,
     this.onCampoCambiato,
     this.onBloccataCambiato,
+    this.sostitutoVasca,
     super.key,
   });
 
@@ -460,6 +465,11 @@ class WaterPoloTacticsBoard extends StatefulWidget {
   final ValueChanged<CampoLavagna>? onCampoCambiato;
   final ValueChanged<bool>? onBloccataCambiato;
 
+  /// Mostrato al posto della vasca (es. l'animazione dello schema, fatta
+  /// partire dalla striscia dei passi): gli strumenti restano al loro
+  /// posto ma spenti, così la pagina non salta.
+  final Widget? sostitutoVasca;
+
   @override
   State<WaterPoloTacticsBoard> createState() => _WaterPoloTacticsBoardState();
 }
@@ -481,6 +491,10 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   /// svuota quando cambia il campo, perché le posizioni salvate lì non
   /// varrebbero più.
   final List<PassoLavagna> _cronologia = [];
+
+  /// Gli stati tolti da "Annulla", per "Ripeti". Si svuota alla prima
+  /// modifica nuova: da lì la storia prende un'altra strada.
+  final List<PassoLavagna> _annullati = [];
 
   /// Il tratto che il dito sta disegnando, in pixel.
   List<Offset>? _traccia;
@@ -639,25 +653,38 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   void _notifica() =>
       widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
 
-  void _registraCronologia() => _cronologia.add((
-    giocatori: List.of(_giocatori),
-    frecce: List.of(_frecce),
-  ));
+  PassoLavagna get _istantanea =>
+      (giocatori: List.of(_giocatori), frecce: List.of(_frecce));
 
-  void _annulla() {
-    if (_cronologia.isEmpty) return;
-    final precedente = _cronologia.removeLast();
+  void _registraCronologia() {
+    _cronologia.add(_istantanea);
+    _annullati.clear();
+  }
+
+  void _ripristina(PassoLavagna stato) {
     setState(() {
       _giocatori
         ..clear()
-        ..addAll(precedente.giocatori);
+        ..addAll(stato.giocatori);
       _frecce
         ..clear()
-        ..addAll(precedente.frecce);
+        ..addAll(stato.frecce);
       _selezionato = null;
       _frecciaSelezionata = null;
     });
     _notifica();
+  }
+
+  void _annulla() {
+    if (_cronologia.isEmpty) return;
+    _annullati.add(_istantanea);
+    _ripristina(_cronologia.removeLast());
+  }
+
+  void _ripeti() {
+    if (_annullati.isEmpty) return;
+    _cronologia.add(_istantanea);
+    _ripristina(_annullati.removeLast());
   }
 
   void _cancellaTutto() {
@@ -739,6 +766,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         // Le posizioni salvate nella cronologia erano per il campo
         // precedente: non avrebbero più senso qui.
         _cronologia.clear();
+        _annullati.clear();
         _selezionato = null;
         _frecciaSelezionata = null;
       });
@@ -792,6 +820,11 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
           onPressed: _cronologia.isEmpty ? null : _annulla,
         ),
         IconButton(
+          icon: const Icon(Icons.redo),
+          tooltip: 'Ripeti la modifica annullata',
+          onPressed: _annullati.isEmpty ? null : _ripeti,
+        ),
+        IconButton(
           icon: Icon(widget.bloccata ? Icons.lock : Icons.lock_open_outlined),
           tooltip: widget.bloccata
               ? 'Sblocca lo scorrimento della pagina'
@@ -807,9 +840,9 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
               : (vuoto ? null : _cancellaTutto),
         ),
       ];
-      // Sotto ~400 px quattro pulsanti da 48 lasciano al selettore meno
-      // di 70 px per segmento: gli strumenti scendono sotto.
-      if (vincoli.maxWidth < 400) {
+      // Sotto ~460 px cinque pulsanti da 48 lasciano al selettore meno
+      // di 90 px per segmento: gli strumenti scendono sotto.
+      if (vincoli.maxWidth < 460) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -834,6 +867,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     final colori = context.colori;
     final vuoto = _giocatori.isEmpty && _frecce.isEmpty;
     final frecciaScelta = _freccia;
+    final inRiproduzione = widget.sostitutoVasca != null;
     final suggerimento = switch (_modalita) {
       _ModalitaLavagna.giocatori =>
         'Tocca l\'acqua per mettere ${_pezzo.palla ? 'la palla' : 'una calottina'}, '
@@ -849,102 +883,118 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.modificabile) ...[
-          _barraStrumenti(vuoto),
-          const SizedBox(height: AppSpacing.s8),
-          SegmentedButton<CampoLavagna>(
-            showSelectedIcon: false,
-            style: const ButtonStyle(visualDensity: VisualDensity.compact),
-            segments: [
-              for (final c in CampoLavagna.values)
-                ButtonSegment(value: c, label: Text(c.nome)),
-            ],
-            selected: {widget.campo},
-            onSelectionChanged: (s) => _cambiaCampo(s.first),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          if (_modalita == _ModalitaLavagna.giocatori)
-            Wrap(
-              spacing: AppSpacing.s8,
-              runSpacing: AppSpacing.s8,
-              children: [
-                for (final p in ColoreLavagna.pezzi)
-                  _ChipStrumento(
-                    etichetta: p.nomePezzo,
-                    selezionato: p == _pezzo,
-                    onTap: () => setState(() {
-                      _pezzo = p;
-                      _selezionato = null;
-                    }),
-                    icona: SizedBox(
-                      width: 26,
-                      height: 22,
-                      child: CustomPaint(
-                        painter: _PezzoPainter(
-                          colore: p,
-                          etichetta: p.etichetta(1),
+        if (widget.modificabile)
+          // Durante l'animazione gli strumenti restano visibili ma spenti.
+          IgnorePointer(
+            ignoring: inRiproduzione,
+            child: Opacity(
+              opacity: inRiproduzione ? 0.45 : 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _barraStrumenti(vuoto),
+                  const SizedBox(height: AppSpacing.s8),
+                  SegmentedButton<CampoLavagna>(
+                    showSelectedIcon: false,
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    segments: [
+                      for (final c in CampoLavagna.values)
+                        ButtonSegment(value: c, label: Text(c.nome)),
+                    ],
+                    selected: {widget.campo},
+                    onSelectionChanged: (s) => _cambiaCampo(s.first),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  if (_modalita == _ModalitaLavagna.giocatori)
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s8,
+                      children: [
+                        for (final p in ColoreLavagna.pezzi)
+                          _ChipStrumento(
+                            etichetta: p.nomePezzo,
+                            selezionato: p == _pezzo,
+                            onTap: () => setState(() {
+                              _pezzo = p;
+                              _selezionato = null;
+                            }),
+                            icona: SizedBox(
+                              width: 26,
+                              height: 22,
+                              child: CustomPaint(
+                                painter: _PezzoPainter(
+                                  colore: p,
+                                  etichetta: p.etichetta(1),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  else ...[
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s8,
+                      children: [
+                        for (final t in TipoFreccia.values)
+                          _ChipStrumento(
+                            etichetta: t.nome,
+                            selezionato: t == (frecciaScelta?.tipo ?? _tipo),
+                            onTap: () => _scegliTipo(t),
+                            icona: SizedBox(
+                              width: 30,
+                              height: 14,
+                              child: CustomPaint(
+                                painter: _AnteprimaTipoPainter(
+                                  tipo: t,
+                                  colore: colori.testo,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpacing.s8,
+                      children: [
+                        Text(
+                          'Colore:',
+                          style: AppTypography.piccolo.copyWith(
+                            color: colori.testoSecondario,
+                          ),
                         ),
-                      ),
+                        for (final c in ColoreLavagna.inchiostri)
+                          _SwatchColore(
+                            colore: c,
+                            selezionato:
+                                c == (frecciaScelta?.colore ?? _inchiostro),
+                            onTap: () => _scegliInchiostro(c),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.s8),
+                  Text(
+                    suggerimento,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
                     ),
                   ),
-              ],
-            )
-          else ...[
-            Wrap(
-              spacing: AppSpacing.s8,
-              runSpacing: AppSpacing.s8,
-              children: [
-                for (final t in TipoFreccia.values)
-                  _ChipStrumento(
-                    etichetta: t.nome,
-                    selezionato: t == (frecciaScelta?.tipo ?? _tipo),
-                    onTap: () => _scegliTipo(t),
-                    icona: SizedBox(
-                      width: 30,
-                      height: 14,
-                      child: CustomPaint(
-                        painter: _AnteprimaTipoPainter(
-                          tipo: t,
-                          colore: colori.testo,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: AppSpacing.s8,
-              children: [
-                Text(
-                  'Colore:',
-                  style: AppTypography.piccolo.copyWith(
-                    color: colori.testoSecondario,
-                  ),
-                ),
-                for (final c in ColoreLavagna.inchiostri)
-                  _SwatchColore(
-                    colore: c,
-                    selezionato: c == (frecciaScelta?.colore ?? _inchiostro),
-                    onTap: () => _scegliInchiostro(c),
-                  ),
-              ],
-            ),
-          ],
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            suggerimento,
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
+                  const SizedBox(height: AppSpacing.s8),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: AppSpacing.s8),
-        ],
-        _RiquadroVasca(
-          campo: widget.campo,
-          builder: (larghezza, altezza) => _vasca(context, larghezza, altezza),
-        ),
+        widget.sostitutoVasca ??
+            _RiquadroVasca(
+              campo: widget.campo,
+              builder: (larghezza, altezza) =>
+                  _vasca(context, larghezza, altezza),
+            ),
       ],
     );
   }
@@ -1060,7 +1110,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: CustomPaint(painter: _VascaPainter(campo: widget.campo)),
+            child: CustomPaint(painter: VascaPainter(campo: widget.campo)),
           ),
           if (widget.passoFantasma case final fantasma?)
             Positioned.fill(
@@ -1618,9 +1668,9 @@ class _PezzoPainter extends CustomPainter {
 /// sul campo intero), i segni colorati ai bordi come le boe vere (rosso
 /// fino ai 2 m, giallo fino ai 5 m, verde fino a metà campo) e, per
 /// leggere le distanze in mezzo all'acqua, le righe tratteggiate dei 2 e
-/// dei 5 m. Proporzioni di un campo da 30 x 20 m.
-class _VascaPainter extends CustomPainter {
-  const _VascaPainter({required this.campo});
+/// dei 5 m. Proporzioni di un campo da 25 x 20 m.
+class VascaPainter extends CustomPainter {
+  const VascaPainter({required this.campo});
 
   final CampoLavagna campo;
 
@@ -1650,16 +1700,19 @@ class _VascaPainter extends CustomPainter {
     _riflessi(canvas, acqua);
 
     final metro = acqua.height / campo.metriInAltezza;
-    final yPortaAlta = acqua.top + metro;
+    const dietro = CampoLavagna.metriDietroPorta;
+    final yPortaAlta = acqua.top + metro * dietro;
     final intero = campo == CampoLavagna.intero;
-    final yMeta = intero ? acqua.top + metro * 16 : acqua.bottom;
+    final yMeta = intero
+        ? acqua.top + metro * (dietro + CampoLavagna.lunghezzaCampo / 2)
+        : acqua.bottom;
 
     _metaVasca(canvas, acqua, yPorta: yPortaAlta, verso: 1, yMeta: yMeta);
     if (intero) {
       _metaVasca(
         canvas,
         acqua,
-        yPorta: acqua.bottom - metro,
+        yPorta: acqua.bottom - metro * dietro,
         verso: -1,
         yMeta: yMeta,
       );
@@ -1696,7 +1749,8 @@ class _VascaPainter extends CustomPainter {
     required double verso,
     required double yMeta,
   }) {
-    final metro = (yMeta - yPorta).abs() / 15;
+    const metaCampo = CampoLavagna.lunghezzaCampo / 2;
+    final metro = (yMeta - yPorta).abs() / metaCampo;
     double aMetri(double m) => yPorta + verso * metro * m;
 
     // Segni ai bordi: rosso, giallo, verde.
@@ -1704,7 +1758,7 @@ class _VascaPainter extends CustomPainter {
     for (final (da, a, colore) in [
       (0.0, 2.0, VascaPalette.segnoRosso),
       (2.0, 5.0, VascaPalette.segnoGiallo),
-      (5.0, 15.0, VascaPalette.segnoVerde),
+      (5.0, metaCampo, VascaPalette.segnoVerde),
     ]) {
       final y1 = aMetri(da);
       final y2 = aMetri(a);
@@ -1834,7 +1888,60 @@ class _VascaPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_VascaPainter old) => old.campo != campo;
+  bool shouldRepaint(VascaPainter old) => old.campo != campo;
+}
+
+/// Un passo in miniatura, per la striscia dei passi dell'editor: la
+/// vasca, i pezzi come pallini colorati e le frecce come tratti sottili.
+class MiniaturaPassoPainter extends CustomPainter {
+  const MiniaturaPassoPainter({required this.passo, required this.campo});
+
+  final PassoLavagna passo;
+  final CampoLavagna campo;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    VascaPainter(campo: campo).paint(canvas, size);
+    Offset inPixel(Offset p) => Offset(p.dx * size.width, p.dy * size.height);
+
+    for (final f in passo.frecce) {
+      final punti = campionaCurva(
+        inPixel(f.inizio),
+        f.controllo == null ? null : inPixel(f.controllo!),
+        inPixel(f.fine),
+        segmenti: 16,
+      );
+      canvas.drawPath(
+        percorsoFreccia(punti, tratteggiata: f.tipo == TipoFreccia.passaggio),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round
+          ..color = f.colore.colore,
+      );
+    }
+
+    final raggio = math.max(2.5, size.shortestSide * 0.045);
+    for (final g in passo.giocatori) {
+      final centro = inPixel(g.posizione);
+      final c = g.colore.calottina;
+      final r = g.colore.palla ? raggio * 0.75 : raggio;
+      canvas.drawCircle(centro, r, Paint()..color = c.tessuto);
+      canvas.drawCircle(
+        centro,
+        r,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8
+          ..color = c.ombra,
+      );
+    }
+  }
+
+  // I passi arrivano come record nuovi a ogni build: ridisegnare una
+  // miniatura costa poco.
+  @override
+  bool shouldRepaint(MiniaturaPassoPainter old) => true;
 }
 
 /// Disegna una freccia: tratto del suo tipo, punta piena e un alone del
@@ -2192,11 +2299,35 @@ class SchemaTatticoPlayer extends StatefulWidget {
   const SchemaTatticoPlayer({
     required this.passi,
     required this.campo,
+    this.mostraComandi = true,
+    this.passoIniziale = 0,
+    this.avviaSubito = false,
+    this.velocita,
+    this.onPassoCambiato,
+    this.onFine,
     super.key,
   });
 
   final List<PassoLavagna> passi;
   final CampoLavagna campo;
+
+  /// `false` nell'editor: lì play, passi e velocità stanno nella striscia
+  /// dei passi sotto la vasca, e qui resta solo la vasca che si muove.
+  final bool mostraComandi;
+
+  final int passoIniziale;
+
+  /// Parte da solo appena mostrato (play premuto nell'editor).
+  final bool avviaSubito;
+
+  /// Velocità imposta da fuori (l'editor); `null` = scelta qui.
+  final double? velocita;
+
+  /// A ogni passo raggiunto, per evidenziarlo nella striscia dei passi.
+  final ValueChanged<int>? onPassoCambiato;
+
+  /// Arrivata in fondo alla sequenza.
+  final VoidCallback? onFine;
 
   @override
   State<SchemaTatticoPlayer> createState() => _SchemaTatticoPlayerState();
@@ -2207,7 +2338,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
   static const _durataBase = Duration(milliseconds: 900);
   static const _velocitaDisponibili = [0.5, 1.0, 1.5, 2.0];
 
-  double _velocita = 1.0;
+  late double _velocita = widget.velocita ?? 1.0;
 
   Duration get _durataMovimento =>
       Duration(milliseconds: (_durataBase.inMilliseconds / _velocita).round());
@@ -2218,7 +2349,10 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
     duration: _durataMovimento,
   );
 
-  int _passoAttuale = 0;
+  late int _passoAttuale = widget.passoIniziale.clamp(
+    0,
+    widget.passi.length - 1,
+  );
   int? _passoSuccessivo;
   bool _inRiproduzione = false;
 
@@ -2229,13 +2363,27 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
   bool _mostraTutteLeFrecce = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.avviaSubito) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _play();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
   Future<void> _play() async {
-    if (_inRiproduzione || widget.passi.length < 2) return;
+    if (_inRiproduzione) return;
+    if (widget.passi.length < 2) {
+      widget.onFine?.call();
+      return;
+    }
     setState(() {
       _inRiproduzione = true;
       _mostraTutteLeFrecce = false;
@@ -2253,12 +2401,14 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
         _passoAttuale = i;
         _passoSuccessivo = null;
       });
+      widget.onPassoCambiato?.call(i);
     }
     if (mounted) {
       setState(() {
         _inRiproduzione = false;
         _mostraTutteLeFrecce = true;
       });
+      widget.onFine?.call();
     }
   }
 
@@ -2289,7 +2439,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (passi.length > 1) ...[
+        if (passi.length > 1 && widget.mostraComandi) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2361,7 +2511,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
           campo: widget.campo,
           builder: (larghezza, altezza) {
             final vasca = Positioned.fill(
-              child: CustomPaint(painter: _VascaPainter(campo: widget.campo)),
+              child: CustomPaint(painter: VascaPainter(campo: widget.campo)),
             );
 
             if (passoSuccessivo == null) {
@@ -2425,7 +2575,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
             );
           },
         ),
-        if (tipiUsati.isNotEmpty) ...[
+        if (widget.mostraComandi && tipiUsati.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s12),
           _LegendaFrecce(tipi: tipiUsati),
         ],

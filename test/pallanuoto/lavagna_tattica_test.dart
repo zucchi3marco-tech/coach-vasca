@@ -207,6 +207,21 @@ void main() {
     expect(disegno.frecce.single.tipo, TipoFreccia.tiro);
   });
 
+  testWidgets('annulla e ripeti', (tester) async {
+    final disegno = await _apriLavagna(tester);
+    await tester.tapAt(_punto(tester, 0.3, 0.5));
+    await tester.pump();
+    expect(disegno.giocatori, hasLength(1));
+
+    await tester.tap(find.byTooltip("Annulla l'ultima modifica"));
+    await tester.pump();
+    expect(disegno.giocatori, isEmpty);
+
+    await tester.tap(find.byTooltip('Ripeti la modifica annullata'));
+    await tester.pump();
+    expect(disegno.giocatori, hasLength(1));
+  });
+
   testWidgets('chi sfoglia lo schema vede la legenda delle frecce usate', (
     tester,
   ) async {

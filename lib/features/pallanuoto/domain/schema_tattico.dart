@@ -38,6 +38,32 @@ typedef PassoSchema = ({
   List<FrecciaSchema> frecce,
 });
 
+/// Lo stesso passo allo specchio, destra e sinistra scambiate: uno
+/// schema preparato su un lato si gioca uguale sull'altro. La porta resta
+/// dov'è.
+PassoSchema passoSpecchiato(PassoSchema passo) {
+  PuntoSchema specchia(PuntoSchema p) => (1 - p.$1, p.$2);
+  return (
+    giocatori: [
+      for (final g in passo.giocatori)
+        (punto: specchia(g.punto), colore: g.colore, portatore: g.portatore),
+    ],
+    frecce: [
+      for (final f in passo.frecce)
+        (
+          inizio: specchia(f.inizio),
+          fine: specchia(f.fine),
+          colore: f.colore,
+          tipo: f.tipo,
+          controllo: switch (f.controllo) {
+            final c? => specchia(c),
+            null => null,
+          },
+        ),
+    ],
+  );
+}
+
 /// Uno schema tattico salvato dall'allenatore (pallanuoto): una
 /// sequenza di passi (giocatori piazzati + frecce di movimento per
 /// ciascuno), disegnati sulla lavagna (`WaterPoloTacticsBoard`) e

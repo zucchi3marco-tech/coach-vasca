@@ -11,12 +11,12 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
-import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
+import 'striscia_passi.dart';
 import 'water_polo_tactics_board.dart';
 import '../../../widgets/nascondi_barra_club.dart';
 
@@ -50,6 +50,17 @@ class _SchemaTatticoFormScreenState
   late CampoLavagna _campo;
   bool _bloccata = false;
 
+  /// Cresce quando i passi cambiano tutti insieme (duplica, sposta,
+  /// elimina, specchia): la lavagna va ricostruita anche se l'indice del
+  /// passo scelto è rimasto lo stesso, o mostrerebbe il contenuto vecchio.
+  int _versione = 0;
+
+  bool _inRiproduzione = false;
+  int _passoPartenza = 0;
+  int _passoMostrato = 0;
+  int _avvii = 0;
+  double _velocita = 1.0;
+
   bool _isSubmitting = false;
   String? _errorMessage;
 
@@ -77,33 +88,65 @@ class _SchemaTatticoFormScreenState
     List<GiocatoreLavagna> giocatori,
     List<FrecciaLavagna> frecce,
   ) {
-    _passi[_passoAttuale] = passoSchemaDaLavagna(giocatori, frecce);
+    // setState anche se la lavagna si ridisegna da sola: la miniatura del
+    // passo nella striscia deve seguire ogni modifica.
+    setState(
+      () => _passi[_passoAttuale] = passoSchemaDaLavagna(giocatori, frecce),
+    );
   }
 
   void _cambiaCampo(CampoLavagna nuovo) => setState(() => _campo = nuovo);
 
-  void _vaiAPasso(int indice) => setState(() => _passoAttuale = indice);
-
   PassoLavagna _passoAWidget(PassoSchema p) => passoLavagnaDaSchema(p);
 
-  void _apriAnteprima() {
-    final titolo = _titoloController.text.trim();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AppScaffold(
-          scrollabile: true,
-          appBar: AppBar(title: Text(titolo.isEmpty ? 'Anteprima' : titolo)),
-          body: Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.s8),
-            child: SchemaTatticoPlayer(
-              campo: _campo,
-              passi: [for (final p in _passi) _passoAWidget(p)],
-            ),
-          ),
-        ),
-      ),
-    );
+  void _play() {
+    // Dall'ultimo passo non c'è niente da animare: si riparte dal primo.
+    final partenza = _passoAttuale >= _passi.length - 1 ? 0 : _passoAttuale;
+    setState(() {
+      _inRiproduzione = true;
+      _passoPartenza = partenza;
+      _passoMostrato = partenza;
+      _avvii++;
+    });
   }
+
+  /// Fine o stop: si torna a lavorare sul passo a cui si era arrivati.
+  void _fermaRiproduzione() {
+    if (!_inRiproduzione) return;
+    setState(() {
+      _inRiproduzione = false;
+      _passoAttuale = _passoMostrato;
+    });
+  }
+
+  void _seleziona(int indice) => setState(() {
+    _inRiproduzione = false;
+    _passoAttuale = indice;
+  });
+
+  void _duplicaPasso(int indice) {
+    if (_passi.length >= SchemaTattico.massimoPassi) return;
+    setState(() {
+      _passi.insert(indice + 1, _passi[indice]);
+      _passoAttuale = indice + 1;
+      _versione++;
+    });
+  }
+
+  void _spostaPasso(int da, int a) {
+    if (a < 0 || a >= _passi.length) return;
+    setState(() {
+      final passo = _passi.removeAt(da);
+      _passi.insert(a, passo);
+      _passoAttuale = a;
+      _versione++;
+    });
+  }
+
+  void _specchia() => setState(() {
+    _passi = [for (final p in _passi) passoSpecchiato(p)];
+    _versione++;
+  });
 
   void _aggiungiPasso() {
     if (_passi.length >= SchemaTattico.massimoPassi) return;
@@ -145,7 +188,10 @@ class _SchemaTatticoFormScreenState
     }
     setState(() {
       _passi.removeAt(indice);
-      if (_passoAttuale >= _passi.length) _passoAttuale = _passi.length - 1;
+      if (_passoAttuale > indice || _passoAttuale >= _passi.length) {
+        _passoAttuale = (_passoAttuale - 1).clamp(0, _passi.length - 1);
+      }
+      _versione++;
     });
   }
 
@@ -242,42 +288,10 @@ class _SchemaTatticoFormScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // La lavagna prima di tutto: è quello che si apre la pagina per
-            // fare. Titolo, categoria e gruppi stanno sotto.
-            TitoloSezione(
-              'Passi',
-              conteggio: _passi.length,
-              spiegazione:
-                  'Ogni passo è una schermata a sé: es. passo 1 le '
-                  'posizioni di partenza, passo 2 le frecce di movimento, '
-                  'passo 3 le posizioni finali. Non serve usarli tutti '
-                  '(massimo ${SchemaTattico.massimoPassi}).',
-              azione: 'Anteprima',
-              onAzione: _apriAnteprima,
-            ),
-            Wrap(
-              spacing: AppSpacing.s8,
-              runSpacing: AppSpacing.s8,
-              children: [
-                for (var i = 0; i < _passi.length; i++)
-                  TonalChip(
-                    etichetta: '${i + 1}',
-                    selezionato: i == _passoAttuale,
-                    onSelezionato: (_) => _vaiAPasso(i),
-                    onEliminato: _passi.length > 1
-                        ? () => _eliminaPasso(i)
-                        : null,
-                  ),
-                if (_passi.length < SchemaTattico.massimoPassi)
-                  ActionChip(
-                    avatar: const Icon(Icons.add, size: 18),
-                    label: const Text('Passo'),
-                    onPressed: _aggiungiPasso,
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s16),
+            // fare. Sotto, la striscia dei passi; titolo, categoria e
+            // gruppi in fondo.
             WaterPoloTacticsBoard(
-              key: ValueKey(_passoAttuale),
+              key: ValueKey((_passoAttuale, _versione)),
               giocatoriIniziali: passoAttuale.giocatori,
               frecceIniziali: passoAttuale.frecce,
               passoFantasma: passoFantasma,
@@ -286,6 +300,41 @@ class _SchemaTatticoFormScreenState
               onCampoCambiato: _cambiaCampo,
               onBloccataCambiato: (b) => setState(() => _bloccata = b),
               onCambiato: _onCambiato,
+              sostitutoVasca: _inRiproduzione
+                  ? SchemaTatticoPlayer(
+                      key: ValueKey(_avvii),
+                      passi: [for (final p in _passi) _passoAWidget(p)],
+                      campo: _campo,
+                      mostraComandi: false,
+                      passoIniziale: _passoPartenza,
+                      avviaSubito: true,
+                      velocita: _velocita,
+                      onPassoCambiato: (i) =>
+                          setState(() => _passoMostrato = i),
+                      onFine: _fermaRiproduzione,
+                    )
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            StrisciaPassi(
+              passi: [for (final p in _passi) _passoAWidget(p)],
+              campo: _campo,
+              selezionato: _inRiproduzione ? _passoMostrato : _passoAttuale,
+              inRiproduzione: _inRiproduzione,
+              velocita: _velocita,
+              onSeleziona: _seleziona,
+              onPlay: _play,
+              onStop: _fermaRiproduzione,
+              onVelocita: (v) => setState(() => _velocita = v),
+              onSpecchia: _specchia,
+              onSposta: _spostaPasso,
+              onElimina: _eliminaPasso,
+              onAggiungi: _passi.length < SchemaTattico.massimoPassi
+                  ? _aggiungiPasso
+                  : null,
+              onDuplica: _passi.length < SchemaTattico.massimoPassi
+                  ? _duplicaPasso
+                  : null,
             ),
             const SizedBox(height: AppSpacing.s24),
             FormGroup(

@@ -1,4 +1,5 @@
 import 'package:coach_vasca/features/pallanuoto/data/schemi_tattici_repository.dart';
+import 'package:coach_vasca/features/pallanuoto/domain/schema_tattico.dart';
 import 'package:coach_vasca/features/pallanuoto/presentation/water_polo_tactics_board.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -116,5 +117,35 @@ void main() {
         isNull,
       );
     });
+  });
+
+  test('specchiare scambia destra e sinistra, frecce e curve comprese', () {
+    final passo = passoSchemaDaLavagna(
+      const [
+        GiocatoreLavagna(
+          posizione: Offset(0.2, 0.3),
+          colore: ColoreLavagna.blu,
+        ),
+      ],
+      const [
+        FrecciaLavagna(
+          inizio: Offset(0.1, 0.5),
+          fine: Offset(0.4, 0.2),
+          colore: ColoreLavagna.nero,
+          tipo: TipoFreccia.passaggio,
+          controllo: Offset(0.3, 0.6),
+        ),
+      ],
+    );
+    final specchiato = passoLavagnaDaSchema(passoSpecchiato(passo));
+    final g = specchiato.giocatori.single.posizione;
+    expect(g.dx, closeTo(0.8, 1e-9));
+    expect(g.dy, 0.3);
+    final f = specchiato.frecce.single;
+    expect(f.inizio.dx, closeTo(0.9, 1e-9));
+    expect(f.fine.dx, closeTo(0.6, 1e-9));
+    expect(f.controllo!.dx, closeTo(0.7, 1e-9));
+    expect(f.controllo!.dy, 0.6);
+    expect(f.tipo, TipoFreccia.passaggio);
   });
 }
