@@ -129,9 +129,7 @@ class _DatiAtleta extends ConsumerWidget {
                   style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else
-                Wrap(
-                  spacing: AppSpacing.s24,
-                  runSpacing: AppSpacing.s16,
+                GrigliaNumeri(
                   children: [
                     StatPanel(etichetta: 'Reti', valore: '${rigaReferti.reti}'),
                     StatPanel(
@@ -164,9 +162,7 @@ class _DatiAtleta extends ConsumerWidget {
                   style: AppTypography.corpo.copyWith(color: colori.testo),
                 )
               else ...[
-                Wrap(
-                  spacing: AppSpacing.s24,
-                  runSpacing: AppSpacing.s16,
+                GrigliaNumeri(
                   children: [
                     StatPanel(
                       etichetta: 'Gol',
@@ -182,9 +178,7 @@ class _DatiAtleta extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.s16),
-                Wrap(
-                  spacing: AppSpacing.s24,
-                  runSpacing: AppSpacing.s16,
+                GrigliaNumeri(
                   children: [
                     StatPanel(
                       etichetta: 'Gol azione',

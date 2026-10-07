@@ -109,9 +109,7 @@ class StatistichePartitaScreen extends ConsumerWidget {
               return ListView(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 children: [
-                  Wrap(
-                    spacing: AppSpacing.s24,
-                    runSpacing: AppSpacing.s16,
+                  GrigliaNumeri(
                     children: [
                       StatPanel(
                         etichetta: 'Gol',

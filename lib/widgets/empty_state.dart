@@ -59,30 +59,34 @@ class EmptyState extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppSpacing.s20),
-              // Larghezza contenuta: il tema allarga i pulsanti a tutto
-              // schermo, e su tablet/PC finivano sotto il pulsante "+".
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 320),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    PrimaryButton(
-                      label: azionePrincipale,
-                      onPressed: onAzionePrincipale,
-                      expanded: false,
-                    ),
-                    if (azioneSecondaria != null) ...[
-                      const SizedBox(height: AppSpacing.s12),
-                      SecondaryButton(
-                        label: azioneSecondaria!,
-                        onPressed: onAzioneSecondaria,
+              // Senza azione collegata il pulsante sarebbe disattivato e
+              // basta ("Torna indietro" che non torna): si toglie.
+              if (onAzionePrincipale != null)
+                const SizedBox(height: AppSpacing.s20),
+              if (onAzionePrincipale != null)
+                // Larghezza contenuta: il tema allarga i pulsanti a tutto
+                // schermo, e su tablet/PC finivano sotto il pulsante "+".
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      PrimaryButton(
+                        label: azionePrincipale,
+                        onPressed: onAzionePrincipale,
                         expanded: false,
                       ),
+                      if (azioneSecondaria != null) ...[
+                        const SizedBox(height: AppSpacing.s12),
+                        SecondaryButton(
+                          label: azioneSecondaria!,
+                          onPressed: onAzioneSecondaria,
+                          expanded: false,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

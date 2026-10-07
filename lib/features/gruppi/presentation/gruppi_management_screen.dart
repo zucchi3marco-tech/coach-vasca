@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
-import '../../../theme/app_spacing.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
+import '../../../widgets/form_group.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
+import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/presentation/codici_gruppo_screen.dart';
 import '../../club/application/current_club_provider.dart';
 import '../application/gruppi_providers.dart';
@@ -148,34 +150,43 @@ class _GruppiManagementScreenState
   @override
   Widget build(BuildContext context) {
     final gruppiAsync = ref.watch(gruppiListProvider(widget.clubId));
+    final atleti =
+        ref
+            .watch(
+              atletiListProvider((
+                clubId: widget.clubId,
+                includeInactive: false,
+              )),
+            )
+            .value ??
+        const [];
     final colori = context.colori;
+
+    void apriCodici(Gruppo g) => Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => CodiciGruppoScreen(gruppo: g)),
+    );
+
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(title: const Text('Gestisci gruppi')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppTextField(
-                  etichetta: 'Nuovo gruppo',
-                  controller: _nuovoGruppoController,
-                ),
+          FormGroup(
+            titolo: 'Nuovo gruppo',
+            campi: [
+              AppTextField(
+                etichetta: 'Nome del gruppo',
+                controller: _nuovoGruppoController,
               ),
+              PrimaryButton(
+                label: 'Aggiungi gruppo',
+                isLoading: _isSubmitting,
+                onPressed: _isSubmitting ? null : _aggiungi,
+              ),
+              if (_errore != null) ErrorBanner(messaggio: _errore!),
             ],
           ),
-          const SizedBox(height: AppSpacing.s12),
-          PrimaryButton(
-            label: 'Aggiungi gruppo',
-            isLoading: _isSubmitting,
-            onPressed: _isSubmitting ? null : _aggiungi,
-          ),
-          if (_errore != null) ...[
-            const SizedBox(height: AppSpacing.s12),
-            ErrorBanner(messaggio: _errore!),
-          ],
-          const SizedBox(height: AppSpacing.s24),
           gruppiAsync.when(
             data: (gruppi) => gruppi.isEmpty
                 ? const EmptyState(
@@ -184,41 +195,67 @@ class _GruppiManagementScreenState
                     descrizione: 'Aggiungi il primo gruppo di allenamento.',
                     azionePrincipale: 'Ho capito',
                   )
-                : AppListPanel(
-                    righe: [
-                      for (final g in gruppi)
-                        AppListRow(
-                          titolo: g.nome,
-                          trailing: PopupMenuButton<VoidCallback>(
-                            icon: Icon(
-                              Icons.more_vert,
-                              color: colori.testoSecondario,
-                            ),
-                            onSelected: (azione) => azione(),
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        CodiciGruppoScreen(gruppo: g),
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TitoloSezione('I tuoi gruppi', conteggio: gruppi.length),
+                      GrigliaSchede(
+                        colonneMassime: 1,
+                        figli: [
+                          for (final g in gruppi)
+                            SchedaElenco(
+                              leading: const IconaRiquadro(
+                                Icons.groups_outlined,
+                                dimensione: 44,
+                              ),
+                              titolo: g.nome,
+                              sottotitolo: switch (atleti
+                                  .where((a) => a.gruppoId == g.id)
+                                  .length) {
+                                0 => 'Nessun atleta',
+                                1 => '1 atleta',
+                                final n => '$n atleti',
+                              },
+                              mostraFreccia: false,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Il codice per far registrare gli atleti
+                                  // del gruppo: prima solo nel menu ⋮.
+                                  IconButton(
+                                    tooltip: 'Codice di registrazione',
+                                    icon: Icon(
+                                      Icons.qr_code_2_outlined,
+                                      color: colori.azione,
+                                    ),
+                                    onPressed: () => apriCodici(g),
                                   ),
-                                ),
-                                child: const Text('Codice di registrazione'),
+                                  PopupMenuButton<VoidCallback>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: colori.testoSecondario,
+                                    ),
+                                    tooltip: 'Altre azioni',
+                                    onSelected: (azione) => azione(),
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: () => _rinomina(g),
+                                        child: const Text('Rinomina'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: () => _elimina(g),
+                                        child: Text(
+                                          'Elimina',
+                                          style: TextStyle(color: colori.rosso),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              PopupMenuItem(
-                                value: () => _rinomina(g),
-                                child: const Text('Rinomina'),
-                              ),
-                              PopupMenuItem(
-                                value: () => _elimina(g),
-                                child: Text(
-                                  'Elimina',
-                                  style: TextStyle(color: colori.rosso),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
             loading: () => const LoadingSkeletonList(righe: 3),

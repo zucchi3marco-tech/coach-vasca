@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
+import '../../allenamenti/application/allenamenti_providers.dart';
+import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/generazione_ai_registrata.dart';
@@ -74,12 +79,6 @@ class _StoricoGenerazioniScreenState
     _caricaPagina();
   }
 
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year} ${data.hour.toString().padLeft(2, '0')}:'
-      '${data.minute.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
@@ -100,75 +99,107 @@ class _StoricoGenerazioniScreenState
         ),
       );
     } else if (_voci.isEmpty) {
-      corpo = const EmptyState(
+      corpo = EmptyState(
         icona: Icons.auto_awesome_outlined,
         titolo: 'Nessuna generazione ancora effettuata',
         descrizione:
-            'Le proposte generate con l\'AI comparirano qui, anche '
+            'Le proposte generate con l\'AI compariranno qui, anche '
             'quelle non salvate come allenamento.',
         azionePrincipale: 'Torna indietro',
+        onAzionePrincipale: () => Navigator.of(context).maybePop(),
       );
     } else {
-      corpo = SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.s16),
-        child: Column(
-          children: [
-            AppListPanel(
-              righe: [
-                for (final voce in _voci)
-                  AppListRow(
-                    leading: Icon(
-                      !voce.successo
-                          ? Icons.error_outline
-                          : voce.allenamentoId != null
-                          ? Icons.check_circle
-                          : Icons.check_circle_outline,
-                      color: !voce.successo
-                          ? colori.rosso
-                          : voce.allenamentoId != null
-                          ? colori.ok
-                          : colori.testoTenue,
-                    ),
-                    titolo: riassuntoParametriGenerazione(voce.parametri),
-                    sottotitolo:
-                        '${_formattaData(voce.creatoIl)} · '
-                        '${!voce.successo
-                            ? 'generazione fallita'
-                            : voce.allenamentoId != null
-                            ? 'salvata come allenamento'
-                            : 'generata, non salvata'}',
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (context) => _DialogDettaglioVoce(voce: voce),
-                    ),
-                  ),
+      // Una sezione per giorno ("Oggi", "Ieri", "martedì 6 ott"): l'ora
+      // sta sulla scheda, la data non si ripete su ogni riga.
+      final perGiorno = <DateTime, List<GenerazioneAiRegistrata>>{};
+      for (final voce in _voci) {
+        perGiorno
+            .putIfAbsent(soloData(voce.creatoIl.toLocal()), () => [])
+            .add(voce);
+      }
+      String titoloGiorno(DateTime giorno) {
+        final quando = traQuanto(giorno);
+        return quando == 'Oggi' || quando == 'Ieri'
+            ? quando
+            : dataEstesa(giorno);
+      }
+
+      Widget scheda(GenerazioneAiRegistrata voce) {
+        final salvata = voce.allenamentoId != null;
+        final ora = voce.creatoIl.toLocal();
+        return SchedaElenco(
+          leading: IconaRiquadro(
+            !voce.successo
+                ? Icons.error_outline
+                : salvata
+                ? Icons.check_circle
+                : Icons.auto_awesome_outlined,
+            colore: !voce.successo
+                ? colori.rosso
+                : salvata
+                ? colori.ok
+                : colori.testoSecondario,
+            dimensione: 44,
+          ),
+          titolo: riassuntoParametriGenerazione(voce.parametri),
+          sottotitolo:
+              '${ora.hour.toString().padLeft(2, '0')}:'
+              '${ora.minute.toString().padLeft(2, '0')} · '
+              '${!voce.successo
+                  ? 'generazione fallita'
+                  : salvata
+                  ? 'salvata come allenamento'
+                  : 'generata, non salvata'}',
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (context) =>
+                _DialogDettaglioVoce(voce: voce, clubId: widget.clubId),
+          ),
+        );
+      }
+
+      corpo = ListView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+        children: [
+          Column(
+            children: [
+              for (final giorno in perGiorno.keys) ...[
+                TitoloSezione(
+                  titoloGiorno(giorno),
+                  conteggio: perGiorno[giorno]!.length,
+                ),
+                GrigliaSchede(
+                  colonneMassime: 1,
+                  figli: [for (final v in perGiorno[giorno]!) scheda(v)],
+                ),
+                const SizedBox(height: AppSpacing.s24),
               ],
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            if (_caricamentoAltre)
-              const CircularProgressIndicator()
-            else if (_errore != null)
-              Column(
-                children: [
-                  Text(
-                    'Non è stato possibile caricare altre voci: '
-                    '${messaggioErrore(_errore!)}',
-                    style: TextStyle(color: colori.rosso),
-                  ),
-                  const SizedBox(height: AppSpacing.s4),
-                  TextButton(
-                    onPressed: _caricaAltre,
-                    child: const Text('Riprova'),
-                  ),
-                ],
-              )
-            else if (_altrePagine)
-              TextButton(
-                onPressed: _caricaAltre,
-                child: const Text('Carica altre'),
-              ),
-          ],
-        ),
+              const SizedBox(height: AppSpacing.s16),
+              if (_caricamentoAltre)
+                const CircularProgressIndicator()
+              else if (_errore != null)
+                Column(
+                  children: [
+                    Text(
+                      'Non è stato possibile caricare altre voci: '
+                      '${messaggioErrore(_errore!)}',
+                      style: TextStyle(color: colori.rosso),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    TextButton(
+                      onPressed: _caricaAltre,
+                      child: const Text('Riprova'),
+                    ),
+                  ],
+                )
+              else if (_altrePagine)
+                TextButton(
+                  onPressed: _caricaAltre,
+                  child: const Text('Carica altre'),
+                ),
+            ],
+          ),
+        ],
       );
     }
 
@@ -179,13 +210,21 @@ class _StoricoGenerazioniScreenState
   }
 }
 
-class _DialogDettaglioVoce extends StatelessWidget {
-  const _DialogDettaglioVoce({required this.voce});
+class _DialogDettaglioVoce extends ConsumerWidget {
+  const _DialogDettaglioVoce({required this.voce, required this.clubId});
 
   final GenerazioneAiRegistrata voce;
+  final String clubId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // L'allenamento nato da questa generazione, se esiste ancora: si apre
+    // da qui invece di andarlo a cercare nel calendario.
+    final allenamento = voce.allenamentoId == null
+        ? null
+        : (ref.watch(allenamentiListProvider(clubId)).value ?? const [])
+              .where((a) => a.id == voce.allenamentoId)
+              .firstOrNull;
     final scheda = voce.scheda;
     final salvata = voce.allenamentoId != null;
     final colori = context.colori;
@@ -251,6 +290,19 @@ class _DialogDettaglioVoce extends StatelessWidget {
         ),
       ),
       actions: [
+        if (allenamento != null)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      AllenamentoDetailScreen(allenamento: allenamento),
+                ),
+              );
+            },
+            child: const Text('Apri l\'allenamento'),
+          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Chiudi'),

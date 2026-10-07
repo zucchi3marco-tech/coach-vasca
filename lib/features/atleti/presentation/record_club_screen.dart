@@ -3,17 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../application/atleti_providers.dart';
 import '../application/personal_best_providers.dart';
 import '../domain/pb_slots.dart';
+import 'scheda_tempo.dart';
 
 /// Record del club, per stile+distanza (FASE 11): al posto della
 /// programmazione a settimane, la scheda di una stagione "nuoto" mostra
@@ -33,7 +35,9 @@ class RecordClubScreen extends ConsumerWidget {
     final pbAsync = ref.watch(personalBestClubProvider(clubId));
 
     return AppScaffold(
-      appBar: AppBar(title: const Text('Record')),
+      // Il titolo sta in grande nella testata.
+      appBar: AppBar(),
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
       body: atletiAsync.when(
         data: (atleti) => pbAsync.when(
           data: (pb) {
@@ -53,47 +57,75 @@ class RecordClubScreen extends ConsumerWidget {
               );
             }
 
-            String? migliorePerSlot(String stile, int distanzaM) {
-              String? nomeMigliore;
-              double? tempoMigliore;
+            ({String nome, double tempo})? migliorePerSlot(
+              String stile,
+              int distanzaM,
+            ) {
+              ({String nome, double tempo})? migliore;
               for (final p in pb) {
                 if (p.stile != stile || p.distanzaM != distanzaM) continue;
                 final nome = nomiNuotatori[p.atletaId];
                 if (nome == null) continue;
-                if (tempoMigliore == null || p.tempoS < tempoMigliore) {
-                  tempoMigliore = p.tempoS;
-                  nomeMigliore = nome;
+                if (migliore == null || p.tempoS < migliore.tempo) {
+                  migliore = (nome: nome, tempo: p.tempoS);
                 }
               }
-              if (nomeMigliore == null || tempoMigliore == null) return null;
-              return '$nomeMigliore — ${formatPaceSeconds(tempoMigliore)}';
+              return migliore;
             }
 
             final slots = slotsPerSport('nuoto');
+            final registrati = slots
+                .where((s) => migliorePerSlot(s.stile, s.distanzaM) != null)
+                .length;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.s16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final stile in stiliNuoto) ...[
-                    SectionHeader(capitalizzaParola(stile)),
-                    const SizedBox(height: AppSpacing.s8),
-                    AppListPanel(
-                      righe: [
-                        for (final slot in slots.where((s) => s.stile == stile))
-                          AppListRow(
-                            titolo: '${slot.distanzaM}m',
-                            sottotitolo:
-                                migliorePerSlot(slot.stile, slot.distanzaM) ??
-                                'Nessun record',
-                          ),
-                      ],
+            return ListView(
+              padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+              children: [
+                TestataPagina(
+                  titolo: 'Record del club',
+                  sottotitolo:
+                      'Il tempo migliore mai registrato dal club in ogni '
+                      'gara, con chi lo detiene.',
+                  numeri: [
+                    NumeroTestata(
+                      valore: '$registrati/${slots.length}',
+                      etichetta: 'Gare con un record',
                     ),
-                    const SizedBox(height: AppSpacing.s16),
+                    NumeroTestata(
+                      valore: '${nomiNuotatori.length}',
+                      etichetta: 'Nuotatori',
+                    ),
                   ],
+                ),
+                const SizedBox(height: AppSpacing.s24),
+                for (final stile in stiliNuoto) ...[
+                  TitoloSezione(capitalizzaParola(stile)),
+                  GrigliaSchede(
+                    larghezzaMinimaColonna: 150,
+                    colonneMassime: 4,
+                    cascata: false,
+                    figli: [
+                      for (final slot in slots.where((s) => s.stile == stile))
+                        Builder(
+                          builder: (context) {
+                            final r = migliorePerSlot(
+                              slot.stile,
+                              slot.distanzaM,
+                            );
+                            return SchedaTempo(
+                              distanza: '${slot.distanzaM} m',
+                              tempo: r == null
+                                  ? null
+                                  : formatPaceSeconds(r.tempo),
+                              sotto: r?.nome,
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s24),
                 ],
-              ),
+              ],
             );
           },
           loading: () => const Padding(

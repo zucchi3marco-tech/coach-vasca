@@ -138,7 +138,13 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             (
               etichetta: 'Presenze',
               valore: presenze == null ? '—' : '$presenze%',
-              onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+              onTap: () => _apri(
+                context,
+                MiePresenzeScreen(
+                  atleta: atleta,
+                  vistaAllenatore: vistaAllenatore,
+                ),
+              ),
             ),
           ]
         : [
@@ -150,7 +156,13 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             (
               etichetta: 'Presenze',
               valore: presenze == null ? '—' : '$presenze%',
-              onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+              onTap: () => _apri(
+                context,
+                MiePresenzeScreen(
+                  atleta: atleta,
+                  vistaAllenatore: vistaAllenatore,
+                ),
+              ),
             ),
           ];
 
@@ -185,6 +197,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             PartiteAtletaListScreen(
               clubId: atleta.clubId,
               filtroGruppoId: atleta.gruppoId,
+              vistaAllenatore: vistaAllenatore,
             ),
           ),
         ),
@@ -217,14 +230,23 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             ? 'Gli allenamenti a cui hai partecipato'
             : '${allenamenti.presente} su ${allenamenti.fatti} allenamenti',
         accento: dominio.evidenzaVerde,
-        onTap: () => _apri(context, MiePresenzeScreen(atleta: atleta)),
+        onTap: () => _apri(
+          context,
+          MiePresenzeScreen(atleta: atleta, vistaAllenatore: vistaAllenatore),
+        ),
       ),
       VoceRiquadro(
         soggetto: SoggettoRiquadro.stagione,
         titolo: titolo('La mia stagione', 'Stagione'),
         descrizione: 'Calendario e obiettivi della squadra',
         accento: dominio.evidenzaAmbra,
-        onTap: () => _apri(context, StagioneAtletaScreen(atleta: atleta)),
+        onTap: () => _apri(
+          context,
+          StagioneAtletaScreen(
+            atleta: atleta,
+            vistaAllenatore: vistaAllenatore,
+          ),
+        ),
       ),
     ];
 

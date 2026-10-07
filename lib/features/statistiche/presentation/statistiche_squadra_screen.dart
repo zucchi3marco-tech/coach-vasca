@@ -139,9 +139,7 @@ class _SezioneReferti extends ConsumerWidget {
             ..sort((a, b) => b.reti.compareTo(a.reti));
           return ListView(
             children: [
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   StatPanel(etichetta: 'Partite', valore: '${r.partite}'),
                   StatPanel(
@@ -241,9 +239,7 @@ class _SezioneEventi extends ConsumerWidget {
               : '—';
           return ListView(
             children: [
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   StatPanel(
                     etichetta: 'Gol',
@@ -258,9 +254,7 @@ class _SezioneEventi extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.s16),
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   StatPanel(etichetta: 'Gol azione', valore: '${r.golAzione}'),
                   StatPanel(
@@ -271,9 +265,7 @@ class _SezioneEventi extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.s16),
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   StatPanel(
                     etichetta: 'Gol subiti',

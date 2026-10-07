@@ -4,17 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/scarica_file.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../widgets/app_text_field.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../application/excel_export.dart';
 import '../application/excel_import.dart';
@@ -51,122 +52,126 @@ class _LibreriaBlocchiScreenState extends ConsumerState<LibreriaBlocchiScreen> {
   @override
   Widget build(BuildContext context) {
     final blocchiAsync = ref.watch(trainingBlocksListProvider(widget.clubId));
+    final blocchi = blocchiAsync.value ?? const <TrainingBlock>[];
+    final approvati = blocchi.where((b) => b.stato == 'approvato').length;
 
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Libreria blocchi'),
-        actions: [
-          IconButton(
-            tooltip: 'Esporta in Excel',
-            onPressed: _esportando ? null : _esportaInExcel,
-            icon: _esportando
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download_outlined),
-          ),
-          IconButton(
-            tooltip: 'Importa da Excel',
-            onPressed: _importando ? null : _importaDaExcel,
-            icon: _importando
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.upload_file_outlined),
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppTextField(
-            etichetta: 'Cerca per titolo o codice',
-            suffixIcon: const Icon(Icons.search),
-            onChanged: (value) => setState(() => _ricerca = value),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          Wrap(
-            spacing: AppSpacing.s8,
-            runSpacing: AppSpacing.s8,
-            children: [
-              TonalChip(
-                etichetta: 'Tutti gli sport',
-                selezionato: _filtroSport == null,
-                onSelezionato: (_) => setState(() => _filtroSport = null),
-              ),
-              for (final s in ['nuoto', 'pallanuoto', 'entrambi'])
-                TonalChip(
-                  etichetta: _labelSport(s),
-                  selezionato: _filtroSport == s,
-                  onSelezionato: (_) => setState(() => _filtroSport = s),
+      // Il titolo sta in grande nella testata: qui solo il ritorno.
+      appBar: AppBar(),
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
+      body: RefreshIndicator(
+        onRefresh: () => ref
+            .read(trainingBlocksRepositoryProvider)
+            .refreshFromRemote(widget.clubId),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+          children: [
+            // Importa ed esporta erano due icone senza nome in alto: ora
+            // sono pulsanti con l'etichetta, accanto a "Nuovo blocco".
+            TestataPagina(
+              titolo: 'Libreria blocchi',
+              sottotitolo:
+                  'I blocchi approvati sono quelli che l\'AI usa per '
+                  'comporre le sedute.',
+              numeri: blocchiAsync.hasValue
+                  ? [
+                      NumeroTestata(
+                        valore: '${blocchi.length}',
+                        etichetta: 'Blocchi',
+                      ),
+                      NumeroTestata(
+                        valore: '$approvati',
+                        etichetta: 'Approvati',
+                      ),
+                      NumeroTestata(
+                        valore: '${blocchi.length - approvati}',
+                        etichetta: 'Bozze',
+                      ),
+                    ]
+                  : const [],
+              azioni: [
+                AzioneTestata(
+                  icona: Icons.add,
+                  etichetta: 'Nuovo blocco',
+                  principale: true,
+                  onTap: _nuovoBlocco,
                 ),
-              TonalChip(
-                etichetta: 'Tutti gli stati',
-                selezionato: _filtroStato == null,
-                onSelezionato: (_) => setState(() => _filtroStato = null),
+                AzioneTestata(
+                  icona: Icons.upload_file_outlined,
+                  etichetta: _importando ? 'Importo...' : 'Importa da Excel',
+                  onTap: _importando ? () {} : _importaDaExcel,
+                ),
+                AzioneTestata(
+                  icona: Icons.download_outlined,
+                  etichetta: _esportando ? 'Esporto...' : 'Esporta in Excel',
+                  onTap: _esportando ? () {} : _esportaInExcel,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            TextField(
+              decoration: const InputDecoration(
+                hintText: 'Cerca per titolo o codice',
+                prefixIcon: Icon(Icons.search),
               ),
-              TonalChip(
-                etichetta: 'Approvati',
-                selezionato: _filtroStato == 'approvato',
-                onSelezionato: (_) =>
-                    setState(() => _filtroStato = 'approvato'),
-              ),
-              TonalChip(
-                etichetta: 'Bozze',
-                selezionato: _filtroStato == 'bozza',
-                onSelezionato: (_) => setState(() => _filtroStato = 'bozza'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => ref
-                  .read(trainingBlocksRepositoryProvider)
-                  .refreshFromRemote(widget.clubId),
-              child: blocchiAsync.when(
-                data: (blocchi) => _Elenco(
-                  blocchi: blocchi,
-                  ricerca: _ricerca,
-                  filtroSport: _filtroSport,
-                  filtroStato: _filtroStato,
-                  onTap: (b) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BloccoDetailScreen(blocco: b),
-                    ),
+              onChanged: (value) => setState(() => _ricerca = value),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (final (valore, etichetta) in const [
+                  (null, 'Tutti gli sport'),
+                  ('nuoto', 'Nuoto'),
+                  ('pallanuoto', 'Pallanuoto'),
+                  ('entrambi', 'Entrambi'),
+                ])
+                  TonalChip(
+                    etichetta: etichetta,
+                    selezionato: _filtroSport == valore,
+                    onSelezionato: (_) => setState(() => _filtroSport = valore),
                   ),
-                  onTapNuovo: _nuovoBlocco,
-                  onApprova: _toggleApprovato,
-                  onDuplica: _duplica,
-                  onElimina: _elimina,
+                for (final (valore, etichetta) in const [
+                  (null, 'Tutti gli stati'),
+                  ('approvato', 'Approvati'),
+                  ('bozza', 'Bozze'),
+                ])
+                  TonalChip(
+                    etichetta: etichetta,
+                    selezionato: _filtroStato == valore,
+                    onSelezionato: (_) => setState(() => _filtroStato = valore),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s24),
+            blocchiAsync.when(
+              data: (blocchi) => _Elenco(
+                blocchi: blocchi,
+                ricerca: _ricerca,
+                filtroSport: _filtroSport,
+                filtroStato: _filtroStato,
+                onTap: (b) => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => BloccoDetailScreen(blocco: b),
+                  ),
                 ),
-                loading: () => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [LoadingSkeletonList(righe: 6)],
-                ),
-                error: (error, _) => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    ErrorBanner(
-                      messaggio: 'Non è stato possibile caricare la libreria.',
-                      suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-                      dettaglioTecnico: messaggioErrore(error),
-                    ),
-                  ],
-                ),
+                onTapNuovo: _nuovoBlocco,
+                onApprova: _toggleApprovato,
+                onDuplica: _duplica,
+                onElimina: _elimina,
+              ),
+              loading: () => const LoadingSkeletonList(righe: 6),
+              error: (error, _) => ErrorBanner(
+                messaggio: 'Non è stato possibile caricare la libreria.',
+                suggerimento:
+                    'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+                dettaglioTecnico: messaggioErrore(error),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _nuovoBlocco,
-        tooltip: 'Nuovo blocco',
-        child: const Icon(Icons.add),
+          ],
+        ),
       ),
     );
   }
@@ -379,90 +384,98 @@ class _Elenco extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (blocchi.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          EmptyState(
-            icona: Icons.view_list_outlined,
-            titolo: 'Nessun blocco in libreria',
-            descrizione: 'Importa il file Excel della libreria o crea il primo blocco a mano.',
-            azionePrincipale: 'Nuovo blocco',
-            onAzionePrincipale: onTapNuovo,
-          ),
-        ],
+      return EmptyState(
+        icona: Icons.view_list_outlined,
+        titolo: 'Nessun blocco in libreria',
+        descrizione:
+            'Importa il file Excel della libreria o crea il primo blocco '
+            'a mano.',
+        azionePrincipale: 'Nuovo blocco',
+        onAzionePrincipale: onTapNuovo,
       );
     }
 
     final filtrati = _filtrati()..sort((a, b) => a.titolo.compareTo(b.titolo));
     if (filtrati.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          EmptyState(
-            icona: Icons.search_off,
-            titolo: 'Nessun blocco trovato',
-            descrizione: 'Prova a cambiare i filtri o il testo cercato.',
-            azionePrincipale: 'Ho capito',
-          ),
-        ],
+      return const EmptyState(
+        icona: Icons.search_off,
+        titolo: 'Nessun blocco trovato',
+        descrizione: 'Prova a cambiare i filtri o il testo cercato.',
+        azionePrincipale: 'Ho capito',
       );
     }
 
+    // Raggruppati per fase (riscaldamento, principale...): con centinaia
+    // di blocchi un elenco unico in ordine alfabetico non si leggeva.
+    final perFase = <String, List<TrainingBlock>>{};
+    for (final b in filtrati) {
+      final fase = b.fase.trim().isEmpty ? 'Senza fase' : b.fase.trim();
+      perFase.putIfAbsent(fase, () => []).add(b);
+    }
+    final fasi = perFase.keys.toList()
+      ..sort((a, b) {
+        if ((a == 'Senza fase') != (b == 'Senza fase')) {
+          return a == 'Senza fase' ? 1 : -1;
+        }
+        return a.compareTo(b);
+      });
+
     final colori = context.colori;
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: AppListPanel(
-        righe: [
-          for (final b in filtrati)
-            AppListRow(
-              titolo: b.titolo,
-              // Senza fase (blocco scritto a mano) restava un "·" appeso.
-              sottotitolo: [
-                _labelSport(b.sport),
-                if (b.fase.trim().isNotEmpty) b.fase.trim(),
-                if (b.metriTotali > 0) '${b.metriTotali} m',
-              ].join(' · '),
-              extraTitolo: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: b.stato == 'approvato'
-                      ? colori.okTenue
-                      : colori.attenzioneTenue,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  b.stato == 'approvato' ? 'Approvato' : 'Bozza',
-                  style: AppTypography.piccolo.copyWith(
-                    color: b.stato == 'approvato'
-                        ? colori.ok
-                        : colori.attenzione,
-                  ),
-                ),
-              ),
-              trailing: PopupMenuButton<VoidCallback>(
-                icon: Icon(Icons.more_vert, color: colori.testoSecondario),
-                onSelected: (azione) => azione(),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: () => onApprova(b),
-                    child: Text(
-                      b.stato == 'approvato' ? 'Rendi bozza' : 'Approva',
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: () => onDuplica(b),
-                    child: const Text('Duplica'),
-                  ),
-                  PopupMenuItem(
-                    value: () => onElimina(b),
-                    child: const Text('Elimina'),
-                  ),
-                ],
-              ),
-              onTap: () => onTap(b),
+    final ciano = context.dominio.evidenzaCiano;
+    Widget scheda(TrainingBlock b) {
+      final approvato = b.stato == 'approvato';
+      return SchedaElenco(
+        leading: IconaRiquadro(
+          Icons.view_list_outlined,
+          colore: approvato ? ciano : colori.attenzione,
+          dimensione: 48,
+        ),
+        titolo: b.titolo,
+        sottotitolo: [
+          b.codice,
+          if (filtroSport == null) _labelSport(b.sport),
+          if (b.metriTotali > 0) '${b.metriTotali} m',
+          if (b.durataStimataMin > 0) '~${b.durataStimataMin} min',
+        ].join(' · '),
+        // Solo le bozze hanno l'etichetta: "Approvato" su centinaia di
+        // schede era rumore.
+        sotto: approvato ? null : Pastiglia('Bozza', colore: colori.attenzione),
+        mostraFreccia: false,
+        trailing: PopupMenuButton<VoidCallback>(
+          icon: Icon(Icons.more_vert, color: colori.testoSecondario),
+          tooltip: 'Altre azioni',
+          onSelected: (azione) => azione(),
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: () => onApprova(b),
+              child: Text(approvato ? 'Rendi bozza' : 'Approva'),
             ),
+            PopupMenuItem(
+              value: () => onDuplica(b),
+              child: const Text('Duplica'),
+            ),
+            PopupMenuItem(
+              value: () => onElimina(b),
+              child: const Text('Elimina'),
+            ),
+          ],
+        ),
+        onTap: () => onTap(b),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final fase in fasi) ...[
+          SezioneSchede(
+            titolo: fase,
+            vociIniziali: 6,
+            figli: [for (final b in perFase[fase]!) scheda(b)],
+          ),
+          const SizedBox(height: AppSpacing.s24),
         ],
-      ),
+      ],
     );
   }
 }

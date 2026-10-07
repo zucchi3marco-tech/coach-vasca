@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
@@ -12,7 +14,8 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
-import '../../../widgets/titolo_due_righe.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
 import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../../test/application/test_providers.dart';
@@ -24,6 +27,7 @@ import '../domain/atleta.dart';
 import '../domain/pb_slots.dart';
 import '../domain/personal_best.dart';
 import 'pb_form_screen.dart';
+import 'scheda_tempo.dart';
 
 /// Tabella di tutti i personal best possibili per lo sport dell'atleta
 /// (FASE 10, punto 3): ogni combinazione stile+distanza è sempre
@@ -92,13 +96,12 @@ class PbListScreen extends ConsumerWidget {
       context,
     ).push(MaterialPageRoute(builder: (_) => TestFormScreen(atleta: atleta)));
 
+    final test = testAsync.value;
+
     return AppScaffold(
-      appBar: AppBar(
-        title: TitoloDueRighe(
-          titolo: 'Personal best',
-          sottotitolo: atleta.nomeCompleto,
-        ),
-      ),
+      // Nome e titolo stanno in grande nella testata.
+      appBar: AppBar(),
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
       body: pbAsync.when(
         data: (righe) {
           // Il piu' veloce, se per qualche motivo ci fosse piu' di un
@@ -117,68 +120,108 @@ class PbListScreen extends ConsumerWidget {
           for (final s in slots) {
             if (!stiliOrdinati.contains(s.stile)) stiliOrdinati.add(s.stile);
           }
-          final mostraIntestazioni = stiliOrdinati.length > 1;
+          final registrati = slots
+              .where(
+                (s) => migliorePerSlot['${s.stile}_${s.distanzaM}'] != null,
+              )
+              .length;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final stile in stiliOrdinati) ...[
-                  if (mostraIntestazioni) ...[
-                    SectionHeader(capitalizzaParola(stile)),
-                    const SizedBox(height: AppSpacing.s8),
-                  ],
-                  AppListPanel(
-                    righe: [
-                      for (final slot in slots.where((s) => s.stile == stile))
-                        _rigaSlot(
-                          slot: slot,
-                          pb: migliorePerSlot['${slot.stile}_${slot.distanzaM}'],
-                          onTap: () => apriForm(
-                            stile: slot.stile,
-                            distanzaM: slot.distanzaM,
-                            personalBest:
-                                migliorePerSlot['${slot.stile}_${slot.distanzaM}'],
-                          ),
-                        ),
-                    ],
+          return ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+            children: [
+              TestataPagina(
+                occhiello: atleta.nomeCompleto,
+                titolo: 'Personal best',
+                numeri: [
+                  NumeroTestata(
+                    valore: '$registrati/${slots.length}',
+                    etichetta: 'Tempi registrati',
                   ),
-                  const SizedBox(height: AppSpacing.s16),
+                  NumeroTestata(
+                    valore: test == null ? '—' : '${test.length}',
+                    etichetta: 'Test BVS',
+                  ),
                 ],
-                const SectionHeader('Test BVS'),
-                const SizedBox(height: AppSpacing.s8),
-                testAsync.when(
-                  data: (test) => AppListPanel(
-                    righe: test.isEmpty
-                        ? [
-                            AppListRow(
-                              leading: const Icon(Icons.add_circle_outline),
-                              titolo: 'Aggiungi il primo test BVS',
-                              onTap: apriFormTest,
+                azioni: [
+                  AzioneTestata(
+                    icona: Icons.speed_outlined,
+                    etichetta: 'Nuovo test BVS',
+                    principale: true,
+                    onTap: apriFormTest,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s24),
+              // Un "tabellone" per stile: ogni distanza e' una casella col
+              // tempo in grande, registrato o no, cosi' si vede cosa manca.
+              for (final stile in stiliOrdinati) ...[
+                TitoloSezione(capitalizzaParola(stile)),
+                GrigliaSchede(
+                  larghezzaMinimaColonna: 150,
+                  colonneMassime: 4,
+                  cascata: false,
+                  figli: [
+                    for (final slot in slots.where((s) => s.stile == stile))
+                      Builder(
+                        builder: (context) {
+                          final pb =
+                              migliorePerSlot['${slot.stile}_${slot.distanzaM}'];
+                          return SchedaTempo(
+                            distanza: '${slot.distanzaM} m',
+                            tempo: pb == null
+                                ? null
+                                : formatPaceSeconds(pb.tempoS),
+                            sotto: pb == null ? 'Aggiungi' : null,
+                            onTap: () => apriForm(
+                              stile: slot.stile,
+                              distanzaM: slot.distanzaM,
+                              personalBest: pb,
                             ),
-                          ]
-                        : [
-                            for (final t in test)
-                              _TestTile(
-                                test: t,
-                                atleta: atleta,
-                                onDelete: () =>
-                                    _confermaEliminazioneTest(context, ref, t),
-                              ),
-                          ],
-                  ),
-                  loading: () => const LoadingSkeletonList(righe: 2),
-                  error: (error, _) => ErrorBanner(
-                    messaggio: 'Non è stato possibile caricare i test.',
-                    suggerimento:
-                        'Riprova. Se l\'errore continua, chiudi e riapri '
-                        'l\'app.',
-                    dettaglioTecnico: messaggioErrore(error),
-                  ),
+                          );
+                        },
+                      ),
+                  ],
                 ),
+                const SizedBox(height: AppSpacing.s24),
               ],
-            ),
+              TitoloSezione(
+                'Test BVS',
+                conteggio: test?.length,
+                spiegazione:
+                    'Il test di soglia: dal passo medio si calcolano le '
+                    'tabelle dei passi per zona, usate dalle ripartenze '
+                    'e dalla generazione degli allenamenti.',
+              ),
+              testAsync.when(
+                data: (test) => AppListPanel(
+                  righe: test.isEmpty
+                      ? [
+                          AppListRow(
+                            leading: const Icon(Icons.add_circle_outline),
+                            titolo: 'Aggiungi il primo test BVS',
+                            onTap: apriFormTest,
+                          ),
+                        ]
+                      : [
+                          for (final t in test)
+                            _TestTile(
+                              test: t,
+                              atleta: atleta,
+                              onDelete: () =>
+                                  _confermaEliminazioneTest(context, ref, t),
+                            ),
+                        ],
+                ),
+                loading: () => const LoadingSkeletonList(righe: 2),
+                error: (error, _) => ErrorBanner(
+                  messaggio: 'Non è stato possibile caricare i test.',
+                  suggerimento:
+                      'Riprova. Se l\'errore continua, chiudi e riapri '
+                      'l\'app.',
+                  dettaglioTecnico: messaggioErrore(error),
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Padding(
@@ -195,25 +238,6 @@ class PbListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-nuovo-test-bvs',
-        onPressed: apriFormTest,
-        tooltip: 'Nuovo test BVS',
-        child: const Icon(Icons.speed_outlined),
-      ),
-    );
-  }
-
-  AppListRow _rigaSlot({
-    required SlotPersonalBest slot,
-    required PersonalBest? pb,
-    required VoidCallback onTap,
-  }) {
-    return AppListRow(
-      titolo: '${slot.distanzaM}m ${capitalizzaParola(slot.stile)}',
-      sottotitolo: pb != null ? formatPaceSeconds(pb.tempoS) : 'Non registrato',
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
     );
   }
 }
@@ -242,9 +266,7 @@ class _TestTile extends ConsumerWidget {
       ),
       titolo: '${test.tipo} — ${formatPaceSeconds(test.passoMedio100S)}/100m',
       sottotitolo:
-          '${test.dataTest.day.toString().padLeft(2, '0')}/'
-          '${test.dataTest.month.toString().padLeft(2, '0')}/'
-          '${test.dataTest.year} · '
+          '${dataCompatta(test.dataTest)} ${test.dataTest.year} · '
           '${test.distanzaTotaleM} m in ${formatPaceSeconds(test.tempoTotaleS)}',
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),

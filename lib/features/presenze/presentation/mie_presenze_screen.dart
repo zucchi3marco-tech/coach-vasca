@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
-import '../../../widgets/section_header.dart';
-import '../../../widgets/stat_panel.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/domain/atleta.dart';
@@ -57,9 +57,17 @@ Color _coloreStato(String stato, ColoriApp colori) {
 /// un gruppo impostato, o nessun allenamento lo riporta, si conta su
 /// tutti gli allenamenti del club).
 class MiePresenzeScreen extends ConsumerWidget {
-  const MiePresenzeScreen({required this.atleta, super.key});
+  const MiePresenzeScreen({
+    required this.atleta,
+    this.vistaAllenatore = false,
+    super.key,
+  });
 
   final Atleta atleta;
+
+  /// Aperta dall'allenatore dalla scheda di un atleta: titolo non in
+  /// prima persona.
+  final bool vistaAllenatore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,11 +77,12 @@ class MiePresenzeScreen extends ConsumerWidget {
     );
 
     return AppScaffold(
-      appBar: AppBar(title: const Text('Le mie presenze')),
+      appBar: AppBar(),
       body: presenzeAsync.when(
         data: (presenze) => allenamentiAsync.when(
           data: (allenamenti) => _Contenuto(
             atleta: atleta,
+            vistaAllenatore: vistaAllenatore,
             presenze: presenze,
             allenamenti: allenamenti,
           ),
@@ -112,11 +121,13 @@ class MiePresenzeScreen extends ConsumerWidget {
 class _Contenuto extends StatelessWidget {
   const _Contenuto({
     required this.atleta,
+    required this.vistaAllenatore,
     required this.presenze,
     required this.allenamenti,
   });
 
   final Atleta atleta;
+  final bool vistaAllenatore;
   final List<Presenza> presenze;
   final List<Allenamento> allenamenti;
 
@@ -162,60 +173,71 @@ class _Contenuto extends StatelessWidget {
         return dataB.compareTo(dataA);
       });
 
+    // I numeri stanno in testata; sotto lo storico, una scheda per
+    // allenamento con il riquadro data e lo stato colorato.
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.s16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.s32),
       children: [
-        Wrap(
-          spacing: AppSpacing.s24,
-          runSpacing: AppSpacing.s16,
-          children: [
-            StatPanel(etichetta: 'Presenze totali', valore: '$numeroPresenze'),
-            StatPanel(
-              etichetta: '% questo mese',
+        TestataPagina(
+          occhiello: atleta.nomeCompleto,
+          titolo: vistaAllenatore ? 'Presenze' : 'Le mie presenze',
+          numeri: [
+            NumeroTestata(valore: '$numeroPresenze', etichetta: 'Presenze'),
+            NumeroTestata(
               valore: percentualeMese == null
                   ? '—'
                   : '${percentualeMese.round()}%',
+              etichetta: 'Questo mese',
             ),
-            StatPanel(
-              etichetta: '% totale',
+            NumeroTestata(
               valore: percentualeTotale == null
                   ? '—'
                   : '${percentualeTotale.round()}%',
+              etichetta: 'Da inizio stagione',
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.s24),
-        const SectionHeader('Storico'),
-        const SizedBox(height: AppSpacing.s16),
         if (storico.isEmpty)
-          Text(
-            'Nessuna presenza registrata ancora.',
-            style: AppTypography.corpo.copyWith(color: colori.testo),
+          const EmptyState(
+            icona: Icons.how_to_reg_outlined,
+            titolo: 'Nessuna presenza registrata',
+            descrizione:
+                'Le presenze compaiono qui quando l\'allenatore le segna.',
+            azionePrincipale: 'Ho capito',
           )
         else
-          AppListPanel(
-            righe: [
+          SezioneSchede(
+            titolo: 'Storico',
+            figli: [
               for (final p in storico)
-                AppListRow(
-                  leading: Icon(
-                    _iconaStato(p.stato),
-                    color: _coloreStato(p.stato, colori),
-                  ),
-                  titolo: _formattaData(
-                    allenamentoPerId[p.allenamentoId]?.data,
-                  ),
-                  sottotitolo: _etichettaStato(p.stato),
+                Builder(
+                  builder: (context) {
+                    final a = allenamentoPerId[p.allenamentoId];
+                    final colore = _coloreStato(p.stato, colori);
+                    return SchedaElenco(
+                      leading: a == null
+                          ? IconaRiquadro(_iconaStato(p.stato), colore: colore)
+                          : RiquadroData(
+                              a.data,
+                              colore: colore,
+                              dimensione: 48,
+                            ),
+                      titolo: a?.titolo != null && a!.titolo!.isNotEmpty
+                          ? a.titolo!
+                          : 'Allenamento',
+                      sottotitolo: a == null ? null : giornoSettimana(a.data),
+                      trailing: Pastiglia(
+                        _etichettaStato(p.stato),
+                        colore: colore,
+                      ),
+                      mostraFreccia: false,
+                    );
+                  },
                 ),
             ],
           ),
       ],
     );
-  }
-
-  String _formattaData(DateTime? data) {
-    if (data == null) return 'Allenamento';
-    return '${data.day.toString().padLeft(2, '0')}/'
-        '${data.month.toString().padLeft(2, '0')}/'
-        '${data.year}';
   }
 }

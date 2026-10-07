@@ -53,3 +53,56 @@ class StatPanel extends StatelessWidget {
     );
   }
 }
+
+/// Più [StatPanel] in schede di pari larghezza, nello stile "Oggi": due
+/// per riga su telefono, fino a quattro su schermo largo, righe alte
+/// quanto la scheda più alta.
+class GrigliaNumeri extends StatelessWidget {
+  const GrigliaNumeri({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        const spazio = AppSpacing.spazioPannelli;
+        final massimo = children.length.clamp(1, 4);
+        final colonne = vincoli.maxWidth < 480 ? massimo.clamp(1, 2) : massimo;
+        Widget scheda(Widget figlio) => Container(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          decoration: BoxDecoration(
+            color: colori.superficie,
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+            border: Border.all(color: colori.linea),
+          ),
+          child: figlio,
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var r = 0; r < children.length; r += colonne) ...[
+              if (r > 0) const SizedBox(height: spazio),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var c = 0; c < colonne; c++) ...[
+                      if (c > 0) const SizedBox(width: spazio),
+                      Expanded(
+                        child: r + c < children.length
+                            ? scheda(children[r + c])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}

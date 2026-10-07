@@ -12,6 +12,9 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../application/libreria_blocchi_providers.dart';
 import '../domain/training_block.dart';
 import 'blocco_form_screen.dart';
@@ -34,10 +37,22 @@ class BloccoDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final partiAsync = ref.watch(trainingBlockPartiProvider(blocco.id));
     final colori = context.colori;
+    final parti = partiAsync.value ?? const <TrainingBlockParte>[];
+
+    void apriParte({TrainingBlockParte? parte}) => Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ParteFormScreen(
+          bloccoId: blocco.id,
+          clubId: blocco.clubId,
+          parte: parte,
+          ordineSuccessivo: parti.length + 1,
+        ),
+      ),
+    );
 
     return AppScaffold(
       appBar: AppBar(
-        title: Text(blocco.titolo),
+        title: const Text('Blocco'),
         actions: [
           IconButton(
             tooltip: 'Modifica',
@@ -51,73 +66,67 @@ class BloccoDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.s32),
         children: [
-          Wrap(
-            spacing: AppSpacing.s12,
-            children: [
-              Text(
-                'Codice ${blocco.codice}',
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-              Text(
-                blocco.fase,
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-              Text(
-                blocco.obiettivo,
-                style: AppTypography.piccolo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
+          TestataPagina(
+            occhiello: [
+              blocco.codice,
+              if (blocco.fase.trim().isNotEmpty) blocco.fase.trim(),
+              if (blocco.stato != 'approvato') 'bozza',
+            ].join(' · '),
+            titolo: blocco.titolo,
+            sottotitolo: blocco.obiettivo.trim().isEmpty
+                ? null
+                : blocco.obiettivo,
+            numeri: [
               if (blocco.metriTotali > 0)
-                Text(
-                  '${blocco.metriTotali} m',
-                  style: AppTypography.piccolo.copyWith(
-                    color: colori.testoSecondario,
-                  ),
+                NumeroTestata(
+                  valore: '${blocco.metriTotali}',
+                  etichetta: 'Metri',
                 ),
               if (blocco.durataStimataMin > 0)
-                Text(
-                  '~${blocco.durataStimataMin} min',
-                  style: AppTypography.piccolo.copyWith(
-                    color: colori.testoSecondario,
-                  ),
+                NumeroTestata(
+                  valore: '~${blocco.durataStimataMin}',
+                  etichetta: 'Minuti',
                 ),
+              NumeroTestata(valore: '${parti.length}', etichetta: 'Parti'),
+            ],
+            azioni: [
+              AzioneTestata(
+                icona: Icons.add,
+                etichetta: 'Aggiungi parte',
+                principale: true,
+                onTap: apriParte,
+              ),
             ],
           ),
           if (blocco.note != null && blocco.note!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s8),
-            Text(
-              blocco.note!,
-              style: AppTypography.corpo.copyWith(color: colori.testo),
+            const SizedBox(height: AppSpacing.s12),
+            PoolCard(
+              child: Text(
+                blocco.note!,
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
             ),
           ],
-          const SizedBox(height: AppSpacing.s16),
-          Expanded(
-            child: partiAsync.when(
-              data: (parti) => parti.isEmpty
-                  ? EmptyState(
-                      icona: Icons.list_alt_outlined,
-                      titolo: 'Nessuna parte',
-                      descrizione: 'Questo blocco non ha ancora serie: aggiungine una, o re-importa il file Excel.',
-                      azionePrincipale: 'Aggiungi parte',
-                      onAzionePrincipale: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ParteFormScreen(
-                            bloccoId: blocco.id,
-                            clubId: blocco.clubId,
-                          ),
-                        ),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      child: AppListPanel(
+          const SizedBox(height: AppSpacing.s24),
+          partiAsync.when(
+            data: (parti) => parti.isEmpty
+                ? EmptyState(
+                    icona: Icons.list_alt_outlined,
+                    titolo: 'Nessuna parte',
+                    descrizione:
+                        'Questo blocco non ha ancora serie: aggiungine una, '
+                        'o re-importa il file Excel.',
+                    azionePrincipale: 'Aggiungi parte',
+                    onAzionePrincipale: apriParte,
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TitoloSezione('Parti', conteggio: parti.length),
+                      AppListPanel(
                         righe: [
                           for (final p in parti)
                             AppListRow(
@@ -129,43 +138,20 @@ class BloccoDetailScreen extends ConsumerWidget {
                                 p.esecuzione,
                                 if (p.recuperoS != null) "rec ${p.recuperoS}''",
                               ].join(' · '),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => ParteFormScreen(
-                                    bloccoId: blocco.id,
-                                    clubId: blocco.clubId,
-                                    parte: p,
-                                  ),
-                                ),
-                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => apriParte(parte: p),
                             ),
                         ],
                       ),
-                    ),
-              loading: () => const LoadingSkeletonList(righe: 4),
-              error: (error, _) => ErrorBanner(
-                messaggio: 'Non è stato possibile caricare le parti.',
-                dettaglioTecnico: messaggioErrore(error),
-              ),
+                    ],
+                  ),
+            loading: () => const LoadingSkeletonList(righe: 4),
+            error: (error, _) => ErrorBanner(
+              messaggio: 'Non è stato possibile caricare le parti.',
+              dettaglioTecnico: messaggioErrore(error),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Nuova parte',
-        onPressed: () {
-          final parti = partiAsync.value ?? const <TrainingBlockParte>[];
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ParteFormScreen(
-                bloccoId: blocco.id,
-                clubId: blocco.clubId,
-                ordineSuccessivo: parti.length + 1,
-              ),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }

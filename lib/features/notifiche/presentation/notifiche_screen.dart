@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
 import '../data/notifiche_repository.dart';
 import '../domain/notifica.dart';
 
@@ -24,20 +28,34 @@ class NotificheScreen extends ConsumerWidget {
     _ => Icons.person_add_alt_outlined,
   };
 
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year} ${data.hour.toString().padLeft(2, '0')}:'
-      '${data.minute.toString().padLeft(2, '0')}';
+  Color _colore(BuildContext context, String tipo) => switch (tipo) {
+    'convocazione_gara' => context.dominio.evidenzaAmbra,
+    'convocazione_partita' => context.dominio.evidenzaAmbra,
+    'visita_medica' => context.colori.rosso,
+    _ => context.colori.azione,
+  };
 
-  Future<void> _segnaLetta(
+  /// "Oggi 14:30", "Ieri 09:05", "lunedì 5 ott 18:00".
+  String _quando(DateTime data) {
+    final d = data.toLocal();
+    final giorno = traQuanto(d);
+    final ora =
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+    return '${giorno == 'Oggi' || giorno == 'Ieri' ? giorno : dataEstesa(d)} '
+        '$ora';
+  }
+
+  Future<void> _segnaLette(
     BuildContext context,
     WidgetRef ref,
-    Notifica notifica,
+    List<Notifica> notifiche,
   ) async {
     try {
-      await ref.read(notificheRepositoryProvider).segnaLetta(notifica.id);
-      ref.invalidate(notificheNonLetteProvider(clubId));
+      final repository = ref.read(notificheRepositoryProvider);
+      for (final n in notifiche) {
+        await repository.segnaLetta(n.id);
+      }
     } catch (e) {
       // Senza rete (o con un errore del server) la notifica resta non
       // letta: meglio dirlo che far credere che sia andata a buon fine.
@@ -51,6 +69,8 @@ class NotificheScreen extends ConsumerWidget {
           ),
         );
       }
+    } finally {
+      ref.invalidate(notificheNonLetteProvider(clubId));
     }
   }
 
@@ -62,29 +82,47 @@ class NotificheScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Notifiche')),
       body: notificheAsync.when(
         data: (notifiche) => notifiche.isEmpty
-            ? const EmptyState(
+            ? EmptyState(
                 icona: Icons.notifications_none_outlined,
                 titolo: 'Nessuna notifica',
                 descrizione: 'Le notifiche non lette compariranno qui.',
                 azionePrincipale: 'Torna indietro',
+                onAzionePrincipale: () => Navigator.of(context).maybePop(),
               )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: AppListPanel(
-                  righe: [
-                    for (final n in notifiche)
-                      AppListRow(
-                        leading: Icon(_icona(n.tipo)),
-                        titolo: n.messaggio,
-                        sottotitolo: _formattaData(n.creataIl),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.check_outlined),
-                          tooltip: 'Segna come letta',
-                          onPressed: () => _segnaLetta(context, ref, n),
+            : ListView(
+                padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+                children: [
+                  TitoloSezione(
+                    'Da leggere',
+                    conteggio: notifiche.length,
+                    // Con tante notifiche, una per una era lungo.
+                    azione: notifiche.length > 1
+                        ? 'Segna tutte come lette'
+                        : null,
+                    onAzione: () => _segnaLette(context, ref, notifiche),
+                  ),
+                  GrigliaSchede(
+                    colonneMassime: 1,
+                    figli: [
+                      for (final n in notifiche)
+                        SchedaElenco(
+                          leading: IconaRiquadro(
+                            _icona(n.tipo),
+                            colore: _colore(context, n.tipo),
+                            dimensione: 44,
+                          ),
+                          titolo: n.messaggio,
+                          sottotitolo: _quando(n.creataIl),
+                          mostraFreccia: false,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.check_outlined),
+                            tooltip: 'Segna come letta',
+                            onPressed: () => _segnaLette(context, ref, [n]),
+                          ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),

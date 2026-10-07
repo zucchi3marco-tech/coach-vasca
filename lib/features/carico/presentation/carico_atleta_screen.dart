@@ -94,8 +94,7 @@ class CaricoAtletaScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.s16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    GrigliaNumeri(
                       children: [
                         StatPanel(
                           etichetta: 'Fitness',
@@ -189,9 +188,7 @@ class _SezioneVolumi extends ConsumerWidget {
                 ),
               )
             else
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   for (final z in zoneOrdinate)
                     StatPanel(
@@ -216,9 +213,7 @@ class _SezioneVolumi extends ConsumerWidget {
                 ),
               )
             else
-              Wrap(
-                spacing: AppSpacing.s24,
-                runSpacing: AppSpacing.s16,
+              GrigliaNumeri(
                 children: [
                   for (final e in esecuzioniOrdinate)
                     StatPanel(

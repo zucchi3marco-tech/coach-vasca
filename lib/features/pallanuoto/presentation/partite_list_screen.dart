@@ -6,7 +6,6 @@ import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/giorni.dart';
 import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
@@ -26,7 +25,7 @@ import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import '../domain/elenco_partite.dart';
 import '../domain/partita.dart';
-import '../domain/risultato_partita.dart';
+import 'chip_risultato.dart';
 import 'distinta_screen.dart';
 import 'partita_form_screen.dart';
 
@@ -88,7 +87,7 @@ class PartiteListScreen extends ConsumerWidget {
               )
             : null,
         trailing: giocata
-            ? _Risultato(partita: p)
+            ? ChipRisultato(partita: p)
             : IconButton(
                 icon: const Icon(Icons.edit_outlined),
                 tooltip: 'Modifica partita',
@@ -227,44 +226,4 @@ class PartiteListScreen extends ConsumerWidget {
           builder: (_) => PartitaFormScreen(clubId: clubId, stagione: stagione),
         ),
       );
-}
-
-/// Il risultato di una partita giocata, dagli eventi registrati dal
-/// vivo: verde se vinta, rosso se persa. Niente se non ci sono gol
-/// registrati (partita seguita senza il campo live).
-class _Risultato extends ConsumerWidget {
-  const _Risultato({required this.partita});
-
-  final Partita partita;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final eventi = ref.watch(eventiPartitaListProvider(partita.id)).value;
-    final r = eventi == null ? null : risultatoPartita(eventi, partita);
-    if (r == null) return const SizedBox.shrink();
-    final colori = context.colori;
-    final nostri = partita.inCasa ? r.golCasa : r.golTrasferta;
-    final loro = partita.inCasa ? r.golTrasferta : r.golCasa;
-    final colore = nostri > loro
-        ? colori.ok
-        : nostri < loro
-        ? colori.rosso
-        : colori.testoSecondario;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: colore.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '${r.golCasa}–${r.golTrasferta}',
-        style: AppTypography.numerica(
-          AppTypography.corpoForte.copyWith(
-            color: colore,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
 }
