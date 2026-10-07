@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
+import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../core/utils/error_messages.dart';
-import '../../../core/utils/pace_format.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/application/tempi_gara_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -33,20 +35,6 @@ class GaraDetailScreen extends ConsumerWidget {
 
   final Gara gara;
 
-  static const _nomiGiorni = [
-    'Lunedì',
-    'Martedì',
-    'Mercoledì',
-    'Giovedì',
-    'Venerdì',
-    'Sabato',
-    'Domenica',
-  ];
-
-  String _formattaData(DateTime d) =>
-      '${_nomiGiorni[d.weekday - 1]} ${d.day}/'
-      '${d.month.toString().padLeft(2, '0')}/${d.year}';
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colori = context.colori;
@@ -61,26 +49,10 @@ class GaraDetailScreen extends ConsumerWidget {
         x.id: x.nome,
     }[g.gruppoId];
 
-    Widget riga(IconData icona, String testo) => Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-      child: Row(
-        children: [
-          Icon(icona, size: 20, color: colori.testoSecondario),
-          const SizedBox(width: AppSpacing.s12),
-          Expanded(
-            child: Text(
-              testo,
-              style: AppTypography.corpo.copyWith(color: colori.testo),
-            ),
-          ),
-        ],
-      ),
-    );
-
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(g.nome),
+        title: const Text('Gara'),
         actions: [
           IconButton(
             tooltip: 'Modifica',
@@ -102,17 +74,27 @@ class GaraDetailScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          riga(Icons.calendar_today_outlined, _formattaData(g.data)),
-          if (g.ora != null && g.ora!.isNotEmpty)
-            riga(Icons.access_time, g.ora!),
-          if (g.luogo != null && g.luogo!.isNotEmpty)
-            riga(Icons.place_outlined, g.luogo!),
-          riga(
-            Icons.groups_outlined,
-            g.diClub ? 'Tutto il club' : (nomeGruppo ?? 'Gruppo'),
+          TestataPagina(
+            occhiello: [
+              traQuanto(g.data),
+              dataEstesa(g.data),
+              if (g.ora != null && g.ora!.isNotEmpty) g.ora!,
+            ].join(' · '),
+            titolo: g.nome,
+            sottotitolo: [
+              if (g.luogo != null && g.luogo!.isNotEmpty) g.luogo!,
+              g.diClub ? 'Tutto il club' : (nomeGruppo ?? 'Gruppo'),
+            ].join(' · '),
           ),
-          if (g.note != null && g.note!.isNotEmpty)
-            riga(Icons.notes_outlined, g.note!),
+          if (g.note != null && g.note!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s12),
+            PoolCard(
+              child: Text(
+                g.note!,
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.s24),
           _SezioneIscritti(gara: g),
           const SizedBox(height: AppSpacing.s24),
@@ -176,14 +158,14 @@ class _SezioneIscritti extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          'Atleti iscritti (${idPerAtleta.length})',
+        TitoloSezione(
+          'Atleti iscritti',
+          conteggio: idPerAtleta.length,
           spiegazione:
               'Spunta gli atleti che partecipano alla gara. Si propongono '
               'gli atleti del gruppo della gara; per una gara di tutto il '
               'club, tutti gli atleti attivi.',
         ),
-        const SizedBox(height: AppSpacing.s8),
         if (elenco.isEmpty)
           Text(
             'Nessun atleta disponibile per questa gara.',

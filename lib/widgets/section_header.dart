@@ -4,10 +4,92 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/colori_app.dart';
 
-/// Intestazione di un gruppo (form, elenco): stile `sezione` con un
-/// filetto sotto — vedi DESIGN.md sezione 13, "Form". Con [spiegazione]
-/// mostra anche un'iconcina "i" che apre una spiegazione a comparsa
-/// (mai automatica: solo su tocco, per chi la vuole leggere).
+/// Titolo di una sezione in stile "Oggi": testo `sezione` in grassetto,
+/// senza filetto sotto (lo stacco lo danno le schede che seguono). Con
+/// [conteggio] mostra il numero di voci accanto al titolo, con [azione]
+/// un collegamento a destra (es. "Vedi tutti"), con [spiegazione]
+/// un'iconcina "i" che apre una spiegazione a comparsa.
+class TitoloSezione extends StatelessWidget {
+  const TitoloSezione(
+    this.testo, {
+    this.conteggio,
+    this.spiegazione,
+    this.azione,
+    this.onAzione,
+    super.key,
+  });
+
+  final String testo;
+  final int? conteggio;
+  final String? spiegazione;
+  final String? azione;
+  final VoidCallback? onAzione;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    testo,
+                    style: AppTypography.sezione.copyWith(
+                      color: colori.testo,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (conteggio != null) ...[
+                  const SizedBox(width: AppSpacing.s8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colori.superficieAlt,
+                      borderRadius: BorderRadius.circular(AppRadius.pillola),
+                    ),
+                    child: Text(
+                      '$conteggio',
+                      style: AppTypography.numerica(
+                        AppTypography.etichetta.copyWith(
+                          color: colori.testoSecondario,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (spiegazione != null) ...[
+                  const SizedBox(width: AppSpacing.s4),
+                  PulsanteSpiegazione(titolo: testo, spiegazione: spiegazione!),
+                ],
+              ],
+            ),
+          ),
+          if (azione != null)
+            TextButton(
+              onPressed: onAzione,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Text(azione!),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Intestazione di un gruppo (form, elenco). Stesso aspetto di
+/// [TitoloSezione]: resta come nome storico usato da molte schermate.
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.titolo, {this.spiegazione, super.key});
 
@@ -15,28 +97,8 @@ class SectionHeader extends StatelessWidget {
   final String? spiegazione;
 
   @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                titolo,
-                style: AppTypography.sezione.copyWith(color: colori.testo),
-              ),
-            ),
-            if (spiegazione != null)
-              PulsanteSpiegazione(titolo: titolo, spiegazione: spiegazione!),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.s8),
-        Divider(color: colori.linea, height: 1),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      TitoloSezione(titolo, spiegazione: spiegazione);
 }
 
 /// Iconcina "i" che apre una spiegazione in un dialogo — riusabile

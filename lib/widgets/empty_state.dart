@@ -4,6 +4,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/colori_app.dart';
 import 'primary_button.dart';
+import 'riquadri.dart';
 import 'secondary_button.dart';
 
 /// Schermata/sezione vuota — vedi DESIGN.md sezione 13, "Schermate
@@ -40,11 +41,14 @@ class EmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icona, size: 48, color: colori.testoTenue),
+              IconaRiquadro(icona, dimensione: 64),
               const SizedBox(height: AppSpacing.s16),
               Text(
                 titolo,
-                style: AppTypography.sezione.copyWith(color: colori.testo),
+                style: AppTypography.sezione.copyWith(
+                  color: colori.testo,
+                  fontWeight: FontWeight.w700,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.s8),

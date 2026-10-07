@@ -72,58 +72,72 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
         ),
     ];
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.s4,
-            vertical: AppSpacing.s4,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left, color: colori.testoSecondario),
-                onPressed: () => setState(
-                  () => _mese = DateTime(_mese.year, _mese.month - 1),
-                ),
+    // Larghezza contenuta: su schermo largo le celle quadrate di sette
+    // colonne diventavano enormi.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s4,
+                vertical: AppSpacing.s4,
               ),
-              Text(
-                '${_nomiMesi[_mese.month - 1]} ${_mese.year}',
-                style: AppTypography.sezione.copyWith(color: colori.testo),
-              ),
-              IconButton(
-                icon: Icon(Icons.chevron_right, color: colori.testoSecondario),
-                onPressed: () => setState(
-                  () => _mese = DateTime(_mese.year, _mese.month + 1),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: _nomiGiorni
-              .map(
-                (g) => Expanded(
-                  child: Center(
-                    child: Text(
-                      g,
-                      style: AppTypography.etichetta.copyWith(
-                        color: colori.testoSecondario,
-                      ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: colori.testoSecondario,
+                    ),
+                    onPressed: () => setState(
+                      () => _mese = DateTime(_mese.year, _mese.month - 1),
                     ),
                   ),
-                ),
-              )
-              .toList(),
+                  Text(
+                    '${_nomiMesi[_mese.month - 1]} ${_mese.year}',
+                    style: AppTypography.sezione.copyWith(color: colori.testo),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: colori.testoSecondario,
+                    ),
+                    onPressed: () => setState(
+                      () => _mese = DateTime(_mese.year, _mese.month + 1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              children: _nomiGiorni
+                  .map(
+                    (g) => Expanded(
+                      child: Center(
+                        child: Text(
+                          g,
+                          style: AppTypography.etichetta.copyWith(
+                            color: colori.testoSecondario,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: celle,
+            ),
+          ],
         ),
-        GridView.count(
-          crossAxisCount: 7,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: celle,
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
+import '../theme/colori_app.dart';
 import 'section_header.dart';
 
-/// Un gruppo di campi con la sua intestazione — vedi DESIGN.md sezione 8,
-/// "Form": "Nessun form mostra più di cinque campi di fila senza
-/// un'interruzione". Più [FormGroup] in colonna si spaziano da soli
-/// (28px fra un gruppo e l'altro): non serve aggiungere SizedBox fra loro.
+/// Un gruppo di campi in stile "Oggi": titolo di sezione sopra e i campi
+/// raccolti in una scheda arrotondata. "Nessun form mostra più di cinque
+/// campi di fila senza un'interruzione" (DESIGN.md, "Form"). Più
+/// [FormGroup] in colonna si spaziano da soli: non serve aggiungere
+/// SizedBox fra loro.
 class FormGroup extends StatelessWidget {
   const FormGroup({
     required this.titolo,
     required this.campi,
+    this.spiegazione,
     this.isUltimo = false,
     super.key,
   });
 
   final String titolo;
   final List<Widget> campi;
+  final String? spiegazione;
 
   /// L'ultimo gruppo di una schermata non ha bisogno dello spazio sotto:
   /// ci pensa già il padding della schermata.
@@ -24,17 +28,31 @@ class FormGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colori = context.colori;
     return Padding(
-      padding: EdgeInsets.only(bottom: isUltimo ? 0 : AppSpacing.s28),
+      padding: EdgeInsets.only(bottom: isUltimo ? 0 : AppSpacing.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SectionHeader(titolo),
-          const SizedBox(height: AppSpacing.s16),
-          for (var i = 0; i < campi.length; i++) ...[
-            campi[i],
-            if (i != campi.length - 1) const SizedBox(height: AppSpacing.s16),
-          ],
+          TitoloSezione(titolo, spiegazione: spiegazione),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.paddingPannello),
+            decoration: BoxDecoration(
+              color: colori.superficie,
+              borderRadius: BorderRadius.circular(AppRadius.pannello),
+              border: Border.all(color: colori.linea),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < campi.length; i++) ...[
+                  campi[i],
+                  if (i != campi.length - 1)
+                    const SizedBox(height: AppSpacing.s16),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

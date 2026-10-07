@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/pool_card.dart';
 import '../../../widgets/secondary_button.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../atleti/presentation/record_club_screen.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gare/application/gare_providers.dart';
@@ -24,7 +29,6 @@ import '../data/duplicazione_stagione_service.dart';
 import '../data/stagioni_repository.dart';
 import '../domain/evento_calendario.dart';
 import '../domain/stagione.dart';
-import '../../../widgets/titolo_due_righe.dart';
 import 'calendario_stagione_view.dart';
 import 'elimina_dialogs.dart';
 import 'stagione_form_screen.dart';
@@ -215,16 +219,28 @@ class StagioneDetailScreen extends ConsumerWidget {
       for (final p in partite) EventoCalendario.daPartita(p),
       for (final g in gare) EventoCalendario.daGara(g),
     ]);
+    final oggi = soloData(DateTime.now());
+    final svolti = eventi.where((e) => e.data.isBefore(oggi)).length;
+    final prossimo = eventi
+        .where((e) => !e.data.isBefore(oggi))
+        .map((e) => e.data)
+        .fold<DateTime?>(
+          null,
+          (min, d) => min == null || d.isBefore(min) ? d : min,
+        );
+    final nomeEventi = sport == 'nuoto' ? 'Gare' : 'Partite';
+
+    String periodo(DateTime d) =>
+        '${d.day} ${mesiBrevi[d.month - 1]} ${d.year}';
 
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        // "Stagione agonistica 2026/2027" su telefono veniva troncato:
-        // il nome intero sta nella seconda riga.
-        title: TitoloDueRighe(titolo: 'Stagione', sottotitolo: stagione.nome),
+        title: const Text('Stagione'),
         actions: [
           PopupMenuButton<_AzioneStagione>(
             icon: const Icon(Icons.more_vert),
+            tooltip: 'Altre azioni',
             onSelected: (azione) {
               switch (azione) {
                 case _AzioneStagione.duplica:
@@ -280,21 +296,40 @@ class StagioneDetailScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CalendarioStagioneView(
-            primoGiorno: stagione.dataInizio,
-            ultimoGiorno: stagione.dataFine,
-            eventi: eventi,
-            onGiornoSelezionato: (giorno, eventiDelGiorno) =>
-                _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          AppListPanel(
-            righe: [
+          // Campionato, obiettivo e i collegamenti (statistiche, record)
+          // stanno in testata: prima erano in fondo, sotto un calendario
+          // lungo quanto la stagione.
+          TestataPagina(
+            occhiello: [
+              '${periodo(stagione.dataInizio)} – ${periodo(stagione.dataFine)}',
+              if ((stagione.campionato ?? '').isNotEmpty) stagione.campionato!,
+            ].join(' · '),
+            titolo: stagione.nome,
+            sottotitolo: (stagione.obiettivo ?? '').isNotEmpty
+                ? 'Obiettivo: ${stagione.obiettivo}'
+                : null,
+            numeri: [
+              NumeroTestata(valore: '${eventi.length}', etichetta: nomeEventi),
+              NumeroTestata(
+                valore: '$svolti',
+                etichetta: sport == 'nuoto' ? 'Disputate' : 'Giocate',
+              ),
+              NumeroTestata(
+                valore: prossimo == null ? '—' : dataCompatta(prossimo),
+                etichetta: 'La prossima',
+              ),
+            ],
+            azioni: [
+              AzioneTestata(
+                icona: Icons.add,
+                etichetta: sport == 'nuoto' ? 'Nuova gara' : 'Nuova partita',
+                principale: true,
+                onTap: () => _creaEvento(context, ref, DateTime.now()),
+              ),
               if (mostraPallanuoto)
-                AppListRow(
-                  leading: const Icon(Icons.query_stats),
-                  titolo: 'Statistiche di stagione',
-                  trailing: const Icon(Icons.chevron_right),
+                AzioneTestata(
+                  icona: Icons.query_stats,
+                  etichetta: 'Statistiche',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) =>
@@ -303,10 +338,9 @@ class StagioneDetailScreen extends ConsumerWidget {
                   ),
                 ),
               if (mostraNuoto)
-                AppListRow(
-                  leading: const Icon(Icons.emoji_events_outlined),
-                  titolo: 'Record',
-                  trailing: const Icon(Icons.chevron_right),
+                AzioneTestata(
+                  icona: Icons.emoji_events_outlined,
+                  etichetta: 'Record',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => RecordClubScreen(clubId: stagione.clubId),
@@ -315,24 +349,24 @@ class StagioneDetailScreen extends ConsumerWidget {
                 ),
             ],
           ),
-          if ((stagione.campionato ?? '').isNotEmpty ||
-              (stagione.obiettivo ?? '').isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s16),
-            if ((stagione.campionato ?? '').isNotEmpty)
-              Text(
-                'Campionato: ${stagione.campionato}',
-                style: AppTypography.corpo.copyWith(color: colori.testo),
-              ),
-            if ((stagione.obiettivo ?? '').isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                'Obiettivo: ${stagione.obiettivo}',
-                style: AppTypography.corpo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
-            ],
-          ],
+          const SizedBox(height: AppSpacing.s24),
+          const TitoloSezione(
+            'Calendario',
+            spiegazione:
+                'Tocca un giorno vuoto per aggiungere una partita o una '
+                'gara in quella data; tocca un giorno colorato per aprire '
+                'quello che c\'è in programma.',
+          ),
+          PoolCard(
+            padding: const EdgeInsets.all(AppSpacing.s8),
+            child: CalendarioStagioneView(
+              primoGiorno: stagione.dataInizio,
+              ultimoGiorno: stagione.dataFine,
+              eventi: eventi,
+              onGiornoSelezionato: (giorno, eventiDelGiorno) =>
+                  _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
+            ),
+          ),
         ],
       ),
     );

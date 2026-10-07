@@ -40,24 +40,24 @@ abstract final class AppSpacing {
   // sezione 11 del nuovo DESIGN.md (versione 2): stessi concetti, valori
   // leggermente rifiniti (`sheet` passa da 20 a 24) — questi restano
   // finché le schermate non migrano ad [AppRadius].
-  static const raggioPannello = 12.0;
-  static const raggioControllo = 8.0;
+  static const raggioPannello = 20.0;
+  static const raggioControllo = 12.0;
   static const raggioPillola = 999.0;
   static const raggioSheet = 20.0;
 }
 
-/// Raggi — DESIGN.md (versione 2) sezione 11. Il raggio dipende dal
-/// ruolo dell'elemento, non da "è un riquadro": in pratica ne convivono
-/// due, 8 per i controlli e 12 per i contenitori.
+/// Raggi — DESIGN.md (versione 3, linguaggio "Oggi"). Il raggio dipende
+/// dal ruolo dell'elemento, non da "è un riquadro": 12 per i controlli,
+/// 20 per schede e pannelli, 24 per le testate.
 abstract final class AppRadius {
   /// Pulsante, campo di testo, scheletro di caricamento.
-  static const controllo = 8.0;
+  static const controllo = 12.0;
 
-  /// Pannello, riga di elenco raggruppata, chip rettangolare.
-  static const pannello = 12.0;
+  /// Scheda, pannello, riga di elenco raggruppata, chip rettangolare.
+  static const pannello = 20.0;
 
   /// Blocco in evidenza, pannello statistica, blocco vasca.
-  static const evidenza = 16.0;
+  static const evidenza = 24.0;
 
   /// Bottom sheet, dialog — solo gli angoli superiori per gli sheet.
   static const sheet = 24.0;

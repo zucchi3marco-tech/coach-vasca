@@ -181,6 +181,7 @@ class _CalendarioSettimanaleViewState
     );
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -244,48 +245,45 @@ class _CalendarioSettimanaleViewState
             ],
           ),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: AppListPanel(
-              righe: [
-                for (var index = 0; index < 7; index++)
-                  Builder(
-                    builder: (context) {
-                      final data = aggiungiGiorni(_inizioSettimana, index);
-                      final sessioni = perGiorno[data] ?? const [];
-                      final oggiStesso = isStessoGiorno(data, oggi);
-                      final metriGiorno = metriPerGiorno[data] ?? 0;
-                      return AppListRow(
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: oggiStesso
-                                ? colori.azione
-                                : colori.superficieAlt,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '${data.day}',
-                            style: AppTypography.corpoForte.copyWith(
-                              color: oggiStesso
-                                  ? colori.azioneInk
-                                  : colori.testo,
-                            ),
+        // Senza scroll proprio: scorre insieme alla pagina che la ospita.
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s8),
+          child: AppListPanel(
+            righe: [
+              for (var index = 0; index < 7; index++)
+                Builder(
+                  builder: (context) {
+                    final data = aggiungiGiorni(_inizioSettimana, index);
+                    final sessioni = perGiorno[data] ?? const [];
+                    final oggiStesso = isStessoGiorno(data, oggi);
+                    final metriGiorno = metriPerGiorno[data] ?? 0;
+                    return AppListRow(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: oggiStesso
+                              ? colori.azione
+                              : colori.superficieAlt,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${data.day}',
+                          style: AppTypography.corpoForte.copyWith(
+                            color: oggiStesso ? colori.azioneInk : colori.testo,
                           ),
                         ),
-                        titolo: _nomiGiorni[index],
-                        sottotitolo: sessioni.isEmpty
-                            ? 'Nessun allenamento'
-                            : '${sessioni.map((a) => a.titolo != null && a.titolo!.isNotEmpty ? a.titolo! : 'Allenamento').join(', ')} · $metriGiorno m',
-                        onTap: () => widget.onGiornoSelezionato(data),
-                      );
-                    },
-                  ),
-              ],
-            ),
+                      ),
+                      titolo: _nomiGiorni[index],
+                      sottotitolo: sessioni.isEmpty
+                          ? 'Nessun allenamento'
+                          : '${sessioni.map((a) => a.titolo != null && a.titolo!.isNotEmpty ? a.titolo! : 'Allenamento').join(', ')} · $metriGiorno m',
+                      onTap: () => widget.onGiornoSelezionato(data),
+                    );
+                  },
+                ),
+            ],
           ),
         ),
       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -11,6 +12,9 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -403,85 +407,93 @@ class _AllenamentoDetailScreenState
     };
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
     final colori = context.colori;
+    final titolo = allenamento.titolo != null && allenamento.titolo!.isNotEmpty
+        ? allenamento.titolo!
+        : 'Allenamento';
+    final serieCaricate = serieAsync.value ?? const <Serie>[];
+    final metri = serieCaricate.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
 
-    final testata = Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${allenamento.data.day.toString().padLeft(2, '0')}/'
-            '${allenamento.data.month.toString().padLeft(2, '0')}/'
-            '${allenamento.data.year}'
-            '${nomeGruppo != null ? ' · $nomeGruppo' : ''}',
-            style: AppTypography.sezione.copyWith(color: colori.testo),
-          ),
-          if (allenamento.note != null && allenamento.note!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s4),
-            _NoteCompatte(allenamento.note!),
+    // Le due cose che si fanno a bordo vasca stanno in vista nella
+    // testata (prima erano nel menu ⋮); "Aggiungi serie" resta il "+".
+    final testata = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TestataPagina(
+          occhiello: [
+            traQuanto(allenamento.data),
+            dataEstesa(allenamento.data),
+            ?nomeGruppo,
+          ].join(' · '),
+          titolo: titolo,
+          numeri: serieCaricate.isEmpty
+              ? const []
+              : [
+                  NumeroTestata(
+                    valore: formattaMetri(metri),
+                    etichetta: 'Metri',
+                  ),
+                  NumeroTestata(
+                    valore: '${raggruppaPerPiramide(serieCaricate).length}',
+                    etichetta: 'Serie',
+                  ),
+                ],
+          azioni: [
+            AzioneTestata(
+              icona: Icons.pool,
+              etichetta: 'Bordo vasca',
+              principale: true,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SchedaBordoVascaScreen(allenamento: allenamento),
+                ),
+              ),
+            ),
+            AzioneTestata(
+              icona: Icons.how_to_reg_outlined,
+              etichetta: 'Presenze',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PresenzeScreen(allenamento: allenamento),
+                ),
+              ),
+            ),
           ],
+        ),
+        if (allenamento.note != null && allenamento.note!.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s12),
+          PoolCard(child: _NoteCompatte(allenamento.note!)),
         ],
-      ),
+        const SizedBox(height: AppSpacing.s16),
+      ],
     );
 
     return AppScaffold(
       appBar: AppBar(
-        title: Text(
-          allenamento.titolo != null && allenamento.titolo!.isNotEmpty
-              ? allenamento.titolo!
-              : 'Allenamento',
-        ),
+        title: const Text('Allenamento'),
         actions: [
+          IconButton(
+            tooltip: 'Esporta',
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => mostraMenuExport(
+              context,
+              titoloDocumento: titolo,
+              nomiGruppi: nomiGruppi,
+              caricaDati: () async => [
+                (
+                  allenamento,
+                  await ref
+                      .read(serieRepositoryProvider)
+                      .fetchPerAllenamento(allenamento.id),
+                ),
+              ],
+            ),
+          ),
           PopupMenuButton<VoidCallback>(
             icon: const Icon(Icons.more_vert),
+            tooltip: 'Altre azioni',
             onSelected: (azione) => azione(),
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        SchedaBordoVascaScreen(allenamento: allenamento),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.pool,
-                  etichetta: 'Vista bordo vasca',
-                ),
-              ),
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PresenzeScreen(allenamento: allenamento),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.how_to_reg_outlined,
-                  etichetta: 'Presenze',
-                ),
-              ),
-              PopupMenuItem(
-                value: () => mostraMenuExport(
-                  context,
-                  titoloDocumento:
-                      allenamento.titolo != null &&
-                          allenamento.titolo!.isNotEmpty
-                      ? allenamento.titolo!
-                      : 'Allenamento',
-                  nomiGruppi: nomiGruppi,
-                  caricaDati: () async => [
-                    (
-                      allenamento,
-                      await ref
-                          .read(serieRepositoryProvider)
-                          .fetchPerAllenamento(allenamento.id),
-                    ),
-                  ],
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.ios_share,
-                  etichetta: 'Esporta',
-                ),
-              ),
               PopupMenuItem(
                 value: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -493,7 +505,7 @@ class _AllenamentoDetailScreenState
                 ),
                 child: const _VoceMenu(
                   icona: Icons.edit_outlined,
-                  etichetta: 'Modifica',
+                  etichetta: 'Modifica data, titolo e note',
                 ),
               ),
               PopupMenuItem(
@@ -516,12 +528,11 @@ class _AllenamentoDetailScreenState
       body: serieAsync.when(
         data: (serie) {
           if (serie.isEmpty) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            return ListView(
               children: [
                 testata,
-                const Divider(height: 1),
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.s8),
                   child: EmptyState(
                     icona: Icons.pool_outlined,
                     titolo: 'Nessuna serie',
@@ -549,8 +560,14 @@ class _AllenamentoDetailScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 testata,
-                RiepilogoVolumi(serie: serie),
-                const SizedBox(height: AppSpacing.s12),
+                TitoloSezione('Serie', conteggio: gruppi.length),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 4,
+                    bottom: AppSpacing.s12,
+                  ),
+                  child: RiepilogoVolumi(serie: serie, mostraTotale: false),
+                ),
               ],
             ),
             itemCount: gruppi.length,

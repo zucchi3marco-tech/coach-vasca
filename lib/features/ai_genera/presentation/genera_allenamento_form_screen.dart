@@ -418,7 +418,7 @@ class _GeneraAllenamentoFormScreenState
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: const Text('Genera con AI'),
+        title: const Text('Nuovo allenamento'),
         actions: [
           IconButton(
             tooltip: 'Libreria blocchi',

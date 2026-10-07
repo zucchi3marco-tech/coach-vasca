@@ -14,6 +14,7 @@ class AppScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.scrollabile = false,
     this.physics,
+    this.larghezzaMassima = _larghezzaMassimaContenuto,
     super.key,
   });
 
@@ -32,6 +33,11 @@ class AppScaffold extends StatelessWidget {
   /// interno che userebbe altrimenti lo stesso gesto (es. la lavagna
   /// tattica mentre si disegna una freccia). `null` = scroll normale.
   final ScrollPhysics? physics;
+
+  /// Le schermate principali (le tab della home) usano la stessa
+  /// larghezza del cruscotto "Oggi", cosi' passando da una tab all'altra
+  /// il contenuto non cambia misura.
+  final double larghezzaMassima;
 
   /// Oltre questa larghezza il contenuto smette di allargarsi e resta
   /// centrato — su un monitor desktop, campi di testo larghi quanto la
@@ -58,9 +64,7 @@ class AppScaffold extends StatelessWidget {
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: _larghezzaMassimaContenuto,
-            ),
+            constraints: BoxConstraints(maxWidth: larghezzaMassima),
             child: corpo,
           ),
         ),

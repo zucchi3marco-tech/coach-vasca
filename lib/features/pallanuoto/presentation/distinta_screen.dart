@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -12,7 +13,8 @@ import '../../../widgets/cap_badge.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
-import '../../../widgets/titolo_due_righe.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
@@ -25,15 +27,12 @@ import 'partita_form_screen.dart';
 import 'partita_live_screen.dart';
 import 'statistiche_partita_screen.dart';
 
+/// La scheda di una partita: dati e azioni del giorno della partita in
+/// testata, sotto la distinta dei convocati.
 class DistintaScreen extends ConsumerWidget {
   const DistintaScreen({required this.partita, super.key});
 
   final Partita partita;
-
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year}';
 
   Future<void> _esporta(
     BuildContext context,
@@ -61,208 +60,154 @@ class DistintaScreen extends ConsumerWidget {
     final atletiAsync = ref.watch(
       atletiListProvider((clubId: partita.clubId, includeInactive: false)),
     );
-    final colori = context.colori;
+    final convocati = distintaAsync.value;
 
-    return AppScaffold(
-      appBar: AppBar(
-        toolbarHeight: TitoloDueRighe.altezzaBarraDueRighe,
-        title: TitoloDueRighe(
-          titolo: 'Distinta',
-          sottotitolo: '${partita.squadraCasa} - ${partita.squadraTrasferta}',
-          righeSottotitolo: 2,
+    void apri(Widget schermata) =>
+        Navigator.of(context)
+            .push(MaterialPageRoute<void>(builder: (_) => schermata));
+
+    void aggiungiConvocato(List<DistintaGiocatore> esistenti) =>
+        showDialog<void>(
+          context: context,
+          builder: (_) => _DialogSelezionaAtleta(
+            partita: partita,
+            convocatiEsistenti: esistenti,
+          ),
+        );
+
+    // La scheda della partita: le azioni del giorno della partita (dal
+    // vivo, statistiche, referto) stanno in vista nella testata — prima
+    // erano nel menu ⋮ — e sotto c'e' la distinta.
+    final testata = TestataPagina(
+      occhiello: [
+        traQuanto(partita.data),
+        dataEstesa(partita.data),
+        if (partita.ora != null && partita.ora!.isNotEmpty) partita.ora!,
+      ].join(' · '),
+      titolo: '${partita.squadraCasa} – ${partita.squadraTrasferta}',
+      sottotitolo: [
+        if (partita.luogo != null && partita.luogo!.isNotEmpty) partita.luogo!,
+        if (partita.campionato != null && partita.campionato!.isNotEmpty)
+          partita.campionato!,
+        if (partita.coloreCalottina != null &&
+            partita.coloreCalottina!.isNotEmpty)
+          'calottina ${partita.coloreCalottina == 'blu' ? 'blu' : 'bianca'}',
+      ].join(' · '),
+      azioni: [
+        AzioneTestata(
+          icona: Icons.play_circle_fill,
+          etichetta: 'Dal vivo',
+          principale: true,
+          onTap: () => apri(PartitaLiveScreen(partita: partita)),
         ),
-        actions: [
-          PopupMenuButton<VoidCallback>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (azione) => azione(),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PartitaLiveScreen(partita: partita),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.timeline,
-                  etichetta: 'Eventi partita',
-                ),
+        AzioneTestata(
+          icona: Icons.bar_chart,
+          etichetta: 'Statistiche',
+          onTap: () => apri(StatistichePartitaScreen(partita: partita)),
+        ),
+        AzioneTestata(
+          icona: Icons.description_outlined,
+          etichetta: 'Referto',
+          onTap: () => apri(RefertoPartitaScreen(partita: partita)),
+        ),
+      ],
+    );
+
+    final List<Widget> corpo = distintaAsync.when(
+      data: (convocati) => atletiAsync.when(
+        data: (atleti) {
+          final atletiPerId = {for (final a in atleti) a.id: a};
+          if (convocati.isEmpty) {
+            return [
+              EmptyState(
+                icona: Icons.groups_outlined,
+                titolo: 'Nessun convocato',
+                descrizione:
+                    'Aggiungi il primo convocato per costruire la '
+                    'distinta di questa partita.',
+                azionePrincipale: 'Aggiungi convocato',
+                onAzionePrincipale: () => aggiungiConvocato(convocati),
               ),
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => StatistichePartitaScreen(partita: partita),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.bar_chart,
-                  etichetta: 'Statistiche',
-                ),
-              ),
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RefertoPartitaScreen(partita: partita),
-                  ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.description_outlined,
-                  etichetta: 'Referto',
-                ),
-              ),
-              PopupMenuItem(
-                value: () {
-                  final convocati = distintaAsync.value;
-                  final atleti = atletiAsync.value;
-                  if (convocati == null || atleti == null) return;
-                  _esporta(context, ref, convocati, {
-                    for (final a in atleti) a.id: a,
-                  });
-                },
-                child: const _VoceMenu(
-                  icona: Icons.ios_share,
-                  etichetta: 'Esporta distinta',
-                ),
-              ),
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PartitaFormScreen(
-                      clubId: partita.clubId,
-                      partita: partita,
+            ];
+          }
+          return [
+            AppListPanel(
+              righe: [
+                for (final g in convocati)
+                  _RigaConvocato(
+                    giocatore: g,
+                    atleta: atletiPerId[g.atletaId],
+                    coloreCalottina: partita.coloreCalottina,
+                    onTap: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => _DialogModificaConvocato(
+                        partita: partita,
+                        convocato: g,
+                      ),
                     ),
                   ),
-                ),
-                child: const _VoceMenu(
-                  icona: Icons.edit_outlined,
-                  etichetta: 'Modifica partita',
-                ),
-              ),
-            ],
+              ],
+            ),
+          ];
+        },
+        loading: () => const [LoadingSkeletonList(righe: 5)],
+        error: (error, _) => [
+          ErrorBanner(
+            messaggio: 'Non è stato possibile caricare gli atleti.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(error),
           ),
         ],
       ),
-      body: Column(
+      loading: () => const [LoadingSkeletonList(righe: 5)],
+      error: (error, _) => [
+        ErrorBanner(
+          messaggio: 'Non è stato possibile caricare la distinta.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(error),
+        ),
+      ],
+    );
+
+    return AppScaffold(
+      appBar: AppBar(
+        title: const Text('Partita'),
+        actions: [
+          IconButton(
+            tooltip: 'Esporta distinta',
+            icon: const Icon(Icons.ios_share),
+            onPressed: () {
+              final convocati = distintaAsync.value;
+              final atleti = atletiAsync.value;
+              if (convocati == null || atleti == null) return;
+              _esporta(context, ref, convocati, {
+                for (final a in atleti) a.id: a,
+              });
+            },
+          ),
+          IconButton(
+            tooltip: 'Modifica partita',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => apri(
+              PartitaFormScreen(clubId: partita.clubId, partita: partita),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 88),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_formattaData(partita.data)}'
-                  '${partita.ora != null && partita.ora!.isNotEmpty ? ' · ${partita.ora}' : ''}'
-                  '${partita.luogo != null && partita.luogo!.isNotEmpty ? ' · ${partita.luogo}' : ''}',
-                  style: AppTypography.sezione.copyWith(color: colori.testo),
-                ),
-                if (partita.campionato != null &&
-                    partita.campionato!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    partita.campionato!,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                  ),
-                ],
-                if (partita.coloreCalottina != null &&
-                    partita.coloreCalottina!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    'Calottina: '
-                    '${partita.coloreCalottina == 'blu' ? 'Blu' : 'Bianca'}',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.s8),
-                distintaAsync.when(
-                  data: (convocati) => Text(
-                    '${convocati.length}/${partita.numeroMaxConvocati} '
-                    'convocati',
-                    style: AppTypography.piccolo.copyWith(
-                      color: colori.testoSecondario,
-                    ),
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
-              ],
-            ),
+          testata,
+          const SizedBox(height: AppSpacing.s24),
+          TitoloSezione(
+            convocati == null
+                ? 'Distinta'
+                : 'Distinta · ${convocati.length}/'
+                      '${partita.numeroMaxConvocati} convocati',
           ),
-          const Divider(height: 1),
-          Expanded(
-            child: distintaAsync.when(
-              data: (convocati) => atletiAsync.when(
-                data: (atleti) {
-                  final atletiPerId = {for (final a in atleti) a.id: a};
-                  if (convocati.isEmpty) {
-                    return EmptyState(
-                      icona: Icons.groups_outlined,
-                      titolo: 'Nessun convocato',
-                      descrizione:
-                          'Aggiungi il primo convocato per costruire la '
-                          'distinta di questa partita.',
-                      azionePrincipale: 'Aggiungi convocato',
-                      onAzionePrincipale: () => showDialog<void>(
-                        context: context,
-                        builder: (_) => _DialogSelezionaAtleta(
-                          partita: partita,
-                          convocatiEsistenti: convocati,
-                        ),
-                      ),
-                    );
-                  }
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppSpacing.s16),
-                    child: AppListPanel(
-                      righe: [
-                        for (final g in convocati)
-                          _RigaConvocato(
-                            giocatore: g,
-                            atleta: atletiPerId[g.atletaId],
-                            coloreCalottina: partita.coloreCalottina,
-                            onTap: () => showDialog<void>(
-                              context: context,
-                              builder: (_) => _DialogModificaConvocato(
-                                partita: partita,
-                                convocato: g,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(AppSpacing.s16),
-                  child: LoadingSkeletonList(righe: 5),
-                ),
-                error: (error, _) => Padding(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  child: ErrorBanner(
-                    messaggio: 'Non è stato possibile caricare gli atleti.',
-                    suggerimento:
-                        'Riprova. Se l\'errore continua, chiudi e riapri '
-                        'l\'app.',
-                    dettaglioTecnico: messaggioErrore(error),
-                  ),
-                ),
-              ),
-              loading: () => const Padding(
-                padding: EdgeInsets.all(AppSpacing.s16),
-                child: LoadingSkeletonList(righe: 5),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                child: ErrorBanner(
-                  messaggio: 'Non è stato possibile caricare la distinta.',
-                  suggerimento:
-                      'Riprova. Se l\'errore continua, chiudi e riapri '
-                      'l\'app.',
-                  dettaglioTecnico: messaggioErrore(error),
-                ),
-              ),
-            ),
-          ),
+          ...corpo,
         ],
       ),
       floatingActionButton: distintaAsync.maybeWhen(
@@ -271,39 +216,11 @@ class DistintaScreen extends ConsumerWidget {
             : FloatingActionButton(
                 heroTag: 'fab-distinta',
                 tooltip: 'Aggiungi convocato',
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => _DialogSelezionaAtleta(
-                    partita: partita,
-                    convocatiEsistenti: convocati,
-                  ),
-                ),
+                onPressed: () => aggiungiConvocato(convocati),
                 child: const Icon(Icons.add),
               ),
         orElse: () => null,
       ),
-    );
-  }
-}
-
-class _VoceMenu extends StatelessWidget {
-  const _VoceMenu({required this.icona, required this.etichetta});
-
-  final IconData icona;
-  final String etichetta;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Row(
-      children: [
-        Icon(icona, size: 20, color: colori.testoSecondario),
-        const SizedBox(width: AppSpacing.s12),
-        Text(
-          etichetta,
-          style: AppTypography.corpo.copyWith(color: colori.testo),
-        ),
-      ],
     );
   }
 }

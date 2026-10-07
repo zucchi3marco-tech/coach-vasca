@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/utils/giorni.dart';
-import '../../../theme/app_spacing.dart';
+import '../../../core/utils/date_italiane.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/entrata_a_cascata.dart';
+import '../../../widgets/premibile.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../allenamenti/presentation/scheda_bordo_vasca_screen.dart';
@@ -16,137 +17,11 @@ import '../../pallanuoto/domain/partita.dart';
 import 'dati_home_atleta.dart';
 import 'grafica_pallanuoto.dart';
 
-const _giorni = [
-  'lunedì',
-  'martedì',
-  'mercoledì',
-  'giovedì',
-  'venerdì',
-  'sabato',
-  'domenica',
-];
-const _mesi = [
-  'gen',
-  'feb',
-  'mar',
-  'apr',
-  'mag',
-  'giu',
-  'lug',
-  'ago',
-  'set',
-  'ott',
-  'nov',
-  'dic',
-];
-
-String dataEstesa(DateTime d) =>
-    '${_giorni[d.weekday - 1]} ${d.day} ${_mesi[d.month - 1]}';
-
-/// "Oggi", "Domani", "Tra 5 giorni".
-String traQuanto(DateTime d, {DateTime? oggi}) {
-  final giorni = giorniTra(oggi ?? DateTime.now(), d);
-  return switch (giorni) {
-    <= 0 => 'Oggi',
-    1 => 'Domani',
-    _ => 'Tra $giorni giorni',
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Entrata a cascata: ogni blocco sale e compare con un piccolo ritardo.
-// ---------------------------------------------------------------------------
-
-class EntrataACascata extends StatelessWidget {
-  const EntrataACascata({required this.indice, required this.child, super.key});
-
-  final int indice;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 360 + indice * 70),
-      curve: Interval(
-        (indice * 70) / (360 + indice * 70),
-        1,
-        curve: Curves.easeOutCubic,
-      ),
-      builder: (context, t, child) => Opacity(
-        opacity: t,
-        child: Transform.translate(
-          offset: Offset(0, (1 - t) * 18),
-          child: child,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Riquadro che si abbassa leggermente sotto il dito, con vibrazione
-/// breve al tocco: si capisce subito che e' premibile.
-class Premibile extends StatefulWidget {
-  const Premibile({
-    required this.child,
-    required this.onTap,
-    this.raggio = 20,
-    this.etichetta,
-    super.key,
-  });
-
-  final Widget child;
-  final VoidCallback? onTap;
-  final double raggio;
-  final String? etichetta;
-
-  @override
-  State<Premibile> createState() => _PremibileState();
-}
-
-class _PremibileState extends State<Premibile> {
-  bool _premuto = false;
-  bool _sopra = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final ridotto = MediaQuery.disableAnimationsOf(context);
-    final scala = _premuto ? 0.97 : (_sopra ? 1.01 : 1.0);
-    return Semantics(
-      button: widget.onTap != null,
-      label: widget.etichetta,
-      child: MouseRegion(
-        cursor: widget.onTap == null
-            ? MouseCursor.defer
-            : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _sopra = true),
-        onExit: (_) => setState(() => _sopra = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: widget.onTap == null
-              ? null
-              : (_) => setState(() => _premuto = true),
-          onTapCancel: () => setState(() => _premuto = false),
-          onTapUp: (_) => setState(() => _premuto = false),
-          onTap: widget.onTap == null
-              ? null
-              : () {
-                  HapticFeedback.selectionClick();
-                  widget.onTap!();
-                },
-          child: AnimatedScale(
-            scale: ridotto ? 1 : scala,
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutCubic,
-            child: widget.child,
-          ),
-        ),
-      ),
-    );
-  }
-}
+export '../../../core/utils/date_italiane.dart'
+    show dataEstesa, dataCompatta, traQuanto;
+export '../../../widgets/entrata_a_cascata.dart';
+export '../../../widgets/premibile.dart';
+export '../../../widgets/section_header.dart' show TitoloSezione;
 
 // ---------------------------------------------------------------------------
 // Testata: foto della vasca (o acqua disegnata), calottina, nome, numeri.
@@ -821,7 +696,7 @@ class CardProssimoAllenamento extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _mesi[prossimo.data.month - 1].toUpperCase(),
+                          mesiBrevi[prossimo.data.month - 1].toUpperCase(),
                           style: AppTypography.etichetta.copyWith(
                             color: colori.azione,
                             fontWeight: FontWeight.w700,
@@ -1101,27 +976,6 @@ class _IllustrazioneAnimata extends StatelessWidget {
           accento: accento,
           fondo: fondo,
           progresso: t,
-        ),
-      ),
-    );
-  }
-}
-
-/// Titolo di sezione della home atleta.
-class TitoloSezione extends StatelessWidget {
-  const TitoloSezione(this.testo, {super.key});
-
-  final String testo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s8),
-      child: Text(
-        testo,
-        style: AppTypography.sezione.copyWith(
-          color: context.colori.testo,
-          fontWeight: FontWeight.w700,
         ),
       ),
     );

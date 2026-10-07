@@ -5,10 +5,11 @@ import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
+import '../../../widgets/griglia_azioni.dart';
+import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
-import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/presentation/atleta_form_screen.dart';
@@ -117,9 +118,9 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         .where((a) => !a.consensoPrivacyFirmato)
         .toList();
 
-    final azioni = <_Azione>[
+    final azioni = <AzioneRapida>[
       if (allenamentoOggi != null)
-        _Azione(
+        AzioneRapida(
           icona: Icons.how_to_reg,
           titolo: 'Segna le presenze',
           sottotitolo: 'Allenamento di oggi',
@@ -129,7 +130,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
               _apri(context, PresenzeScreen(allenamento: allenamentoOggi)),
         ),
       if (partitaOggi != null)
-        _Azione(
+        AzioneRapida(
           icona: Icons.play_circle_fill,
           titolo: 'Partita dal vivo',
           sottotitolo: 'Segna tiri e gol',
@@ -137,15 +138,16 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
           evidenziata: true,
           onTap: () => _apri(context, PartitaLiveScreen(partita: partitaOggi)),
         ),
-      _Azione(
+      AzioneRapida(
         icona: Icons.add_task,
         titolo: 'Nuovo allenamento',
-        sottotitolo: 'Mettilo in calendario',
+        sottotitolo: 'Scrivilo, dettalo o generalo',
         colore: dominio.evidenzaCiano,
-        onTap: () => _apri(context, AllenamentoFormScreen(clubId: club.id)),
+        onTap: () =>
+            _apri(context, GeneraAllenamentoFormScreen(clubId: club.id)),
       ),
       if (pallanuoto)
-        _Azione(
+        AzioneRapida(
           icona: Icons.sports_handball,
           titolo: 'Nuova partita',
           sottotitolo: 'Data, avversario, piscina',
@@ -153,14 +155,14 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
           onTap: () => _apri(context, PartitaFormScreen(clubId: club.id)),
         ),
       if (pallanuoto && prossimaPartita != null && partitaOggi == null)
-        _Azione(
+        AzioneRapida(
           icona: Icons.format_list_numbered,
           titolo: 'Convocazioni',
           sottotitolo: 'Distinta della prossima partita',
           colore: dominio.evidenzaViola,
           onTap: () => _apri(context, DistintaScreen(partita: prossimaPartita)),
         ),
-      _Azione(
+      AzioneRapida(
         icona: Icons.person_add_alt_1,
         titolo: 'Nuovo atleta',
         sottotitolo: 'Aggiungilo alla squadra',
@@ -206,7 +208,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               blocco(const TitoloSezione('Cosa vuoi fare?')),
-              blocco(_GrigliaAzioni(azioni: azioni)),
+              blocco(GrigliaAzioni(azioni: azioni)),
               const SizedBox(height: 20),
               blocco(const TitoloSezione('In programma')),
               if (prossimaPartita != null) ...[
@@ -224,7 +226,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
                   onApri: prossimoAllenamento == null
                       ? () => _apri(
                           context,
-                          AllenamentoFormScreen(clubId: club.id),
+                          GeneraAllenamentoFormScreen(clubId: club.id),
                         )
                       : () => _apri(
                           context,
@@ -457,115 +459,6 @@ class _TestataSquadra extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Azione {
-  const _Azione({
-    required this.icona,
-    required this.titolo,
-    required this.sottotitolo,
-    required this.colore,
-    required this.onTap,
-    this.evidenziata = false,
-  });
-
-  final IconData icona;
-  final String titolo;
-  final String sottotitolo;
-  final Color colore;
-  final VoidCallback onTap;
-
-  /// Le azioni di oggi (presenze, partita dal vivo): piu' in vista.
-  final bool evidenziata;
-}
-
-class _GrigliaAzioni extends StatelessWidget {
-  const _GrigliaAzioni({required this.azioni});
-
-  final List<_Azione> azioni;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth;
-        final colonne = w < 520 ? 2 : (w < 900 ? 3 : 4);
-        const spazio = 12.0;
-        final larghezza = (w - spazio * (colonne - 1)) / colonne;
-        return Wrap(
-          spacing: spazio,
-          runSpacing: spazio,
-          children: [
-            for (final a in azioni)
-              SizedBox(
-                width: larghezza,
-                child: Premibile(
-                  onTap: a.onTap,
-                  etichetta: '${a.titolo}. ${a.sottotitolo}',
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 112),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: a.evidenziata ? null : colori.superficie,
-                      gradient: a.evidenziata
-                          ? LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                a.colore.withValues(alpha: 0.32),
-                                a.colore.withValues(alpha: 0.1),
-                              ],
-                            )
-                          : null,
-                      border: Border.all(
-                        color: a.evidenziata
-                            ? a.colore.withValues(alpha: 0.6)
-                            : colori.linea,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: a.colore.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(a.icona, color: a.colore),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          a.titolo,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.corpoForte.copyWith(
-                            color: colori.testo,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          a.sottotitolo,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.etichetta.copyWith(
-                            color: colori.testoSecondario,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
     );
   }
 }

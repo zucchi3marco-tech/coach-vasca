@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
-import '../../../theme/app_typography.dart';
-import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/entrata_a_cascata.dart';
 import '../../../widgets/error_banner.dart';
-import '../../../widgets/fab_azioni.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/pool_card.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -20,11 +25,16 @@ import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 import 'allenamento_detail_screen.dart';
+import 'calendario/allenamenti_per_giorno.dart';
 import 'calendario/calendario_mensile_view.dart';
 import 'calendario/calendario_settimanale_view.dart';
 import 'giorno_allenamenti_screen.dart';
 
 enum _Vista { elenco, settimana, mese }
+
+/// Quante voci mostrare per sezione prima di "Mostra tutti": con una
+/// stagione programmata in anticipo gli allenamenti futuri sono decine.
+const _vociIniziali = 8;
 
 class AllenamentiListScreen extends ConsumerStatefulWidget {
   const AllenamentiListScreen({
@@ -45,199 +55,244 @@ class AllenamentiListScreen extends ConsumerStatefulWidget {
 
 class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
   _Vista _vista = _Vista.elenco;
+  bool _tuttiProssimi = false;
+  bool _tuttiSvolti = false;
 
   @override
   Widget build(BuildContext context) {
     final allenamentiAsync = ref.watch(allenamentiListProvider(widget.clubId));
-    final Map<String, String> nomiGruppi = {
-      for (final g in ref.watch(gruppiListProvider(widget.clubId)).value ?? [])
-        g.id: g.nome,
-    };
+    final nomeSquadra = ref.watch(
+      nomeSquadraProvider((
+        clubId: widget.clubId,
+        gruppoId: widget.filtroGruppoId,
+      )),
+    );
+    // Un allenamento con gruppo assegnato è visibile solo a chi lavora
+    // con quel gruppo; uno senza gruppo resta visibile a tutti (stessa
+    // regola di PresenzeScreen).
+    final allenamenti = allenamentiAsync.value
+        ?.where(
+          (a) =>
+              widget.filtroGruppoId == null ||
+              a.gruppoId == widget.filtroGruppoId ||
+              a.gruppoId == null,
+        )
+        .toList();
+
+    final oggi = soloData(DateTime.now());
+    final inProgramma =
+        allenamenti?.where((a) => !a.data.isBefore(oggi)).length ?? 0;
+    final svolti = (allenamenti?.length ?? 0) - inProgramma;
 
     return AppScaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s8),
-            child: SegmentedButton<_Vista>(
-              // Senza spunta: la scelta e' gia' evidenziata dal
-              // colore, e la spunta toglieva spazio all'etichetta
-              // che su telefono andava a capo a meta' parola.
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: _Vista.elenco, label: Text('Elenco')),
-                ButtonSegment(
-                  value: _Vista.settimana,
-                  label: Text('Settimana'),
-                ),
-                ButtonSegment(value: _Vista.mese, label: Text('Mese')),
-              ],
-              selected: {_vista},
-              onSelectionChanged: (selezione) =>
-                  setState(() => _vista = selezione.first),
-            ),
-          ),
-          Expanded(
-            child: allenamentiAsync.when(
-              data: (tuttiGliAllenamenti) {
-                // Un allenamento con gruppo assegnato è visibile solo a chi
-                // lavora con quel gruppo; uno senza gruppo resta visibile a
-                // tutti (stessa regola di PresenzeScreen).
-                final allenamenti = widget.filtroGruppoId == null
-                    ? tuttiGliAllenamenti
-                    : tuttiGliAllenamenti
-                          .where(
-                            (a) =>
-                                a.gruppoId == widget.filtroGruppoId ||
-                                a.gruppoId == null,
-                          )
-                          .toList();
-                return switch (_vista) {
-                  _Vista.elenco => _buildElenco(allenamenti, nomiGruppi),
-                  _Vista.settimana => CalendarioSettimanaleView(
-                    clubId: widget.clubId,
-                    allenamenti: allenamenti,
-                    onGiornoSelezionato: (data) => _apriGiorno(data),
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
+      body: RefreshIndicator(
+        onRefresh: () => ref
+            .read(allenamentiRepositoryProvider)
+            .refreshFromRemote(widget.clubId),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+          children: [
+            EntrataACascata(
+              indice: 0,
+              child: TestataPagina(
+                occhiello: nomeSquadra,
+                titolo: 'Allenamenti',
+                sottotitolo: allenamenti == null
+                    ? null
+                    : '$inProgramma in programma · $svolti già svolti',
+                azioni: [
+                  AzioneTestata(
+                    icona: Icons.add,
+                    etichetta: 'Nuovo allenamento',
+                    principale: true,
+                    onTap: _apriNuovo,
                   ),
-                  _Vista.mese => CalendarioMensileView(
-                    allenamenti: allenamenti,
-                    onGiornoSelezionato: (data) => _apriGiorno(data),
+                  AzioneTestata(
+                    icona: Icons.view_week_outlined,
+                    etichetta: 'Genera la settimana',
+                    onTap: _apriGeneraSettimana,
                   ),
-                };
-              },
-              loading: () => ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                children: const [LoadingSkeletonList(righe: 6)],
-              ),
-              error: (error, _) => ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(AppSpacing.s16),
-                children: [
-                  ErrorBanner(
-                    messaggio:
-                        'Non è stato possibile caricare gli '
-                        'allenamenti.',
-                    suggerimento:
-                        'Riprova. Se l\'errore continua, chiudi e riapri '
-                        'l\'app.',
-                    dettaglioTecnico: messaggioErrore(error),
+                  AzioneTestata(
+                    icona: Icons.speed,
+                    etichetta: 'Ripartenze',
+                    onTap: _apriRipartenze,
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FabAzioni(
-        heroTag: 'fab-allenamenti',
-        azioni: [
-          AzioneFab(
-            icona: Icons.auto_awesome,
-            etichetta: 'Nuovo allenamento',
-            onPressed: _apriGeneraAI,
-          ),
-          AzioneFab(
-            icona: Icons.view_week_outlined,
-            etichetta: 'Genera settimana con AI',
-            onPressed: _apriGeneraSettimanaAI,
-          ),
-          AzioneFab(
-            icona: Icons.speed,
-            etichetta: 'Ripartenze',
-            onPressed: _apriRipartenze,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildElenco(
-    List<Allenamento> allenamenti,
-    Map<String, String> nomiGruppi,
-  ) {
-    return RefreshIndicator(
-      onRefresh: () => ref
-          .read(allenamentiRepositoryProvider)
-          .refreshFromRemote(widget.clubId),
-      child: allenamenti.isEmpty
-          ? ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                EmptyState(
-                  icona: Icons.calendar_month_outlined,
-                  titolo: 'Nessun allenamento',
-                  descrizione:
-                      'Descrivi il primo allenamento o impostane i '
-                      'parametri: l\'AI ti propone la scheda.',
-                  azionePrincipale: 'Nuovo allenamento',
-                  onAzionePrincipale: _apriGeneraAI,
+            const SizedBox(height: AppSpacing.s16),
+            Center(
+              child: SegmentedButton<_Vista>(
+                // Senza spunta: la scelta e' gia' evidenziata dal colore, e
+                // la spunta toglieva spazio all'etichetta che su telefono
+                // andava a capo a meta' parola.
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: _Vista.elenco, label: Text('Elenco')),
+                  ButtonSegment(
+                    value: _Vista.settimana,
+                    label: Text('Settimana'),
+                  ),
+                  ButtonSegment(value: _Vista.mese, label: Text('Mese')),
+                ],
+                selected: {_vista},
+                onSelectionChanged: (selezione) =>
+                    setState(() => _vista = selezione.first),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            ...allenamentiAsync.when(
+              data: (_) => switch (_vista) {
+                _Vista.elenco => _elenco(allenamenti!),
+                _Vista.settimana => [
+                  CalendarioSettimanaleView(
+                    clubId: widget.clubId,
+                    allenamenti: allenamenti!,
+                    onGiornoSelezionato: _apriGiorno,
+                  ),
+                ],
+                _Vista.mese => [
+                  PoolCard(
+                    padding: const EdgeInsets.all(AppSpacing.s8),
+                    child: CalendarioMensileView(
+                      allenamenti: allenamenti!,
+                      onGiornoSelezionato: _apriGiorno,
+                    ),
+                  ),
+                ],
+              },
+              loading: () => const [LoadingSkeletonList(righe: 6)],
+              error: (error, _) => [
+                ErrorBanner(
+                  messaggio:
+                      'Non è stato possibile caricare gli '
+                      'allenamenti.',
+                  suggerimento:
+                      'Riprova. Se l\'errore continua, chiudi e riapri '
+                      'l\'app.',
+                  dettaglioTecnico: messaggioErrore(error),
                 ),
               ],
-            )
-          : _elencoDivisoPerOggi(allenamenti, nomiGruppi),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  /// Prima oggi e i prossimi (dal piu' vicino), poi quelli gia' svolti
+  /// Prima oggi, poi i prossimi (dal piu' vicino), poi quelli gia' svolti
   /// (dal piu' recente). Con una stagione programmata in anticipo,
   /// l'ordine unico dal piu' lontano costringeva a scorrere mesi di sedute
   /// future per trovare quella di oggi.
-  Widget _elencoDivisoPerOggi(
-    List<Allenamento> allenamenti,
-    Map<String, String> nomiGruppi,
-  ) {
-    final adesso = DateTime.now();
-    final oggi = DateTime(adesso.year, adesso.month, adesso.day);
-    final prossimi = allenamenti.where((a) => !a.data.isBefore(oggi)).toList()
-      ..sort((a, b) => a.data.compareTo(b.data));
+  List<Widget> _elenco(List<Allenamento> allenamenti) {
+    if (allenamenti.isEmpty) {
+      return [
+        EmptyState(
+          icona: Icons.calendar_month_outlined,
+          titolo: 'Nessun allenamento',
+          descrizione:
+              'Scrivi o detta il primo allenamento, oppure impostane i '
+              'parametri: l\'AI ti propone la scheda.',
+          azionePrincipale: 'Nuovo allenamento',
+          onAzionePrincipale: _apriNuovo,
+        ),
+      ];
+    }
+    final oggi = soloData(DateTime.now());
+    final diOggi = allenamenti
+        .where((a) => isStessoGiorno(a.data, oggi))
+        .toList();
+    final prossimi =
+        allenamenti
+            .where((a) => a.data.isAfter(oggi) && !isStessoGiorno(a.data, oggi))
+            .toList()
+          ..sort((a, b) => a.data.compareTo(b.data));
     final svolti = allenamenti.where((a) => a.data.isBefore(oggi)).toList()
       ..sort((a, b) => b.data.compareTo(a.data));
-    final colori = context.colori;
+    final nomiGruppi = {
+      for (final g in ref.watch(gruppiListProvider(widget.clubId)).value ?? [])
+        g.id: g.nome,
+    };
+    final ciano = context.dominio.evidenzaCiano;
 
-    AppListRow riga(Allenamento a) => AppListRow(
-      titolo: a.titolo != null && a.titolo!.isNotEmpty
-          ? a.titolo!
-          : 'Allenamento',
-      sottotitolo:
-          '${a.data.day.toString().padLeft(2, '0')}/'
-          '${a.data.month.toString().padLeft(2, '0')}/'
-          '${a.data.year}'
-          '${nomiGruppi[a.gruppoId] != null ? ' · ${nomiGruppi[a.gruppoId]}' : ''}',
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => AllenamentoDetailScreen(allenamento: a),
+    Widget scheda(Allenamento a, {bool passato = false, bool oggi = false}) {
+      // Il gruppo si scrive solo quando aggiunge qualcosa: con una squadra
+      // scelta in alto era ripetuto identico su ogni riga.
+      final gruppo = a.gruppoId == null
+          ? 'Tutto il club'
+          : widget.filtroGruppoId == null
+          ? nomiGruppi[a.gruppoId]
+          : null;
+      return SchedaElenco(
+        leading: RiquadroData(a.data, colore: ciano, spento: passato),
+        occhiello: oggi ? 'Oggi' : null,
+        evidenza: oggi ? ciano : null,
+        titolo: a.titolo != null && a.titolo!.isNotEmpty
+            ? a.titolo!
+            : 'Allenamento',
+        sottotitolo: [
+          if (!oggi) traQuanto(a.data),
+          giornoSettimana(a.data),
+          ?gruppo,
+        ].join(' · '),
+        attenuata: passato,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AllenamentoDetailScreen(allenamento: a),
+          ),
         ),
-      ),
-    );
+      );
+    }
 
-    Widget titolo(String testo, int quanti) => Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, AppSpacing.s8),
-      child: Text(
-        '$testo · $quanti',
-        style: AppTypography.sezione.copyWith(
-          color: colori.testo,
-          fontWeight: FontWeight.w700,
+    List<Widget> sezione({
+      required String titolo,
+      required List<Allenamento> voci,
+      required bool tutti,
+      required VoidCallback onAlterna,
+      bool passato = false,
+    }) {
+      final visibili = tutti ? voci : voci.take(_vociIniziali).toList();
+      return [
+        const SizedBox(height: AppSpacing.s8),
+        TitoloSezione(
+          titolo,
+          conteggio: voci.length,
+          azione: voci.length > _vociIniziali
+              ? (tutti ? 'Mostra meno' : 'Mostra tutti')
+              : null,
+          onAzione: onAlterna,
         ),
-      ),
-    );
+        GrigliaSchede(
+          figli: [for (final a in visibili) scheda(a, passato: passato)],
+        ),
+        const SizedBox(height: AppSpacing.s16),
+      ];
+    }
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      children: [
-        if (prossimi.isNotEmpty) ...[
-          titolo('Oggi e prossimi', prossimi.length),
-          AppListPanel(righe: [for (final a in prossimi) riga(a)]),
-        ],
-        if (svolti.isNotEmpty) ...[
-          if (prossimi.isNotEmpty) const SizedBox(height: AppSpacing.s24),
-          titolo('Già svolti', svolti.length),
-          AppListPanel(righe: [for (final a in svolti) riga(a)]),
-        ],
+    return [
+      if (diOggi.isNotEmpty) ...[
+        const TitoloSezione('Oggi'),
+        GrigliaSchede(figli: [for (final a in diOggi) scheda(a, oggi: true)]),
+        const SizedBox(height: AppSpacing.s16),
       ],
-    );
+      if (prossimi.isNotEmpty)
+        ...sezione(
+          titolo: 'Prossimi',
+          voci: prossimi,
+          tutti: _tuttiProssimi,
+          onAlterna: () => setState(() => _tuttiProssimi = !_tuttiProssimi),
+        ),
+      if (svolti.isNotEmpty)
+        ...sezione(
+          titolo: 'Già svolti',
+          voci: svolti,
+          tutti: _tuttiSvolti,
+          passato: true,
+          onAlterna: () => setState(() => _tuttiSvolti = !_tuttiSvolti),
+        ),
+    ];
   }
 
   void _apriGiorno(DateTime data) {
@@ -249,7 +304,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
     );
   }
 
-  Future<void> _apriGeneraAI() async {
+  Future<void> _apriNuovo() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GeneraAllenamentoFormScreen(clubId: widget.clubId),
@@ -257,7 +312,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
     );
   }
 
-  Future<void> _apriGeneraSettimanaAI() async {
+  Future<void> _apriGeneraSettimana() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GeneraSettimanaFormScreen(clubId: widget.clubId),

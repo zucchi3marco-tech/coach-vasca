@@ -1,29 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_list_panel.dart';
-import '../../../widgets/app_list_row.dart';
+import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/entrata_a_cascata.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/testata_pagina.dart';
+import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/data/stagioni_repository.dart';
 import '../../stagioni/domain/stagione.dart';
+import '../../stagioni/presentation/stagione_detail_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import '../domain/elenco_partite.dart';
 import '../domain/partita.dart';
+import '../domain/risultato_partita.dart';
 import 'distinta_screen.dart';
 import 'partita_form_screen.dart';
 
-/// Elenco delle partite della stagione in corso del gruppo, una sotto
-/// l'altra dalla più vecchia alla più recente. Le partite non si creano
-/// da qui: si creano dal calendario della stagione (tocco su un giorno).
+/// Elenco delle partite della stagione in corso del gruppo, divise fra
+/// prossime (dalla più vicina) e giocate (dalla più recente, con il
+/// risultato). Una partita nuova si crea dalla testata (nella stagione
+/// mostrata) o dal calendario della stagione.
 class PartiteListScreen extends ConsumerWidget {
   const PartiteListScreen({
     required this.clubId,
@@ -40,150 +51,221 @@ class PartiteListScreen extends ConsumerWidget {
   /// Porta alla tab Stagioni (da lì si crea la stagione e le sue partite).
   final VoidCallback? onVaiAStagioni;
 
-  String _formattaData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/'
-      '${data.month.toString().padLeft(2, '0')}/'
-      '${data.year}';
-
-  Widget _vuoto({required String titolo, required String descrizione}) =>
-      ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          EmptyState(
-            icona: Icons.sports_handball_outlined,
-            titolo: titolo,
-            descrizione: descrizione,
-            azionePrincipale: 'Vai alle stagioni',
-            onAzionePrincipale: onVaiAStagioni,
-          ),
-        ],
-      );
-
-  Widget _elenco(
-    BuildContext context,
-    Stagione stagione,
-    List<Partita> partite,
-  ) {
+  List<Widget> _elenco(BuildContext context, List<Partita> partite) {
     final colori = context.colori;
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            stagione.nome,
-            style: AppTypography.sezione.copyWith(color: colori.testo),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          AppListPanel(
-            righe: [
-              for (final p in partite)
-                AppListRow(
-                  titolo: 'vs ${p.avversario}',
-                  sottotitolo:
-                      '${p.inCasa ? 'In casa' : 'In trasferta'} · '
-                      // Data e ora legate: l'ora non va a capo da sola.
-                      '${_formattaData(p.data)}'
-                      '${p.ora != null && p.ora!.isNotEmpty ? '\u00A0·\u00A0${p.ora}' : ''}'
-                      '${p.gruppoId == null ? ' · Tutto il club' : ''}',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Modifica partita',
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                PartitaFormScreen(clubId: clubId, partita: p),
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => DistintaScreen(partita: p),
-                    ),
-                  ),
-                  onLongPress: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PartitaFormScreen(clubId: clubId, partita: p),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
+    final ambra = context.dominio.evidenzaAmbra;
+    final oggi = soloData(DateTime.now());
+    final prossime = partite.where((p) => !p.data.isBefore(oggi)).toList();
+    final giocate = partite.where((p) => p.data.isBefore(oggi)).toList()
+      ..sort((a, b) => b.data.compareTo(a.data));
+
+    Widget scheda(Partita p, {required bool giocata}) {
+      final oggiStesso = giorniTra(oggi, p.data) == 0;
+      void modifica() => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PartitaFormScreen(clubId: clubId, partita: p),
+        ),
+      );
+      return SchedaElenco(
+        leading: RiquadroData(p.data, colore: ambra, spento: giocata),
+        occhiello: oggiStesso ? 'Oggi' : null,
+        evidenza: oggiStesso ? ambra : null,
+        titolo: 'vs ${p.avversario}',
+        sottotitolo: [
+          if (!oggiStesso) traQuanto(p.data),
+          if (p.ora != null && p.ora!.isNotEmpty) p.ora!,
+          p.inCasa ? 'In casa' : 'In trasferta',
+        ].join(' · '),
+        sotto: p.gruppoId == null || p.importanza == 'alta'
+            ? Wrap(
+                spacing: AppSpacing.s4,
+                runSpacing: AppSpacing.s4,
+                children: [
+                  if (p.importanza == 'alta')
+                    Pastiglia('Importante', colore: colori.attenzione),
+                  if (p.gruppoId == null)
+                    Pastiglia('Tutto il club', colore: colori.testoSecondario),
+                ],
+              )
+            : null,
+        trailing: giocata
+            ? _Risultato(partita: p)
+            : IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Modifica partita',
+                onPressed: modifica,
+              ),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => DistintaScreen(partita: p))),
+        onLongPress: modifica,
+      );
+    }
+
+    return [
+      if (prossime.isNotEmpty) ...[
+        TitoloSezione('Prossime', conteggio: prossime.length),
+        GrigliaSchede(
+          figli: [for (final p in prossime) scheda(p, giocata: false)],
+        ),
+        const SizedBox(height: AppSpacing.s24),
+      ],
+      if (giocate.isNotEmpty) ...[
+        TitoloSezione('Giocate', conteggio: giocate.length),
+        GrigliaSchede(
+          figli: [for (final p in giocate) scheda(p, giocata: true)],
+        ),
+      ],
+    ];
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stagioniAsync = ref.watch(stagioniListProvider(clubId));
     final partiteAsync = ref.watch(partiteListProvider(clubId));
+    final nomeSquadra = ref.watch(
+      nomeSquadraProvider((clubId: clubId, gruppoId: filtroGruppoId)),
+    );
+    final stagione = stagioniAsync.hasValue
+        ? stagionePerElenco(stagioniAsync.requireValue, filtroGruppoId)
+        : null;
 
-    final Widget corpo;
+    final List<Widget> corpo;
     final errore = stagioniAsync.error ?? partiteAsync.error;
     if (errore != null) {
-      corpo = ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.s16),
-        children: [
-          ErrorBanner(
-            messaggio: 'Non è stato possibile caricare le partite.',
-            suggerimento:
-                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-            dettaglioTecnico: messaggioErrore(errore),
-          ),
-        ],
-      );
+      corpo = [
+        ErrorBanner(
+          messaggio: 'Non è stato possibile caricare le partite.',
+          suggerimento:
+              'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+          dettaglioTecnico: messaggioErrore(errore),
+        ),
+      ];
     } else if (!stagioniAsync.hasValue || !partiteAsync.hasValue) {
-      corpo = ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.s16),
-        children: const [LoadingSkeletonList(righe: 6)],
-      );
-    } else {
-      final stagione = stagionePerElenco(
-        stagioniAsync.requireValue,
-        filtroGruppoId,
-      );
-      if (stagione == null) {
-        corpo = _vuoto(
+      corpo = const [LoadingSkeletonList(righe: 6)];
+    } else if (stagione == null) {
+      corpo = [
+        EmptyState(
+          icona: Icons.sports_handball_outlined,
           titolo: 'Nessuna stagione',
           descrizione:
-              'Le partite si aggiungono dal calendario di una stagione: '
-              'crea prima la stagione.',
-        );
-      } else {
-        final partite = partiteDellaStagione(
-          stagione,
-          partiteAsync.requireValue,
-          filtroGruppoId,
-        );
-        corpo = partite.isEmpty
-            ? _vuoto(
+              'Le partite appartengono a una stagione: crea prima la '
+              'stagione del gruppo.',
+          azionePrincipale: 'Vai alle stagioni',
+          onAzionePrincipale: onVaiAStagioni,
+        ),
+      ];
+    } else {
+      final partite = partiteDellaStagione(
+        stagione,
+        partiteAsync.requireValue,
+        filtroGruppoId,
+      );
+      corpo = partite.isEmpty
+          ? [
+              EmptyState(
+                icona: Icons.sports_handball_outlined,
                 titolo: 'Nessuna partita in questa stagione',
                 descrizione:
-                    'Apri la stagione «${stagione.nome}» e tocca un giorno '
-                    'del calendario per aggiungere una partita.',
-              )
-            : _elenco(context, stagione, partite);
-      }
+                    'Aggiungi la prima partita di «${stagione.nome}»: poi '
+                    'prepari la distinta e la segui dal vivo.',
+                azionePrincipale: 'Nuova partita',
+                onAzionePrincipale: () => _apriNuova(context, stagione),
+              ),
+            ]
+          : _elenco(context, partite);
     }
 
     return AppScaffold(
+      larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(partiteRepositoryProvider).refreshFromRemote(clubId);
           await ref.read(stagioniRepositoryProvider).refreshFromRemote(clubId);
         },
-        child: corpo,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+          children: [
+            EntrataACascata(
+              indice: 0,
+              child: TestataPagina(
+                occhiello: nomeSquadra,
+                titolo: 'Partite',
+                sottotitolo: stagione?.nome,
+                azioni: [
+                  if (stagione != null) ...[
+                    AzioneTestata(
+                      icona: Icons.add,
+                      etichetta: 'Nuova partita',
+                      principale: true,
+                      onTap: () => _apriNuova(context, stagione),
+                    ),
+                    AzioneTestata(
+                      icona: Icons.calendar_month_outlined,
+                      etichetta: 'Calendario',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              StagioneDetailScreen(stagione: stagione),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s24),
+            ...corpo,
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _apriNuova(BuildContext context, Stagione stagione) =>
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PartitaFormScreen(clubId: clubId, stagione: stagione),
+        ),
+      );
+}
+
+/// Il risultato di una partita giocata, dagli eventi registrati dal
+/// vivo: verde se vinta, rosso se persa. Niente se non ci sono gol
+/// registrati (partita seguita senza il campo live).
+class _Risultato extends ConsumerWidget {
+  const _Risultato({required this.partita});
+
+  final Partita partita;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final eventi = ref.watch(eventiPartitaListProvider(partita.id)).value;
+    final r = eventi == null ? null : risultatoPartita(eventi, partita);
+    if (r == null) return const SizedBox.shrink();
+    final colori = context.colori;
+    final nostri = partita.inCasa ? r.golCasa : r.golTrasferta;
+    final loro = partita.inCasa ? r.golTrasferta : r.golCasa;
+    final colore = nostri > loro
+        ? colori.ok
+        : nostri < loro
+        ? colori.rosso
+        : colori.testoSecondario;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colore.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        '${r.golCasa}–${r.golTrasferta}',
+        style: AppTypography.numerica(
+          AppTypography.corpoForte.copyWith(
+            color: colore,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }

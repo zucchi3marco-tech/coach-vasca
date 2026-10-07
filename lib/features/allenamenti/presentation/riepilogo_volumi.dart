@@ -21,9 +21,17 @@ String formattaMetri(int metri) {
 /// blocco (solo quelli con serie) e il materiale. Sostituisce il vecchio
 /// riepilogo a più righe, che su smartphone toglieva spazio alle serie.
 class RiepilogoVolumi extends StatelessWidget {
-  const RiepilogoVolumi({required this.serie, super.key});
+  const RiepilogoVolumi({
+    required this.serie,
+    this.mostraTotale = true,
+    super.key,
+  });
 
   final List<Serie> serie;
+
+  /// false quando il totale e' gia' scritto in grande sopra (testata del
+  /// dettaglio allenamento): qui restano i metri per blocco e il materiale.
+  final bool mostraTotale;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +63,14 @@ class RiepilogoVolumi extends StatelessWidget {
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: '${formattaMetri(totale)} m',
-                style: AppTypography.corpoForte.copyWith(color: colori.testo),
-              ),
+              if (mostraTotale)
+                TextSpan(
+                  text: '${formattaMetri(totale)} m   ',
+                  style: AppTypography.corpoForte.copyWith(color: colori.testo),
+                ),
               if (blocchi.isNotEmpty)
                 TextSpan(
-                  text: '   ${blocchi.join(' · ')}',
+                  text: blocchi.join(' · '),
                   style: AppTypography.piccolo.copyWith(
                     color: colori.testoSecondario,
                   ),
@@ -69,7 +78,8 @@ class RiepilogoVolumi extends StatelessWidget {
               if (totaleDurataS > 0)
                 TextSpan(
                   text:
-                      '   + ${formatDurataS(totaleDurataS)} a tempo '
+                      '${blocchi.isEmpty ? '' : '   '}+ '
+                      '${formatDurataS(totaleDurataS)} a tempo '
                       '(non contati nei metri)',
                   style: AppTypography.piccolo.copyWith(
                     color: colori.testoSecondario,
