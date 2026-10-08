@@ -486,9 +486,11 @@ class _UnaAllaVolta extends StatelessWidget {
             const SizedBox(height: AppSpacing.s12),
             Row(
               children: [
+                // Metà e metà: "Indietro" deve starci intero, e "Avanti"
+                // si riconosce già dal colore pieno.
                 Expanded(child: indietro),
                 const SizedBox(width: AppSpacing.s12),
-                Expanded(flex: 2, child: avanti),
+                Expanded(child: avanti),
               ],
             ),
           ],

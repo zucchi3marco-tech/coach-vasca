@@ -328,21 +328,31 @@ class _PannelloOrologioState extends State<PannelloOrologio>
           ...finita,
           Row(
             children: [
-              Expanded(
+              SizedBox(
+                width: 116,
                 child: FilledButton.icon(
                   onPressed: _via,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s12,
+                    ),
                     textStyle: AppTypography.titolo,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.pannello),
                     ),
                   ),
                   icon: const Icon(Icons.play_arrow, size: 28),
-                  label: Text(_finita ? 'Di nuovo' : 'Via'),
+                  label: Text(
+                    _finita ? 'Ancora' : 'Via',
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
                 ),
               ),
-              ogni,
+              Expanded(
+                child: FittedBox(fit: BoxFit.scaleDown, child: ogni),
+              ),
               IconButton(
                 tooltip: 'Gruppi e suono',
                 icon: Badge(

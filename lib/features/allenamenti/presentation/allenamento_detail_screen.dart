@@ -576,7 +576,7 @@ class _AllenamentoDetailScreenState
                 value: () => _duplica(allenamento),
                 child: const _VoceMenu(
                   icona: Icons.copy_all_outlined,
-                  etichetta: 'Duplica (anche per un\'altra squadra)',
+                  etichetta: 'Duplica',
                 ),
               ),
               PopupMenuItem(
