@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
@@ -31,6 +32,31 @@ const _ordineZonePerVolume = [
 
 String _formattaVolume(int metri) =>
     metri >= 1000 ? '${(metri / 1000).toStringAsFixed(1)} km' : '$metri m';
+
+/// 2700 -> "45'", 9000 -> "2h30'", 7200 -> "2h".
+String formattaTempoLavoro(int secondi) {
+  if (secondi < 60) return formatDurataS(secondi);
+  final minuti = (secondi / 60).round();
+  if (minuti < 60) return "$minuti'";
+  final resto = minuti % 60;
+  return resto == 0
+      ? '${minuti ~/ 60}h'
+      : "${minuti ~/ 60}h${resto.toString().padLeft(2, '0')}'";
+}
+
+/// Un riquadro con i metri e/o il tempo di lavoro: i metri in grande e il
+/// tempo sotto quando ci sono entrambi ("nuoto" a distanza e a tempo),
+/// il solo tempo per il lavoro a tempo (palleggio, tattica).
+StatPanel _pannelloVolume(String etichetta, int metri, int secondi) =>
+    StatPanel(
+      etichetta: etichetta,
+      valore: metri == 0 && secondi > 0
+          ? formattaTempoLavoro(secondi)
+          : _formattaVolume(metri),
+      confronto: metri > 0 && secondi > 0
+          ? '+ ${formattaTempoLavoro(secondi)} a tempo'
+          : null,
+    );
 
 /// Palette dei grafici a linee — DESIGN.md sezione 7: Fitness `azione`,
 /// Fatica `attenzione`, Forma `ok` (via [TokenDominio.curvaFitness] e
@@ -91,9 +117,12 @@ class CaricoAtletaScreen extends ConsumerWidget {
                         'Modello Banister (fitness/fatica/forma) calcolato '
                         'dal volume di allenamento pesato per zona di '
                         'intensità, contato solo nei giorni in cui '
-                        'l\'atleta era presente. È un indice relativo utile '
-                        'per valutare l\'andamento nel tempo, non un valore '
-                        'fisiologico assoluto.',
+                        'l\'atleta era presente. Il lavoro a tempo '
+                        '(palleggio, tattica, a secco) vale i metri che si '
+                        'nuotano in quel tempo al passo medio (1\'50" ogni '
+                        '100 m). È un indice relativo utile per valutare '
+                        'l\'andamento nel tempo, non un valore fisiologico '
+                        'assoluto.',
                   ),
                   PoolCard(
                     child: Column(
@@ -133,7 +162,8 @@ class CaricoAtletaScreen extends ConsumerWidget {
 
 /// Volume totale e scomposto per zona/tipo di lavoro (FASE 9): stesso
 /// perimetro dati del grafico Banister sopra (solo presenze segnate
-/// "presente"), ma come somma di metri invece che curva pesata.
+/// "presente"), ma come somma di metri — e di tempo, per il lavoro a
+/// tempo — invece che curva pesata.
 class _SezioneVolumi extends ConsumerWidget {
   const _SezioneVolumi({required this.atletaId, required this.clubId});
 
@@ -150,11 +180,15 @@ class _SezioneVolumi extends ConsumerWidget {
       data: (volumi) {
         final zoneOrdinate = [
           for (final z in _ordineZonePerVolume)
-            if (volumi.perZona.containsKey(z)) z,
+            if (volumi.perZona.containsKey(z) ||
+                volumi.tempoPerZona.containsKey(z))
+              z,
         ];
         final esecuzioniOrdinate = [
           for (final e in esecuzioniSerie)
-            if (volumi.perEsecuzione.containsKey(e)) e,
+            if (volumi.perEsecuzione.containsKey(e) ||
+                volumi.tempoPerEsecuzione.containsKey(e))
+              e,
         ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +200,11 @@ class _SezioneVolumi extends ConsumerWidget {
                   etichetta: 'Volume totale',
                   valore: _formattaVolume(volumi.volumeTotaleM),
                 ),
+                if (volumi.tempoTotaleS > 0)
+                  StatPanel(
+                    etichetta: 'Lavoro a tempo',
+                    valore: formattaTempoLavoro(volumi.tempoTotaleS),
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.s24),
@@ -176,9 +215,10 @@ class _SezioneVolumi extends ConsumerWidget {
               GrigliaNumeri(
                 children: [
                   for (final z in zoneOrdinate)
-                    StatPanel(
-                      etichetta: z,
-                      valore: _formattaVolume(volumi.perZona[z]!),
+                    _pannelloVolume(
+                      z,
+                      volumi.perZona[z] ?? 0,
+                      volumi.tempoPerZona[z] ?? 0,
                     ),
                 ],
               ),
@@ -190,9 +230,10 @@ class _SezioneVolumi extends ConsumerWidget {
               GrigliaNumeri(
                 children: [
                   for (final e in esecuzioniOrdinate)
-                    StatPanel(
-                      etichetta: labelEsecuzione(e),
-                      valore: _formattaVolume(volumi.perEsecuzione[e]!),
+                    _pannelloVolume(
+                      labelEsecuzione(e),
+                      volumi.perEsecuzione[e] ?? 0,
+                      volumi.tempoPerEsecuzione[e] ?? 0,
                     ),
                 ],
               ),

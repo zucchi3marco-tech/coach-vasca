@@ -110,6 +110,23 @@ class GraficoBanister extends StatelessWidget {
                 ),
               ),
             ),
+            // Al tocco i valori arrotondati e con il nome della curva, come
+            // nella testata: prima "1091.8720451369998".
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                fitInsideHorizontally: true,
+                fitInsideVertically: true,
+                getTooltipItems: (toccati) => [
+                  for (final s in toccati)
+                    LineTooltipItem(
+                      '${const ['Fitness', 'Fatica', 'Forma'][s.barIndex]} '
+                      '${s.y.round()}',
+                      AppTypography.numerica(AppTypography.piccolo)
+                          .copyWith(color: s.bar.color ?? colori.testo),
+                    ),
+                ],
+              ),
+            ),
             gridData: const FlGridData(show: true),
             borderData: FlBorderData(show: false),
           ),

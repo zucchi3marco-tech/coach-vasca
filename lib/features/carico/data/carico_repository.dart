@@ -6,6 +6,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
+import '../../allenamenti/domain/durata_serie.dart';
 import '../domain/volumi_atleta.dart';
 
 /// Peso relativo di ogni zona di intensita' nel calcolo del carico: una
@@ -29,6 +30,20 @@ const _pesoZona = {
 
 double _pesoPerZona(String? zona) => _pesoZona[zona] ?? 1.0;
 
+/// Il carico di una serie: i metri pesati per zona. Una serie a tempo
+/// (palleggio, tattica, a secco...) vale i metri che si nuotano in quel
+/// tempo al passo medio ([passoMedioS], 1'50" ogni 100 m), pesati allo
+/// stesso modo: prima valeva zero (segnalazione del coach 2026-10-08).
+double caricoSerie({
+  required int ripetute,
+  int? distanzaM,
+  int? durataS,
+  String? zona,
+}) {
+  final metri = distanzaM ?? (durataS ?? 0) * 100 / passoMedioS;
+  return ripetute * metri * _pesoPerZona(zona);
+}
+
 /// Calcola, per un atleta, il carico di allenamento giorno per giorno a
 /// partire dallo storico di serie e presenze: base per il modello
 /// Banister (fitness/fatica/forma) usato per pianificare lo scarico
@@ -39,52 +54,20 @@ class CaricoRepository {
   final SupabaseClient _client;
   final AppDatabase _db;
 
-  /// Mappa allenamentoId -> carico totale (somma delle serie pesate per
-  /// zona) per tutti gli allenamenti del club.
-  ///
-  /// Legge da `serie_per_carico` (RPC, non dalla tabella `serie`
-  /// direttamente): un atleta collegato può calcolare il proprio carico
-  /// senza poter leggere note/attrezzatura delle serie di altri atleti
-  /// (audit 12/09) — vedi migrazione `20260912000100_carico_atleta_rpc.sql`.
+  /// Mappa allenamentoId -> carico totale (somma di [caricoSerie]) per
+  /// tutti gli allenamenti del club.
   Future<Map<String, double>> _caricoPerAllenamento(String clubId) async {
-    List<Map<String, dynamic>> righe;
-    try {
-      final risposta = await _client.rpc(
-        'serie_per_carico',
-        params: {'p_club_id': clubId},
-      );
-      righe = (risposta as List).cast<Map<String, dynamic>>();
-    } catch (e) {
-      if (!isNetworkFailure(e)) rethrow;
-      // Come la RPC: le serie saltate a bordo vasca non contano.
-      final locali =
-          await (_db.select(_db.serieTable)
-                ..where((t) => t.clubId.equals(clubId))
-                ..where(
-                  (t) => t.esito.isNull() | t.esito.isNotValue('saltata'),
-                ))
-              .get();
-      righe = [
-        for (final r in locali)
-          {
-            'allenamento_id': r.allenamentoId,
-            'ripetute': r.ripetute,
-            'distanza_m': r.distanzaM,
-            'zona': r.zona,
-          },
-      ];
-    }
     final carico = <String, double>{};
-    for (final r in righe) {
+    for (final r in await _serieDelClub(clubId)) {
       final allenamentoId = r['allenamento_id'] as String;
-      final ripetute = r['ripetute'] as int;
-      // Una serie "a tempo" (durata_s invece di distanza_m) non pesa nel
-      // carico basato sui metri: lo stesso principio di [VolumiAtleta],
-      // nessuna stima a caso.
-      final distanzaM = r['distanza_m'] as int? ?? 0;
-      final peso = _pesoPerZona(r['zona'] as String?);
       carico[allenamentoId] =
-          (carico[allenamentoId] ?? 0.0) + ripetute * distanzaM * peso;
+          (carico[allenamentoId] ?? 0.0) +
+          caricoSerie(
+            ripetute: r['ripetute'] as int,
+            distanzaM: r['distanza_m'] as int?,
+            durataS: r['durata_s'] as int?,
+            zona: r['zona'] as String?,
+          );
     }
     return carico;
   }
@@ -160,8 +143,13 @@ class CaricoRepository {
     return risultato;
   }
 
-  /// Righe di tutte le serie del club (zona ed esecuzione incluse),
-  /// stesso schema try/fallback-locale di [_caricoPerAllenamento].
+  /// Righe di tutte le serie del club (distanza o durata, zona,
+  /// esecuzione).
+  ///
+  /// Legge da `serie_per_carico` (RPC, non dalla tabella `serie`
+  /// direttamente): un atleta collegato può calcolare il proprio carico
+  /// senza poter leggere note/attrezzatura delle serie di altri atleti
+  /// (audit 12/09) — vedi migrazione `20260912000100_carico_atleta_rpc.sql`.
   Future<List<Map<String, dynamic>>> _serieDelClub(String clubId) async {
     try {
       final risposta = await _client.rpc(
@@ -171,6 +159,7 @@ class CaricoRepository {
       return (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
+      // Come la RPC: le serie saltate a bordo vasca non contano.
       final locali =
           await (_db.select(_db.serieTable)
                 ..where((t) => t.clubId.equals(clubId))
@@ -184,6 +173,7 @@ class CaricoRepository {
             'allenamento_id': r.allenamentoId,
             'ripetute': r.ripetute,
             'distanza_m': r.distanzaM,
+            'durata_s': r.durataS,
             'zona': r.zona,
             'esecuzione': r.esecuzione,
           },
@@ -191,36 +181,16 @@ class CaricoRepository {
     }
   }
 
-  /// Volume (metri) di un atleta scomposto per zona e per tipo di
-  /// lavoro, contato solo negli allenamenti a cui risulta presente
-  /// (stesso perimetro di [caricoGiornalieroPerAtleta]).
+  /// Volume (metri e lavoro a tempo) di un atleta scomposto per zona e
+  /// per tipo di lavoro, contato solo negli allenamenti a cui risulta
+  /// presente (stesso perimetro di [caricoGiornalieroPerAtleta]).
   Future<VolumiAtleta> volumiPerAtleta({
     required String atletaId,
     required String clubId,
-  }) async {
-    final serie = await _serieDelClub(clubId);
-    final presenti = await _allenamentiPresenti(atletaId);
-
-    var totale = 0;
-    final perZona = <String, int>{};
-    final perEsecuzione = <String, int>{};
-    for (final r in serie) {
-      if (!presenti.contains(r['allenamento_id'] as String)) continue;
-      final volume = (r['ripetute'] as int) * (r['distanza_m'] as int? ?? 0);
-      totale += volume;
-      final zona = r['zona'] as String?;
-      if (zona != null) {
-        perZona[zona] = (perZona[zona] ?? 0) + volume;
-      }
-      final esecuzione = r['esecuzione'] as String;
-      perEsecuzione[esecuzione] = (perEsecuzione[esecuzione] ?? 0) + volume;
-    }
-    return VolumiAtleta(
-      volumeTotaleM: totale,
-      perZona: perZona,
-      perEsecuzione: perEsecuzione,
-    );
-  }
+  }) async => VolumiAtleta.daSerie(
+    await _serieDelClub(clubId),
+    await _allenamentiPresenti(atletaId),
+  );
 }
 
 final caricoRepositoryProvider = Provider<CaricoRepository>((ref) {
