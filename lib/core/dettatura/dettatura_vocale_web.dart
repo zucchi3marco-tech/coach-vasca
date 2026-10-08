@@ -44,7 +44,12 @@ class DettatoreVocale {
     required this.onTrascrizione,
     required this.onErrore,
     required this.onFine,
+    this.separatore = ' ',
   });
+
+  /// Fra una frase e l'altra (una pausa di chi parla): uno spazio, o un
+  /// a capo per chi detta una riga per volta (l'allenamento).
+  final String separatore;
 
   /// Chiamato ad ogni aggiornamento con l'INTERO testo riconosciuto in
   /// questa sessione di ascolto (non un pezzo da aggiungere al
@@ -148,9 +153,9 @@ class DettatoreVocale {
     _segmentiCommittati = aggiornati.committati;
     onTrascrizione(
       ricostruisciTrascrizione([
-        testoCommittato(_segmentiCommittati),
+        testoCommittato(_segmentiCommittati, separatore),
         aggiornati.interim,
-      ]),
+      ], separatore: separatore),
     );
   }
 

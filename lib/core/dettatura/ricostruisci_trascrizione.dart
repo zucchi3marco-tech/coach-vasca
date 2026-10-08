@@ -11,7 +11,10 @@
 /// lunga quanto vuole il browser, senza impedire che la stessa frase
 /// torni più avanti se il coach la ripete davvero in un punto diverso
 /// della dettatura.
-String ricostruisciTrascrizione(Iterable<String> segmentiGrezzi) {
+String ricostruisciTrascrizione(
+  Iterable<String> segmentiGrezzi, {
+  String separatore = ' ',
+}) {
   final pezzi = <String>[];
   for (final grezzo in segmentiGrezzi) {
     final pezzo = grezzo.trim();
@@ -21,5 +24,5 @@ String ricostruisciTrascrizione(Iterable<String> segmentiGrezzi) {
     }
     pezzi.add(pezzo);
   }
-  return pezzi.join(' ');
+  return pezzi.join(separatore);
 }

@@ -143,6 +143,8 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
     setState(() => _erroreMicrofono = null);
     _prefisso = widget.controller.text.trimRight();
     _dettatore = DettatoreVocale(
+      // Una pausa, una riga: di solito una serie.
+      separatore: '\n',
       onTrascrizione: (sessione) {
         if (!mounted) return;
         final testo = [

@@ -1,4 +1,5 @@
 import '../../../core/utils/pace_format.dart';
+import 'dettato_allenamento.dart';
 import 'riordino_serie.dart';
 import 'serie.dart';
 
@@ -195,6 +196,7 @@ const _stili = {
   'farfalla': 'delfino',
   'mix': 'misti',
   'mi': 'misti',
+  'misto': 'misti',
   'mx': 'misti',
   'misti': 'misti',
 };
@@ -337,6 +339,7 @@ const _riempitivi = {
   'e',
   'di',
   'in',
+  'zona',
   'secondi',
   'sec',
 };
@@ -667,13 +670,44 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
 
 /// Una frase dettata ("riscaldamento 400 misti, poi 8 da 100 stile
 /// libero B1 recupero 20") divisa in righe del testo: un pezzo per ogni
-/// virgola, punto o "poi". Virgole e punti fra due cifre ("1.30")
-/// restano.
-String righeDaDettato(String dettato) => dettato
-    .split(RegExp(r';|[,.](?!\d)|\s+(?:e\s+)?poi\s+', caseSensitive: false))
-    .map((r) => r.trim())
-    .where((r) => r.isNotEmpty)
-    .join('\n');
+/// pausa (il dettatore le separa con un a capo), virgola, punto, "poi" o
+/// "a capo" detto. Virgole e punti fra due cifre ("1.30") restano.
+///
+/// Ogni pezzo passa da [normalizzaDettato] (numeri in lettere, "8%",
+/// tempi e zone a parole). Un pezzo che da solo non è una serie e non
+/// comincia con un numero ("B1 recupero 20", detto dopo una pausa) si
+/// attacca alla serie della riga prima.
+String righeDaDettato(String dettato) {
+  final righe = <String>[];
+  final pezzi = dettato.split(
+    RegExp(
+      r'\n|;|[,.](?!\d)|\s+(?:e\s+)?poi\s+|\s+(?:a capo|nuova riga)\s+',
+      caseSensitive: false,
+    ),
+  );
+  for (final grezzo in pezzi) {
+    final pezzo = normalizzaDettato(
+      grezzo.trim().replaceFirst(
+        RegExp(r'^(?:e\s+)?poi\b\s*', caseSensitive: false),
+        '',
+      ),
+    ).trim();
+    if (pezzo.isEmpty) continue;
+    if (righe.isNotEmpty &&
+        !RegExp(r'^\d').hasMatch(pezzo) &&
+        _continuaLaSerie(pezzo, righe.last)) {
+      righe.last = '${righe.last} $pezzo';
+    } else {
+      righe.add(pezzo);
+    }
+  }
+  return righe.join('\n');
+}
+
+/// [pezzo] da solo non si capisce e [prima] è una serie: è il seguito.
+bool _continuaLaSerie(String pezzo, String prima) =>
+    interpretaAllenamento(pezzo).righe.single.tipo == TipoRiga.errore &&
+    interpretaAllenamento(prima).righe.single.tipo == TipoRiga.serie;
 
 /// Interpreta una riga sola, come quella del pannello "Aggiungi serie":
 /// le sue serie (più d'una per una piramide, con lo stesso `piramideId`

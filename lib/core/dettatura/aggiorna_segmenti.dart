@@ -59,8 +59,9 @@ SegmentiAggiornati aggiornaSegmenti({
   return (committati: committati, interim: interim);
 }
 
-/// Il testo dei segmenti confermati, nell'ordine dei loro indici.
-String testoCommittato(Map<int, String> committati) {
+/// Il testo dei segmenti confermati, nell'ordine dei loro indici, uniti
+/// da [separatore].
+String testoCommittato(Map<int, String> committati, [String separatore = ' ']) {
   final indiciOrdinati = committati.keys.toList()..sort();
-  return indiciOrdinati.map((i) => committati[i]!).join(' ');
+  return indiciOrdinati.map((i) => committati[i]!).join(separatore);
 }
