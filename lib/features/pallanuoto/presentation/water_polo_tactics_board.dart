@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
@@ -14,7 +16,7 @@ import '../../home/atleta/grafica_pallanuoto.dart' show disegnaPalla;
 import '../domain/schema_tattico.dart';
 import 'geometria_frecce.dart';
 
-enum _ModalitaLavagna { giocatori, frecce }
+enum _ModalitaLavagna { giocatori, frecce, zone, testo }
 
 const _spiegazioneLavagna =
     'Modalità "Giocatori": scegli cosa mettere in acqua (calottina '
@@ -32,6 +34,13 @@ const _spiegazioneLavagna =
     'centro per curvarla (doppio tocco per raddrizzarla) e quelli agli '
     'estremi per spostarla. Con una freccia scelta, tipo e colore valgono '
     'per lei e il cestino elimina solo lei.\n\n'
+    'Modalità "Zone": trascina sull\'acqua per disegnare un rettangolo o '
+    'un ovale colorato e trasparente (es. l\'area del pressing). Toccalo '
+    'per sceglierlo: lo trascini per spostarlo, i pallini agli angoli ne '
+    'cambiano la misura.\n\n'
+    'Modalità "Testo": tocca l\'acqua e scrivi un\'etichetta (es. '
+    '"Centroboa"). Toccala per sceglierla e trascinarla; toccala di nuovo '
+    'per cambiarne il testo.\n\n'
     'Il lucchetto blocca lo scorrimento della pagina mentre disegni '
     '(utile se trascinando ti si sposta lo schermo).';
 
@@ -294,12 +303,96 @@ class FrecciaLavagna {
   );
 }
 
+/// Forma di una zona colorata.
+enum FormaZona {
+  rettangolo('Rettangolo'),
+  ovale('Ovale');
+
+  const FormaZona(this.nome);
+  final String nome;
+
+  static FormaZona daNome(String? nome) => FormaZona.values.firstWhere(
+    (f) => f.name == nome,
+    orElse: () => FormaZona.rettangolo,
+  );
+}
+
+/// Una zona colorata e trasparente sul campo (es. l'area del pressing):
+/// [da] e [a] sono due angoli opposti, in frazioni del campo.
+class ZonaLavagna {
+  const ZonaLavagna({
+    required this.da,
+    required this.a,
+    required this.colore,
+    this.forma = FormaZona.rettangolo,
+  });
+
+  final Offset da;
+  final Offset a;
+  final ColoreLavagna colore;
+  final FormaZona forma;
+
+  /// Il rettangolo che la contiene, in pixel di un campo grande [size].
+  Rect inPixel(Size size) => Rect.fromPoints(
+    Offset(da.dx * size.width, da.dy * size.height),
+    Offset(a.dx * size.width, a.dy * size.height),
+  );
+
+  /// Se [punto] (in pixel) cade dentro la zona.
+  bool contiene(Offset punto, Size size) {
+    final r = inPixel(size);
+    if (forma == FormaZona.rettangolo) return r.contains(punto);
+    if (r.width == 0 || r.height == 0) return false;
+    final dx = (punto.dx - r.center.dx) / (r.width / 2);
+    final dy = (punto.dy - r.center.dy) / (r.height / 2);
+    return dx * dx + dy * dy <= 1;
+  }
+
+  ZonaLavagna copiaCon({
+    Offset? da,
+    Offset? a,
+    ColoreLavagna? colore,
+    FormaZona? forma,
+  }) => ZonaLavagna(
+    da: da ?? this.da,
+    a: a ?? this.a,
+    colore: colore ?? this.colore,
+    forma: forma ?? this.forma,
+  );
+}
+
+/// Una scritta sul campo, centrata in [punto] (frazioni del campo), su
+/// un'etichetta del colore scelto.
+class TestoLavagna {
+  const TestoLavagna({
+    required this.punto,
+    required this.testo,
+    required this.colore,
+  });
+
+  final Offset punto;
+  final String testo;
+  final ColoreLavagna colore;
+
+  TestoLavagna copiaCon({
+    Offset? punto,
+    String? testo,
+    ColoreLavagna? colore,
+  }) => TestoLavagna(
+    punto: punto ?? this.punto,
+    testo: testo ?? this.testo,
+    colore: colore ?? this.colore,
+  );
+}
+
 /// Un passo della sequenza (vedi `SchemaTatticoPlayer`): stessa forma
 /// di `PassoSchema` a livello di dominio, ma con i tipi Flutter usati
 /// da questo widget.
 typedef PassoLavagna = ({
   List<GiocatoreLavagna> giocatori,
   List<FrecciaLavagna> frecce,
+  List<ZonaLavagna> zone,
+  List<TestoLavagna> testi,
 });
 
 /// Da un passo salvato a quello disegnato dalla lavagna.
@@ -331,15 +424,29 @@ PassoLavagna passoLavagnaDaSchema(PassoSchema p) => (
         },
       ),
   ],
+  zone: [
+    for (final z in p.zone)
+      ZonaLavagna(
+        da: Offset(z.da.$1, z.da.$2),
+        a: Offset(z.a.$1, z.a.$2),
+        colore: ColoreLavagna.values.byName(z.colore),
+        forma: FormaZona.daNome(z.forma),
+      ),
+  ],
+  testi: [
+    for (final t in p.testi)
+      TestoLavagna(
+        punto: Offset(t.punto.$1, t.punto.$2),
+        testo: t.testo,
+        colore: ColoreLavagna.values.byName(t.colore),
+      ),
+  ],
 );
 
 /// L'inverso di [passoLavagnaDaSchema], per salvare.
-PassoSchema passoSchemaDaLavagna(
-  List<GiocatoreLavagna> giocatori,
-  List<FrecciaLavagna> frecce,
-) => (
+PassoSchema passoSchemaDaLavagna(PassoLavagna p) => (
   giocatori: [
-    for (final g in giocatori)
+    for (final g in p.giocatori)
       (
         punto: (g.posizione.dx, g.posizione.dy),
         colore: g.colore.name,
@@ -350,7 +457,7 @@ PassoSchema passoSchemaDaLavagna(
       ),
   ],
   frecce: [
-    for (final f in frecce)
+    for (final f in p.frecce)
       (
         inizio: (f.inizio.dx, f.inizio.dy),
         fine: (f.fine.dx, f.fine.dy),
@@ -361,6 +468,19 @@ PassoSchema passoSchemaDaLavagna(
           null => null,
         },
       ),
+  ],
+  zone: [
+    for (final z in p.zone)
+      (
+        da: (z.da.dx, z.da.dy),
+        a: (z.a.dx, z.a.dy),
+        colore: z.colore.name,
+        forma: z.forma.name,
+      ),
+  ],
+  testi: [
+    for (final t in p.testi)
+      (punto: (t.punto.dx, t.punto.dy), testo: t.testo, colore: t.colore.name),
   ],
 );
 
@@ -422,6 +542,8 @@ class WaterPoloTacticsBoard extends StatefulWidget {
   const WaterPoloTacticsBoard({
     this.giocatoriIniziali = const [],
     this.frecceIniziali = const [],
+    this.zoneIniziali = const [],
+    this.testiIniziali = const [],
     this.passoFantasma,
     this.campo = CampoLavagna.intero,
     this.modificabile = true,
@@ -440,6 +562,8 @@ class WaterPoloTacticsBoard extends StatefulWidget {
 
   final List<GiocatoreLavagna> giocatoriIniziali;
   final List<FrecciaLavagna> frecceIniziali;
+  final List<ZonaLavagna> zoneIniziali;
+  final List<TestoLavagna> testiIniziali;
 
   /// Passo precedente, mostrato in trasparenza dietro al disegno reale
   /// (non interattivo) come riferimento — utile passando a un nuovo
@@ -457,11 +581,8 @@ class WaterPoloTacticsBoard extends StatefulWidget {
   /// fisica di scroll a `AppScaffold.physics` (vedi [onBloccataCambiato]).
   final bool bloccata;
 
-  final void Function(
-    List<GiocatoreLavagna> giocatori,
-    List<FrecciaLavagna> frecce,
-  )?
-  onCambiato;
+  /// Il passo com'è dopo ogni modifica.
+  final ValueChanged<PassoLavagna>? onCambiato;
   final ValueChanged<CampoLavagna>? onCampoCambiato;
   final ValueChanged<bool>? onBloccataCambiato;
 
@@ -484,6 +605,21 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     widget.giocatoriIniziali,
   );
   late final List<FrecciaLavagna> _frecce = List.of(widget.frecceIniziali);
+  late final List<ZonaLavagna> _zone = List.of(widget.zoneIniziali);
+  late final List<TestoLavagna> _testi = List.of(widget.testiIniziali);
+
+  FormaZona _formaZona = FormaZona.rettangolo;
+  ColoreLavagna _coloreZona = ColoreLavagna.giallo;
+  ColoreLavagna _coloreTesto = ColoreLavagna.bianco;
+
+  /// Angoli (in pixel) della zona che il dito sta disegnando.
+  Offset? _inizioZona;
+  Offset? _fineZona;
+
+  /// Indici in [_zone] e [_testi] dell'elemento scelto in quella
+  /// modalità: lo si sposta, lo si ridimensiona, il cestino elimina lui.
+  int? _zonaSelezionata;
+  int? _testoSelezionato;
 
   /// Uno stato precedente per ogni azione che modifica il disegno
   /// (piazzare/spostare/rimuovere un giocatore, disegnare o modificare
@@ -524,6 +660,23 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   FrecciaLavagna? get _freccia {
     final i = _frecciaSelezionata;
     return i == null || i >= _frecce.length ? null : _frecce[i];
+  }
+
+  ZonaLavagna? get _zona {
+    final i = _zonaSelezionata;
+    return i == null || i >= _zone.length ? null : _zone[i];
+  }
+
+  TestoLavagna? get _testo {
+    final i = _testoSelezionato;
+    return i == null || i >= _testi.length ? null : _testi[i];
+  }
+
+  void _deselezionaTutto() {
+    _selezionato = null;
+    _frecciaSelezionata = null;
+    _zonaSelezionata = null;
+    _testoSelezionato = null;
   }
 
   /// Sposta il giocatore/palla all'indice [i] in [nuova]: se è lui stesso
@@ -650,11 +803,17 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     return occupato(f.fine) && !occupato(f.inizio);
   }
 
-  void _notifica() =>
-      widget.onCambiato?.call(List.of(_giocatori), List.of(_frecce));
+  void _notifica() => widget.onCambiato?.call(_istantanea);
 
-  PassoLavagna get _istantanea =>
-      (giocatori: List.of(_giocatori), frecce: List.of(_frecce));
+  PassoLavagna get _istantanea => (
+    giocatori: List.of(_giocatori),
+    frecce: List.of(_frecce),
+    zone: List.of(_zone),
+    testi: List.of(_testi),
+  );
+
+  bool get _vuoto =>
+      _giocatori.isEmpty && _frecce.isEmpty && _zone.isEmpty && _testi.isEmpty;
 
   void _registraCronologia() {
     _cronologia.add(_istantanea);
@@ -669,8 +828,13 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       _frecce
         ..clear()
         ..addAll(stato.frecce);
-      _selezionato = null;
-      _frecciaSelezionata = null;
+      _zone
+        ..clear()
+        ..addAll(stato.zone);
+      _testi
+        ..clear()
+        ..addAll(stato.testi);
+      _deselezionaTutto();
     });
     _notifica();
   }
@@ -692,10 +856,107 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     setState(() {
       _giocatori.clear();
       _frecce.clear();
-      _selezionato = null;
-      _frecciaSelezionata = null;
+      _zone.clear();
+      _testi.clear();
+      _deselezionaTutto();
     });
     _notifica();
+  }
+
+  void _eliminaZonaSelezionata() {
+    final i = _zonaSelezionata;
+    if (i == null) return;
+    _registraCronologia();
+    setState(() {
+      _zone.removeAt(i);
+      _zonaSelezionata = null;
+    });
+    _notifica();
+  }
+
+  void _eliminaTestoSelezionato() {
+    final i = _testoSelezionato;
+    if (i == null) return;
+    _registraCronologia();
+    setState(() {
+      _testi.removeAt(i);
+      _testoSelezionato = null;
+    });
+    _notifica();
+  }
+
+  void _modificaZona(
+    ZonaLavagna Function(ZonaLavagna) modifica, {
+    bool registra = true,
+  }) {
+    final i = _zonaSelezionata;
+    if (i == null) return;
+    if (registra) _registraCronologia();
+    setState(() => _zone[i] = modifica(_zone[i]));
+    _notifica();
+  }
+
+  void _modificaTesto(
+    TestoLavagna Function(TestoLavagna) modifica, {
+    bool registra = true,
+  }) {
+    final i = _testoSelezionato;
+    if (i == null) return;
+    if (registra) _registraCronologia();
+    setState(() => _testi[i] = modifica(_testi[i]));
+    _notifica();
+  }
+
+  void _scegliForma(FormaZona forma) {
+    setState(() => _formaZona = forma);
+    if (_zona case final z? when z.forma != forma) {
+      _modificaZona((z) => z.copiaCon(forma: forma));
+    }
+  }
+
+  void _scegliColoreZona(ColoreLavagna colore) {
+    setState(() => _coloreZona = colore);
+    if (_zona case final z? when z.colore != colore) {
+      _modificaZona((z) => z.copiaCon(colore: colore));
+    }
+  }
+
+  void _scegliColoreTesto(ColoreLavagna colore) {
+    setState(() => _coloreTesto = colore);
+    if (_testo case final t? when t.colore != colore) {
+      _modificaTesto((t) => t.copiaCon(colore: colore));
+    }
+  }
+
+  /// Chiede il testo di una scritta; `null` se si annulla o resta vuoto.
+  Future<String?> _chiediTesto({String iniziale = ''}) async {
+    final testo = await showDialog<String>(
+      context: context,
+      builder: (context) => _DialogScritta(iniziale: iniziale),
+    );
+    final pulito = testo?.trim() ?? '';
+    return pulito.isEmpty ? null : pulito;
+  }
+
+  Future<void> _nuovoTesto(Offset punto) async {
+    final testo = await _chiediTesto();
+    if (testo == null || !mounted) return;
+    _registraCronologia();
+    setState(() {
+      _testi.add(
+        TestoLavagna(punto: punto, testo: testo, colore: _coloreTesto),
+      );
+      _testoSelezionato = _testi.length - 1;
+    });
+    _notifica();
+  }
+
+  Future<void> _cambiaTesto() async {
+    final attuale = _testo;
+    if (attuale == null) return;
+    final testo = await _chiediTesto(iniziale: attuale.testo);
+    if (testo == null || !mounted || testo == attuale.testo) return;
+    _modificaTesto((t) => t.copiaCon(testo: testo));
   }
 
   void _eliminaFrecciaSelezionata() {
@@ -737,7 +998,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
 
   Future<void> _cambiaCampo(CampoLavagna nuovo) async {
     if (nuovo == widget.campo) return;
-    if (_giocatori.isNotEmpty || _frecce.isNotEmpty) {
+    if (!_vuoto) {
       final conferma = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -763,12 +1024,13 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       setState(() {
         _giocatori.clear();
         _frecce.clear();
+        _zone.clear();
+        _testi.clear();
         // Le posizioni salvate nella cronologia erano per il campo
         // precedente: non avrebbero più senso qui.
         _cronologia.clear();
         _annullati.clear();
-        _selezionato = null;
-        _frecciaSelezionata = null;
+        _deselezionaTutto();
       });
       _notifica();
     }
@@ -800,15 +1062,46 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
             ),
             icon: Icon(Icons.north_east, size: 18),
           ),
+          ButtonSegment(
+            value: _ModalitaLavagna.zone,
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Zone', maxLines: 1),
+            ),
+            icon: Icon(Icons.crop_square, size: 18),
+          ),
+          ButtonSegment(
+            value: _ModalitaLavagna.testo,
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Testo', maxLines: 1),
+            ),
+            icon: Icon(Icons.text_fields, size: 18),
+          ),
         ],
         selected: {_modalita},
         onSelectionChanged: (s) => setState(() {
           _modalita = s.first;
-          _selezionato = null;
-          _frecciaSelezionata = null;
+          _deselezionaTutto();
         }),
       );
-      final conFreccia = _freccia != null;
+      // Il cestino elimina l'elemento scelto nella modalità in uso; senza
+      // niente di scelto, svuota il passo.
+      final (String, VoidCallback?) elimina = switch (_modalita) {
+        _ModalitaLavagna.frecce when _freccia != null => (
+          'Elimina la freccia scelta',
+          _eliminaFrecciaSelezionata,
+        ),
+        _ModalitaLavagna.zone when _zona != null => (
+          'Elimina la zona scelta',
+          _eliminaZonaSelezionata,
+        ),
+        _ModalitaLavagna.testo when _testo != null => (
+          'Elimina la scritta scelta',
+          _eliminaTestoSelezionato,
+        ),
+        _ => ('Cancella tutto', vuoto ? null : _cancellaTutto),
+      };
       final strumenti = <Widget>[
         const PulsanteSpiegazione(
           titolo: 'Lavagna tattica',
@@ -834,10 +1127,8 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         ),
         IconButton(
           icon: const Icon(Icons.delete_outline),
-          tooltip: conFreccia ? 'Elimina la freccia scelta' : 'Cancella tutto',
-          onPressed: conFreccia
-              ? _eliminaFrecciaSelezionata
-              : (vuoto ? null : _cancellaTutto),
+          tooltip: elimina.$1,
+          onPressed: elimina.$2,
         ),
       ];
       // Sotto ~460 px cinque pulsanti da 48 lasciano al selettore meno
@@ -865,8 +1156,10 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final vuoto = _giocatori.isEmpty && _frecce.isEmpty;
+    final vuoto = _vuoto;
     final frecciaScelta = _freccia;
+    final zonaScelta = _zona;
+    final testoScelto = _testo;
     final inRiproduzione = widget.sostitutoVasca != null;
     final suggerimento = switch (_modalita) {
       _ModalitaLavagna.giocatori =>
@@ -878,6 +1171,17 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       _ModalitaLavagna.frecce =>
         'Disegna la traiettoria col dito: la freccia la segue. Tocca una '
             'freccia per modificarla.',
+      _ModalitaLavagna.zone when zonaScelta != null =>
+        'Trascina la zona per spostarla, i pallini agli angoli per cambiarne '
+            'la misura.',
+      _ModalitaLavagna.zone =>
+        'Trascina sull\'acqua per disegnare una zona. Tocca una zona per '
+            'modificarla.',
+      _ModalitaLavagna.testo when testoScelto != null =>
+        'Trascina la scritta per spostarla, toccala di nuovo per cambiarla.',
+      _ModalitaLavagna.testo =>
+        'Tocca l\'acqua dove vuoi una scritta. Tocca una scritta per '
+            'modificarla.',
     };
 
     return Column(
@@ -933,7 +1237,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           ),
                       ],
                     )
-                  else ...[
+                  else if (_modalita == _ModalitaLavagna.frecce) ...[
                     Wrap(
                       spacing: AppSpacing.s8,
                       runSpacing: AppSpacing.s8,
@@ -976,7 +1280,36 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                           ),
                       ],
                     ),
-                  ],
+                  ] else if (_modalita == _ModalitaLavagna.zone) ...[
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s8,
+                      children: [
+                        for (final f in FormaZona.values)
+                          _ChipStrumento(
+                            etichetta: f.nome,
+                            selezionato: f == (zonaScelta?.forma ?? _formaZona),
+                            onTap: () => _scegliForma(f),
+                            icona: Icon(
+                              f == FormaZona.rettangolo
+                                  ? Icons.crop_square
+                                  : Icons.circle_outlined,
+                              size: 20,
+                              color: colori.testo,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    _RigaColori(
+                      scelto: zonaScelta?.colore ?? _coloreZona,
+                      onScelto: _scegliColoreZona,
+                    ),
+                  ] else
+                    _RigaColori(
+                      scelto: testoScelto?.colore ?? _coloreTesto,
+                      onScelto: _scegliColoreTesto,
+                    ),
                   const SizedBox(height: AppSpacing.s8),
                   Text(
                     suggerimento,
@@ -1003,7 +1336,10 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     final colori = context.colori;
     final modificabile = widget.modificabile;
     final inGiocatori = _modalita == _ModalitaLavagna.giocatori;
-    final inFrecce = modificabile && !inGiocatori;
+    final inFrecce = modificabile && _modalita == _ModalitaLavagna.frecce;
+    final inZone = modificabile && _modalita == _ModalitaLavagna.zone;
+    final inTesto = modificabile && _modalita == _ModalitaLavagna.testo;
+    final dimensione = Size(larghezza, altezza);
 
     Offset relativa(Offset locale) => Offset(
       (locale.dx / larghezza).clamp(0.0, 1.0),
@@ -1054,6 +1390,104 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     }
 
     final frecciaScelta = inFrecce ? _freccia : null;
+    final zonaScelta = inZone ? _zona : null;
+
+    final inizioZona = _inizioZona;
+    final fineZona = _fineZona;
+    final zonaInDisegno = inizioZona != null && fineZona != null
+        ? ZonaLavagna(
+            da: relativa(inizioZona),
+            a: relativa(fineZona),
+            colore: _coloreZona,
+            forma: _formaZona,
+          )
+        : null;
+
+    // La più in alto (l'ultima disegnata) vince, come si vede.
+    int? zonaToccata(Offset punto) {
+      for (var i = _zone.length - 1; i >= 0; i--) {
+        if (_zone[i].contiene(punto, dimensione)) return i;
+      }
+      return null;
+    }
+
+    final GestureTapUpCallback? tocco = switch (_modalita) {
+      _ when !modificabile => null,
+      _ModalitaLavagna.giocatori => null,
+      _ModalitaLavagna.frecce => (d) => setState(
+        () => _frecciaSelezionata = frecciaToccata(d.localPosition),
+      ),
+      _ModalitaLavagna.zone => (d) => setState(
+        () => _zonaSelezionata = zonaToccata(d.localPosition),
+      ),
+      // Con una scritta scelta, il tocco sull'acqua la lascia; senza,
+      // ne crea una lì.
+      _ModalitaLavagna.testo => (d) {
+        if (_testoSelezionato != null) {
+          setState(() => _testoSelezionato = null);
+        } else {
+          _nuovoTesto(relativa(d.localPosition));
+        }
+      },
+    };
+
+    Offset dentro(Offset p) =>
+        Offset(p.dx.clamp(0.0, larghezza), p.dy.clamp(0.0, altezza));
+
+    void fineFreccia() {
+      final tratto = _traccia;
+      setState(() => _traccia = null);
+      if (tratto == null || (tratto.last - tratto.first).distance < 16) {
+        return;
+      }
+      final controllo = controlloDaTraccia(tratto);
+      _registraCronologia();
+      setState(() {
+        _frecce.add(
+          FrecciaLavagna(
+            inizio: relativa(tratto.first),
+            fine: relativa(tratto.last),
+            colore: _inchiostro,
+            tipo: _tipo,
+            controllo: controllo == null ? null : inFrazione(controllo),
+          ),
+        );
+        // Appena disegnata resta scelta: si può subito piegarla o
+        // cambiarle tipo.
+        _frecciaSelezionata = _frecce.length - 1;
+      });
+      _notifica();
+    }
+
+    void fineZonaDisegnata() {
+      final a = _inizioZona;
+      final b = _fineZona;
+      setState(() {
+        _inizioZona = null;
+        _fineZona = null;
+      });
+      // Un tratto quasi senza larghezza o altezza era un tocco mosso,
+      // non una zona.
+      if (a == null ||
+          b == null ||
+          (a.dx - b.dx).abs() < 12 ||
+          (a.dy - b.dy).abs() < 12) {
+        return;
+      }
+      _registraCronologia();
+      setState(() {
+        _zone.add(
+          ZonaLavagna(
+            da: relativa(a),
+            a: relativa(b),
+            colore: _coloreZona,
+            forma: _formaZona,
+          ),
+        );
+        _zonaSelezionata = _zone.length - 1;
+      });
+      _notifica();
+    }
 
     return GestureDetector(
       // La freccia parte dal punto toccato, non da dove il trascinamento
@@ -1066,51 +1500,45 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       onTapDown: modificabile && inGiocatori
           ? (d) => _piazzaPezzo(relativa(d.localPosition))
           : null,
-      onTapUp: inFrecce
-          ? (d) => setState(
-              () => _frecciaSelezionata = frecciaToccata(d.localPosition),
-            )
-          : null,
+      onTapUp: tocco,
       onPanStart: inFrecce
           ? (d) => setState(() {
               _frecciaSelezionata = null;
               _traccia = [d.localPosition];
             })
+          : inZone
+          ? (d) => setState(() {
+              _zonaSelezionata = null;
+              _inizioZona = dentro(d.localPosition);
+              _fineZona = _inizioZona;
+            })
           : null,
       onPanUpdate: inFrecce
           ? (d) => setState(() => _traccia?.add(d.localPosition))
+          : inZone
+          ? (d) => setState(() => _fineZona = dentro(d.localPosition))
           : null,
       onPanEnd: inFrecce
-          ? (_) {
-              final tratto = _traccia;
-              setState(() => _traccia = null);
-              if (tratto == null ||
-                  (tratto.last - tratto.first).distance < 16) {
-                return;
-              }
-              final controllo = controlloDaTraccia(tratto);
-              _registraCronologia();
-              setState(() {
-                _frecce.add(
-                  FrecciaLavagna(
-                    inizio: relativa(tratto.first),
-                    fine: relativa(tratto.last),
-                    colore: _inchiostro,
-                    tipo: _tipo,
-                    controllo: controllo == null ? null : inFrazione(controllo),
-                  ),
-                );
-                // Appena disegnata resta scelta: si può subito piegarla
-                // o cambiarle tipo.
-                _frecciaSelezionata = _frecce.length - 1;
-              });
-              _notifica();
-            }
+          ? (_) => fineFreccia()
+          : inZone
+          ? (_) => fineZonaDisegnata()
           : null,
       child: Stack(
         children: [
           Positioned.fill(
             child: CustomPaint(painter: VascaPainter(campo: widget.campo)),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _ZonePainter(
+                  zone: _zone,
+                  anteprima: zonaInDisegno,
+                  evidenziata: zonaScelta,
+                  coloreEvidenza: colori.azione,
+                ),
+              ),
+            ),
           ),
           if (widget.passoFantasma case final fantasma?)
             Positioned.fill(
@@ -1178,6 +1606,39 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
               },
               onRimuovi: () => _rimuoviGiocatore(i),
             ),
+          for (var i = 0; i < _testi.length; i++)
+            _EtichettaTesto(
+              testo: _testi[i],
+              larghezza: larghezza,
+              altezza: altezza,
+              attiva: inTesto,
+              evidenza: inTesto && i == _testoSelezionato
+                  ? colori.azione
+                  : null,
+              onTap: () {
+                if (_testoSelezionato == i) {
+                  _cambiaTesto();
+                } else {
+                  setState(() => _testoSelezionato = i);
+                }
+              },
+              onInizioTrascinamento: () {
+                _registraCronologia();
+                setState(() => _testoSelezionato = i);
+              },
+              onTrascina: (delta) {
+                final t = _testi[i];
+                setState(
+                  () => _testi[i] = t.copiaCon(
+                    punto: Offset(
+                      (t.punto.dx + delta.dx / larghezza).clamp(0.0, 1.0),
+                      (t.punto.dy + delta.dy / altezza).clamp(0.0, 1.0),
+                    ),
+                  ),
+                );
+                _notifica();
+              },
+            ),
           if (frecciaScelta != null) ...[
             _Maniglia(
               centro: inPixel(frecciaScelta.puntoMedio),
@@ -1224,10 +1685,419 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
                 }),
               ),
           ],
+          if (zonaScelta != null) ...[
+            // Il corpo della zona scelta si trascina per spostarla; un
+            // tocco passa sotto e la lascia scelta.
+            Positioned.fromRect(
+              rect: zonaScelta.inPixel(dimensione),
+              child: Semantics(
+                label: 'Sposta la zona',
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  dragStartBehavior: DragStartBehavior.down,
+                  onPanStart: (_) => _registraCronologia(),
+                  onPanUpdate: (d) => _modificaZona(
+                    registra: false,
+                    (z) => zonaSpostata(
+                      z,
+                      Offset(d.delta.dx / larghezza, d.delta.dy / altezza),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            for (final primo in [true, false])
+              _Maniglia(
+                centro: inPixel(primo ? zonaScelta.da : zonaScelta.a),
+                diametro: 16,
+                etichetta: 'Cambia la misura della zona',
+                onInizio: _registraCronologia,
+                onTrascina: (delta) => _modificaZona(registra: false, (z) {
+                  final p = relativa(inPixel(primo ? z.da : z.a) + delta);
+                  return primo ? z.copiaCon(da: p) : z.copiaCon(a: p);
+                }),
+              ),
+          ],
         ],
       ),
     );
   }
+}
+
+/// La finestra per scrivere o cambiare una scritta. Tiene lei il proprio
+/// campo di testo: liberarlo appena chiusa, da fuori, faceva fallire
+/// l'animazione di chiusura che lo usa ancora.
+class _DialogScritta extends StatefulWidget {
+  const _DialogScritta({required this.iniziale});
+
+  final String iniziale;
+
+  @override
+  State<_DialogScritta> createState() => _DialogScrittaState();
+}
+
+class _DialogScrittaState extends State<_DialogScritta> {
+  late final _controller = TextEditingController(text: widget.iniziale);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.iniziale.isEmpty ? 'Nuova scritta' : 'Cambia la scritta',
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 40,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(hintText: 'Es. Centroboa'),
+        onSubmitted: (v) => Navigator.of(context).pop(v),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Salva'),
+        ),
+      ],
+    );
+  }
+}
+
+/// [zona] spostata di [delta] (frazioni del campo), senza farla uscire
+/// dalla vasca: arrivata al bordo si ferma, invece di deformarsi.
+ZonaLavagna zonaSpostata(ZonaLavagna zona, Offset delta) {
+  final sinistra = math.min(zona.da.dx, zona.a.dx);
+  final destra = math.max(zona.da.dx, zona.a.dx);
+  final alto = math.min(zona.da.dy, zona.a.dy);
+  final basso = math.max(zona.da.dy, zona.a.dy);
+  final spostamento = Offset(
+    delta.dx.clamp(-sinistra, 1 - destra),
+    delta.dy.clamp(-alto, 1 - basso),
+  );
+  return zona.copiaCon(da: zona.da + spostamento, a: zona.a + spostamento);
+}
+
+/// Riga dei colori per zone e scritte: gli stessi inchiostri delle frecce.
+class _RigaColori extends StatelessWidget {
+  const _RigaColori({required this.scelto, required this.onScelto});
+
+  final ColoreLavagna scelto;
+  final ValueChanged<ColoreLavagna> onScelto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: AppSpacing.s8,
+      children: [
+        Text(
+          'Colore:',
+          style: AppTypography.piccolo.copyWith(
+            color: context.colori.testoSecondario,
+          ),
+        ),
+        for (final c in ColoreLavagna.inchiostri)
+          _SwatchColore(
+            colore: c,
+            selezionato: c == scelto,
+            onTap: () => onScelto(c),
+          ),
+      ],
+    );
+  }
+}
+
+/// Una zona: riempimento trasparente del suo colore e bordo pieno.
+void _disegnaZona(
+  Canvas canvas,
+  Size size,
+  ZonaLavagna zona, {
+  Color? evidenza,
+  double opacita = 1,
+}) {
+  final r = zona.inPixel(size);
+  final riempimento = Paint()
+    ..color = zona.colore.colore.withValues(alpha: 0.28 * opacita);
+  final bordo = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..color = zona.colore.colore.withValues(alpha: 0.9 * opacita);
+  void forma(Rect rect, Paint pennello) => zona.forma == FormaZona.ovale
+      ? canvas.drawOval(rect, pennello)
+      : canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, const Radius.circular(6)),
+          pennello,
+        );
+  forma(r, riempimento);
+  forma(r, bordo);
+  if (evidenza != null) {
+    forma(
+      r.inflate(4),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..color = evidenza,
+    );
+  }
+}
+
+class _ZonePainter extends CustomPainter {
+  _ZonePainter({
+    required this.zone,
+    this.anteprima,
+    this.evidenziata,
+    this.coloreEvidenza,
+  });
+
+  final List<ZonaLavagna> zone;
+
+  /// La zona che il dito sta disegnando.
+  final ZonaLavagna? anteprima;
+  final ZonaLavagna? evidenziata;
+  final Color? coloreEvidenza;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final z in zone) {
+      _disegnaZona(
+        canvas,
+        size,
+        z,
+        evidenza: identical(z, evidenziata) ? coloreEvidenza : null,
+      );
+    }
+    final a = anteprima;
+    if (a != null) _disegnaZona(canvas, size, a, opacita: 0.6);
+  }
+
+  // Liste nuove a ogni build: ridisegnare poche zone costa poco.
+  @override
+  bool shouldRepaint(covariant _ZonePainter oldDelegate) => true;
+}
+
+/// L'etichetta di una scritta: testo in grassetto su una pastiglia del
+/// colore scelto, al massimo su due righe.
+class _EtichettaPainter extends CustomPainter {
+  _EtichettaPainter({required this.testo, this.evidenza});
+
+  final TestoLavagna testo;
+  final Color? evidenza;
+
+  static const _larghezzaMassima = 180.0;
+  static const _marginiOrizzontali = 16.0;
+  static const _marginiVerticali = 8.0;
+
+  static TextPainter _impagina(String testo, Color colore) => TextPainter(
+    text: TextSpan(
+      text: testo,
+      style: TextStyle(
+        color: colore,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+      ),
+    ),
+    textAlign: TextAlign.center,
+    textDirection: TextDirection.ltr,
+    maxLines: 2,
+    ellipsis: '…',
+  )..layout(maxWidth: _larghezzaMassima - _marginiOrizzontali);
+
+  /// Quanto spazio occupa l'etichetta di [testo].
+  static Size misura(String testo) {
+    final tp = _impagina(testo, AcquaPalette.nero);
+    final dimensione = Size(
+      tp.width + _marginiOrizzontali,
+      tp.height + _marginiVerticali,
+    );
+    tp.dispose();
+    return dimensione;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pastiglia = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(
+      pastiglia.shift(const Offset(0, 1.5)),
+      Paint()
+        ..color = AcquaPalette.nero.withValues(alpha: 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+    );
+    canvas.drawRRect(pastiglia, Paint()..color = testo.colore.colore);
+    canvas.drawRRect(
+      pastiglia,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = testo.colore.controcolore.withValues(alpha: 0.35),
+    );
+    final colore = evidenza;
+    if (colore != null) {
+      canvas.drawRRect(
+        pastiglia.inflate(3),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..color = colore,
+      );
+    }
+    final tp = _impagina(testo.testo, testo.colore.controcolore);
+    tp.paint(
+      canvas,
+      Offset((size.width - tp.width) / 2, (size.height - tp.height) / 2),
+    );
+    tp.dispose();
+  }
+
+  @override
+  bool shouldRepaint(_EtichettaPainter old) =>
+      old.testo.testo != testo.testo ||
+      old.testo.colore != testo.colore ||
+      old.evidenza != evidenza;
+}
+
+/// Una scritta sulla vasca: si tocca e si trascina solo in modalità
+/// "Testo", nelle altre lascia passare i tocchi all'acqua sotto.
+class _EtichettaTesto extends StatelessWidget {
+  const _EtichettaTesto({
+    required this.testo,
+    required this.larghezza,
+    required this.altezza,
+    required this.attiva,
+    required this.onTap,
+    required this.onInizioTrascinamento,
+    required this.onTrascina,
+    this.evidenza,
+  });
+
+  final TestoLavagna testo;
+  final double larghezza;
+  final double altezza;
+  final bool attiva;
+  final VoidCallback onTap;
+  final VoidCallback onInizioTrascinamento;
+  final ValueChanged<Offset> onTrascina;
+  final Color? evidenza;
+
+  @override
+  Widget build(BuildContext context) {
+    final dimensione = _EtichettaPainter.misura(testo.testo);
+    return Positioned(
+      left: testo.punto.dx * larghezza - dimensione.width / 2,
+      top: testo.punto.dy * altezza - dimensione.height / 2,
+      child: IgnorePointer(
+        ignoring: !attiva,
+        child: Semantics(
+          label: 'Scritta: ${testo.testo}',
+          selected: evidenza != null,
+          child: GestureDetector(
+            dragStartBehavior: DragStartBehavior.down,
+            onTap: onTap,
+            onPanStart: (_) => onInizioTrascinamento(),
+            onPanUpdate: (d) => onTrascina(d.delta),
+            child: CustomPaint(
+              size: dimensione,
+              painter: _EtichettaPainter(testo: testo, evidenza: evidenza),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Le scritte disegnate e basta (animazione, miniature, esportazione).
+void _disegnaTesti(Canvas canvas, Size size, List<TestoLavagna> testi) {
+  for (final t in testi) {
+    final dimensione = _EtichettaPainter.misura(t.testo);
+    canvas.save();
+    canvas.translate(
+      t.punto.dx * size.width - dimensione.width / 2,
+      t.punto.dy * size.height - dimensione.height / 2,
+    );
+    _EtichettaPainter(testo: t).paint(canvas, dimensione);
+    canvas.restore();
+  }
+}
+
+class _TestiPainter extends CustomPainter {
+  _TestiPainter(this.testi);
+
+  final List<TestoLavagna> testi;
+
+  @override
+  void paint(Canvas canvas, Size size) => _disegnaTesti(canvas, size, testi);
+
+  @override
+  bool shouldRepaint(covariant _TestiPainter oldDelegate) => true;
+}
+
+/// Un passo intero — vasca, zone, frecce, calottine, scritte — come lo
+/// mostra la lavagna, su una tela grande [size]: per l'esportazione.
+void disegnaPassoCompleto(
+  Canvas canvas,
+  Size size,
+  PassoLavagna passo,
+  CampoLavagna campo,
+) {
+  VascaPainter(campo: campo).paint(canvas, size);
+  for (final z in passo.zone) {
+    _disegnaZona(canvas, size, z);
+  }
+  _FreccePainter(
+    frecce: passo.frecce,
+    pezzi: _ingombri(passo.giocatori),
+  ).paint(canvas, size);
+  for (var i = 0; i < passo.giocatori.length; i++) {
+    final g = passo.giocatori[i];
+    final dimensione = _dimensionePezzo(g.colore);
+    canvas.save();
+    canvas.translate(
+      g.posizione.dx * size.width - dimensione.width / 2,
+      g.posizione.dy * size.height - dimensione.height / 2,
+    );
+    _PezzoPainter(
+      colore: g.colore,
+      etichetta: g.colore.etichetta(_numeroPerColore(passo.giocatori, i)),
+    ).paint(canvas, dimensione);
+    canvas.restore();
+  }
+  _disegnaTesti(canvas, size, passo.testi);
+}
+
+/// Il passo come immagine PNG: [larghezza] in punti logici (calottine e
+/// scritte hanno la stessa misura che sullo schermo di un telefono),
+/// [densita] pixel per punto per un'immagine nitida.
+Future<Uint8List> immaginePasso(
+  PassoLavagna passo,
+  CampoLavagna campo, {
+  double larghezza = 600,
+  double densita = 2,
+}) async {
+  final altezza = larghezza / campo.proporzioni;
+  final registratore = ui.PictureRecorder();
+  final canvas = Canvas(registratore)..scale(densita);
+  disegnaPassoCompleto(canvas, Size(larghezza, altezza), passo, campo);
+  final immagine = await registratore.endRecording().toImage(
+    (larghezza * densita).round(),
+    (altezza * densita).round(),
+  );
+  final dati = await immagine.toByteData(format: ui.ImageByteFormat.png);
+  immagine.dispose();
+  return dati!.buffer.asUint8List();
 }
 
 /// Centri (frazioni del campo) e raggi in pixel dei pezzi in acqua: una
@@ -1902,6 +2772,9 @@ class MiniaturaPassoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     VascaPainter(campo: campo).paint(canvas, size);
+    for (final z in passo.zone) {
+      _disegnaZona(canvas, size, z);
+    }
     Offset inPixel(Offset p) => Offset(p.dx * size.width, p.dy * size.height);
 
     for (final f in passo.frecce) {
@@ -2513,6 +3386,15 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
             final vasca = Positioned.fill(
               child: CustomPaint(painter: VascaPainter(campo: widget.campo)),
             );
+            // Zone e scritte del passo mostrato: durante il movimento
+            // restano quelle del passo di partenza.
+            final passoFermo = passi[_passoAttuale];
+            final zone = Positioned.fill(
+              child: CustomPaint(painter: _ZonePainter(zone: passoFermo.zone)),
+            );
+            final testi = Positioned.fill(
+              child: CustomPaint(painter: _TestiPainter(passoFermo.testi)),
+            );
 
             if (passoSuccessivo == null) {
               final passo = passi[_passoAttuale];
@@ -2527,6 +3409,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
               return Stack(
                 children: [
                   vasca,
+                  zone,
                   Positioned.fill(
                     child: CustomPaint(
                       painter: _FreccePainter(
@@ -2545,6 +3428,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
                       onTrascina: (_) {},
                       onRimuovi: () {},
                     ),
+                  testi,
                 ],
               );
             }
@@ -2563,6 +3447,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
               builder: (context, _) => Stack(
                 children: [
                   vasca,
+                  zone,
                   for (final token in tokenAnimati)
                     _TokenAnimato(
                       token: token,
@@ -2570,6 +3455,7 @@ class _SchemaTatticoPlayerState extends State<SchemaTatticoPlayer>
                       larghezza: larghezza,
                       altezza: altezza,
                     ),
+                  testi,
                 ],
               ),
             );

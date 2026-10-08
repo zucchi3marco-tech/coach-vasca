@@ -9,6 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 class _Disegno {
   List<GiocatoreLavagna> giocatori = const [];
   List<FrecciaLavagna> frecce = const [];
+  List<ZonaLavagna> zone = const [];
+  List<TestoLavagna> testi = const [];
 }
 
 Future<_Disegno> _apriLavagna(WidgetTester tester) async {
@@ -23,10 +25,12 @@ Future<_Disegno> _apriLavagna(WidgetTester tester) async {
         body: SingleChildScrollView(
           child: WaterPoloTacticsBoard(
             campo: CampoLavagna.meta,
-            onCambiato: (giocatori, frecce) {
+            onCambiato: (passo) {
               disegno
-                ..giocatori = giocatori
-                ..frecce = frecce;
+                ..giocatori = passo.giocatori
+                ..frecce = passo.frecce
+                ..zone = passo.zone
+                ..testi = passo.testi;
             },
           ),
         ),
@@ -222,6 +226,62 @@ void main() {
     expect(disegno.giocatori, hasLength(1));
   });
 
+  testWidgets('in modalità Zone si disegna, si sposta e si elimina una zona', (
+    tester,
+  ) async {
+    final disegno = await _apriLavagna(tester);
+    await tester.tap(find.text('Zone'));
+    await tester.pump();
+    await tester.tap(find.text('Ovale'));
+    await tester.pump();
+
+    await _disegna(tester, _punto(tester, 0.2, 0.3), _punto(tester, 0.5, 0.6));
+    final zona = disegno.zone.single;
+    expect(zona.forma, FormaZona.ovale);
+    expect(zona.colore, ColoreLavagna.giallo);
+    expect(zona.da.dx, closeTo(0.2, 0.01));
+
+    // Appena disegnata è scelta: trascinandola dal centro si sposta.
+    await tester.drag(_semantica('Sposta la zona'), const Offset(80, 0));
+    await tester.pump();
+    final r = _vasca(tester);
+    expect(disegno.zone.single.da.dx, closeTo(0.2 + 80 / r.width, 0.01));
+
+    await tester.tap(find.byTooltip('Elimina la zona scelta'));
+    await tester.pump();
+    expect(disegno.zone, isEmpty);
+  });
+
+  testWidgets('in modalità Testo si scrive, si cambia e si elimina', (
+    tester,
+  ) async {
+    final disegno = await _apriLavagna(tester);
+    await tester.tap(find.text('Testo'));
+    await tester.pump();
+
+    await tester.tapAt(_punto(tester, 0.5, 0.5));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Centroboa');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(disegno.testi.single.testo, 'Centroboa');
+    expect(_semantica('Scritta: Centroboa'), findsOneWidget);
+
+    // Già scelta: un altro tocco la riapre per cambiarla.
+    await tester.tap(_semantica('Scritta: Centroboa'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Boa');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    expect(disegno.testi.single.testo, 'Boa');
+
+    await tester.tap(find.byTooltip('Elimina la scritta scelta'));
+    await tester.pump();
+    expect(disegno.testi, isEmpty);
+  });
+
   testWidgets('chi sfoglia lo schema vede la legenda delle frecce usate', (
     tester,
   ) async {
@@ -243,6 +303,8 @@ void main() {
                       tipo: TipoFreccia.passaggio,
                     ),
                   ],
+                  zone: [],
+                  testi: [],
                 ),
               ],
             ),

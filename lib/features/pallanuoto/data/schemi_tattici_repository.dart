@@ -53,6 +53,27 @@ List<FrecciaSchema> _frecceFromDati(Map<String, dynamic> dati) {
   ];
 }
 
+// Zone e scritte non esistevano negli schemi salvati prima del 2026-10-08:
+// mancano, e valgono come liste vuote.
+List<ZonaSchema> _zoneFromDati(Map<String, dynamic> dati) => [
+  for (final z in dati['zone'] as List? ?? const [])
+    (
+      da: _puntoDaLista(z['da'] as List),
+      a: _puntoDaLista(z['a'] as List),
+      colore: z['colore'] as String? ?? 'giallo',
+      forma: z['forma'] as String? ?? 'rettangolo',
+    ),
+];
+
+List<TestoSchema> _testiFromDati(Map<String, dynamic> dati) => [
+  for (final t in dati['testi'] as List? ?? const [])
+    (
+      punto: _puntoDaLista(t['punto'] as List),
+      testo: t['testo'] as String? ?? '',
+      colore: t['colore'] as String? ?? 'bianco',
+    ),
+];
+
 Map<String, dynamic> _passoToMap(PassoSchema passo) => {
   'giocatori': [
     for (final g in passo.giocatori)
@@ -73,10 +94,31 @@ Map<String, dynamic> _passoToMap(PassoSchema passo) => {
         if (f.controllo case (final x, final y)) 'controllo': [x, y],
       },
   ],
+  'zone': [
+    for (final z in passo.zone)
+      {
+        'da': [z.da.$1, z.da.$2],
+        'a': [z.a.$1, z.a.$2],
+        'colore': z.colore,
+        'forma': z.forma,
+      },
+  ],
+  'testi': [
+    for (final t in passo.testi)
+      {
+        'punto': [t.punto.$1, t.punto.$2],
+        'testo': t.testo,
+        'colore': t.colore,
+      },
+  ],
 };
 
-PassoSchema _passoFromMap(Map<String, dynamic> map) =>
-    (giocatori: _giocatoriFromDati(map), frecce: _frecceFromDati(map));
+PassoSchema _passoFromMap(Map<String, dynamic> map) => (
+  giocatori: _giocatoriFromDati(map),
+  frecce: _frecceFromDati(map),
+  zone: _zoneFromDati(map),
+  testi: _testiFromDati(map),
+);
 
 /// Il campo `dati` (jsonb) di uno schema: i passi con giocatori e frecce.
 Map<String, dynamic> datiSchemaInMappa(List<PassoSchema> passi) => {

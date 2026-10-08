@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:coach_vasca/features/pallanuoto/data/schemi_tattici_repository.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/schema_tattico.dart';
 import 'package:coach_vasca/features/pallanuoto/presentation/water_polo_tactics_board.dart';
@@ -6,14 +8,14 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('salvataggio delle frecce', () {
     test('tipo e curva sopravvivono al salvataggio', () {
-      final passo = passoSchemaDaLavagna(
-        const [
+      final passo = passoSchemaDaLavagna((
+        giocatori: const [
           GiocatoreLavagna(
             posizione: Offset(0.2, 0.3),
             colore: ColoreLavagna.rosso,
           ),
         ],
-        const [
+        frecce: const [
           FrecciaLavagna(
             inizio: Offset(0.1, 0.1),
             fine: Offset(0.5, 0.5),
@@ -28,7 +30,9 @@ void main() {
             tipo: TipoFreccia.tiro,
           ),
         ],
-      );
+        zone: const [],
+        testi: const [],
+      ));
 
       final riletto = passoLavagnaDaSchema(
         passiSchemaDaMappa(datiSchemaInMappa([passo])).single,
@@ -120,14 +124,14 @@ void main() {
   });
 
   test('specchiare scambia destra e sinistra, frecce e curve comprese', () {
-    final passo = passoSchemaDaLavagna(
-      const [
+    final passo = passoSchemaDaLavagna((
+      giocatori: const [
         GiocatoreLavagna(
           posizione: Offset(0.2, 0.3),
           colore: ColoreLavagna.blu,
         ),
       ],
-      const [
+      frecce: const [
         FrecciaLavagna(
           inizio: Offset(0.1, 0.5),
           fine: Offset(0.4, 0.2),
@@ -136,7 +140,9 @@ void main() {
           controllo: Offset(0.3, 0.6),
         ),
       ],
-    );
+      zone: const [],
+      testi: const [],
+    ));
     final specchiato = passoLavagnaDaSchema(passoSpecchiato(passo));
     final g = specchiato.giocatori.single.posizione;
     expect(g.dx, closeTo(0.8, 1e-9));
@@ -147,5 +153,83 @@ void main() {
     expect(f.controllo!.dx, closeTo(0.7, 1e-9));
     expect(f.controllo!.dy, 0.6);
     expect(f.tipo, TipoFreccia.passaggio);
+  });
+
+  group('zone e scritte', () {
+    test('sopravvivono al salvataggio e si specchiano', () {
+      final passo = passoSchemaDaLavagna((
+        giocatori: const [],
+        frecce: const [],
+        zone: const [
+          ZonaLavagna(
+            da: Offset(0.1, 0.2),
+            a: Offset(0.4, 0.5),
+            colore: ColoreLavagna.rosso,
+            forma: FormaZona.ovale,
+          ),
+        ],
+        testi: const [
+          TestoLavagna(
+            punto: Offset(0.3, 0.7),
+            testo: 'Centroboa',
+            colore: ColoreLavagna.giallo,
+          ),
+        ],
+      ));
+
+      final riletto = passoLavagnaDaSchema(
+        passiSchemaDaMappa(datiSchemaInMappa([passo])).single,
+      );
+      final zona = riletto.zone.single;
+      expect(zona.forma, FormaZona.ovale);
+      expect(zona.colore, ColoreLavagna.rosso);
+      expect(zona.a, const Offset(0.4, 0.5));
+      final scritta = riletto.testi.single;
+      expect(scritta.testo, 'Centroboa');
+      expect(scritta.colore, ColoreLavagna.giallo);
+
+      final specchiato = passoLavagnaDaSchema(passoSpecchiato(passo));
+      expect(specchiato.zone.single.da.dx, closeTo(0.9, 1e-9));
+      expect(specchiato.testi.single.punto.dx, closeTo(0.7, 1e-9));
+    });
+
+    test('gli schemi salvati prima non hanno zone né scritte', () {
+      final passo = passiSchemaDaMappa({
+        'passi': [
+          {'giocatori': const [], 'frecce': const []},
+        ],
+      }).single;
+      expect(passo.zone, isEmpty);
+      expect(passo.testi, isEmpty);
+    });
+
+    test('una zona ovale contiene il centro ma non gli angoli', () {
+      const zona = ZonaLavagna(
+        da: Offset(0, 0),
+        a: Offset(1, 1),
+        colore: ColoreLavagna.giallo,
+        forma: FormaZona.ovale,
+      );
+      const size = Size(100, 100);
+      expect(zona.contiene(const Offset(50, 50), size), isTrue);
+      expect(zona.contiene(const Offset(5, 5), size), isFalse);
+      expect(
+        zona
+            .copiaCon(forma: FormaZona.rettangolo)
+            .contiene(const Offset(5, 5), size),
+        isTrue,
+      );
+    });
+
+    test('spostata contro il bordo, la zona si ferma e non si deforma', () {
+      const zona = ZonaLavagna(
+        da: Offset(0.7, 0.2),
+        a: Offset(0.9, 0.4),
+        colore: ColoreLavagna.giallo,
+      );
+      final spostata = zonaSpostata(zona, const Offset(0.5, 0));
+      expect(spostata.a.dx, closeTo(1, 1e-9));
+      expect(spostata.da.dx, closeTo(0.8, 1e-9));
+    });
   });
 }

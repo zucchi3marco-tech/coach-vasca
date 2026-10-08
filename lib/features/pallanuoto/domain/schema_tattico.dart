@@ -28,6 +28,20 @@ typedef FrecciaSchema = ({
   PuntoSchema? controllo,
 });
 
+/// Una zona colorata e trasparente sul campo (es. l'area del pressing):
+/// [da] e [a] sono due angoli opposti del rettangolo che la contiene.
+/// [forma]: 'rettangolo' | 'ovale'. [colore]: come per le frecce.
+typedef ZonaSchema = ({
+  PuntoSchema da,
+  PuntoSchema a,
+  String colore,
+  String forma,
+});
+
+/// Una scritta sul campo, centrata in [punto] (es. "Centroboa", "1°
+/// passaggio"). [colore]: lo sfondo dell'etichetta, come per le frecce.
+typedef TestoSchema = ({PuntoSchema punto, String testo, String colore});
+
 /// Un fotogramma dello schema: una disposizione di giocatori/frecce
 /// indipendente dagli altri passi — es. passo 1 "posizioni di
 /// partenza", passo 2 "frecce di movimento", passo 3 "posizioni
@@ -36,7 +50,17 @@ typedef FrecciaSchema = ({
 typedef PassoSchema = ({
   List<GiocatoreSchema> giocatori,
   List<FrecciaSchema> frecce,
+  List<ZonaSchema> zone,
+  List<TestoSchema> testi,
 });
+
+/// Un passo vuoto, per uno schema nuovo.
+const PassoSchema passoSchemaVuoto = (
+  giocatori: [],
+  frecce: [],
+  zone: [],
+  testi: [],
+);
 
 /// Lo stesso passo allo specchio, destra e sinistra scambiate: uno
 /// schema preparato su un lato si gioca uguale sull'altro. La porta resta
@@ -60,6 +84,19 @@ PassoSchema passoSpecchiato(PassoSchema passo) {
             null => null,
           },
         ),
+    ],
+    zone: [
+      for (final z in passo.zone)
+        (
+          da: specchia(z.da),
+          a: specchia(z.a),
+          colore: z.colore,
+          forma: z.forma,
+        ),
+    ],
+    testi: [
+      for (final t in passo.testi)
+        (punto: specchia(t.punto), testo: t.testo, colore: t.colore),
     ],
   );
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../domain/schema_tattico.dart';
+import 'esporta_schema.dart';
 import 'water_polo_tactics_board.dart';
 import '../../../widgets/nascondi_barra_club.dart';
 
@@ -21,7 +22,22 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
   Widget _costruisci(BuildContext context) {
     return AppScaffold(
       scrollabile: true,
-      appBar: AppBar(title: Text(schema.titolo)),
+      appBar: AppBar(
+        title: Text(schema.titolo),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Esporta lo schema',
+            onPressed: () => mostraEsportaSchema(
+              context,
+              titolo: schema.titolo,
+              categoria: schema.categoria,
+              campo: CampoLavagna.values.byName(schema.campo),
+              passi: [for (final p in schema.passi) passoLavagnaDaSchema(p)],
+            ),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.only(top: AppSpacing.s8),
         child: SchemaTatticoPlayer(

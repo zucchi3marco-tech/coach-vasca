@@ -16,6 +16,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../application/schemi_tattici_providers.dart';
 import '../data/schemi_tattici_repository.dart';
 import '../domain/schema_tattico.dart';
+import 'esporta_schema.dart';
 import 'striscia_passi.dart';
 import 'water_polo_tactics_board.dart';
 import '../../../widgets/nascondi_barra_club.dart';
@@ -73,7 +74,7 @@ class _SchemaTatticoFormScreenState
     _titoloController = TextEditingController(text: s?.titolo ?? '');
     _categoriaController = TextEditingController(text: s?.categoria ?? '');
     _gruppoIdsSelezionati = {...?s?.gruppoIds};
-    _passi = List.of(s?.passi ?? const [(giocatori: [], frecce: [])]);
+    _passi = List.of(s?.passi ?? const [passoSchemaVuoto]);
     _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
   }
 
@@ -84,15 +85,10 @@ class _SchemaTatticoFormScreenState
     super.dispose();
   }
 
-  void _onCambiato(
-    List<GiocatoreLavagna> giocatori,
-    List<FrecciaLavagna> frecce,
-  ) {
+  void _onCambiato(PassoLavagna passo) {
     // setState anche se la lavagna si ridisegna da sola: la miniatura del
     // passo nella striscia deve seguire ogni modifica.
-    setState(
-      () => _passi[_passoAttuale] = passoSchemaDaLavagna(giocatori, frecce),
-    );
+    setState(() => _passi[_passoAttuale] = passoSchemaDaLavagna(passo));
   }
 
   void _cambiaCampo(CampoLavagna nuovo) => setState(() => _campo = nuovo);
@@ -153,12 +149,15 @@ class _SchemaTatticoFormScreenState
     setState(() {
       // Il nuovo passo parte dalle posizioni dei giocatori dell'attuale
       // (di solito il passo successivo riparte da dove sta il
-      // precedente, non da zero), ma senza le sue frecce: sono
-      // annotazioni di quel singolo passo, non devono restare a
-      // descrivere uno spostamento vecchio nei passi successivi.
+      // precedente, non da zero), con le sue zone e scritte (fanno da
+      // contesto), ma senza le sue frecce: descrivono uno spostamento di
+      // quel passo, già avvenuto in quello nuovo.
+      final attuale = _passi[_passoAttuale];
       _passi.add((
-        giocatori: _passi[_passoAttuale].giocatori,
+        giocatori: attuale.giocatori,
         frecce: const [],
+        zone: attuale.zone,
+        testi: attuale.testi,
       ));
       _passoAttuale = _passi.length - 1;
     });
@@ -281,6 +280,24 @@ class _SchemaTatticoFormScreenState
       physics: _bloccata ? const NeverScrollableScrollPhysics() : null,
       appBar: AppBar(
         title: Text(_isEditing ? 'Modifica schema' : 'Nuovo schema'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Esporta lo schema',
+            onPressed: _inRiproduzione
+                ? null
+                : () => mostraEsportaSchema(
+                    context,
+                    titolo: _titoloController.text.trim().isEmpty
+                        ? 'Schema tattico'
+                        : _titoloController.text.trim(),
+                    categoria: _categoriaController.text.trim(),
+                    campo: _campo,
+                    passi: [for (final p in _passi) _passoAWidget(p)],
+                    passoCorrente: _passoAttuale,
+                  ),
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -294,6 +311,8 @@ class _SchemaTatticoFormScreenState
               key: ValueKey((_passoAttuale, _versione)),
               giocatoriIniziali: passoAttuale.giocatori,
               frecceIniziali: passoAttuale.frecce,
+              zoneIniziali: passoAttuale.zone,
+              testiIniziali: passoAttuale.testi,
               passoFantasma: passoFantasma,
               campo: _campo,
               bloccata: _bloccata,
