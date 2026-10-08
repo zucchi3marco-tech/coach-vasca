@@ -10,12 +10,19 @@ String labelVolumeSerie(DatiSerie s) {
   return '${s.ripetute}×${s.distanzaM}m';
 }
 
-/// "8×100m Libero", "4×50m Dorso Gambe".
+/// "8×100m Libero", "4×50m Dorso Gambe", "4×5' Uomo in più".
 String titoloSerie(DatiSerie s) => [
   labelVolumeSerie(s),
-  labelStile(s.stile),
+  ?labelStileSerie(s),
   if (s.esecuzione != 'nuoto') labelEsecuzione(s.esecuzione),
 ].join(' ');
+
+/// Lo stile della serie, se conta: nel lavoro di pallanuoto e a secco
+/// "libero" è solo il valore di partenza ([esecuzioniSenzaStile]).
+String? labelStileSerie(DatiSerie s) =>
+    s.stile == 'libero' && esecuzioniSenzaStile.contains(s.esecuzione)
+    ? null
+    : labelStile(s.stile);
 
 /// Il titolo di più serie raggruppate: "50-100-200m Libero" o
 /// "2×(50-100)m Libero" per una piramide, "2 × (3×200m Libero + 4×75m
@@ -33,7 +40,7 @@ String titoloGruppo(List<DatiSerie> gruppo) {
         '${piramide.giri}×($sequenza)m'
       else
         '${sequenza}m',
-      labelStile(primo.stile),
+      ?labelStileSerie(primo),
       if (primo.esecuzione != 'nuoto') labelEsecuzione(primo.esecuzione),
     ].join(' ');
   }
@@ -70,6 +77,12 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   'tecnica' => 'Tecnica',
   'remate' => 'Remate',
   'pallanuoto tecnico-tattico' => 'Tecnico-tattico',
+  'palleggio' => 'Palleggio',
+  'tiri' => 'Tiri',
+  'uomo in più' => 'Uomo in più',
+  'uomo in meno' => 'Uomo in meno',
+  'gioco da schierati' => 'Gioco da schierati',
+  'schemi' => 'Schemi',
   'a secco' => 'A secco',
   _ => esecuzione,
 };

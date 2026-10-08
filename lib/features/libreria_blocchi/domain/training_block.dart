@@ -135,8 +135,9 @@ class TrainingBlockParte {
   /// TEST.
   final String zona;
 
-  /// nuoto | gambe | braccia | pull | tecnica | remate | pallanuoto
-  /// tecnico-tattico | a secco — dedotta all'importazione.
+  /// Uno di `esecuzioniSerie` — dedotta all'importazione (dall'Excel
+  /// arrivano nuoto, gambe, braccia, pull, tecnica, remate, pallanuoto
+  /// tecnico-tattico e a secco).
   final String esecuzione;
   final int? recuperoS;
   final String? attrezzi;

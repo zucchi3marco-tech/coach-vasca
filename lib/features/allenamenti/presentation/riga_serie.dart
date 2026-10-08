@@ -46,11 +46,7 @@ class RigaSerie extends StatelessWidget {
       rispetto: colori.linea,
     );
 
-    final titolo = StringBuffer('${labelVolumeSerie(s)} ')
-      ..write(labelStile(s.stile));
-    if (s.esecuzione != 'nuoto') {
-      titolo.write(' ${labelEsecuzione(s.esecuzione)}');
-    }
+    final titolo = titoloSerie(s);
 
     final dettagli = <String>[
       // Segnata a bordo vasca.
@@ -99,7 +95,7 @@ class RigaSerie extends StatelessWidget {
                                 ),
                               ),
                               TextSpan(
-                                text: titolo.toString(),
+                                text: titolo,
                                 style: AppTypography.corpoForte.copyWith(
                                   color: s.saltata
                                       ? colori.testoSecondario

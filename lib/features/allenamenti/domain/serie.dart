@@ -1,3 +1,36 @@
+/// Le esecuzioni di una serie, nell'ordine dei menu: i valori dell'enum
+/// `esecuzione_serie` del database. Dopo il nuoto, il lavoro di
+/// pallanuoto (richiesta del coach 2026-10-08) e quello a secco.
+const esecuzioniSerie = [
+  'nuoto',
+  'gambe',
+  'braccia',
+  'pull',
+  'tecnica',
+  'remate',
+  'pallanuoto tecnico-tattico',
+  'palleggio',
+  'tiri',
+  'uomo in più',
+  'uomo in meno',
+  'gioco da schierati',
+  'schemi',
+  'a secco',
+];
+
+/// Esecuzioni in cui lo stile non conta: "libero" è solo il valore di
+/// partenza, e non si scrive né si mostra.
+const esecuzioniSenzaStile = {
+  'pallanuoto tecnico-tattico',
+  'palleggio',
+  'tiri',
+  'uomo in più',
+  'uomo in meno',
+  'gioco da schierati',
+  'schemi',
+  'a secco',
+};
+
 /// I dati di una serie, salvata ([Serie]) o appena scritta a testo e non
 /// ancora salvata (`SerieScritta`): quello che serve per descriverla,
 /// stimarne la durata e disegnarla, senza id né ordine.
@@ -59,7 +92,7 @@ class Serie implements DatiSerie {
   @override
   final String stile; // libero | dorso | rana | delfino | misti
   @override
-  final String esecuzione; // nuoto | gambe | braccia | pull | tecnica | remate
+  final String esecuzione; // uno di [esecuzioniSerie]
   @override
   final String? zona; // A1 | A2 | B1 | B2 | C1 | C2 | C3 | D (C: storico)
   @override

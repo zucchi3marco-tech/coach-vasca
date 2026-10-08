@@ -221,7 +221,7 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
               .copyWith(color: colori.testo),
           decoration: const InputDecoration(
             hintText:
-                'Riscaldamento\n400 mi A1\n\nPrincipale\n2x\n'
+                'Riscaldamento\n400 mix A1\n\nPrincipale\n2x\n'
                 '4x100 sl B1 @1:40\n4x50 do r15\n\n200 sl sciolto',
             hintMaxLines: 9,
           ),
@@ -550,11 +550,17 @@ void mostraAiutoScrittura(BuildContext context) {
           'titolo: apre il blocco (anche Principale, '
               'Defaticamento, Altro)',
         ),
-        ('sl do ra df mi', 'stile'),
+        ('sl do ra df mix', 'stile'),
+        ('gambe braccia pull tecnica remate', 'esecuzione'),
         (
-          'gambe braccia pull tecnica remate tecnico-tattico a-secco',
-          'esecuzione',
+          'palleggio tiri schemi gioco da schierati',
+          'pallanuoto: lo stile non serve',
         ),
+        (
+          'uomo in +  uomo in -',
+          'superiorità e inferiorità (anche "uomo in più", "uomo in meno")',
+        ),
+        ('tecnico-tattico  a-secco', 'altro lavoro senza stile'),
         ('A1 A2 B1 B2 C1 C2 C3 D', 'zona'),
         ('1:25', 'passo sui 100'),
         ('@1:30', 'ripartenza'),

@@ -119,6 +119,35 @@ void main() {
       },
     );
 
+    test('i misti si scrivono "mix" (ma "mi" e "mx" valgono ancora)', () {
+      expect(_una('400 mix').stile, 'misti');
+      expect(_una('400 mi').stile, 'misti');
+      expect(_una('400 mx').stile, 'misti');
+    });
+
+    test('le esecuzioni di pallanuoto, anche di più parole', () {
+      SerieScritta s(String riga) => _una(riga);
+      expect(s('4x25 palleggio').esecuzione, 'palleggio');
+      expect(s("10' tiri").esecuzione, 'tiri');
+      expect(s("15' schemi").esecuzione, 'schemi');
+      expect(s("4x5' uomo in + r60").esecuzione, 'uomo in più');
+      expect(s("4x5' uomo in + r60").recuperoS, 60);
+      expect(s("4x5' uomo in + r60").note, isNull);
+      expect(s("4x5' Uomo in più").esecuzione, 'uomo in più');
+      expect(s("4x5' uomo+").esecuzione, 'uomo in più');
+      expect(s("4x5' superiorità").esecuzione, 'uomo in più');
+      expect(s("4x5' uomo in meno C1").esecuzione, 'uomo in meno');
+      expect(s("4x5' uomo in meno C1").zona, 'C1');
+      expect(s("4x5' uomo in -").esecuzione, 'uomo in meno');
+      expect(s("4x5' inferiorità").esecuzione, 'uomo in meno');
+      expect(s("20' gioco da schierati").esecuzione, 'gioco da schierati');
+      expect(s("20' schierati").esecuzione, 'gioco da schierati');
+      // Fra virgolette resta una nota.
+      final nota = s('10\' tiri "dopo l\'uomo in più"');
+      expect(nota.esecuzione, 'tiri');
+      expect(nota.note, "dopo l'uomo in più");
+    });
+
     test('un numero da solo è una distanza solo all\'inizio', () {
       expect(leggiRigaSerie('sl 400', blocco: 'principale'), isNull);
       expect(leggiRigaSerie('A2 r15 sl', blocco: 'principale'), isNull);
@@ -191,7 +220,7 @@ void main() {
   group('tutto l\'allenamento', () {
     const testo = '''
 Riscaldamento
-400 mi A1
+400 mix A1
 4x50 gambe r15
 
 Principale
@@ -280,7 +309,7 @@ defat. 200 sl''';
       ];
       expect(
         testoDaSerie(serie),
-        'Riscaldamento\n400 mi\n\nPrincipale\n8x100 sl B1 @1:30 r20',
+        'Riscaldamento\n400 mix\n\nPrincipale\n8x100 sl B1 @1:30 r20',
       );
     });
 
@@ -296,6 +325,13 @@ defat. 200 sl''';
           ),
         ]),
         "Principale\n4x5' tecnico-tattico r60",
+      );
+      expect(
+        testoDaSerie([
+          _salvata(1, ripetute: 4, durataS: 300, esecuzione: 'uomo in più'),
+          _salvata(2, durataS: 1200, esecuzione: 'gioco da schierati'),
+        ]),
+        "Principale\n4x5' uomo in più\n20' gioco da schierati",
       );
     });
 
@@ -331,6 +367,21 @@ defat. 200 sl''';
           attrezzatura: 'palloni da 5',
         ),
         _salvata(6, blocco: 'altro', durataS: 900, esecuzione: 'a secco'),
+        for (final (i, e) in [
+          'palleggio',
+          'tiri',
+          'uomo in più',
+          'uomo in meno',
+          'gioco da schierati',
+          'schemi',
+        ].indexed)
+          _salvata(
+            10 + i,
+            ripetute: 4,
+            durataS: 300,
+            esecuzione: e,
+            zona: 'C1',
+          ),
         _salvata(
           7,
           blocco: 'defaticamento',

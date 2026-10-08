@@ -11,6 +11,7 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/carico_providers.dart';
@@ -26,16 +27,6 @@ const _ordineZonePerVolume = [
   'C3',
   'C',
   'D',
-];
-const _ordineEsecuzionePerVolume = [
-  'nuoto',
-  'gambe',
-  'braccia',
-  'pull',
-  'tecnica',
-  'remate',
-  'pallanuoto tecnico-tattico',
-  'a secco',
 ];
 
 String _formattaVolume(int metri) =>
@@ -162,7 +153,7 @@ class _SezioneVolumi extends ConsumerWidget {
             if (volumi.perZona.containsKey(z)) z,
         ];
         final esecuzioniOrdinate = [
-          for (final e in _ordineEsecuzionePerVolume)
+          for (final e in esecuzioniSerie)
             if (volumi.perEsecuzione.containsKey(e)) e,
         ];
         return Column(

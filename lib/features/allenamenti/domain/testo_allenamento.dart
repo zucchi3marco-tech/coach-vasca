@@ -8,7 +8,7 @@ import 'serie.dart';
 ///
 /// ```text
 /// Riscaldamento
-/// 400 mi A1
+/// 400 mix A1
 /// 4x50 gambe pinne r15
 ///
 /// Principale
@@ -29,8 +29,10 @@ import 'serie.dart';
 ///   piramide "50-100-200" o "2x(50-100)", oppure una durata "10'",
 ///   "3x5'", "30''".
 /// - Il resto, in qualsiasi ordine: zona (A1…D), stile (sl, do, ra, df,
-///   mi), esecuzione (gambe, braccia, pull, tecnica, remate), passo sui
-///   100 "1:25", ripartenza "@1:30", recupero "r15" (o "r1:00"),
+///   mix), esecuzione (gambe, braccia, pull, tecnica, remate; per la
+///   pallanuoto palleggio, tiri, uomo in +, uomo in -, gioco da
+///   schierati, schemi, tecnico-tattico; a-secco), passo sui 100 "1:25",
+///   ripartenza "@1:30", recupero "r15" (o "r1:00"),
 ///   attrezzi (pinne, palette, …, o "[pinne corte]"), note fra
 ///   virgolette. Una parola che non si riconosce finisce nelle note.
 ///
@@ -190,6 +192,7 @@ const _stili = {
   'fa': 'delfino',
   'delfino': 'delfino',
   'farfalla': 'delfino',
+  'mix': 'misti',
   'mi': 'misti',
   'mx': 'misti',
   'misti': 'misti',
@@ -200,7 +203,7 @@ const _sigleStile = {
   'dorso': 'do',
   'rana': 'ra',
   'delfino': 'df',
-  'misti': 'mi',
+  'misti': 'mix',
 };
 
 const _esecuzioni = {
@@ -217,6 +220,20 @@ const _esecuzioni = {
   'tattica': 'pallanuoto tecnico-tattico',
   'secco': 'a secco',
   'a-secco': 'a secco',
+  'palleggio': 'palleggio',
+  'palleggi': 'palleggio',
+  'tiri': 'tiri',
+  'tiro': 'tiri',
+  'uomo-in-più': 'uomo in più',
+  'superiorità': 'uomo in più',
+  'superiorita': 'uomo in più',
+  'uomo-in-meno': 'uomo in meno',
+  'inferiorità': 'uomo in meno',
+  'inferiorita': 'uomo in meno',
+  'gioco-da-schierati': 'gioco da schierati',
+  'schierati': 'gioco da schierati',
+  'schemi': 'schemi',
+  'schema': 'schemi',
 };
 
 const _paroleEsecuzione = {
@@ -227,9 +244,50 @@ const _paroleEsecuzione = {
   'remate': 'remate',
   'pallanuoto tecnico-tattico': 'tecnico-tattico',
   'a secco': 'a-secco',
+  'palleggio': 'palleggio',
+  'tiri': 'tiri',
+  // Si rileggono con [_frasiEsecuzione].
+  'uomo in più': 'uomo in più',
+  'uomo in meno': 'uomo in meno',
+  'gioco da schierati': 'gioco da schierati',
+  'schemi': 'schemi',
 };
 
-const _senzaStile = {'pallanuoto tecnico-tattico', 'a secco'};
+/// Esecuzioni di più parole, come si scrivono o si dicono ("uomo in +",
+/// "uomo in meno", "gioco da schierati"): diventano una parola sola prima
+/// di dividere la riga. Prima e dopo ci vuole uno spazio (o l'inizio o la
+/// fine della riga), così "uomo-in-più" scritto attaccato resta com'è.
+final _frasiEsecuzione = <(RegExp, String)>[
+  (
+    RegExp(
+      r'(?<![^\s,;])uomo\s*(?:in\s*)?(?:\+|più|piu)(?![^\s,;])',
+      caseSensitive: false,
+    ),
+    'uomo-in-più',
+  ),
+  (
+    RegExp(
+      r'(?<![^\s,;])uomo\s*(?:in\s*)?(?:-|–|meno)(?![^\s,;])',
+      caseSensitive: false,
+    ),
+    'uomo-in-meno',
+  ),
+  (
+    RegExp(
+      r'(?<![^\s,;])gioco\s+da\s+schierati(?![^\s,;])',
+      caseSensitive: false,
+    ),
+    'gioco-da-schierati',
+  ),
+];
+
+String _uniscFrasi(String t) {
+  var risultato = t;
+  for (final (frase, parola) in _frasiEsecuzione) {
+    risultato = risultato.replaceAll(frase, parola);
+  }
+  return risultato;
+}
 
 /// Attrezzi che si scrivono come parola sola; gli altri fra quadre.
 const _attrezzi = {
@@ -417,7 +475,7 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
   });
 
   final token = [
-    for (final t in _normalizza(resto).split(RegExp(r'\s+')))
+    for (final t in _normalizza(_uniscFrasi(resto)).split(RegExp(r'\s+')))
       if (t.replaceAll(RegExp(r'^[,;]+|[,;]+$'), '') case final pulito
           when pulito.isNotEmpty)
         pulito,
@@ -806,7 +864,7 @@ String _durataTesto(int secondi) {
 List<String> _dati(DatiSerie s) => [
   // Nel lavoro di pallanuoto e a secco lo stile non conta: "libero" è
   // quello che si legge quando non è scritto.
-  if (s.stile != 'libero' || !_senzaStile.contains(s.esecuzione))
+  if (s.stile != 'libero' || !esecuzioniSenzaStile.contains(s.esecuzione))
     _sigleStile[s.stile] ?? s.stile,
   ?_paroleEsecuzione[s.esecuzione],
   ?s.zona,

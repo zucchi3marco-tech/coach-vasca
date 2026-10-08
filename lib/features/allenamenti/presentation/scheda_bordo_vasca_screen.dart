@@ -292,9 +292,11 @@ String _comeAlCronometro(num secondi) {
   return m > 0 ? '$m\'$resto"' : '$resto"';
 }
 
-String _testoSerie(Serie s) =>
-    '${labelVolumeSerie(s)} ${labelStile(s.stile)} '
-    '${labelEsecuzione(s.esecuzione)}';
+String _testoSerie(Serie s) => [
+  labelVolumeSerie(s),
+  ?labelStileSerie(s),
+  labelEsecuzione(s.esecuzione),
+].join(' ');
 
 /// Il modo "allenamento in corso" — tre bande su schermo largo
 /// (avanzamento · serie · azioni), una colonna su telefono.

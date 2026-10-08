@@ -12,6 +12,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../allenamenti/domain/serie.dart';
 import '../data/training_blocks_repository.dart';
 import '../domain/training_block.dart';
 
@@ -31,17 +32,6 @@ const _zoneDisponibili = [
   'T',
   'TT',
   'TEST',
-];
-
-const _esecuzioniDisponibili = [
-  'nuoto',
-  'gambe',
-  'braccia',
-  'pull',
-  'tecnica',
-  'remate',
-  'pallanuoto tecnico-tattico',
-  'a secco',
 ];
 
 /// Crea o modifica una parte (serie) di un blocco — rifinitura dopo la
@@ -345,7 +335,7 @@ class _ParteFormScreenState extends ConsumerState<ParteFormScreen> {
                   etichetta: 'Esecuzione',
                   value: _esecuzione,
                   items: [
-                    for (final e in _esecuzioniDisponibili)
+                    for (final e in esecuzioniSerie)
                       DropdownMenuItem(value: e, child: Text(e)),
                   ],
                   onChanged: (value) =>

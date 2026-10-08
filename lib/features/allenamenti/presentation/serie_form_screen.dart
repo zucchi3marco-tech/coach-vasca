@@ -15,6 +15,7 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/serie_repository.dart';
 import '../domain/serie.dart';
+import 'serie_labels.dart';
 
 // "C" (zona storica prima dello split in C1/C2/C3) non e' piu' tra le
 // scelte proposte: resta pero' un valore valido dell'enum, quindi se una
@@ -291,21 +292,14 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 AppSelect<String>(
                   etichetta: 'Esecuzione',
                   value: _esecuzione,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'nuoto',
-                      child: Text('Nuoto completo'),
-                    ),
-                    DropdownMenuItem(value: 'gambe', child: Text('Gambe')),
-                    DropdownMenuItem(value: 'braccia', child: Text('Braccia')),
-                    DropdownMenuItem(value: 'pull', child: Text('Pull')),
-                    DropdownMenuItem(value: 'tecnica', child: Text('Tecnica')),
-                    DropdownMenuItem(value: 'remate', child: Text('Remate')),
-                    DropdownMenuItem(
-                      value: 'pallanuoto tecnico-tattico',
-                      child: Text('Tecnico-tattico'),
-                    ),
-                    DropdownMenuItem(value: 'a secco', child: Text('A secco')),
+                  items: [
+                    for (final e in esecuzioniSerie)
+                      DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e == 'nuoto' ? 'Nuoto completo' : labelEsecuzione(e),
+                        ),
+                      ),
                   ],
                   onChanged: (value) =>
                       setState(() => _esecuzione = value ?? 'nuoto'),
