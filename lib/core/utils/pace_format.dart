@@ -11,6 +11,18 @@ String formatDurataS(int secondi) {
       : "$minuti'${resto.toString().padLeft(2, '0')}\"";
 }
 
+/// Il lavoro a tempo sommato (statistiche, volumi): 2700 -> "45'",
+/// 9000 -> "2h30'", 7200 -> "2h".
+String formattaTempoLavoro(int secondi) {
+  if (secondi < 60) return formatDurataS(secondi);
+  final minuti = (secondi / 60).round();
+  if (minuti < 60) return "$minuti'";
+  final resto = minuti % 60;
+  return resto == 0
+      ? '${minuti ~/ 60}h'
+      : "${minuti ~/ 60}h${resto.toString().padLeft(2, '0')}'";
+}
+
 /// Formatta una durata in secondi interi come 'm:ss' editabile (es. 630
 /// -> '10:30'), per il campo "Durata" di [SerieFormScreen] — si
 /// interpreta di nuovo con [parsePaceMmSs]. Diverso da [formatDurataS],

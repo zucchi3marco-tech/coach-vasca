@@ -5,6 +5,7 @@ import '../data/allenamenti_repository.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
+import '../domain/volume_allenamento.dart';
 
 final allenamentiListProvider =
     StreamProvider.family<List<Allenamento>, String>((ref, clubId) {
@@ -39,3 +40,18 @@ final serieListProvider = StreamProvider.family<List<Serie>, String>((
     watch: () => repository.watchPerAllenamento(allenamentoId),
   );
 });
+
+/// Metri e lavoro a tempo di ogni allenamento del club (chiave: id), per
+/// l'elenco e i totali delle settimane: le serie di tutto il club in una
+/// lettura, invece di una chiamata per allenamento.
+final volumiAllenamentiProvider =
+    StreamProvider.family<Map<String, VolumeAllenamento>, String>((
+      ref,
+      clubId,
+    ) {
+      final repository = ref.watch(serieRepositoryProvider);
+      return streamConRefreshIniziale(
+        refresh: () => repository.refreshPerClub(clubId),
+        watch: () => repository.watchPerClub(clubId).map(volumiPerAllenamento),
+      );
+    });

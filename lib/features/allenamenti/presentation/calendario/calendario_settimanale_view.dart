@@ -12,6 +12,8 @@ import '../../../../widgets/app_list_row.dart';
 import '../../application/allenamenti_providers.dart';
 import '../../data/duplicazione_settimana_service.dart';
 import '../../domain/allenamento.dart';
+import '../../domain/volume_allenamento.dart';
+import '../riepilogo_volumi.dart';
 import 'allenamenti_per_giorno.dart';
 
 class CalendarioSettimanaleView extends ConsumerStatefulWidget {
@@ -19,8 +21,13 @@ class CalendarioSettimanaleView extends ConsumerStatefulWidget {
     required this.clubId,
     required this.allenamenti,
     required this.onGiornoSelezionato,
+    this.settimanaIniziale,
     super.key,
   });
+
+  /// Un giorno della settimana da mostrare all'inizio (dal grafico dei
+  /// volumi settimanali); null = questa settimana.
+  final DateTime? settimanaIniziale;
 
   final String clubId;
   final List<Allenamento> allenamenti;
@@ -48,21 +55,11 @@ class _CalendarioSettimanaleViewState
   @override
   void initState() {
     super.initState();
-    final oggi = DateTime.now();
-    final lunedi = aggiungiGiorni(oggi, -(oggi.weekday - 1));
-    _inizioSettimana = DateTime(lunedi.year, lunedi.month, lunedi.day);
+    _inizioSettimana = lunediDi(widget.settimanaIniziale ?? DateTime.now());
   }
 
   String _formattaData(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
-
-  /// Somma dei metri delle serie di un allenamento: legge dalla cache
-  /// locale già sincronizzata (stessa fonte di [AllenamentoDetailScreen]),
-  /// nessuna nuova chiamata di rete.
-  int _metriAllenamento(Allenamento a) {
-    final serie = ref.watch(serieListProvider(a.id)).value ?? const [];
-    return serie.fold<int>(0, (tot, s) => tot + s.distanzaTotaleM);
-  }
 
   Future<void> _duplicaSettimana(int numeroAllenamenti) async {
     final colori = context.colori;
@@ -164,20 +161,25 @@ class _CalendarioSettimanaleViewState
     final fineSettimana = aggiungiGiorni(_inizioSettimana, 6);
     final oggi = DateTime.now();
 
-    final metriPerGiorno = <DateTime, int>{};
+    // Metri e lavoro a tempo dalle serie di tutto il club, lette una volta
+    // sola (non una chiamata per allenamento).
+    final volumi =
+        ref.watch(volumiAllenamentiProvider(widget.clubId)).value ??
+        const <String, VolumeAllenamento>{};
+    final volumePerGiorno = <DateTime, VolumeAllenamento>{};
     var numeroAllenamentiSettimana = 0;
     for (var index = 0; index < 7; index++) {
       final data = aggiungiGiorni(_inizioSettimana, index);
       final sessioni = perGiorno[data] ?? const [];
       numeroAllenamentiSettimana += sessioni.length;
-      metriPerGiorno[data] = sessioni.fold<int>(
-        0,
-        (tot, a) => tot + _metriAllenamento(a),
+      volumePerGiorno[data] = sessioni.fold(
+        VolumeAllenamento.zero,
+        (tot, a) => tot + (volumi[a.id] ?? VolumeAllenamento.zero),
       );
     }
-    final metriSettimana = metriPerGiorno.values.fold<int>(
-      0,
-      (tot, m) => tot + m,
+    final volumeSettimana = volumePerGiorno.values.fold(
+      VolumeAllenamento.zero,
+      (tot, v) => tot + v,
     );
 
     return Column(
@@ -235,9 +237,9 @@ class _CalendarioSettimanaleViewState
                   ),
                 ],
               ),
-              if (metriSettimana > 0)
+              if (etichettaVolume(volumeSettimana) case final totale?)
                 Text(
-                  'Totale settimana: $metriSettimana m',
+                  'Totale settimana: $totale',
                   style: AppTypography.piccolo.copyWith(
                     color: colori.testoSecondario,
                   ),
@@ -256,7 +258,8 @@ class _CalendarioSettimanaleViewState
                     final data = aggiungiGiorni(_inizioSettimana, index);
                     final sessioni = perGiorno[data] ?? const [];
                     final oggiStesso = isStessoGiorno(data, oggi);
-                    final metriGiorno = metriPerGiorno[data] ?? 0;
+                    final volumeGiorno =
+                        etichettaVolume(volumePerGiorno[data]!) ?? '0 m';
                     return AppListRow(
                       leading: Container(
                         width: 40,
@@ -278,7 +281,7 @@ class _CalendarioSettimanaleViewState
                       titolo: _nomiGiorni[index],
                       sottotitolo: sessioni.isEmpty
                           ? 'Nessun allenamento'
-                          : '${sessioni.map((a) => a.titolo != null && a.titolo!.isNotEmpty ? a.titolo! : 'Allenamento').join(', ')} · $metriGiorno m',
+                          : '${sessioni.map((a) => a.titolo != null && a.titolo!.isNotEmpty ? a.titolo! : 'Allenamento').join(', ')} · $volumeGiorno',
                       onTap: () => widget.onGiornoSelezionato(data),
                     );
                   },

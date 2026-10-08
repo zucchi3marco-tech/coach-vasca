@@ -24,11 +24,14 @@ import '../../ripartenze/presentation/ripartenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
+import '../domain/volume_allenamento.dart';
 import 'allenamento_detail_screen.dart';
 import 'calendario/allenamenti_per_giorno.dart';
 import 'calendario/calendario_mensile_view.dart';
 import 'calendario/calendario_settimanale_view.dart';
 import 'giorno_allenamenti_screen.dart';
+import 'riepilogo_volumi.dart';
+import 'volume_settimane.dart';
 
 enum _Vista { elenco, settimana, mese }
 
@@ -51,6 +54,10 @@ class AllenamentiListScreen extends ConsumerStatefulWidget {
 
 class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
   _Vista _vista = _Vista.elenco;
+
+  /// La settimana da mostrare passando alla vista "Settimana" da un tocco
+  /// sul grafico dei volumi; null = questa settimana.
+  DateTime? _settimanaDaAprire;
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +139,10 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                   ButtonSegment(value: _Vista.mese, label: Text('Mese')),
                 ],
                 selected: {_vista},
-                onSelectionChanged: (selezione) =>
-                    setState(() => _vista = selezione.first),
+                onSelectionChanged: (selezione) => setState(() {
+                  _vista = selezione.first;
+                  _settimanaDaAprire = null;
+                }),
               ),
             ),
             const SizedBox(height: AppSpacing.s16),
@@ -142,6 +151,8 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                 _Vista.elenco => _elenco(allenamenti!),
                 _Vista.settimana => [
                   CalendarioSettimanaleView(
+                    key: ValueKey(_settimanaDaAprire),
+                    settimanaIniziale: _settimanaDaAprire,
                     clubId: widget.clubId,
                     allenamenti: allenamenti!,
                     onGiornoSelezionato: _apriGiorno,
@@ -210,6 +221,9 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
         g.id: g.nome,
     };
     final ciano = context.dominio.evidenzaCiano;
+    final volumi =
+        ref.watch(volumiAllenamentiProvider(widget.clubId)).value ??
+        const <String, VolumeAllenamento>{};
 
     Widget scheda(Allenamento a, {bool passato = false, bool oggi = false}) {
       // Il gruppo si scrive solo quando aggiunge qualcosa: con una squadra
@@ -233,6 +247,12 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
           ?gruppo,
         ].join(' · '),
         attenuata: passato,
+        // Il volume accanto al titolo, sempre sott'occhio (richiesta del
+        // coach 2026-10-08).
+        trailing: switch (volumi[a.id]) {
+          final v? => VolumeScheda(v, attenuato: passato),
+          null => null,
+        },
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AllenamentoDetailScreen(allenamento: a),
@@ -245,10 +265,23 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
       if (diOggi.isNotEmpty) ...[
         const TitoloSezione('Oggi'),
         GrigliaSchede(figli: [for (final a in diOggi) scheda(a, oggi: true)]),
-        const SizedBox(height: AppSpacing.s16),
+        const SizedBox(height: AppSpacing.s24),
       ],
+      // Dopo l'allenamento di oggi, prima dei prossimi: si vede appena si
+      // apre la pagina senza spingere giù la seduta di oggi.
+      const TitoloSezione('Volume per settimana'),
+      PoolCard(
+        child: VolumeSettimane(
+          allenamenti: allenamenti,
+          volumi: volumi,
+          onApriSettimana: (lunedi) => setState(() {
+            _vista = _Vista.settimana;
+            _settimanaDaAprire = lunedi;
+          }),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.s24),
       if (prossimi.isNotEmpty) ...[
-        const SizedBox(height: AppSpacing.s8),
         SezioneSchede(
           titolo: 'Prossimi',
           figli: [for (final a in prossimi) scheda(a)],

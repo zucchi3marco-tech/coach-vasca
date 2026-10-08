@@ -33,17 +33,6 @@ const _ordineZonePerVolume = [
 String _formattaVolume(int metri) =>
     metri >= 1000 ? '${(metri / 1000).toStringAsFixed(1)} km' : '$metri m';
 
-/// 2700 -> "45'", 9000 -> "2h30'", 7200 -> "2h".
-String formattaTempoLavoro(int secondi) {
-  if (secondi < 60) return formatDurataS(secondi);
-  final minuti = (secondi / 60).round();
-  if (minuti < 60) return "$minuti'";
-  final resto = minuti % 60;
-  return resto == 0
-      ? '${minuti ~/ 60}h'
-      : "${minuti ~/ 60}h${resto.toString().padLeft(2, '0')}'";
-}
-
 /// Un riquadro con i metri e/o il tempo di lavoro: i metri in grande e il
 /// tempo sotto quando ci sono entrambi ("nuoto" a distanza e a tempo),
 /// il solo tempo per il lavoro a tempo (palleggio, tattica).

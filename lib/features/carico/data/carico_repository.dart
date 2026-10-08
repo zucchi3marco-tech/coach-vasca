@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../allenamenti/domain/durata_serie.dart';
@@ -152,11 +153,14 @@ class CaricoRepository {
   /// (audit 12/09) — vedi migrazione `20260912000100_carico_atleta_rpc.sql`.
   Future<List<Map<String, dynamic>>> _serieDelClub(String clubId) async {
     try {
-      final risposta = await _client.rpc(
-        'serie_per_carico',
-        params: {'p_club_id': clubId},
+      // A pagine: il club supera presto le 1000 serie, il massimo di righe
+      // per richiesta, e oltre il carico si calcolava su una parte sola.
+      return await leggiAPagine(
+        (da, a) => _client
+            .rpc('serie_per_carico', params: {'p_club_id': clubId})
+            .order('id')
+            .range(da, a),
       );
-      return (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       // Come la RPC: le serie saltate a bordo vasca non contano.

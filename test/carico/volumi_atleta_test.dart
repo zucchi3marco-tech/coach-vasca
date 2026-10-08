@@ -1,3 +1,4 @@
+import 'package:coach_vasca/core/utils/pace_format.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/carico/application/carico_providers.dart';
 import 'package:coach_vasca/features/carico/data/carico_repository.dart';

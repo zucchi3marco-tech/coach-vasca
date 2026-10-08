@@ -17,6 +17,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
 import 'allenamento_detail_screen.dart';
 import 'calendario/allenamenti_per_giorno.dart';
+import 'riepilogo_volumi.dart';
 
 class GiornoAllenamentiScreen extends ConsumerWidget {
   const GiornoAllenamentiScreen({
@@ -66,6 +67,8 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
               onAzionePrincipale: apriNuovo,
             );
           }
+          final volumi =
+              ref.watch(volumiAllenamentiProvider(clubId)).value ?? const {};
           return ListView(
             children: [
               TitoloSezione(traQuanto(data), conteggio: delGiorno.length),
@@ -85,6 +88,10 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
                       sottotitolo: a.gruppoId == null
                           ? 'Tutto il club'
                           : nomiGruppi[a.gruppoId],
+                      trailing: switch (volumi[a.id]) {
+                        final v? => VolumeScheda(v),
+                        null => null,
+                      },
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) =>

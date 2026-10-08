@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -114,6 +115,37 @@ class SerieRepository {
         }
       });
     });
+  }
+
+  /// Le serie di tutto il club in cache, per i volumi nell'elenco degli
+  /// allenamenti e delle settimane ([watchPerClub]): una lettura sola, a
+  /// pagine, invece di una per allenamento. Sostituzione totale come in
+  /// [refreshFromRemote].
+  Future<void> refreshPerClub(String clubId) async {
+    final rows = await leggiAPagine(
+      (da, a) => _client
+          .from('serie')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.serieTable,
+      )..where((t) => t.clubId.equals(clubId))).go();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(_db.serieTable, _companionFromMap(row));
+        }
+      });
+    });
+  }
+
+  Stream<List<Serie>> watchPerClub(String clubId) {
+    final query = _db.select(_db.serieTable)
+      ..where((t) => t.clubId.equals(clubId));
+    return query.watch().map((rows) => rows.map(_fromRow).toList());
   }
 
   /// Per l'atleta collegato: le serie di UN allenamento, senza il campo

@@ -5,6 +5,7 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../domain/serie.dart';
+import '../domain/volume_allenamento.dart';
 import 'serie_labels.dart';
 
 /// 3200 -> "3.200".
@@ -15,6 +16,52 @@ String formattaMetri(int metri) {
     gruppi.insert(0, cifre.substring(fine - 3 < 0 ? 0 : fine - 3, fine));
   }
   return '${metri < 0 ? '-' : ''}${gruppi.join('.')}';
+}
+
+/// "4.200 m", "4.200 m + 20'", "45'" (solo lavoro a tempo); null se
+/// l'allenamento non ha ancora serie.
+String? etichettaVolume(VolumeAllenamento v) {
+  if (v.vuoto) return null;
+  if (v.metri == 0) return formattaTempoLavoro(v.secondi);
+  final metri = '${formattaMetri(v.metri)} m';
+  return v.secondi == 0 ? metri : '$metri + ${formattaTempoLavoro(v.secondi)}';
+}
+
+/// Il volume a destra di una scheda dell'elenco allenamenti, accanto al
+/// titolo: i metri in evidenza e il lavoro a tempo sotto (solo il tempo
+/// se l'allenamento è tutto a tempo). Niente senza serie.
+class VolumeScheda extends StatelessWidget {
+  const VolumeScheda(this.volume, {this.attenuato = false, super.key});
+
+  final VolumeAllenamento volume;
+
+  /// Allenamenti già svolti: come il titolo, più tenue.
+  final bool attenuato;
+
+  @override
+  Widget build(BuildContext context) {
+    if (volume.vuoto) return const SizedBox.shrink();
+    final colori = context.colori;
+    final aTempo = formattaTempoLavoro(volume.secondi);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          volume.metri > 0 ? '${formattaMetri(volume.metri)} m' : aTempo,
+          style: AppTypography.numerica(
+            AppTypography.corpoForte,
+          ).copyWith(color: attenuato ? colori.testoSecondario : colori.testo),
+        ),
+        if (volume.metri > 0 && volume.secondi > 0)
+          Text(
+            '+ $aTempo',
+            style: AppTypography.numerica(AppTypography.piccolo)
+                .copyWith(color: colori.testoSecondario),
+          ),
+      ],
+    );
+  }
 }
 
 /// Riepilogo di un allenamento in poche righe: il totale, i metri per
