@@ -59,7 +59,16 @@ class RigaGruppoPiramide extends StatelessWidget {
     final valoriOrdinati = conteggio.keys.toList()
       ..sort((a, b) => conteggio[b]!.compareTo(conteggio[a]!));
 
+    final fatte = gruppo.where((s) => s.fatta).length;
+    final saltate = gruppo.where((s) => s.saltata).length;
     final dettagli = <String>[
+      // Segnate a bordo vasca, una per riga del gruppo.
+      if (fatte == gruppo.length)
+        'fatta'
+      else if (saltate == gruppo.length)
+        'saltata'
+      else if (fatte + saltate > 0)
+        '$fatte fatte, $saltate saltate',
       labelBloccoBreve(prima.blocco),
       '${formattaMetri(metriTotali)} m',
       if (piramide && valoriOrdinati.isNotEmpty)

@@ -25,8 +25,10 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
+import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
+import 'pannello_orologio.dart';
 import 'riepilogo_volumi.dart';
 import 'serie_labels.dart';
 
@@ -39,6 +41,12 @@ import 'serie_labels.dart';
 /// la serie al centro in grande, avanzamento a sinistra, "Avanti" e
 /// "Indietro" a destra, scorrimento col dito) e **tutte le serie** (per
 /// leggerla da capo a fondo). Lo schermo resta acceso finché è aperta.
+///
+/// Nel modo "una alla volta" l'allenatore ha anche l'orologio di vasca
+/// ([PannelloOrologio]) sotto la serie e i pulsanti "Fatta" / "Saltata"
+/// (idee prese da Swimtraxx Hub): segnata la serie si passa alla
+/// successiva, e quando l'orologio finisce una serie la segna fatta da
+/// solo. Le saltate non contano nel carico degli atleti.
 ///
 /// Con [perAtleta] la stessa vista serve all'atleta che apre il suo
 /// prossimo allenamento dalla dashboard: le serie arrivano dalla funzione
@@ -66,6 +74,16 @@ class _SchedaBordoVascaScreenState
   late bool _unaAllaVolta = !widget.perAtleta;
   int _corrente = 0;
 
+  /// Partenze sfalsate dell'orologio: valgono per tutte le serie della
+  /// seduta, finché non si cambiano.
+  int _gruppi = 1;
+  int _distaccoS = 10;
+
+  /// Una chiave globale per l'orologio di ogni serie: girando il telefono
+  /// l'orologio passa da una colonna a una riga di tre bande, e senza
+  /// questa ripartirebbe da zero a metà serie.
+  final _chiaviOrologio = <String, GlobalKey>{};
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +103,35 @@ class _SchedaBordoVascaScreenState
     if (indice < 0 || indice >= totale) return;
     HapticFeedback.selectionClick();
     setState(() => _corrente = indice);
+  }
+
+  /// Segna [s] come fatta o saltata e passa alla successiva; lo stesso
+  /// tocco su un esito già segnato lo toglie.
+  Future<void> _segna(Serie s, String esito, int indice, int totale) async {
+    final nuovo = s.esito == esito ? null : esito;
+    HapticFeedback.selectionClick();
+    try {
+      await ref.read(serieRepositoryProvider).segnaEsito(s.id, nuovo);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      return;
+    }
+    if (nuovo != null && mounted) _vai(indice + 1, totale);
+  }
+
+  /// L'orologio ha finito la serie: fatta (se non era già segnata), e si
+  /// passa alla successiva, con l'orologio fermo ad aspettare il "Via".
+  Future<void> _finitaDallOrologio(Serie s, int indice, int totale) async {
+    if (s.esito == null) {
+      try {
+        await ref.read(serieRepositoryProvider).segnaEsito(s.id, 'fatta');
+      } catch (_) {
+        // Resta da segnare a mano: l'orologio intanto va avanti.
+      }
+    }
+    if (mounted) _vai(indice + 1, totale);
   }
 
   void _apriPresenze() => Navigator.of(context).push(
@@ -152,6 +199,28 @@ class _SchedaBordoVascaScreenState
                   indice: indice,
                   onVai: (i) => _vai(i, serie.length),
                   onPresenze: perAtleta ? null : _apriPresenze,
+                  onSegna: perAtleta
+                      ? null
+                      : (esito) =>
+                            _segna(serie[indice], esito, indice, serie.length),
+                  orologio: perAtleta
+                      ? null
+                      : PannelloOrologio(
+                          key: _chiaviOrologio.putIfAbsent(
+                            serie[indice].id,
+                            GlobalKey.new,
+                          ),
+                          serie: serie[indice],
+                          gruppi: _gruppi,
+                          distaccoS: _distaccoS,
+                          onGruppi: (g) => setState(() => _gruppi = g),
+                          onDistacco: (d) => setState(() => _distaccoS = d),
+                          onFinita: () => _finitaDallOrologio(
+                            serie[indice],
+                            indice,
+                            serie.length,
+                          ),
+                        ),
                 )
               : _TutteLeSerie(
                   serie: serie,
@@ -225,6 +294,8 @@ class _UnaAllaVolta extends StatelessWidget {
     required this.indice,
     required this.onVai,
     required this.onPresenze,
+    this.onSegna,
+    this.orologio,
   });
 
   final List<Serie> serie;
@@ -232,12 +303,20 @@ class _UnaAllaVolta extends StatelessWidget {
   final ValueChanged<int> onVai;
   final VoidCallback? onPresenze;
 
+  /// Segna la serie in corso come 'fatta' o 'saltata' (null per l'atleta).
+  final ValueChanged<String>? onSegna;
+  final Widget? orologio;
+
   @override
   Widget build(BuildContext context) {
     final s = serie[indice];
-    final fatti = serie
-        .take(indice)
-        .fold<int>(0, (t, x) => t + x.distanzaTotaleM);
+    // I metri fatti: le serie segnate fatte, e quelle già passate senza
+    // essere segnate saltate (come le conta il carico).
+    final fatti = [
+      for (var i = 0; i < serie.length; i++)
+        if (serie[i].fatta || (i < indice && !serie[i].saltata)) serie[i],
+    ].fold<int>(0, (t, x) => t + x.distanzaTotaleM);
+    final saltate = serie.where((x) => x.saltata).length;
     final totale = serie.fold<int>(0, (t, x) => t + x.distanzaTotaleM);
     final prossima = indice + 1 < serie.length ? serie[indice + 1] : null;
 
@@ -263,7 +342,7 @@ class _UnaAllaVolta extends StatelessWidget {
 
     // Il centro non è un bersaglio (DESIGN.md 14), ma si scorre col dito
     // per passare alla serie dopo o prima, come si sfoglia un foglio.
-    final centro = GestureDetector(
+    final scheda = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onHorizontalDragEnd: (d) {
         final v = d.primaryVelocity ?? 0;
@@ -272,13 +351,42 @@ class _UnaAllaVolta extends StatelessWidget {
       },
       child: _SerieInGrande(serie: s, prossima: prossima),
     );
+    // La serie scorre se non ci sta; l'orologio resta sempre in vista.
+    final centro = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: SingleChildScrollView(child: scheda)),
+        if (orologio != null) ...[
+          const SizedBox(height: AppSpacing.s12),
+          orologio!,
+        ],
+      ],
+    );
 
     final avanzamento = _Avanzamento(
       numero: indice + 1,
       di: serie.length,
       metriFatti: fatti,
       metriTotali: totale,
+      saltate: saltate,
     );
+    final segna = onSegna;
+    final fatta = segna == null
+        ? null
+        : _BottoneEsito(
+            etichetta: 'Fatta',
+            icona: s.fatta ? Icons.check_circle : Icons.check_circle_outline,
+            scelto: s.fatta,
+            onTap: () => segna('fatta'),
+          );
+    final saltata = segna == null
+        ? null
+        : _BottoneEsito(
+            etichetta: 'Saltata',
+            icona: Icons.redo,
+            scelto: s.saltata,
+            onTap: () => segna('saltata'),
+          );
 
     return LayoutBuilder(
       builder: (context, vincoli) {
@@ -286,7 +394,22 @@ class _UnaAllaVolta extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(width: 160, child: avanzamento),
+              SizedBox(
+                width: 160,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    avanzamento,
+                    if (fatta != null && saltata != null) ...[
+                      const SizedBox(height: AppSpacing.s24),
+                      fatta,
+                      const SizedBox(height: AppSpacing.s12),
+                      saltata,
+                    ],
+                  ],
+                ),
+              ),
               const SizedBox(width: AppSpacing.s16),
               Expanded(child: centro),
               const SizedBox(width: AppSpacing.s16),
@@ -314,7 +437,17 @@ class _UnaAllaVolta extends StatelessWidget {
           children: [
             avanzamento,
             const SizedBox(height: AppSpacing.s16),
-            Expanded(child: SingleChildScrollView(child: centro)),
+            Expanded(child: centro),
+            if (fatta != null && saltata != null) ...[
+              const SizedBox(height: AppSpacing.s12),
+              Row(
+                children: [
+                  Expanded(child: fatta),
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(child: saltata),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.s12),
             Row(
               children: [
@@ -340,12 +473,14 @@ class _Avanzamento extends StatelessWidget {
     required this.di,
     required this.metriFatti,
     required this.metriTotali,
+    this.saltate = 0,
   });
 
   final int numero;
   final int di;
   final int metriFatti;
   final int metriTotali;
+  final int saltate;
 
   @override
   Widget build(BuildContext context) {
@@ -385,6 +520,13 @@ class _Avanzamento extends StatelessWidget {
             ),
           ),
         ],
+        if (saltate > 0)
+          Text(
+            saltate == 1 ? '1 serie saltata' : '$saltate serie saltate',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
       ],
     );
   }
@@ -540,6 +682,21 @@ class _TutteLeSerie extends StatelessWidget {
                         const SizedBox(width: AppSpacing.s8),
                         ZoneChip(sigla: s.zona!),
                       ],
+                      if (s.esito != null) ...[
+                        const Spacer(),
+                        Icon(
+                          s.fatta ? Icons.check_circle : Icons.redo,
+                          size: 20,
+                          color: s.fatta ? colori.ok : colori.testoSecondario,
+                        ),
+                        const SizedBox(width: AppSpacing.s4),
+                        Text(
+                          s.fatta ? 'Fatta' : 'Saltata',
+                          style: AppTypography.etichetta.copyWith(
+                            color: colori.testo,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s8),
@@ -583,6 +740,53 @@ class _TutteLeSerie extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// "Fatta" / "Saltata": bersaglio da bordo vasca come [_BottoneVasca],
+/// evidenziato quando l'esito è quello segnato.
+class _BottoneEsito extends StatelessWidget {
+  const _BottoneEsito({
+    required this.etichetta,
+    required this.icona,
+    required this.scelto,
+    required this.onTap,
+  });
+
+  final String etichetta;
+  final IconData icona;
+  final bool scelto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Semantics(
+      selected: scelto,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(
+            AppSpacing.altezzaMinimaBersaglioVasca,
+          ),
+          backgroundColor: scelto ? colori.azioneTenue : null,
+          foregroundColor: colori.testo,
+          side: BorderSide(color: scelto ? colori.azione : colori.lineaForte),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pannello),
+          ),
+          textStyle: AppTypography.corpoForte.copyWith(fontSize: 18),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icona, size: 24),
+            const SizedBox(width: AppSpacing.s8),
+            Flexible(child: Text(etichetta, maxLines: 1)),
+          ],
+        ),
+      ),
     );
   }
 }

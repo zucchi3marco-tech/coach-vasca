@@ -17,6 +17,7 @@ Serie _serie(
   String? zona = 'A2',
   String esecuzione = 'nuoto',
   String? attrezzatura,
+  String? esito,
 }) => Serie(
   id: id,
   allenamentoId: 'a',
@@ -30,6 +31,7 @@ Serie _serie(
   zona: zona,
   recuperoS: 20,
   attrezzatura: attrezzatura,
+  esito: esito,
 );
 
 Widget _app(ThemeData tema, Widget figlio) => MaterialApp(
@@ -128,6 +130,29 @@ void main() {
         expect(find.textContaining('Princ.\u00A02.400'), findsOneWidget);
         expect(find.textContaining('Defat.'), findsNothing);
         expect(find.textContaining('Materiale: pull'), findsOneWidget);
+        // Nessuna serie saltata: niente riga del volume svolto.
+        expect(find.textContaining('svolti'), findsNothing);
+      });
+
+      testWidgets('RiepilogoVolumi dice i metri svolti se si è saltato', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _app(
+            tema,
+            RiepilogoVolumi(
+              serie: [
+                _serie('a', 1, ripetute: 1, distanzaM: 400, esito: 'fatta'),
+                _serie('b', 2, ripetute: 8, distanzaM: 50, esito: 'saltata'),
+                _serie('c', 3, ripetute: 2, distanzaM: 100),
+              ],
+            ),
+          ),
+        );
+        expect(
+          find.text('1 serie saltata: svolti 600 di 1.000 m'),
+          findsOneWidget,
+        );
       });
 
       testWidgets('RigaSerie sta in una riga bassa e il menu ha le azioni', (

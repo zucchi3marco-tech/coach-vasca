@@ -204,6 +204,9 @@ class SerieTable extends Table {
   /// visiva — null per una serie normale.
   TextColumn get piramideId => text().nullable()();
 
+  /// 'fatta' | 'saltata', segnato a bordo vasca; null se non segnata.
+  TextColumn get esito => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

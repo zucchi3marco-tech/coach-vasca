@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -380,6 +380,13 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'schede_benessere_table', nome)) {
             await m.addColumn(t, colonna);
           }
+        }
+      }
+      // v30 -> v31: esito della serie (fatta/saltata) segnato a bordo
+      // vasca.
+      if (from < 31) {
+        if (!await _hasColumn(m, 'serie_table', 'esito')) {
+          await m.addColumn(serieTable, serieTable.esito);
         }
       }
     },

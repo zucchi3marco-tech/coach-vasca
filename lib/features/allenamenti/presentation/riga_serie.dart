@@ -53,6 +53,9 @@ class RigaSerie extends StatelessWidget {
     }
 
     final dettagli = <String>[
+      // Segnata a bordo vasca.
+      if (s.fatta) 'fatta',
+      if (s.saltata) 'saltata',
       labelBloccoBreve(s.blocco),
       if (s.passoObiettivoS != null)
         '${formatTempoCompatto(s.passoObiettivoS!)}/100m',
@@ -98,7 +101,12 @@ class RigaSerie extends StatelessWidget {
                               TextSpan(
                                 text: titolo.toString(),
                                 style: AppTypography.corpoForte.copyWith(
-                                  color: colori.testo,
+                                  color: s.saltata
+                                      ? colori.testoSecondario
+                                      : colori.testo,
+                                  decoration: s.saltata
+                                      ? TextDecoration.lineThrough
+                                      : null,
                                 ),
                               ),
                             ],

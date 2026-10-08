@@ -39,6 +39,7 @@ class Serie implements DatiSerie {
     this.attrezzatura,
     this.note,
     this.piramideId,
+    this.esito,
   });
 
   final String id;
@@ -78,6 +79,13 @@ class Serie implements DatiSerie {
   @override
   final String? piramideId;
 
+  /// 'fatta' | 'saltata', segnato a bordo vasca durante la seduta; null
+  /// finché non si segna. Le saltate non contano nel volume reale.
+  final String? esito;
+
+  bool get fatta => esito == 'fatta';
+  bool get saltata => esito == 'saltata';
+
   /// Metri totali di nuoto — 0 per una serie a tempo: non si stima una
   /// distanza, i riepiloghi la segnalano a parte (vedi [aTempo]).
   int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
@@ -103,6 +111,7 @@ class Serie implements DatiSerie {
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
       piramideId: map['piramide_id'] as String?,
+      esito: map['esito'] as String?,
     );
   }
 }

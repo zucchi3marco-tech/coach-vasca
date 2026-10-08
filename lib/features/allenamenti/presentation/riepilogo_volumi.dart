@@ -51,6 +51,9 @@ class RiepilogoVolumi extends StatelessWidget {
     final totaleDurataS = serie
         .where((s) => s.aTempo)
         .fold<int>(0, (t, s) => t + s.ripetute * s.durataS!);
+    // Segnate saltate a bordo vasca: il volume davvero svolto è un altro.
+    final saltate = serie.where((s) => s.saltata).toList();
+    final metriSaltati = saltate.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
     final materiale = {
       for (final s in serie)
         if (s.attrezzatura != null && s.attrezzatura!.trim().isNotEmpty)
@@ -88,6 +91,16 @@ class RiepilogoVolumi extends StatelessWidget {
             ],
           ),
         ),
+        if (saltate.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            '${saltate.length == 1 ? '1 serie saltata' : '${saltate.length} serie saltate'}: '
+            'svolti ${formattaMetri(totale - metriSaltati)} di '
+            '${formattaMetri(totale)} m',
+            style: AppTypography.numerica(AppTypography.piccolo)
+                .copyWith(color: colori.testoSecondario),
+          ),
+        ],
         if (materiale.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s4),
           Text(

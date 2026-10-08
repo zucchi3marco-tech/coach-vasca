@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -55,9 +56,14 @@ class CaricoRepository {
       righe = (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final locali = await (_db.select(
-        _db.serieTable,
-      )..where((t) => t.clubId.equals(clubId))).get();
+      // Come la RPC: le serie saltate a bordo vasca non contano.
+      final locali =
+          await (_db.select(_db.serieTable)
+                ..where((t) => t.clubId.equals(clubId))
+                ..where(
+                  (t) => t.esito.isNull() | t.esito.isNotValue('saltata'),
+                ))
+              .get();
       righe = [
         for (final r in locali)
           {
@@ -165,9 +171,13 @@ class CaricoRepository {
       return (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final locali = await (_db.select(
-        _db.serieTable,
-      )..where((t) => t.clubId.equals(clubId))).get();
+      final locali =
+          await (_db.select(_db.serieTable)
+                ..where((t) => t.clubId.equals(clubId))
+                ..where(
+                  (t) => t.esito.isNull() | t.esito.isNotValue('saltata'),
+                ))
+              .get();
       return [
         for (final r in locali)
           {

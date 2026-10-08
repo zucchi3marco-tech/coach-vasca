@@ -39,6 +39,7 @@ class SerieRepository {
       attrezzatura: row.attrezzatura,
       note: row.note,
       piramideId: row.piramideId,
+      esito: row.esito,
     );
   }
 
@@ -61,6 +62,7 @@ class SerieRepository {
       attrezzatura: map['attrezzatura'] as String?,
       note: map['note'] as String?,
       piramideId: map['piramide_id'] as String?,
+      esito: map['esito'] as String?,
     );
   }
 
@@ -83,6 +85,7 @@ class SerieRepository {
       attrezzatura: Value(map['attrezzatura'] as String?),
       note: Value(map['note'] as String?),
       piramideId: Value(map['piramide_id'] as String?),
+      esito: Value(map['esito'] as String?),
     );
   }
 
@@ -152,21 +155,58 @@ class SerieRepository {
   /// Le serie di più allenamenti in un colpo solo, per analizzare come
   /// il gruppo è stato allenato finora (generatore settimana AI — vedi
   /// `storico_settimana_service.dart`): senza questa, occorrerebbe una
-  /// chiamata per allenamento.
+  /// chiamata per allenamento. Le serie segnate come saltate a bordo
+  /// vasca non ci sono: non sono state fatte.
   Future<List<Serie>> fetchPerAllenamenti(List<String> allenamentoIds) async {
     if (allenamentoIds.isEmpty) return [];
+    List<Serie> serie;
     try {
       final rows = await _client
           .from('serie')
           .select()
           .inFilter('allenamento_id', allenamentoIds);
-      return rows.map(_fromMap).toList();
+      serie = rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       final rows = await (_db.select(
         _db.serieTable,
       )..where((t) => t.allenamentoId.isIn(allenamentoIds))).get();
-      return rows.map(_fromRow).toList();
+      serie = rows.map(_fromRow).toList();
+    }
+    return [
+      for (final s in serie)
+        if (!s.saltata) s,
+    ];
+  }
+
+  /// Segna la serie come fatta o saltata a bordo vasca (null la riporta
+  /// a "non segnata"). Senza rete si segna in locale e parte appena
+  /// torna, come le altre modifiche.
+  Future<void> segnaEsito(String id, String? esito) async {
+    final payload = {'esito': esito};
+    try {
+      final row = await _client
+          .from('serie')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db
+          .into(_db.serieTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(_db.serieTable)..where((t) => t.id.equals(id))).write(
+        SerieTableCompanion(esito: Value(esito)),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'serie',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
     }
   }
 
