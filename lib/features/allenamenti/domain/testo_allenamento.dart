@@ -246,8 +246,33 @@ const _attrezzi = {
   'zavorra': 'zavorra',
 };
 
-/// Parole di contorno ("400 m stile libero con pinne"): si saltano.
-const _riempitivi = {'m', 'mt', 'metri', 'stile', 'a', 'con', 'e'};
+/// Parole di contorno ("400 m stile libero con pinne", "20 secondi di
+/// recupero"): si saltano.
+const _riempitivi = {
+  'm',
+  'mt',
+  'metri',
+  'stile',
+  'a',
+  'con',
+  'e',
+  'di',
+  'secondi',
+  'sec',
+};
+
+/// Parole dette prima (o dopo) un tempo, come si parla a bordo vasca:
+/// "recupero 20", "ripartenza 1:30", "passo 1:25".
+enum _Tempo { recupero, ripartenza, passo }
+
+const _paroleTempo = {
+  'rec': _Tempo.recupero,
+  'recupero': _Tempo.recupero,
+  'ripartenza': _Tempo.ripartenza,
+  'partenza': _Tempo.ripartenza,
+  'ogni': _Tempo.ripartenza,
+  'passo': _Tempo.passo,
+};
 
 // ---------------------------------------------------------------------------
 // Lettura
@@ -281,9 +306,14 @@ int? _durata(String t) {
   return null;
 }
 
-/// "90", "1:30", "1:30.5", "1'30" → secondi.
+/// "90", "1:30", "1:30.5", "1'30" → secondi; anche "1.30", come lo
+/// scrive a volte la dettatura del browser.
 double? _tempo(String t) {
   if (RegExp(r'^\d+$').hasMatch(t)) return double.parse(t);
+  final conPunto = RegExp(r'^(\d+)\.(\d{2})$').firstMatch(t);
+  if (conPunto != null) {
+    return int.parse(conPunto[1]!) * 60 + double.parse(conPunto[2]!);
+  }
   final mmss = _rxMinutiSecondi.firstMatch(t);
   if (mmss != null) {
     return int.parse(mmss[1]!) * 60 +
@@ -292,11 +322,12 @@ double? _tempo(String t) {
   return _durata(t)?.toDouble();
 }
 
-/// Mette insieme quello che si scrive staccato: "8 x 100" → "8x100",
-/// "8 volte 100" → "8x100", "50 - 100" → "50-100", "10 min" → "10min".
+/// Mette insieme quello che si scrive (o si detta) staccato: "8 x 100",
+/// "8 volte 100", "8 da 100", "8 per 100" → "8x100", "50 - 100" →
+/// "50-100", "10 min" → "10min".
 String _normalizza(String t) => t
     .replaceAllMapped(
-      RegExp(r'(\d)\s*(?:[xX×]|[vV]olte)\s*(?=[\d(])'),
+      RegExp(r'(\d)\s*(?:[xX×]|[vV]olte|[dD]a|[pP]er)\s*(?=[\d(])'),
       (m) => '${m[1]}x',
     )
     .replaceAllMapped(RegExp(r'(\d)\s*-\s*(?=\d)'), (m) => '${m[1]}-')
@@ -411,6 +442,31 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
         continue;
       }
     }
+    if (_paroleTempo[basso] case final tipo?) {
+      // "recupero 20": il tempo viene dopo; "20 di recupero": era il
+      // numero appena prima, rimasto fra le parole non capite.
+      final dopo = i + 1 < token.length
+          ? _tempo(token[i + 1].toLowerCase())
+          : null;
+      double? prima;
+      if (dopo == null && ignote.isNotEmpty) {
+        prima = _tempo(ignote.last);
+        if (prima != null) ignote.removeLast();
+      }
+      final valore = dopo ?? prima;
+      if (dopo != null) i++;
+      if (valore != null) {
+        switch (tipo) {
+          case _Tempo.recupero:
+            recuperi.add(valore.round());
+          case _Tempo.ripartenza:
+            ripartenza = valore;
+          case _Tempo.passo:
+            passo = valore;
+        }
+      }
+      continue;
+    }
     if (_riempitivi.contains(basso)) continue;
     if (_zone.contains(t.toUpperCase())) {
       zona = t.toUpperCase();
@@ -519,6 +575,16 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
     problema: null,
   );
 }
+
+/// Una frase dettata ("riscaldamento 400 misti, poi 8 da 100 stile
+/// libero B1 recupero 20") divisa in righe del testo: un pezzo per ogni
+/// virgola, punto o "poi". Virgole e punti fra due cifre ("1.30")
+/// restano.
+String righeDaDettato(String dettato) => dettato
+    .split(RegExp(r';|[,.](?!\d)|\s+(?:e\s+)?poi\s+', caseSensitive: false))
+    .map((r) => r.trim())
+    .where((r) => r.isNotEmpty)
+    .join('\n');
 
 /// Interpreta una riga sola, come quella del pannello "Aggiungi serie":
 /// le sue serie (più d'una per una piramide, con lo stesso `piramideId`

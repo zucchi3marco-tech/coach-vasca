@@ -1,6 +1,3 @@
-import 'package:coach_vasca/features/ai_genera/data/generazione_ai_repository.dart';
-import 'package:coach_vasca/features/ai_genera/data/generazioni_ai_repository.dart';
-import 'package:coach_vasca/features/ai_genera/domain/scheda_generata.dart';
 import 'package:coach_vasca/features/allenamenti/data/serie_repository.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
@@ -11,50 +8,6 @@ import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-class _GenerazioneFinta implements GenerazioneAiRepository {
-  String? testoRicevuto;
-
-  @override
-  Future<SchedaGenerata> generaDaDettatura({
-    required String testo,
-    required String clubId,
-    String? gruppo,
-  }) async {
-    testoRicevuto = testo;
-    return const SchedaGenerata(
-      titolo: 'ignorato',
-      serie: [
-        SerieGenerata(
-          ordine: 1,
-          blocco: 'defaticamento',
-          ripetute: 1,
-          distanzaM: 200,
-          stile: 'dorso',
-          esecuzione: 'nuoto',
-          zona: 'A1',
-        ),
-      ],
-    );
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _StoricoFinto implements GenerazioniAiRepository {
-  @override
-  Future<String> registraGenerazione({
-    required String clubId,
-    required Map<String, dynamic> parametri,
-    required String esito,
-    Map<String, dynamic>? scheda,
-    String? messaggioErrore,
-  }) async => 'g1';
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 class _SerieFinta implements SerieRepository {
   final operazioni = <String>[];
@@ -151,7 +104,6 @@ Future<void> _apri(
   WidgetTester tester, {
   required _SerieFinta repository,
   List<Serie> serie = const [],
-  _GenerazioneFinta? generazione,
   ThemeData? tema,
   Size schermo = const Size(400, 1600),
 }) async {
@@ -162,10 +114,6 @@ Future<void> _apri(
     ProviderScope(
       overrides: [
         serieRepositoryProvider.overrideWithValue(repository),
-        generazioneAiRepositoryProvider.overrideWithValue(
-          generazione ?? _GenerazioneFinta(),
-        ),
-        generazioniAiRepositoryProvider.overrideWithValue(_StoricoFinto()),
         gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
       ],
       child: MaterialApp(
@@ -248,7 +196,11 @@ void main() {
     expect(find.text('2×'), findsOneWidget);
     expect(find.textContaining('non diventa una serie'), findsOneWidget);
     // 2 × (200 + 100) metri.
-    expect(find.textContaining('600 m'), findsOneWidget);
+    // In alto, fissi: 2 × (200 + 100) metri, 2 gruppi... uno solo.
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Allenamento: 600 metri, .* 1 serie$')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Salva'));
     await tester.pumpAndSettle();
@@ -261,36 +213,6 @@ void main() {
     expect(gruppi, hasLength(1));
     expect(gruppi.single, isNotNull);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('quello che si detta lo trasforma l\'AI e va in fondo al testo', (
-    tester,
-  ) async {
-    final generazione = _GenerazioneFinta();
-    await _apri(
-      tester,
-      repository: _SerieFinta(),
-      generazione: generazione,
-      serie: [_serie(1, distanzaM: 400)],
-    );
-
-    await tester.tap(find.text('Detta o descrivi a parole'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.descendant(
-        of: find.byType(BottomSheet),
-        matching: find.byType(TextFormField),
-      ),
-      'per finire 200 dorso sciolto',
-    );
-    await tester.tap(find.text('Trasforma in serie'));
-    await tester.pumpAndSettle();
-
-    expect(generazione.testoRicevuto, 'per finire 200 dorso sciolto');
-    expect(
-      _testoScritto(tester),
-      'Principale\n400 sl\n\nDefaticamento\n200 do A1',
-    );
   });
 
   testWidgets('su schermo largo testo e anteprima stanno affiancati', (

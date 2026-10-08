@@ -47,38 +47,6 @@ class GenerazioneAiRepository {
     }
   }
 
-  /// Chiama la Edge Function `detta-allenamento`: a differenza di
-  /// [generaAllenamento] (che *inventa* una scheda da parametri), qui
-  /// l'AI deve solo *trascrivere fedelmente* in JSON strutturato quello
-  /// che il coach ha dettato — stessa forma di output ([SchedaGenerata]),
-  /// stessa Edge Function del "genera con AI" nel senso di isolare la
-  /// chiave del provider lato server, ma un prompt diverso.
-  Future<SchedaGenerata> generaDaDettatura({
-    required String testo,
-    required String clubId,
-    String? gruppo,
-  }) async {
-    try {
-      final risposta = await _client.functions
-          .invoke(
-            'detta-allenamento',
-            body: {'testo': testo, 'gruppo': gruppo, 'clubId': clubId},
-          )
-          .timeout(_timeoutGenerazione);
-      final dati = risposta.data;
-      if (dati is Map && dati['scheda'] is Map) {
-        return SchedaGenerata.fromMap(dati['scheda'] as Map<String, dynamic>);
-      }
-      throw Exception('Risposta inattesa dalla dettatura: $dati');
-    } on FunctionException catch (e) {
-      final dettagli = e.details;
-      if (dettagli is Map && dettagli['error'] is String) {
-        throw Exception(dettagli['error'] as String);
-      }
-      rethrow;
-    }
-  }
-
   /// Chiama `compila-modulo`: dal testo libero del coach ricava i valori
   /// dei campi del form "Genera con AI" (vasca, volumi, tipi di lavoro,
   /// focus, attrezzi...). Non genera nessuna scheda: il coach rivede il

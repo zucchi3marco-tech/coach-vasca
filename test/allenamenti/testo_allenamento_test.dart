@@ -150,6 +150,44 @@ void main() {
     );
   });
 
+  group('detto a voce', () {
+    test('"8 da 100", "recupero 20", "ripartenza 1:30", "passo 1:25"', () {
+      final s = _una('8 da 100 stile libero B1 recupero 20 ripartenza 1:30');
+      expect(s.ripetute, 8);
+      expect(s.distanzaM, 100);
+      expect(s.zona, 'B1');
+      expect(s.recuperoS, 20);
+      expect(s.ripartenzaS, 90);
+      expect(s.note, isNull);
+      expect(_una('4 per 50 dorso passo 0:40').passoObiettivoS, 40);
+    });
+
+    test('"20 secondi di recupero" e "ogni 1.30"', () {
+      final s = _una('6 volte 50 gambe 15 secondi di recupero');
+      expect(s.ripetute, 6);
+      expect(s.esecuzione, 'gambe');
+      expect(s.recuperoS, 15);
+      expect(s.note, isNull);
+      expect(_una('10 da 100 ogni 1.30').ripartenzaS, 90);
+    });
+
+    test('una frase dettata diventa una riga per serie', () {
+      const frase =
+          'riscaldamento 400 misti, poi 8 da 100 stile libero B1 recupero '
+          '20. 200 dorso sciolto';
+      expect(
+        righeDaDettato(frase),
+        'riscaldamento 400 misti\n8 da 100 stile libero B1 recupero 20\n'
+        '200 dorso sciolto',
+      );
+      final scritto = interpretaAllenamento(righeDaDettato(frase));
+      expect(scritto.righeNonCapite, 0);
+      expect(scritto.metri, 400 + 800 + 200);
+      // Il tempo "1.30" non si spezza.
+      expect(righeDaDettato('8 da 100 ogni 1.30'), '8 da 100 ogni 1.30');
+    });
+  });
+
   group('tutto l\'allenamento', () {
     const testo = '''
 Riscaldamento

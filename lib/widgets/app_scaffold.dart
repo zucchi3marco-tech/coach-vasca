@@ -14,7 +14,7 @@ class AppScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.scrollabile = false,
     this.physics,
-    this.larghezzaMassima = _larghezzaMassimaContenuto,
+    this.larghezzaMassima = larghezzaPredefinita,
     super.key,
   });
 
@@ -42,7 +42,7 @@ class AppScaffold extends StatelessWidget {
   /// Oltre questa larghezza il contenuto smette di allargarsi e resta
   /// centrato — su un monitor desktop, campi di testo larghi quanto la
   /// finestra intera sono scomodi da leggere (analisi video, punto 3.5).
-  static const _larghezzaMassimaContenuto = 760.0;
+  static const larghezzaPredefinita = 760.0;
 
   @override
   Widget build(BuildContext context) {

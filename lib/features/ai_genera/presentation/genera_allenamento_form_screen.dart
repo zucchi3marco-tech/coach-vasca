@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -14,9 +17,15 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../allenamenti/application/passo_riferimento_provider.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
+import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/durata_serie.dart';
+import '../../allenamenti/domain/piano_salvataggio_testo.dart';
+import '../../allenamenti/domain/testo_allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
+import '../../allenamenti/presentation/editor_testo_allenamento.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../club/application/current_club_provider.dart';
@@ -78,11 +87,17 @@ class _GeneraAllenamentoFormScreenState
   final _vincoliController = TextEditingController();
   final _testoController = TextEditingController();
   final _casellaKey = GlobalKey<CasellaDettaturaState>();
+
+  /// Il testo delle serie di "Scrivi o detta": letto dall'app mentre si
+  /// scrive, come in "Scrivi l'allenamento" (senza AI).
+  late final _serieController = TextEditingController()
+    ..addListener(() => setState(() {}));
+  final _editorKey = GlobalKey<EditorTestoAllenamentoState>();
   late DateTime _data = widget.dataPredefinita ?? DateTime.now();
   late final TextEditingController _dataController = TextEditingController(
     text: _formattaData(_data),
   );
-  bool _serieDaTestoInCorso = false;
+  bool _creazioneDaTestoInCorso = false;
   bool _creazioneVuotaInCorso = false;
 
   /// Chi scrive le sue serie non deve passare ogni volta dal generatore:
@@ -101,6 +116,7 @@ class _GeneraAllenamentoFormScreenState
 
   void _cambiaModo(_Modo modo) {
     _casellaKey.currentState?.ferma();
+    _editorKey.currentState?.ferma();
     setState(() => _modo = modo);
     SharedPreferences.getInstance().then(
       (prefs) => prefs.setString(_chiaveModo, modo.name),
@@ -132,7 +148,7 @@ class _GeneraAllenamentoFormScreenState
   bool get _occupato =>
       _generazioneInCorso ||
       _compilazioneInCorso ||
-      _serieDaTestoInCorso ||
+      _creazioneDaTestoInCorso ||
       _creazioneVuotaInCorso;
 
   String _formattaData(DateTime data) =>
@@ -155,101 +171,113 @@ class _GeneraAllenamentoFormScreenState
     }
   }
 
-  /// Il coach ha scritto (o detto) le serie: si trascrivono fedelmente
-  /// (`detta-allenamento`) invece di inventarle dai parametri.
-  Future<void> _creaSerieDaTesto() async {
-    final testo = _testoController.text.trim();
-    if (testo.length < 10) {
+  /// "Scrivi o detta": le serie le legge l'app dal testo, come in
+  /// "Scrivi l'allenamento" — niente AI. Si crea l'allenamento nella data
+  /// scelta, poi le sue serie nell'ordine scritto (con i gruppi dei "2x" e
+  /// delle piramidi), e si apre il dettaglio.
+  Future<void> _creaDaTesto() async {
+    _editorKey.currentState?.ferma();
+    final scritto = interpretaAllenamento(_serieController.text);
+    if (scritto.serie.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Scrivi o detta prima le serie')),
+        const SnackBar(
+          content: Text('Scrivi almeno una serie, per esempio "400 sl A1"'),
+        ),
       );
       return;
     }
-    _casellaKey.currentState?.ferma();
-    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
-    final nomeGruppo = (ref.read(gruppiListProvider(widget.clubId)).value ?? [])
-        .where((g) => g.id == gruppoId)
-        .firstOrNull
-        ?.nome;
-    setState(() => _serieDaTestoInCorso = true);
-
-    final parametriStorico = {
-      'modalita': 'dettatura',
-      'testo': testo,
-      'gruppo': ?nomeGruppo,
-    };
-
-    try {
-      final scheda = await ref
-          .read(generazioneAiRepositoryProvider)
-          .generaDaDettatura(
-            testo: testo,
-            clubId: widget.clubId,
-            gruppo: nomeGruppo,
-          );
-
-      String? generazioneId;
-      try {
-        generazioneId = await ref
-            .read(generazioniAiRepositoryProvider)
-            .registraGenerazione(
-              clubId: widget.clubId,
-              parametri: parametriStorico,
-              esito: 'successo',
-              scheda: scheda.toMap(),
-            );
-      } catch (_) {}
-
-      if (!mounted) return;
-      await _mostraSchedaEApriDettaglio(
-        SchedaGenerataScreen(
-          scheda: scheda,
-          clubId: widget.clubId,
-          gruppoId: gruppoId,
-          dataIniziale: _data,
-          generazioneId: generazioneId,
+    final nonCapite = scritto.righeNonCapite;
+    if (nonCapite > 0) {
+      final continua = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            nonCapite == 1
+                ? 'Una riga non è stata capita'
+                : '$nonCapite righe non sono state capite',
+          ),
+          content: const Text(
+            'Sono quelle segnate in rosso: se crei ora non diventano serie.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Crea lo stesso'),
+            ),
+          ],
         ),
       );
+      if (continua != true || !mounted) return;
+    }
+
+    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
+    final messaggero = ScaffoldMessenger.of(context);
+    setState(() => _creazioneDaTestoInCorso = true);
+    Allenamento? allenamento;
+    var create = 0;
+    final piano = pianoSalvataggio(
+      vecchie: const [],
+      nuove: scritto.serie,
+      nuovoId: () => const Uuid().v4(),
+    );
+    try {
+      allenamento = await ref
+          .read(allenamentiRepositoryProvider)
+          .createAllenamento(
+            clubId: widget.clubId,
+            data: _data,
+            gruppoId: gruppoId,
+          );
+      final serieRepository = ref.read(serieRepositoryProvider);
+      for (final c in piano.crea) {
+        final s = c.nuova;
+        await serieRepository.createSerie(
+          allenamentoId: allenamento.id,
+          ordine: c.ordine,
+          blocco: s.blocco,
+          ripetute: s.ripetute,
+          distanzaM: s.distanzaM,
+          durataS: s.durataS,
+          stile: s.stile,
+          esecuzione: s.esecuzione,
+          zona: s.zona,
+          passoObiettivoS: s.passoObiettivoS,
+          recuperoS: s.recuperoS,
+          ripartenzaS: s.ripartenzaS,
+          attrezzatura: s.attrezzatura,
+          note: s.note,
+          piramideId: c.piramideId,
+        );
+        create++;
+      }
     } catch (e) {
-      try {
-        await ref
-            .read(generazioniAiRepositoryProvider)
-            .registraGenerazione(
-              clubId: widget.clubId,
-              parametri: parametriStorico,
-              esito: 'errore',
-              messaggioErrore: e.toString(),
-            );
-      } catch (_) {}
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messaggero.showSnackBar(
         SnackBar(
           content: Text(
-            'Errore nella lettura delle serie: ${messaggioErrore(e)}',
+            allenamento == null
+                ? 'Errore nella creazione: ${messaggioErrore(e)}'
+                : 'Allenamento creato, ma salvate $create serie su '
+                      '${piano.crea.length}: ${messaggioErrore(e)}',
           ),
           duration: const Duration(seconds: 6),
-          action: SnackBarAction(
-            label: 'Riprova',
-            onPressed: _creaSerieDaTesto,
-          ),
         ),
       );
-    } finally {
-      if (mounted) setState(() => _serieDaTestoInCorso = false);
+      if (allenamento == null) {
+        if (mounted) setState(() => _creazioneDaTestoInCorso = false);
+        return;
+      }
     }
-  }
-
-  Future<void> _mostraSchedaEApriDettaglio(Widget schermataScheda) async {
-    final allenamentoSalvato = await Navigator.of(context)
-        .push<Allenamento>(MaterialPageRoute(builder: (_) => schermataScheda));
-    if (allenamentoSalvato != null && mounted) {
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) =>
-              AllenamentoDetailScreen(allenamento: allenamentoSalvato),
-        ),
-      );
-    }
+    if (!mounted) return;
+    _serieController.clear();
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => AllenamentoDetailScreen(allenamento: allenamento!),
+      ),
+    );
   }
 
   /// Nessuna generazione: si crea l'allenamento vuoto nella data scelta e
@@ -286,6 +314,7 @@ class _GeneraAllenamentoFormScreenState
   void dispose() {
     _vincoliController.dispose();
     _testoController.dispose();
+    _serieController.dispose();
     _dataController.dispose();
     super.dispose();
   }
@@ -443,11 +472,73 @@ class _GeneraAllenamentoFormScreenState
     final volumeLavoroCentraleClampato = (_volumeLavoroCentraleMetri ?? 0)
         .clamp(0, _volumeMetri)
         .toDouble();
+    final scrivi = _modo == _Modo.scrivi;
+    final scritto = interpretaAllenamento(_serieController.text);
+    final riferimento = scrivi
+        ? ref.watch(
+            passoRiferimentoProvider((
+              clubId: widget.clubId,
+              gruppoId: gruppoId,
+            )),
+          )
+        : null;
 
+    return PopScope(
+      // Con delle serie scritte non si esce per sbaglio.
+      canPop: !scrivi || _serieController.text.trim().isEmpty,
+      onPopInvokedWithResult: (fatto, _) async {
+        if (fatto) return;
+        final esci = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Uscire senza creare?'),
+            content: const Text('Le serie scritte andranno perse.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Annulla'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Esci'),
+              ),
+            ],
+          ),
+        );
+        if (esci == true && context.mounted) Navigator.of(context).pop();
+      },
+      child: _corpo(
+        context,
+        nomeGruppo: nomeGruppo,
+        colori: colori,
+        volumeLavoroCentraleClampato: volumeLavoroCentraleClampato,
+        scritto: scritto,
+        riferimento: riferimento,
+      ),
+    );
+  }
+
+  Widget _corpo(
+    BuildContext context, {
+    required String nomeGruppo,
+    required ColoriApp colori,
+    required double volumeLavoroCentraleClampato,
+    required AllenamentoScritto scritto,
+    required PassoRiferimento? riferimento,
+  }) {
+    final scrivi = _modo == _Modo.scrivi;
     return AppScaffold(
       scrollabile: true,
+      // Scrivendo, su schermo largo il testo e come è stato capito stanno
+      // affiancati (come nell'editor di Swimtraxx).
+      larghezzaMassima: scrivi
+          ? AppLayout.larghezzaMassimaContenuto
+          : AppScaffold.larghezzaPredefinita,
       appBar: AppBar(
         title: const Text('Nuovo allenamento'),
+        bottom: scrivi
+            ? BarraTotali(scritto: scritto, riferimento: riferimento)
+            : null,
         actions: [
           IconButton(
             tooltip: 'Libreria blocchi',
@@ -508,45 +599,63 @@ class _GeneraAllenamentoFormScreenState
                   : (scelta) => _cambiaModo(scelta.first),
             ),
             const SizedBox(height: AppSpacing.s24),
-            FormGroup(
-              titolo: 'Quando',
-              campi: [
-                AppTextField(
-                  etichetta: 'Data dell\'allenamento',
-                  controller: _dataController,
-                  readOnly: true,
-                  onTap: _occupato ? null : _scegliData,
-                  suffixIcon: const Icon(Icons.calendar_today_outlined),
-                ),
-                Text(
-                  'Gruppo: $nomeGruppo',
-                  style: AppTypography.corpo.copyWith(
-                    color: colori.testoSecondario,
+            if (scrivi) ...[
+              // Data e gruppo in una riga, come in cima all'editor di
+              // Swimtraxx: lo spazio è per le serie.
+              Wrap(
+                spacing: AppSpacing.s16,
+                runSpacing: AppSpacing.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _occupato ? null : _scegliData,
+                    icon: const Icon(Icons.calendar_today_outlined, size: 18),
+                    label: Text(dataEstesa(_data)),
                   ),
-                ),
-              ],
-            ),
-            if (_modo == _Modo.scrivi)
-              FormGroup(
-                titolo: 'Le serie',
-                isUltimo: true,
-                campi: [
-                  CasellaDettatura(
-                    key: _casellaKey,
-                    controller: _testoController,
-                    etichetta: 'Scrivi o detta le serie',
-                    aiuto:
-                        'Es. "400 riscaldamento, 8x100 sl soglia rec 20, '
-                        '200 defaticamento": le trascrivo così come sono.',
+                  Text(
+                    'Gruppo: $nomeGruppo',
+                    style: AppTypography.corpo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s16),
+              EditorTestoAllenamento(
+                key: _editorKey,
+                controller: _serieController,
+                scritto: scritto,
+                riferimento: riferimento,
+                sottoIlTesto: [
+                  const SizedBox(height: AppSpacing.s16),
                   PrimaryButton(
-                    label: _serieDaTestoInCorso
-                        ? 'Sto leggendo...'
-                        : 'Crea le serie',
-                    isLoading: _serieDaTestoInCorso,
-                    onPressed: _occupato ? null : _creaSerieDaTesto,
+                    label: _creazioneDaTestoInCorso
+                        ? 'Sto creando...'
+                        : "Crea l'allenamento",
+                    isLoading: _creazioneDaTestoInCorso,
+                    onPressed: _occupato || scritto.serie.isEmpty
+                        ? null
+                        : _creaDaTesto,
                   ),
-                  if (_serieDaTestoInCorso) const AttesaAiHint(),
+                ],
+              ),
+            ] else
+              FormGroup(
+                titolo: 'Quando',
+                campi: [
+                  AppTextField(
+                    etichetta: 'Data dell\'allenamento',
+                    controller: _dataController,
+                    readOnly: true,
+                    onTap: _occupato ? null : _scegliData,
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  ),
+                  Text(
+                    'Gruppo: $nomeGruppo',
+                    style: AppTypography.corpo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
                 ],
               ),
             if (_modo == _Modo.vuoto)
