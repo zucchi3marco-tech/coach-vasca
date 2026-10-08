@@ -162,11 +162,20 @@ class _SchedaBordoVascaScreenState
         ? allenamento.titolo
         : {for (final g in gruppi) g.id: g.nome}[allenamento.gruppoId];
 
+    final telefono = Breakpoint.of(context) == Breakpoint.compatto;
     Widget content = AppScaffold(
       larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
       appBar: AppBar(
         title: Text([dataCompatta(allenamento.data), ?contesto].join(' · ')),
         actions: [
+          // Sul telefono "Presenze" sta qui: in basso lo spazio è della
+          // serie e dell'orologio.
+          if (telefono && _unaAllaVolta && !perAtleta)
+            IconButton(
+              tooltip: 'Presenze',
+              icon: const Icon(Icons.how_to_reg_outlined),
+              onPressed: _apriPresenze,
+            ),
           IconButton(
             tooltip: _unaAllaVolta
                 ? 'Mostra tutte le serie'
@@ -363,16 +372,23 @@ class _UnaAllaVolta extends StatelessWidget {
       },
       child: _SerieInGrande(serie: s, prossima: prossima),
     );
-    // La serie scorre se non ci sta; l'orologio resta sempre in vista.
-    final centro = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: SingleChildScrollView(child: scheda)),
-        if (orologio != null) ...[
-          const SizedBox(height: AppSpacing.s12),
-          orologio!,
+    // La serie scorre se non ci sta; l'orologio resta sempre in vista ma
+    // non si prende mai più di metà dello spazio: la serie non deve
+    // sparire dietro (segnalazione del coach 2026-10-08, su telefono).
+    final centro = LayoutBuilder(
+      builder: (context, spazio) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: SingleChildScrollView(child: scheda)),
+          if (orologio != null) ...[
+            const SizedBox(height: AppSpacing.s12),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: spazio.maxHeight * 0.5),
+              child: SingleChildScrollView(child: orologio),
+            ),
+          ],
         ],
-      ],
+      ),
     );
 
     final avanzamento = _Avanzamento(
@@ -447,8 +463,15 @@ class _UnaAllaVolta extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            avanzamento,
-            const SizedBox(height: AppSpacing.s16),
+            _Avanzamento(
+              numero: indice + 1,
+              di: serie.length,
+              metriFatti: fatti,
+              metriTotali: totale,
+              saltate: saltate,
+              compatto: true,
+            ),
+            const SizedBox(height: AppSpacing.s12),
             Expanded(child: centro),
             if (fatta != null && saltata != null) ...[
               const SizedBox(height: AppSpacing.s12),
@@ -468,10 +491,6 @@ class _UnaAllaVolta extends StatelessWidget {
                 Expanded(flex: 2, child: avanti),
               ],
             ),
-            if (presenze != null) ...[
-              const SizedBox(height: AppSpacing.s12),
-              presenze,
-            ],
           ],
         );
       },
@@ -486,6 +505,7 @@ class _Avanzamento extends StatelessWidget {
     required this.metriFatti,
     required this.metriTotali,
     this.saltate = 0,
+    this.compatto = false,
   });
 
   final int numero;
@@ -494,9 +514,63 @@ class _Avanzamento extends StatelessWidget {
   final int metriTotali;
   final int saltate;
 
+  /// Sul telefono: una riga e la barra, per lasciare spazio alla serie.
+  final bool compatto;
+
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    final barra = ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.pillola),
+      child: LinearProgressIndicator(
+        value: di == 0 ? 0 : numero / di,
+        minHeight: 8,
+        color: colori.azione,
+        backgroundColor: colori.superficieAlt,
+      ),
+    );
+    if (compatto) {
+      final secondario = AppTypography.numerica(
+        AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+      );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                'Serie ',
+                style: AppTypography.corpo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+              Text(
+                '$numero di $di',
+                style: AppTypography.numerica(
+                  AppTypography.corpoForte.copyWith(color: colori.testo),
+                ),
+              ),
+              const Spacer(),
+              if (saltate > 0)
+                Text(
+                  saltate == 1 ? '1 saltata · ' : '$saltate saltate · ',
+                  style: secondario,
+                ),
+              if (metriTotali > 0)
+                Text(
+                  '${formattaMetri(metriFatti)} di '
+                  '${formattaMetri(metriTotali)} m',
+                  style: secondario,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          barra,
+        ],
+      );
+    }
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,15 +588,7 @@ class _Avanzamento extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.s8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.pillola),
-          child: LinearProgressIndicator(
-            value: di == 0 ? 0 : numero / di,
-            minHeight: 8,
-            color: colori.azione,
-            backgroundColor: colori.superficieAlt,
-          ),
-        ),
+        barra,
         if (metriTotali > 0) ...[
           const SizedBox(height: AppSpacing.s8),
           Text(
@@ -562,7 +628,7 @@ class _SerieInGrande extends StatelessWidget {
     return LaneRule(
       colore: coloreZona,
       child: PoolCard(
-        padding: const EdgeInsets.all(AppSpacing.s24),
+        padding: EdgeInsets.all(tablet ? AppSpacing.s24 : AppSpacing.s16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,

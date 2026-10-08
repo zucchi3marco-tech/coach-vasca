@@ -309,16 +309,61 @@ class _PannelloOrologioState extends State<PannelloOrologio>
         ),
       ],
     );
+    final finita = [
+      if (_finita) ...[
+        Text(
+          'Serie finita',
+          style: AppTypography.corpoForte.copyWith(color: colori.testo),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+      ],
+    ];
+    // Sul telefono l'orologio fermo sta in una riga: la serie, sopra,
+    // deve restare in vista (segnalazione del coach 2026-10-08). Gruppi,
+    // distacco e suono in un foglio a parte.
+    if (Breakpoint.of(context) == Breakpoint.compatto) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ...finita,
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _via,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    textStyle: AppTypography.titolo,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.pannello),
+                    ),
+                  ),
+                  icon: const Icon(Icons.play_arrow, size: 28),
+                  label: Text(_finita ? 'Di nuovo' : 'Via'),
+                ),
+              ),
+              ogni,
+              IconButton(
+                tooltip: 'Gruppi e suono',
+                icon: Badge(
+                  isLabelVisible: widget.gruppi > 1,
+                  // Il rosso è solo per "in corso" ed errori (DESIGN.md).
+                  backgroundColor: colori.azione,
+                  textColor: colori.azioneInk,
+                  label: Text('${widget.gruppi}'),
+                  child: const Icon(Icons.tune),
+                ),
+                onPressed: _impostazioni,
+              ),
+            ],
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_finita) ...[
-          Text(
-            'Serie finita',
-            style: AppTypography.corpoForte.copyWith(color: colori.testo),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-        ],
+        ...finita,
         Wrap(
           spacing: AppSpacing.s24,
           runSpacing: AppSpacing.s12,
@@ -346,6 +391,92 @@ class _PannelloOrologioState extends State<PannelloOrologio>
           ],
         ),
       ],
+    );
+  }
+
+  /// Sul telefono: gruppi sfalsati, distacco e suono in un foglio.
+  Future<void> _impostazioni() {
+    var gruppi = widget.gruppi;
+    var distacco = widget.distaccoS;
+    var suono = widget.suono;
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, aggiorna) {
+          final colori = context.colori;
+          final etichetta = AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          );
+          final onSuono = widget.onSuono;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s16,
+                0,
+                AppSpacing.s16,
+                AppSpacing.s24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Gruppi che partono sfalsati', style: etichetta),
+                  const SizedBox(height: AppSpacing.s8),
+                  Wrap(
+                    spacing: AppSpacing.s8,
+                    runSpacing: AppSpacing.s8,
+                    children: [
+                      for (final g in _scelteGruppi)
+                        TonalChip(
+                          etichetta: '$g',
+                          selezionato: gruppi == g,
+                          onSelezionato: (_) {
+                            widget.onGruppi(g);
+                            aggiorna(() => gruppi = g);
+                          },
+                        ),
+                    ],
+                  ),
+                  if (gruppi > 1) ...[
+                    const SizedBox(height: AppSpacing.s16),
+                    Text('Uno dopo l\'altro a', style: etichetta),
+                    const SizedBox(height: AppSpacing.s8),
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s8,
+                      children: [
+                        for (final d in _scelteDistacco)
+                          TonalChip(
+                            etichetta: "$d''",
+                            selezionato: distacco == d,
+                            onSelezionato: (_) {
+                              widget.onDistacco(d);
+                              aggiorna(() => distacco = d);
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
+                  if (onSuono != null) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Suono alle partenze'),
+                      value: suono,
+                      onChanged: (v) {
+                        preparaSuono();
+                        onSuono(v);
+                        aggiorna(() => suono = v);
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -435,7 +566,7 @@ class _PannelloOrologioState extends State<PannelloOrologio>
                     style: AppTypography.corpo.copyWith(color: secondario),
                   ),
                   SizedBox(
-                    height: tablet ? 120 : 80,
+                    height: tablet ? 120 : 64,
                     child: FittedBox(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -460,7 +591,7 @@ class _PannelloOrologioState extends State<PannelloOrologio>
                     style: AppTypography.corpo.copyWith(color: secondario),
                   ),
                   SizedBox(
-                    height: tablet ? 72 : 52,
+                    height: tablet ? 72 : 44,
                     child: FittedBox(
                       alignment: Alignment.centerRight,
                       child: Text(

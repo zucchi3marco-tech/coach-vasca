@@ -203,6 +203,47 @@ void main() {
     await _chiudi(tester, repository);
   });
 
+  testWidgets("sul telefono la serie resta in vista sopra l'orologio", (
+    tester,
+  ) async {
+    final repository = _SerieFinta([_serie(1, ripartenza: 90), _serie(2)]);
+    await _apri(tester, repository);
+    tester.view.physicalSize = const Size(390, 740);
+    await tester.pumpAndSettle();
+
+    final serie = find.text('4×100m Libero Nuoto');
+    expect(serie, findsOneWidget);
+    final via = find.text('Via');
+    final schermo = tester.getRect(find.byType(Scaffold).first);
+    // La serie si vede tutta, sopra il "Via", dentro lo schermo.
+    final rettangolo = tester.getRect(serie);
+    expect(rettangolo.height, greaterThan(20));
+    expect(rettangolo.bottom, lessThan(tester.getRect(via).top));
+    expect(schermo.contains(tester.getRect(via).center), isTrue);
+    expect(find.text('1 di 2'), findsOneWidget);
+    expect(find.byTooltip('Presenze'), findsOneWidget);
+
+    // Gruppi e suono in un foglio a parte.
+    await tester.tap(find.byTooltip('Gruppi e suono'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2'));
+    await tester.pumpAndSettle();
+    expect(find.text("Uno dopo l'altro a"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tapAt(const Offset(195, 40));
+    await tester.pumpAndSettle();
+
+    // Anche con l'orologio che corre la serie si vede.
+    await tester.tap(find.text('Via'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
+    expect(tester.getRect(serie).height, greaterThan(20));
+    expect(tester.getRect(serie).bottom, lessThan(schermo.bottom));
+    expect(tester.takeException(), isNull);
+
+    await _chiudi(tester, repository);
+  });
+
   testWidgets('partenze sfalsate: si vede quando parte ogni gruppo', (
     tester,
   ) async {
