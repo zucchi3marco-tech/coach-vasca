@@ -16,11 +16,12 @@ List<T> spostaSerie<T>(List<T> serie, int da, int a) {
 }
 
 /// Accorpa righe **consecutive** con lo stesso [Serie.piramideId] non
-/// nullo in un unico gruppo (una piramide, es. 50-100-200-100-50): una
-/// riga normale (`piramideId == null`) è un gruppo da sola. [serie] deve
-/// essere già nell'ordine mostrato a schermo (per `ordine`).
-List<List<Serie>> raggruppaPerPiramide(List<Serie> serie) {
-  final gruppi = <List<Serie>>[];
+/// nullo in un unico gruppo (una piramide, es. 50-100-200-100-50, o le
+/// serie di un "2x" scritto a testo): una riga normale
+/// (`piramideId == null`) è un gruppo da sola. [serie] deve essere già
+/// nell'ordine mostrato a schermo (per `ordine`).
+List<List<T>> raggruppaPerPiramide<T extends DatiSerie>(List<T> serie) {
+  final gruppi = <List<T>>[];
   for (final s in serie) {
     final ultimo = gruppi.isNotEmpty ? gruppi.last : null;
     if (s.piramideId != null &&

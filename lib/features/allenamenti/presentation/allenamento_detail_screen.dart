@@ -24,16 +24,18 @@ import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
+import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/serie.dart';
-import '../domain/serie_rapida.dart';
+import '../domain/testo_allenamento.dart';
 import 'allenamento_form_screen.dart';
+import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_gruppo_piramide.dart';
 import 'riga_serie.dart';
 import 'scheda_bordo_vasca_screen.dart';
-import 'scrivi_serie_screen.dart';
+import 'scrivi_allenamento_screen.dart';
 import 'serie_form_screen.dart';
 import 'serie_labels.dart';
 
@@ -75,12 +77,14 @@ class _AllenamentoDetailScreenState
     );
   }
 
-  void _apriScriviSerie() {
+  void _apriScriviAllenamento() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ScriviSerieScreen(
+        builder: (_) => ScriviAllenamentoScreen(
           allenamento: widget.allenamento,
-          ordineSuccessivo: _ordineSuccessivo(),
+          serie:
+              ref.read(serieListProvider(widget.allenamento.id)).value ??
+              const [],
         ),
       ),
     );
@@ -92,22 +96,19 @@ class _AllenamentoDetailScreenState
       bloccoIniziale: _bloccoRapido,
       onBloccoCambiato: (b) => _bloccoRapido = b,
       aggiungiRapida: _aggiungiRapida,
-      onScrivi: _apriScriviSerie,
+      onScrivi: _apriScriviAllenamento,
       onSerieCompleta: () => _apriSerieCompleta(serie: null),
     );
   }
 
   /// Una riga rapida può interpretarsi in più serie (piramide: una
-  /// distanza diversa per serie, vedi [parseSerieRapida]): l'ordine si
+  /// distanza diversa per serie, vedi [leggiRigaSerie]): l'ordine si
   /// calcola una sola volta prima del giro, non ad ogni iterazione — il
   /// provider locale potrebbe non essersi ancora aggiornato fra una
   /// creazione e la successiva. Più di una serie dalla stessa riga
   /// condividono un `piramideId`, per restare raggruppate in un'unica
   /// riga visiva (vedi `raggruppaPerPiramide`).
-  Future<void> _aggiungiRapida(
-    List<SerieRapida> parsedList,
-    String blocco,
-  ) async {
+  Future<void> _aggiungiRapida(List<SerieScritta> parsedList) async {
     try {
       final repository = ref.read(serieRepositoryProvider);
       final piramideId = parsedList.length > 1 ? const Uuid().v4() : null;
@@ -116,14 +117,18 @@ class _AllenamentoDetailScreenState
         await repository.createSerie(
           allenamentoId: widget.allenamento.id,
           ordine: ordine,
-          blocco: blocco,
+          blocco: parsed.blocco,
           ripetute: parsed.ripetute,
           distanzaM: parsed.distanzaM,
+          durataS: parsed.durataS,
           stile: parsed.stile,
-          esecuzione: 'nuoto',
+          esecuzione: parsed.esecuzione,
           zona: parsed.zona,
           passoObiettivoS: parsed.passoObiettivoS,
           recuperoS: parsed.recuperoS,
+          ripartenzaS: parsed.ripartenzaS,
+          attrezzatura: parsed.attrezzatura,
+          note: parsed.note,
           piramideId: piramideId,
         );
         ordine++;
@@ -432,6 +437,10 @@ class _AllenamentoDetailScreenState
                     valore: '${raggruppaPerPiramide(serieCaricate).length}',
                     etichetta: 'Serie',
                   ),
+                  NumeroTestata(
+                    valore: "${minutiStimati(serieCaricate)}'",
+                    etichetta: 'Durata stimata',
+                  ),
                 ],
           azioni: [
             AzioneTestata(
@@ -468,6 +477,11 @@ class _AllenamentoDetailScreenState
       appBar: AppBar(
         title: const Text('Allenamento'),
         actions: [
+          IconButton(
+            tooltip: "Scrivi l'allenamento",
+            icon: const Icon(Icons.edit_note),
+            onPressed: _apriScriviAllenamento,
+          ),
           IconButton(
             tooltip: 'Esporta',
             icon: const Icon(Icons.ios_share),
@@ -533,12 +547,12 @@ class _AllenamentoDetailScreenState
                     icona: Icons.pool_outlined,
                     titolo: 'Nessuna serie',
                     descrizione:
-                        'Aggiungi la prima serie con il pulsante +, '
-                        'oppure scrivi o detta più serie insieme.',
-                    azionePrincipale: 'Aggiungi la prima serie',
-                    onAzionePrincipale: _apriPannello,
-                    azioneSecondaria: 'Scrivi o detta più serie insieme',
-                    onAzioneSecondaria: _apriScriviSerie,
+                        'Scrivilo tutto come su un foglio, una serie per '
+                        'riga, oppure aggiungi una serie alla volta con +.',
+                    azionePrincipale: "Scrivi l'allenamento",
+                    onAzionePrincipale: _apriScriviAllenamento,
+                    azioneSecondaria: 'Aggiungi una serie',
+                    onAzioneSecondaria: _apriPannello,
                   ),
                 ),
               ],
@@ -563,6 +577,10 @@ class _AllenamentoDetailScreenState
                     bottom: AppSpacing.s12,
                   ),
                   child: RiepilogoVolumi(serie: serie, mostraTotale: false),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s16),
+                  child: GraficoIntensita(serie: serie),
                 ),
               ],
             ),

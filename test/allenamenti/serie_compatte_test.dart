@@ -1,6 +1,6 @@
 import 'package:coach_vasca/features/allenamenti/domain/riordino_serie.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
-import 'package:coach_vasca/features/allenamenti/domain/serie_rapida.dart';
+import 'package:coach_vasca/features/allenamenti/domain/testo_allenamento.dart';
 import 'package:coach_vasca/features/allenamenti/presentation/pannello_aggiungi_serie.dart';
 import 'package:coach_vasca/features/allenamenti/presentation/riepilogo_volumi.dart';
 import 'package:coach_vasca/features/allenamenti/presentation/riga_serie.dart';
@@ -222,7 +222,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
-      final aggiunte = <(List<SerieRapida>, String)>[];
+      final aggiunte = <List<SerieScritta>>[];
       final blocchi = <String>[];
       await tester.pumpWidget(
         _app(
@@ -231,8 +231,7 @@ void main() {
             child: PannelloAggiungiSerie(
               bloccoIniziale: 'principale',
               onBloccoCambiato: blocchi.add,
-              aggiungiRapida: (serie, blocco) async =>
-                  aggiunte.add((serie, blocco)),
+              aggiungiRapida: (serie) async => aggiunte.add(serie),
               onScrivi: () {},
               onSerieCompleta: () {},
             ),
@@ -251,9 +250,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(aggiunte, hasLength(1));
-      expect(aggiunte.single.$2, 'riscaldamento');
-      expect(aggiunte.single.$1.single.ripetute, 10);
-      expect(aggiunte.single.$1.single.distanzaM, 100);
+      final serie = aggiunte.single.single;
+      expect(serie.blocco, 'riscaldamento');
+      expect(serie.ripetute, 10);
+      expect(serie.distanzaM, 100);
       expect(find.textContaining('Aggiunta:'), findsOneWidget);
       expect(
         tester.widget<TextField>(find.byType(TextField)).controller!.text,

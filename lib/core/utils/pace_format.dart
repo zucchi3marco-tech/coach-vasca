@@ -6,7 +6,9 @@ String formatDurataS(int secondi) {
   if (secondi < 60) return "$secondi\"";
   final minuti = secondi ~/ 60;
   final resto = secondi % 60;
-  return resto == 0 ? "$minuti'" : "$minuti'${resto.toString().padLeft(2, '0')}\"";
+  return resto == 0
+      ? "$minuti'"
+      : "$minuti'${resto.toString().padLeft(2, '0')}\"";
 }
 
 /// Formatta una durata in secondi interi come 'm:ss' editabile (es. 630
@@ -25,6 +27,19 @@ String formatPaceSeconds(double totalSeconds) {
   final seconds = totalSeconds - minutes * 60;
   final secondsStr = seconds.toStringAsFixed(2).padLeft(5, '0');
   return '$minutes:$secondsStr';
+}
+
+/// Un passo o una ripartenza da leggere al volo: 'm:ss' senza decimali
+/// inutili (85 -> '1:25', 85.5 -> '1:25.5', 40 -> '0:40'), mentre
+/// [formatPaceSeconds] li scrive sempre ('1:25.00').
+String formatTempoCompatto(double secondi) {
+  final minuti = secondi ~/ 60;
+  final resto = (secondi - minuti * 60)
+      .toStringAsFixed(2)
+      .replaceAll(RegExp(r'\.?0+$'), '');
+  final parti = (resto.isEmpty ? '0' : resto).split('.');
+  return '$minuti:${parti.first.padLeft(2, '0')}'
+      '${parti.length > 1 ? '.${parti.last}' : ''}';
 }
 
 final _rxPaceMmSs = RegExp(r'^(\d+):(\d+(?:\.\d+)?)$');

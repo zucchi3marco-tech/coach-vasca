@@ -250,6 +250,10 @@ class SerieRepository {
     double? ripartenzaS,
     String? attrezzatura,
     String? note,
+
+    /// Solo dalla scrittura a testo, che rifà anche i gruppi: senza, il
+    /// gruppo della serie resta com'è.
+    ({String? id})? piramide,
   }) async {
     final payload = {
       'ordine': ordine,
@@ -265,6 +269,7 @@ class SerieRepository {
       'ripartenza_s': ripartenzaS,
       'attrezzatura': attrezzatura,
       'note': note,
+      if (piramide != null) 'piramide_id': piramide.id,
     };
     try {
       final row = await _client
@@ -294,6 +299,9 @@ class SerieRepository {
           ripartenzaS: Value(ripartenzaS),
           attrezzatura: Value(attrezzatura),
           note: Value(note),
+          piramideId: piramide == null
+              ? const Value.absent()
+              : Value(piramide.id),
         ),
       );
       await enqueueOperation(

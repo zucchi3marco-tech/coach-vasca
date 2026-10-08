@@ -1,13 +1,57 @@
 import '../../../core/utils/pace_format.dart';
 import '../domain/serie.dart';
+import '../domain/testo_allenamento.dart';
 
 /// "8×100m" per una serie a distanza, "3×5'" per una a tempo — mai
 /// entrambe (vedi [Serie.aTempo]).
-String labelVolumeSerie(Serie s) {
+String labelVolumeSerie(DatiSerie s) {
   final durata = s.durataS;
   if (durata != null) return '${s.ripetute}×${formatDurataS(durata)}';
   return '${s.ripetute}×${s.distanzaM}m';
 }
+
+/// "8×100m Libero", "4×50m Dorso Gambe".
+String titoloSerie(DatiSerie s) => [
+  labelVolumeSerie(s),
+  labelStile(s.stile),
+  if (s.esecuzione != 'nuoto') labelEsecuzione(s.esecuzione),
+].join(' ');
+
+/// Il titolo di più serie raggruppate: "50-100-200m Libero" o
+/// "2×(50-100)m Libero" per una piramide, "2 × (3×200m Libero + 4×75m
+/// Dorso)" per un "2x" scritto a testo.
+String titoloGruppo(List<DatiSerie> gruppo) {
+  final primo = gruppo.first;
+  final piramide = strutturaPiramide(gruppo);
+  if (piramide != null) {
+    final sequenza = gruppo
+        .take(piramide.distanze)
+        .map((s) => s.distanzaM)
+        .join('-');
+    return [
+      if (piramide.giri > 1)
+        '${piramide.giri}×($sequenza)m'
+      else
+        '${sequenza}m',
+      labelStile(primo.stile),
+      if (primo.esecuzione != 'nuoto') labelEsecuzione(primo.esecuzione),
+    ].join(' ');
+  }
+  final periodo = periodoGruppo(gruppo);
+  final volte = gruppo.length ~/ periodo;
+  final corpo = gruppo.take(periodo).map(titoloSerie).join(' + ');
+  if (volte == 1) return corpo;
+  return periodo > 1 ? '$volte × ($corpo)' : '$volte × $corpo';
+}
+
+/// Zona, passo, ripartenza, recupero e attrezzi di una serie.
+List<String> dettagliSerie(DatiSerie s) => [
+  ?s.zona,
+  if (s.passoObiettivoS case final p?) '${formatTempoCompatto(p)}/100m',
+  if (s.ripartenzaS case final r?) 'rip ${formatTempoCompatto(r)}',
+  if (s.recuperoS case final r?) "rec $r''",
+  if (s.attrezzatura case final a? when a.trim().isNotEmpty) a,
+];
 
 String labelStile(String stile) => switch (stile) {
   'libero' => 'Libero',

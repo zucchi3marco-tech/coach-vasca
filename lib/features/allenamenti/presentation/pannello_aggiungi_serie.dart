@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/tonal_chip.dart';
-import '../domain/serie_rapida.dart';
+import '../domain/testo_allenamento.dart';
 import 'serie_labels.dart';
 
 /// Apre il pannello dal basso per aggiungere serie. Tutto quello che prima
 /// stava in una barra fissa molto alta (scelta del blocco, campo rapido,
-/// "scrivi o detta", "serie completa") sta qui, e la barra non c'è più: le
-/// serie occupano lo schermo.
+/// "scrivi l'allenamento", "serie completa") sta qui, e la barra non c'è
+/// più: le serie occupano lo schermo. La riga si legge come una riga di
+/// "Scrivi l'allenamento" ([leggiRigaSerie]).
 ///
 /// [aggiungiRapida] riceve la serie già interpretata e il blocco scelto; se
 /// non lancia, il pannello resta aperto per aggiungerne altre. Il blocco
@@ -22,8 +22,7 @@ Future<void> mostraPannelloAggiungiSerie(
   BuildContext context, {
   required String bloccoIniziale,
   required ValueChanged<String> onBloccoCambiato,
-  required Future<void> Function(List<SerieRapida> serie, String blocco)
-  aggiungiRapida,
+  required Future<void> Function(List<SerieScritta> serie) aggiungiRapida,
   required VoidCallback onScrivi,
   required VoidCallback onSerieCompleta,
 }) {
@@ -59,8 +58,9 @@ class PannelloAggiungiSerie extends StatefulWidget {
 
   final String bloccoIniziale;
   final ValueChanged<String> onBloccoCambiato;
-  final Future<void> Function(List<SerieRapida> serie, String blocco)
-  aggiungiRapida;
+
+  /// Riceve le serie già nel blocco scelto.
+  final Future<void> Function(List<SerieScritta> serie) aggiungiRapida;
   final VoidCallback onScrivi;
   final VoidCallback onSerieCompleta;
 
@@ -80,48 +80,32 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
     super.dispose();
   }
 
-  String _suffissoComune(SerieRapida s) {
-    final parti = <String>[];
-    if (s.zona != null) parti.add('zona ${s.zona}');
-    if (s.passoObiettivoS != null) {
-      parti.add('passo ${formatPaceSeconds(s.passoObiettivoS!)}/100m');
-    }
-    if (s.recuperoS != null) parti.add("rec ${s.recuperoS}''");
-    return parti.isEmpty ? '' : ' · ${parti.join(' · ')}';
-  }
+  String _descrizione(List<SerieScritta> serie) => [
+    if (serie.length > 1) titoloGruppo(serie) else titoloSerie(serie.single),
+    ...dettagliSerie(serie.first),
+    if (serie.first.note case final nota?) 'nota: $nota',
+  ].join(' · ');
 
-  String _descrizione(List<SerieRapida> serie) {
-    if (serie.length == 1) {
-      final s = serie.single;
-      return '${s.ripetute} × ${s.distanzaM}m ${labelStile(s.stile)}'
-          '${_suffissoComune(s)}';
-    }
-    // Piramide: una distanza diversa per serie, 1 ripetuta ciascuna.
-    final primo = serie.first;
-    final distanze = serie.map((s) => '${s.distanzaM}').join('-');
-    return '${serie.length} serie $distanze'
-        'm ${labelStile(primo.stile)}${_suffissoComune(primo)}';
-  }
-
-  String _aiuto(List<SerieRapida>? parsed) {
+  String _aiuto(List<SerieScritta>? parsed) {
     if (_controller.text.trim().isEmpty) {
       return _ultimaAggiunta != null
           ? 'Aggiunta: $_ultimaAggiunta. Scrivi la prossima.'
-          : 'Es. 10x100 A2 1:25 r15 sl, oppure 50-100-200-100-50 sl';
+          : "Es. 10x100 A2 1:25 r15 sl, 400 gambe pinne, 10' remate, "
+                'oppure 50-100-200-100-50 sl';
     }
     if (parsed == null) {
-      return 'Scrivi ripetute×distanza (es. 10x100) oppure una piramide '
-          '(es. 50-100-200-100-50)';
+      return 'Scrivi ripetute×distanza (es. 10x100), una distanza (400), '
+          "una durata (10') oppure una piramide (es. 50-100-200-100-50)";
     }
     return '→ ${_descrizione(parsed)}';
   }
 
   Future<void> _aggiungi() async {
-    final parsed = parseSerieRapida(_controller.text);
+    final parsed = leggiRigaSerie(_controller.text, blocco: _blocco);
     if (parsed == null || _inCorso) return;
     setState(() => _inCorso = true);
     try {
-      await widget.aggiungiRapida(parsed, _blocco);
+      await widget.aggiungiRapida(parsed);
       if (!mounted) return;
       setState(() {
         _ultimaAggiunta = _descrizione(parsed);
@@ -138,7 +122,7 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final parsed = parseSerieRapida(_controller.text);
+    final parsed = leggiRigaSerie(_controller.text, blocco: _blocco);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.s16,
@@ -187,8 +171,8 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
             ),
             const SizedBox(height: AppSpacing.s12),
             SecondaryButton(
-              label: 'Scrivi o detta più serie insieme',
-              icon: Icons.mic_none_outlined,
+              label: "Scrivi tutto l'allenamento",
+              icon: Icons.edit_note,
               onPressed: widget.onScrivi,
             ),
             const SizedBox(height: AppSpacing.s8),

@@ -6,12 +6,14 @@ import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
 import '../domain/serie.dart';
+import '../domain/testo_allenamento.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_serie.dart' show AzioneSerie;
 import 'serie_labels.dart';
 
-/// Una piramide (es. 50-100-200-100-50, dalla barra rapida) nell'elenco
-/// del dettaglio allenamento: stesso stile/altezza di [RigaSerie], ma
+/// Una piramide (es. 50-100-200-100-50, dalla barra rapida) o un "2x"
+/// scritto a testo nell'elenco del dettaglio allenamento: stesso
+/// stile/altezza di [RigaSerie], ma
 /// rappresenta **tutte** le serie del gruppo come una riga sola — ogni
 /// azione del menu si applica all'intero gruppo, mai a una singola
 /// distanza (per modificarne una si cancella e si riscrive, scelta del
@@ -41,12 +43,8 @@ class RigaGruppoPiramide extends StatelessWidget {
       rispetto: colori.linea,
     );
 
-    final distanze = gruppo.map((s) => '${s.distanzaM}').join('-');
-    final titolo = StringBuffer('${distanze}m ')
-      ..write(labelStile(prima.stile));
-    if (prima.esecuzione != 'nuoto') {
-      titolo.write(' ${labelEsecuzione(prima.esecuzione)}');
-    }
+    final titolo = titoloGruppo(gruppo);
+    final piramide = strutturaPiramide(gruppo) != null;
 
     final metriTotali = gruppo.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
 
@@ -64,8 +62,10 @@ class RigaGruppoPiramide extends StatelessWidget {
     final dettagli = <String>[
       labelBloccoBreve(prima.blocco),
       '${formattaMetri(metriTotali)} m',
-      if (valoriOrdinati.isNotEmpty) "rec ${valoriOrdinati.first}''",
-      if (valoriOrdinati.length > 1) "tra i giri ${valoriOrdinati[1]}''",
+      if (piramide && valoriOrdinati.isNotEmpty)
+        "rec ${valoriOrdinati.first}''",
+      if (piramide && valoriOrdinati.length > 1)
+        "tra i giri ${valoriOrdinati[1]}''",
     ];
 
     return Container(
@@ -99,7 +99,7 @@ class RigaGruppoPiramide extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: titolo.toString(),
+                              text: titolo,
                               style: AppTypography.corpoForte.copyWith(
                                 color: colori.testo,
                               ),
@@ -149,7 +149,9 @@ class RigaGruppoPiramide extends StatelessWidget {
                 ),
               ),
               PopupMenuButton<AzioneSerie>(
-                tooltip: 'Azioni sulla piramide',
+                tooltip: piramide
+                    ? 'Azioni sulla piramide'
+                    : 'Azioni sul gruppo',
                 icon: const Icon(Icons.more_vert),
                 onSelected: onAzione,
                 itemBuilder: (context) => [

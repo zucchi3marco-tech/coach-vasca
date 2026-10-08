@@ -55,9 +55,9 @@ class RigaSerie extends StatelessWidget {
     final dettagli = <String>[
       labelBloccoBreve(s.blocco),
       if (s.passoObiettivoS != null)
-        '${formatPaceSeconds(s.passoObiettivoS!)}/100m',
+        '${formatTempoCompatto(s.passoObiettivoS!)}/100m',
       if (s.recuperoS != null) "rec ${s.recuperoS}''",
-      if (s.ripartenzaS != null) 'rip ${formatPaceSeconds(s.ripartenzaS!)}',
+      if (s.ripartenzaS != null) 'rip ${formatTempoCompatto(s.ripartenzaS!)}',
       if (s.attrezzatura != null && s.attrezzatura!.isNotEmpty) s.attrezzatura!,
     ];
 

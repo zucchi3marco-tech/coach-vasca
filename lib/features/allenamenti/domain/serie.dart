@@ -1,4 +1,26 @@
-class Serie {
+/// I dati di una serie, salvata ([Serie]) o appena scritta a testo e non
+/// ancora salvata (`SerieScritta`): quello che serve per descriverla,
+/// stimarne la durata e disegnarla, senza id né ordine.
+abstract interface class DatiSerie {
+  String get blocco;
+  int get ripetute;
+  int? get distanzaM;
+  int? get durataS;
+  String get stile;
+  String get esecuzione;
+  String? get zona;
+  double? get passoObiettivoS;
+  int? get recuperoS;
+  double? get ripartenzaS;
+  String? get attrezzatura;
+  String? get note;
+
+  /// Righe dello stesso gruppo (una piramide, un "2x") hanno lo stesso
+  /// valore; null per una serie da sola.
+  String? get piramideId;
+}
+
+class Serie implements DatiSerie {
   const Serie({
     required this.id,
     required this.allenamentoId,
@@ -23,24 +45,37 @@ class Serie {
   final String allenamentoId;
   final String clubId;
   final int ordine;
+  @override
   final String blocco; // riscaldamento | principale | defaticamento | altro
+  @override
   final int ripetute;
 
   /// Una serie usa l'una o l'altra, mai entrambe — vedi [aTempo].
+  @override
   final int? distanzaM;
+  @override
   final int? durataS;
+  @override
   final String stile; // libero | dorso | rana | delfino | misti
+  @override
   final String esecuzione; // nuoto | gambe | braccia | pull | tecnica | remate
+  @override
   final String? zona; // A1 | A2 | B1 | B2 | C1 | C2 | C3 | D (C: storico)
+  @override
   final double? passoObiettivoS;
+  @override
   final int? recuperoS;
+  @override
   final double? ripartenzaS;
+  @override
   final String? attrezzatura;
+  @override
   final String? note;
 
   /// Righe della stessa piramide (es. 50-100-200-100-50) condividono
   /// questo id, per raggrupparle in un'unica riga visiva — null per una
   /// serie normale.
+  @override
   final String? piramideId;
 
   /// Metri totali di nuoto — 0 per una serie a tempo: non si stima una
