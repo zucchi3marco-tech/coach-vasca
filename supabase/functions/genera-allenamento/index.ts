@@ -49,6 +49,12 @@ const ESECUZIONI = [
   "tecnica",
   "remate",
   "pallanuoto tecnico-tattico",
+  "palleggio",
+  "tiri",
+  "uomo in più",
+  "uomo in meno",
+  "gioco da schierati",
+  "schemi",
   "a secco",
 ];
 // "C" (senza numero) è uno storico dell'enum del database, tenuto solo
@@ -255,6 +261,28 @@ function istruzioniFocus(p: ParametriGenerazione): string {
   return righe.join("\n");
 }
 
+// Le esecuzioni di pallanuoto aggiunte il 2026-10-08 (migrazione
+// 20261008000200_esecuzioni_pallanuoto.sql). La scheda generata salva
+// solo serie a distanza (distanzaM): il lavoro tattico, che si fa a tempo,
+// non può ancora diventare una serie e va nelle note della scheda.
+const ISTRUZIONI_PALLANUOTO = [
+  "Esecuzioni di pallanuoto, da usare SOLO per un gruppo di pallanuoto " +
+    "(lo dicono il nome del gruppo, i vincoli o i blocchi della libreria), " +
+    "mai per un gruppo di nuoto: \"palleggio\" (nuoto con la palla, testa " +
+    "alta), \"tiri\" (partenza veloce e tiro in porta), \"uomo in più\" e " +
+    "\"uomo in meno\" (superiorità e inferiorità numerica), \"gioco da " +
+    "schierati\" (attacco e difesa a uomini schierati), \"schemi\" (schemi " +
+    "di gioco), \"pallanuoto tecnico-tattico\" (altro lavoro tattico). Con " +
+    "queste esecuzioni lo stile è sempre \"libero\".",
+  "\"palleggio\" e \"tiri\" si scrivono a metri come le altre serie (es. " +
+    "8x25 palleggio, 6x25 tiri). \"uomo in più\", \"uomo in meno\", " +
+    "\"gioco da schierati\" e \"schemi\" sono lavoro a tempo, che questa " +
+    "scheda non può ancora salvare come " +
+    "serie: NON generarle come serie; se la seduta le prevede, scrivile " +
+    "nelle note della scheda con la loro durata (es. \"dopo il nuoto: 15' " +
+    "uomo in più, 10' schemi\"), fuori dal volume in metri.",
+].join("\n");
+
 // La libreria salva lo stile come nell'Excel originale ("Stile libero",
 // "Delfino", ma anche "A scelta"/"Testa alta", non uno degli STILI
 // ammessi per la serie generata): normalizzato qui, non lasciato
@@ -415,6 +443,7 @@ function costruisciPrompt(p: ParametriGenerazione): string {
             "senza zona.",
         ].join("\n")
       : "",
+    ISTRUZIONI_PALLANUOTO,
     istruzioniLibreria(blocchiDisponibili),
     "Nel campo note di una serie scrivi solo indicazioni brevi su COME " +
       "eseguirla (es. \"respirazione ogni 3\", \"progressivi\"), oppure " +
