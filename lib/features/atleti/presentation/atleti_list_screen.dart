@@ -23,6 +23,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../home/area_atleta_home_screen.dart';
 import '../../presenze/application/presenze_providers.dart';
+import '../../presenze/presentation/presenze_stagione_screen.dart';
 import '../../presenze/domain/presenza.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
@@ -52,6 +53,15 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   bool _mostraInattivi = false;
   String _ricerca = '';
   _Ordinamento _ordinamento = _Ordinamento.cognome;
+
+  void _apriPresenze() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PresenzeStagioneScreen(
+        clubId: widget.clubId,
+        gruppoId: widget.filtroGruppoId,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +125,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   NumeroTestata(
                     valore: presenzeMedie,
                     etichetta: 'Presenze medie',
+                    onTap: _apriPresenze,
                   ),
                   NumeroTestata(
                     valore: '$inattivi',
@@ -134,6 +145,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                     etichetta: 'Nuovo atleta',
                     principale: true,
                     onTap: () => _apriForm(context),
+                  ),
+                  AzioneTestata(
+                    icona: Icons.calendar_view_month,
+                    etichetta: 'Presenze',
+                    onTap: _apriPresenze,
                   ),
                 ],
               ),

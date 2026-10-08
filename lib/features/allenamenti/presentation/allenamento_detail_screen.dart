@@ -21,6 +21,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../libreria_blocchi/data/training_blocks_repository.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
+import '../application/passo_riferimento_provider.dart';
 import '../data/allenamenti_repository.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
@@ -416,6 +417,12 @@ class _AllenamentoDetailScreenState
         ? allenamento.titolo!
         : 'Allenamento';
     final serieCaricate = serieAsync.value ?? const <Serie>[];
+    final riferimento = ref.watch(
+      passoRiferimentoProvider((
+        clubId: allenamento.clubId,
+        gruppoId: allenamento.gruppoId,
+      )),
+    );
     final metri = serieCaricate.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
 
     // Le due cose che si fanno a bordo vasca stanno in vista nella
@@ -438,7 +445,8 @@ class _AllenamentoDetailScreenState
                     etichetta: 'Serie',
                   ),
                   NumeroTestata(
-                    valore: "${minutiStimati(serieCaricate)}'",
+                    valore:
+                        "${minutiStimati(serieCaricate, riferimento: riferimento)}'",
                     etichetta: 'Durata stimata',
                   ),
                 ],
@@ -580,7 +588,10 @@ class _AllenamentoDetailScreenState
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.s16),
-                  child: GraficoIntensita(serie: serie),
+                  child: GraficoIntensita(
+                    serie: serie,
+                    riferimento: riferimento,
+                  ),
                 ),
               ],
             ),

@@ -25,6 +25,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
+import '../application/passo_riferimento_provider.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
@@ -78,6 +79,7 @@ class _SchedaBordoVascaScreenState
   /// seduta, finché non si cambiano.
   int _gruppi = 1;
   int _distaccoS = 10;
+  bool _suono = true;
 
   /// Una chiave globale per l'orologio di ogni serie: girando il telefono
   /// l'orologio passa da una colonna a una riga di tre bande, e senza
@@ -211,10 +213,18 @@ class _SchedaBordoVascaScreenState
                             GlobalKey.new,
                           ),
                           serie: serie[indice],
+                          riferimento: ref.watch(
+                            passoRiferimentoProvider((
+                              clubId: allenamento.clubId,
+                              gruppoId: allenamento.gruppoId,
+                            )),
+                          ),
                           gruppi: _gruppi,
                           distaccoS: _distaccoS,
                           onGruppi: (g) => setState(() => _gruppi = g),
                           onDistacco: (d) => setState(() => _distaccoS = d),
+                          suono: _suono,
+                          onSuono: (s) => setState(() => _suono = s),
                           onFinita: () => _finitaDallOrologio(
                             serie[indice],
                             indice,

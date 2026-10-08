@@ -11,13 +11,18 @@ import 'serie.dart';
 
 /// Ogni quanto parte una ripetuta di [s], in secondi: la ripartenza se
 /// c'è, nelle serie a tempo durata più recupero, altrimenti la stima di
-/// [secondiPerRipetuta] arrotondata ai 5 secondi, come si dà una
-/// partenza a voce ([stimato] vero: l'allenatore può correggerla).
-({double secondi, bool stimato}) intervalloPartenze(DatiSerie s) {
+/// [secondiPerRipetuta] (sul passo del gruppo, se si conosce)
+/// arrotondata ai 5 secondi, come si dà una partenza a voce ([stimato]
+/// vero: l'allenatore può correggerla).
+({double secondi, bool stimato}) intervalloPartenze(
+  DatiSerie s, {
+  PassoRiferimento? riferimento,
+}) {
   if (s.durataS != null || s.ripartenzaS != null) {
     return (secondi: secondiPerRipetuta(s), stimato: false);
   }
-  final stima = (secondiPerRipetuta(s) / 5).round() * 5.0;
+  final stima =
+      (secondiPerRipetuta(s, riferimento: riferimento) / 5).round() * 5.0;
   return (secondi: math.max(stima, 5), stimato: true);
 }
 

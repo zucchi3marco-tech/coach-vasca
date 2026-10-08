@@ -5,6 +5,38 @@ import 'serie.dart';
 /// quando non conosce le corsie.
 const passoMedioS = 110.0;
 
+/// Il passo di riferimento di un gruppo: quello della sua corsia più
+/// lenta (chi arriva per ultimo detta i tempi della seduta), dal primato
+/// sui 100 stile libero e dal differenziale T200-T100 quando c'è — gli
+/// stessi dati delle corsie del generatore (`assegnaCorsie`).
+typedef PassoRiferimento = ({double passo100S, double? differenzialeS});
+
+/// `OFFSET_SOGLIA_B1_S` della Edge Function.
+const _offsetSogliaB1S = 3.5;
+
+/// Il passo di nuoto (s/100m) in una zona. Con il [riferimento] del gruppo
+/// segue le regole di `passoPerZona` della Edge Function (più lento nelle
+/// zone aerobiche, vicino al primato in quelle lattacide); una serie
+/// senza zona si conta come A1. Senza riferimento: [passoMedioS].
+double passoPerZona(String? zona, PassoRiferimento? riferimento) {
+  if (riferimento == null) return passoMedioS;
+  final passo100 = riferimento.passo100S;
+  // Senza il primato sui 200 (o con uno incoerente, più veloce del passo
+  // sui 100) il differenziale si stima dal 100.
+  final differenziale = switch (riferimento.differenzialeS) {
+    final d? when d >= passo100 => d,
+    _ => passo100 * 1.15,
+  };
+  return switch (zona) {
+    null || 'A1' => differenziale + _offsetSogliaB1S + 12,
+    'A2' => differenziale + _offsetSogliaB1S + 5,
+    'B1' => differenziale + _offsetSogliaB1S,
+    'B2' => differenziale,
+    'C1' || 'D' => passo100 + 1.5,
+    _ => passo100,
+  };
+}
+
 /// Gambe e tecnica sono più lente del nuoto completo: stessi fattori di
 /// `FATTORE_ESECUZIONE` nella Edge Function (stima di partenza, non una
 /// formula del coach — da calibrare con l'uso reale).
@@ -51,22 +83,31 @@ int recuperoPredefinito(String? zona, int distanzaM) {
 /// - Serie a tempo: la durata più il recupero scritto.
 /// - Con la ripartenza: la ripartenza (comprende già il recupero).
 /// - Altrimenti: la distanza al passo obiettivo — o, senza, al passo
-///   medio rallentato per gambe/tecnica — più il recupero scritto o
-///   quello tipico della zona.
-double secondiPerRipetuta(DatiSerie s) {
+///   della zona per il gruppo ([passoPerZona], il passo medio se non si
+///   conosce il gruppo) rallentato per gambe/tecnica — più il recupero
+///   scritto o quello tipico della zona.
+double secondiPerRipetuta(DatiSerie s, {PassoRiferimento? riferimento}) {
   final durata = s.durataS;
   if (durata != null) return (durata + (s.recuperoS ?? 0)).toDouble();
   final ripartenza = s.ripartenzaS;
   if (ripartenza != null) return ripartenza;
   final distanza = s.distanzaM ?? 0;
   final passo =
-      s.passoObiettivoS ?? passoMedioS * (fattoreEsecuzione[s.esecuzione] ?? 1);
+      s.passoObiettivoS ??
+      passoPerZona(s.zona, riferimento) *
+          (fattoreEsecuzione[s.esecuzione] ?? 1);
   return passo * distanza / 100 +
       (s.recuperoS ?? recuperoPredefinito(s.zona, distanza));
 }
 
-double secondiSerie(DatiSerie s) => s.ripetute * secondiPerRipetuta(s);
+double secondiSerie(DatiSerie s, {PassoRiferimento? riferimento}) =>
+    s.ripetute * secondiPerRipetuta(s, riferimento: riferimento);
 
 /// La durata stimata di un allenamento, in minuti interi.
-int minutiStimati(Iterable<DatiSerie> serie) =>
-    (serie.fold<double>(0, (t, s) => t + secondiSerie(s)) / 60).round();
+int minutiStimati(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) =>
+    (serie.fold<double>(
+              0,
+              (t, s) => t + secondiSerie(s, riferimento: riferimento),
+            ) /
+            60)
+        .round();

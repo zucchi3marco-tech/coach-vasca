@@ -30,9 +30,17 @@ const _altezzaSenzaZona = 0.18;
 /// legenda delle zone usate (il colore non basta mai da solo, DESIGN.md
 /// sezione 7); sotto, i minuti.
 class GraficoIntensita extends StatelessWidget {
-  const GraficoIntensita({required this.serie, this.altezza = 56, super.key});
+  const GraficoIntensita({
+    required this.serie,
+    this.riferimento,
+    this.altezza = 56,
+    super.key,
+  });
 
   final List<DatiSerie> serie;
+
+  /// Il passo del gruppo per stimare quanto dura ogni ripetuta.
+  final PassoRiferimento? riferimento;
 
   /// Altezza delle barre, senza legenda e minuti.
   final double altezza;
@@ -41,7 +49,10 @@ class GraficoIntensita extends StatelessWidget {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final dominio = context.dominio;
-    final totale = serie.fold<double>(0, (t, s) => t + secondiSerie(s));
+    final totale = serie.fold<double>(
+      0,
+      (t, s) => t + secondiSerie(s, riferimento: riferimento),
+    );
     if (totale <= 0) return const SizedBox.shrink();
 
     final usate = {for (final s in serie) ?s.zona};
@@ -53,7 +64,7 @@ class GraficoIntensita extends StatelessWidget {
     final barre = [
       for (final s in serie)
         (
-          secondi: secondiPerRipetuta(s),
+          secondi: secondiPerRipetuta(s, riferimento: riferimento),
           ripetute: s.ripetute,
           altezza: _altezzaZona[s.zona] ?? _altezzaSenzaZona,
           colore: s.zona == null

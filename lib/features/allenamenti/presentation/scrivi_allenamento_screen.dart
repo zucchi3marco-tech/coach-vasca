@@ -11,6 +11,7 @@ import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/secondary_button.dart';
+import '../application/passo_riferimento_provider.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/durata_serie.dart';
@@ -224,11 +225,17 @@ class _ScriviAllenamentoScreenState
     final colori = context.colori;
     final scritto = interpretaAllenamento(_controller.text);
     final corrente = _rigaCorrente(scritto);
+    final riferimento = ref.watch(
+      passoRiferimentoProvider((
+        clubId: widget.allenamento.clubId,
+        gruppoId: widget.allenamento.gruppoId,
+      )),
+    );
 
     final editor = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Riepilogo(scritto: scritto),
+        _Riepilogo(scritto: scritto, riferimento: riferimento),
         const SizedBox(height: AppSpacing.s16),
         Text(
           'Una serie per riga',
@@ -355,9 +362,10 @@ String _comeCapita(RigaScritta riga) => switch (riga.tipo) {
 };
 
 class _Riepilogo extends StatelessWidget {
-  const _Riepilogo({required this.scritto});
+  const _Riepilogo({required this.scritto, required this.riferimento});
 
   final AllenamentoScritto scritto;
+  final PassoRiferimento? riferimento;
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +394,10 @@ class _Riepilogo extends StatelessWidget {
                   style: numero,
                 ),
                 TextSpan(text: '   circa ', style: etichetta),
-                TextSpan(text: "${minutiStimati(serie)}'", style: numero),
+                TextSpan(
+                  text: "${minutiStimati(serie, riferimento: riferimento)}'",
+                  style: numero,
+                ),
                 TextSpan(text: '   ', style: etichetta),
                 TextSpan(
                   text: '${raggruppaPerPiramide(serie).length}',
@@ -398,7 +409,16 @@ class _Riepilogo extends StatelessWidget {
           ),
           if (serie.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.s12),
-            GraficoIntensita(serie: serie),
+            GraficoIntensita(serie: serie, riferimento: riferimento),
+            const SizedBox(height: AppSpacing.s8),
+            Text(
+              riferimento == null
+                  ? "Minuti stimati su un passo medio di 1'50'' ogni 100 m: "
+                        'nel gruppo mancano i primati sui 100 stile libero.'
+                  : 'Minuti stimati sui primati del gruppo (la corsia più '
+                        'lenta), zona per zona.',
+              style: etichetta,
+            ),
           ],
         ],
       ),
