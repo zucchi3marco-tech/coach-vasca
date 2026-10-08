@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -77,8 +78,20 @@ class PresenzeRepository {
   /// Sostituzione totale delle presenze del club — vedi [refreshFromRemote]
   /// per il motivo (upsert per id non basta, una riga sparita da remoto
   /// deve sparire anche in locale).
+  ///
+  /// A pagine ([leggiAPagine]): in una stagione le presenze del club
+  /// superano le 1000 righe, il massimo per richiesta, e oltre la risposta
+  /// si tronca senza errore (le percentuali si calcolerebbero su una
+  /// parte).
   Future<void> refreshFromRemotePerClub(String clubId) async {
-    final rows = await _client.from('presenze').select().eq('club_id', clubId);
+    final rows = await leggiAPagine(
+      (da, a) => _client
+          .from('presenze')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
     await _db.transaction(() async {
       await (_db.delete(
         _db.presenzeTable,

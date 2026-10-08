@@ -34,6 +34,9 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Per i test: un database qualsiasi, di solito in memoria.
+  AppDatabase.perTest(super.e);
+
   @override
   int get schemaVersion => 31;
 

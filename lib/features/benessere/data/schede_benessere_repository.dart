@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -89,11 +90,17 @@ class SchedeBenessereRepository {
   }
 
   /// Sostituzione totale per il club (solo l'allenatore la vede tutta).
+  /// A pagine: una scheda per atleta al giorno supera presto le 1000
+  /// righe per richiesta (vedi [leggiAPagine]).
   Future<void> refreshFromRemoteClub(String clubId) async {
-    final righe = await _client
-        .from('schede_benessere')
-        .select()
-        .eq('club_id', clubId);
+    final righe = await leggiAPagine(
+      (da, a) => _client
+          .from('schede_benessere')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
     await _db.transaction(() async {
       await (_db.delete(
         _db.schedeBenessereTable,

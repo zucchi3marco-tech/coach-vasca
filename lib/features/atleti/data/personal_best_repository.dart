@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -75,10 +76,14 @@ class PersonalBestRepository {
   /// Sostituzione totale per il club (non insertOrReplace): un PB
   /// eliminato fuori dall'app resterebbe altrimenti "fantasma" in cache.
   Future<void> refreshFromRemoteClub(String clubId) async {
-    final rows = await _client
-        .from('personal_best')
-        .select()
-        .eq('club_id', clubId);
+    final rows = await leggiAPagine(
+      (da, a) => _client
+          .from('personal_best')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
     await _db.transaction(() async {
       await (_db.delete(
         _db.personalBestTable,

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -245,17 +246,27 @@ class TrainingBlocksRepository {
   /// Sostituzione totale per questo club (non insertOrReplace): un
   /// blocco eliminato fuori dall'app resterebbe altrimenti in cache.
   Future<void> refreshFromRemote(String clubId) async {
-    final blocchi = await _client
-        .from('training_blocks')
-        .select()
-        .eq('club_id', clubId);
-    final idBlocchi = [for (final b in blocchi) b['id'] as String];
-    final parti = idBlocchi.isEmpty
+    // A pagine (vedi [leggiAPagine]). Le parti per club e non per elenco
+    // di blocchi: con centinaia di id in una richiesta l'indirizzo
+    // diventava troppo lungo.
+    final blocchi = await leggiAPagine(
+      (da, a) => _client
+          .from('training_blocks')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
+    final parti = blocchi.isEmpty
         ? <Map<String, dynamic>>[]
-        : await _client
-              .from('training_block_parti')
-              .select()
-              .inFilter('blocco_id', idBlocchi);
+        : await leggiAPagine(
+            (da, a) => _client
+                .from('training_block_parti')
+                .select()
+                .eq('club_id', clubId)
+                .order('id')
+                .range(da, a),
+          );
     await _db.transaction(() async {
       await (_db.delete(
         _db.trainingBlocksTable,
@@ -406,10 +417,14 @@ class TrainingBlocksRepository {
     var codiceCopia = '${originale.codice}-copia';
     Set<String> codiciEsistenti;
     try {
-      final esistenti = await _client
-          .from('training_blocks')
-          .select('codice')
-          .eq('club_id', originale.clubId);
+      final esistenti = await leggiAPagine(
+        (da, a) => _client
+            .from('training_blocks')
+            .select('id, codice')
+            .eq('club_id', originale.clubId)
+            .order('id')
+            .range(da, a),
+      );
       codiciEsistenti = {for (final r in esistenti) r['codice'] as String};
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -733,10 +748,16 @@ class TrainingBlocksRepository {
     String clubId,
     RisultatoParsingLibreria parsed,
   ) async {
-    final esistenti = await _client
-        .from('training_blocks')
-        .select('id, codice, modificato_in_app')
-        .eq('club_id', clubId);
+    // Tutti, a pagine: oltre i primi 1000 un blocco già importato
+    // sembrerebbe nuovo e verrebbe duplicato.
+    final esistenti = await leggiAPagine(
+      (da, a) => _client
+          .from('training_blocks')
+          .select('id, codice, modificato_in_app')
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
     final perCodice = {for (final r in esistenti) r['codice'] as String: r};
 
     var importati = 0;

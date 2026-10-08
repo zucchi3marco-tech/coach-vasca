@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -59,12 +60,16 @@ class AllenamentiRepository {
     required DateTime dataFine,
   }) async {
     try {
-      final rows = await _client
-          .from('allenamenti')
-          .select()
-          .eq('club_id', clubId)
-          .gte('data', formatDateOnly(dataInizio))
-          .lte('data', formatDateOnly(dataFine));
+      final rows = await leggiAPagine(
+        (da, a) => _client
+            .from('allenamenti')
+            .select()
+            .eq('club_id', clubId)
+            .gte('data', formatDateOnly(dataInizio))
+            .lte('data', formatDateOnly(dataFine))
+            .order('id')
+            .range(da, a),
+      );
       return [for (final r in rows) Allenamento.fromMap(r)];
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -85,8 +90,9 @@ class AllenamentiRepository {
   /// che espone solo id/data/titolo/gruppo, mai `note`.
   Future<List<Allenamento>> fetchPerAtleta(String clubId) async {
     try {
-      final risposta = await _client.rpc('allenamenti_atleta');
-      final righe = (risposta as List).cast<Map<String, dynamic>>();
+      final righe = await leggiAPagine(
+        (da, a) => _client.rpc('allenamenti_atleta').order('id').range(da, a),
+      );
       return righe.map(Allenamento.fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -101,10 +107,16 @@ class AllenamentiRepository {
   /// allenamento eliminato fuori dall'app resterebbe altrimenti in cache
   /// a tempo indeterminato.
   Future<void> refreshFromRemote(String clubId) async {
-    final rows = await _client
-        .from('allenamenti')
-        .select()
-        .eq('club_id', clubId);
+    // A pagine, come tutte le letture dell'intero club (vedi
+    // [leggiAPagine]).
+    final rows = await leggiAPagine(
+      (da, a) => _client
+          .from('allenamenti')
+          .select()
+          .eq('club_id', clubId)
+          .order('id')
+          .range(da, a),
+    );
     await _db.transaction(() async {
       await (_db.delete(
         _db.allenamentiTable,

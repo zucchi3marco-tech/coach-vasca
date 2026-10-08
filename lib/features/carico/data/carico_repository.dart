@@ -79,11 +79,12 @@ class CaricoRepository {
   Future<Map<String, DateTime>> _dataPerAllenamento(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
-      final risposta = await _client.rpc(
-        'allenamenti_per_carico',
-        params: {'p_club_id': clubId},
+      righe = await leggiAPagine(
+        (da, a) => _client
+            .rpc('allenamenti_per_carico', params: {'p_club_id': clubId})
+            .order('id')
+            .range(da, a),
       );
-      righe = (risposta as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       final locali = await (_db.select(
