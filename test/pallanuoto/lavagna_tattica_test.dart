@@ -13,7 +13,10 @@ class _Disegno {
   List<TestoLavagna> testi = const [];
 }
 
-Future<_Disegno> _apriLavagna(WidgetTester tester) async {
+Future<_Disegno> _apriLavagna(
+  WidgetTester tester, {
+  CampoLavagna campo = CampoLavagna.meta,
+}) async {
   tester.view.physicalSize = const Size(800, 1400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -24,7 +27,7 @@ Future<_Disegno> _apriLavagna(WidgetTester tester) async {
       home: Scaffold(
         body: SingleChildScrollView(
           child: WaterPoloTacticsBoard(
-            campo: CampoLavagna.meta,
+            campo: campo,
             onCambiato: (passo) {
               disegno
                 ..giocatori = passo.giocatori
@@ -74,10 +77,22 @@ Finder _semantica(String etichetta) => find.byWidgetPredicate(
 );
 
 void main() {
+  testWidgets('a metà campo un solo portiere', (tester) async {
+    final disegno = await _apriLavagna(tester);
+    await tester.tap(find.text('Portiere'));
+    await tester.pump();
+    for (final x in [0.3, 0.7]) {
+      await tester.tapAt(_punto(tester, x, 0.2));
+      await tester.pump();
+    }
+    expect(disegno.giocatori, hasLength(1));
+    expect(find.textContaining('un solo portiere'), findsOneWidget);
+  });
+
   testWidgets('il portiere ha la calottina rossa con la P, al massimo due', (
     tester,
   ) async {
-    final disegno = await _apriLavagna(tester);
+    final disegno = await _apriLavagna(tester, campo: CampoLavagna.intero);
     await tester.tap(find.text('Portiere'));
     await tester.pump();
 

@@ -74,8 +74,19 @@ class _SchemaTatticoFormScreenState
     _titoloController = TextEditingController(text: s?.titolo ?? '');
     _categoriaController = TextEditingController(text: s?.categoria ?? '');
     _gruppoIdsSelezionati = {...?s?.gruppoIds};
-    _passi = List.of(s?.passi ?? const [passoSchemaVuoto]);
     _campo = CampoLavagna.values.byName(s?.campo ?? 'intero');
+    // Uno schema nuovo parte con i portieri già in porta.
+    _passi = List.of(
+      s?.passi ??
+          [
+            passoSchemaDaLavagna((
+              giocatori: portieriInPorta(_campo),
+              frecce: const [],
+              zone: const [],
+              testi: const [],
+            )),
+          ],
+    );
   }
 
   @override

@@ -24,7 +24,8 @@ const _spiegazioneLavagna =
     'doppio tocco per toglierlo. Per spostarlo trascinalo, oppure '
     'toccalo (si evidenzia) e poi tocca il punto di arrivo. Al massimo 7 '
     'calottine per colore, numerate in ordine di piazzamento, e 2 '
-    'portieri.\n\n'
+    'portieri (uno solo a metà campo): una lavagna nuova parte con i '
+    'portieri già in porta.\n\n'
     'La palla è una sola: toccala e poi tocca il giocatore che la riceve '
     'per agganciargliela, lo seguirà finché non la riassegni. Quando non '
     'è agganciata si sposta come un giocatore.\n\n'
@@ -228,6 +229,21 @@ enum CampoLavagna {
 
   /// Acqua disegnata dietro ogni linea di porta, dove sta la rete.
   static const metriDietroPorta = 1.0;
+}
+
+/// I portieri in porta, al centro e mezzo metro davanti alla linea: uno
+/// per porta sul campo intero, uno solo a metà campo. Una lavagna nuova
+/// parte da qui (richiesta del coach 2026-10-08: "per non sbagliare").
+List<GiocatoreLavagna> portieriInPorta(CampoLavagna campo) {
+  final y = (CampoLavagna.metriDietroPorta + 0.5) / campo.metriInAltezza;
+  return [
+    GiocatoreLavagna(posizione: Offset(0.5, y), colore: ColoreLavagna.rosso),
+    if (campo == CampoLavagna.intero)
+      GiocatoreLavagna(
+        posizione: Offset(0.5, 1 - y),
+        colore: ColoreLavagna.rosso,
+      ),
+  ];
 }
 
 /// Un giocatore piazzato sulla lavagna: posizione frazionaria (0-1 su
@@ -748,11 +764,14 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
       return;
     }
     final giaPresenti = _giocatori.where((g) => g.colore == _pezzo).length;
-    if (giaPresenti >= _pezzo.massimoInAcqua) {
+    if (giaPresenti >= _massimoInAcqua(_pezzo)) {
       final messaggio = switch (_pezzo) {
         ColoreLavagna.giallo =>
           'Puoi avere una sola palla: tocca quella già piazzata per '
               'riassegnarla a un altro giocatore.',
+        ColoreLavagna.rosso when widget.campo == CampoLavagna.meta =>
+          'A metà campo c\'è una porta sola: un solo portiere. Per '
+              'spostarlo trascinalo.',
         ColoreLavagna.rosso => 'Al massimo 2 portieri, uno per squadra.',
         _ =>
           'Massimo ${WaterPoloTacticsBoard.massimoGiocatoriPerColore} '
@@ -815,6 +834,29 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
   bool get _vuoto =>
       _giocatori.isEmpty && _frecce.isEmpty && _zone.isEmpty && _testi.isEmpty;
 
+  /// Come appena aperta: solo i portieri in porta ([portieriInPorta]).
+  bool get _comeNuova {
+    final portieri = portieriInPorta(widget.campo);
+    if (_frecce.isNotEmpty || _zone.isNotEmpty || _testi.isNotEmpty) {
+      return false;
+    }
+    if (_giocatori.length != portieri.length) return false;
+    for (var i = 0; i < portieri.length; i++) {
+      if (_giocatori[i].colore != portieri[i].colore ||
+          (_giocatori[i].posizione - portieri[i].posizione).distance > 0.001) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Quanti pezzi di [pezzo] possono stare in acqua su questo campo: a
+  /// metà campo c'è una porta sola, quindi un solo portiere.
+  int _massimoInAcqua(ColoreLavagna pezzo) =>
+      pezzo == ColoreLavagna.rosso && widget.campo == CampoLavagna.meta
+      ? 1
+      : pezzo.massimoInAcqua;
+
   void _registraCronologia() {
     _cronologia.add(_istantanea);
     _annullati.clear();
@@ -851,10 +893,13 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
     _ripristina(_annullati.removeLast());
   }
 
+  /// Si riparte da una lavagna nuova: i portieri restano in porta.
   void _cancellaTutto() {
     _registraCronologia();
     setState(() {
-      _giocatori.clear();
+      _giocatori
+        ..clear()
+        ..addAll(portieriInPorta(widget.campo));
       _frecce.clear();
       _zone.clear();
       _testi.clear();
@@ -998,7 +1043,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
 
   Future<void> _cambiaCampo(CampoLavagna nuovo) async {
     if (nuovo == widget.campo) return;
-    if (!_vuoto) {
+    if (!_vuoto && !_comeNuova) {
       final conferma = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -1021,19 +1066,22 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
         ),
       );
       if (conferma != true) return;
-      setState(() {
-        _giocatori.clear();
-        _frecce.clear();
-        _zone.clear();
-        _testi.clear();
-        // Le posizioni salvate nella cronologia erano per il campo
-        // precedente: non avrebbero più senso qui.
-        _cronologia.clear();
-        _annullati.clear();
-        _deselezionaTutto();
-      });
-      _notifica();
     }
+    setState(() {
+      // Sul campo nuovo si riparte con i suoi portieri in porta.
+      _giocatori
+        ..clear()
+        ..addAll(portieriInPorta(nuovo));
+      _frecce.clear();
+      _zone.clear();
+      _testi.clear();
+      // Le posizioni salvate nella cronologia erano per il campo
+      // precedente: non avrebbero più senso qui.
+      _cronologia.clear();
+      _annullati.clear();
+      _deselezionaTutto();
+    });
+    _notifica();
     widget.onCampoCambiato?.call(nuovo);
   }
 
@@ -1100,7 +1148,7 @@ class _WaterPoloTacticsBoardState extends State<WaterPoloTacticsBoard> {
           'Elimina la scritta scelta',
           _eliminaTestoSelezionato,
         ),
-        _ => ('Cancella tutto', vuoto ? null : _cancellaTutto),
+        _ => ('Cancella tutto', vuoto || _comeNuova ? null : _cancellaTutto),
       };
       final strumenti = <Widget>[
         const PulsanteSpiegazione(

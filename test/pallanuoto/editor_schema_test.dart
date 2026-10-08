@@ -89,12 +89,29 @@ void main() {
         .map((c) => c.painter)
         .whereType<MiniaturaPassoPainter>()
         .single;
-    expect(miniatura().passo.giocatori, isEmpty);
+    // Uno schema nuovo parte con i due portieri in porta.
+    expect(miniatura().passo.giocatori, hasLength(2));
 
     await tester.tapAt(_punto(tester, 0.3, 0.6));
     await tester.pump();
 
-    expect(miniatura().passo.giocatori, hasLength(1));
+    expect(miniatura().passo.giocatori, hasLength(3));
+    await _chiudi(tester);
+  });
+
+  testWidgets('portieri in porta: due sul campo intero, uno a metà campo', (
+    tester,
+  ) async {
+    await _apriEditor(tester);
+    expect(_semantica('Portiere 1'), findsWidgets);
+    expect(_semantica('Portiere 2'), findsWidgets);
+
+    // Solo i portieri: si cambia campo senza chiedere conferma.
+    await tester.tap(find.text('Metà campo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cambiare campo?'), findsNothing);
+    expect(_semantica('Portiere 1'), findsWidgets);
+    expect(_semantica('Portiere 2'), findsNothing);
     await _chiudi(tester);
   });
 
