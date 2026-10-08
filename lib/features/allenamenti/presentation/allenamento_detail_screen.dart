@@ -23,6 +23,7 @@ import '../../presenze/presentation/presenze_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../application/passo_riferimento_provider.dart';
 import '../data/allenamenti_repository.dart';
+import '../data/duplicazione_settimana_service.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/durata_serie.dart';
@@ -30,6 +31,7 @@ import '../domain/riordino_serie.dart';
 import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
 import 'allenamento_form_screen.dart';
+import 'duplica_allenamento_dialog.dart';
 import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
@@ -369,6 +371,50 @@ class _AllenamentoDetailScreenState
     }
   }
 
+  /// Copia l'allenamento (anche per un'altra squadra) e apre la copia,
+  /// pronta da modificare.
+  Future<void> _duplica(Allenamento allenamento) async {
+    final gruppi =
+        ref.read(gruppiListProvider(allenamento.clubId)).value ?? const [];
+    final dove = await chiediDoveDuplicare(
+      context,
+      allenamento: allenamento,
+      gruppi: gruppi,
+    );
+    if (dove == null || !mounted) return;
+    final messaggero = ScaffoldMessenger.of(context);
+    final navigatore = Navigator.of(context);
+    try {
+      final copia = await ref
+          .read(duplicazioneSettimanaServiceProvider)
+          .copiaAllenamento(
+            allenamento,
+            data: dove.data,
+            gruppoId: dove.gruppoId,
+          );
+      final squadra = gruppi
+          .where((g) => g.id == dove.gruppoId)
+          .firstOrNull
+          ?.nome;
+      messaggero.showSnackBar(
+        SnackBar(
+          content: Text(
+            squadra == null
+                ? 'Allenamento copiato: ora puoi modificarlo'
+                : 'Copiato per $squadra: ora puoi modificarlo',
+          ),
+        ),
+      );
+      await navigatore.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => AllenamentoDetailScreen(allenamento: copia),
+        ),
+      );
+    } catch (e) {
+      _errore(e);
+    }
+  }
+
   Future<void> _eliminaAllenamento(Allenamento allenamento) async {
     final conferma = await showDialog<bool>(
       context: context,
@@ -524,6 +570,13 @@ class _AllenamentoDetailScreenState
                 child: const _VoceMenu(
                   icona: Icons.edit_outlined,
                   etichetta: 'Modifica data, titolo e note',
+                ),
+              ),
+              PopupMenuItem(
+                value: () => _duplica(allenamento),
+                child: const _VoceMenu(
+                  icona: Icons.copy_all_outlined,
+                  etichetta: 'Duplica (anche per un\'altra squadra)',
                 ),
               ),
               PopupMenuItem(

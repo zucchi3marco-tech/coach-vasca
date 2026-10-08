@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/utils/giorni.dart';
 import '../domain/allenamento.dart';
@@ -18,25 +19,25 @@ class DuplicazioneSettimanaService {
   final AllenamentiRepository _allenamenti;
   final SerieRepository _serie;
 
-  Future<void> _duplicaAllenamento(
+  /// Copia un allenamento con tutte le sue serie in [data], per
+  /// [gruppoId] — anche un'altra squadra ("Duplica" nel dettaglio,
+  /// richiesta del coach 2026-10-08). Le piramidi e i "2x" restano
+  /// gruppi, con un `piramideId` nuovo; l'esito (fatta/saltata) no.
+  Future<Allenamento> copiaAllenamento(
     Allenamento sorgente, {
-    required String clubId,
-    required DateTime dataInizioSorgente,
-    required DateTime nuovaDataInizio,
+    required DateTime data,
+    required String? gruppoId,
   }) async {
-    // Stesso spostamento in giorni di calendario per ogni seduta, tenendo
-    // l'orario: con "+N x 24 ore" la settimana del cambio dell'ora finiva
-    // su un giorno sbagliato e l'ora della seduta si perdeva.
-    final spostamento = giorniTra(dataInizioSorgente, nuovaDataInizio);
     final nuovo = await _allenamenti.createAllenamento(
-      clubId: clubId,
-      data: aggiungiGiorni(sorgente.data, spostamento),
+      clubId: sorgente.clubId,
+      data: data,
       titolo: sorgente.titolo,
-      gruppoId: sorgente.gruppoId,
+      gruppoId: gruppoId,
       note: sorgente.note,
     );
 
     final serie = await _serie.fetchPerAllenamento(sorgente.id);
+    final gruppi = <String, String>{};
     await Future.wait([
       for (final s in serie)
         _serie.createSerie(
@@ -54,8 +55,28 @@ class DuplicazioneSettimanaService {
           ripartenzaS: s.ripartenzaS,
           attrezzatura: s.attrezzatura,
           note: s.note,
+          piramideId: s.piramideId == null
+              ? null
+              : gruppi.putIfAbsent(s.piramideId!, () => const Uuid().v4()),
         ),
     ]);
+    return nuovo;
+  }
+
+  Future<void> _duplicaAllenamento(
+    Allenamento sorgente, {
+    required DateTime dataInizioSorgente,
+    required DateTime nuovaDataInizio,
+  }) async {
+    // Stesso spostamento in giorni di calendario per ogni seduta, tenendo
+    // l'orario: con "+N x 24 ore" la settimana del cambio dell'ora finiva
+    // su un giorno sbagliato e l'ora della seduta si perdeva.
+    final spostamento = giorniTra(dataInizioSorgente, nuovaDataInizio);
+    await copiaAllenamento(
+      sorgente,
+      data: aggiungiGiorni(sorgente.data, spostamento),
+      gruppoId: sorgente.gruppoId,
+    );
   }
 
   /// Torna il numero di allenamenti duplicati.
@@ -78,7 +99,6 @@ class DuplicazioneSettimanaService {
       for (final a in sorgenti)
         _duplicaAllenamento(
           a,
-          clubId: clubId,
           dataInizioSorgente: dataInizioSorgente,
           nuovaDataInizio: nuovaDataInizio,
         ),
