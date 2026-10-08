@@ -8,6 +8,7 @@ const esecuzioniSerie = [
   'pull',
   'tecnica',
   'remate',
+  'test',
   'pallanuoto tecnico-tattico',
   'palleggio',
   'tiri',
@@ -15,6 +16,7 @@ const esecuzioniSerie = [
   'uomo in meno',
   'gioco da schierati',
   'schemi',
+  'partita',
   'a secco',
 ];
 
@@ -28,6 +30,7 @@ const esecuzioniSenzaStile = {
   'uomo in meno',
   'gioco da schierati',
   'schemi',
+  'partita',
   'a secco',
 };
 

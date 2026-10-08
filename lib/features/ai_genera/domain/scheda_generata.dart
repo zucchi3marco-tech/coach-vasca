@@ -1,3 +1,5 @@
+import '../../allenamenti/domain/serie.dart';
+
 /// Proposta di scheda restituita dalla generazione AI, già validata lato
 /// server (Edge Function) contro i valori noti di blocco/stile/esecuzione/
 /// zona. Non è ancora un `Allenamento` salvato: la conferma manuale del
@@ -68,12 +70,15 @@ class RipartenzaCorsia {
   }
 }
 
-class SerieGenerata {
+/// Una serie della scheda proposta: a distanza o a tempo (dal 2026-10-08,
+/// per il lavoro tattico di pallanuoto), mai entrambe — come [Serie].
+class SerieGenerata implements DatiSerie {
   const SerieGenerata({
     required this.ordine,
     required this.blocco,
     required this.ripetute,
-    required this.distanzaM,
+    this.distanzaM,
+    this.durataS,
     required this.stile,
     required this.esecuzione,
     this.zona,
@@ -86,15 +91,35 @@ class SerieGenerata {
   });
 
   final int ordine;
+  @override
   final String blocco;
+  @override
   final int ripetute;
-  final int distanzaM;
+  @override
+  final int? distanzaM;
+  @override
+  final int? durataS;
+  @override
   final String stile;
+  @override
   final String esecuzione;
+  @override
   final String? zona;
+  @override
   final int? recuperoS;
+  @override
   final String? attrezzatura;
+  @override
   final String? note;
+
+  // La scheda proposta non ha passo, ripartenza unica né gruppi: le
+  // ripartenze sono per corsia ([ripartenzePerCorsia]).
+  @override
+  double? get passoObiettivoS => null;
+  @override
+  double? get ripartenzaS => null;
+  @override
+  String? get piramideId => null;
 
   /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
   /// la generazione non aveva passi di riferimento da usare, o se questo
@@ -111,14 +136,16 @@ class SerieGenerata {
   /// approvare (vedi `TrainingBlocksRepository.salvaSerieComeBlocco`).
   final bool nuovo;
 
-  int get distanzaTotaleM => ripetute * distanzaM;
+  /// Le serie a tempo non hanno metri: contano zero.
+  int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
 
   factory SerieGenerata.fromMap(Map<String, dynamic> map) {
     return SerieGenerata(
       ordine: map['ordine'] as int,
       blocco: map['blocco'] as String,
       ripetute: map['ripetute'] as int,
-      distanzaM: map['distanzaM'] as int,
+      distanzaM: (map['distanzaM'] as num?)?.toInt(),
+      durataS: (map['durataS'] as num?)?.toInt(),
       stile: map['stile'] as String,
       esecuzione: map['esecuzione'] as String,
       zona: map['zona'] as String?,
@@ -141,6 +168,7 @@ class SerieGenerata {
       'blocco': blocco,
       'ripetute': ripetute,
       'distanzaM': distanzaM,
+      'durataS': durataS,
       'stile': stile,
       'esecuzione': esecuzione,
       'zona': zona,

@@ -29,9 +29,10 @@ import 'serie.dart';
 ///   piramide "50-100-200" o "2x(50-100)", oppure una durata "10'",
 ///   "3x5'", "30''".
 /// - Il resto, in qualsiasi ordine: zona (A1…D), stile (sl, do, ra, df,
-///   mix), esecuzione (gambe, braccia, pull, tecnica, remate; per la
-///   pallanuoto palleggio, tiri, uomo in +, uomo in -, gioco da
-///   schierati, schemi, tecnico-tattico; a-secco), passo sui 100 "1:25",
+///   mix), esecuzione (gambe, braccia, pull, tecnica, remate, test; per
+///   la pallanuoto palleggio, tiri, uomo in +, uomo in -, gioco da
+///   schierati, schemi, partita, tecnico-tattico; a-secco), come nuotarla
+///   (sciolto, lungo, progressione: finisce nella nota), passo sui 100 "1:25",
 ///   ripartenza "@1:30", recupero "r15" (o "r1:00"),
 ///   attrezzi (pinne, palette, …, o "[pinne corte]"), note fra
 ///   virgolette. Una parola che non si riconosce finisce nelle note.
@@ -234,6 +235,9 @@ const _esecuzioni = {
   'schierati': 'gioco da schierati',
   'schemi': 'schemi',
   'schema': 'schemi',
+  'partita': 'partita',
+  'partitella': 'partita',
+  'test': 'test',
 };
 
 const _paroleEsecuzione = {
@@ -251,6 +255,23 @@ const _paroleEsecuzione = {
   'uomo in meno': 'uomo in meno',
   'gioco da schierati': 'gioco da schierati',
   'schemi': 'schemi',
+  'partita': 'partita',
+  'test': 'test',
+};
+
+/// Come nuotare la serie ("400 sciolto", "4x200 progressione"): parole
+/// riconosciute, che finiscono nella nota così si combinano con tutto il
+/// resto ("400 gambe sciolto"). Richiesta del coach 2026-10-08.
+const _paroleModo = {
+  'sciolto',
+  'sciolti',
+  'sciolta',
+  'lungo',
+  'lunghi',
+  'lunga',
+  'progressione',
+  'progressivo',
+  'progressivi',
 };
 
 /// Esecuzioni di più parole, come si scrivono o si dicono ("uomo in +",
@@ -315,6 +336,7 @@ const _riempitivi = {
   'con',
   'e',
   'di',
+  'in',
   'secondi',
   'sec',
 };
@@ -488,6 +510,7 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
   double? passo;
   double? ripartenza;
   final recuperi = <int>[];
+  final modi = <String>[];
   final ignote = <String>[];
 
   for (var i = 0; i < token.length; i++) {
@@ -526,6 +549,10 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
       continue;
     }
     if (_riempitivi.contains(basso)) continue;
+    if (_paroleModo.contains(basso)) {
+      modi.add(basso);
+      continue;
+    }
     if (_zone.contains(t.toUpperCase())) {
       zona = t.toUpperCase();
       continue;
@@ -576,7 +603,11 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
     );
   }
 
-  final tutteLeNote = [...note, if (ignote.isNotEmpty) ignote.join(' ')];
+  final tutteLeNote = [
+    if (modi.isNotEmpty) modi.join(' '),
+    ...note,
+    if (ignote.isNotEmpty) ignote.join(' '),
+  ];
   SerieScritta serie({
     required int ripetute,
     int? distanzaM,
@@ -873,7 +904,7 @@ List<String> _dati(DatiSerie s) => [
 ];
 
 /// Attrezzi (parole note da sole, il resto fra quadre) e note fra
-/// virgolette.
+/// virgolette — senza, se sono solo parole come "sciolto" ([_paroleModo]).
 List<String> _attrezziENote(DatiSerie s) {
   final attrezzatura = _pieno(s.attrezzatura);
   final nota = _pieno(s.note);
@@ -884,7 +915,11 @@ List<String> _attrezziENote(DatiSerie s) {
         ...parti
       else
         '[${attrezzatura.replaceAll(']', ')')}]',
-    if (nota != null) '"${nota.replaceAll('"', "'").replaceAll('\n', ' ')}"',
+    if (nota != null)
+      if (nota.split(' ').every(_paroleModo.contains))
+        nota
+      else
+        '"${nota.replaceAll('"', "'").replaceAll('\n', ' ')}"',
   ];
 }
 

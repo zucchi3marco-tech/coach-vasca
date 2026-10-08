@@ -17,6 +17,14 @@ String titoloSerie(DatiSerie s) => [
   if (s.esecuzione != 'nuoto') labelEsecuzione(s.esecuzione),
 ].join(' ');
 
+/// "8×100m Libero Nuoto", "3×5' Uomo in più": il titolo di una serie
+/// proposta dal generatore, con l'esecuzione sempre scritta.
+String titoloSerieProposta(DatiSerie s) => [
+  labelVolumeSerie(s),
+  ?labelStileSerie(s),
+  labelEsecuzione(s.esecuzione),
+].join(' ');
+
 /// Lo stile della serie, se conta: nel lavoro di pallanuoto e a secco
 /// "libero" è solo il valore di partenza ([esecuzioniSenzaStile]).
 String? labelStileSerie(DatiSerie s) =>
@@ -76,6 +84,7 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   'pull' => 'Pull',
   'tecnica' => 'Tecnica',
   'remate' => 'Remate',
+  'test' => 'Test',
   'pallanuoto tecnico-tattico' => 'Tecnico-tattico',
   'palleggio' => 'Palleggio',
   'tiri' => 'Tiri',
@@ -83,6 +92,7 @@ String labelEsecuzione(String esecuzione) => switch (esecuzione) {
   'uomo in meno' => 'Uomo in meno',
   'gioco da schierati' => 'Gioco da schierati',
   'schemi' => 'Schemi',
+  'partita' => 'Partita',
   'a secco' => 'A secco',
   _ => esecuzione,
 };

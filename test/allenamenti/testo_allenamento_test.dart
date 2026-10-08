@@ -113,8 +113,8 @@ void main() {
     test(
       'le parole che non riconosce vanno nelle note, le virgolette pure',
       () {
-        final s = _una('8x50 sl B1 "respirazione ogni 3" sciolto');
-        expect(s.note, 'respirazione ogni 3 sciolto');
+        final s = _una('8x50 sl B1 "respirazione ogni 3" tranquillo');
+        expect(s.note, 'respirazione ogni 3 tranquillo');
         expect(_una('200 mi [pinne corte]').attrezzatura, 'pinne corte');
       },
     );
@@ -146,6 +146,25 @@ void main() {
       final nota = s('10\' tiri "dopo l\'uomo in più"');
       expect(nota.esecuzione, 'tiri');
       expect(nota.note, "dopo l'uomo in più");
+    });
+
+    test('sciolto, lungo, progressione: riconosciute, vanno nella nota', () {
+      final s = _una('400 gambe sciolto pinne');
+      expect(s.esecuzione, 'gambe');
+      expect(s.note, 'sciolto');
+      expect(s.attrezzatura, 'pinne');
+      expect(_una('4x200 sl in progressione B1').note, 'progressione');
+      expect(_una('200 lungo "respira ogni 3"').note, 'lungo respira ogni 3');
+      final riga = interpretaAllenamento('400 sciolti').righe.single;
+      expect(riga.paroleIgnote, isEmpty);
+    });
+
+    test('partita e test sono esecuzioni', () {
+      expect(_una("2x8' partitella").esecuzione, 'partita');
+      expect(_una("2x8' partita r120").recuperoS, 120);
+      final test = _una('400 sl test');
+      expect(test.esecuzione, 'test');
+      expect(test.stile, 'libero');
     });
 
     test('un numero da solo è una distanza solo all\'inizio', () {
@@ -333,6 +352,11 @@ defat. 200 sl''';
         ]),
         "Principale\n4x5' uomo in più\n20' gioco da schierati",
       );
+      // "sciolto" e simili si scrivono senza virgolette.
+      expect(
+        testoDaSerie([_salvata(1, distanzaM: 400, note: 'sciolto')]),
+        'Principale\n400 sl sciolto',
+      );
     });
 
     test('ogni campo torna uguale', () {
@@ -367,6 +391,9 @@ defat. 200 sl''';
           attrezzatura: 'palloni da 5',
         ),
         _salvata(6, blocco: 'altro', durataS: 900, esecuzione: 'a secco'),
+        _salvata(7, blocco: 'altro', durataS: 480, esecuzione: 'partita'),
+        _salvata(8, blocco: 'altro', distanzaM: 400, esecuzione: 'test'),
+        _salvata(9, blocco: 'altro', distanzaM: 400, note: 'sciolto'),
         for (final (i, e) in [
           'palleggio',
           'tiri',

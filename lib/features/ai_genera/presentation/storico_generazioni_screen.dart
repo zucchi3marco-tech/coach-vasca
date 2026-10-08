@@ -19,6 +19,7 @@ import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/generazione_ai_registrata.dart';
+import '../domain/scheda_generata.dart';
 import '../domain/riassunto_parametri.dart';
 
 const _voxPerPagina = 30;
@@ -279,9 +280,7 @@ class _DialogDettaglioVoce extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.s4),
                 for (final s in (scheda['serie'] as List? ?? []))
                   Text(
-                    '${s['ordine']}. ${s['ripetute']}×${s['distanzaM']}m '
-                    '${labelStile(s['stile'] as String)} '
-                    '${labelEsecuzione(s['esecuzione'] as String)}',
+                    '${s['ordine']}. ${titoloSerieProposta(SerieGenerata.fromMap(Map<String, dynamic>.from(s as Map)))}',
                     style: AppTypography.corpo.copyWith(color: colori.testo),
                   ),
               ],

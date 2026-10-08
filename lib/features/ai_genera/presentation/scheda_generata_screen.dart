@@ -114,6 +114,9 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
   /// dall'AI per quella stessa corsia — mai un buco silenzioso.
   List<RipartenzaCorsia> _ripartenzePerSerie(SerieGenerata s) {
     final assegnazione = widget.assegnazione;
+    final distanzaM = s.distanzaM;
+    // A tempo: nessuna ripartenza.
+    if (distanzaM == null) return const [];
     if (assegnazione == null || s.zona == null) return s.ripartenzePerCorsia;
 
     final risultato = <RipartenzaCorsia>[];
@@ -121,7 +124,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
       final calcolato = ripartenzaPerSerie(
         zona: s.zona!,
         stile: s.stile,
-        distanzaM: s.distanzaM,
+        distanzaM: distanzaM,
         atletiIds: c.atletiIds,
         assegnazione: assegnazione,
       );
@@ -159,6 +162,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
           blocco: s.blocco,
           ripetute: s.ripetute,
           distanzaM: s.distanzaM,
+          durataS: s.durataS,
           stile: s.stile,
           esecuzione: s.esecuzione,
           zona: s.zona,
@@ -279,9 +283,7 @@ class _SchedaGenerataScreenState extends ConsumerState<SchedaGenerataScreen> {
                       ),
                     ),
                   ),
-                  titolo:
-                      '${s.ripetute}×${s.distanzaM}m '
-                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                  titolo: titoloSerieProposta(s),
                   sottotitolo: [
                     _sottotitoloSerie(s),
                     if (s.ripartenzePerCorsia.isNotEmpty) _ripartenzeSerie(s),

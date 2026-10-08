@@ -12,19 +12,23 @@ const _passoMedioS = 110.0;
 ///
 /// Per ogni serie: se ha ripartenze, ripetute × la ripartenza più lenta
 /// fra le corsie (è l'atleta che finisce per ultimo, e la ripartenza
-/// comprende già il recupero); altrimenti ripetute × (nuoto al passo
-/// medio + recupero).
+/// comprende già il recupero); a tempo, ripetute × (durata + recupero);
+/// altrimenti ripetute × (nuoto al passo medio + recupero).
 int stimaMinutiSessione(List<SerieGenerata> serie) {
   var secondiTotali = 0.0;
   for (final s in serie) {
-    if (s.ripartenzePerCorsia.isNotEmpty) {
+    final durata = s.durataS;
+    if (durata != null) {
+      secondiTotali += s.ripetute * (durata + (s.recuperoS ?? 0));
+    } else if (s.ripartenzePerCorsia.isNotEmpty) {
       final ripartenzaPiuLenta = s.ripartenzePerCorsia
           .map((r) => r.ripartenzaS)
           .reduce((a, b) => a > b ? a : b);
       secondiTotali += s.ripetute * ripartenzaPiuLenta;
     } else {
       secondiTotali +=
-          s.ripetute * (s.distanzaM / 100 * _passoMedioS + (s.recuperoS ?? 0));
+          s.ripetute *
+          ((s.distanzaM ?? 0) / 100 * _passoMedioS + (s.recuperoS ?? 0));
     }
   }
   return (secondiTotali / 60).round();

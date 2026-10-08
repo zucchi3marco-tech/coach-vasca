@@ -1340,13 +1340,16 @@ class _RevisioneSettimanaScreenState
   /// di `SchedaGenerataScreen._ripartenzePerSerie`, duplicata perché le
   /// due schermate non condividono una classe base.
   List<RipartenzaCorsia> _ripartenzePerSerie(SerieGenerata s) {
+    final distanzaM = s.distanzaM;
+    // A tempo: nessuna ripartenza.
+    if (distanzaM == null) return const [];
     if (s.zona == null) return s.ripartenzePerCorsia;
     final risultato = <RipartenzaCorsia>[];
     for (final c in widget.assegnazione.corsie) {
       final calcolato = ripartenzaPerSerie(
         zona: s.zona!,
         stile: s.stile,
-        distanzaM: s.distanzaM,
+        distanzaM: distanzaM,
         atletiIds: c.atletiIds,
         assegnazione: widget.assegnazione,
       );
@@ -1395,6 +1398,7 @@ class _RevisioneSettimanaScreenState
             blocco: s.blocco,
             ripetute: s.ripetute,
             distanzaM: s.distanzaM,
+            durataS: s.durataS,
             stile: s.stile,
             esecuzione: s.esecuzione,
             zona: s.zona,
@@ -1664,9 +1668,7 @@ class _CardSedutaState extends State<_CardSeduta> {
                       ),
                     ),
                   ),
-                  titolo:
-                      '${s.ripetute}×${s.distanzaM}m '
-                      '${labelStile(s.stile)} ${labelEsecuzione(s.esecuzione)}',
+                  titolo: titoloSerieProposta(s),
                   sottotitolo: [
                     widget.sottotitoloSerie(s),
                     if (s.ripartenzePerCorsia.isNotEmpty)

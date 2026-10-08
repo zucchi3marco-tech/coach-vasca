@@ -55,6 +55,8 @@ const ESECUZIONI = [
   "uomo in meno",
   "gioco da schierati",
   "schemi",
+  "partita",
+  "test",
   "a secco",
 ];
 // "C" (senza numero) è uno storico dell'enum del database, tenuto solo
@@ -132,7 +134,10 @@ interface SerieGenerata {
   ordine: number;
   blocco: string;
   ripetute: number;
-  distanzaM: number;
+  // Una serie è a distanza (distanzaM) o a tempo (durataS, secondi per
+  // ripetuta), mai entrambe: come `Serie.aTempo` nell'app.
+  distanzaM: number | null;
+  durataS: number | null;
   stile: string;
   esecuzione: string;
   zona: string;
@@ -262,9 +267,8 @@ function istruzioniFocus(p: ParametriGenerazione): string {
 }
 
 // Le esecuzioni di pallanuoto aggiunte il 2026-10-08 (migrazione
-// 20261008000200_esecuzioni_pallanuoto.sql). La scheda generata salva
-// solo serie a distanza (distanzaM): il lavoro tattico, che si fa a tempo,
-// non può ancora diventare una serie e va nelle note della scheda.
+// 20261008000200_esecuzioni_pallanuoto.sql): il lavoro tattico si fa a
+// tempo, con le serie a tempo (durataS) della scheda.
 const ISTRUZIONI_PALLANUOTO = [
   "Esecuzioni di pallanuoto, da usare SOLO per un gruppo di pallanuoto " +
     "(lo dicono il nome del gruppo, i vincoli o i blocchi della libreria), " +
@@ -272,15 +276,16 @@ const ISTRUZIONI_PALLANUOTO = [
     "alta), \"tiri\" (partenza veloce e tiro in porta), \"uomo in più\" e " +
     "\"uomo in meno\" (superiorità e inferiorità numerica), \"gioco da " +
     "schierati\" (attacco e difesa a uomini schierati), \"schemi\" (schemi " +
-    "di gioco), \"pallanuoto tecnico-tattico\" (altro lavoro tattico). Con " +
+    "di gioco), \"partita\" (partita o partitella), \"pallanuoto " +
+    "tecnico-tattico\" (altro lavoro tattico). Con " +
     "queste esecuzioni lo stile è sempre \"libero\".",
-  "\"palleggio\" e \"tiri\" si scrivono a metri come le altre serie (es. " +
-    "8x25 palleggio, 6x25 tiri). \"uomo in più\", \"uomo in meno\", " +
-    "\"gioco da schierati\" e \"schemi\" sono lavoro a tempo, che questa " +
-    "scheda non può ancora salvare come " +
-    "serie: NON generarle come serie; se la seduta le prevede, scrivile " +
-    "nelle note della scheda con la loro durata (es. \"dopo il nuoto: 15' " +
-    "uomo in più, 10' schemi\"), fuori dal volume in metri.",
+  "\"palleggio\" e \"tiri\" vanno bene a metri (es. 8x25 palleggio, " +
+    "6x25 tiri). \"uomo in più\", \"uomo in meno\", \"gioco da " +
+    "schierati\", \"schemi\", \"partita\" e \"pallanuoto tecnico-tattico\" " +
+    "sono lavoro a tempo: serie con durataS (es. 3 ripetute da 300 secondi " +
+    "di uomo in più, con recupero), che non contano nel volume in metri.",
+  "L'esecuzione \"test\" (un test cronometrico, per qualsiasi gruppo) " +
+    "usala solo se i vincoli del coach chiedono un test.",
 ].join("\n");
 
 // La libreria salva lo stile come nell'Excel originale ("Stile libero",
@@ -339,10 +344,8 @@ function istruzioniLibreria(blocchi: BloccoDisponibile[]): string {
       "adatto: in quel caso lascia bloccoLibreriaId vuoto e segna " +
       "nuovo=true. Per ogni altra serie, nuovo deve essere false.",
     "Alcuni blocchi sono \"a tempo\" (una durata in secondi, es. \"600s\", " +
-      "invece di una distanza in metri): questa scheda non può ancora " +
-      "salvare serie a tempo, quindi NON scegliere quei blocchi con " +
-      "bloccoLibreriaId. Se il lavoro più adatto è uno di questi, inventa " +
-      "una serie equivalente a distanza (nuovo=true) invece di usarlo.",
+      "invece di una distanza in metri): le loro serie sono a tempo, con " +
+      "durataS (i secondi di una ripetuta) al posto di distanzaM.",
     "Le zone delle parti qui sotto usano anche sigle che NON sono fra " +
       "quelle ammesse per la zona della serie generata: \"V\" = C3, " +
       "\"RG\" = D; \"T\"/\"TT\"/\"TEST\" non sono zone di intensità " +
@@ -409,8 +412,12 @@ function costruisciPrompt(p: ParametriGenerazione): string {
       ? `Vasca da ${p.vascaM}m: evita distanze scomode rispetto a questa lunghezza (preferisci multipli o mezzi di ${p.vascaM}m dove sensato).`
       : "",
     "Dividi la scheda in riscaldamento, parte principale e defaticamento. " +
-      "La somma di ripetute*distanza di tutte le serie deve avvicinarsi il " +
-      "più possibile al volume totale richiesto" +
+      "Ogni serie è a distanza (distanzaM in metri, durataS vuoto) oppure a " +
+      "tempo (durataS in secondi per ripetuta, es. 4 ripetute da 300 = " +
+      "4x5', distanzaM vuoto): mai tutte e due. Le serie a tempo non " +
+      "contano nel volume in metri. " +
+      "La somma di ripetute*distanza delle serie a distanza deve " +
+      "avvicinarsi il più possibile al volume totale richiesto" +
       (p.volumeMetri
         ? ` (fra ${Math.round(p.volumeMetri * (1 - TOLLERANZA_VOLUME))} e ` +
           `${Math.round(p.volumeMetri * (1 + TOLLERANZA_VOLUME))} metri)`
@@ -476,6 +483,7 @@ function costruisciSchemaGemini(blocchiDisponibili: BloccoDisponibile[]) {
             blocco: { type: "STRING", enum: BLOCCHI },
             ripetute: { type: "INTEGER" },
             distanzaM: { type: "INTEGER" },
+            durataS: { type: "INTEGER" },
             stile: { type: "STRING", enum: STILI },
             esecuzione: { type: "STRING", enum: ESECUZIONI },
             zona: { type: "STRING", enum: ZONE },
@@ -502,7 +510,6 @@ function costruisciSchemaGemini(blocchiDisponibili: BloccoDisponibile[]) {
             "ordine",
             "blocco",
             "ripetute",
-            "distanzaM",
             "stile",
             "esecuzione",
             "zona",
@@ -525,7 +532,8 @@ function costruisciSchemaOpenAi(blocchiDisponibili: BloccoDisponibile[]) {
     ordine: { type: "integer" },
     blocco: { type: "string", enum: BLOCCHI },
     ripetute: { type: "integer" },
-    distanzaM: { type: "integer" },
+    distanzaM: { type: ["integer", "null"] },
+    durataS: { type: ["integer", "null"] },
     stile: { type: "string", enum: STILI },
     esecuzione: { type: "string", enum: ESECUZIONI },
     zona: { type: "string", enum: ZONE },
@@ -660,6 +668,12 @@ function stimaMinutiSessione(
     : null;
   let secondi = 0;
   for (const s of serie) {
+    // A tempo: la durata più il recupero scritto, come
+    // `secondiPerRipetuta` in lib/features/allenamenti/domain/durata_serie.dart.
+    if (s.distanzaM == null) {
+      secondi += s.ripetute * ((s.durataS ?? 0) + (s.recuperoS ?? 0));
+      continue;
+    }
     const passo = passoPerZona(s.zona, piuLenta) *
       (FATTORE_ESECUZIONE[s.esecuzione] ?? 1);
     const recupero = s.recuperoS ?? recuperoPredefinito(s.zona, s.distanzaM);
@@ -668,8 +682,10 @@ function stimaMinutiSessione(
   return secondi / 60;
 }
 
+/// Le serie a tempo non hanno metri: nel volume contano zero, come
+/// `distanzaTotaleM` nell'app.
 function metriSerie(serie: SerieGenerata[]): number {
-  return serie.reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+  return serie.reduce((somma, s) => somma + s.ripetute * (s.distanzaM ?? 0), 0);
 }
 
 function metriScheda(scheda: SchedaGenerata): number {
@@ -685,19 +701,19 @@ function scartoVolume(scheda: SchedaGenerata, volumeRichiesto: number): number {
 /// una serie con più ripetute cambia il numero di ripetute, una serie
 /// singola (un "400 sciolti", i gradini di una piramide) la distanza, a
 /// passi di 50m. Il resto lasciato dagli arrotondamenti lo assorbe la
-/// serie a ripetute la cui distanza ci sta meglio.
+/// serie a ripetute la cui distanza ci sta meglio. Le serie a tempo non
+/// si toccano: non hanno metri.
 function scalaSerie(
   serie: SerieGenerata[],
   scala: (s: SerieGenerata) => boolean,
   obiettivo: number,
 ): SerieGenerata[] {
-  const metri = (elenco: SerieGenerata[]) =>
-    elenco.filter(scala).reduce((somma, s) => somma + s.ripetute * s.distanzaM, 0);
+  const metri = (elenco: SerieGenerata[]) => metriSerie(elenco.filter(scala));
   const attuali = metri(serie);
   if (attuali === 0 || obiettivo <= 0) return serie;
   const fattore = obiettivo / attuali;
   const scalate = serie.map((s) => {
-    if (!scala(s)) return s;
+    if (!scala(s) || s.distanzaM == null) return s;
     if (s.ripetute > 1) {
       return { ...s, ripetute: Math.max(1, Math.round(s.ripetute * fattore)) };
     }
@@ -715,7 +731,7 @@ function scalaSerie(
   let ripetuteInPiu = 0;
   let restoMinimo = Math.abs(resto);
   scalate.forEach((s, indice) => {
-    if (!scala(s) || s.ripetute < 2) return;
+    if (!scala(s) || s.distanzaM == null || s.ripetute < 2) return;
     const k = Math.round(resto / s.distanzaM);
     if (k === 0 || s.ripetute + k < 1) return;
     const residuo = Math.abs(resto - k * s.distanzaM);
@@ -776,7 +792,17 @@ function adattaScheda(
     for (let giro = 0; giro < 4; giro++) {
       const minuti = stimaMinutiSessione(serie, corsie);
       if (minuti <= minutiMax) break;
-      const obiettivo = Math.floor(metriSerie(serie) * (minutiMax / minuti) * 0.97);
+      // Le serie a tempo durano quello che durano: si accorcia solo il
+      // nuoto, nel tempo che resta.
+      const minutiATempo = stimaMinutiSessione(
+        serie.filter((s) => s.distanzaM == null),
+        corsie,
+      );
+      const minutiNuoto = minuti - minutiATempo;
+      if (minutiNuoto <= 0 || minutiMax <= minutiATempo) break;
+      const obiettivo = Math.floor(
+        metriSerie(serie) * ((minutiMax - minutiATempo) / minutiNuoto) * 0.97,
+      );
       serie = scalaSerie(serie, () => true, obiettivo);
     }
   }
@@ -791,19 +817,15 @@ function pulisciNota(nota: string): string | null {
   return pulita.length > 0 ? pulita : null;
 }
 
-/// `null` se l'AI non ha indicato un bloccoLibreriaId, se l'ID non
-/// corrisponde a nessun blocco disponibile, o se il blocco è interamente
-/// a tempo (il prompt chiede di non scegliere questi, ma non ci si fida
-/// alla cieca).
+/// `null` se l'AI non ha indicato un bloccoLibreriaId o se l'ID non
+/// corrisponde a nessun blocco disponibile. I blocchi a tempo vanno bene
+/// anche loro, ora che la scheda ha le serie a tempo.
 function _bloccoLibreriaIdValido(
   s: Record<string, unknown>,
   blocchiPerId: Map<string, BloccoDisponibile>,
 ): string | null {
   if (typeof s.bloccoLibreriaId !== "string") return null;
-  const blocco = blocchiPerId.get(s.bloccoLibreriaId);
-  if (!blocco) return null;
-  const tuttoATempo = blocco.parti.every((p) => p.durataS != null);
-  return tuttoATempo ? null : s.bloccoLibreriaId;
+  return blocchiPerId.has(s.bloccoLibreriaId) ? s.bloccoLibreriaId : null;
 }
 
 // Le zone dei blocchi usano anche sigle dell'Excel che non sono nella
@@ -824,14 +846,26 @@ function _zonaEquivalente(zonaBlocco: string, zonaSerie: string): boolean {
 /// affidabile di fidarsi solo di quello che l'AI dichiara.
 function _bloccoPerContenuto(
   ripetute: number,
-  distanzaM: number,
+  distanzaM: number | null,
+  durataS: number | null,
   stile: string,
+  esecuzione: string,
   zona: string,
   blocchi: BloccoDisponibile[],
 ): string | null {
   for (const blocco of blocchi) {
     for (const parte of blocco.parti) {
-      if (parte.distanzaM == null) continue; // a tempo: non comparabile qui.
+      // A tempo: stessa esecuzione e durata entro il 25% (le zone delle
+      // parti a tempo sono spesso T/TT, non zone di intensità).
+      if (durataS != null) {
+        if (parte.durataS == null || parte.esecuzione !== esecuzione) continue;
+        const tempoParte = parte.giri * parte.ripetizioni * parte.durataS;
+        if (tempoParte <= 0) continue;
+        const scartoTempo = Math.abs(ripetute * durataS - tempoParte) / tempoParte;
+        if (scartoTempo <= 0.25) return blocco.id;
+        continue;
+      }
+      if (parte.distanzaM == null || distanzaM == null) continue;
       if (!_zonaEquivalente(parte.zona, zona)) continue;
       const stileParte = normalizzaStile(parte.stile);
       if (stileParte != null && stileParte !== stile) continue;
@@ -884,9 +918,18 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
     if (!Number.isInteger(ripetute) || ripetute < 1) {
       throw new Error(`serie #${indice + 1}: ripetute non valide`);
     }
-    const distanzaM = Number(s.distanzaM);
-    if (!Number.isInteger(distanzaM) || distanzaM < 25) {
-      throw new Error(`serie #${indice + 1}: distanza non valida`);
+    // A distanza o a tempo: con una distanza valida vale quella (OpenAI
+    // compila sempre tutti e due i campi, spesso con 0 o null).
+    const distanza = Number(s.distanzaM);
+    const durata = Number(s.durataS);
+    let distanzaM: number | null = null;
+    let durataS: number | null = null;
+    if (s.distanzaM != null && Number.isInteger(distanza) && distanza >= 25) {
+      distanzaM = distanza;
+    } else if (s.durataS != null && Number.isInteger(durata) && durata >= 10) {
+      durataS = durata;
+    } else {
+      throw new Error(`serie #${indice + 1}: distanza o durata non valida`);
     }
     if (typeof s.stile !== "string" || !STILI.includes(s.stile)) {
       throw new Error(`serie #${indice + 1}: stile "${s.stile}" non riconosciuto`);
@@ -915,7 +958,9 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       _bloccoPerContenuto(
         ripetute,
         distanzaM,
+        durataS,
         s.stile as string,
+        s.esecuzione,
         zona,
         [...blocchiPerId.values()],
       );
@@ -950,13 +995,15 @@ function validaScheda(dati: unknown, parametri: ParametriGenerazione): SchedaGen
       blocco: s.blocco,
       ripetute,
       distanzaM,
+      durataS,
       stile: s.stile,
       esecuzione: s.esecuzione,
       zona,
       recuperoS,
       attrezzatura: typeof s.attrezzatura === "string" ? s.attrezzatura : null,
       note: typeof s.note === "string" ? pulisciNota(s.note) : null,
-      ripartenzePerCorsia,
+      // Una serie a tempo non ha ripartenze.
+      ripartenzePerCorsia: durataS != null ? [] : ripartenzePerCorsia,
       // RIPROGETTAZIONE AI, FASE 3: "nuovo" è semplicemente "non
       // riconducibile a nessun blocco della libreria", per etichetta o
       // per contenuto — mai un errore, solo un'informazione per l'app

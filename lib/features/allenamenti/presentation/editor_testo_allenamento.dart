@@ -551,9 +551,10 @@ void mostraAiutoScrittura(BuildContext context) {
               'Defaticamento, Altro)',
         ),
         ('sl do ra df mix', 'stile'),
-        ('gambe braccia pull tecnica remate', 'esecuzione'),
+        ('gambe braccia pull tecnica remate test', 'esecuzione'),
+        ('sciolto  lungo  progressione', 'come nuotarla: va nella nota'),
         (
-          'palleggio tiri schemi gioco da schierati',
+          'palleggio tiri schemi gioco da schierati partita',
           'pallanuoto: lo stile non serve',
         ),
         (
