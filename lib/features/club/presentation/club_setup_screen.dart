@@ -11,6 +11,8 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../auth/presentation/avviso_solo_allenatori.dart';
+import '../../auth/presentation/riscatta_invito_screen.dart';
 import '../../gruppi/data/gruppi_repository.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
@@ -155,6 +157,21 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                     'atleti.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  // Qui arriva chiunque abbia un account senza club, anche
+                  // un atleta entrato con Google o registrato dalla strada
+                  // sbagliata: col codice si collega all'account già aperto.
+                  AvvisoSoloAllenatori(
+                    testo:
+                        'Crea un club solo se sei l\'allenatore responsabile. '
+                        'Se sei un atleta non crearlo: entra nel club della '
+                        'tua squadra con il codice dell\'allenatore.',
+                    onSonoAtleta: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const RiscattaInvitoScreen(),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.s24),
                   FormGroup(

@@ -57,6 +57,17 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
   bool _isSubmitting = false;
   String? _errore;
 
+  /// L'email dell'account già aperto quando si arriva qui da "Crea il tuo
+  /// club" (un atleta registrato dalla strada sbagliata, o entrato con
+  /// Google): l'ultimo passo collega quell'account invece di chiederne
+  /// uno nuovo. Letta una volta sola: durante la registrazione normale
+  /// l'account nasce a metà dell'ultimo passo, e il modulo non deve
+  /// cambiare sotto le dita.
+  late final String? _accountGiaAperto = () {
+    final utente = ref.read(authRepositoryProvider).currentUser;
+    return utente == null ? null : (utente.email ?? '');
+  }();
+
   @override
   void dispose() {
     _codiceController.dispose();
@@ -150,7 +161,10 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
   }
 
   Future<void> _creaAccount() async {
-    if (!(_formKeyAccount.currentState?.validate() ?? false)) return;
+    if (_accountGiaAperto == null &&
+        !(_formKeyAccount.currentState?.validate() ?? false)) {
+      return;
+    }
     setState(() {
       _isSubmitting = true;
       _errore = null;
@@ -303,6 +317,12 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                     }
                   },
                 ),
+                _Passo.account when _accountGiaAperto != null =>
+                  _PassoAccountGiaAperto(
+                    email: _accountGiaAperto,
+                    isSubmitting: _isSubmitting,
+                    onCompleta: _creaAccount,
+                  ),
                 _Passo.account => _PassoAccount(
                   formKey: _formKeyAccount,
                   emailController: _emailController,
@@ -458,6 +478,42 @@ class _PassoAnagrafica extends StatelessWidget {
         ],
         const SizedBox(height: AppSpacing.s24),
         PrimaryButton(label: 'Continua', onPressed: onContinua),
+      ],
+    );
+  }
+}
+
+/// L'ultimo passo per chi ha già un account (vedi `_accountGiaAperto`):
+/// niente email e password da inventare, solo il collegamento.
+class _PassoAccountGiaAperto extends StatelessWidget {
+  const _PassoAccountGiaAperto({
+    required this.email,
+    required this.isSubmitting,
+    required this.onCompleta,
+  });
+
+  final String email;
+  final bool isSubmitting;
+  final VoidCallback onCompleta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          email.isEmpty
+              ? 'Userai l\'account con cui sei già entrato.'
+              : 'Userai l\'account con cui sei già entrato: $email.',
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        PrimaryButton(
+          label: 'Completa la registrazione',
+          isLoading: isSubmitting,
+          onPressed: isSubmitting ? null : onCompleta,
+        ),
       ],
     );
   }

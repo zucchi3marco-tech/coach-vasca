@@ -9,6 +9,8 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../data/auth_repository.dart';
+import 'avviso_solo_allenatori.dart';
+import 'riscatta_invito_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({this.emailIniziale, super.key});
@@ -91,7 +93,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(title: const Text('Crea account coach')),
+      appBar: AppBar(title: const Text('Registrazione allenatore')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
@@ -108,6 +110,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Chi arriva qui per sbaglio (un atleta) se ne accorge
+                  // prima di creare l'account, non dopo, davanti a "Crea il
+                  // tuo club".
+                  AvvisoSoloAllenatori(
+                    onSonoAtleta: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const RiscattaInvitoScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s24),
                   AppTextField(
                     etichetta: 'Email',
                     controller: _emailController,

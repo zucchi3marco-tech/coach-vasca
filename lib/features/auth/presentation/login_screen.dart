@@ -11,7 +11,7 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../data/auth_repository.dart';
 import 'riscatta_invito_screen.dart';
-import 'signup_screen.dart';
+import 'scelta_registrazione_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -207,9 +207,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         label: 'Registrati',
                         onPressed: _isSubmitting
                             ? null
+                            // Prima la scelta atleta/allenatore: andando
+                            // dritti alla registrazione da allenatore,
+                            // alcuni atleti creavano un club vuoto.
                             : () => Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => SignUpScreen(
+                                  builder: (_) => SceltaRegistrazioneScreen(
                                     emailIniziale: _emailController.text.trim(),
                                   ),
                                 ),

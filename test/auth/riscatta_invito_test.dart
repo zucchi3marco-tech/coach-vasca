@@ -104,15 +104,14 @@ void main() {
     await tester.tap(find.text('Continua'));
     await tester.pumpAndSettle();
 
-    final campi = find.byType(TextFormField);
-    await tester.enterText(campi.at(0), 'marco@example.com');
-    await tester.enterText(campi.at(1), 'segreta1');
-    await tester.enterText(campi.at(2), 'segreta1');
-    await tester.tap(find.text('Crea account'));
+    // L'account è già aperto: niente email e password, solo il
+    // collegamento.
+    expect(find.byType(TextFormField), findsNothing);
+    await tester.tap(find.text('Completa la registrazione'));
     await tester.pumpAndSettle();
 
     // La schermata si chiude e i provider sono stati ricalcolati.
-    expect(find.text('Crea account'), findsNothing);
+    expect(find.text('Completa la registrazione'), findsNothing);
     expect(letturePerAtleta, 2);
     expect(lettureClub, 2);
   });
