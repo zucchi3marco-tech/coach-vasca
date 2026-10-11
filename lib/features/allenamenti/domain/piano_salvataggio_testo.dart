@@ -64,6 +64,7 @@ PianoSalvataggio pianoSalvataggio({
     }
     final vecchia = vecchie[i];
     if (!stessaSerie(vecchia, nuova) ||
+        vecchia.recuperoDopoS != nuova.recuperoDopoS ||
         vecchia.ordine != i + 1 ||
         vecchia.piramideId != piramideId) {
       aggiorna.add((

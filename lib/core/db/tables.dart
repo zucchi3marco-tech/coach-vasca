@@ -211,6 +211,9 @@ class SerieTable extends Table {
   /// 'fatta' | 'saltata', segnato a bordo vasca; null se non segnata.
   TextColumn get esito => text().nullable()();
 
+  /// Recupero dopo la serie, prima della successiva (secondi).
+  IntColumn get recuperoDopoS => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

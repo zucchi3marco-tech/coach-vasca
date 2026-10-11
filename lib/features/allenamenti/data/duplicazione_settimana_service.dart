@@ -58,6 +58,7 @@ class DuplicazioneSettimanaService {
           piramideId: s.piramideId == null
               ? null
               : gruppi.putIfAbsent(s.piramideId!, () => const Uuid().v4()),
+          recuperoDopoS: s.recuperoDopoS,
         ),
     ]);
     return nuovo;

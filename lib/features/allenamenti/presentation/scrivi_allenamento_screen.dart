@@ -137,6 +137,7 @@ class _ScriviAllenamentoScreenState
           attrezzatura: s.attrezzatura,
           note: s.note,
           piramide: (id: a.piramideId),
+          recuperoDopo: (secondi: s.recuperoDopoS),
         );
       }
       for (final c in piano.crea) {
@@ -157,6 +158,7 @@ class _ScriviAllenamentoScreenState
           attrezzatura: s.attrezzatura,
           note: s.note,
           piramideId: c.piramideId,
+          recuperoDopoS: s.recuperoDopoS,
         );
       }
       for (final s in piano.elimina) {

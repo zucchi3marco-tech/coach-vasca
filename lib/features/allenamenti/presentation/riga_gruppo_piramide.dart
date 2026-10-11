@@ -9,6 +9,7 @@ import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_serie.dart' show AzioneSerie;
+import 'nota_serie.dart';
 import 'serie_labels.dart';
 
 /// Una piramide (es. 50-100-200-100-50, dalla barra rapida) o un "2x"
@@ -77,6 +78,9 @@ class RigaGruppoPiramide extends StatelessWidget {
         "tra i giri ${valoriOrdinati[1]}''",
     ];
 
+    // Le note diverse delle serie del gruppo (in una piramide è una sola).
+    final note = <String>{for (final s in gruppo) ?notaPiena(s.note)};
+
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -94,66 +98,69 @@ class RigaGruppoPiramide extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '${prima.ordine}  ',
-                              style: AppTypography.piccolo.copyWith(
-                                color: colori.testoTenue,
-                              ),
-                            ),
-                            TextSpan(
-                              text: titolo,
-                              style: AppTypography.corpoForte.copyWith(
-                                color: colori.testo,
-                              ),
-                            ),
-                          ],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            if (prima.zona != null) ...[
-                              WidgetSpan(
-                                alignment: PlaceholderAlignment.middle,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: coloreZona,
-                                    shape: BoxShape.circle,
-                                  ),
+                  child: ConNotaAccanto(
+                    nota: note.isEmpty ? null : note.join('\n'),
+                    principale: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${prima.ordine}  ',
+                                style: AppTypography.piccolo.copyWith(
+                                  color: colori.testoTenue,
                                 ),
                               ),
                               TextSpan(
-                                text: ' ${prima.zona} · ',
-                                style: AppTypography.piccolo.copyWith(
+                                text: titolo,
+                                style: AppTypography.corpoForte.copyWith(
                                   color: colori.testo,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
-                            TextSpan(
-                              text: dettagli.join(' · '),
-                              style: AppTypography.piccolo.copyWith(
-                                color: colori.testoSecondario,
-                              ),
-                            ),
-                          ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              if (prima.zona != null) ...[
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: coloreZona,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' ${prima.zona} · ',
+                                  style: AppTypography.piccolo.copyWith(
+                                    color: colori.testo,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                              TextSpan(
+                                text: dettagli.join(' · '),
+                                style: AppTypography.piccolo.copyWith(
+                                  color: colori.testoSecondario,
+                                ),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

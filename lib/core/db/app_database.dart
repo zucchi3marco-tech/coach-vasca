@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -401,6 +401,12 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'stagioni_table', 'fasi_json')) {
           await m.addColumn(stagioniTable, stagioniTable.fasiJson);
+        }
+      }
+      // v32 -> v33: recupero fra una serie e la successiva.
+      if (from < 33) {
+        if (!await _hasColumn(m, 'serie_table', 'recupero_dopo_s')) {
+          await m.addColumn(serieTable, serieTable.recuperoDopoS);
         }
       }
     },

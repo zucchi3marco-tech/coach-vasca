@@ -100,8 +100,10 @@ double secondiPerRipetuta(DatiSerie s, {PassoRiferimento? riferimento}) {
       (s.recuperoS ?? recuperoPredefinito(s.zona, distanza));
 }
 
+/// Quanto dura tutta la serie, con il recupero prima della successiva.
 double secondiSerie(DatiSerie s, {PassoRiferimento? riferimento}) =>
-    s.ripetute * secondiPerRipetuta(s, riferimento: riferimento);
+    s.ripetute * secondiPerRipetuta(s, riferimento: riferimento) +
+    (s.recuperoDopoS ?? 0);
 
 /// La durata stimata di un allenamento, in minuti interi.
 int minutiStimati(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) =>

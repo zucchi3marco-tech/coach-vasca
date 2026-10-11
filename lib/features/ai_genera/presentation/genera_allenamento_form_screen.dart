@@ -251,6 +251,7 @@ class _GeneraAllenamentoFormScreenState
           attrezzatura: s.attrezzatura,
           note: s.note,
           piramideId: c.piramideId,
+          recuperoDopoS: s.recuperoDopoS,
         );
         create++;
       }

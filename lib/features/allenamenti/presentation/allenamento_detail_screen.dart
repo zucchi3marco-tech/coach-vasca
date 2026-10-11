@@ -36,6 +36,7 @@ import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_gruppo_piramide.dart';
+import 'nota_serie.dart';
 import 'riga_serie.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'scrivi_allenamento_screen.dart';
@@ -279,6 +280,7 @@ class _AllenamentoDetailScreenState
             attrezzatura: s.attrezzatura,
             note: s.note,
             piramideId: nuovoPiramideId,
+            recuperoDopoS: s.recuperoDopoS,
           ),
         );
         ordineProvvisorio++;
@@ -659,27 +661,38 @@ class _AllenamentoDetailScreenState
                   color: colori.testoSecondario,
                 ),
               );
+              final riga = gruppo.length == 1
+                  ? RigaSerie(
+                      serie: gruppo.single,
+                      primo: index == 0,
+                      ultimo: index == gruppi.length - 1,
+                      maniglia: maniglia,
+                      onApri: () => _apriSerieCompleta(serie: gruppo.single),
+                      onAzione: (azione) =>
+                          _azioneGruppo(gruppi, index, azione),
+                    )
+                  : RigaGruppoPiramide(
+                      gruppo: gruppo,
+                      primo: index == 0,
+                      ultimo: index == gruppi.length - 1,
+                      maniglia: maniglia,
+                      onAzione: (azione) =>
+                          _azioneGruppo(gruppi, index, azione),
+                    );
               return Padding(
                 key: ValueKey(gruppo.first.id),
                 padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                child: gruppo.length == 1
-                    ? RigaSerie(
-                        serie: gruppo.single,
-                        primo: index == 0,
-                        ultimo: index == gruppi.length - 1,
-                        maniglia: maniglia,
-                        onApri: () => _apriSerieCompleta(serie: gruppo.single),
-                        onAzione: (azione) =>
-                            _azioneGruppo(gruppi, index, azione),
-                      )
-                    : RigaGruppoPiramide(
-                        gruppo: gruppo,
-                        primo: index == 0,
-                        ultimo: index == gruppi.length - 1,
-                        maniglia: maniglia,
-                        onAzione: (azione) =>
-                            _azioneGruppo(gruppi, index, azione),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    riga,
+                    if (gruppo.last.recuperoDopoS case final secondi?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.s8),
+                        child: RecuperoFraSerie(secondi),
                       ),
+                  ],
+                ),
               );
             },
           );

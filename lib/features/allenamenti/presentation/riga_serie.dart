@@ -7,6 +7,7 @@ import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
 import '../domain/serie.dart';
+import 'nota_serie.dart';
 import 'serie_labels.dart';
 
 enum AzioneSerie { su, giu, cambiaBlocco, duplica, salvaComeBlocco, elimina }
@@ -81,71 +82,74 @@ class RigaSerie extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSpacing.s8,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '${s.ordine}  ',
-                                style: AppTypography.piccolo.copyWith(
-                                  color: colori.testoTenue,
-                                ),
-                              ),
-                              TextSpan(
-                                text: titolo,
-                                style: AppTypography.corpoForte.copyWith(
-                                  color: s.saltata
-                                      ? colori.testoSecondario
-                                      : colori.testo,
-                                  decoration: s.saltata
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              if (s.zona != null) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: coloreZona,
-                                      shape: BoxShape.circle,
-                                    ),
+                    child: ConNotaAccanto(
+                      nota: notaPiena(s.note),
+                      principale: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '${s.ordine}  ',
+                                  style: AppTypography.piccolo.copyWith(
+                                    color: colori.testoTenue,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: ' ${s.zona} · ',
-                                  style: AppTypography.piccolo.copyWith(
-                                    color: colori.testo,
-                                    fontWeight: FontWeight.w600,
+                                  text: titolo,
+                                  style: AppTypography.corpoForte.copyWith(
+                                    color: s.saltata
+                                        ? colori.testoSecondario
+                                        : colori.testo,
+                                    decoration: s.saltata
+                                        ? TextDecoration.lineThrough
+                                        : null,
                                   ),
                                 ),
                               ],
-                              TextSpan(
-                                text: dettagli.join(' · '),
-                                style: AppTypography.piccolo.copyWith(
-                                  color: colori.testoSecondario,
-                                ),
-                              ),
-                            ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                if (s.zona != null) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: coloreZona,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' ${s.zona} · ',
+                                    style: AppTypography.piccolo.copyWith(
+                                      color: colori.testo,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                                TextSpan(
+                                  text: dettagli.join(' · '),
+                                  style: AppTypography.piccolo.copyWith(
+                                    color: colori.testoSecondario,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

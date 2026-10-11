@@ -66,6 +66,7 @@ class GraficoIntensita extends StatelessWidget {
         (
           secondi: secondiPerRipetuta(s, riferimento: riferimento),
           ripetute: s.ripetute,
+          dopo: (s.recuperoDopoS ?? 0).toDouble(),
           altezza: _altezzaZona[s.zona] ?? _altezzaSenzaZona,
           colore: s.zona == null
               ? senzaZona
@@ -132,7 +133,13 @@ class GraficoIntensita extends StatelessWidget {
   }
 }
 
-typedef _Barra = ({double secondi, int ripetute, double altezza, Color colore});
+typedef _Barra = ({
+  double secondi,
+  int ripetute,
+  double dopo,
+  double altezza,
+  Color colore,
+});
 
 class _GraficoPainter extends CustomPainter {
   _GraficoPainter({
@@ -180,7 +187,8 @@ class _GraficoPainter extends CustomPainter {
           pennello,
         );
       }
-      x += larghezza * b.ripetute;
+      // Il recupero prima della serie successiva: uno spazio vuoto.
+      x += larghezza * b.ripetute + b.dopo * scala;
     }
 
     final asse = Paint()

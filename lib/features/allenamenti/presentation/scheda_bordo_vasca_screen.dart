@@ -32,6 +32,7 @@ import '../domain/serie.dart';
 import 'pannello_orologio.dart';
 import 'riepilogo_volumi.dart';
 import 'serie_labels.dart';
+import 'nota_serie.dart';
 
 /// Vista per il tablet a bordo vasca — DESIGN.md sezione 14: tipografia
 /// enorme, colori ridotti all'osso, bersagli da 64-72, orizzontale e — a
@@ -695,14 +696,13 @@ class _SerieInGrande extends StatelessWidget {
                 style: AppTypography.corpoForte.copyWith(color: colori.testo),
               ),
             ],
-            if (serie.note != null && serie.note!.trim().isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.s8),
-              Text(
-                serie.note!.trim(),
-                style: AppTypography.corpo.copyWith(
-                  color: colori.testoSecondario,
-                ),
-              ),
+            if (notaPiena(serie.note) case final nota?) ...[
+              const SizedBox(height: AppSpacing.s12),
+              NotaSerie(nota, grande: true),
+            ],
+            if (serie.recuperoDopoS case final secondi?) ...[
+              const SizedBox(height: AppSpacing.s16),
+              RecuperoFraSerie(secondi, grande: true),
             ],
             if (prossima != null) ...[
               const SizedBox(height: AppSpacing.s24),
@@ -813,6 +813,14 @@ class _TutteLeSerie extends StatelessWidget {
                           ),
                       ],
                     ),
+                  ],
+                  if (notaPiena(s.note) case final nota?) ...[
+                    const SizedBox(height: AppSpacing.s12),
+                    NotaSerie(nota, grande: true),
+                  ],
+                  if (s.recuperoDopoS case final secondi?) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    RecuperoFraSerie(secondi),
                   ],
                 ],
               ),

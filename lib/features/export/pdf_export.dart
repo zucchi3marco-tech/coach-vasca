@@ -52,9 +52,7 @@ Future<Uint8List> generaPdf(
               'Attrezzatura',
               'Note',
             ],
-            data: [
-              for (final s in serie) _rigaTabella(s),
-            ],
+            data: [for (final s in serie) _rigaTabella(s)],
           ),
         ],
       ),

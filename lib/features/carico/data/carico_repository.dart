@@ -263,6 +263,7 @@ class CaricoRepository {
             'recupero_s': r.recuperoS,
             'ripartenza_s': r.ripartenzaS,
             'passo_obiettivo_s': r.passoObiettivoS,
+            'recupero_dopo_s': r.recuperoDopoS,
           },
       ];
     }

@@ -41,18 +41,14 @@ class InvitiAtletaRepository {
   /// Da chiamare subito dopo la signUp(): collega l'utente appena
   /// autenticato all'atleta del codice.
   Future<Atleta> collegaConCodice(String codice) async {
-    final row =
-        await _client.rpc(
-              'collega_atleta_da_invito',
-              params: {'p_codice': codice},
-            )
-            as Map<String, dynamic>;
+    final row = await _client.rpc(
+      'collega_atleta_da_invito',
+      params: {'p_codice': codice},
+    ) as Map<String, dynamic>;
     return Atleta.fromMap(row);
   }
 }
 
-final invitiAtletaRepositoryProvider = Provider<InvitiAtletaRepository>((
-  ref,
-) {
+final invitiAtletaRepositoryProvider = Provider<InvitiAtletaRepository>((ref) {
   return InvitiAtletaRepository(ref.watch(supabaseClientProvider));
 });

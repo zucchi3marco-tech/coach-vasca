@@ -53,6 +53,7 @@ class _SerieFinte implements SerieRepository {
     String? attrezzatura,
     String? note,
     String? piramideId,
+    int? recuperoDopoS,
   }) async {
     create.add('$allenamentoId $ordine $blocco ${ripetute}x$distanzaM');
     gruppi.add(piramideId);

@@ -120,6 +120,8 @@ class SerieGenerata implements DatiSerie {
   double? get ripartenzaS => null;
   @override
   String? get piramideId => null;
+  @override
+  int? get recuperoDopoS => null;
 
   /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
   /// la generazione non aveva passi di riferimento da usare, o se questo

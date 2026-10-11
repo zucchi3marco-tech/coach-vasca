@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../core/dettatura/dettatura_vocale.dart';
 import '../../../theme/app_spacing.dart';
@@ -9,6 +11,7 @@ import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/testo_allenamento.dart';
 import 'grafico_intensita.dart';
+import 'nota_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'serie_labels.dart';
 
@@ -125,6 +128,58 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
   /// Il testo prima di premere il microfono: il dettato si aggiunge sotto.
   String _prefisso = '';
 
+  /// Il volume accanto ai titoli dei blocchi, dentro il testo: dove sta
+  /// ogni titolo si misura dopo che il campo è stato disegnato.
+  final _chiaveCampo = GlobalKey();
+  final _chiaveStrato = GlobalKey();
+  List<({double alto, double altezza, String testo})> _etichette = const [];
+
+  void _misuraEtichette() {
+    if (!mounted) return;
+    final strato = _chiaveStrato.currentContext?.findRenderObject();
+    final campo = _chiaveCampo.currentContext?.findRenderObject();
+    RenderEditable? editabile;
+    void cerca(RenderObject o) {
+      if (editabile != null) return;
+      if (o is RenderEditable) {
+        editabile = o;
+      } else {
+        o.visitChildren(cerca);
+      }
+    }
+
+    if (campo != null) cerca(campo);
+    final nuove = <({double alto, double altezza, String testo})>[];
+    final testo = widget.controller.text;
+    if (strato is RenderBox &&
+        strato.hasSize &&
+        editabile != null &&
+        editabile!.hasSize &&
+        testo.isNotEmpty) {
+      final inizi = [0];
+      for (var i = 0; i < testo.length; i++) {
+        if (testo.codeUnitAt(i) == 10) inizi.add(i + 1);
+      }
+      for (final MapEntry(key: riga, value: volume) in volumiPerBlocco(
+        widget.scritto,
+      ).entries) {
+        if (riga >= inizi.length) continue;
+        final cursore = editabile!.getLocalRectForCaret(
+          TextPosition(offset: inizi[riga]),
+        );
+        final alto = strato
+            .globalToLocal(editabile!.localToGlobal(cursore.topLeft))
+            .dy;
+        nuove.add((
+          alto: alto,
+          altezza: cursore.height,
+          testo: etichettaBlocco(volume),
+        ));
+      }
+    }
+    if (!listEquals(nuove, _etichette)) setState(() => _etichette = nuove);
+  }
+
   @override
   void dispose() {
     _dettatore?.dispose();
@@ -170,14 +225,14 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
   }
 
   /// La riga dove sta il cursore, per dire subito come è stata capita.
-  RigaScritta? _rigaCorrente() {
+  ({int indice, RigaScritta riga})? _rigaCorrente() {
     final controller = widget.controller;
     final selezione = controller.selection;
     if (!selezione.isValid) return null;
     final fine = selezione.baseOffset.clamp(0, controller.text.length);
     final indice = '\n'.allMatches(controller.text.substring(0, fine)).length;
     final righe = widget.scritto.righe;
-    return indice < righe.length ? righe[indice] : null;
+    return indice < righe.length ? (indice: indice, riga: righe[indice]) : null;
   }
 
   @override
@@ -186,6 +241,8 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
     final scritto = widget.scritto;
     final corrente = _rigaCorrente();
     final microfono = DettatoreVocale.disponibile;
+    final volumi = volumiPerBlocco(scritto);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _misuraEtichette());
 
     final editor = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,30 +268,64 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
             ),
           ],
         ),
-        TextField(
-          key: const Key('testo-allenamento'),
-          controller: widget.controller,
-          keyboardType: TextInputType.multiline,
-          minLines: 10,
-          maxLines: null,
-          autocorrect: false,
-          enableSuggestions: false,
-          style: AppTypography.numerica(AppTypography.corpo)
-              .copyWith(color: colori.testo),
-          decoration: const InputDecoration(
-            hintText:
-                'Riscaldamento\n400 mix A1\n\nPrincipale\n2x\n'
-                '4x100 sl B1 @1:40\n4x50 do r15\n\n200 sl sciolto',
-            hintMaxLines: 9,
-          ),
+        // Accanto a ogni titolo di blocco, a destra dentro il campo, il
+        // volume del blocco e il totale fin lì (richiesta del coach
+        // 2026-10-11): non fa parte del testo e non si tocca.
+        Stack(
+          key: _chiaveStrato,
+          children: [
+            KeyedSubtree(
+              key: _chiaveCampo,
+              child: TextField(
+                key: const Key('testo-allenamento'),
+                controller: widget.controller,
+                keyboardType: TextInputType.multiline,
+                minLines: 10,
+                maxLines: null,
+                autocorrect: false,
+                enableSuggestions: false,
+                style: AppTypography.numerica(AppTypography.corpo)
+                    .copyWith(color: colori.testo),
+                decoration: const InputDecoration(
+                  hintText:
+                      'Riscaldamento\n400 mix A1\n\nPrincipale\n2x\n'
+                      "4x100 sl B1 @1:40\nrec 1'\n4x50 do r15\n\n"
+                      '200 sl sciolto',
+                  hintMaxLines: 10,
+                ),
+              ),
+            ),
+            for (final e in _etichette)
+              Positioned(
+                top: e.alto,
+                right: AppSpacing.s12,
+                height: e.altezza,
+                child: IgnorePointer(
+                  child: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(left: AppSpacing.s8),
+                    color: colori.superficie,
+                    child: Text(
+                      e.testo,
+                      maxLines: 1,
+                      style: AppTypography.numerica(AppTypography.etichetta)
+                          .copyWith(
+                            color: colori.azione,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
-        if (corrente != null && corrente.tipo != TipoRiga.vuota)
+        if (corrente != null && corrente.riga.tipo != TipoRiga.vuota)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.s8),
             child: Text(
-              _comeCapita(corrente),
+              _comeCapita(corrente.riga, volumi[corrente.indice]),
               style: AppTypography.piccolo.copyWith(
-                color: corrente.tipo == TipoRiga.errore
+                color: corrente.riga.tipo == TipoRiga.errore
                     ? colori.rosso
                     : colori.testoSecondario,
               ),
@@ -284,7 +375,7 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
         ...widget.sottoIlTesto,
       ],
     );
-    final anteprima = _Anteprima(scritto: scritto);
+    final anteprima = _Anteprima(scritto: scritto, volumi: volumi);
 
     return LayoutBuilder(
       builder: (context, vincoli) {
@@ -350,33 +441,54 @@ class _Andamento extends StatelessWidget {
   }
 }
 
+/// "800 m", o "1.200 m · totale 2.000 m" dal secondo blocco in poi: il
+/// volume accanto al titolo di un blocco.
+String etichettaBlocco(VolumeBlocco v) {
+  final blocco = etichettaVolume(v.blocco) ?? '0 m';
+  final soloQuesto =
+      v.totale.metri == v.blocco.metri && v.totale.secondi == v.blocco.secondi;
+  return soloQuesto ? blocco : '$blocco · totale ${etichettaVolume(v.totale)}';
+}
+
+/// "Recupero 2' prima della serie successiva".
+String _testoRecupero(int secondi) =>
+    'Recupero ${formattaRecupero(secondi)} prima della serie successiva';
+
 /// "8×100m Libero · B1 · rip 1:30" per la riga sotto il cursore.
-String _comeCapita(RigaScritta riga) => switch (riga.tipo) {
-  TipoRiga.vuota => '',
-  TipoRiga.titolo => 'Inizia il blocco ${labelBlocco(riga.blocco!)}',
-  TipoRiga.giri =>
-    'Ripete ${riga.giri} volte le righe sotto, fino alla prima riga vuota',
-  TipoRiga.errore => riga.problema!,
-  TipoRiga.serie => [
-    if (riga.serie.length > 1)
-      titoloGruppo(riga.serie)
-    else
-      titoloSerie(riga.serie.single),
-    ...dettagliSerie(riga.serie.first),
-  ].join(' · '),
-};
+String _comeCapita(RigaScritta riga, VolumeBlocco? volume) =>
+    switch (riga.tipo) {
+      TipoRiga.vuota => '',
+      TipoRiga.titolo =>
+        'Inizia il blocco ${labelBlocco(riga.blocco!)}'
+            '${volume == null ? '' : ' · ${etichettaBlocco(volume)}'}',
+      TipoRiga.recupero => _testoRecupero(riga.recuperoS!),
+      TipoRiga.giri =>
+        'Ripete ${riga.giri} volte le righe sotto, fino alla prima riga vuota',
+      TipoRiga.errore => riga.problema!,
+      TipoRiga.serie => [
+        if (riga.serie.length > 1)
+          titoloGruppo(riga.serie)
+        else
+          titoloSerie(riga.serie.single),
+        ...dettagliSerie(riga.serie.first),
+      ].join(' · '),
+    };
 
 /// Come è stato capito il testo, riga per riga: i titoli dei blocchi, i
 /// "2x" con le serie che ripetono, le righe non capite in rosso.
 class _Anteprima extends StatelessWidget {
-  const _Anteprima({required this.scritto});
+  const _Anteprima({required this.scritto, required this.volumi});
 
   final AllenamentoScritto scritto;
+  final Map<int, VolumeBlocco> volumi;
 
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final righe = scritto.righe.where((r) => r.tipo != TipoRiga.vuota);
+    final righe = [
+      for (final (i, r) in scritto.righe.indexed)
+        if (r.tipo != TipoRiga.vuota) (indice: i, riga: r),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -393,16 +505,58 @@ class _Anteprima extends StatelessWidget {
               color: colori.testoSecondario,
             ),
           ),
-        for (final riga in righe) _RigaAnteprima(riga: riga),
+        for (final r in righe) ...[
+          // Un titolo con una serie sulla stessa riga: prima il titolo.
+          if (volumi[r.indice] case final volume?
+              when r.riga.tipo != TipoRiga.titolo)
+            _TitoloBlocco(blocco: r.riga.blocco!, volume: volume),
+          _RigaAnteprima(riga: r.riga, volume: volumi[r.indice]),
+        ],
       ],
     );
   }
 }
 
+/// Il titolo di un blocco con il suo volume a destra.
+class _TitoloBlocco extends StatelessWidget {
+  const _TitoloBlocco({required this.blocco, this.volume});
+
+  final String blocco;
+  final VolumeBlocco? volume;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: AppSpacing.s12,
+        bottom: AppSpacing.s4,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              labelBlocco(blocco),
+              style: AppTypography.corpoForte.copyWith(color: colori.testo),
+            ),
+          ),
+          if (volume case final v?)
+            Text(
+              etichettaBlocco(v),
+              style: AppTypography.numerica(AppTypography.etichetta)
+                  .copyWith(color: colori.azione, fontWeight: FontWeight.w700),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RigaAnteprima extends StatelessWidget {
-  const _RigaAnteprima({required this.riga});
+  const _RigaAnteprima({required this.riga, this.volume});
 
   final RigaScritta riga;
+  final VolumeBlocco? volume;
 
   @override
   Widget build(BuildContext context) {
@@ -411,14 +565,30 @@ class _RigaAnteprima extends StatelessWidget {
       case TipoRiga.vuota:
         return const SizedBox.shrink();
       case TipoRiga.titolo:
+        return _TitoloBlocco(blocco: riga.blocco!, volume: volume);
+      case TipoRiga.recupero:
         return Padding(
-          padding: const EdgeInsets.only(
-            top: AppSpacing.s12,
-            bottom: AppSpacing.s4,
+          padding: EdgeInsets.only(
+            left: riga.giri > 1 ? AppSpacing.s12 : 0,
+            top: AppSpacing.s4,
           ),
-          child: Text(
-            labelBlocco(riga.blocco!),
-            style: AppTypography.corpoForte.copyWith(color: colori.testo),
+          child: Row(
+            children: [
+              Icon(
+                Icons.hourglass_bottom,
+                size: 16,
+                color: colori.testoSecondario,
+              ),
+              const SizedBox(width: AppSpacing.s8),
+              Expanded(
+                child: Text(
+                  _testoRecupero(riga.recuperoS!),
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       case TipoRiga.giri:
@@ -567,7 +737,12 @@ void mostraAiutoScrittura(BuildContext context) {
         ('A1 A2 B1 B2 C1 C2 C3 D', 'zona'),
         ('1:25', 'passo sui 100'),
         ('@1:30', 'ripartenza'),
-        ('r15  r1:00', 'recupero'),
+        ('r15  r1:00', 'recupero fra le ripetute'),
+        (
+          "rec 2'  pausa 1:30",
+          'da soli su una riga: recupero dopo la serie sopra, prima della '
+              'successiva',
+        ),
         ('pinne palette  [pinne corte]', 'attrezzi'),
         ('"testo"', 'nota; anche le parole che non conosco finiscono qui'),
       ];

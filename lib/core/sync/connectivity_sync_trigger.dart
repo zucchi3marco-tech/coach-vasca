@@ -12,9 +12,7 @@ final connectivitySyncTriggerProvider = Provider<void>((ref) {
 
   syncEngine.processQueue();
 
-  final subscription = Connectivity().onConnectivityChanged.listen((
-    results,
-  ) {
+  final subscription = Connectivity().onConnectivityChanged.listen((results) {
     if (!results.contains(ConnectivityResult.none)) {
       syncEngine.processQueue();
     }

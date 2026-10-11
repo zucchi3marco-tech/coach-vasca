@@ -74,6 +74,7 @@ class SerieCarico implements DatiSerie {
     this.recuperoS,
     this.ripartenzaS,
     this.passoObiettivoS,
+    this.recuperoDopoS,
   });
 
   factory SerieCarico.fromMap(Map<String, dynamic> r) => SerieCarico(
@@ -86,6 +87,7 @@ class SerieCarico implements DatiSerie {
     recuperoS: r['recupero_s'] as int?,
     ripartenzaS: (r['ripartenza_s'] as num?)?.toDouble(),
     passoObiettivoS: (r['passo_obiettivo_s'] as num?)?.toDouble(),
+    recuperoDopoS: r['recupero_dopo_s'] as int?,
   );
 
   final String allenamentoId;
@@ -105,6 +107,8 @@ class SerieCarico implements DatiSerie {
   final double? ripartenzaS;
   @override
   final double? passoObiettivoS;
+  @override
+  final int? recuperoDopoS;
 
   @override
   String get blocco => 'centrale';

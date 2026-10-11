@@ -54,6 +54,11 @@ abstract interface class DatiSerie {
   /// Righe dello stesso gruppo (una piramide, un "2x") hanno lo stesso
   /// valore; null per una serie da sola.
   String? get piramideId;
+
+  /// Il recupero dopo la serie, prima della successiva, in secondi
+  /// ("rec 2'" su una riga da sola nel compilatore). Diverso da
+  /// [recuperoS], che sta fra le ripetute della stessa serie.
+  int? get recuperoDopoS;
 }
 
 class Serie implements DatiSerie {
@@ -76,6 +81,7 @@ class Serie implements DatiSerie {
     this.note,
     this.piramideId,
     this.esito,
+    this.recuperoDopoS,
   });
 
   final String id;
@@ -115,6 +121,9 @@ class Serie implements DatiSerie {
   @override
   final String? piramideId;
 
+  @override
+  final int? recuperoDopoS;
+
   /// 'fatta' | 'saltata', segnato a bordo vasca durante la seduta; null
   /// finché non si segna. Le saltate non contano nel volume reale.
   final String? esito;
@@ -148,6 +157,7 @@ class Serie implements DatiSerie {
       note: map['note'] as String?,
       piramideId: map['piramide_id'] as String?,
       esito: map['esito'] as String?,
+      recuperoDopoS: map['recupero_dopo_s'] as int?,
     );
   }
 }

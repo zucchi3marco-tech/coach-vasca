@@ -31,6 +31,7 @@ class _SerieFinta implements SerieRepository {
     String? attrezzatura,
     String? note,
     String? piramideId,
+    int? recuperoDopoS,
   }) async {
     operazioni.add('crea $ordine');
     create.add({
@@ -61,6 +62,7 @@ class _SerieFinta implements SerieRepository {
     String? attrezzatura,
     String? note,
     ({String? id})? piramide,
+    ({int? secondi})? recuperoDopo,
   }) async {
     operazioni.add('aggiorna $id');
     aggiornate.add({'id': id, 'ripetute': ripetute, 'distanzaM': distanzaM});

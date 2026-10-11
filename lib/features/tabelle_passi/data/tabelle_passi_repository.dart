@@ -138,10 +138,13 @@ class TabellePassiRepository {
       )..where((t) => t.id.equals(testId))).getSingle();
       final righeComplete = <Map<String, dynamic>>[];
       for (final riga in payload) {
-        final esistente = await (_db.select(_db.tabellePassiTable)..where(
-              (t) => t.testId.equals(testId) & t.zona.equals(riga['zona'] as String),
-            ))
-            .getSingleOrNull();
+        final esistente =
+            await (_db.select(_db.tabellePassiTable)..where(
+                  (t) =>
+                      t.testId.equals(testId) &
+                      t.zona.equals(riga['zona'] as String),
+                ))
+                .getSingleOrNull();
         righeComplete.add({
           ...riga,
           'id': esistente?.id ?? _uuid.v4(),
@@ -171,9 +174,7 @@ class TabellePassiRepository {
   }
 }
 
-final tabellePassiRepositoryProvider = Provider<TabellePassiRepository>((
-  ref,
-) {
+final tabellePassiRepositoryProvider = Provider<TabellePassiRepository>((ref) {
   return TabellePassiRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),

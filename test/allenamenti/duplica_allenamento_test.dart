@@ -57,6 +57,7 @@ class _Serie implements SerieRepository {
     String? attrezzatura,
     String? note,
     String? piramideId,
+    int? recuperoDopoS,
   }) async {
     create.add((
       allenamentoId: allenamentoId,

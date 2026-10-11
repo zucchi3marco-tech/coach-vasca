@@ -41,6 +41,7 @@ class SerieRepository {
       note: row.note,
       piramideId: row.piramideId,
       esito: row.esito,
+      recuperoDopoS: row.recuperoDopoS,
     );
   }
 
@@ -64,6 +65,7 @@ class SerieRepository {
       note: map['note'] as String?,
       piramideId: map['piramide_id'] as String?,
       esito: map['esito'] as String?,
+      recuperoDopoS: map['recupero_dopo_s'] as int?,
     );
   }
 
@@ -87,6 +89,7 @@ class SerieRepository {
       note: Value(map['note'] as String?),
       piramideId: Value(map['piramide_id'] as String?),
       esito: Value(map['esito'] as String?),
+      recuperoDopoS: Value(map['recupero_dopo_s'] as int?),
     );
   }
 
@@ -258,6 +261,7 @@ class SerieRepository {
     String? attrezzatura,
     String? note,
     String? piramideId,
+    int? recuperoDopoS,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -277,6 +281,7 @@ class SerieRepository {
       'attrezzatura': attrezzatura,
       'note': note,
       'piramide_id': piramideId,
+      'recupero_dopo_s': recuperoDopoS,
     };
     try {
       final row = await _client.from('serie').insert(payload).select().single();
@@ -326,6 +331,10 @@ class SerieRepository {
     /// Solo dalla scrittura a testo, che rifà anche i gruppi: senza, il
     /// gruppo della serie resta com'è.
     ({String? id})? piramide,
+
+    /// Come [piramide]: senza, il recupero dopo la serie resta com'è (il
+    /// modulo della singola serie non lo tocca).
+    ({int? secondi})? recuperoDopo,
   }) async {
     final payload = {
       'ordine': ordine,
@@ -342,6 +351,7 @@ class SerieRepository {
       'attrezzatura': attrezzatura,
       'note': note,
       if (piramide != null) 'piramide_id': piramide.id,
+      if (recuperoDopo != null) 'recupero_dopo_s': recuperoDopo.secondi,
     };
     try {
       final row = await _client
@@ -374,6 +384,9 @@ class SerieRepository {
           piramideId: piramide == null
               ? const Value.absent()
               : Value(piramide.id),
+          recuperoDopoS: recuperoDopo == null
+              ? const Value.absent()
+              : Value(recuperoDopo.secondi),
         ),
       );
       await enqueueOperation(

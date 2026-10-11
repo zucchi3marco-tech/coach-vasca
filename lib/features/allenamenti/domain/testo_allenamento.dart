@@ -2,6 +2,7 @@ import '../../../core/utils/pace_format.dart';
 import 'dettato_allenamento.dart';
 import 'riordino_serie.dart';
 import 'serie.dart';
+import 'volume_allenamento.dart';
 
 /// Scrivere un allenamento come su un foglio, una serie per riga — idea
 /// presa dall'editor di Swimtraxx Hub (richiesta del coach 2026-10-08):
@@ -37,6 +38,10 @@ import 'serie.dart';
 ///   ripartenza "@1:30", recupero "r15" (o "r1:00"),
 ///   attrezzi (pinne, palette, …, o "[pinne corte]"), note fra
 ///   virgolette. Una parola che non si riconosce finisce nelle note.
+/// - Una riga con solo un recupero ("rec 2'", "recupero 1:30", "pausa
+///   2'", "r30''") è il riposo dopo la serie sopra, prima della
+///   successiva (`recuperoDopoS`): non è una serie e non conta nel
+///   volume, solo nella durata.
 ///
 /// [testoDaSerie] fa il contrario: riscrive le serie di un allenamento in
 /// questo formato, in modo che rilette diano le stesse serie.
@@ -57,6 +62,7 @@ class SerieScritta implements DatiSerie {
     this.attrezzatura,
     this.note,
     this.piramideId,
+    this.recuperoDopoS,
   });
 
   @override
@@ -89,9 +95,17 @@ class SerieScritta implements DatiSerie {
   @override
   final String? piramideId;
 
+  @override
+  final int? recuperoDopoS;
+
   int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
 
-  SerieScritta _conGruppo(String? gruppo) => SerieScritta(
+  SerieScritta _conGruppo(String? gruppo) => _copia(gruppo: gruppo);
+
+  SerieScritta _conRecuperoDopo(int secondi) =>
+      _copia(gruppo: piramideId, recuperoDopo: secondi);
+
+  SerieScritta _copia({String? gruppo, int? recuperoDopo}) => SerieScritta(
     blocco: blocco,
     ripetute: ripetute,
     distanzaM: distanzaM,
@@ -105,10 +119,11 @@ class SerieScritta implements DatiSerie {
     attrezzatura: attrezzatura,
     note: note,
     piramideId: gruppo,
+    recuperoDopoS: recuperoDopo ?? recuperoDopoS,
   );
 }
 
-enum TipoRiga { vuota, titolo, giri, serie, errore }
+enum TipoRiga { vuota, titolo, giri, serie, recupero, errore }
 
 /// Come è stata capita una riga del testo, per mostrarlo accanto mentre
 /// si scrive.
@@ -121,6 +136,7 @@ class RigaScritta {
     this.problema,
     this.giri = 1,
     this.blocco,
+    this.recuperoS,
   });
 
   final String testo;
@@ -141,6 +157,9 @@ class RigaScritta {
 
   /// Il blocco in cui cade la riga (per un titolo, quello che apre).
   final String? blocco;
+
+  /// Per una riga di recupero fra le serie: quanto, in secondi.
+  final int? recuperoS;
 }
 
 class AllenamentoScritto {
@@ -375,6 +394,34 @@ final _rxPrimi = RegExp(r'''^(\d+)['’′](\d{1,2})?(?:["”″]|'')?$''');
 final _rxSecondi = RegExp(r'''^(\d+)(?:["”″]|'')$''');
 final _rxMinuti = RegExp(r'^(\d+)min$', caseSensitive: false);
 final _rxRecupero = RegExp(r'^r(?:ec)?(.+)$', caseSensitive: false);
+
+/// Le parole di una riga che è solo un recupero fra le serie.
+const _paroleRecuperoDopo = {'rec', 'recupero', 'pausa', 'riposo'};
+
+/// Una riga che è solo un recupero ("rec 2'", "pausa 1:30", "2' di
+/// recupero", "r30''"): i secondi, o null se la riga è altro.
+int? _leggiRecuperoDopo(String riga) {
+  final token = [
+    for (final t in _normalizza(riga.toLowerCase()).split(RegExp(r'\s+')))
+      if (t.isNotEmpty && t != 'di' && t != ':') t,
+  ];
+  double? secondi;
+  if (token.length == 1) {
+    final m = _rxRecupero.firstMatch(token.single);
+    if (m != null) secondi = _tempo(m[1]!);
+  } else if (token.length == 2) {
+    if (_paroleRecuperoDopo.contains(token.first)) {
+      secondi = _tempo(token.last);
+    } else if (_paroleRecuperoDopo.contains(token.last) &&
+        // "400 recupero" non è un recupero di 400 secondi: dopo il
+        // numero serve l'unità ("2'", "30''").
+        !RegExp(r'^\d+$').hasMatch(token.first)) {
+      secondi = _tempo(token.first);
+    }
+  }
+  if (secondi == null || secondi <= 0) return null;
+  return secondi.round();
+}
 
 /// "5'", "5'30\"", "30\"", "10min" → secondi.
 int? _durata(String t) {
@@ -705,9 +752,17 @@ String righeDaDettato(String dettato) {
 }
 
 /// [pezzo] da solo non si capisce e [prima] è una serie: è il seguito.
-bool _continuaLaSerie(String pezzo, String prima) =>
-    interpretaAllenamento(pezzo).righe.single.tipo == TipoRiga.errore &&
-    interpretaAllenamento(prima).righe.single.tipo == TipoRiga.serie;
+/// Anche "recupero 20" detto dopo una serie è il suo recupero fra le
+/// ripetute; per il recupero fra due serie si dice "pausa".
+bool _continuaLaSerie(String pezzo, String prima) {
+  if (interpretaAllenamento(prima).righe.single.tipo != TipoRiga.serie) {
+    return false;
+  }
+  if (_leggiRecuperoDopo(pezzo) != null) {
+    return RegExp(r'^rec', caseSensitive: false).hasMatch(pezzo.trim());
+  }
+  return interpretaAllenamento(pezzo).righe.single.tipo == TipoRiga.errore;
+}
 
 /// Interpreta una riga sola, come quella del pannello "Aggiungi serie":
 /// le sue serie (più d'una per una piramide, con lo stesso `piramideId`
@@ -806,6 +861,37 @@ AllenamentoScritto interpretaAllenamento(
           testo: grezza,
           tipo: TipoRiga.giri,
           giri: n,
+          blocco: blocco,
+        ),
+      );
+      continue;
+    }
+
+    final pausa = _leggiRecuperoDopo(t);
+    if (pausa != null) {
+      // Il recupero va dopo la serie scritta sopra: dentro un "2x" quella
+      // del gruppo (e si ripete a ogni giro), altrimenti l'ultima.
+      final destinazione = rigaGiro != null ? corpo : serie;
+      if (destinazione.isEmpty) {
+        righe.add(
+          RigaScritta(
+            testo: grezza,
+            tipo: TipoRiga.errore,
+            problema: rigaGiro != null
+                ? 'Il recupero va dopo una serie del gruppo'
+                : 'Il recupero va dopo una serie',
+            blocco: blocco,
+          ),
+        );
+        continue;
+      }
+      destinazione.last = destinazione.last._conRecuperoDopo(pausa);
+      righe.add(
+        RigaScritta(
+          testo: grezza,
+          tipo: TipoRiga.recupero,
+          recuperoS: pausa,
+          giri: rigaGiro == null ? 1 : volte,
           blocco: blocco,
         ),
       );
@@ -914,6 +1000,9 @@ int periodoGruppo(List<DatiSerie> gruppo) {
   return n;
 }
 
+/// La riga di recupero dopo una serie: "rec 2'", "rec 30''".
+String _rigaRecuperoDopo(int secondi) => 'rec ${_durataTesto(secondi)}';
+
 /// "10'", "5'30''", "30''": i secondi con due apici, perché le
 /// virgolette nel testo sono delle note.
 String _durataTesto(int secondi) {
@@ -978,6 +1067,11 @@ String _rigaSerie(DatiSerie s) {
 String? _rigaPiramide(List<DatiSerie> gruppo) {
   final struttura = strutturaPiramide(gruppo);
   if (struttura == null) return null;
+  // Un recupero fra un pezzo e l'altro non si scrive in una piramide:
+  // allora è un "2x".
+  if (gruppo.take(gruppo.length - 1).any((s) => s.recuperoDopoS != null)) {
+    return null;
+  }
   final n = gruppo.length;
   final p = struttura.distanze;
   final r1 = gruppo.first.recuperoS;
@@ -1010,13 +1104,16 @@ String testoDaSerie(List<DatiSerie> serie) {
       righe.add(_nomiBlocco[primo.blocco] ?? primo.blocco);
       blocco = primo.blocco;
     }
+    final ultimo = gruppo.last.recuperoDopoS;
     if (gruppo.length == 1) {
       righe.add(_rigaSerie(primo));
+      if (ultimo != null) righe.add(_rigaRecuperoDopo(ultimo));
       continue;
     }
     final piramide = _rigaPiramide(gruppo);
     if (piramide != null) {
       righe.add(piramide);
+      if (ultimo != null) righe.add(_rigaRecuperoDopo(ultimo));
       continue;
     }
     final periodo = periodoGruppo(gruppo);
@@ -1025,13 +1122,67 @@ String testoDaSerie(List<DatiSerie> serie) {
         !_nomiBlocco.containsValue(righe.last)) {
       righe.add('');
     }
-    righe
-      ..add('${gruppo.length ~/ periodo}x')
-      ..addAll(gruppo.take(periodo).map(_rigaSerie))
-      ..add('');
+    righe.add('${gruppo.length ~/ periodo}x');
+    for (final s in gruppo.take(periodo)) {
+      righe.add(_rigaSerie(s));
+      if (s.recuperoDopoS case final r?) righe.add(_rigaRecuperoDopo(r));
+    }
+    righe.add('');
+    // Un recupero diverso dopo l'ultimo giro: fuori dal gruppo, sotto la
+    // riga vuota.
+    if (ultimo != null && ultimo != gruppo[periodo - 1].recuperoDopoS) {
+      righe.add(_rigaRecuperoDopo(ultimo));
+    }
   }
   while (righe.isNotEmpty && righe.last.isEmpty) {
     righe.removeLast();
   }
   return righe.join('\n');
+}
+
+/// Il volume di un blocco del testo e quello di tutto l'allenamento fino
+/// alla fine di quel blocco.
+typedef VolumeBlocco = ({VolumeAllenamento blocco, VolumeAllenamento totale});
+
+/// Il volume di ogni blocco, per indice della riga che lo apre (il titolo,
+/// anche con una serie sulla stessa riga): accanto a "Riscaldamento",
+/// "Principale"... nel compilatore. Le serie di un "2x" contano tante
+/// volte quanti i giri. Le serie prima del primo titolo non hanno una
+/// riga a cui stare accanto: contano solo nel totale.
+Map<int, VolumeBlocco> volumiPerBlocco(AllenamentoScritto scritto) {
+  final volumi = <int, VolumeBlocco>{};
+  var totale = VolumeAllenamento.zero;
+  int? aperto;
+  var delBlocco = VolumeAllenamento.zero;
+
+  void chiudi() {
+    if (aperto case final riga?) {
+      volumi[riga] = (blocco: delBlocco, totale: totale);
+    }
+  }
+
+  for (final (i, riga) in scritto.righe.indexed) {
+    final titolo = _rxTitolo.firstMatch(riga.testo.trim());
+    final apre =
+        riga.tipo == TipoRiga.titolo ||
+        (titolo != null &&
+            _titoliBlocco.containsKey(titolo[1]!.toLowerCase()) &&
+            riga.tipo != TipoRiga.vuota);
+    if (apre) {
+      chiudi();
+      aperto = i;
+      delBlocco = VolumeAllenamento.zero;
+    }
+    if (riga.tipo != TipoRiga.serie) continue;
+    final volume = VolumeAllenamento(
+      metri: riga.giri * riga.serie.fold(0, (t, s) => t + s.distanzaTotaleM),
+      secondi:
+          riga.giri *
+          riga.serie.fold(0, (t, s) => t + s.ripetute * (s.durataS ?? 0)),
+    );
+    delBlocco += volume;
+    totale += volume;
+  }
+  chiudi();
+  return volumi;
 }
