@@ -4117,6 +4117,18 @@ class $StagioniTableTable extends StagioniTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fasiJsonMeta = const VerificationMeta(
+    'fasiJson',
+  );
+  @override
+  late final GeneratedColumn<String> fasiJson = GeneratedColumn<String>(
+    'fasi_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4127,6 +4139,7 @@ class $StagioniTableTable extends StagioniTable
     obiettivo,
     gruppoId,
     campionato,
+    fasiJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4195,6 +4208,12 @@ class $StagioniTableTable extends StagioniTable
         campionato.isAcceptableOrUnknown(data['campionato']!, _campionatoMeta),
       );
     }
+    if (data.containsKey('fasi_json')) {
+      context.handle(
+        _fasiJsonMeta,
+        fasiJson.isAcceptableOrUnknown(data['fasi_json']!, _fasiJsonMeta),
+      );
+    }
     return context;
   }
 
@@ -4236,6 +4255,10 @@ class $StagioniTableTable extends StagioniTable
         DriftSqlType.string,
         data['${effectivePrefix}campionato'],
       ),
+      fasiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fasi_json'],
+      )!,
     );
   }
 
@@ -4255,6 +4278,10 @@ class StagioniTableData extends DataClass
   final String? obiettivo;
   final String? gruppoId;
   final String? campionato;
+
+  /// Le fasi con gli obiettivi settimanali, come lista JSON (vedi
+  /// `FaseStagione`).
+  final String fasiJson;
   const StagioniTableData({
     required this.id,
     required this.clubId,
@@ -4264,6 +4291,7 @@ class StagioniTableData extends DataClass
     this.obiettivo,
     this.gruppoId,
     this.campionato,
+    required this.fasiJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4282,6 +4310,7 @@ class StagioniTableData extends DataClass
     if (!nullToAbsent || campionato != null) {
       map['campionato'] = Variable<String>(campionato);
     }
+    map['fasi_json'] = Variable<String>(fasiJson);
     return map;
   }
 
@@ -4301,6 +4330,7 @@ class StagioniTableData extends DataClass
       campionato: campionato == null && nullToAbsent
           ? const Value.absent()
           : Value(campionato),
+      fasiJson: Value(fasiJson),
     );
   }
 
@@ -4318,6 +4348,7 @@ class StagioniTableData extends DataClass
       obiettivo: serializer.fromJson<String?>(json['obiettivo']),
       gruppoId: serializer.fromJson<String?>(json['gruppoId']),
       campionato: serializer.fromJson<String?>(json['campionato']),
+      fasiJson: serializer.fromJson<String>(json['fasiJson']),
     );
   }
   @override
@@ -4332,6 +4363,7 @@ class StagioniTableData extends DataClass
       'obiettivo': serializer.toJson<String?>(obiettivo),
       'gruppoId': serializer.toJson<String?>(gruppoId),
       'campionato': serializer.toJson<String?>(campionato),
+      'fasiJson': serializer.toJson<String>(fasiJson),
     };
   }
 
@@ -4344,6 +4376,7 @@ class StagioniTableData extends DataClass
     Value<String?> obiettivo = const Value.absent(),
     Value<String?> gruppoId = const Value.absent(),
     Value<String?> campionato = const Value.absent(),
+    String? fasiJson,
   }) => StagioniTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -4353,6 +4386,7 @@ class StagioniTableData extends DataClass
     obiettivo: obiettivo.present ? obiettivo.value : this.obiettivo,
     gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
     campionato: campionato.present ? campionato.value : this.campionato,
+    fasiJson: fasiJson ?? this.fasiJson,
   );
   StagioniTableData copyWithCompanion(StagioniTableCompanion data) {
     return StagioniTableData(
@@ -4368,6 +4402,7 @@ class StagioniTableData extends DataClass
       campionato: data.campionato.present
           ? data.campionato.value
           : this.campionato,
+      fasiJson: data.fasiJson.present ? data.fasiJson.value : this.fasiJson,
     );
   }
 
@@ -4381,7 +4416,8 @@ class StagioniTableData extends DataClass
           ..write('dataFine: $dataFine, ')
           ..write('obiettivo: $obiettivo, ')
           ..write('gruppoId: $gruppoId, ')
-          ..write('campionato: $campionato')
+          ..write('campionato: $campionato, ')
+          ..write('fasiJson: $fasiJson')
           ..write(')'))
         .toString();
   }
@@ -4396,6 +4432,7 @@ class StagioniTableData extends DataClass
     obiettivo,
     gruppoId,
     campionato,
+    fasiJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -4408,7 +4445,8 @@ class StagioniTableData extends DataClass
           other.dataFine == this.dataFine &&
           other.obiettivo == this.obiettivo &&
           other.gruppoId == this.gruppoId &&
-          other.campionato == this.campionato);
+          other.campionato == this.campionato &&
+          other.fasiJson == this.fasiJson);
 }
 
 class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
@@ -4420,6 +4458,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
   final Value<String?> obiettivo;
   final Value<String?> gruppoId;
   final Value<String?> campionato;
+  final Value<String> fasiJson;
   final Value<int> rowid;
   const StagioniTableCompanion({
     this.id = const Value.absent(),
@@ -4430,6 +4469,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     this.obiettivo = const Value.absent(),
     this.gruppoId = const Value.absent(),
     this.campionato = const Value.absent(),
+    this.fasiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   StagioniTableCompanion.insert({
@@ -4441,6 +4481,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     this.obiettivo = const Value.absent(),
     this.gruppoId = const Value.absent(),
     this.campionato = const Value.absent(),
+    this.fasiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -4456,6 +4497,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Expression<String>? obiettivo,
     Expression<String>? gruppoId,
     Expression<String>? campionato,
+    Expression<String>? fasiJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4467,6 +4509,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       if (obiettivo != null) 'obiettivo': obiettivo,
       if (gruppoId != null) 'gruppo_id': gruppoId,
       if (campionato != null) 'campionato': campionato,
+      if (fasiJson != null) 'fasi_json': fasiJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4480,6 +4523,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     Value<String?>? obiettivo,
     Value<String?>? gruppoId,
     Value<String?>? campionato,
+    Value<String>? fasiJson,
     Value<int>? rowid,
   }) {
     return StagioniTableCompanion(
@@ -4491,6 +4535,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
       obiettivo: obiettivo ?? this.obiettivo,
       gruppoId: gruppoId ?? this.gruppoId,
       campionato: campionato ?? this.campionato,
+      fasiJson: fasiJson ?? this.fasiJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4522,6 +4567,9 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
     if (campionato.present) {
       map['campionato'] = Variable<String>(campionato.value);
     }
+    if (fasiJson.present) {
+      map['fasi_json'] = Variable<String>(fasiJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4539,6 +4587,7 @@ class StagioniTableCompanion extends UpdateCompanion<StagioniTableData> {
           ..write('obiettivo: $obiettivo, ')
           ..write('gruppoId: $gruppoId, ')
           ..write('campionato: $campionato, ')
+          ..write('fasiJson: $fasiJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13921,6 +13970,460 @@ class SchedeBenessereTableCompanion
   }
 }
 
+class $RpeSeduteTableTable extends RpeSeduteTable
+    with TableInfo<$RpeSeduteTableTable, RpeSeduteTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RpeSeduteTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventoTipoMeta = const VerificationMeta(
+    'eventoTipo',
+  );
+  @override
+  late final GeneratedColumn<String> eventoTipo = GeneratedColumn<String>(
+    'evento_tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventoIdMeta = const VerificationMeta(
+    'eventoId',
+  );
+  @override
+  late final GeneratedColumn<String> eventoId = GeneratedColumn<String>(
+    'evento_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rpeMeta = const VerificationMeta('rpe');
+  @override
+  late final GeneratedColumn<int> rpe = GeneratedColumn<int>(
+    'rpe',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    atletaId,
+    clubId,
+    eventoTipo,
+    eventoId,
+    data,
+    rpe,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rpe_sedute_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RpeSeduteTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('evento_tipo')) {
+      context.handle(
+        _eventoTipoMeta,
+        eventoTipo.isAcceptableOrUnknown(data['evento_tipo']!, _eventoTipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventoTipoMeta);
+    }
+    if (data.containsKey('evento_id')) {
+      context.handle(
+        _eventoIdMeta,
+        eventoId.isAcceptableOrUnknown(data['evento_id']!, _eventoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventoIdMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('rpe')) {
+      context.handle(
+        _rpeMeta,
+        rpe.isAcceptableOrUnknown(data['rpe']!, _rpeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rpeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RpeSeduteTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RpeSeduteTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      eventoTipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evento_tipo'],
+      )!,
+      eventoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evento_id'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      )!,
+      rpe: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rpe'],
+      )!,
+    );
+  }
+
+  @override
+  $RpeSeduteTableTable createAlias(String alias) {
+    return $RpeSeduteTableTable(attachedDatabase, alias);
+  }
+}
+
+class RpeSeduteTableData extends DataClass
+    implements Insertable<RpeSeduteTableData> {
+  final String id;
+  final String atletaId;
+  final String clubId;
+  final String eventoTipo;
+  final String eventoId;
+  final DateTime data;
+  final int rpe;
+  const RpeSeduteTableData({
+    required this.id,
+    required this.atletaId,
+    required this.clubId,
+    required this.eventoTipo,
+    required this.eventoId,
+    required this.data,
+    required this.rpe,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['evento_tipo'] = Variable<String>(eventoTipo);
+    map['evento_id'] = Variable<String>(eventoId);
+    map['data'] = Variable<DateTime>(data);
+    map['rpe'] = Variable<int>(rpe);
+    return map;
+  }
+
+  RpeSeduteTableCompanion toCompanion(bool nullToAbsent) {
+    return RpeSeduteTableCompanion(
+      id: Value(id),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      eventoTipo: Value(eventoTipo),
+      eventoId: Value(eventoId),
+      data: Value(data),
+      rpe: Value(rpe),
+    );
+  }
+
+  factory RpeSeduteTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RpeSeduteTableData(
+      id: serializer.fromJson<String>(json['id']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      eventoTipo: serializer.fromJson<String>(json['eventoTipo']),
+      eventoId: serializer.fromJson<String>(json['eventoId']),
+      data: serializer.fromJson<DateTime>(json['data']),
+      rpe: serializer.fromJson<int>(json['rpe']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'eventoTipo': serializer.toJson<String>(eventoTipo),
+      'eventoId': serializer.toJson<String>(eventoId),
+      'data': serializer.toJson<DateTime>(data),
+      'rpe': serializer.toJson<int>(rpe),
+    };
+  }
+
+  RpeSeduteTableData copyWith({
+    String? id,
+    String? atletaId,
+    String? clubId,
+    String? eventoTipo,
+    String? eventoId,
+    DateTime? data,
+    int? rpe,
+  }) => RpeSeduteTableData(
+    id: id ?? this.id,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    eventoTipo: eventoTipo ?? this.eventoTipo,
+    eventoId: eventoId ?? this.eventoId,
+    data: data ?? this.data,
+    rpe: rpe ?? this.rpe,
+  );
+  RpeSeduteTableData copyWithCompanion(RpeSeduteTableCompanion data) {
+    return RpeSeduteTableData(
+      id: data.id.present ? data.id.value : this.id,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      eventoTipo: data.eventoTipo.present
+          ? data.eventoTipo.value
+          : this.eventoTipo,
+      eventoId: data.eventoId.present ? data.eventoId.value : this.eventoId,
+      data: data.data.present ? data.data.value : this.data,
+      rpe: data.rpe.present ? data.rpe.value : this.rpe,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RpeSeduteTableData(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('eventoTipo: $eventoTipo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('data: $data, ')
+          ..write('rpe: $rpe')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, atletaId, clubId, eventoTipo, eventoId, data, rpe);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RpeSeduteTableData &&
+          other.id == this.id &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.eventoTipo == this.eventoTipo &&
+          other.eventoId == this.eventoId &&
+          other.data == this.data &&
+          other.rpe == this.rpe);
+}
+
+class RpeSeduteTableCompanion extends UpdateCompanion<RpeSeduteTableData> {
+  final Value<String> id;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<String> eventoTipo;
+  final Value<String> eventoId;
+  final Value<DateTime> data;
+  final Value<int> rpe;
+  final Value<int> rowid;
+  const RpeSeduteTableCompanion({
+    this.id = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.eventoTipo = const Value.absent(),
+    this.eventoId = const Value.absent(),
+    this.data = const Value.absent(),
+    this.rpe = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RpeSeduteTableCompanion.insert({
+    required String id,
+    required String atletaId,
+    required String clubId,
+    required String eventoTipo,
+    required String eventoId,
+    required DateTime data,
+    required int rpe,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       eventoTipo = Value(eventoTipo),
+       eventoId = Value(eventoId),
+       data = Value(data),
+       rpe = Value(rpe);
+  static Insertable<RpeSeduteTableData> custom({
+    Expression<String>? id,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<String>? eventoTipo,
+    Expression<String>? eventoId,
+    Expression<DateTime>? data,
+    Expression<int>? rpe,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (eventoTipo != null) 'evento_tipo': eventoTipo,
+      if (eventoId != null) 'evento_id': eventoId,
+      if (data != null) 'data': data,
+      if (rpe != null) 'rpe': rpe,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RpeSeduteTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<String>? eventoTipo,
+    Value<String>? eventoId,
+    Value<DateTime>? data,
+    Value<int>? rpe,
+    Value<int>? rowid,
+  }) {
+    return RpeSeduteTableCompanion(
+      id: id ?? this.id,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      eventoTipo: eventoTipo ?? this.eventoTipo,
+      eventoId: eventoId ?? this.eventoId,
+      data: data ?? this.data,
+      rpe: rpe ?? this.rpe,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (eventoTipo.present) {
+      map['evento_tipo'] = Variable<String>(eventoTipo.value);
+    }
+    if (eventoId.present) {
+      map['evento_id'] = Variable<String>(eventoId.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (rpe.present) {
+      map['rpe'] = Variable<int>(rpe.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RpeSeduteTableCompanion(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('eventoTipo: $eventoTipo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('data: $data, ')
+          ..write('rpe: $rpe, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13960,6 +14463,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $TrainingBlockPartiTableTable(this);
   late final $SchedeBenessereTableTable schedeBenessereTable =
       $SchedeBenessereTableTable(this);
+  late final $RpeSeduteTableTable rpeSeduteTable = $RpeSeduteTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13987,6 +14491,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     trainingBlocksTable,
     trainingBlockPartiTable,
     schedeBenessereTable,
+    rpeSeduteTable,
   ];
 }
 
@@ -16106,6 +16611,7 @@ typedef $$StagioniTableTableCreateCompanionBuilder =
       Value<String?> obiettivo,
       Value<String?> gruppoId,
       Value<String?> campionato,
+      Value<String> fasiJson,
       Value<int> rowid,
     });
 typedef $$StagioniTableTableUpdateCompanionBuilder =
@@ -16118,6 +16624,7 @@ typedef $$StagioniTableTableUpdateCompanionBuilder =
       Value<String?> obiettivo,
       Value<String?> gruppoId,
       Value<String?> campionato,
+      Value<String> fasiJson,
       Value<int> rowid,
     });
 
@@ -16167,6 +16674,11 @@ class $$StagioniTableTableFilterComposer
 
   ColumnFilters<String> get campionato => $composableBuilder(
     column: $table.campionato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fasiJson => $composableBuilder(
+    column: $table.fasiJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -16219,6 +16731,11 @@ class $$StagioniTableTableOrderingComposer
     column: $table.campionato,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get fasiJson => $composableBuilder(
+    column: $table.fasiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$StagioniTableTableAnnotationComposer
@@ -16257,6 +16774,9 @@ class $$StagioniTableTableAnnotationComposer
     column: $table.campionato,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get fasiJson =>
+      $composableBuilder(column: $table.fasiJson, builder: (column) => column);
 }
 
 class $$StagioniTableTableTableManager
@@ -16302,6 +16822,7 @@ class $$StagioniTableTableTableManager
                 Value<String?> obiettivo = const Value.absent(),
                 Value<String?> gruppoId = const Value.absent(),
                 Value<String?> campionato = const Value.absent(),
+                Value<String> fasiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion(
                 id: id,
@@ -16312,6 +16833,7 @@ class $$StagioniTableTableTableManager
                 obiettivo: obiettivo,
                 gruppoId: gruppoId,
                 campionato: campionato,
+                fasiJson: fasiJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16324,6 +16846,7 @@ class $$StagioniTableTableTableManager
                 Value<String?> obiettivo = const Value.absent(),
                 Value<String?> gruppoId = const Value.absent(),
                 Value<String?> campionato = const Value.absent(),
+                Value<String> fasiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StagioniTableCompanion.insert(
                 id: id,
@@ -16334,6 +16857,7 @@ class $$StagioniTableTableTableManager
                 obiettivo: obiettivo,
                 gruppoId: gruppoId,
                 campionato: campionato,
+                fasiJson: fasiJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21166,6 +21690,261 @@ typedef $$SchedeBenessereTableTableProcessedTableManager =
       SchedeBenessereTableData,
       PrefetchHooks Function()
     >;
+typedef $$RpeSeduteTableTableCreateCompanionBuilder =
+    RpeSeduteTableCompanion Function({
+      required String id,
+      required String atletaId,
+      required String clubId,
+      required String eventoTipo,
+      required String eventoId,
+      required DateTime data,
+      required int rpe,
+      Value<int> rowid,
+    });
+typedef $$RpeSeduteTableTableUpdateCompanionBuilder =
+    RpeSeduteTableCompanion Function({
+      Value<String> id,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<String> eventoTipo,
+      Value<String> eventoId,
+      Value<DateTime> data,
+      Value<int> rpe,
+      Value<int> rowid,
+    });
+
+class $$RpeSeduteTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RpeSeduteTableTable> {
+  $$RpeSeduteTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rpe => $composableBuilder(
+    column: $table.rpe,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RpeSeduteTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RpeSeduteTableTable> {
+  $$RpeSeduteTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rpe => $composableBuilder(
+    column: $table.rpe,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RpeSeduteTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RpeSeduteTableTable> {
+  $$RpeSeduteTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get eventoTipo => $composableBuilder(
+    column: $table.eventoTipo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get eventoId =>
+      $composableBuilder(column: $table.eventoId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<int> get rpe =>
+      $composableBuilder(column: $table.rpe, builder: (column) => column);
+}
+
+class $$RpeSeduteTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RpeSeduteTableTable,
+          RpeSeduteTableData,
+          $$RpeSeduteTableTableFilterComposer,
+          $$RpeSeduteTableTableOrderingComposer,
+          $$RpeSeduteTableTableAnnotationComposer,
+          $$RpeSeduteTableTableCreateCompanionBuilder,
+          $$RpeSeduteTableTableUpdateCompanionBuilder,
+          (
+            RpeSeduteTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $RpeSeduteTableTable,
+              RpeSeduteTableData
+            >,
+          ),
+          RpeSeduteTableData,
+          PrefetchHooks Function()
+        > {
+  $$RpeSeduteTableTableTableManager(
+    _$AppDatabase db,
+    $RpeSeduteTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RpeSeduteTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RpeSeduteTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RpeSeduteTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> eventoTipo = const Value.absent(),
+                Value<String> eventoId = const Value.absent(),
+                Value<DateTime> data = const Value.absent(),
+                Value<int> rpe = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RpeSeduteTableCompanion(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                eventoTipo: eventoTipo,
+                eventoId: eventoId,
+                data: data,
+                rpe: rpe,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String atletaId,
+                required String clubId,
+                required String eventoTipo,
+                required String eventoId,
+                required DateTime data,
+                required int rpe,
+                Value<int> rowid = const Value.absent(),
+              }) => RpeSeduteTableCompanion.insert(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                eventoTipo: eventoTipo,
+                eventoId: eventoId,
+                data: data,
+                rpe: rpe,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RpeSeduteTableTable, RpeSeduteTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RpeSeduteTableTable,
+                    RpeSeduteTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RpeSeduteTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RpeSeduteTableTable,
+      RpeSeduteTableData,
+      $$RpeSeduteTableTableFilterComposer,
+      $$RpeSeduteTableTableOrderingComposer,
+      $$RpeSeduteTableTableAnnotationComposer,
+      $$RpeSeduteTableTableCreateCompanionBuilder,
+      $$RpeSeduteTableTableUpdateCompanionBuilder,
+      (
+        RpeSeduteTableData,
+        BaseReferences<_$AppDatabase, $RpeSeduteTableTable, RpeSeduteTableData>,
+      ),
+      RpeSeduteTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -21223,4 +22002,6 @@ class $AppDatabaseManager {
       );
   $$SchedeBenessereTableTableTableManager get schedeBenessereTable =>
       $$SchedeBenessereTableTableTableManager(_db, _db.schedeBenessereTable);
+  $$RpeSeduteTableTableTableManager get rpeSeduteTable =>
+      $$RpeSeduteTableTableTableManager(_db, _db.rpeSeduteTable);
 }

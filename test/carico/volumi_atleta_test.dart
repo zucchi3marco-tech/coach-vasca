@@ -1,10 +1,11 @@
 import 'package:coach_vasca/core/utils/pace_format.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/carico/application/carico_providers.dart';
-import 'package:coach_vasca/features/carico/data/carico_repository.dart';
 import 'package:coach_vasca/features/carico/domain/banister.dart';
 import 'package:coach_vasca/features/carico/domain/volumi_atleta.dart';
 import 'package:coach_vasca/features/carico/presentation/carico_atleta_screen.dart';
+import 'package:coach_vasca/features/stagioni/application/stagioni_providers.dart';
+import 'package:coach_vasca/features/stagioni/domain/stagione.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,19 +48,6 @@ void main() {
     expect(volumi.tempoPerZona, {'A2': 300});
   });
 
-  test('una serie a tempo pesa nel carico come i metri al passo medio', () {
-    // 8x100 B1: 800 m per il peso della zona (1.6).
-    expect(caricoSerie(ripetute: 8, distanzaM: 100, zona: 'B1'), 1280);
-    // 10' di palleggio: 600 s al passo medio (110 s ogni 100 m) = 545 m.
-    expect(caricoSerie(ripetute: 1, durataS: 600), closeTo(545.5, 0.1));
-    // Con una zona, lo stesso peso dei metri.
-    expect(
-      caricoSerie(ripetute: 2, durataS: 300, zona: 'B2'),
-      closeTo(2 * 300 * 100 / 110 * 2.0, 0.001),
-    );
-    expect(caricoSerie(ripetute: 3), 0);
-  });
-
   test('il tempo di lavoro si legge in minuti e ore', () {
     expect(formattaTempoLavoro(45), '45"');
     expect(formattaTempoLavoro(2700), "45'");
@@ -82,6 +70,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          seduteCaricoProvider.overrideWith((ref, chiave) async => const []),
+          stagioniListProvider.overrideWith(
+            (ref, clubId) => Stream.value(const <Stagione>[]),
+          ),
           andamentoCaricoProvider.overrideWith(
             (ref, chiave) async =>
                 calcolaBanister({DateTime(2026, 10, 1): 1000}),

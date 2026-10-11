@@ -29,6 +29,7 @@ part 'app_database.g.dart';
     TrainingBlocksTable,
     TrainingBlockPartiTable,
     SchedeBenessereTable,
+    RpeSeduteTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -38,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -390,6 +391,16 @@ class AppDatabase extends _$AppDatabase {
       if (from < 31) {
         if (!await _hasColumn(m, 'serie_table', 'esito')) {
           await m.addColumn(serieTable, serieTable.esito);
+        }
+      }
+      // v31 -> v32: RPE di fine seduta (carico RPE x minuti) e fasi della
+      // stagione con gli obiettivi settimanali.
+      if (from < 32) {
+        if (!await _hasTable(m, 'rpe_sedute_table')) {
+          await m.createTable(rpeSeduteTable);
+        }
+        if (!await _hasColumn(m, 'stagioni_table', 'fasi_json')) {
+          await m.addColumn(stagioniTable, stagioniTable.fasiJson);
         }
       }
     },

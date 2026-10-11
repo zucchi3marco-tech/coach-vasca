@@ -9,6 +9,9 @@ import 'package:coach_vasca/features/allenamenti/presentation/riepilogo_volumi.d
 import 'package:coach_vasca/features/allenamenti/presentation/volume_settimane.dart';
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
 import 'package:coach_vasca/features/gruppi/domain/gruppo.dart';
+import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
+import 'package:coach_vasca/features/stagioni/application/stagioni_providers.dart';
+import 'package:coach_vasca/features/stagioni/domain/stagione.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -179,6 +182,64 @@ void main() {
       expect(find.text('1 allenamento'), findsOneWidget);
     });
 
+    testWidgets('l\'obiettivo della fase e le settimane con partita', (
+      tester,
+    ) async {
+      final andata = FaseStagione(
+        nome: 'Andata',
+        dataInizio: DateTime(2026, 10, 1),
+        dataFine: DateTime(2026, 12, 20),
+        obiettivoMetri: 4000,
+      );
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: VolumeSettimane(
+              allenamenti: allenamenti,
+              volumi: volumi,
+              oggi: oggi,
+              onApriSettimana: (_) {},
+              faseDi: (lunedi) => faseDellaSettimana(
+                [
+                  Stagione(
+                    id: 's1',
+                    clubId: 'c1',
+                    nome: 'Stagione',
+                    dataInizio: DateTime(2026, 9, 1),
+                    dataFine: DateTime(2027, 6, 30),
+                    fasi: [andata],
+                  ),
+                ],
+                null,
+                lunedi,
+              ),
+              partiteDi: (lunedi) => lunedi == DateTime(2026, 10, 5)
+                  ? ['Partita sab 10 ott con Brescia']
+                  : const [],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Obiettivo della fase'), findsOneWidget);
+      expect(find.text('Settimana con partita'), findsOneWidget);
+      // Questa settimana: 5.000 m su un obiettivo di 4 km.
+      expect(
+        find.text('Fase Andata · obiettivo 4 km · 125% fatto'),
+        findsOneWidget,
+      );
+      expect(find.text('Partita sab 10 ott con Brescia'), findsOneWidget);
+
+      // La fase comincia giovedì 1: la settimana prima ne ha 4 giorni e
+      // prende il suo obiettivo; niente partita.
+      await tester.tap(find.text('4.0'));
+      await tester.pump();
+      expect(
+        find.text('Fase Andata · obiettivo 4 km · 100% fatto'),
+        findsOneWidget,
+      );
+      expect(find.text('Partita sab 10 ott con Brescia'), findsNothing);
+    });
+
     testWidgets('le frecce spostano le settimane', (tester) async {
       await tester.pumpWidget(
         _app(
@@ -222,6 +283,12 @@ void main() {
           ),
           gruppiListProvider.overrideWith(
             (ref, clubId) => Stream.value(const <Gruppo>[]),
+          ),
+          stagioniListProvider.overrideWith(
+            (ref, clubId) => Stream.value(const <Stagione>[]),
+          ),
+          partiteListProvider.overrideWith(
+            (ref, clubId) => Stream.value(const []),
           ),
         ],
         child: _app(const AllenamentiListScreen(clubId: 'c1')),

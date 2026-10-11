@@ -337,6 +337,10 @@ Il grafico Banister (pagina Carico: fitness/fatica/forma) è l'unico grafico a l
 | Fatica | `attenzione` |
 | Forma | `ok` |
 
+Il grafico del **carico per settimana** (pagina Carico, colonne divise per tipo di carico) usa i colori che quei dati hanno già nell'app: acqua `evidenzaCiano` (come gli allenamenti), partita `evidenzaAmbra` (come le partite), secco `evidenzaViola`. Fra un pezzo e l'altro 2px di stacco; la legenda con le tre voci sta sopra e i numeri della settimana scelta sono scritti sotto, perché il ciano su fondo chiaro sta sotto 3:1 e il colore non deve portare il dato da solo. La settimana scelta ha un contorno in `testo`. Il rapporto della settimana con il solito (ACWR) è un numero con la fascia: "Nella norma" in `ok`, "In salita" e "Molto sopra il solito" in `attenzione`, mai `rosso`.
+
+Gli **obiettivi delle fasi** della stagione sono una lineetta orizzontale di 2px in `testo` sulla colonna della settimana (nel volume per settimana e nel carico), con la voce "Obiettivo della fase" in legenda. Le settimane con una partita (o una gara) hanno un punto di 7px in `evidenzaAmbra` sotto la data.
+
 Regole di lettura valide per ogni grafico:
 
 - spessore della linea 2px, nessun punto sui vertici salvo quello selezionato;

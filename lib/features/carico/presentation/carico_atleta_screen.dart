@@ -15,7 +15,11 @@ import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../stagioni/application/stagioni_providers.dart';
+import '../../stagioni/domain/stagione.dart';
 import '../application/carico_providers.dart';
+import '../domain/carico_rpe.dart';
+import 'carico_settimane.dart';
 import 'grafico_banister.dart';
 
 const _ordineZonePerVolume = [
@@ -68,11 +72,12 @@ class CaricoAtletaScreen extends ConsumerWidget {
         data: (punti) => punti.isEmpty
             ? EmptyState(
                 icona: Icons.show_chart,
-                titolo: 'Nessuna presenza registrata',
+                titolo: 'Nessuna seduta registrata',
                 descrizione:
                     'Il carico si calcola dagli allenamenti con presenza '
-                    'segnata come "presente": non c\'è ancora niente da '
-                    'mostrare per questo atleta.',
+                    'segnata come "presente", dalle partite con l\'atleta '
+                    'in distinta e dalle sedute a cui ha dato l\'RPE: non '
+                    'c\'è ancora niente da mostrare per questo atleta.',
                 azionePrincipale: 'Torna indietro',
                 onAzionePrincipale: () => Navigator.of(context).pop(),
               )
@@ -104,14 +109,15 @@ class CaricoAtletaScreen extends ConsumerWidget {
                     'Andamento',
                     spiegazione:
                         'Modello Banister (fitness/fatica/forma) calcolato '
-                        'dal volume di allenamento pesato per zona di '
-                        'intensità, contato solo nei giorni in cui '
-                        'l\'atleta era presente. Il lavoro a tempo '
-                        '(palleggio, tattica, a secco) vale i metri che si '
-                        'nuotano in quel tempo al passo medio (1\'50" ogni '
-                        '100 m). È un indice relativo utile per valutare '
-                        'l\'andamento nel tempo, non un valore fisiologico '
-                        'assoluto.',
+                        'dal carico di ogni seduta: quanto è stata dura '
+                        '(RPE da 0 a 10, detto dall\'atleta a fine seduta) '
+                        'per quanti minuti è durata. Contano gli '
+                        'allenamenti in cui era presente, il lavoro a secco '
+                        'e le partite in cui era convocato (60 minuti). '
+                        'Senza la sua risposta l\'RPE si stima dalle zone '
+                        'delle serie. È un indice relativo utile per '
+                        'valutare l\'andamento nel tempo, non un valore '
+                        'fisiologico assoluto.',
                   ),
                   PoolCard(
                     child: Column(
@@ -126,6 +132,8 @@ class CaricoAtletaScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.s28),
+                  _SezioneCarico(atleta: atleta),
                   const SizedBox(height: AppSpacing.s28),
                   _SezioneVolumi(atletaId: atleta.id, clubId: atleta.clubId),
                 ],
@@ -144,6 +152,69 @@ class CaricoAtletaScreen extends ConsumerWidget {
             dettaglioTecnico: messaggioErrore(error),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Il carico settimana per settimana (acqua, secco, partita) e il
+/// confronto della settimana con il solito (ACWR).
+class _SezioneCarico extends ConsumerWidget {
+  const _SezioneCarico({required this.atleta});
+
+  final Atleta atleta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final seduteAsync = ref.watch(
+      seduteCaricoProvider((atletaId: atleta.id, clubId: atleta.clubId)),
+    );
+    // Gli obiettivi di carico delle fasi della sua stagione.
+    final stagioni =
+        ref.watch(stagioniListProvider(atleta.clubId)).value ??
+        const <Stagione>[];
+    return seduteAsync.when(
+      data: (sedute) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const TitoloSezione(
+            'Carico per settimana',
+            spiegazione:
+                'Il carico di una seduta è l\'RPE (quanto è stata dura, '
+                'da 0 a 10) per i minuti: il metodo di Foster. L\'acqua '
+                'e il secco vengono dagli allenamenti (i minuti delle '
+                'serie a secco vanno nel secco), la partita dalle partite '
+                'in cui era convocato. Le sedute senza la risposta '
+                'dell\'atleta hanno un carico stimato dalle serie.',
+          ),
+          PoolCard(
+            child: CaricoSettimane(
+              sedute: sedute,
+              obiettivoDi: (lunedi) => faseDellaSettimana(
+                stagioni,
+                atleta.gruppoId,
+                lunedi,
+              )?.obiettivoCarico,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s28),
+          const TitoloSezione(
+            'Questa settimana e il solito',
+            spiegazione:
+                'Il rapporto fra il carico degli ultimi 7 giorni e la '
+                'media settimanale delle ultime 4 settimane (ACWR). Fra '
+                '0,8 e 1,3 la settimana è in linea con il solito; sopra '
+                '1,5 il carico è salito molto in fretta. È un riferimento '
+                'per programmare, non una diagnosi.',
+          ),
+          PoolCard(child: PannelloAcwr(acwr: calcolaAcwr(sedute))),
+        ],
+      ),
+      loading: () => const LoadingSkeleton(height: 160),
+      error: (error, _) => ErrorBanner(
+        messaggio: 'Non è stato possibile caricare il carico.',
+        suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+        dettaglioTecnico: messaggioErrore(error),
       ),
     );
   }

@@ -9,6 +9,9 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../carico/application/carico_providers.dart';
+import '../../carico/domain/carico_rpe.dart';
+import '../../carico/presentation/carico_settimane.dart';
 import '../../home/area_atleta_home_screen.dart';
 import '../../home/atleta/home_atleta_widgets.dart';
 import '../application/benessere_providers.dart';
@@ -90,6 +93,11 @@ class CardBenessereSquadra extends ConsumerWidget {
         .where((a) => punteggi[a.id]!.livello == 1)
         .length;
     final mancano = atleti.length - compilate.length;
+    // Il carico della settimana molto sopra il suo solito (ACWR).
+    final acwr = ref.watch(acwrClubProvider(clubId));
+    final caricoAlto = atleti
+        .where((a) => acwr[a.id]?.fascia == FasciaAcwr.alto)
+        .length;
     final media = compilate.isEmpty
         ? null
         : (compilate
@@ -183,9 +191,18 @@ class CardBenessereSquadra extends ConsumerWidget {
                           testo: '$mancano non compilate',
                           colore: colori.testoSecondario,
                         ),
+                      if (caricoAlto > 0)
+                        _Conteggio(
+                          testo: caricoAlto == 1
+                              ? '1 con il carico molto sopra il solito'
+                              : '$caricoAlto con il carico molto sopra il '
+                                    'solito',
+                          colore: colori.attenzione,
+                        ),
                       if (compilate.isNotEmpty &&
                           daSentire == 0 &&
-                          daSeguire == 0)
+                          daSeguire == 0 &&
+                          caricoAlto == 0)
                         _Conteggio(testo: 'Tutti ok', colore: colori.ok),
                     ],
                   ),
@@ -317,6 +334,7 @@ class _BenessereSquadraScreenState
     final tutte = ref.watch(schedeBenessereClubProvider(clubId)).value ?? [];
     final oggi = ref.watch(schedeOggiClubProvider(clubId));
     final punteggi = ref.watch(punteggiOggiClubProvider(clubId));
+    final acwr = ref.watch(acwrClubProvider(clubId));
     // Prima il livello piu' alto (rosso), poi il punteggio piu' basso; chi
     // non ha compilato in fondo.
     final ordinati = atleti.where(_corrisponde).toList()
@@ -381,6 +399,7 @@ class _BenessereSquadraScreenState
                       atleta: a,
                       oggi: oggi[a.id],
                       punteggio: punteggi[a.id],
+                      acwr: acwr[a.id],
                       schede: tutte.where((s) => s.atletaId == a.id).toList(),
                     ),
                   ),
@@ -401,12 +420,16 @@ class _RigaAtleta extends StatelessWidget {
     required this.oggi,
     required this.punteggio,
     required this.schede,
+    this.acwr,
   });
 
   final Atleta atleta;
   final SchedaBenessere? oggi;
   final PunteggioBenessere? punteggio;
   final List<SchedaBenessere> schede;
+
+  /// Il carico della settimana rispetto al suo solito; null senza sedute.
+  final Acwr? acwr;
 
   @override
   Widget build(BuildContext context) {
@@ -451,6 +474,18 @@ class _RigaAtleta extends StatelessWidget {
                             '(${p.mediaPersonale!.round()})',
                   style: AppTypography.etichetta.copyWith(
                     color: p.scartoDalSolito! <= -10
+                        ? colori.attenzione
+                        : colori.testoSecondario,
+                  ),
+                ),
+              if (acwr?.fascia case final fascia?)
+                Text(
+                  'Carico 7 giorni ${formattaCarico(acwr!.acuto)} · '
+                  '${fascia.etichetta.toLowerCase()} '
+                  '(${formattaAcwr(acwr!.rapporto!)})',
+                  style: AppTypography.etichetta.copyWith(
+                    color:
+                        fascia == FasciaAcwr.alto || fascia == FasciaAcwr.salita
                         ? colori.attenzione
                         : colori.testoSecondario,
                   ),

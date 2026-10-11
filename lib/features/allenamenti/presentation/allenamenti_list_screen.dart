@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/giorni.dart';
+import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/tokens_dominio.dart';
@@ -19,8 +20,15 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../ai_genera/presentation/genera_settimana_form_screen.dart';
+import '../../club/application/current_club_provider.dart';
+import '../../gare/application/gare_providers.dart';
+import '../../gare/domain/gara.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/domain/partita.dart';
 import '../../ripartenze/presentation/ripartenze_screen.dart';
+import '../../stagioni/application/stagioni_providers.dart';
+import '../../stagioni/domain/stagione.dart';
 import '../application/allenamenti_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
@@ -224,6 +232,38 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
     final volumi =
         ref.watch(volumiAllenamentiProvider(widget.clubId)).value ??
         const <String, VolumeAllenamento>{};
+    // Per il grafico del volume: le fasi della stagione con i loro
+    // obiettivi e le settimane con una partita (o una gara, nel nuoto)
+    // della squadra scelta.
+    final stagioni =
+        ref.watch(stagioniListProvider(widget.clubId)).value ??
+        const <Stagione>[];
+    final nuoto = ref.watch(currentClubProvider).value?.sport == 'nuoto';
+    bool delGruppo(String? gruppoId) => visibileNelGruppo(
+      gruppoDelRecord: gruppoId,
+      gruppoSelezionato: widget.filtroGruppoId,
+    );
+    final eventi = <({DateTime data, String descrizione})>[
+      if (!nuoto)
+        for (final p
+            in ref.watch(partiteListProvider(widget.clubId)).value ??
+                const <Partita>[])
+          if (delGruppo(p.gruppoId))
+            (
+              data: p.data,
+              descrizione:
+                  'Partita ${dataCompatta(p.data)} con ${p.avversario}',
+            ),
+      if (nuoto)
+        for (final g
+            in ref.watch(gareListProvider(widget.clubId)).value ??
+                const <Gara>[])
+          if (delGruppo(g.gruppoId))
+            (
+              data: g.data,
+              descrizione: 'Gara ${dataCompatta(g.data)}: ${g.nome}',
+            ),
+    ];
 
     Widget scheda(Allenamento a, {bool passato = false, bool oggi = false}) {
       // Il gruppo si scrive solo quando aggiunge qualcosa: con una squadra
@@ -274,6 +314,15 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
         child: VolumeSettimane(
           allenamenti: allenamenti,
           volumi: volumi,
+          faseDi: (lunedi) =>
+              faseDellaSettimana(stagioni, widget.filtroGruppoId, lunedi),
+          partiteDi: (lunedi) => [
+            for (final e in eventi)
+              if (lunediDi(e.data) == lunedi) e.descrizione,
+          ],
+          etichettaPartite: nuoto
+              ? 'Settimana con gara'
+              : 'Settimana con partita',
           onApriSettimana: (lunedi) => setState(() {
             _vista = _Vista.settimana;
             _settimanaDaAprire = lunedi;

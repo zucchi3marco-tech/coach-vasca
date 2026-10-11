@@ -99,4 +99,63 @@ void main() {
     expect(p.mediaPersonale, 100);
     expect(p.livello, 1);
   });
+
+  // Gli stessi casi, con gli stessi risultati, sono stati provati sulla
+  // funzione del database `prontezza_scheda_benessere` (migrazione
+  // 20261010000200_avvisi_benessere.sql), che decide gli avvisi agli
+  // allenatori: se questo test cambia, va cambiata anche quella.
+  test('stesse regole della funzione del database per gli avvisi', () {
+    SchedaBenessere scheda(
+      List<int?> voci,
+      double sonno, {
+      List<String> zone = const [],
+      int? intensita,
+      List<String> sintomi = const [],
+    }) => SchedaBenessere(
+      id: 'x',
+      atletaId: 'a',
+      clubId: 'c',
+      data: DateTime(2026, 1, 1),
+      dolori: zone.isNotEmpty,
+      zoneDolore: zone,
+      intensitaDolore: intensita,
+      oreSonno: sonno,
+      compilataIl: DateTime(2026, 1, 1),
+      qualitaSonno: voci[0],
+      energia: voci[1],
+      muscoli: voci[2],
+      stress: voci[3],
+      umore: voci[4],
+      sintomi: sintomi,
+    );
+    final adulto = DateTime(1990, 1, 1);
+    final casi = [
+      (scheda([3, 3, 3, 3, 3], 8), _quindicenne, 60, false),
+      (scheda([4, 5, 4, 3, 4], 6.5), _quindicenne, 65, false),
+      (
+        scheda([2, 2, 3, 1, 3], 7, zone: ['spalla'], intensita: 7),
+        _quindicenne,
+        9,
+        true,
+      ),
+      (scheda([null, null, null, null, null], 6), adulto, 70, false),
+      (
+        scheda([4, 4, 4, 4, 4], 8, sintomi: ['febbre', 'gola']),
+        _quindicenne,
+        40,
+        true,
+      ),
+      (
+        scheda([5, 5, 5, 5, 5], 4.5, zone: ['ginocchio']),
+        _quindicenne,
+        60,
+        true,
+      ),
+    ];
+    for (final (s, nascita, valore, critico) in casi) {
+      final p = calcolaPunteggio(s, dataNascita: nascita);
+      expect(p.valore, valore);
+      expect(p.motivi.any((m) => m.critico), critico);
+    }
+  });
 }

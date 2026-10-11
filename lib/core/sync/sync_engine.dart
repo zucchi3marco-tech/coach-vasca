@@ -36,6 +36,7 @@ class SyncEngine {
     'tabelle_passi': 'test_id,zona',
     'referti_partita': 'partita_id',
     'schede_benessere': 'atleta_id,data',
+    'rpe_sedute': 'atleta_id,evento_tipo,evento_id',
   };
 
   Future<void> processQueue() async {

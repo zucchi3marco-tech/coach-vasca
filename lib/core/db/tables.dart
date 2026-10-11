@@ -149,6 +149,10 @@ class StagioniTable extends Table {
   TextColumn get gruppoId => text().nullable()();
   TextColumn get campionato => text().nullable()();
 
+  /// Le fasi con gli obiettivi settimanali, come lista JSON (vedi
+  /// `FaseStagione`).
+  TextColumn get fasiJson => text().withDefault(const Constant('[]'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -398,6 +402,21 @@ class SchedeBenessereTable extends Table {
 
   /// Sintomi di malattia come lista JSON (es. `["febbre"]`).
   TextColumn get sintomiJson => text().withDefault(const Constant('[]'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// RPE di fine seduta (0-10) dato dall'atleta, o dall'allenatore per
+/// lui: uno per atleta e per allenamento o partita.
+class RpeSeduteTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get eventoTipo => text()(); // allenamento | partita
+  TextColumn get eventoId => text()();
+  DateTimeColumn get data => dateTime()();
+  IntColumn get rpe => integer()();
 
   @override
   Set<Column> get primaryKey => {id};

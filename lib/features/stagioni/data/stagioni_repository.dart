@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,6 +33,10 @@ class StagioniRepository {
       obiettivo: row.obiettivo,
       gruppoId: row.gruppoId,
       campionato: row.campionato,
+      fasi: [
+        for (final f in jsonDecode(row.fasiJson) as List)
+          FaseStagione.fromMap(f as Map<String, dynamic>),
+      ],
     );
   }
 
@@ -44,6 +50,7 @@ class StagioniRepository {
       obiettivo: Value(map['obiettivo'] as String?),
       gruppoId: Value(map['gruppo_id'] as String?),
       campionato: Value(map['campionato'] as String?),
+      fasiJson: Value(jsonEncode(map['fasi'] ?? const [])),
     );
   }
 
@@ -87,6 +94,7 @@ class StagioniRepository {
     String? obiettivo,
     String? gruppoId,
     String? campionato,
+    List<FaseStagione> fasi = const [],
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -98,6 +106,7 @@ class StagioniRepository {
       if (obiettivo != null && obiettivo.isNotEmpty) 'obiettivo': obiettivo,
       'gruppo_id': ?gruppoId,
       if (campionato != null && campionato.isNotEmpty) 'campionato': campionato,
+      if (fasi.isNotEmpty) 'fasi': [for (final f in fasi) f.toMap()],
     };
     try {
       final row = await _client
@@ -165,6 +174,43 @@ class StagioniRepository {
           gruppoId: Value(gruppoId),
           campionato: Value(campionato),
         ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'stagioni',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
+  }
+
+  /// Sostituisce le fasi della stagione [id] (in ordine di data). Le
+  /// altre colonne restano come sono.
+  Future<Stagione> salvaFasi(String id, List<FaseStagione> fasi) async {
+    final ordinate = [...fasi]
+      ..sort((a, b) => a.dataInizio.compareTo(b.dataInizio));
+    final payload = {
+      'fasi': [for (final f in ordinate) f.toMap()],
+    };
+    try {
+      final row = await _client
+          .from('stagioni')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db
+          .into(_db.stagioniTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(
+        _db.stagioniTable,
+      )..where((t) => t.id.equals(id))).write(
+        StagioniTableCompanion(fasiJson: Value(jsonEncode(payload['fasi']))),
       );
       await enqueueOperation(
         _db,

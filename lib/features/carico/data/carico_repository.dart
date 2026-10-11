@@ -7,75 +7,28 @@ import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
-import '../../allenamenti/domain/durata_serie.dart';
+import '../domain/carico_rpe.dart';
+import '../domain/rpe_seduta.dart';
 import '../domain/volumi_atleta.dart';
+import 'rpe_repository.dart';
 
-/// Peso relativo di ogni zona di intensita' nel calcolo del carico: una
-/// stima approssimativa (non un fattore TRIMP validato scientificamente,
-/// che richiederebbe la frequenza cardiaca), pensata solo per dare più
-/// peso alle serie più intense a parità di volume. Da ritoccare se l'uso
-/// reale mostra che non riflette bene lo sforzo percepito.
-// 'C' resta per pesare correttamente le serie storiche create prima
-// dello split in C1/C2/C3 (mai piu' assegnata a serie nuove).
-const _pesoZona = {
-  'A1': 1.0,
-  'A2': 1.2,
-  'B1': 1.6,
-  'B2': 2.0,
-  'C': 2.8,
-  'C1': 2.4,
-  'C2': 2.8,
-  'C3': 3.2,
-  'D': 3.5,
-};
-
-double _pesoPerZona(String? zona) => _pesoZona[zona] ?? 1.0;
-
-/// Il carico di una serie: i metri pesati per zona. Una serie a tempo
-/// (palleggio, tattica, a secco...) vale i metri che si nuotano in quel
-/// tempo al passo medio ([passoMedioS], 1'50" ogni 100 m), pesati allo
-/// stesso modo: prima valeva zero (segnalazione del coach 2026-10-08).
-double caricoSerie({
-  required int ripetute,
-  int? distanzaM,
-  int? durataS,
-  String? zona,
-}) {
-  final metri = distanzaM ?? (durataS ?? 0) * 100 / passoMedioS;
-  return ripetute * metri * _pesoPerZona(zona);
-}
-
-/// Calcola, per un atleta, il carico di allenamento giorno per giorno a
-/// partire dallo storico di serie e presenze: base per il modello
-/// Banister (fitness/fatica/forma) usato per pianificare lo scarico
-/// pre-gara.
+/// Il carico degli atleti seduta per seduta: RPE × minuti (il metodo di
+/// Foster), per acqua, secco e partita — vedi [seduteDiAtleta]. Base del
+/// modello Banister (fitness/fatica/forma) e dell'ACWR.
+///
+/// Prima il carico contava solo i metri pesati per zona: una partita e il
+/// lavoro a secco valevano zero (analisi "Il Mako della pallanuoto",
+/// proposta 1).
 class CaricoRepository {
-  CaricoRepository(this._client, this._db);
+  CaricoRepository(this._client, this._db, this._rpe);
 
   final SupabaseClient _client;
   final AppDatabase _db;
-
-  /// Mappa allenamentoId -> carico totale (somma di [caricoSerie]) per
-  /// tutti gli allenamenti del club.
-  Future<Map<String, double>> _caricoPerAllenamento(String clubId) async {
-    final carico = <String, double>{};
-    for (final r in await _serieDelClub(clubId)) {
-      final allenamentoId = r['allenamento_id'] as String;
-      carico[allenamentoId] =
-          (carico[allenamentoId] ?? 0.0) +
-          caricoSerie(
-            ripetute: r['ripetute'] as int,
-            distanzaM: r['distanza_m'] as int?,
-            durataS: r['durata_s'] as int?,
-            zona: r['zona'] as String?,
-          );
-    }
-    return carico;
-  }
+  final RpeRepository _rpe;
 
   /// Mappa allenamentoId -> data, per tutti gli allenamenti del club.
-  /// Legge da `allenamenti_per_carico` (RPC), stesso motivo di
-  /// [_caricoPerAllenamento].
+  /// Legge da `allenamenti_per_carico` (RPC): l'atleta collegato non
+  /// legge la tabella degli allenamenti.
   Future<Map<String, DateTime>> _dataPerAllenamento(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
@@ -100,53 +53,179 @@ class CaricoRepository {
     };
   }
 
-  /// Id di tutti gli allenamenti a cui l'atleta risulta presente.
-  Future<Set<String>> _allenamentiPresenti(String atletaId) async {
+  /// Mappa partitaId -> data, per tutte le partite del club.
+  Future<Map<String, DateTime>> _dataPerPartita(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
-      righe = await _client
-          .from('presenze')
-          .select('allenamento_id')
-          .eq('atleta_id', atletaId)
-          .eq('stato', 'presente');
+      righe = await leggiAPagine(
+        (da, a) => _client
+            .from('partite')
+            .select('id, data')
+            .eq('club_id', clubId)
+            .order('id')
+            .range(da, a),
+      );
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
-      final locali =
-          await (_db.select(_db.presenzeTable)
-                ..where((t) => t.atletaId.equals(atletaId))
-                ..where((t) => t.stato.equals('presente')))
-              .get();
+      final locali = await (_db.select(
+        _db.partiteTable,
+      )..where((t) => t.clubId.equals(clubId))).get();
       righe = [
-        for (final r in locali) {'allenamento_id': r.allenamentoId},
+        for (final r in locali) {'id': r.id, 'data': r.data.toIso8601String()},
       ];
     }
-    return {for (final r in righe) r['allenamento_id'] as String};
+    return {
+      for (final r in righe)
+        r['id'] as String: DateTime.parse(r['data'] as String),
+    };
   }
 
-  /// Carico totale per giorno (normalizzato a mezzanotte), sommando gli
-  /// allenamenti a cui l'atleta era presente. Un giorno con piu'
-  /// allenamenti presenti somma i rispettivi carichi.
-  Future<Map<DateTime, double>> caricoGiornalieroPerAtleta({
+  /// Le presenze (allenamento_id, atleta_id, stato) di un atleta o, con
+  /// [atletaId] null, di tutto il club.
+  Future<List<Map<String, dynamic>>> _presenze({
+    required String clubId,
+    String? atletaId,
+  }) async {
+    try {
+      return await leggiAPagine((da, a) {
+        final q = _client
+            .from('presenze')
+            .select('id, allenamento_id, atleta_id, stato');
+        return (atletaId == null
+                ? q.eq('club_id', clubId)
+                : q.eq('atleta_id', atletaId))
+            .order('id')
+            .range(da, a);
+      });
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final q = _db.select(_db.presenzeTable)
+        ..where(
+          (t) => atletaId == null
+              ? t.clubId.equals(clubId)
+              : t.atletaId.equals(atletaId),
+        );
+      return [
+        for (final r in await q.get())
+          {
+            'allenamento_id': r.allenamentoId,
+            'atleta_id': r.atletaId,
+            'stato': r.stato,
+          },
+      ];
+    }
+  }
+
+  /// Le convocazioni (partita_id, atleta_id) di un atleta o, con
+  /// [atletaId] null, di tutto il club.
+  Future<List<Map<String, dynamic>>> _convocazioni({
+    required String clubId,
+    String? atletaId,
+  }) async {
+    try {
+      return await leggiAPagine((da, a) {
+        final q = _client
+            .from('distinta_giocatori')
+            .select('id, partita_id, atleta_id');
+        return (atletaId == null
+                ? q.eq('club_id', clubId)
+                : q.eq('atleta_id', atletaId))
+            .order('id')
+            .range(da, a);
+      });
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final q = _db.select(_db.distintaGiocatoriTable)
+        ..where(
+          (t) => atletaId == null
+              ? t.clubId.equals(clubId)
+              : t.atletaId.equals(atletaId),
+        );
+      return [
+        for (final r in await q.get())
+          {'partita_id': r.partitaId, 'atleta_id': r.atletaId},
+      ];
+    }
+  }
+
+  /// Le sedute di ogni atleta (chiave: id atleta) a partire da
+  /// [presenze], [convocazioni] e risposte [rpe]: un atleta senza
+  /// nessuna di queste non compare.
+  Future<Map<String, List<CaricoSeduta>>> _sedute({
+    required String clubId,
+    required List<Map<String, dynamic>> presenze,
+    required List<Map<String, dynamic>> convocazioni,
+    required List<RpeSeduta> rpe,
+  }) async {
+    final dataAllenamenti = await _dataPerAllenamento(clubId);
+    final dataPartite = await _dataPerPartita(clubId);
+    final seriePerAllenamento = <String, List<SerieCarico>>{};
+    for (final r in await _serieDelClub(clubId)) {
+      final s = SerieCarico.fromMap(r);
+      (seriePerAllenamento[s.allenamentoId] ??= []).add(s);
+    }
+
+    final presenzePerAtleta = <String, Map<String, String>>{};
+    for (final p in presenze) {
+      (presenzePerAtleta[p['atleta_id'] as String] ??= {})[p['allenamento_id']
+              as String] =
+          p['stato'] as String;
+    }
+    final convocazioniPerAtleta = <String, Set<String>>{};
+    for (final c in convocazioni) {
+      (convocazioniPerAtleta[c['atleta_id'] as String] ??= {}).add(
+        c['partita_id'] as String,
+      );
+    }
+    final rpePerAtleta = <String, Map<(String, String), int>>{};
+    for (final r in rpe) {
+      (rpePerAtleta[r.atletaId] ??= {})[(r.eventoTipo, r.eventoId)] = r.rpe;
+    }
+
+    final atleti = {
+      ...presenzePerAtleta.keys,
+      ...convocazioniPerAtleta.keys,
+      ...rpePerAtleta.keys,
+    };
+    return {
+      for (final atletaId in atleti)
+        atletaId: seduteDiAtleta(
+          dataAllenamenti: dataAllenamenti,
+          seriePerAllenamento: seriePerAllenamento,
+          statoPresenze: presenzePerAtleta[atletaId] ?? const {},
+          dataPartite: dataPartite,
+          partiteConvocato: convocazioniPerAtleta[atletaId] ?? const {},
+          rpe: rpePerAtleta[atletaId] ?? const {},
+        ),
+    };
+  }
+
+  /// Le sedute di un atleta, ognuna con il suo carico, dalla più vecchia.
+  Future<List<CaricoSeduta>> sedutePerAtleta({
     required String atletaId,
     required String clubId,
   }) async {
-    final dataPerAllenamento = await _dataPerAllenamento(clubId);
-    final caricoPerAllenamento = await _caricoPerAllenamento(clubId);
-    final presenti = await _allenamentiPresenti(atletaId);
-
-    final risultato = <DateTime, double>{};
-    for (final allenamentoId in presenti) {
-      final data = dataPerAllenamento[allenamentoId];
-      if (data == null) continue;
-      final giorno = DateTime(data.year, data.month, data.day);
-      final carico = caricoPerAllenamento[allenamentoId] ?? 0.0;
-      risultato[giorno] = (risultato[giorno] ?? 0.0) + carico;
-    }
-    return risultato;
+    final sedute = await _sedute(
+      clubId: clubId,
+      presenze: await _presenze(clubId: clubId, atletaId: atletaId),
+      convocazioni: await _convocazioni(clubId: clubId, atletaId: atletaId),
+      rpe: await _rpe.perAtleta(atletaId),
+    );
+    return sedute[atletaId] ?? const [];
   }
 
-  /// Righe di tutte le serie del club (distanza o durata, zona,
-  /// esecuzione).
+  /// Le sedute di tutti gli atleti del club (vista dell'allenatore), con
+  /// una lettura sola per tabella.
+  Future<Map<String, List<CaricoSeduta>>> sedutePerClub(String clubId) async =>
+      _sedute(
+        clubId: clubId,
+        presenze: await _presenze(clubId: clubId),
+        convocazioni: await _convocazioni(clubId: clubId),
+        rpe: await _rpe.perClub(clubId),
+      );
+
+  /// Righe di tutte le serie del club non saltate (distanza o durata,
+  /// zona, esecuzione, recupero, ripartenza, passo obiettivo).
   ///
   /// Legge da `serie_per_carico` (RPC, non dalla tabella `serie`
   /// direttamente): un atleta collegato può calcolare il proprio carico
@@ -181,6 +260,9 @@ class CaricoRepository {
             'durata_s': r.durataS,
             'zona': r.zona,
             'esecuzione': r.esecuzione,
+            'recupero_s': r.recuperoS,
+            'ripartenza_s': r.ripartenzaS,
+            'passo_obiettivo_s': r.passoObiettivoS,
           },
       ];
     }
@@ -188,19 +270,20 @@ class CaricoRepository {
 
   /// Volume (metri e lavoro a tempo) di un atleta scomposto per zona e
   /// per tipo di lavoro, contato solo negli allenamenti a cui risulta
-  /// presente (stesso perimetro di [caricoGiornalieroPerAtleta]).
+  /// presente.
   Future<VolumiAtleta> volumiPerAtleta({
     required String atletaId,
     required String clubId,
-  }) async => VolumiAtleta.daSerie(
-    await _serieDelClub(clubId),
-    await _allenamentiPresenti(atletaId),
-  );
+  }) async => VolumiAtleta.daSerie(await _serieDelClub(clubId), {
+    for (final p in await _presenze(clubId: clubId, atletaId: atletaId))
+      if (p['stato'] == 'presente') p['allenamento_id'] as String,
+  });
 }
 
 final caricoRepositoryProvider = Provider<CaricoRepository>((ref) {
   return CaricoRepository(
     ref.watch(supabaseClientProvider),
     ref.watch(appDatabaseProvider),
+    ref.watch(rpeRepositoryProvider),
   );
 });

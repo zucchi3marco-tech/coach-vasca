@@ -12,6 +12,7 @@ import '../atleti/domain/atleta.dart';
 import '../atleti/presentation/atleta_form_screen.dart';
 import '../atleti/presentation/pb_list_screen.dart';
 import '../carico/application/carico_providers.dart';
+import '../carico/presentation/card_rpe.dart';
 import '../carico/presentation/carico_atleta_screen.dart';
 import '../carico/presentation/grafico_banister.dart';
 import '../pallanuoto/application/schemi_tattici_providers.dart';
@@ -295,6 +296,9 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                         impegno: _impegno(allenamenti?.prossimo, partita),
                       ),
                     ),
+                    // La domanda di fine seduta: la risponde solo
+                    // l'atleta.
+                    if (!vistaAllenatore) blocco(CardRpe(atleta: atleta)),
                     const SizedBox(height: 12),
                     if (largo && prossimi.length == 2)
                       blocco(
@@ -422,7 +426,9 @@ class _CardAndamento extends ConsumerWidget {
                     vistaAllenatore ? 'Forma' : 'La tua forma',
                     spiegazione:
                         'Il grafico Banister: tre curve calcolate dagli '
-                        'allenamenti ${vistaAllenatore ? 'svolti' : 'a cui hai partecipato'}. Fitness cresce '
+                        'allenamenti e dalle partite '
+                        '${vistaAllenatore ? 'svolti' : 'a cui hai partecipato'}, '
+                        'con quanto sono stati duri. Fitness cresce '
                         'con il carico accumulato nel tempo, Fatica cresce '
                         'più in fretta ma si scarica anche più in fretta, '
                         'Forma è la differenza fra le due — più alta è, '

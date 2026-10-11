@@ -206,6 +206,11 @@ class PunteggioBenessere {
 /// dolore da 7/10, febbre o meno di 5 ore di sonno. Con lo [storico]
 /// dell'atleta: se il punteggio e' sotto il suo solito di oltre 1,5
 /// deviazioni standard (e di almeno 10 punti) sale di un livello.
+///
+/// Le stesse regole sono nel database, nella funzione
+/// `prontezza_scheda_benessere` che decide gli avvisi agli allenatori
+/// (migrazione `20261010000200_avvisi_benessere.sql`): se cambiano qui,
+/// vanno cambiate anche lì.
 PunteggioBenessere calcolaPunteggio(
   SchedaBenessere s, {
   DateTime? dataNascita,

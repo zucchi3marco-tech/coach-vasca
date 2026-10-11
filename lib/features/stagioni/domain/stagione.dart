@@ -1,3 +1,6 @@
+import '../../../core/utils/date_format.dart';
+import '../../../core/utils/giorni.dart';
+
 class Stagione {
   const Stagione({
     required this.id,
@@ -8,6 +11,7 @@ class Stagione {
     this.obiettivo,
     this.gruppoId,
     this.campionato,
+    this.fasi = const [],
   });
 
   final String id;
@@ -22,6 +26,104 @@ class Stagione {
   /// data compresa fra [dataInizio] e [dataFine] lo ereditano
   /// automaticamente, non si sceglie più partita per partita.
   final String? campionato;
+
+  /// Le fasi (preparazione, andata, ritorno...) con i loro obiettivi
+  /// settimanali, in ordine di data.
+  final List<FaseStagione> fasi;
+}
+
+/// Una fase della stagione con gli obiettivi di ogni sua settimana.
+class FaseStagione {
+  const FaseStagione({
+    required this.nome,
+    required this.dataInizio,
+    required this.dataFine,
+    this.obiettivoMetri,
+    this.obiettivoCarico,
+  });
+
+  factory FaseStagione.fromMap(Map<String, dynamic> m) => FaseStagione(
+    nome: m['nome'] as String,
+    dataInizio: DateTime.parse(m['data_inizio'] as String),
+    dataFine: DateTime.parse(m['data_fine'] as String),
+    obiettivoMetri: (m['obiettivo_metri'] as num?)?.round(),
+    obiettivoCarico: (m['obiettivo_carico'] as num?)?.round(),
+  );
+
+  final String nome;
+  final DateTime dataInizio;
+  final DateTime dataFine;
+
+  /// Metri a settimana che la squadra dovrebbe fare.
+  final int? obiettivoMetri;
+
+  /// Carico a settimana (RPE × minuti) di un atleta.
+  final int? obiettivoCarico;
+
+  Map<String, dynamic> toMap() => {
+    'nome': nome,
+    'data_inizio': formatDateOnly(dataInizio),
+    'data_fine': formatDateOnly(dataFine),
+    'obiettivo_metri': ?obiettivoMetri,
+    'obiettivo_carico': ?obiettivoCarico,
+  };
+
+  /// La stessa fase spostata di [giorni] giorni di calendario (per
+  /// duplicare la stagione su un altro anno).
+  FaseStagione spostata(int giorni) => FaseStagione(
+    nome: nome,
+    dataInizio: aggiungiGiorni(dataInizio, giorni),
+    dataFine: aggiungiGiorni(dataFine, giorni),
+    obiettivoMetri: obiettivoMetri,
+    obiettivoCarico: obiettivoCarico,
+  );
+}
+
+/// I nomi proposti per una fase nuova.
+const nomiFasiProposti = [
+  'Preparazione',
+  'Andata',
+  'Ritorno',
+  'Playoff',
+  'Scarico',
+];
+
+/// La fase della settimana del [lunedi] per il gruppo [gruppoId]: fra le
+/// stagioni del gruppo e poi quelle di club (mai di un altro gruppo),
+/// quella che copre più giorni di quella settimana. null se nessuna fase
+/// la tocca.
+FaseStagione? faseDellaSettimana(
+  List<Stagione> stagioni,
+  String? gruppoId,
+  DateTime lunedi,
+) {
+  final inizio = soloData(lunedi);
+  final fine = aggiungiGiorni(inizio, 6);
+  int giorniCoperti(FaseStagione f) {
+    final da = f.dataInizio.isAfter(inizio) ? soloData(f.dataInizio) : inizio;
+    final a = f.dataFine.isBefore(fine) ? soloData(f.dataFine) : fine;
+    return a.isBefore(da) ? 0 : giorniTra(da, a) + 1;
+  }
+
+  FaseStagione? migliore(Iterable<Stagione> candidate) {
+    FaseStagione? scelta;
+    var giorni = 0;
+    for (final s in candidate) {
+      for (final f in s.fasi) {
+        final g = giorniCoperti(f);
+        if (g > giorni) {
+          scelta = f;
+          giorni = g;
+        }
+      }
+    }
+    return scelta;
+  }
+
+  return (gruppoId == null
+          ? null
+          : migliore(stagioni.where((s) => s.gruppoId == gruppoId))) ??
+      migliore(stagioni.where((s) => s.gruppoId == null));
 }
 
 /// Etichetta della "categoria" di una stagione di club (senza gruppo).

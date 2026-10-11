@@ -7,6 +7,8 @@ import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../theme/tokens_dominio.dart';
+import '../../stagioni/domain/stagione.dart';
 import '../domain/allenamento.dart';
 import '../domain/volume_allenamento.dart';
 import 'riepilogo_volumi.dart';
@@ -29,6 +31,9 @@ class VolumeSettimane extends StatefulWidget {
     required this.allenamenti,
     required this.volumi,
     required this.onApriSettimana,
+    this.faseDi,
+    this.partiteDi,
+    this.etichettaPartite = 'Settimana con partita',
     this.oggi,
     super.key,
   });
@@ -41,6 +46,19 @@ class VolumeSettimane extends StatefulWidget {
 
   /// Con il lunedì della settimana scelta.
   final ValueChanged<DateTime> onApriSettimana;
+
+  /// La fase della stagione della settimana del lunedì dato, se c'è: il
+  /// suo obiettivo di metri si disegna come linea sulla colonna.
+  final FaseStagione? Function(DateTime lunedi)? faseDi;
+
+  /// Le partite della settimana del lunedì dato, già descritte ("sab 11
+  /// ott con Brescia"): le settimane con partita hanno un segno sotto la
+  /// data.
+  final List<String> Function(DateTime lunedi)? partiteDi;
+
+  /// La voce della legenda per il segno delle partite ("Settimana con
+  /// gara" nel nuoto).
+  final String etichettaPartite;
 
   /// Solo per i test; altrimenti adesso.
   final DateTime? oggi;
@@ -95,7 +113,16 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
         aggiungiGiorni(inizio, 7 * i),
     ];
     int metri(DateTime lunedi) => perSettimana[lunedi]?.volume.metri ?? 0;
-    final massimo = settimane.map(metri).fold(0, math.max);
+    int? obiettivo(DateTime lunedi) =>
+        widget.faseDi?.call(lunedi)?.obiettivoMetri;
+    bool conPartita(DateTime lunedi) =>
+        widget.partiteDi?.call(lunedi).isNotEmpty ?? false;
+    final massimo = [
+      ...settimane.map(metri),
+      ...settimane.map((l) => obiettivo(l) ?? 0),
+    ].fold(0, math.max);
+    final legendaObiettivo = settimane.any((l) => obiettivo(l) != null);
+    final legendaPartite = settimane.any(conPartita);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -125,9 +152,29 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
             ),
           ],
         ),
+        if (legendaObiettivo || legendaPartite)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+            child: Wrap(
+              spacing: AppSpacing.s16,
+              runSpacing: AppSpacing.s4,
+              children: [
+                if (legendaObiettivo)
+                  _VoceLegenda(
+                    segno: Container(width: 16, height: 2, color: colori.testo),
+                    testo: 'Obiettivo della fase',
+                  ),
+                if (legendaPartite)
+                  _VoceLegenda(
+                    segno: _SegnoPartita(colore: context.dominio.evidenzaAmbra),
+                    testo: widget.etichettaPartite,
+                  ),
+              ],
+            ),
+          ),
         const SizedBox(height: AppSpacing.s8),
         SizedBox(
-          height: 148,
+          height: 158,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -135,6 +182,8 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
                 Expanded(
                   child: _Colonna(
                     metri: metri(lunedi),
+                    obiettivo: obiettivo(lunedi),
+                    conPartita: conPartita(lunedi),
                     massimo: massimo,
                     scelta: lunedi == _scelta,
                     inProgramma: lunedi.isAfter(_questa),
@@ -207,6 +256,21 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
             ].join(' · '),
             style: secondario,
           ),
+        if (widget.faseDi?.call(_scelta) case final fase?)
+          Text(
+            [
+              'Fase ${fase.nome}',
+              if (fase.obiettivoMetri case final obiettivo?) ...[
+                'obiettivo ${_km(obiettivo)} km',
+                if (obiettivo > 0)
+                  '${(metri / obiettivo * 100).round()}% fatto',
+              ],
+            ].join(' · '),
+            style: secondario,
+          ),
+        for (final partita
+            in widget.partiteDi?.call(_scelta) ?? const <String>[])
+          Text(partita, style: secondario),
         if (settimana != null)
           Align(
             alignment: Alignment.centerRight,
@@ -218,6 +282,11 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
       ],
     );
   }
+
+  /// 18000 -> "18", 18500 -> "18,5".
+  String _km(int metri) => metri % 1000 == 0
+      ? '${metri ~/ 1000}'
+      : (metri / 1000).toStringAsFixed(1).replaceAll('.', ',');
 
   /// "5–11 ott", o "28 set – 4 ott" a cavallo di due mesi.
   String _intervallo(DateTime lunedi) {
@@ -234,6 +303,8 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
 class _Colonna extends StatelessWidget {
   const _Colonna({
     required this.metri,
+    required this.obiettivo,
+    required this.conPartita,
     required this.massimo,
     required this.scelta,
     required this.inProgramma,
@@ -243,6 +314,10 @@ class _Colonna extends StatelessWidget {
   });
 
   final int metri;
+
+  /// I metri dell'obiettivo della fase: una linea sulla colonna.
+  final int? obiettivo;
+  final bool conPartita;
   final int massimo;
   final bool scelta;
   final bool inProgramma;
@@ -285,21 +360,34 @@ class _Colonna extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: FractionallySizedBox(
-                  heightFactor: massimo == 0
-                      ? 0
-                      : math.max(metri / massimo, metri == 0 ? 0 : 0.03),
-                  child: Container(
-                    width: 24,
-                    decoration: BoxDecoration(
-                      color: colore,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
+              child: LayoutBuilder(
+                builder: (context, vincoli) => Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    FractionallySizedBox(
+                      heightFactor: massimo == 0
+                          ? 0
+                          : math.max(metri / massimo, metri == 0 ? 0 : 0.03),
+                      child: Container(
+                        width: 24,
+                        decoration: BoxDecoration(
+                          color: colore,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (obiettivo case final o? when massimo > 0)
+                      Positioned(
+                        bottom: vincoli.maxHeight * o / massimo - 1,
+                        child: Container(
+                          width: 34,
+                          height: 2,
+                          color: colori.testo,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -312,9 +400,56 @@ class _Colonna extends StatelessWidget {
                 child: Text(etichettaData, maxLines: 1, style: testo),
               ),
             ),
+            SizedBox(
+              height: 10,
+              child: conPartita
+                  ? Center(
+                      child: _SegnoPartita(
+                        colore: context.dominio.evidenzaAmbra,
+                      ),
+                    )
+                  : null,
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Il segno delle settimane con partita: un punto nel colore delle
+/// partite.
+class _SegnoPartita extends StatelessWidget {
+  const _SegnoPartita({required this.colore});
+
+  final Color colore;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 7,
+    height: 7,
+    decoration: BoxDecoration(color: colore, shape: BoxShape.circle),
+  );
+}
+
+class _VoceLegenda extends StatelessWidget {
+  const _VoceLegenda({required this.segno, required this.testo});
+
+  final Widget segno;
+  final String testo;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      segno,
+      const SizedBox(width: 6),
+      Text(
+        testo,
+        style: AppTypography.etichetta.copyWith(
+          color: context.colori.testoSecondario,
+        ),
+      ),
+    ],
+  );
 }

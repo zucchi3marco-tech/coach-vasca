@@ -33,6 +33,7 @@ import '../../pallanuoto/presentation/partita_live_screen.dart';
 import '../../presenze/presentation/presenze_screen.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
+import '../../test/presentation/tempi_da_foto_screen.dart';
 import '../atleta/grafica_pallanuoto.dart';
 import '../atleta/home_atleta_widgets.dart';
 
@@ -201,6 +202,20 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
             GaraFormScreen(clubId: club.id, stagione: stagione),
           ),
         ),
+      AzioneRapida(
+        icona: Icons.document_scanner_outlined,
+        titolo: 'Tempi da una foto',
+        sottotitolo: 'Dal foglio o dalla lavagna',
+        colore: dominio.evidenzaViola,
+        onTap: () => _apri(
+          context,
+          TempiDaFotoScreen(
+            clubId: club.id,
+            sport: pallanuoto ? 'pallanuoto' : 'nuoto',
+            gruppoId: gruppoId,
+          ),
+        ),
+      ),
       AzioneRapida(
         icona: Icons.person_add_alt_1,
         titolo: 'Nuovo atleta',
