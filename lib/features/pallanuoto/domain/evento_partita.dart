@@ -21,12 +21,15 @@ class EventoPartita {
   final String id;
   final String partitaId;
   final String clubId;
-  final String tipo; // tiro | espulsione |  final String contestoTiro; // azione | superiorita | rigore | controfuga (solo per tiro)| palla_persa | palla_recuperata| espulsione | superiorita
+
+  /// tiro | espulsione | superiorita | palla_persa | palla_recuperata
+  final String tipo;
   final String squadra; // nostra | avversaria
   final String? atletaId;
   final int? periodo;
   final String? esito; // gol | non_gol | parato | palo_fuori
-  final String contestoTiro; // azione | superiorita | rigore (solo per tiro)
+  /// azione | superiorita | rigore | controfuga (solo per tiro)
+  final String contestoTiro;
 
   /// Posizione del tiro sul campo disegnato (percentuale 0-100 su
   /// entrambi gli assi), solo per tipo 'tiro'. Null per gli eventi

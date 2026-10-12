@@ -483,6 +483,37 @@ class TestRisultatiTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Il video YouTube di una partita e i punti che lo allineano agli
+/// eventi (lista JSON) — vedi `VideoPartita`.
+class VideoPartiteTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get partitaId => text()();
+  TextColumn get youtubeId => text()();
+  TextColumn get allineamentiJson => text().withDefault(const Constant('[]'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Una nota su un fotogramma del video: disegno (lista JSON di forme) e
+/// testo, per tutta la squadra o per un convocato — vedi `NotaVideo`.
+class NoteVideoTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get videoId => text()();
+  TextColumn get partitaId => text()();
+  TextColumn get clubId => text()();
+  RealColumn get secondo => real()();
+  TextColumn get eventoId => text().nullable()();
+  TextColumn get atletaId => text().nullable()();
+  TextColumn get testo => text().nullable()();
+  TextColumn get disegnoJson => text().withDefault(const Constant('[]'))();
+  DateTimeColumn get creatoIl => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Libreria di blocchi di allenamento approvati (RIPROGETTAZIONE AI,
 /// FASE 1) — cache locale, stesso pattern di [SerieTable]/[AllenamentiTable].
 class TrainingBlocksTable extends Table {

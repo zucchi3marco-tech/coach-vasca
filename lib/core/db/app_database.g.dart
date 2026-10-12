@@ -15916,6 +15916,983 @@ class TestRisultatiTableCompanion
   }
 }
 
+class $VideoPartiteTableTable extends VideoPartiteTable
+    with TableInfo<$VideoPartiteTableTable, VideoPartiteTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VideoPartiteTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _partitaIdMeta = const VerificationMeta(
+    'partitaId',
+  );
+  @override
+  late final GeneratedColumn<String> partitaId = GeneratedColumn<String>(
+    'partita_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _youtubeIdMeta = const VerificationMeta(
+    'youtubeId',
+  );
+  @override
+  late final GeneratedColumn<String> youtubeId = GeneratedColumn<String>(
+    'youtube_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _allineamentiJsonMeta = const VerificationMeta(
+    'allineamentiJson',
+  );
+  @override
+  late final GeneratedColumn<String> allineamentiJson = GeneratedColumn<String>(
+    'allineamenti_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    partitaId,
+    youtubeId,
+    allineamentiJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'video_partite_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VideoPartiteTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('partita_id')) {
+      context.handle(
+        _partitaIdMeta,
+        partitaId.isAcceptableOrUnknown(data['partita_id']!, _partitaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_partitaIdMeta);
+    }
+    if (data.containsKey('youtube_id')) {
+      context.handle(
+        _youtubeIdMeta,
+        youtubeId.isAcceptableOrUnknown(data['youtube_id']!, _youtubeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_youtubeIdMeta);
+    }
+    if (data.containsKey('allineamenti_json')) {
+      context.handle(
+        _allineamentiJsonMeta,
+        allineamentiJson.isAcceptableOrUnknown(
+          data['allineamenti_json']!,
+          _allineamentiJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VideoPartiteTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VideoPartiteTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      partitaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partita_id'],
+      )!,
+      youtubeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}youtube_id'],
+      )!,
+      allineamentiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allineamenti_json'],
+      )!,
+    );
+  }
+
+  @override
+  $VideoPartiteTableTable createAlias(String alias) {
+    return $VideoPartiteTableTable(attachedDatabase, alias);
+  }
+}
+
+class VideoPartiteTableData extends DataClass
+    implements Insertable<VideoPartiteTableData> {
+  final String id;
+  final String clubId;
+  final String partitaId;
+  final String youtubeId;
+  final String allineamentiJson;
+  const VideoPartiteTableData({
+    required this.id,
+    required this.clubId,
+    required this.partitaId,
+    required this.youtubeId,
+    required this.allineamentiJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['partita_id'] = Variable<String>(partitaId);
+    map['youtube_id'] = Variable<String>(youtubeId);
+    map['allineamenti_json'] = Variable<String>(allineamentiJson);
+    return map;
+  }
+
+  VideoPartiteTableCompanion toCompanion(bool nullToAbsent) {
+    return VideoPartiteTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      partitaId: Value(partitaId),
+      youtubeId: Value(youtubeId),
+      allineamentiJson: Value(allineamentiJson),
+    );
+  }
+
+  factory VideoPartiteTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VideoPartiteTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      partitaId: serializer.fromJson<String>(json['partitaId']),
+      youtubeId: serializer.fromJson<String>(json['youtubeId']),
+      allineamentiJson: serializer.fromJson<String>(json['allineamentiJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'partitaId': serializer.toJson<String>(partitaId),
+      'youtubeId': serializer.toJson<String>(youtubeId),
+      'allineamentiJson': serializer.toJson<String>(allineamentiJson),
+    };
+  }
+
+  VideoPartiteTableData copyWith({
+    String? id,
+    String? clubId,
+    String? partitaId,
+    String? youtubeId,
+    String? allineamentiJson,
+  }) => VideoPartiteTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    partitaId: partitaId ?? this.partitaId,
+    youtubeId: youtubeId ?? this.youtubeId,
+    allineamentiJson: allineamentiJson ?? this.allineamentiJson,
+  );
+  VideoPartiteTableData copyWithCompanion(VideoPartiteTableCompanion data) {
+    return VideoPartiteTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      partitaId: data.partitaId.present ? data.partitaId.value : this.partitaId,
+      youtubeId: data.youtubeId.present ? data.youtubeId.value : this.youtubeId,
+      allineamentiJson: data.allineamentiJson.present
+          ? data.allineamentiJson.value
+          : this.allineamentiJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VideoPartiteTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('youtubeId: $youtubeId, ')
+          ..write('allineamentiJson: $allineamentiJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, clubId, partitaId, youtubeId, allineamentiJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VideoPartiteTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.partitaId == this.partitaId &&
+          other.youtubeId == this.youtubeId &&
+          other.allineamentiJson == this.allineamentiJson);
+}
+
+class VideoPartiteTableCompanion
+    extends UpdateCompanion<VideoPartiteTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> partitaId;
+  final Value<String> youtubeId;
+  final Value<String> allineamentiJson;
+  final Value<int> rowid;
+  const VideoPartiteTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.partitaId = const Value.absent(),
+    this.youtubeId = const Value.absent(),
+    this.allineamentiJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VideoPartiteTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String partitaId,
+    required String youtubeId,
+    this.allineamentiJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       partitaId = Value(partitaId),
+       youtubeId = Value(youtubeId);
+  static Insertable<VideoPartiteTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? partitaId,
+    Expression<String>? youtubeId,
+    Expression<String>? allineamentiJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (partitaId != null) 'partita_id': partitaId,
+      if (youtubeId != null) 'youtube_id': youtubeId,
+      if (allineamentiJson != null) 'allineamenti_json': allineamentiJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VideoPartiteTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? partitaId,
+    Value<String>? youtubeId,
+    Value<String>? allineamentiJson,
+    Value<int>? rowid,
+  }) {
+    return VideoPartiteTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      partitaId: partitaId ?? this.partitaId,
+      youtubeId: youtubeId ?? this.youtubeId,
+      allineamentiJson: allineamentiJson ?? this.allineamentiJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (partitaId.present) {
+      map['partita_id'] = Variable<String>(partitaId.value);
+    }
+    if (youtubeId.present) {
+      map['youtube_id'] = Variable<String>(youtubeId.value);
+    }
+    if (allineamentiJson.present) {
+      map['allineamenti_json'] = Variable<String>(allineamentiJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VideoPartiteTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('youtubeId: $youtubeId, ')
+          ..write('allineamentiJson: $allineamentiJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NoteVideoTableTable extends NoteVideoTable
+    with TableInfo<$NoteVideoTableTable, NoteVideoTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NoteVideoTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _videoIdMeta = const VerificationMeta(
+    'videoId',
+  );
+  @override
+  late final GeneratedColumn<String> videoId = GeneratedColumn<String>(
+    'video_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _partitaIdMeta = const VerificationMeta(
+    'partitaId',
+  );
+  @override
+  late final GeneratedColumn<String> partitaId = GeneratedColumn<String>(
+    'partita_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _secondoMeta = const VerificationMeta(
+    'secondo',
+  );
+  @override
+  late final GeneratedColumn<double> secondo = GeneratedColumn<double>(
+    'secondo',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventoIdMeta = const VerificationMeta(
+    'eventoId',
+  );
+  @override
+  late final GeneratedColumn<String> eventoId = GeneratedColumn<String>(
+    'evento_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _testoMeta = const VerificationMeta('testo');
+  @override
+  late final GeneratedColumn<String> testo = GeneratedColumn<String>(
+    'testo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _disegnoJsonMeta = const VerificationMeta(
+    'disegnoJson',
+  );
+  @override
+  late final GeneratedColumn<String> disegnoJson = GeneratedColumn<String>(
+    'disegno_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _creatoIlMeta = const VerificationMeta(
+    'creatoIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> creatoIl = GeneratedColumn<DateTime>(
+    'creato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    videoId,
+    partitaId,
+    clubId,
+    secondo,
+    eventoId,
+    atletaId,
+    testo,
+    disegnoJson,
+    creatoIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'note_video_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NoteVideoTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('video_id')) {
+      context.handle(
+        _videoIdMeta,
+        videoId.isAcceptableOrUnknown(data['video_id']!, _videoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_videoIdMeta);
+    }
+    if (data.containsKey('partita_id')) {
+      context.handle(
+        _partitaIdMeta,
+        partitaId.isAcceptableOrUnknown(data['partita_id']!, _partitaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_partitaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('secondo')) {
+      context.handle(
+        _secondoMeta,
+        secondo.isAcceptableOrUnknown(data['secondo']!, _secondoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_secondoMeta);
+    }
+    if (data.containsKey('evento_id')) {
+      context.handle(
+        _eventoIdMeta,
+        eventoId.isAcceptableOrUnknown(data['evento_id']!, _eventoIdMeta),
+      );
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    }
+    if (data.containsKey('testo')) {
+      context.handle(
+        _testoMeta,
+        testo.isAcceptableOrUnknown(data['testo']!, _testoMeta),
+      );
+    }
+    if (data.containsKey('disegno_json')) {
+      context.handle(
+        _disegnoJsonMeta,
+        disegnoJson.isAcceptableOrUnknown(
+          data['disegno_json']!,
+          _disegnoJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('creato_il')) {
+      context.handle(
+        _creatoIlMeta,
+        creatoIl.isAcceptableOrUnknown(data['creato_il']!, _creatoIlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_creatoIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NoteVideoTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NoteVideoTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      videoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_id'],
+      )!,
+      partitaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partita_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      secondo: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}secondo'],
+      )!,
+      eventoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evento_id'],
+      ),
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      ),
+      testo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}testo'],
+      ),
+      disegnoJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}disegno_json'],
+      )!,
+      creatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creato_il'],
+      )!,
+    );
+  }
+
+  @override
+  $NoteVideoTableTable createAlias(String alias) {
+    return $NoteVideoTableTable(attachedDatabase, alias);
+  }
+}
+
+class NoteVideoTableData extends DataClass
+    implements Insertable<NoteVideoTableData> {
+  final String id;
+  final String videoId;
+  final String partitaId;
+  final String clubId;
+  final double secondo;
+  final String? eventoId;
+  final String? atletaId;
+  final String? testo;
+  final String disegnoJson;
+  final DateTime creatoIl;
+  const NoteVideoTableData({
+    required this.id,
+    required this.videoId,
+    required this.partitaId,
+    required this.clubId,
+    required this.secondo,
+    this.eventoId,
+    this.atletaId,
+    this.testo,
+    required this.disegnoJson,
+    required this.creatoIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['video_id'] = Variable<String>(videoId);
+    map['partita_id'] = Variable<String>(partitaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['secondo'] = Variable<double>(secondo);
+    if (!nullToAbsent || eventoId != null) {
+      map['evento_id'] = Variable<String>(eventoId);
+    }
+    if (!nullToAbsent || atletaId != null) {
+      map['atleta_id'] = Variable<String>(atletaId);
+    }
+    if (!nullToAbsent || testo != null) {
+      map['testo'] = Variable<String>(testo);
+    }
+    map['disegno_json'] = Variable<String>(disegnoJson);
+    map['creato_il'] = Variable<DateTime>(creatoIl);
+    return map;
+  }
+
+  NoteVideoTableCompanion toCompanion(bool nullToAbsent) {
+    return NoteVideoTableCompanion(
+      id: Value(id),
+      videoId: Value(videoId),
+      partitaId: Value(partitaId),
+      clubId: Value(clubId),
+      secondo: Value(secondo),
+      eventoId: eventoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eventoId),
+      atletaId: atletaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(atletaId),
+      testo: testo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(testo),
+      disegnoJson: Value(disegnoJson),
+      creatoIl: Value(creatoIl),
+    );
+  }
+
+  factory NoteVideoTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NoteVideoTableData(
+      id: serializer.fromJson<String>(json['id']),
+      videoId: serializer.fromJson<String>(json['videoId']),
+      partitaId: serializer.fromJson<String>(json['partitaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      secondo: serializer.fromJson<double>(json['secondo']),
+      eventoId: serializer.fromJson<String?>(json['eventoId']),
+      atletaId: serializer.fromJson<String?>(json['atletaId']),
+      testo: serializer.fromJson<String?>(json['testo']),
+      disegnoJson: serializer.fromJson<String>(json['disegnoJson']),
+      creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'videoId': serializer.toJson<String>(videoId),
+      'partitaId': serializer.toJson<String>(partitaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'secondo': serializer.toJson<double>(secondo),
+      'eventoId': serializer.toJson<String?>(eventoId),
+      'atletaId': serializer.toJson<String?>(atletaId),
+      'testo': serializer.toJson<String?>(testo),
+      'disegnoJson': serializer.toJson<String>(disegnoJson),
+      'creatoIl': serializer.toJson<DateTime>(creatoIl),
+    };
+  }
+
+  NoteVideoTableData copyWith({
+    String? id,
+    String? videoId,
+    String? partitaId,
+    String? clubId,
+    double? secondo,
+    Value<String?> eventoId = const Value.absent(),
+    Value<String?> atletaId = const Value.absent(),
+    Value<String?> testo = const Value.absent(),
+    String? disegnoJson,
+    DateTime? creatoIl,
+  }) => NoteVideoTableData(
+    id: id ?? this.id,
+    videoId: videoId ?? this.videoId,
+    partitaId: partitaId ?? this.partitaId,
+    clubId: clubId ?? this.clubId,
+    secondo: secondo ?? this.secondo,
+    eventoId: eventoId.present ? eventoId.value : this.eventoId,
+    atletaId: atletaId.present ? atletaId.value : this.atletaId,
+    testo: testo.present ? testo.value : this.testo,
+    disegnoJson: disegnoJson ?? this.disegnoJson,
+    creatoIl: creatoIl ?? this.creatoIl,
+  );
+  NoteVideoTableData copyWithCompanion(NoteVideoTableCompanion data) {
+    return NoteVideoTableData(
+      id: data.id.present ? data.id.value : this.id,
+      videoId: data.videoId.present ? data.videoId.value : this.videoId,
+      partitaId: data.partitaId.present ? data.partitaId.value : this.partitaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      secondo: data.secondo.present ? data.secondo.value : this.secondo,
+      eventoId: data.eventoId.present ? data.eventoId.value : this.eventoId,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      testo: data.testo.present ? data.testo.value : this.testo,
+      disegnoJson: data.disegnoJson.present
+          ? data.disegnoJson.value
+          : this.disegnoJson,
+      creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteVideoTableData(')
+          ..write('id: $id, ')
+          ..write('videoId: $videoId, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('secondo: $secondo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('testo: $testo, ')
+          ..write('disegnoJson: $disegnoJson, ')
+          ..write('creatoIl: $creatoIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    videoId,
+    partitaId,
+    clubId,
+    secondo,
+    eventoId,
+    atletaId,
+    testo,
+    disegnoJson,
+    creatoIl,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NoteVideoTableData &&
+          other.id == this.id &&
+          other.videoId == this.videoId &&
+          other.partitaId == this.partitaId &&
+          other.clubId == this.clubId &&
+          other.secondo == this.secondo &&
+          other.eventoId == this.eventoId &&
+          other.atletaId == this.atletaId &&
+          other.testo == this.testo &&
+          other.disegnoJson == this.disegnoJson &&
+          other.creatoIl == this.creatoIl);
+}
+
+class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
+  final Value<String> id;
+  final Value<String> videoId;
+  final Value<String> partitaId;
+  final Value<String> clubId;
+  final Value<double> secondo;
+  final Value<String?> eventoId;
+  final Value<String?> atletaId;
+  final Value<String?> testo;
+  final Value<String> disegnoJson;
+  final Value<DateTime> creatoIl;
+  final Value<int> rowid;
+  const NoteVideoTableCompanion({
+    this.id = const Value.absent(),
+    this.videoId = const Value.absent(),
+    this.partitaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.secondo = const Value.absent(),
+    this.eventoId = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.testo = const Value.absent(),
+    this.disegnoJson = const Value.absent(),
+    this.creatoIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NoteVideoTableCompanion.insert({
+    required String id,
+    required String videoId,
+    required String partitaId,
+    required String clubId,
+    required double secondo,
+    this.eventoId = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.testo = const Value.absent(),
+    this.disegnoJson = const Value.absent(),
+    required DateTime creatoIl,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       videoId = Value(videoId),
+       partitaId = Value(partitaId),
+       clubId = Value(clubId),
+       secondo = Value(secondo),
+       creatoIl = Value(creatoIl);
+  static Insertable<NoteVideoTableData> custom({
+    Expression<String>? id,
+    Expression<String>? videoId,
+    Expression<String>? partitaId,
+    Expression<String>? clubId,
+    Expression<double>? secondo,
+    Expression<String>? eventoId,
+    Expression<String>? atletaId,
+    Expression<String>? testo,
+    Expression<String>? disegnoJson,
+    Expression<DateTime>? creatoIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (videoId != null) 'video_id': videoId,
+      if (partitaId != null) 'partita_id': partitaId,
+      if (clubId != null) 'club_id': clubId,
+      if (secondo != null) 'secondo': secondo,
+      if (eventoId != null) 'evento_id': eventoId,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (testo != null) 'testo': testo,
+      if (disegnoJson != null) 'disegno_json': disegnoJson,
+      if (creatoIl != null) 'creato_il': creatoIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NoteVideoTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? videoId,
+    Value<String>? partitaId,
+    Value<String>? clubId,
+    Value<double>? secondo,
+    Value<String?>? eventoId,
+    Value<String?>? atletaId,
+    Value<String?>? testo,
+    Value<String>? disegnoJson,
+    Value<DateTime>? creatoIl,
+    Value<int>? rowid,
+  }) {
+    return NoteVideoTableCompanion(
+      id: id ?? this.id,
+      videoId: videoId ?? this.videoId,
+      partitaId: partitaId ?? this.partitaId,
+      clubId: clubId ?? this.clubId,
+      secondo: secondo ?? this.secondo,
+      eventoId: eventoId ?? this.eventoId,
+      atletaId: atletaId ?? this.atletaId,
+      testo: testo ?? this.testo,
+      disegnoJson: disegnoJson ?? this.disegnoJson,
+      creatoIl: creatoIl ?? this.creatoIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (videoId.present) {
+      map['video_id'] = Variable<String>(videoId.value);
+    }
+    if (partitaId.present) {
+      map['partita_id'] = Variable<String>(partitaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (secondo.present) {
+      map['secondo'] = Variable<double>(secondo.value);
+    }
+    if (eventoId.present) {
+      map['evento_id'] = Variable<String>(eventoId.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (testo.present) {
+      map['testo'] = Variable<String>(testo.value);
+    }
+    if (disegnoJson.present) {
+      map['disegno_json'] = Variable<String>(disegnoJson.value);
+    }
+    if (creatoIl.present) {
+      map['creato_il'] = Variable<DateTime>(creatoIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteVideoTableCompanion(')
+          ..write('id: $id, ')
+          ..write('videoId: $videoId, ')
+          ..write('partitaId: $partitaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('secondo: $secondo, ')
+          ..write('eventoId: $eventoId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('testo: $testo, ')
+          ..write('disegnoJson: $disegnoJson, ')
+          ..write('creatoIl: $creatoIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15959,6 +16936,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TestClubTableTable testClubTable = $TestClubTableTable(this);
   late final $TestRisultatiTableTable testRisultatiTable =
       $TestRisultatiTableTable(this);
+  late final $VideoPartiteTableTable videoPartiteTable =
+      $VideoPartiteTableTable(this);
+  late final $NoteVideoTableTable noteVideoTable = $NoteVideoTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -15989,6 +16969,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rpeSeduteTable,
     testClubTable,
     testRisultatiTable,
+    videoPartiteTable,
+    noteVideoTable,
   ];
 }
 
@@ -24180,6 +25162,544 @@ typedef $$TestRisultatiTableTableProcessedTableManager =
       TestRisultatiTableData,
       PrefetchHooks Function()
     >;
+typedef $$VideoPartiteTableTableCreateCompanionBuilder =
+    VideoPartiteTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String partitaId,
+      required String youtubeId,
+      Value<String> allineamentiJson,
+      Value<int> rowid,
+    });
+typedef $$VideoPartiteTableTableUpdateCompanionBuilder =
+    VideoPartiteTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> partitaId,
+      Value<String> youtubeId,
+      Value<String> allineamentiJson,
+      Value<int> rowid,
+    });
+
+class $$VideoPartiteTableTableFilterComposer
+    extends Composer<_$AppDatabase, $VideoPartiteTableTable> {
+  $$VideoPartiteTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get youtubeId => $composableBuilder(
+    column: $table.youtubeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allineamentiJson => $composableBuilder(
+    column: $table.allineamentiJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$VideoPartiteTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $VideoPartiteTableTable> {
+  $$VideoPartiteTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get youtubeId => $composableBuilder(
+    column: $table.youtubeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allineamentiJson => $composableBuilder(
+    column: $table.allineamentiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$VideoPartiteTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VideoPartiteTableTable> {
+  $$VideoPartiteTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get partitaId =>
+      $composableBuilder(column: $table.partitaId, builder: (column) => column);
+
+  GeneratedColumn<String> get youtubeId =>
+      $composableBuilder(column: $table.youtubeId, builder: (column) => column);
+
+  GeneratedColumn<String> get allineamentiJson => $composableBuilder(
+    column: $table.allineamentiJson,
+    builder: (column) => column,
+  );
+}
+
+class $$VideoPartiteTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VideoPartiteTableTable,
+          VideoPartiteTableData,
+          $$VideoPartiteTableTableFilterComposer,
+          $$VideoPartiteTableTableOrderingComposer,
+          $$VideoPartiteTableTableAnnotationComposer,
+          $$VideoPartiteTableTableCreateCompanionBuilder,
+          $$VideoPartiteTableTableUpdateCompanionBuilder,
+          (
+            VideoPartiteTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $VideoPartiteTableTable,
+              VideoPartiteTableData
+            >,
+          ),
+          VideoPartiteTableData,
+          PrefetchHooks Function()
+        > {
+  $$VideoPartiteTableTableTableManager(
+    _$AppDatabase db,
+    $VideoPartiteTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VideoPartiteTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VideoPartiteTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VideoPartiteTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> partitaId = const Value.absent(),
+                Value<String> youtubeId = const Value.absent(),
+                Value<String> allineamentiJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VideoPartiteTableCompanion(
+                id: id,
+                clubId: clubId,
+                partitaId: partitaId,
+                youtubeId: youtubeId,
+                allineamentiJson: allineamentiJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String partitaId,
+                required String youtubeId,
+                Value<String> allineamentiJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VideoPartiteTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                partitaId: partitaId,
+                youtubeId: youtubeId,
+                allineamentiJson: allineamentiJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VideoPartiteTableTable, VideoPartiteTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $VideoPartiteTableTable,
+                    VideoPartiteTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$VideoPartiteTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VideoPartiteTableTable,
+      VideoPartiteTableData,
+      $$VideoPartiteTableTableFilterComposer,
+      $$VideoPartiteTableTableOrderingComposer,
+      $$VideoPartiteTableTableAnnotationComposer,
+      $$VideoPartiteTableTableCreateCompanionBuilder,
+      $$VideoPartiteTableTableUpdateCompanionBuilder,
+      (
+        VideoPartiteTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $VideoPartiteTableTable,
+          VideoPartiteTableData
+        >,
+      ),
+      VideoPartiteTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$NoteVideoTableTableCreateCompanionBuilder =
+    NoteVideoTableCompanion Function({
+      required String id,
+      required String videoId,
+      required String partitaId,
+      required String clubId,
+      required double secondo,
+      Value<String?> eventoId,
+      Value<String?> atletaId,
+      Value<String?> testo,
+      Value<String> disegnoJson,
+      required DateTime creatoIl,
+      Value<int> rowid,
+    });
+typedef $$NoteVideoTableTableUpdateCompanionBuilder =
+    NoteVideoTableCompanion Function({
+      Value<String> id,
+      Value<String> videoId,
+      Value<String> partitaId,
+      Value<String> clubId,
+      Value<double> secondo,
+      Value<String?> eventoId,
+      Value<String?> atletaId,
+      Value<String?> testo,
+      Value<String> disegnoJson,
+      Value<DateTime> creatoIl,
+      Value<int> rowid,
+    });
+
+class $$NoteVideoTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NoteVideoTableTable> {
+  $$NoteVideoTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get videoId => $composableBuilder(
+    column: $table.videoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get secondo => $composableBuilder(
+    column: $table.secondo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get testo => $composableBuilder(
+    column: $table.testo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get disegnoJson => $composableBuilder(
+    column: $table.disegnoJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NoteVideoTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NoteVideoTableTable> {
+  $$NoteVideoTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get videoId => $composableBuilder(
+    column: $table.videoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partitaId => $composableBuilder(
+    column: $table.partitaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get secondo => $composableBuilder(
+    column: $table.secondo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventoId => $composableBuilder(
+    column: $table.eventoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get testo => $composableBuilder(
+    column: $table.testo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get disegnoJson => $composableBuilder(
+    column: $table.disegnoJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creatoIl => $composableBuilder(
+    column: $table.creatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NoteVideoTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NoteVideoTableTable> {
+  $$NoteVideoTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get videoId =>
+      $composableBuilder(column: $table.videoId, builder: (column) => column);
+
+  GeneratedColumn<String> get partitaId =>
+      $composableBuilder(column: $table.partitaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<double> get secondo =>
+      $composableBuilder(column: $table.secondo, builder: (column) => column);
+
+  GeneratedColumn<String> get eventoId =>
+      $composableBuilder(column: $table.eventoId, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get testo =>
+      $composableBuilder(column: $table.testo, builder: (column) => column);
+
+  GeneratedColumn<String> get disegnoJson => $composableBuilder(
+    column: $table.disegnoJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get creatoIl =>
+      $composableBuilder(column: $table.creatoIl, builder: (column) => column);
+}
+
+class $$NoteVideoTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NoteVideoTableTable,
+          NoteVideoTableData,
+          $$NoteVideoTableTableFilterComposer,
+          $$NoteVideoTableTableOrderingComposer,
+          $$NoteVideoTableTableAnnotationComposer,
+          $$NoteVideoTableTableCreateCompanionBuilder,
+          $$NoteVideoTableTableUpdateCompanionBuilder,
+          (
+            NoteVideoTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $NoteVideoTableTable,
+              NoteVideoTableData
+            >,
+          ),
+          NoteVideoTableData,
+          PrefetchHooks Function()
+        > {
+  $$NoteVideoTableTableTableManager(
+    _$AppDatabase db,
+    $NoteVideoTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NoteVideoTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NoteVideoTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NoteVideoTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> videoId = const Value.absent(),
+                Value<String> partitaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<double> secondo = const Value.absent(),
+                Value<String?> eventoId = const Value.absent(),
+                Value<String?> atletaId = const Value.absent(),
+                Value<String?> testo = const Value.absent(),
+                Value<String> disegnoJson = const Value.absent(),
+                Value<DateTime> creatoIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NoteVideoTableCompanion(
+                id: id,
+                videoId: videoId,
+                partitaId: partitaId,
+                clubId: clubId,
+                secondo: secondo,
+                eventoId: eventoId,
+                atletaId: atletaId,
+                testo: testo,
+                disegnoJson: disegnoJson,
+                creatoIl: creatoIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String videoId,
+                required String partitaId,
+                required String clubId,
+                required double secondo,
+                Value<String?> eventoId = const Value.absent(),
+                Value<String?> atletaId = const Value.absent(),
+                Value<String?> testo = const Value.absent(),
+                Value<String> disegnoJson = const Value.absent(),
+                required DateTime creatoIl,
+                Value<int> rowid = const Value.absent(),
+              }) => NoteVideoTableCompanion.insert(
+                id: id,
+                videoId: videoId,
+                partitaId: partitaId,
+                clubId: clubId,
+                secondo: secondo,
+                eventoId: eventoId,
+                atletaId: atletaId,
+                testo: testo,
+                disegnoJson: disegnoJson,
+                creatoIl: creatoIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NoteVideoTableTable, NoteVideoTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $NoteVideoTableTable,
+                    NoteVideoTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NoteVideoTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NoteVideoTableTable,
+      NoteVideoTableData,
+      $$NoteVideoTableTableFilterComposer,
+      $$NoteVideoTableTableOrderingComposer,
+      $$NoteVideoTableTableAnnotationComposer,
+      $$NoteVideoTableTableCreateCompanionBuilder,
+      $$NoteVideoTableTableUpdateCompanionBuilder,
+      (
+        NoteVideoTableData,
+        BaseReferences<_$AppDatabase, $NoteVideoTableTable, NoteVideoTableData>,
+      ),
+      NoteVideoTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -24243,4 +25763,8 @@ class $AppDatabaseManager {
       $$TestClubTableTableTableManager(_db, _db.testClubTable);
   $$TestRisultatiTableTableTableManager get testRisultatiTable =>
       $$TestRisultatiTableTableTableManager(_db, _db.testRisultatiTable);
+  $$VideoPartiteTableTableTableManager get videoPartiteTable =>
+      $$VideoPartiteTableTableTableManager(_db, _db.videoPartiteTable);
+  $$NoteVideoTableTableTableManager get noteVideoTable =>
+      $$NoteVideoTableTableTableManager(_db, _db.noteVideoTable);
 }

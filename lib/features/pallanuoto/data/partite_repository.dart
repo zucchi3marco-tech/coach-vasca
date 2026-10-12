@@ -312,6 +312,12 @@ class PartiteRepository {
       await (_db.delete(
         _db.refertiPartitaTable,
       )..where((t) => t.partitaId.equals(id))).go();
+      await (_db.delete(
+        _db.noteVideoTable,
+      )..where((t) => t.partitaId.equals(id))).go();
+      await (_db.delete(
+        _db.videoPartiteTable,
+      )..where((t) => t.partitaId.equals(id))).go();
       await (_db.delete(_db.partiteTable)..where((t) => t.id.equals(id))).go();
     });
   }

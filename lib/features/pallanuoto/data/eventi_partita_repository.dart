@@ -191,6 +191,10 @@ class EventiPartitaRepository {
     final payload = {
       'id': id,
       'partita_id': partitaId,
+      // Il momento del tocco, non quello dell'arrivo al server: senza
+      // rete l'evento parte dalla coda anche minuti dopo, e il video
+      // della partita ritrova gli eventi proprio da questo orario.
+      'created_at': DateTime.now().toUtc().toIso8601String(),
       'tipo': tipo,
       'squadra': squadra,
       'atleta_id': ?atletaId,

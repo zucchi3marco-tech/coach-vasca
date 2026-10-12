@@ -26,6 +26,7 @@ import '../pdf/distinta_pdf.dart';
 import 'partita_form_screen.dart';
 import 'partita_live_screen.dart';
 import 'statistiche_partita_screen.dart';
+import 'video_partita_screen.dart';
 
 /// La scheda di una partita: dati e azioni del giorno della partita in
 /// testata, sotto la distinta dei convocati.
@@ -115,6 +116,13 @@ class DistintaScreen extends ConsumerWidget {
           etichetta: 'Referto',
           onTap: () => apri(RefertoPartitaScreen(partita: partita)),
         ),
+        // Il video c'è solo dopo: dal giorno della partita.
+        if (!partita.data.isAfter(DateTime.now()))
+          AzioneTestata(
+            icona: Icons.ondemand_video_outlined,
+            etichetta: 'Video',
+            onTap: () => apri(VideoPartitaScreen(partita: partita)),
+          ),
       ],
     );
 

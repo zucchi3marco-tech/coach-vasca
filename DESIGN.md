@@ -533,7 +533,7 @@ Il campo di ricerca e la fila di chip restano fissi sopra la lista, non scorrono
 └──────────────────────────────────────┘
 ```
 
-L'azione principale di una pagina di dettaglio sta nella testata ad acqua (`AzioneTestata`, vedi 2bis): ad esempio "Bordo vasca" e "Presenze" nel dettaglio allenamento, "Dal vivo", "Statistiche" e "Referto" nella partita. Il "+" resta per aggiungere elementi all'elenco della pagina; nella barra in alto solo esporta, modifica ed elimina.
+L'azione principale di una pagina di dettaglio sta nella testata ad acqua (`AzioneTestata`, vedi 2bis): ad esempio "Bordo vasca" e "Presenze" nel dettaglio allenamento, "Dal vivo", "Statistiche" e "Referto" nella partita (e dal giorno della partita una quarta, "Video": prima non c'è niente da guardare). Il "+" resta per aggiungere elementi all'elenco della pagina; nella barra in alto solo esporta, modifica ed elimina.
 
 **C. Pagina form**
 
@@ -776,6 +776,18 @@ L'errore non si scusa e non è vago.
 Azione riuscita → snackbar in basso, livello 3, filetto sinistro `ok`, testo al passato che riprende il verbo del pulsante: "Salva atleta" → "Atleta salvato". Dura 3 secondi. Nel tema scuro la snackbar è `superficieAlta`, non un rettangolo chiaro invertito.
 
 Azione distruttiva → dialog con titolo che nomina l'oggetto ("Archiviare Sara Napoletani?"), una riga sulle conseguenze, pulsante distruttivo a destra, secondario a sinistra.
+
+### Video della partita
+
+Si guarda alla scrivania o sul divano, non a bordo vasca: valgono le regole normali, non quelle della sezione 14.
+
+- **Due pannelli da `esteso` in su**: a sinistra il video 16:9, la barra dei comandi e sotto un solo riquadro; a destra le clip, larghe 360, che scorrono per conto loro. Su telefono il video resta fermo in alto e sotto scorrono comandi, riquadro e clip. Larghezza fino a 1200, come un cruscotto.
+- **Un riquadro alla volta** sotto il video, quello di quello che si sta facendo: il disegno di una nota, l'allineamento ("Dov'è nel video?", con i passi da ±1 e ±0,2 secondi), una nota su cui il video si è fermato, la clip in onda (con "Precedente" / "Successiva" guardandole di fila), o l'invito ad allineare. Mai due insieme.
+- **Comandi**: indietro e avanti di 5 secondi, play/pausa in `azione`, "Rallenta" (1×, 0,5×, 0,25×), il punto del video in cifre tabulari e, per l'allenatore, "Disegna". Il lettore di YouTube ha anche i suoi.
+- **Il riquadro del video è nero in entrambi i temi** (`AcquaPalette.nero`): è il colore delle bande del video, come il campo della lavagna non cambia col tema.
+- **Il disegno** usa gli inchiostri della lavagna tattica (`ColoreLavagna.inchiostri`) e la stessa punta di freccia, più spessi (4 px con un alone di 8 nel controcolore) perché il video sotto è pieno di dettagli. Freccia (curva se il dito curva) e cerchio; "Togli l'ultimo" annulla un segno. Mentre si disegna il video non riceve tocchi.
+- **Le clip** sono righe di elenco con l'icona dell'evento e la stessa descrizione della cronologia ("Tiro — Rossi — Gol (T1)"), sotto il punto del video; quella in onda ha icona ed etichetta "In onda" in `azione`. I filtri sono chip in una fila che scorre (solo quelli con almeno una clip) e, per l'allenatore, il chip del giocatore che apre l'elenco dei convocati.
+- L'atleta vede prima "Le tue azioni", poi "Tutta la partita", senza disegno, allineamento né menu.
 
 ---
 

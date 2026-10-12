@@ -13,11 +13,14 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../atleti/application/current_atleta_provider.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
 import '../application/pallanuoto_providers.dart';
+import '../application/video_partita_providers.dart';
 import '../domain/partita.dart';
 import 'chip_risultato.dart';
 import 'statistiche_partita_screen.dart';
+import 'video_partita_screen.dart';
 
 /// Elenco partite per l'atleta collegato (FASE 13, punto 4): prossime e
 /// giocate come nella schermata del coach, con il risultato sulle
@@ -71,6 +74,34 @@ class PartiteAtletaListScreen extends ConsumerWidget {
                 );
               },
             ),
+            // Il video lo vede chi era convocato (il server non lo dà agli
+            // altri), quando l'allenatore l'ha collegato.
+            if (!vistaAllenatore)
+              Consumer(
+                builder: (context, ref, _) {
+                  final video = ref
+                      .watch(videoPartitaProvider(partita.id))
+                      .value;
+                  if (video == null) return const SizedBox.shrink();
+                  final atletaId = ref.watch(currentAtletaProvider).value?.id;
+                  return ListTile(
+                    leading: const Icon(Icons.ondemand_video_outlined),
+                    title: const Text('Video della partita'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => VideoPartitaScreen(
+                            partita: partita,
+                            modifica: false,
+                            atletaId: atletaId,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
           ],
         ),
       ),

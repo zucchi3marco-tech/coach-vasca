@@ -32,6 +32,8 @@ part 'app_database.g.dart';
     RpeSeduteTable,
     TestClubTable,
     TestRisultatiTable,
+    VideoPartiteTable,
+    NoteVideoTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -41,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 37;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -449,6 +451,15 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'eventi_partita_table', nome)) {
             await m.addColumn(eventiPartitaTable, colonna);
           }
+        }
+      }
+      // v36 -> v37: il video della partita e le note sui fotogrammi.
+      if (from < 37) {
+        if (!await _hasTable(m, 'video_partite_table')) {
+          await m.createTable(videoPartiteTable);
+        }
+        if (!await _hasTable(m, 'note_video_table')) {
+          await m.createTable(noteVideoTable);
         }
       }
     },

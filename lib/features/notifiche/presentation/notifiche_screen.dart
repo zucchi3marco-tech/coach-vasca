@@ -26,6 +26,7 @@ class NotificheScreen extends ConsumerWidget {
     'convocazione_partita' => Icons.sports_handball_outlined,
     'visita_medica' => Icons.medical_services_outlined,
     'benessere' => Icons.favorite_outline,
+    'video_partita' => Icons.ondemand_video_outlined,
     _ => Icons.person_add_alt_outlined,
   };
 
@@ -34,6 +35,7 @@ class NotificheScreen extends ConsumerWidget {
     'convocazione_partita' => context.dominio.evidenzaAmbra,
     'visita_medica' => context.colori.rosso,
     'benessere' => context.dominio.evidenzaViola,
+    'video_partita' => context.dominio.evidenzaAmbra,
     _ => context.colori.azione,
   };
 

@@ -33,7 +33,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 6;
+const _versioneDati = 7;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -782,7 +782,9 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                     tipo: e % 6 == 5 ? 'espulsione' : 'tiro',
                     squadra: Value(e % 3 == 2 ? 'avversaria' : 'nostra'),
                     atletaId: Value(e % 3 == 2 ? null : atleti[1 + e % 10]),
-                    periodo: Value(1 + e % 4),
+                    // Un evento ogni 2 minuti, 6 per tempo: come dal vivo,
+                    // e il video della partita li ritrova in ordine.
+                    periodo: Value(1 + e ~/ 6),
                     esito: Value(e % 6 == 5 ? null : esiti[e % 4]),
                     contestoTiro: Value(e % 5 == 0 ? 'superiorita' : 'azione'),
                     posX: Value(0.2 + (e % 7) / 10),
@@ -818,7 +820,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                     clubId: clubId,
                     tipo: e.isEven ? 'palla_persa' : 'palla_recuperata',
                     atletaId: Value(e == 6 ? null : atleti[1 + (e * 3) % 10]),
-                    periodo: Value(1 + e % 4),
+                    periodo: Value(1 + (1 + e * 6) ~/ 12),
                     creatoIl: aggiungiGiorni(
                       giorno,
                       giorni,

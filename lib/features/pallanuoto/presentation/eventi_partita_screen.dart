@@ -38,63 +38,6 @@ class EventiPartitaScreen extends ConsumerWidget {
 
   final Partita partita;
 
-  String _descrizione(EventoPartita e, Map<String, Atleta> atletiPerId) {
-    final tempo = e.periodo != null ? ' (T${e.periodo})' : '';
-    String nome(String? id) =>
-        atletiPerId[id]?.nomeCompleto ?? 'Atleta rimosso';
-    switch (e.tipo) {
-      case 'tiro':
-        final contesto = etichettaContesto(e.contestoTiro);
-        final suffisso = contesto.isEmpty ? '' : ' ($contesto)';
-        final assist = e.assistDi != null && e.esito == 'gol'
-            ? ' · assist ${nome(e.assistDi)}'
-            : '';
-        final chi = e.squadra == 'nostra'
-            ? 'Tiro — ${nome(e.atletaId)}'
-            : 'Tiro avversario';
-        return '$chi — ${etichettaEsito(e.esito)}$suffisso$assist$tempo';
-      case 'espulsione':
-        final chi = e.atletaId != null
-            ? nome(e.atletaId)
-            : 'Avversario n. ${e.numeroCalottinaAvversario}';
-        final rigore = e.espulsioneDaRigore ? ' (fallo da rigore)' : '';
-        final guadagnata = e.guadagnataDa == null
-            ? ''
-            : e.espulsioneDaRigore
-            ? ' · rigore guadagnato da ${nome(e.guadagnataDa)}'
-            : ' · guadagnata da ${nome(e.guadagnataDa)}';
-        return 'Espulsione — $chi$rigore$guadagnata$tempo';
-      case 'superiorita':
-        final squadra = e.squadra == 'nostra' ? 'nostra' : 'avversaria';
-        return 'Superiorità $squadra — ${etichettaEsito(e.esito)}$tempo';
-      case 'palla_persa' || 'palla_recuperata':
-        final cosa = e.tipo == 'palla_persa'
-            ? 'Palla persa'
-            : 'Palla recuperata';
-        final chi = e.atletaId != null ? nome(e.atletaId) : 'squadra';
-        return '$cosa — $chi$tempo';
-      default:
-        return e.tipo;
-    }
-  }
-
-  IconData _icona(EventoPartita e) {
-    switch (e.tipo) {
-      case 'tiro':
-        return Icons.sports_handball_outlined;
-      case 'espulsione':
-        return Icons.warning_amber_outlined;
-      case 'superiorita':
-        return e.squadra == 'nostra' ? Icons.trending_up : Icons.trending_down;
-      case 'palla_persa':
-        return Icons.remove_circle_outline;
-      case 'palla_recuperata':
-        return Icons.add_circle_outline;
-      default:
-        return Icons.circle_outlined;
-    }
-  }
-
   Future<void> _onTap(
     BuildContext context,
     WidgetRef ref,
@@ -178,14 +121,19 @@ class EventiPartitaScreen extends ConsumerWidget {
                               child: Row(
                                 children: [
                                   Icon(
-                                    _icona(e),
+                                    iconaEvento(e),
                                     size: 20,
                                     color: colori.testoSecondario,
                                   ),
                                   const SizedBox(width: AppSpacing.s12),
                                   Expanded(
                                     child: Text(
-                                      _descrizione(e, atletiPerId),
+                                      descriviEvento(
+                                        e,
+                                        (id) =>
+                                            atletiPerId[id]?.nomeCompleto ??
+                                            'Atleta rimosso',
+                                      ),
                                       style: AppTypography.corpoForte.copyWith(
                                         color: colori.testo,
                                       ),
