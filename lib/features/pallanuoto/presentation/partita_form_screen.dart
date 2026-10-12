@@ -55,6 +55,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
   late DateTime _data;
   late int _numeroMaxConvocati;
   late String _dettaglioTiro;
+  late String _eventiLive;
   late bool _tracciaTempo;
   late String _nostraSquadra;
   late String _importanza;
@@ -85,6 +86,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
     _dataController = TextEditingController(text: _formattaData(_data));
     _numeroMaxConvocati = p?.numeroMaxConvocati ?? 15;
     _dettaglioTiro = p?.dettaglioTiro ?? 'semplice';
+    _eventiLive = p?.eventiLive ?? 'essenziale';
     _tracciaTempo = p?.tracciaTempo ?? true;
     _nostraSquadra = p?.nostraSquadra ?? 'casa';
     _importanza = p?.importanza ?? 'media';
@@ -102,6 +104,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
         if (mounted && ultima != null) {
           setState(() {
             _dettaglioTiro = ultima.dettaglioTiro;
+            _eventiLive = ultima.eventiLive;
             _tracciaTempo = ultima.tracciaTempo;
           });
         }
@@ -232,6 +235,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           numeroMaxConvocati: _numeroMaxConvocati,
           note: _noteController.text.trim(),
           dettaglioTiro: _dettaglioTiro,
+          eventiLive: _eventiLive,
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
@@ -251,6 +255,7 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
           numeroMaxConvocati: _numeroMaxConvocati,
           note: _noteController.text.trim(),
           dettaglioTiro: _dettaglioTiro,
+          eventiLive: _eventiLive,
           tracciaTempo: _tracciaTempo,
           modalitaSuperiorita: 'singolo',
           nostraSquadra: _nostraSquadra,
@@ -483,6 +488,9 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                 _dettaglioTiro == 'dettagliato'
                     ? 'tiro dettagliato'
                     : 'tiro semplice',
+                _eventiLive == 'completa'
+                    ? 'eventi completi'
+                    : 'eventi essenziali',
                 _tracciaTempo ? 'tempo tracciato' : 'tempo non tracciato',
               ].join(' · '),
               campi: [
@@ -539,6 +547,45 @@ class _PartitaFormScreenState extends ConsumerState<PartitaFormScreen> {
                       'Semplice: solo Gol/Non gol. Dettagliato: distingue '
                       'anche un tiro parato da uno andato a vuoto (palo o '
                       'fuori).',
+                      style: AppTypography.piccolo.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Eventi dal vivo',
+                      style: AppTypography.etichetta.copyWith(
+                        color: colori.testoSecondario,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: 'essenziale',
+                          label: Text('Essenziali'),
+                        ),
+                        ButtonSegment(
+                          value: 'completa',
+                          label: Text('Completi'),
+                        ),
+                      ],
+                      selected: {_eventiLive},
+                      onSelectionChanged: (s) =>
+                          setState(() => _eventiLive = s.first),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      'Essenziali: tiri, espulsioni, rigori e tiri '
+                      'avversari. Completi: anche palle perse e recuperate, '
+                      'l\'assist di ogni gol, i gol in controfuga e chi ha '
+                      'guadagnato espulsioni e rigori — più tocchi a bordo '
+                      'vasca, statistiche più ricche.',
                       style: AppTypography.piccolo.copyWith(
                         color: colori.testoSecondario,
                       ),

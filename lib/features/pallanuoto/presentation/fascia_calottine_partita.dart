@@ -25,6 +25,7 @@ class FasciaCalottinePartita extends StatelessWidget {
     required this.conteggiRigore,
     required this.onSelezionato,
     this.soloNostra = false,
+    this.atletaEscluso,
     super.key,
   });
 
@@ -42,6 +43,10 @@ class FasciaCalottinePartita extends StatelessWidget {
   /// (usato per il tiro: solo un nostro giocatore può tirare).
   final bool soloNostra;
 
+  /// Un nostro giocatore che qui non si può scegliere (chi ha segnato,
+  /// quando si sceglie l'assist).
+  final String? atletaEscluso;
+
   bool get _eNostra => (partita.nostraSquadra == 'casa') == casa;
 
   _BadgeCalottina _badge(int n, bool toccabile) {
@@ -51,7 +56,12 @@ class FasciaCalottinePartita extends StatelessWidget {
     return _BadgeCalottina(
       numero: n,
       colore: casa ? CapColore.bianca : CapColore.blu,
-      attivo: toccabile && (_eNostra ? atletaPerNumero[n] != null : true),
+      attivo:
+          toccabile &&
+          (_eNostra
+              ? atletaPerNumero[n] != null &&
+                    atletaPerNumero[n]!.id != atletaEscluso
+              : true),
       squalificato: disqualificati.contains(
         _eNostra
             ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')

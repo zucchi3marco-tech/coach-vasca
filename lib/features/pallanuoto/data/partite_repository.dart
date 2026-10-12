@@ -40,6 +40,7 @@ class PartiteRepository {
       modalitaSuperiorita: row.modalitaSuperiorita,
       nostraSquadra: row.nostraSquadra,
       importanza: row.importanza,
+      eventiLive: row.eventiLive,
     );
   }
 
@@ -64,6 +65,7 @@ class PartiteRepository {
       ),
       nostraSquadra: Value(map['nostra_squadra'] as String? ?? 'casa'),
       importanza: Value(map['importanza'] as String? ?? 'media'),
+      eventiLive: Value(map['eventi_live'] as String? ?? 'essenziale'),
     );
   }
 
@@ -93,7 +95,7 @@ class PartiteRepository {
 
   /// Ultima partita creata per questo club (per data), usata per
   /// precompilare le impostazioni eventi (dettaglio tiro, traccia tempo,
-  /// modalita' superiorita') di una nuova partita.
+  /// eventi essenziali o completi) di una nuova partita.
   Future<Partita?> ultimaPerClub(String clubId) async {
     final rows =
         await (_db.select(_db.partiteTable)
@@ -156,6 +158,7 @@ class PartiteRepository {
     required String modalitaSuperiorita,
     required String nostraSquadra,
     String importanza = 'media',
+    required String eventiLive,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -177,6 +180,7 @@ class PartiteRepository {
       'modalita_superiorita': modalitaSuperiorita,
       'nostra_squadra': nostraSquadra,
       'importanza': importanza,
+      'eventi_live': eventiLive,
     };
     try {
       final row = await _client
@@ -221,6 +225,7 @@ class PartiteRepository {
     required String modalitaSuperiorita,
     required String nostraSquadra,
     String importanza = 'media',
+    required String eventiLive,
   }) async {
     final payload = {
       'gruppo_id': gruppoId,
@@ -238,6 +243,7 @@ class PartiteRepository {
       'modalita_superiorita': modalitaSuperiorita,
       'nostra_squadra': nostraSquadra,
       'importanza': importanza,
+      'eventi_live': eventiLive,
     };
     try {
       final row = await _client
@@ -268,6 +274,7 @@ class PartiteRepository {
           modalitaSuperiorita: Value(modalitaSuperiorita),
           nostraSquadra: Value(nostraSquadra),
           importanza: Value(importanza),
+          eventiLive: Value(eventiLive),
         ),
       );
       await enqueueOperation(

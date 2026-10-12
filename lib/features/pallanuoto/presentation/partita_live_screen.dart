@@ -14,6 +14,7 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/schermo_acceso.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/eventi_partita_repository.dart';
 import '../domain/evento_partita.dart';
@@ -27,7 +28,22 @@ import 'squalifiche_partita.dart';
 import 'striscia_sanzionati_partita.dart';
 import '../../../widgets/nascondi_barra_club.dart';
 
-enum _Interazione { riposo, sceltaGiocatoreTiro, sceltaGiocatoreSanzione }
+enum _Interazione {
+  riposo,
+  sceltaGiocatoreTiro,
+  sceltaGiocatoreSanzione,
+
+  /// Modalità completa: chi ha perso o recuperato palla.
+  sceltaGiocatorePalla,
+
+  /// Modalità completa, dopo un nostro gol già salvato: chi ha fatto
+  /// l'assist.
+  sceltaAssist,
+
+  /// Modalità completa, dopo l'espulsione (o il rigore) di un avversario
+  /// già salvata: chi dei nostri l'ha guadagnata.
+  sceltaGuadagnata,
+}
 
 /// Schermata da bordo vasca per gli eventi partita (DESIGN.md sezione 9):
 /// campo disegnato al centro, fasce di calottine sui bordi sempre visibili,
@@ -49,7 +65,14 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   double? _posX;
   double? _posY;
   bool _rigorePendente = false;
+  bool _pallaRecuperata = false;
   int? _periodo;
+
+  /// Il gol o l'espulsione appena salvati a cui si aggiunge l'assist o chi
+  /// l'ha guadagnata: sono già salvati, il passo dopo si può saltare.
+  EventoPartita? _eventoDaCompletare;
+
+  bool get _completa => widget.partita.eventiCompleti;
 
   @override
   void initState() {
@@ -60,12 +83,22 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
     ]);
   }
 
+  /// Preso qui e non in [dispose]: lì la schermata è già staccata e
+  /// cercare un antenato non è sicuro.
+  ScaffoldMessengerState? _messenger;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.maybeOf(context);
+  }
+
   @override
   void dispose() {
     // Uno snackbar residuo (o una coda di snackbar accumulati da eventi
     // registrati in rapida successione) non deve seguire l'utente fuori
     // da questa schermata.
-    ScaffoldMessenger.of(context).clearSnackBars();
+    _messenger?.clearSnackBars();
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
   }
@@ -76,6 +109,23 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       _posX = null;
       _posY = null;
       _rigorePendente = false;
+      _eventoDaCompletare = null;
+    });
+  }
+
+  /// Dopo un evento salvato: in modalità completa si passa a [poi] (assist
+  /// o espulsione guadagnata) sullo stesso evento, altrimenti si torna a
+  /// riposo.
+  void _continuaOChiudi(EventoPartita evento, _Interazione? poi) {
+    if (poi == null) {
+      _annullaInterazione();
+      return;
+    }
+    setState(() {
+      _interazione = poi;
+      _posX = null;
+      _posY = null;
+      _eventoDaCompletare = evento;
     });
   }
 
@@ -91,10 +141,18 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         SnackBar(
           content: const Text('Evento registrato'),
           duration: const Duration(seconds: 4),
+          // Con un'azione uno snackbar resterebbe finché non lo si tocca,
+          // sopra i bottoni in basso: qui deve sparire da solo.
+          persist: false,
           action: SnackBarAction(
             label: 'Annulla',
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
+              // Annullato il gol (o l'espulsione) non c'è più l'assist
+              // (o chi l'ha guadagnata) da scegliere.
+              if (mounted && _eventoDaCompletare?.id == evento.id) {
+                _annullaInterazione();
+              }
               try {
                 await ref
                     .read(eventiPartitaRepositoryProvider)
@@ -116,6 +174,12 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       );
   }
 
+  void _mostraErrore(Object e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+  }
+
   Future<void> _salvaTiro(
     String atletaId,
     String esito,
@@ -133,13 +197,17 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
             posX: _posX,
             posY: _posY,
           );
-      if (mounted) _mostraAnnulla(context, evento);
+      if (!mounted) return;
+      _mostraAnnulla(context, evento);
+      // Un rigore non ha assist.
+      _continuaOChiudi(
+        evento,
+        _completa && esito == 'gol' && contesto != 'rigore'
+            ? _Interazione.sceltaAssist
+            : null,
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-      }
-    } finally {
+      _mostraErrore(e);
       if (mounted) _annullaInterazione();
     }
   }
@@ -157,23 +225,60 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
             periodo: _periodo,
             espulsioneDaRigore: _rigorePendente,
           );
+      if (!mounted) return;
+      _mostraAnnulla(context, evento);
+      _continuaOChiudi(
+        evento,
+        _completa && id is AvversarioGiocatoreId
+            ? _Interazione.sceltaGuadagnata
+            : null,
+      );
+    } catch (e) {
+      _mostraErrore(e);
+      if (mounted) _annullaInterazione();
+    }
+  }
+
+  /// [atletaId] null: palla persa o recuperata dalla squadra, senza un
+  /// giocatore.
+  Future<void> _salvaPalla(String? atletaId) async {
+    try {
+      final evento = await ref
+          .read(eventiPartitaRepositoryProvider)
+          .registraPalla(
+            partitaId: widget.partita.id,
+            recuperata: _pallaRecuperata,
+            atletaId: atletaId,
+            periodo: _periodo,
+          );
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-      }
+      _mostraErrore(e);
     } finally {
       if (mounted) _annullaInterazione();
     }
   }
 
-  Future<void> _salvaTiroAvversario(
-    List<EventoPartita> eventi,
-    String esito,
-  ) async {
-    final contesto =
-        contestoAutomatico(eventi, 'avversaria', DateTime.now()) ?? 'azione';
+  /// L'assist o chi ha guadagnato l'espulsione: un aggiornamento del gol
+  /// o dell'espulsione appena salvati. [atletaId] null = nessuno.
+  Future<void> _completaEvento(String? atletaId) async {
+    final evento = _eventoDaCompletare;
+    final interazione = _interazione;
+    _annullaInterazione();
+    if (evento == null || atletaId == null) return;
+    final repository = ref.read(eventiPartitaRepositoryProvider);
+    try {
+      if (interazione == _Interazione.sceltaAssist) {
+        await repository.impostaAssist(id: evento.id, atletaId: atletaId);
+      } else {
+        await repository.impostaGuadagnataDa(id: evento.id, atletaId: atletaId);
+      }
+    } catch (e) {
+      _mostraErrore(e);
+    }
+  }
+
+  Future<void> _salvaTiroAvversario(String esito, String contesto) async {
     try {
       final evento = await ref
           .read(eventiPartitaRepositoryProvider)
@@ -185,89 +290,74 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
           );
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
-      }
+      _mostraErrore(e);
     }
   }
 
-  Future<void> _scegliEsitoTiroAvversario(List<EventoPartita> eventi) async {
+  /// Bottom sheet con gli esiti, uno per bottone da 64: un tocco salva.
+  /// Affiancati quando c'è spazio (in orizzontale), uno sotto l'altro su
+  /// uno schermo stretto. Torna il valore scelto, null se si chiude.
+  Future<String?> _scegliEsito(String titolo, List<(String, String)> opzioni) {
     final tema = Theme.of(context);
-    final esito = await showModalBottomSheet<String>(
+    return showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       builder: (sheetContext) => Theme(
         data: tema,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final (valore, etichetta) in esitiTiroSemplice) ...[
-                  SizedBox(
-                    height: AppSpacing.altezzaMinimaBersaglioVasca,
-                    child: PrimaryButton(
-                      label: etichetta,
-                      onPressed: () => Navigator.of(sheetContext).pop(valore),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s12),
-                ],
-              ],
-            ),
-          ),
+        child: _FoglioEsito(
+          titolo: titolo,
+          opzioni: opzioni,
+          onScelto: (valore) => Navigator.of(sheetContext).pop(valore),
         ),
       ),
     );
+  }
+
+  Future<void> _scegliEsitoTiroAvversario(List<EventoPartita> eventi) async {
+    final contesto =
+        contestoAutomatico(eventi, 'avversaria', DateTime.now()) ?? 'azione';
+    final esito = await _scegliEsito(
+      'Tiro avversario',
+      _completa && contesto == 'azione'
+          ? conControfuga(esitiTiroSemplice)
+          : esitiTiroSemplice,
+    );
     if (esito == null) return;
-    await _salvaTiroAvversario(eventi, esito);
+    if (esito == golInControfuga) {
+      await _salvaTiroAvversario('gol', 'controfuga');
+    } else {
+      await _salvaTiroAvversario(esito, contesto);
+    }
   }
 
   Future<void> _scegliEsitoTiro(
     List<EventoPartita> eventi,
     String atletaId,
+    String nome,
   ) async {
     // Un tiro da rigore va sempre distinto fra parato e palo/fuori, anche
     // se la partita è impostata su "semplice" per il gioco normale.
     final contesto =
         contestoAutomatico(eventi, 'nostra', DateTime.now()) ?? 'azione';
-    final opzioni =
+    final base =
         contesto == 'rigore' || widget.partita.dettaglioTiro == 'dettagliato'
         ? esitiTiroDettagliato
         : esitiTiroSemplice;
-    final tema = Theme.of(context);
-    final esito = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => Theme(
-        data: tema,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final (valore, etichetta) in opzioni) ...[
-                  SizedBox(
-                    height: AppSpacing.altezzaMinimaBersaglioVasca,
-                    child: PrimaryButton(
-                      label: etichetta,
-                      onPressed: () => Navigator.of(sheetContext).pop(valore),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s12),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+    // La controfuga solo per un tiro in azione: in superiorità o su
+    // rigore il contesto è già quello.
+    final esito = await _scegliEsito(
+      contesto == 'rigore' ? 'Rigore di $nome' : 'Tiro di $nome',
+      _completa && contesto == 'azione' ? conControfuga(base) : base,
     );
     if (esito == null) {
       _annullaInterazione();
       return;
     }
-    await _salvaTiro(atletaId, esito, contesto);
+    if (esito == golInControfuga) {
+      await _salvaTiro(atletaId, 'gol', 'controfuga');
+    } else {
+      await _salvaTiro(atletaId, esito, contesto);
+    }
   }
 
   Future<void> _confermaFinePartita(BuildContext context) async {
@@ -304,17 +394,68 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
 
   void _onSelezionatoGiocatore(
     List<EventoPartita> eventi,
+    Map<String, Atleta> atletiPerId,
     GiocatorePartitaId id,
   ) {
+    final atletaId = id is NostroGiocatoreId ? id.atletaId : null;
     switch (_interazione) {
       case _Interazione.sceltaGiocatoreTiro:
-        if (id is NostroGiocatoreId) _scegliEsitoTiro(eventi, id.atletaId);
+        if (atletaId != null) {
+          _scegliEsitoTiro(
+            eventi,
+            atletaId,
+            atletiPerId[atletaId]?.cognome ?? '',
+          );
+        }
       case _Interazione.sceltaGiocatoreSanzione:
         _salvaSanzione(id);
+      case _Interazione.sceltaGiocatorePalla:
+        if (atletaId != null) _salvaPalla(atletaId);
+      case _Interazione.sceltaAssist:
+      case _Interazione.sceltaGuadagnata:
+        if (atletaId != null) _completaEvento(atletaId);
       case _Interazione.riposo:
         break;
     }
   }
+
+  /// Cosa si sta scegliendo, scritto al centro del campo, e la scelta
+  /// "nessun giocatore" quando c'è.
+  ({String domanda, String? nessuno, VoidCallback? onNessuno}) _richiesta() =>
+      switch (_interazione) {
+        _Interazione.sceltaGiocatoreTiro => (
+          domanda: 'Chi ha tirato?',
+          nessuno: null,
+          onNessuno: null,
+        ),
+        _Interazione.sceltaGiocatoreSanzione => (
+          domanda: _rigorePendente
+              ? 'Chi ha commesso il fallo da rigore?'
+              : 'Chi è stato espulso?',
+          nessuno: null,
+          onNessuno: null,
+        ),
+        _Interazione.sceltaGiocatorePalla => (
+          domanda: _pallaRecuperata
+              ? 'Chi ha recuperato palla?'
+              : 'Chi ha perso palla?',
+          nessuno: 'Senza giocatore',
+          onNessuno: () => _salvaPalla(null),
+        ),
+        _Interazione.sceltaAssist => (
+          domanda: 'Chi ha fatto l\'assist?',
+          nessuno: 'Nessun assist',
+          onNessuno: () => _completaEvento(null),
+        ),
+        _Interazione.sceltaGuadagnata => (
+          domanda: _eventoDaCompletare?.espulsioneDaRigore ?? false
+              ? 'Chi ha guadagnato il rigore?'
+              : 'Chi ha guadagnato l\'espulsione?',
+          nessuno: 'Non so',
+          onNessuno: () => _completaEvento(null),
+        ),
+        _Interazione.riposo => (domanda: '', nessuno: null, onNessuno: null),
+      };
 
   @override
   Widget build(BuildContext context) =>
@@ -391,6 +532,12 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         .length;
 
     final attiva = _interazione != _Interazione.riposo;
+    final soloNostra = _interazione != _Interazione.sceltaGiocatoreSanzione;
+    // Chi ha segnato non può essere l'assist di sé stesso.
+    final atletaEscluso = _interazione == _Interazione.sceltaAssist
+        ? _eventoDaCompletare?.atletaId
+        : null;
+    final richiesta = _richiesta();
     final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
     final temaVasca = temaBordoVascaDa(overrideVasca);
 
@@ -490,13 +637,15 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             casa: true,
                             convocati: convocati,
                             attiva: attiva,
-                            soloNostra:
-                                _interazione ==
-                                _Interazione.sceltaGiocatoreTiro,
+                            soloNostra: soloNostra,
+                            atletaEscluso: atletaEscluso,
                             disqualificati: disqualificati,
                             conteggiRigore: conteggiRigore,
-                            onSelezionato: (id) =>
-                                _onSelezionatoGiocatore(eventi, id),
+                            onSelezionato: (id) => _onSelezionatoGiocatore(
+                              eventi,
+                              atletiPerId,
+                              id,
+                            ),
                           ),
                         Expanded(
                           child: Padding(
@@ -546,6 +695,12 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                                       ),
                                     ),
                                   ),
+                                if (attiva)
+                                  _Richiesta(
+                                    domanda: richiesta.domanda,
+                                    nessuno: richiesta.nessuno,
+                                    onNessuno: richiesta.onNessuno,
+                                  ),
                               ],
                             ),
                           ),
@@ -556,13 +711,15 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             casa: false,
                             convocati: convocati,
                             attiva: attiva,
-                            soloNostra:
-                                _interazione ==
-                                _Interazione.sceltaGiocatoreTiro,
+                            soloNostra: soloNostra,
+                            atletaEscluso: atletaEscluso,
                             disqualificati: disqualificati,
                             conteggiRigore: conteggiRigore,
-                            onSelezionato: (id) =>
-                                _onSelezionatoGiocatore(eventi, id),
+                            onSelezionato: (id) => _onSelezionatoGiocatore(
+                              eventi,
+                              atletiPerId,
+                              id,
+                            ),
                           ),
                       ],
                     ),
@@ -582,9 +739,14 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                     padding: const EdgeInsets.all(AppSpacing.s16),
                     child: LayoutBuilder(
                       builder: (context, vincoli) {
-                        // Sotto ~400 px niente icone: le tre etichette
-                        // restano su una riga senza spezzarsi.
-                        final stretto = vincoli.maxWidth < 400;
+                        // Sotto ~400 px (~720 con le palle perse e
+                        // recuperate) niente icone: le etichette restano
+                        // su una riga senza spezzarsi.
+                        final stretto =
+                            vincoli.maxWidth < (_completa ? 720 : 400);
+                        final distacco = SizedBox(
+                          width: stretto ? AppSpacing.s8 : AppSpacing.s16,
+                        );
                         return Row(
                           children: [
                             Expanded(
@@ -621,9 +783,35 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: stretto ? AppSpacing.s8 : AppSpacing.s16,
-                            ),
+                            distacco,
+                            // Modalità completa: palla persa e recuperata,
+                            // due bersagli affiancati come espulsione e
+                            // rigore (DESIGN.md sezione 14).
+                            if (_completa) ...[
+                              for (final recuperata in [false, true]) ...[
+                                if (recuperata)
+                                  const SizedBox(width: AppSpacing.s8),
+                                Expanded(
+                                  flex: 3,
+                                  child: SizedBox(
+                                    height:
+                                        AppSpacing.altezzaMinimaBersaglioVasca,
+                                    child: SecondaryButton(
+                                      label: recuperata
+                                          ? 'Recuperata'
+                                          : 'Palla persa',
+                                      unaRiga: true,
+                                      onPressed: () => setState(() {
+                                        _interazione =
+                                            _Interazione.sceltaGiocatorePalla;
+                                        _pallaRecuperata = recuperata;
+                                      }),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              distacco,
+                            ],
                             Expanded(
                               flex: 3,
                               child: SizedBox(
@@ -780,6 +968,111 @@ class _Suggerimento extends StatelessWidget {
           testo,
           style: AppTypography.piccolo.copyWith(color: colori.testo),
         ),
+      ),
+    );
+  }
+}
+
+/// Gli esiti di un tiro: bottoni da 64, un tocco salva. Affiancati quando
+/// c'è spazio (in orizzontale ci stanno tutti senza scorrere), uno sotto
+/// l'altro su uno schermo stretto.
+class _FoglioEsito extends StatelessWidget {
+  const _FoglioEsito({
+    required this.titolo,
+    required this.opzioni,
+    required this.onScelto,
+  });
+
+  final String titolo;
+  final List<(String, String)> opzioni;
+  final ValueChanged<String> onScelto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    Widget bottone((String, String) opzione) => SizedBox(
+      height: AppSpacing.altezzaMinimaBersaglioVasca,
+      child: PrimaryButton(
+        label: opzione.$2,
+        onPressed: () => onScelto(opzione.$1),
+      ),
+    );
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: LayoutBuilder(
+          builder: (context, vincoli) {
+            final affiancati = vincoli.maxWidth >= 140.0 * opzioni.length;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  titolo,
+                  style: AppTypography.sezione.copyWith(color: colori.testo),
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                if (affiancati)
+                  Row(
+                    children: [
+                      for (final (i, opzione) in opzioni.indexed) ...[
+                        if (i > 0) const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: bottone(opzione)),
+                      ],
+                    ],
+                  )
+                else
+                  for (final (i, opzione) in opzioni.indexed) ...[
+                    if (i > 0) const SizedBox(height: AppSpacing.s12),
+                    bottone(opzione),
+                  ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Al centro del campo velato, mentre si sceglie un giocatore: cosa si
+/// sta scegliendo e, quando c'è, la scelta "nessuno" (palla persa dalla
+/// squadra, nessun assist, non so chi ha guadagnato l'espulsione).
+class _Richiesta extends StatelessWidget {
+  const _Richiesta({required this.domanda, this.nessuno, this.onNessuno});
+
+  final String domanda;
+  final String? nessuno;
+  final VoidCallback? onNessuno;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 360),
+      margin: const EdgeInsets.all(AppSpacing.s16),
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      decoration: BoxDecoration(
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            domanda,
+            textAlign: TextAlign.center,
+            style: AppTypography.sezione.copyWith(color: colori.testo),
+          ),
+          if (nessuno != null) ...[
+            const SizedBox(height: AppSpacing.s12),
+            SizedBox(
+              height: AppSpacing.altezzaMinimaBersaglioVasca,
+              child: SecondaryButton(label: nessuno!, onPressed: onNessuno),
+            ),
+          ],
+        ],
       ),
     );
   }

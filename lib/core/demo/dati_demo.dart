@@ -750,6 +750,8 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   casa.startsWith('Pallanuoto Riviera') ? 'casa' : 'trasferta',
                 ),
                 importanza: Value(alta ? 'alta' : 'media'),
+                // Le partite si seguono con gli eventi completi.
+                eventiLive: const Value('completa'),
               ),
             );
         for (var a = 0; a < 11; a++) {
@@ -788,10 +790,39 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                     numeroCalottinaAvversario: Value(
                       e % 3 == 2 ? 2 + e % 9 : null,
                     ),
+                    // Ogni gol nostro con un assist, ogni espulsione
+                    // avversaria guadagnata da qualcuno (mai chi tira).
+                    assistDi: Value(
+                      e % 3 != 2 && e % 6 != 5 && e % 4 == 0
+                          ? atleti[1 + (e + 3) % 10]
+                          : null,
+                    ),
+                    guadagnataDa: Value(
+                      e % 6 == 5 ? atleti[1 + (e + 3) % 10] : null,
+                    ),
                     creatoIl: aggiungiGiorni(
                       giorno,
                       giorni,
                     ).add(Duration(hours: 15, minutes: e * 2)),
+                  ),
+                );
+          }
+          // Palle perse e recuperate (modalità completa).
+          for (var e = 0; e < 8; e++) {
+            await db
+                .into(db.eventiPartitaTable)
+                .insert(
+                  EventiPartitaTableCompanion.insert(
+                    id: uuid.v4(),
+                    partitaId: partitaId,
+                    clubId: clubId,
+                    tipo: e.isEven ? 'palla_persa' : 'palla_recuperata',
+                    atletaId: Value(e == 6 ? null : atleti[1 + (e * 3) % 10]),
+                    periodo: Value(1 + e % 4),
+                    creatoIl: aggiungiGiorni(
+                      giorno,
+                      giorni,
+                    ).add(Duration(hours: 15, minutes: 1 + e * 6)),
                   ),
                 );
           }

@@ -5,7 +5,10 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/app_list_panel.dart';
+import '../../../widgets/app_list_row.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../widgets/cap_badge.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
@@ -37,21 +40,39 @@ class EventiPartitaScreen extends ConsumerWidget {
 
   String _descrizione(EventoPartita e, Map<String, Atleta> atletiPerId) {
     final tempo = e.periodo != null ? ' (T${e.periodo})' : '';
+    String nome(String? id) =>
+        atletiPerId[id]?.nomeCompleto ?? 'Atleta rimosso';
     switch (e.tipo) {
       case 'tiro':
-        final nome = atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso';
         final contesto = etichettaContesto(e.contestoTiro);
         final suffisso = contesto.isEmpty ? '' : ' ($contesto)';
-        return 'Tiro — $nome — ${etichettaEsito(e.esito)}$suffisso$tempo';
+        final assist = e.assistDi != null && e.esito == 'gol'
+            ? ' · assist ${nome(e.assistDi)}'
+            : '';
+        final chi = e.squadra == 'nostra'
+            ? 'Tiro — ${nome(e.atletaId)}'
+            : 'Tiro avversario';
+        return '$chi — ${etichettaEsito(e.esito)}$suffisso$assist$tempo';
       case 'espulsione':
-        final nome = e.atletaId != null
-            ? (atletiPerId[e.atletaId]?.nomeCompleto ?? 'Atleta rimosso')
+        final chi = e.atletaId != null
+            ? nome(e.atletaId)
             : 'Avversario n. ${e.numeroCalottinaAvversario}';
         final rigore = e.espulsioneDaRigore ? ' (fallo da rigore)' : '';
-        return 'Espulsione — $nome$rigore$tempo';
+        final guadagnata = e.guadagnataDa == null
+            ? ''
+            : e.espulsioneDaRigore
+            ? ' · rigore guadagnato da ${nome(e.guadagnataDa)}'
+            : ' · guadagnata da ${nome(e.guadagnataDa)}';
+        return 'Espulsione — $chi$rigore$guadagnata$tempo';
       case 'superiorita':
         final squadra = e.squadra == 'nostra' ? 'nostra' : 'avversaria';
         return 'Superiorità $squadra — ${etichettaEsito(e.esito)}$tempo';
+      case 'palla_persa' || 'palla_recuperata':
+        final cosa = e.tipo == 'palla_persa'
+            ? 'Palla persa'
+            : 'Palla recuperata';
+        final chi = e.atletaId != null ? nome(e.atletaId) : 'squadra';
+        return '$cosa — $chi$tempo';
       default:
         return e.tipo;
     }
@@ -65,6 +86,10 @@ class EventiPartitaScreen extends ConsumerWidget {
         return Icons.warning_amber_outlined;
       case 'superiorita':
         return e.squadra == 'nostra' ? Icons.trending_up : Icons.trending_down;
+      case 'palla_persa':
+        return Icons.remove_circle_outline;
+      case 'palla_recuperata':
+        return Icons.add_circle_outline;
       default:
         return Icons.circle_outlined;
     }
@@ -88,6 +113,7 @@ class EventiPartitaScreen extends ConsumerWidget {
     }
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (_) => _AzioniEvento(evento: evento, partita: partita),
     );
   }
@@ -432,6 +458,51 @@ class _AzioniEvento extends ConsumerWidget {
     }
   }
 
+  /// L'assist di un gol ([assist] true) o chi ha guadagnato l'espulsione
+  /// di un avversario: si sceglie fra i convocati, o "nessuno".
+  Future<void> _scegliGiocatore(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool assist,
+  }) async {
+    final scelta = await showModalBottomSheet<({String? atletaId})>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FoglioGiocatori(
+        partita: partita,
+        titolo: assist
+            ? 'Chi ha fatto l\'assist?'
+            : evento.espulsioneDaRigore
+            ? 'Chi ha guadagnato il rigore?'
+            : 'Chi ha guadagnato l\'espulsione?',
+        nessuno: assist ? 'Nessun assist' : 'Non so',
+        attuale: assist ? evento.assistDi : evento.guadagnataDa,
+        escluso: assist ? evento.atletaId : null,
+      ),
+    );
+    if (scelta == null) return;
+    final repository = ref.read(eventiPartitaRepositoryProvider);
+    try {
+      if (assist) {
+        await repository.impostaAssist(
+          id: evento.id,
+          atletaId: scelta.atletaId,
+        );
+      } else {
+        await repository.impostaGuadagnataDa(
+          id: evento.id,
+          atletaId: scelta.atletaId,
+        );
+      }
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
   Future<void> _elimina(BuildContext context, WidgetRef ref) async {
     final conferma = await showDialog<bool>(
       context: context,
@@ -475,8 +546,20 @@ class _AzioniEvento extends ConsumerWidget {
       _ => const <(String, String)>[],
     };
     final colori = context.colori;
+    // Assist e chi ha guadagnato l'espulsione si segnano dal vivo in
+    // modalità completa; qui si correggono (o si aggiungono dopo).
+    final conAssist =
+        evento.tipo == 'tiro' &&
+        evento.squadra == 'nostra' &&
+        evento.esito == 'gol' &&
+        evento.contestoTiro != 'rigore' &&
+        (partita.eventiCompleti || evento.assistDi != null);
+    final conGuadagnata =
+        evento.tipo == 'espulsione' &&
+        evento.squadra == 'avversaria' &&
+        (partita.eventiCompleti || evento.guadagnataDa != null);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.s16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -516,12 +599,115 @@ class _AzioniEvento extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s8),
             ],
+            if (conAssist || conGuadagnata) ...[
+              SizedBox(
+                height: AppSpacing.altezzaMinimaBersaglioVasca,
+                child: SecondaryButton(
+                  label: conAssist
+                      ? (evento.assistDi == null
+                            ? 'Aggiungi l\'assist'
+                            : 'Cambia l\'assist')
+                      : evento.guadagnataDa == null
+                      ? 'Chi l\'ha guadagnata?'
+                      : 'Cambia chi l\'ha guadagnata',
+                  onPressed: () =>
+                      _scegliGiocatore(context, ref, assist: conAssist),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+            ],
             TextButton(
               onPressed: () => _elimina(context, ref),
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
               child: const Text('Elimina evento'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// I convocati della partita, per scegliere chi ha fatto l'assist o chi
+/// ha guadagnato un'espulsione. Torna `(atletaId: null)` per "nessuno",
+/// null se si chiude senza scegliere.
+class _FoglioGiocatori extends ConsumerWidget {
+  const _FoglioGiocatori({
+    required this.partita,
+    required this.titolo,
+    required this.nessuno,
+    this.attuale,
+    this.escluso,
+  });
+
+  final Partita partita;
+  final String titolo;
+  final String nessuno;
+  final String? attuale;
+
+  /// Chi non si può scegliere (chi ha segnato, per l'assist).
+  final String? escluso;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final convocati = ref.watch(distintaListProvider(partita.id)).value ?? [];
+    final atletiPerId = {
+      for (final a
+          in ref
+                  .watch(
+                    atletiListProvider((
+                      clubId: partita.clubId,
+                      includeInactive: false,
+                    )),
+                  )
+                  .value ??
+              const <Atleta>[])
+        a.id: a,
+    };
+    final colore = partita.inCasa ? CapColore.bianca : CapColore.blu;
+    void scegli(String? atletaId) =>
+        Navigator.of(context).pop((atletaId: atletaId));
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          children: [
+            Text(
+              titolo,
+              style: AppTypography.sezione.copyWith(color: colori.testo),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            SizedBox(
+              height: AppSpacing.altezzaMinimaBersaglioVasca,
+              child: SecondaryButton(
+                label: nessuno,
+                onPressed: () => scegli(null),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            AppListPanel(
+              righe: [
+                for (final g in convocati)
+                  if (atletiPerId[g.atletaId] != null && g.atletaId != escluso)
+                    AppListRow(
+                      leading: CapBadge(
+                        numero: g.numeroCalottina,
+                        colore: colore,
+                      ),
+                      titolo: atletiPerId[g.atletaId]!.nomeCompleto,
+                      trailing: g.atletaId == attuale
+                          ? Icon(Icons.check, color: colori.azione)
+                          : null,
+                      onTap: () => scegli(g.atletaId),
+                    ),
+              ],
             ),
           ],
         ),

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -35,6 +36,8 @@ class EventiPartitaRepository {
       posY: row.posY,
       numeroCalottinaAvversario: row.numeroCalottinaAvversario,
       espulsioneDaRigore: row.espulsioneDaRigore,
+      assistDi: row.assistDi,
+      guadagnataDa: row.guadagnataDa,
       creatoIl: row.creatoIl,
     );
   }
@@ -56,6 +59,8 @@ class EventiPartitaRepository {
         map['numero_calottina_avversario'] as int?,
       ),
       espulsioneDaRigore: Value(map['espulsione_da_rigore'] as bool? ?? false),
+      assistDi: Value(map['assist_di'] as String?),
+      guadagnataDa: Value(map['guadagnata_da'] as String?),
       creatoIl: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
@@ -104,19 +109,27 @@ class EventiPartitaRepository {
       posY: (map['pos_y'] as num?)?.toDouble(),
       numeroCalottinaAvversario: map['numero_calottina_avversario'] as int?,
       espulsioneDaRigore: map['espulsione_da_rigore'] as bool? ?? false,
+      assistDi: map['assist_di'] as String?,
+      guadagnataDa: map['guadagnata_da'] as String?,
       creatoIl: DateTime.parse(map['created_at'] as String),
     );
   }
 
   /// Eventi di un insieme di partite (una stagione), per le statistiche
-  /// stagionali "da eventi live".
+  /// stagionali "da eventi live". A pagine: con gli eventi completi una
+  /// stagione supera facilmente le 1000 righe che Supabase restituisce in
+  /// una volta.
   Future<List<EventoPartita>> perPartite(List<String> partitaIds) async {
     if (partitaIds.isEmpty) return [];
     try {
-      final rows = await _client
-          .from('eventi_partita')
-          .select()
-          .inFilter('partita_id', partitaIds);
+      final rows = await leggiAPagine(
+        (da, a) => _client
+            .from('eventi_partita')
+            .select()
+            .inFilter('partita_id', partitaIds)
+            .order('id')
+            .range(da, a),
+      );
       return rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -132,11 +145,15 @@ class EventiPartitaRepository {
   /// mappa di calore personale.
   Future<List<EventoPartita>> perAtleta(String atletaId) async {
     try {
-      final rows = await _client
-          .from('eventi_partita')
-          .select()
-          .eq('atleta_id', atletaId)
-          .eq('tipo', 'tiro');
+      final rows = await leggiAPagine(
+        (da, a) => _client
+            .from('eventi_partita')
+            .select()
+            .eq('atleta_id', atletaId)
+            .eq('tipo', 'tiro')
+            .order('id')
+            .range(da, a),
+      );
       return rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -286,6 +303,23 @@ class EventiPartitaRepository {
     );
   }
 
+  /// Palla persa o recuperata (modalità completa) da un nostro giocatore,
+  /// o dalla squadra senza un giocatore ([atletaId] null: per esempio i
+  /// 30 secondi scaduti).
+  Future<EventoPartita> registraPalla({
+    required String partitaId,
+    required bool recuperata,
+    String? atletaId,
+    int? periodo,
+  }) {
+    return _creaEvento(
+      partitaId: partitaId,
+      tipo: recuperata ? 'palla_recuperata' : 'palla_persa',
+      atletaId: atletaId,
+      periodo: periodo,
+    );
+  }
+
   /// In modalita' "singolo" [esito] va passato subito; in modalita'
   /// "inizio_fine" si lascia null e si chiama poi [concludiSuperiorita].
   Future<EventoPartita> registraSuperiorita({
@@ -341,13 +375,36 @@ class EventiPartitaRepository {
   }) => modificaEsito(id: id, esito: esito);
 
   /// Corregge l'esito di un tiro (o di una superiorità già conclusa) già
-  /// registrato, senza dover eliminare e ricreare l'evento.
+  /// registrato, senza dover eliminare e ricreare l'evento. Un tiro che
+  /// non è più gol perde l'assist.
   Future<EventoPartita> modificaEsito({
     required String id,
     required String esito,
+  }) => _aggiornaEvento(
+    id,
+    {'esito': esito, if (esito != 'gol') 'assist_di': null},
+    EventiPartitaTableCompanion(
+      esito: Value(esito),
+      assistDi: esito != 'gol' ? const Value(null) : const Value.absent(),
+    ),
+  );
+
+  /// Chi ha passato la palla del gol; null lo toglie.
+  Future<EventoPartita> impostaAssist({
+    required String id,
+    required String? atletaId,
   }) => _aggiornaEvento(id, {
-    'esito': esito,
-  }, EventiPartitaTableCompanion(esito: Value(esito)));
+    'assist_di': atletaId,
+  }, EventiPartitaTableCompanion(assistDi: Value(atletaId)));
+
+  /// Chi dei nostri ha guadagnato l'espulsione (o il rigore) di un
+  /// avversario; null lo toglie.
+  Future<EventoPartita> impostaGuadagnataDa({
+    required String id,
+    required String? atletaId,
+  }) => _aggiornaEvento(id, {
+    'guadagnata_da': atletaId,
+  }, EventiPartitaTableCompanion(guadagnataDa: Value(atletaId)));
 
   /// Aggiunge/toglie l'attribuzione "fallo da rigore" a un'espulsione già
   /// registrata.

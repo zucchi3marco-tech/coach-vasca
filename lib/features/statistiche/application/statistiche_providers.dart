@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../pallanuoto/data/eventi_partita_repository.dart';
 import '../../pallanuoto/data/partite_repository.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
+import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../referti/data/referti_repository.dart';
 import '../domain/statistiche_stagionali.dart';
 
@@ -118,79 +119,7 @@ final riepilogoEventiProvider = FutureProvider.autoDispose
       final eventi = await ref
           .watch(eventiPartitaRepositoryProvider)
           .perPartite([for (final p in partite) p.id]);
-
-      var tiriTot = 0;
-      var golTot = 0;
-      var golSuperioritaTot = 0;
-      var golRigoreTot = 0;
-      var espTot = 0;
-      var tiriSubitiTot = 0;
-      var golSubitiTot = 0;
-      final partiteConEventi = <String>{};
-      final perAtleta =
-          <String, (int tiri, int gol, int golSup, int golRig, int esp)>{};
-
-      for (final e in eventi) {
-        if (e.tipo == 'tiro' && e.squadra == 'avversaria') {
-          partiteConEventi.add(e.partitaId);
-          tiriSubitiTot++;
-          if (e.esito == 'gol') golSubitiTot++;
-          continue;
-        }
-        final atletaId = e.atletaId;
-        if (e.squadra != 'nostra' || atletaId == null) continue;
-        if (e.tipo == 'tiro') {
-          partiteConEventi.add(e.partitaId);
-          tiriTot++;
-          final isGol = e.esito == 'gol';
-          final isSuperiorita = isGol && e.contestoTiro == 'superiorita';
-          final isRigore = isGol && e.contestoTiro == 'rigore';
-          if (isGol) golTot++;
-          if (isSuperiorita) golSuperioritaTot++;
-          if (isRigore) golRigoreTot++;
-          final attuale = perAtleta[atletaId] ?? (0, 0, 0, 0, 0);
-          perAtleta[atletaId] = (
-            attuale.$1 + 1,
-            attuale.$2 + (isGol ? 1 : 0),
-            attuale.$3 + (isSuperiorita ? 1 : 0),
-            attuale.$4 + (isRigore ? 1 : 0),
-            attuale.$5,
-          );
-        } else if (e.tipo == 'espulsione') {
-          partiteConEventi.add(e.partitaId);
-          espTot++;
-          final attuale = perAtleta[atletaId] ?? (0, 0, 0, 0, 0);
-          perAtleta[atletaId] = (
-            attuale.$1,
-            attuale.$2,
-            attuale.$3,
-            attuale.$4,
-            attuale.$5 + 1,
-          );
-        }
-      }
-
-      return RiepilogoSquadraEventi(
-        partite: partiteConEventi.length,
-        tiri: tiriTot,
-        gol: golTot,
-        golSuperiorita: golSuperioritaTot,
-        golRigore: golRigoreTot,
-        espulsioni: espTot,
-        tiriSubiti: tiriSubitiTot,
-        golSubiti: golSubitiTot,
-        perAtleta: [
-          for (final e in perAtleta.entries)
-            RigaAtletaEventi(
-              atletaId: e.key,
-              tiri: e.value.$1,
-              gol: e.value.$2,
-              golSuperiorita: e.value.$3,
-              golRigore: e.value.$4,
-              espulsioni: e.value.$5,
-            ),
-        ],
-      );
+      return RiepilogoSquadraEventi.da(StatisticheEventi.da(eventi));
     });
 
 /// Tiri grezzi (con posizione) di tutte le partite del club nel periodo

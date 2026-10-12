@@ -41,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -434,6 +434,21 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'test_risultati_table')) {
           await m.createTable(testRisultatiTable);
+        }
+      }
+      // v35 -> v36: partite più ricche — modalità degli eventi dal vivo,
+      // assist e chi ha guadagnato l'espulsione.
+      if (from < 36) {
+        if (!await _hasColumn(m, 'partite_table', 'eventi_live')) {
+          await m.addColumn(partiteTable, partiteTable.eventiLive);
+        }
+        for (final (nome, colonna) in [
+          ('assist_di', eventiPartitaTable.assistDi),
+          ('guadagnata_da', eventiPartitaTable.guadagnataDa),
+        ]) {
+          if (!await _hasColumn(m, 'eventi_partita_table', nome)) {
+            await m.addColumn(eventiPartitaTable, colonna);
+          }
         }
       }
     },

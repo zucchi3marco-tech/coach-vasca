@@ -182,8 +182,40 @@ class _DatiAtleta extends ConsumerWidget {
                       etichetta: 'Gol rigore',
                       valore: '${rigaEventi.golRigore}',
                     ),
+                    if (rigaEventi.golControfuga > 0)
+                      StatPanel(
+                        etichetta: 'Gol controfuga',
+                        valore: '${rigaEventi.golControfuga}',
+                      ),
                   ],
                 ),
+                // Dalle partite seguite in modalità completa.
+                if (rigaEventi.numeri.haEventiCompleti) ...[
+                  const SizedBox(height: AppSpacing.s16),
+                  GrigliaNumeri(
+                    children: [
+                      StatPanel(
+                        etichetta: 'Assist',
+                        valore: '${rigaEventi.numeri.assist}',
+                      ),
+                      StatPanel(
+                        etichetta: 'Palle perse',
+                        valore: '${rigaEventi.numeri.pallePerse}',
+                      ),
+                      StatPanel(
+                        etichetta: 'Palle recuperate',
+                        valore: '${rigaEventi.numeri.palleRecuperate}',
+                      ),
+                      StatPanel(
+                        etichetta: 'Espulsioni guadagnate',
+                        valore: '${rigaEventi.numeri.espulsioniGuadagnate}',
+                        confronto: rigaEventi.numeri.rigoriGuadagnati > 0
+                            ? '+ ${rigaEventi.numeri.rigoriGuadagnati} rigori'
+                            : null,
+                      ),
+                    ],
+                  ),
+                ],
               ],
               if (atleta.sport == 'pallanuoto') ...[
                 const SizedBox(height: AppSpacing.s28),

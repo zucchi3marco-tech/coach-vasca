@@ -17,6 +17,7 @@ class Partita {
     this.modalitaSuperiorita = 'singolo',
     this.nostraSquadra = 'casa',
     this.importanza = 'media',
+    this.eventiLive = 'essenziale',
   });
 
   final String id;
@@ -42,6 +43,13 @@ class Partita {
   /// bassa | media | alta — lo scarico pre-partita del generatore
   /// settimanale (FASE 3) scatta solo per "alta".
   final String importanza;
+
+  /// essenziale | completa — in modalità completa dal vivo si segnano
+  /// anche palle perse e recuperate, assist, gol in controfuga ed
+  /// espulsioni o rigori guadagnati.
+  final String eventiLive;
+
+  bool get eventiCompleti => eventiLive == 'completa';
 
   bool get inCasa => nostraSquadra != 'trasferta';
 
@@ -69,6 +77,7 @@ class Partita {
       modalitaSuperiorita: map['modalita_superiorita'] as String? ?? 'singolo',
       nostraSquadra: map['nostra_squadra'] as String? ?? 'casa',
       importanza: map['importanza'] as String? ?? 'media',
+      eventiLive: map['eventi_live'] as String? ?? 'essenziale',
     );
   }
 }

@@ -270,6 +270,10 @@ class PartiteTable extends Table {
   /// settimanale (FASE 3) scatta solo per "alta".
   TextColumn get importanza => text().withDefault(const Constant('media'))();
 
+  /// essenziale | completa — quali eventi si segnano dal vivo.
+  TextColumn get eventiLive =>
+      text().withDefault(const Constant('essenziale'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -298,7 +302,9 @@ class EventiPartitaTable extends Table {
   TextColumn get id => text()();
   TextColumn get partitaId => text()();
   TextColumn get clubId => text()();
-  TextColumn get tipo => text()(); // tiro | espulsione | superiorita
+
+  /// tiro | espulsione | superiorita | palla_persa | palla_recuperata
+  TextColumn get tipo => text()();
   TextColumn get squadra =>
       text().withDefault(const Constant('nostra'))(); // nostra | avversaria
   TextColumn get atletaId => text().nullable()();
@@ -307,12 +313,19 @@ class EventiPartitaTable extends Table {
       text().nullable()(); // gol | non_gol | parato | palo_fuori
   TextColumn get contestoTiro => text().withDefault(
     const Constant('azione'),
-  )(); // azione | superiorita | rigore
+  )(); // azione | superiorita | rigore | controfuga
   RealColumn get posX => real().nullable()();
   RealColumn get posY => real().nullable()();
   IntColumn get numeroCalottinaAvversario => integer().nullable()();
   BoolColumn get espulsioneDaRigore =>
       boolean().withDefault(const Constant(false))();
+
+  /// Chi ha passato la palla del gol (solo un nostro tiro).
+  TextColumn get assistDi => text().nullable()();
+
+  /// Chi dei nostri ha guadagnato l'espulsione o il rigore di un
+  /// avversario.
+  TextColumn get guadagnataDa => text().nullable()();
   DateTimeColumn get creatoIl => dateTime()();
 
   @override

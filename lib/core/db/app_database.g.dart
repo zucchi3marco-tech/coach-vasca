@@ -7300,6 +7300,18 @@ class $PartiteTableTable extends PartiteTable
     requiredDuringInsert: false,
     defaultValue: const Constant('media'),
   );
+  static const VerificationMeta _eventiLiveMeta = const VerificationMeta(
+    'eventiLive',
+  );
+  @override
+  late final GeneratedColumn<String> eventiLive = GeneratedColumn<String>(
+    'eventi_live',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('essenziale'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7319,6 +7331,7 @@ class $PartiteTableTable extends PartiteTable
     modalitaSuperiorita,
     nostraSquadra,
     importanza,
+    eventiLive,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7465,6 +7478,12 @@ class $PartiteTableTable extends PartiteTable
         importanza.isAcceptableOrUnknown(data['importanza']!, _importanzaMeta),
       );
     }
+    if (data.containsKey('eventi_live')) {
+      context.handle(
+        _eventiLiveMeta,
+        eventiLive.isAcceptableOrUnknown(data['eventi_live']!, _eventiLiveMeta),
+      );
+    }
     return context;
   }
 
@@ -7542,6 +7561,10 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.string,
         data['${effectivePrefix}importanza'],
       )!,
+      eventiLive: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}eventi_live'],
+      )!,
     );
   }
 
@@ -7576,6 +7599,9 @@ class PartiteTableData extends DataClass
   /// bassa | media | alta — lo scarico pre-partita del generatore
   /// settimanale (FASE 3) scatta solo per "alta".
   final String importanza;
+
+  /// essenziale | completa — quali eventi si segnano dal vivo.
+  final String eventiLive;
   const PartiteTableData({
     required this.id,
     required this.clubId,
@@ -7594,6 +7620,7 @@ class PartiteTableData extends DataClass
     required this.modalitaSuperiorita,
     required this.nostraSquadra,
     required this.importanza,
+    required this.eventiLive,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7627,6 +7654,7 @@ class PartiteTableData extends DataClass
     map['modalita_superiorita'] = Variable<String>(modalitaSuperiorita);
     map['nostra_squadra'] = Variable<String>(nostraSquadra);
     map['importanza'] = Variable<String>(importanza);
+    map['eventi_live'] = Variable<String>(eventiLive);
     return map;
   }
 
@@ -7657,6 +7685,7 @@ class PartiteTableData extends DataClass
       modalitaSuperiorita: Value(modalitaSuperiorita),
       nostraSquadra: Value(nostraSquadra),
       importanza: Value(importanza),
+      eventiLive: Value(eventiLive),
     );
   }
 
@@ -7685,6 +7714,7 @@ class PartiteTableData extends DataClass
       ),
       nostraSquadra: serializer.fromJson<String>(json['nostraSquadra']),
       importanza: serializer.fromJson<String>(json['importanza']),
+      eventiLive: serializer.fromJson<String>(json['eventiLive']),
     );
   }
   @override
@@ -7708,6 +7738,7 @@ class PartiteTableData extends DataClass
       'modalitaSuperiorita': serializer.toJson<String>(modalitaSuperiorita),
       'nostraSquadra': serializer.toJson<String>(nostraSquadra),
       'importanza': serializer.toJson<String>(importanza),
+      'eventiLive': serializer.toJson<String>(eventiLive),
     };
   }
 
@@ -7729,6 +7760,7 @@ class PartiteTableData extends DataClass
     String? modalitaSuperiorita,
     String? nostraSquadra,
     String? importanza,
+    String? eventiLive,
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -7749,6 +7781,7 @@ class PartiteTableData extends DataClass
     modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
     nostraSquadra: nostraSquadra ?? this.nostraSquadra,
     importanza: importanza ?? this.importanza,
+    eventiLive: eventiLive ?? this.eventiLive,
   );
   PartiteTableData copyWithCompanion(PartiteTableCompanion data) {
     return PartiteTableData(
@@ -7789,6 +7822,9 @@ class PartiteTableData extends DataClass
       importanza: data.importanza.present
           ? data.importanza.value
           : this.importanza,
+      eventiLive: data.eventiLive.present
+          ? data.eventiLive.value
+          : this.eventiLive,
     );
   }
 
@@ -7811,7 +7847,8 @@ class PartiteTableData extends DataClass
           ..write('tracciaTempo: $tracciaTempo, ')
           ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
           ..write('nostraSquadra: $nostraSquadra, ')
-          ..write('importanza: $importanza')
+          ..write('importanza: $importanza, ')
+          ..write('eventiLive: $eventiLive')
           ..write(')'))
         .toString();
   }
@@ -7835,6 +7872,7 @@ class PartiteTableData extends DataClass
     modalitaSuperiorita,
     nostraSquadra,
     importanza,
+    eventiLive,
   );
   @override
   bool operator ==(Object other) =>
@@ -7856,7 +7894,8 @@ class PartiteTableData extends DataClass
           other.tracciaTempo == this.tracciaTempo &&
           other.modalitaSuperiorita == this.modalitaSuperiorita &&
           other.nostraSquadra == this.nostraSquadra &&
-          other.importanza == this.importanza);
+          other.importanza == this.importanza &&
+          other.eventiLive == this.eventiLive);
 }
 
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
@@ -7877,6 +7916,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<String> modalitaSuperiorita;
   final Value<String> nostraSquadra;
   final Value<String> importanza;
+  final Value<String> eventiLive;
   final Value<int> rowid;
   const PartiteTableCompanion({
     this.id = const Value.absent(),
@@ -7896,6 +7936,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.modalitaSuperiorita = const Value.absent(),
     this.nostraSquadra = const Value.absent(),
     this.importanza = const Value.absent(),
+    this.eventiLive = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PartiteTableCompanion.insert({
@@ -7916,6 +7957,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.modalitaSuperiorita = const Value.absent(),
     this.nostraSquadra = const Value.absent(),
     this.importanza = const Value.absent(),
+    this.eventiLive = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -7940,6 +7982,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Expression<String>? modalitaSuperiorita,
     Expression<String>? nostraSquadra,
     Expression<String>? importanza,
+    Expression<String>? eventiLive,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7962,6 +8005,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
         'modalita_superiorita': modalitaSuperiorita,
       if (nostraSquadra != null) 'nostra_squadra': nostraSquadra,
       if (importanza != null) 'importanza': importanza,
+      if (eventiLive != null) 'eventi_live': eventiLive,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7984,6 +8028,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Value<String>? modalitaSuperiorita,
     Value<String>? nostraSquadra,
     Value<String>? importanza,
+    Value<String>? eventiLive,
     Value<int>? rowid,
   }) {
     return PartiteTableCompanion(
@@ -8004,6 +8049,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       modalitaSuperiorita: modalitaSuperiorita ?? this.modalitaSuperiorita,
       nostraSquadra: nostraSquadra ?? this.nostraSquadra,
       importanza: importanza ?? this.importanza,
+      eventiLive: eventiLive ?? this.eventiLive,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8062,6 +8108,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     if (importanza.present) {
       map['importanza'] = Variable<String>(importanza.value);
     }
+    if (eventiLive.present) {
+      map['eventi_live'] = Variable<String>(eventiLive.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8088,6 +8137,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
           ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
           ..write('nostraSquadra: $nostraSquadra, ')
           ..write('importanza: $importanza, ')
+          ..write('eventiLive: $eventiLive, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8817,6 +8867,28 @@ class $EventiPartitaTableTable extends EventiPartitaTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _assistDiMeta = const VerificationMeta(
+    'assistDi',
+  );
+  @override
+  late final GeneratedColumn<String> assistDi = GeneratedColumn<String>(
+    'assist_di',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guadagnataDaMeta = const VerificationMeta(
+    'guadagnataDa',
+  );
+  @override
+  late final GeneratedColumn<String> guadagnataDa = GeneratedColumn<String>(
+    'guadagnata_da',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _creatoIlMeta = const VerificationMeta(
     'creatoIl',
   );
@@ -8843,6 +8915,8 @@ class $EventiPartitaTableTable extends EventiPartitaTable
     posY,
     numeroCalottinaAvversario,
     espulsioneDaRigore,
+    assistDi,
+    guadagnataDa,
     creatoIl,
   ];
   @override
@@ -8949,6 +9023,21 @@ class $EventiPartitaTableTable extends EventiPartitaTable
         ),
       );
     }
+    if (data.containsKey('assist_di')) {
+      context.handle(
+        _assistDiMeta,
+        assistDi.isAcceptableOrUnknown(data['assist_di']!, _assistDiMeta),
+      );
+    }
+    if (data.containsKey('guadagnata_da')) {
+      context.handle(
+        _guadagnataDaMeta,
+        guadagnataDa.isAcceptableOrUnknown(
+          data['guadagnata_da']!,
+          _guadagnataDaMeta,
+        ),
+      );
+    }
     if (data.containsKey('creato_il')) {
       context.handle(
         _creatoIlMeta,
@@ -9018,6 +9107,14 @@ class $EventiPartitaTableTable extends EventiPartitaTable
         DriftSqlType.bool,
         data['${effectivePrefix}espulsione_da_rigore'],
       )!,
+      assistDi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assist_di'],
+      ),
+      guadagnataDa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guadagnata_da'],
+      ),
       creatoIl: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}creato_il'],
@@ -9036,6 +9133,8 @@ class EventiPartitaTableData extends DataClass
   final String id;
   final String partitaId;
   final String clubId;
+
+  /// tiro | espulsione | superiorita | palla_persa | palla_recuperata
   final String tipo;
   final String squadra;
   final String? atletaId;
@@ -9046,6 +9145,13 @@ class EventiPartitaTableData extends DataClass
   final double? posY;
   final int? numeroCalottinaAvversario;
   final bool espulsioneDaRigore;
+
+  /// Chi ha passato la palla del gol (solo un nostro tiro).
+  final String? assistDi;
+
+  /// Chi dei nostri ha guadagnato l'espulsione o il rigore di un
+  /// avversario.
+  final String? guadagnataDa;
   final DateTime creatoIl;
   const EventiPartitaTableData({
     required this.id,
@@ -9061,6 +9167,8 @@ class EventiPartitaTableData extends DataClass
     this.posY,
     this.numeroCalottinaAvversario,
     required this.espulsioneDaRigore,
+    this.assistDi,
+    this.guadagnataDa,
     required this.creatoIl,
   });
   @override
@@ -9093,6 +9201,12 @@ class EventiPartitaTableData extends DataClass
       );
     }
     map['espulsione_da_rigore'] = Variable<bool>(espulsioneDaRigore);
+    if (!nullToAbsent || assistDi != null) {
+      map['assist_di'] = Variable<String>(assistDi);
+    }
+    if (!nullToAbsent || guadagnataDa != null) {
+      map['guadagnata_da'] = Variable<String>(guadagnataDa);
+    }
     map['creato_il'] = Variable<DateTime>(creatoIl);
     return map;
   }
@@ -9121,6 +9235,12 @@ class EventiPartitaTableData extends DataClass
           ? const Value.absent()
           : Value(numeroCalottinaAvversario),
       espulsioneDaRigore: Value(espulsioneDaRigore),
+      assistDi: assistDi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assistDi),
+      guadagnataDa: guadagnataDa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guadagnataDa),
       creatoIl: Value(creatoIl),
     );
   }
@@ -9146,6 +9266,8 @@ class EventiPartitaTableData extends DataClass
         json['numeroCalottinaAvversario'],
       ),
       espulsioneDaRigore: serializer.fromJson<bool>(json['espulsioneDaRigore']),
+      assistDi: serializer.fromJson<String?>(json['assistDi']),
+      guadagnataDa: serializer.fromJson<String?>(json['guadagnataDa']),
       creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
     );
   }
@@ -9168,6 +9290,8 @@ class EventiPartitaTableData extends DataClass
         numeroCalottinaAvversario,
       ),
       'espulsioneDaRigore': serializer.toJson<bool>(espulsioneDaRigore),
+      'assistDi': serializer.toJson<String?>(assistDi),
+      'guadagnataDa': serializer.toJson<String?>(guadagnataDa),
       'creatoIl': serializer.toJson<DateTime>(creatoIl),
     };
   }
@@ -9186,6 +9310,8 @@ class EventiPartitaTableData extends DataClass
     Value<double?> posY = const Value.absent(),
     Value<int?> numeroCalottinaAvversario = const Value.absent(),
     bool? espulsioneDaRigore,
+    Value<String?> assistDi = const Value.absent(),
+    Value<String?> guadagnataDa = const Value.absent(),
     DateTime? creatoIl,
   }) => EventiPartitaTableData(
     id: id ?? this.id,
@@ -9203,6 +9329,8 @@ class EventiPartitaTableData extends DataClass
         ? numeroCalottinaAvversario.value
         : this.numeroCalottinaAvversario,
     espulsioneDaRigore: espulsioneDaRigore ?? this.espulsioneDaRigore,
+    assistDi: assistDi.present ? assistDi.value : this.assistDi,
+    guadagnataDa: guadagnataDa.present ? guadagnataDa.value : this.guadagnataDa,
     creatoIl: creatoIl ?? this.creatoIl,
   );
   EventiPartitaTableData copyWithCompanion(EventiPartitaTableCompanion data) {
@@ -9226,6 +9354,10 @@ class EventiPartitaTableData extends DataClass
       espulsioneDaRigore: data.espulsioneDaRigore.present
           ? data.espulsioneDaRigore.value
           : this.espulsioneDaRigore,
+      assistDi: data.assistDi.present ? data.assistDi.value : this.assistDi,
+      guadagnataDa: data.guadagnataDa.present
+          ? data.guadagnataDa.value
+          : this.guadagnataDa,
       creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
     );
   }
@@ -9246,6 +9378,8 @@ class EventiPartitaTableData extends DataClass
           ..write('posY: $posY, ')
           ..write('numeroCalottinaAvversario: $numeroCalottinaAvversario, ')
           ..write('espulsioneDaRigore: $espulsioneDaRigore, ')
+          ..write('assistDi: $assistDi, ')
+          ..write('guadagnataDa: $guadagnataDa, ')
           ..write('creatoIl: $creatoIl')
           ..write(')'))
         .toString();
@@ -9266,6 +9400,8 @@ class EventiPartitaTableData extends DataClass
     posY,
     numeroCalottinaAvversario,
     espulsioneDaRigore,
+    assistDi,
+    guadagnataDa,
     creatoIl,
   );
   @override
@@ -9285,6 +9421,8 @@ class EventiPartitaTableData extends DataClass
           other.posY == this.posY &&
           other.numeroCalottinaAvversario == this.numeroCalottinaAvversario &&
           other.espulsioneDaRigore == this.espulsioneDaRigore &&
+          other.assistDi == this.assistDi &&
+          other.guadagnataDa == this.guadagnataDa &&
           other.creatoIl == this.creatoIl);
 }
 
@@ -9303,6 +9441,8 @@ class EventiPartitaTableCompanion
   final Value<double?> posY;
   final Value<int?> numeroCalottinaAvversario;
   final Value<bool> espulsioneDaRigore;
+  final Value<String?> assistDi;
+  final Value<String?> guadagnataDa;
   final Value<DateTime> creatoIl;
   final Value<int> rowid;
   const EventiPartitaTableCompanion({
@@ -9319,6 +9459,8 @@ class EventiPartitaTableCompanion
     this.posY = const Value.absent(),
     this.numeroCalottinaAvversario = const Value.absent(),
     this.espulsioneDaRigore = const Value.absent(),
+    this.assistDi = const Value.absent(),
+    this.guadagnataDa = const Value.absent(),
     this.creatoIl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -9336,6 +9478,8 @@ class EventiPartitaTableCompanion
     this.posY = const Value.absent(),
     this.numeroCalottinaAvversario = const Value.absent(),
     this.espulsioneDaRigore = const Value.absent(),
+    this.assistDi = const Value.absent(),
+    this.guadagnataDa = const Value.absent(),
     required DateTime creatoIl,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -9357,6 +9501,8 @@ class EventiPartitaTableCompanion
     Expression<double>? posY,
     Expression<int>? numeroCalottinaAvversario,
     Expression<bool>? espulsioneDaRigore,
+    Expression<String>? assistDi,
+    Expression<String>? guadagnataDa,
     Expression<DateTime>? creatoIl,
     Expression<int>? rowid,
   }) {
@@ -9376,6 +9522,8 @@ class EventiPartitaTableCompanion
         'numero_calottina_avversario': numeroCalottinaAvversario,
       if (espulsioneDaRigore != null)
         'espulsione_da_rigore': espulsioneDaRigore,
+      if (assistDi != null) 'assist_di': assistDi,
+      if (guadagnataDa != null) 'guadagnata_da': guadagnataDa,
       if (creatoIl != null) 'creato_il': creatoIl,
       if (rowid != null) 'rowid': rowid,
     });
@@ -9395,6 +9543,8 @@ class EventiPartitaTableCompanion
     Value<double?>? posY,
     Value<int?>? numeroCalottinaAvversario,
     Value<bool>? espulsioneDaRigore,
+    Value<String?>? assistDi,
+    Value<String?>? guadagnataDa,
     Value<DateTime>? creatoIl,
     Value<int>? rowid,
   }) {
@@ -9413,6 +9563,8 @@ class EventiPartitaTableCompanion
       numeroCalottinaAvversario:
           numeroCalottinaAvversario ?? this.numeroCalottinaAvversario,
       espulsioneDaRigore: espulsioneDaRigore ?? this.espulsioneDaRigore,
+      assistDi: assistDi ?? this.assistDi,
+      guadagnataDa: guadagnataDa ?? this.guadagnataDa,
       creatoIl: creatoIl ?? this.creatoIl,
       rowid: rowid ?? this.rowid,
     );
@@ -9462,6 +9614,12 @@ class EventiPartitaTableCompanion
     if (espulsioneDaRigore.present) {
       map['espulsione_da_rigore'] = Variable<bool>(espulsioneDaRigore.value);
     }
+    if (assistDi.present) {
+      map['assist_di'] = Variable<String>(assistDi.value);
+    }
+    if (guadagnataDa.present) {
+      map['guadagnata_da'] = Variable<String>(guadagnataDa.value);
+    }
     if (creatoIl.present) {
       map['creato_il'] = Variable<DateTime>(creatoIl.value);
     }
@@ -9487,6 +9645,8 @@ class EventiPartitaTableCompanion
           ..write('posY: $posY, ')
           ..write('numeroCalottinaAvversario: $numeroCalottinaAvversario, ')
           ..write('espulsioneDaRigore: $espulsioneDaRigore, ')
+          ..write('assistDi: $assistDi, ')
+          ..write('guadagnataDa: $guadagnataDa, ')
           ..write('creatoIl: $creatoIl, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -19539,6 +19699,7 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
       Value<String> modalitaSuperiorita,
       Value<String> nostraSquadra,
       Value<String> importanza,
+      Value<String> eventiLive,
       Value<int> rowid,
     });
 typedef $$PartiteTableTableUpdateCompanionBuilder =
@@ -19560,6 +19721,7 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
       Value<String> modalitaSuperiorita,
       Value<String> nostraSquadra,
       Value<String> importanza,
+      Value<String> eventiLive,
       Value<int> rowid,
     });
 
@@ -19654,6 +19816,11 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<String> get importanza => $composableBuilder(
     column: $table.importanza,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventiLive => $composableBuilder(
+    column: $table.eventiLive,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -19751,6 +19918,11 @@ class $$PartiteTableTableOrderingComposer
     column: $table.importanza,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get eventiLive => $composableBuilder(
+    column: $table.eventiLive,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PartiteTableTableAnnotationComposer
@@ -19832,6 +20004,11 @@ class $$PartiteTableTableAnnotationComposer
     column: $table.importanza,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get eventiLive => $composableBuilder(
+    column: $table.eventiLive,
+    builder: (column) => column,
+  );
 }
 
 class $$PartiteTableTableTableManager
@@ -19882,6 +20059,7 @@ class $$PartiteTableTableTableManager
                 Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<String> nostraSquadra = const Value.absent(),
                 Value<String> importanza = const Value.absent(),
+                Value<String> eventiLive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion(
                 id: id,
@@ -19901,6 +20079,7 @@ class $$PartiteTableTableTableManager
                 modalitaSuperiorita: modalitaSuperiorita,
                 nostraSquadra: nostraSquadra,
                 importanza: importanza,
+                eventiLive: eventiLive,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19922,6 +20101,7 @@ class $$PartiteTableTableTableManager
                 Value<String> modalitaSuperiorita = const Value.absent(),
                 Value<String> nostraSquadra = const Value.absent(),
                 Value<String> importanza = const Value.absent(),
+                Value<String> eventiLive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion.insert(
                 id: id,
@@ -19941,6 +20121,7 @@ class $$PartiteTableTableTableManager
                 modalitaSuperiorita: modalitaSuperiorita,
                 nostraSquadra: nostraSquadra,
                 importanza: importanza,
+                eventiLive: eventiLive,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -20305,6 +20486,8 @@ typedef $$EventiPartitaTableTableCreateCompanionBuilder =
       Value<double?> posY,
       Value<int?> numeroCalottinaAvversario,
       Value<bool> espulsioneDaRigore,
+      Value<String?> assistDi,
+      Value<String?> guadagnataDa,
       required DateTime creatoIl,
       Value<int> rowid,
     });
@@ -20323,6 +20506,8 @@ typedef $$EventiPartitaTableTableUpdateCompanionBuilder =
       Value<double?> posY,
       Value<int?> numeroCalottinaAvversario,
       Value<bool> espulsioneDaRigore,
+      Value<String?> assistDi,
+      Value<String?> guadagnataDa,
       Value<DateTime> creatoIl,
       Value<int> rowid,
     });
@@ -20398,6 +20583,16 @@ class $$EventiPartitaTableTableFilterComposer
 
   ColumnFilters<bool> get espulsioneDaRigore => $composableBuilder(
     column: $table.espulsioneDaRigore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assistDi => $composableBuilder(
+    column: $table.assistDi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guadagnataDa => $composableBuilder(
+    column: $table.guadagnataDa,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20481,6 +20676,16 @@ class $$EventiPartitaTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get assistDi => $composableBuilder(
+    column: $table.assistDi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guadagnataDa => $composableBuilder(
+    column: $table.guadagnataDa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get creatoIl => $composableBuilder(
     column: $table.creatoIl,
     builder: (column) => ColumnOrderings(column),
@@ -20541,6 +20746,14 @@ class $$EventiPartitaTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get assistDi =>
+      $composableBuilder(column: $table.assistDi, builder: (column) => column);
+
+  GeneratedColumn<String> get guadagnataDa => $composableBuilder(
+    column: $table.guadagnataDa,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get creatoIl =>
       $composableBuilder(column: $table.creatoIl, builder: (column) => column);
 }
@@ -20598,6 +20811,8 @@ class $$EventiPartitaTableTableTableManager
                 Value<double?> posY = const Value.absent(),
                 Value<int?> numeroCalottinaAvversario = const Value.absent(),
                 Value<bool> espulsioneDaRigore = const Value.absent(),
+                Value<String?> assistDi = const Value.absent(),
+                Value<String?> guadagnataDa = const Value.absent(),
                 Value<DateTime> creatoIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EventiPartitaTableCompanion(
@@ -20614,6 +20829,8 @@ class $$EventiPartitaTableTableTableManager
                 posY: posY,
                 numeroCalottinaAvversario: numeroCalottinaAvversario,
                 espulsioneDaRigore: espulsioneDaRigore,
+                assistDi: assistDi,
+                guadagnataDa: guadagnataDa,
                 creatoIl: creatoIl,
                 rowid: rowid,
               ),
@@ -20632,6 +20849,8 @@ class $$EventiPartitaTableTableTableManager
                 Value<double?> posY = const Value.absent(),
                 Value<int?> numeroCalottinaAvversario = const Value.absent(),
                 Value<bool> espulsioneDaRigore = const Value.absent(),
+                Value<String?> assistDi = const Value.absent(),
+                Value<String?> guadagnataDa = const Value.absent(),
                 required DateTime creatoIl,
                 Value<int> rowid = const Value.absent(),
               }) => EventiPartitaTableCompanion.insert(
@@ -20648,6 +20867,8 @@ class $$EventiPartitaTableTableTableManager
                 posY: posY,
                 numeroCalottinaAvversario: numeroCalottinaAvversario,
                 espulsioneDaRigore: espulsioneDaRigore,
+                assistDi: assistDi,
+                guadagnataDa: guadagnataDa,
                 creatoIl: creatoIl,
                 rowid: rowid,
               ),

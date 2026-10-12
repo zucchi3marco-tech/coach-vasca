@@ -13,13 +13,15 @@ class EventoPartita {
     this.posY,
     this.numeroCalottinaAvversario,
     this.espulsioneDaRigore = false,
+    this.assistDi,
+    this.guadagnataDa,
     required this.creatoIl,
   });
 
   final String id;
   final String partitaId;
   final String clubId;
-  final String tipo; // tiro | espulsione | superiorita
+  final String tipo; // tiro | espulsione |  final String contestoTiro; // azione | superiorita | rigore | controfuga (solo per tiro)| palla_persa | palla_recuperata| espulsione | superiorita
   final String squadra; // nostra | avversaria
   final String? atletaId;
   final int? periodo;
@@ -43,6 +45,14 @@ class EventoPartita {
   /// salvato come stato a parte).
   final bool espulsioneDaRigore;
 
+  /// Solo per un nostro tiro: chi ha passato la palla del gol (modalità
+  /// completa). Conta come assist solo se il tiro è gol.
+  final String? assistDi;
+
+  /// Solo per l'espulsione di un avversario: chi dei nostri l'ha
+  /// guadagnata (con [espulsioneDaRigore], il rigore guadagnato).
+  final String? guadagnataDa;
+
   final DateTime creatoIl;
 
   factory EventoPartita.fromMap(Map<String, dynamic> map) {
@@ -60,6 +70,8 @@ class EventoPartita {
       posY: (map['pos_y'] as num?)?.toDouble(),
       numeroCalottinaAvversario: map['numero_calottina_avversario'] as int?,
       espulsioneDaRigore: map['espulsione_da_rigore'] as bool? ?? false,
+      assistDi: map['assist_di'] as String?,
+      guadagnataDa: map['guadagnata_da'] as String?,
       creatoIl: DateTime.parse(map['created_at'] as String),
     );
   }

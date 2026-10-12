@@ -1,3 +1,5 @@
+import '../../pallanuoto/domain/statistiche_eventi.dart';
+
 /// Statistiche di squadra/atleta calcolate dai referti salvati (Fase 8):
 /// non contano i tiri sbagliati, perche' il referto registra solo reti ed
 /// espulsioni, non ogni singolo tentativo.
@@ -50,71 +52,68 @@ class RigaAtletaReferti {
 }
 
 /// Statistiche di squadra/atleta calcolate dagli eventi partita tracciati
-/// live (tiro/espulsione): piu' accurate (includono anche i tiri
-/// sbagliati e il contesto del gol), ma disponibili solo per le partite
-/// seguite dal vivo dall'app, non per quelle digitalizzate solo da
-/// referto. `partite` conta solo le partite con almeno un evento
-/// registrato, non tutte quelle della stagione.
+/// live: piu' accurate (includono anche i tiri sbagliati e il contesto
+/// del gol), ma disponibili solo per le partite seguite dal vivo
+/// dall'app, non per quelle digitalizzate solo da referto. `partite`
+/// conta solo le partite con almeno un evento registrato, non tutte
+/// quelle della stagione. I conteggi stanno in [numeri] (vedi
+/// `StatisticheEventi`); qui restano le voci usate piu' spesso.
 class RiepilogoSquadraEventi {
   const RiepilogoSquadraEventi({
     required this.partite,
-    required this.tiri,
-    required this.gol,
-    required this.golSuperiorita,
-    required this.golRigore,
-    required this.espulsioni,
-    required this.tiriSubiti,
-    required this.golSubiti,
+    required this.numeri,
     required this.perAtleta,
   });
 
   static const vuoto = RiepilogoSquadraEventi(
     partite: 0,
-    tiri: 0,
-    gol: 0,
-    golSuperiorita: 0,
-    golRigore: 0,
-    espulsioni: 0,
-    tiriSubiti: 0,
-    golSubiti: 0,
+    numeri: NumeriEventi.zero,
     perAtleta: [],
   );
 
+  factory RiepilogoSquadraEventi.da(StatisticheEventi s) =>
+      RiepilogoSquadraEventi(
+        partite: s.partite,
+        numeri: s.squadra,
+        perAtleta: [
+          for (final MapEntry(:key, :value) in s.perAtleta.entries)
+            RigaAtletaEventi(atletaId: key, numeri: value),
+        ],
+      );
+
   final int partite;
-  final int tiri;
-  final int gol;
-  final int golSuperiorita;
-  final int golRigore;
-  final int espulsioni;
+  final NumeriEventi numeri;
+  final List<RigaAtletaEventi> perAtleta;
+
+  int get tiri => numeri.tiri;
+  int get gol => numeri.gol;
+  int get golSuperiorita => numeri.golSuperiorita;
+  int get golRigore => numeri.golRigore;
+  int get golControfuga => numeri.golControfuga;
+  int get golAzione => numeri.golAzione;
+  int get espulsioni => numeri.espulsioni;
 
   /// Tiri e gol dell'avversario contro di noi ("tiro avversario", nessuna
   /// posizione né identità del tiratore: solo l'esito).
-  final int tiriSubiti;
-  final int golSubiti;
-  final List<RigaAtletaEventi> perAtleta;
+  int get tiriSubiti => numeri.tiriSubiti;
+  int get golSubiti => numeri.golSubiti;
 
-  int get golAzione => gol - golSuperiorita - golRigore;
   double get mediaGolPartita => partite > 0 ? gol / partite : 0.0;
   double get percentualeGolSubiti =>
       tiriSubiti > 0 ? golSubiti / tiriSubiti * 100 : 0.0;
 }
 
 class RigaAtletaEventi {
-  const RigaAtletaEventi({
-    required this.atletaId,
-    required this.tiri,
-    required this.gol,
-    required this.golSuperiorita,
-    required this.golRigore,
-    required this.espulsioni,
-  });
+  const RigaAtletaEventi({required this.atletaId, required this.numeri});
 
   final String atletaId;
-  final int tiri;
-  final int gol;
-  final int golSuperiorita;
-  final int golRigore;
-  final int espulsioni;
+  final NumeriEventi numeri;
 
-  int get golAzione => gol - golSuperiorita - golRigore;
+  int get tiri => numeri.tiri;
+  int get gol => numeri.gol;
+  int get golSuperiorita => numeri.golSuperiorita;
+  int get golRigore => numeri.golRigore;
+  int get golControfuga => numeri.golControfuga;
+  int get golAzione => numeri.golAzione;
+  int get espulsioni => numeri.espulsioni;
 }

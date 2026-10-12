@@ -421,6 +421,12 @@ class AtletiRepository {
       await (_db.update(_db.eventiPartitaTable)
             ..where((t) => t.atletaId.equals(id)))
           .write(const EventiPartitaTableCompanion(atletaId: Value(null)));
+      await (_db.update(_db.eventiPartitaTable)
+            ..where((t) => t.assistDi.equals(id)))
+          .write(const EventiPartitaTableCompanion(assistDi: Value(null)));
+      await (_db.update(_db.eventiPartitaTable)
+            ..where((t) => t.guadagnataDa.equals(id)))
+          .write(const EventiPartitaTableCompanion(guadagnataDa: Value(null)));
       await (_db.delete(_db.atletiTable)..where((t) => t.id.equals(id))).go();
     });
   }

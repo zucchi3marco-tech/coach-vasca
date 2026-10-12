@@ -13,7 +13,9 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/stat_panel.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../pallanuoto/presentation/campo_tiro.dart';
+import '../../pallanuoto/presentation/voci_partita.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/statistiche_providers.dart';
 import '../domain/statistiche_stagionali.dart';
@@ -243,7 +245,7 @@ class _SezioneEventi extends ConsumerWidget {
           final nomiPerId = {for (final a in atleti) a.id: a.nomeCompleto};
           final righe = [...r.perAtleta]
             ..sort((a, b) => b.gol.compareTo(a.gol));
-          final percentuale = r.tiri > 0
+          final percentualeGol = r.tiri > 0
               ? '${(r.gol / r.tiri * 100).round()}%'
               : '—';
           return ListView(
@@ -253,7 +255,7 @@ class _SezioneEventi extends ConsumerWidget {
                   StatPanel(
                     etichetta: 'Gol',
                     valore: '${r.gol}/${r.tiri}',
-                    confronto: percentuale,
+                    confronto: percentualeGol,
                   ),
                   StatPanel(etichetta: 'Espulsioni', valore: '${r.espulsioni}'),
                   StatPanel(
@@ -271,6 +273,11 @@ class _SezioneEventi extends ConsumerWidget {
                     valore: '${r.golSuperiorita}',
                   ),
                   StatPanel(etichetta: 'Gol rigore', valore: '${r.golRigore}'),
+                  if (r.golControfuga > 0)
+                    StatPanel(
+                      etichetta: 'Gol controfuga',
+                      valore: '${r.golControfuga}',
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.s16),
@@ -283,8 +290,55 @@ class _SezioneEventi extends ConsumerWidget {
                         ? '${r.percentualeGolSubiti.round()}%'
                         : null,
                   ),
+                  StatPanel(
+                    etichetta: 'Superiorità',
+                    valore: rapporto(
+                      r.numeri.golInSuperiorita,
+                      r.numeri.superiorita,
+                    ),
+                    confronto: percentuale(
+                      r.numeri.golInSuperiorita,
+                      r.numeri.superiorita,
+                    ),
+                  ),
+                  StatPanel(
+                    etichetta: 'Inferiorità',
+                    valore: rapporto(
+                      r.numeri.golSubitiInInferiorita,
+                      r.numeri.inferiorita,
+                    ),
+                    confronto: r.numeri.inferiorita > 0
+                        ? '${r.numeri.inferiorita - r.numeri.golSubitiInInferiorita} difese'
+                        : null,
+                  ),
                 ],
               ),
+              if (r.numeri.haEventiCompleti) ...[
+                const SizedBox(height: AppSpacing.s16),
+                GrigliaNumeri(
+                  children: [
+                    StatPanel(
+                      etichetta: 'Assist',
+                      valore: '${r.numeri.assist}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Palle perse',
+                      valore: '${r.numeri.pallePerse}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Palle recuperate',
+                      valore: '${r.numeri.palleRecuperate}',
+                    ),
+                    StatPanel(
+                      etichetta: 'Espulsioni guadagnate',
+                      valore: '${r.numeri.espulsioniGuadagnate}',
+                      confronto: r.numeri.rigoriGuadagnati > 0
+                          ? '+ ${r.numeri.rigoriGuadagnati} rigori'
+                          : null,
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: AppSpacing.s8),
               Text(
                 '${r.partite} partite seguite dal vivo con "Eventi partita".',
@@ -312,6 +366,9 @@ class _SezioneEventi extends ConsumerWidget {
                           'azione ${riga.golAzione}',
                           'superiorità ${riga.golSuperiorita}',
                           'rigore ${riga.golRigore}',
+                          if (riga.golControfuga > 0)
+                            'controfuga ${riga.golControfuga}',
+                          ...metricheComplete(riga.numeri),
                         ],
                       ),
                   ],

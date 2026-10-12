@@ -14,12 +14,27 @@ const contestiTiro = [
   ('rigore', 'Rigore'),
 ];
 
+/// Il valore dell'esito "gol in controfuga" nei bottoni dell'esito (in
+/// modalità completa): si salva come esito gol con contesto controfuga.
+const golInControfuga = 'gol_controfuga';
+
+/// Gli esiti di un tiro in modalità completa: lo stesso elenco con, dopo
+/// il gol, il gol in controfuga — un tocco solo, senza un passo in più.
+List<(String, String)> conControfuga(List<(String, String)> esiti) => [
+  for (final esito in esiti) ...[
+    esito,
+    if (esito.$1 == 'gol') (golInControfuga, 'Gol in controfuga'),
+  ],
+];
+
 String etichettaContesto(String contesto) {
   switch (contesto) {
     case 'superiorita':
       return 'superiorità';
     case 'rigore':
       return 'rigore';
+    case 'controfuga':
+      return 'controfuga';
     default:
       return '';
   }
