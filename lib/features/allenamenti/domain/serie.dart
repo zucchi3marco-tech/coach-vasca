@@ -1,3 +1,7 @@
+import 'destinatari.dart';
+
+export 'destinatari.dart';
+
 /// Le esecuzioni di una serie, nell'ordine dei menu: i valori dell'enum
 /// `esecuzione_serie` del database. Dopo il nuoto, il lavoro di
 /// pallanuoto (richiesta del coach 2026-10-08) e quello a secco.
@@ -59,6 +63,9 @@ abstract interface class DatiSerie {
   /// ("rec 2'" su una riga da sola nel compilatore). Diverso da
   /// [recuperoS], che sta fra le ripetute della stessa serie.
   int? get recuperoDopoS;
+
+  /// Per chi è la serie: tutto il gruppo, un ruolo, alcuni atleti.
+  Destinatari get destinatari;
 }
 
 class Serie implements DatiSerie {
@@ -82,6 +89,7 @@ class Serie implements DatiSerie {
     this.piramideId,
     this.esito,
     this.recuperoDopoS,
+    this.destinatari = Destinatari.tutti,
   });
 
   final String id;
@@ -124,6 +132,9 @@ class Serie implements DatiSerie {
   @override
   final int? recuperoDopoS;
 
+  @override
+  final Destinatari destinatari;
+
   /// 'fatta' | 'saltata', segnato a bordo vasca durante la seduta; null
   /// finché non si segna. Le saltate non contano nel volume reale.
   final String? esito;
@@ -158,6 +169,7 @@ class Serie implements DatiSerie {
       piramideId: map['piramide_id'] as String?,
       esito: map['esito'] as String?,
       recuperoDopoS: map['recupero_dopo_s'] as int?,
+      destinatari: Destinatari.fromMap(map),
     );
   }
 }

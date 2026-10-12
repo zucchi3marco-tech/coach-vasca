@@ -7,11 +7,14 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
+import '../../atleti/domain/atleta.dart';
+import '../domain/destinatari.dart';
 import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/testo_allenamento.dart';
 import 'grafico_intensita.dart';
 import 'nota_serie.dart';
+import 'per_chi_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'serie_labels.dart';
 
@@ -56,7 +59,9 @@ class BarraTotali extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
     );
-    final minuti = minutiStimati(serie, riferimento: riferimento);
+    // Metri e minuti del gruppo: i portieri lavorano insieme agli altri,
+    // le serie di alcuni atleti sono una variante (vedi `minutiSeduta`).
+    final minuti = minutiSeduta(serie, riferimento: riferimento);
     return Semantics(
       liveRegion: true,
       label:
@@ -103,10 +108,16 @@ class EditorTestoAllenamento extends StatefulWidget {
     required this.scritto,
     required this.riferimento,
     this.sottoIlTesto = const [],
+    this.atleti = const [],
     super.key,
   });
 
   final TextEditingController controller;
+
+  /// Gli atleti del gruppo: per i nomi delle righe "per chi" ("Rossi,
+  /// Bianchi") detti a voce e scritti nell'anteprima. [scritto] va letto
+  /// con gli stessi.
+  final List<Atleta> atleti;
 
   /// [controller] già interpretato da chi usa l'editor (che lo rilegge a
   /// ogni modifica per [BarraTotali]).
@@ -204,7 +215,7 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
         if (!mounted) return;
         final testo = [
           _prefisso,
-          righeDaDettato(sessione),
+          righeDaDettato(sessione, atleti: widget.atleti),
         ].where((t) => t.isNotEmpty).join('\n');
         widget.controller.value = TextEditingValue(
           text: testo,
@@ -323,7 +334,11 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.s8),
             child: Text(
-              _comeCapita(corrente.riga, volumi[corrente.indice]),
+              _comeCapita(
+                corrente.riga,
+                volumi[corrente.indice],
+                widget.atleti,
+              ),
               style: AppTypography.piccolo.copyWith(
                 color: corrente.riga.tipo == TipoRiga.errore
                     ? colori.rosso
@@ -375,7 +390,11 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
         ...widget.sottoIlTesto,
       ],
     );
-    final anteprima = _Anteprima(scritto: scritto, volumi: volumi);
+    final anteprima = _Anteprima(
+      scritto: scritto,
+      volumi: volumi,
+      atleti: widget.atleti,
+    );
 
     return LayoutBuilder(
       builder: (context, vincoli) {
@@ -454,33 +473,53 @@ String etichettaBlocco(VolumeBlocco v) {
 String _testoRecupero(int secondi) =>
     'Recupero ${formattaRecupero(secondi)} prima della serie successiva';
 
+/// "Da qui le serie sono per: Portieri", per una riga "per chi".
+String _testoPerChi(Destinatari d, List<Atleta> atleti) {
+  final chi = labelPerChi(d, atleti);
+  return chi == null
+      ? 'Da qui le serie sono per tutti'
+      : 'Da qui le serie sono per: $chi';
+}
+
 /// "8×100m Libero · B1 · rip 1:30" per la riga sotto il cursore.
-String _comeCapita(RigaScritta riga, VolumeBlocco? volume) =>
-    switch (riga.tipo) {
-      TipoRiga.vuota => '',
-      TipoRiga.titolo =>
-        'Inizia il blocco ${labelBlocco(riga.blocco!)}'
-            '${volume == null ? '' : ' · ${etichettaBlocco(volume)}'}',
-      TipoRiga.recupero => _testoRecupero(riga.recuperoS!),
-      TipoRiga.giri =>
-        'Ripete ${riga.giri} volte le righe sotto, fino alla prima riga vuota',
-      TipoRiga.errore => riga.problema!,
-      TipoRiga.serie => [
-        if (riga.serie.length > 1)
-          titoloGruppo(riga.serie)
-        else
-          titoloSerie(riga.serie.single),
-        ...dettagliSerie(riga.serie.first),
-      ].join(' · '),
-    };
+String _comeCapita(
+  RigaScritta riga,
+  VolumeBlocco? volume,
+  List<Atleta> atleti,
+) => switch (riga.tipo) {
+  TipoRiga.vuota => '',
+  TipoRiga.titolo =>
+    'Inizia il blocco ${labelBlocco(riga.blocco!)}'
+        '${volume == null ? '' : ' · ${etichettaBlocco(volume)}'}',
+  TipoRiga.recupero => _testoRecupero(riga.recuperoS!),
+  TipoRiga.giri =>
+    'Ripete ${riga.giri} volte le righe sotto, fino alla prima riga vuota',
+  TipoRiga.destinatari =>
+    '${_testoPerChi(riga.destinatari!, atleti)}, fino '
+        'al prossimo titolo',
+  TipoRiga.errore => riga.problema!,
+  TipoRiga.serie => [
+    ?labelPerChi(riga.serie.first.destinatari, atleti),
+    if (riga.serie.length > 1)
+      titoloGruppo(riga.serie)
+    else
+      titoloSerie(riga.serie.single),
+    ...dettagliSerie(riga.serie.first),
+  ].join(' · '),
+};
 
 /// Come è stato capito il testo, riga per riga: i titoli dei blocchi, i
 /// "2x" con le serie che ripetono, le righe non capite in rosso.
 class _Anteprima extends StatelessWidget {
-  const _Anteprima({required this.scritto, required this.volumi});
+  const _Anteprima({
+    required this.scritto,
+    required this.volumi,
+    required this.atleti,
+  });
 
   final AllenamentoScritto scritto;
   final Map<int, VolumeBlocco> volumi;
+  final List<Atleta> atleti;
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +549,11 @@ class _Anteprima extends StatelessWidget {
           if (volumi[r.indice] case final volume?
               when r.riga.tipo != TipoRiga.titolo)
             _TitoloBlocco(blocco: r.riga.blocco!, volume: volume),
-          _RigaAnteprima(riga: r.riga, volume: volumi[r.indice]),
+          _RigaAnteprima(
+            riga: r.riga,
+            volume: volumi[r.indice],
+            atleti: atleti,
+          ),
         ],
       ],
     );
@@ -553,10 +596,11 @@ class _TitoloBlocco extends StatelessWidget {
 }
 
 class _RigaAnteprima extends StatelessWidget {
-  const _RigaAnteprima({required this.riga, this.volume});
+  const _RigaAnteprima({required this.riga, required this.atleti, this.volume});
 
   final RigaScritta riga;
   final VolumeBlocco? volume;
+  final List<Atleta> atleti;
 
   @override
   Widget build(BuildContext context) {
@@ -621,6 +665,16 @@ class _RigaAnteprima extends StatelessWidget {
             ],
           ),
         );
+      case TipoRiga.destinatari:
+        return Padding(
+          padding: EdgeInsets.only(
+            left: riga.giri > 1 ? AppSpacing.s12 : 0,
+            top: AppSpacing.s8,
+          ),
+          child: EtichettaPerChi(
+            labelPerChi(riga.destinatari!, atleti) ?? 'Tutti',
+          ),
+        );
       case TipoRiga.errore:
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
@@ -672,6 +726,11 @@ class _RigaAnteprima extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Solo quando la riga dice da sé per chi è ("Rossi: ..."):
+              // sotto una riga "per chi" lo dice già quella.
+              if (riga.destinatari case final d?
+                  when labelPerChi(d, atleti) != null)
+                EtichettaPerChi(labelPerChi(d, atleti)!),
               Text(
                 titolo,
                 style: AppTypography.corpoForte.copyWith(color: colori.testo),
@@ -745,6 +804,20 @@ void mostraAiutoScrittura(BuildContext context) {
         ),
         ('pinne palette  [pinne corte]', 'attrezzi'),
         ('"testo"', 'nota; anche le parole che non conosco finiscono qui'),
+        (
+          'Portieri  Movimento  Tutti',
+          'da soli su una riga: per chi sono le serie sotto, fino al '
+              'prossimo titolo',
+        ),
+        (
+          'Rossi, Bianchi',
+          'solo questi atleti del gruppo (con due Rossi: "Rossi M.")',
+        ),
+        ('Tutti tranne Rossi', 'tutti, ma non Rossi'),
+        (
+          "Portieri: 10' tiri  Rossi: 4x50 gambe",
+          'davanti a una serie: per chi è solo quella, anche in un "2x"',
+        ),
       ];
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(

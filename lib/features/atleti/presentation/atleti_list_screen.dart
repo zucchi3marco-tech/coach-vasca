@@ -411,6 +411,7 @@ class _AtletiList extends StatelessWidget {
             attenuata: !atleta.attivo,
             sotto:
                 !atleta.attivo ||
+                    atleta.portiere ||
                     atleta.visitaMedicaScaduta ||
                     atleta.visitaMedicaInScadenza
                 ? Wrap(
@@ -419,6 +420,9 @@ class _AtletiList extends StatelessWidget {
                     children: [
                       if (!atleta.attivo)
                         Pastiglia('Inattivo', colore: colori.testoSecondario),
+                      // Le serie "Portieri" sono per loro: si vede chi è.
+                      if (atleta.portiere)
+                        Pastiglia('Portiere', colore: colori.testoSecondario),
                       if (atleta.visitaMedicaScaduta)
                         Pastiglia('Visita scaduta', colore: colori.rosso)
                       else if (atleta.visitaMedicaInScadenza)

@@ -13,8 +13,12 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
+import '../../atleti/domain/abbina_atleta.dart';
+import '../../atleti/domain/atleta.dart';
 import '../data/serie_repository.dart';
 import '../domain/serie.dart';
+import 'per_chi_serie.dart';
 import 'serie_labels.dart';
 
 // "C" (zona storica prima dello split in C1/C2/C3) non e' piu' tra le
@@ -29,12 +33,17 @@ class SerieFormScreen extends ConsumerStatefulWidget {
     required this.allenamentoId,
     required this.ordineSuccessivo,
     this.serie,
+    this.atleti = const [],
     super.key,
   });
 
   final String allenamentoId;
   final int ordineSuccessivo;
   final Serie? serie;
+
+  /// Gli atleti del gruppo, per "solo alcuni" e "tutti tranne" (vedi
+  /// `atletiDellAllenamento`).
+  final List<Atleta> atleti;
 
   @override
   ConsumerState<SerieFormScreen> createState() => _SerieFormScreenState();
@@ -56,6 +65,14 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   late String _esecuzione;
   String? _zona;
   late bool _aTempo;
+
+  /// Per chi è: 'tutti' | 'portiere' | 'movimento' | 'solo' | 'tranne'.
+  late String _perChi;
+  late Set<String> _atletiScelti;
+
+  /// Il ruolo di una serie "Movimento tranne Rossi" scritta a testo: il
+  /// modulo mostra solo gli esclusi e lo lascia com'è.
+  String? _ruoloTranne;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -95,6 +112,14 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     _stile = s?.stile ?? 'libero';
     _esecuzione = s?.esecuzione ?? 'nuoto';
     _zona = s?.zona;
+    final d = s?.destinatari ?? Destinatari.tutti;
+    _perChi = d.soloAtleti.isNotEmpty
+        ? 'solo'
+        : d.tranneAtleti.isNotEmpty
+        ? 'tranne'
+        : (d.ruolo ?? 'tutti');
+    _atletiScelti = {...d.soloAtleti, ...d.tranneAtleti};
+    _ruoloTranne = d.tranneAtleti.isNotEmpty ? d.ruolo : null;
   }
 
   @override
@@ -112,6 +137,10 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if ((_perChi == 'solo' || _perChi == 'tranne') && _atletiScelti.isEmpty) {
+      setState(() => _errorMessage = 'Scegli almeno un atleta in "Per chi".');
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -153,6 +182,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           ripartenzaS: ripartenzaS,
           attrezzatura: attrezzatura.isEmpty ? null : attrezzatura,
           note: note.isEmpty ? null : note,
+          destinatari: _destinatari,
         );
       } else {
         await repository.createSerie(
@@ -170,6 +200,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           ripartenzaS: ripartenzaS,
           attrezzatura: attrezzatura.isEmpty ? null : attrezzatura,
           note: note.isEmpty ? null : note,
+          destinatari: _destinatari,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -180,6 +211,72 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  Destinatari get _destinatari => switch (_perChi) {
+    'portiere' => Destinatari.portieri,
+    'movimento' => Destinatari.movimento,
+    'solo' => Destinatari(soloAtleti: _atletiScelti.toList()),
+    'tranne' => Destinatari(
+      ruolo: _ruoloTranne,
+      tranneAtleti: _atletiScelti.toList(),
+    ),
+    _ => Destinatari.tutti,
+  };
+
+  String get _riassuntoPerChi =>
+      labelPerChi(_destinatari, widget.atleti) ?? 'Tutto il gruppo';
+
+  /// Per chi è la serie: si tocca di rado, quindi chiuso con il riassunto
+  /// (aperto se la serie è già per qualcuno in particolare).
+  Widget _gruppoPerChi(BuildContext context) {
+    final pallanuoto =
+        widget.atleti.any((a) => a.sport == 'pallanuoto') ||
+        _perChi == 'portiere' ||
+        _perChi == 'movimento';
+    final scelte = [
+      ('tutti', 'Tutto il gruppo'),
+      if (pallanuoto) ('portiere', 'Solo i portieri'),
+      if (pallanuoto) ('movimento', 'Solo i giocatori di movimento'),
+      ('solo', 'Solo alcuni atleti'),
+      ('tranne', 'Tutti tranne alcuni'),
+    ];
+    final conAtleti = _perChi == 'solo' || _perChi == 'tranne';
+    return FormGroupComprimibile(
+      titolo: 'Per chi',
+      riassunto: _riassuntoPerChi,
+      inizialmenteAperto: _perChi != 'tutti',
+      campi: [
+        AppSelect<String>(
+          etichetta: 'Chi la fa',
+          value: _perChi,
+          items: [
+            for (final (valore, etichetta) in scelte)
+              DropdownMenuItem(value: valore, child: Text(etichetta)),
+          ],
+          onChanged: (value) => setState(() => _perChi = value ?? 'tutti'),
+        ),
+        if (conAtleti)
+          Wrap(
+            spacing: AppSpacing.s8,
+            runSpacing: AppSpacing.s8,
+            children: [
+              for (final a in widget.atleti)
+                TonalChip(
+                  etichetta: nomeBreve(a, widget.atleti),
+                  selezionato: _atletiScelti.contains(a.id),
+                  onSelezionato: (scelto) => setState(() {
+                    if (scelto) {
+                      _atletiScelti.add(a.id);
+                    } else {
+                      _atletiScelti.remove(a.id);
+                    }
+                  }),
+                ),
+            ],
+          ),
+      ],
+    );
   }
 
   Future<void> _elimina() async {
@@ -319,6 +416,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
                 ),
               ],
             ),
+            _gruppoPerChi(context),
             FormGroup(
               titolo: 'Volume',
               campi: [

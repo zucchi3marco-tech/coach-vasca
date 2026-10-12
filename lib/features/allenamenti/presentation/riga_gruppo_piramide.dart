@@ -7,9 +7,11 @@ import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
 import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
+import '../domain/volume_allenamento.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_serie.dart' show AzioneSerie;
 import 'nota_serie.dart';
+import 'per_chi_serie.dart';
 import 'serie_labels.dart';
 
 /// Una piramide (es. 50-100-200-100-50, dalla barra rapida) o un "2x"
@@ -26,6 +28,7 @@ class RigaGruppoPiramide extends StatelessWidget {
     required this.primo,
     required this.ultimo,
     required this.onAzione,
+    this.perChi,
     super.key,
   });
 
@@ -34,6 +37,11 @@ class RigaGruppoPiramide extends StatelessWidget {
   final bool primo;
   final bool ultimo;
   final ValueChanged<AzioneSerie> onAzione;
+
+  /// Il nome di chi fa una serie ("Portieri", "Rossi"), null se è di
+  /// tutto il gruppo: sopra il titolo se il gruppo è per le stesse
+  /// persone, davanti a ogni pezzo se no.
+  final String? Function(Destinatari d)? perChi;
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +52,20 @@ class RigaGruppoPiramide extends StatelessWidget {
       rispetto: colori.linea,
     );
 
-    final titolo = titoloGruppo(gruppo);
+    final uniforme = gruppo.every((s) => s.destinatari == prima.destinatari);
+    final titolo = titoloGruppo(
+      gruppo,
+      perChi: perChi == null ? null : (s) => perChi!(s.destinatari),
+    );
+    final perTutti = uniforme ? perChi?.call(prima.destinatari) : null;
     final piramide = strutturaPiramide(gruppo) != null;
 
-    final metriTotali = gruppo.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
+    // Con serie per persone diverse, i metri del gruppo (un giocatore di
+    // movimento): come nella testata.
+    final metriTotali = (uniforme ? gruppo : serieDelGruppo(gruppo)).fold<int>(
+      0,
+      (t, s) => t + s.distanzaTotaleM,
+    );
 
     // Il recupero più frequente nel gruppo è "tra una distanza e
     // l'altra"; un secondo valore distinto (se c'è, solo con più di un
@@ -104,6 +122,11 @@ class RigaGruppoPiramide extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (perTutti case final chi?)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: EtichettaPerChi(chi),
+                          ),
                         Text.rich(
                           TextSpan(
                             children: [

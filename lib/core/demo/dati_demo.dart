@@ -244,6 +244,12 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 'genitore.${cognome.toLowerCase().replaceAll(RegExp(r"[^a-z]"), "")}@esempio.it',
               ),
               telefonoGenitore: const Value('+39 333 123 4567'),
+              // Come in distinta: i due portieri della squadra.
+              ruolo: Value(
+                sport == 'pallanuoto' && (i == 0 || i == 10)
+                    ? 'portiere'
+                    : null,
+              ),
               consensoPrivacyFirmato: Value(i % 4 != 0),
               consensoPrivacyData: Value(
                 i % 4 != 0 ? DateTime(2026, 9, 1) : null,

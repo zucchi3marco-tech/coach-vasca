@@ -21,6 +21,8 @@ import '../../../widgets/nascondi_barra_club.dart';
 import '../../../widgets/pool_card.dart';
 import '../../../widgets/schermo_acceso.dart';
 import '../../../widgets/zone_chip.dart';
+import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/atleta.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../presenze/presentation/presenze_screen.dart';
@@ -29,7 +31,9 @@ import '../application/passo_riferimento_provider.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
+import '../domain/volume_allenamento.dart';
 import 'pannello_orologio.dart';
+import 'per_chi_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'serie_labels.dart';
 import 'nota_serie.dart';
@@ -163,6 +167,24 @@ class _SchedaBordoVascaScreenState
         ? allenamento.titolo
         : {for (final g in gruppi) g.id: g.nome}[allenamento.gruppoId];
 
+    // Per chi è ogni serie (l'atleta vede solo le sue: non serve).
+    final atleti = perAtleta
+        ? const <Atleta>[]
+        : atletiDellAllenamento(
+            ref
+                    .watch(
+                      atletiListProvider((
+                        clubId: allenamento.clubId,
+                        includeInactive: true,
+                      )),
+                    )
+                    .value ??
+                const [],
+            gruppoId: allenamento.gruppoId,
+            serie: serieAsync.value ?? const [],
+          );
+    String? perChi(Serie s) =>
+        perAtleta ? null : labelPerChi(s.destinatari, atleti);
     final telefono = Breakpoint.of(context) == Breakpoint.compatto;
     Widget content = AppScaffold(
       larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
@@ -208,6 +230,7 @@ class _SchedaBordoVascaScreenState
           return _unaAllaVolta
               ? _UnaAllaVolta(
                   serie: serie,
+                  perChi: perChi,
                   indice: indice,
                   onVai: (i) => _vai(i, serie.length),
                   onPresenze: perAtleta ? null : _apriPresenze,
@@ -244,6 +267,7 @@ class _SchedaBordoVascaScreenState
                 )
               : _TutteLeSerie(
                   serie: serie,
+                  perChi: perChi,
                   onApri: (i) => setState(() {
                     _corrente = i;
                     _unaAllaVolta = true;
@@ -313,6 +337,7 @@ String _testoSerie(Serie s) => [
 class _UnaAllaVolta extends StatelessWidget {
   const _UnaAllaVolta({
     required this.serie,
+    required this.perChi,
     required this.indice,
     required this.onVai,
     required this.onPresenze,
@@ -322,6 +347,7 @@ class _UnaAllaVolta extends StatelessWidget {
 
   final List<Serie> serie;
   final int indice;
+  final String? Function(Serie s) perChi;
   final ValueChanged<int> onVai;
   final VoidCallback? onPresenze;
 
@@ -336,10 +362,14 @@ class _UnaAllaVolta extends StatelessWidget {
     // essere segnate saltate (come le conta il carico).
     final fatti = [
       for (var i = 0; i < serie.length; i++)
-        if (serie[i].fatta || (i < indice && !serie[i].saltata)) serie[i],
+        if (serie[i].destinatari.delGruppo &&
+            (serie[i].fatta || (i < indice && !serie[i].saltata)))
+          serie[i],
     ].fold<int>(0, (t, x) => t + x.distanzaTotaleM);
     final saltate = serie.where((x) => x.saltata).length;
-    final totale = serie.fold<int>(0, (t, x) => t + x.distanzaTotaleM);
+    // I metri del gruppo, come nel dettaglio: non quelli dei soli portieri
+    // né delle varianti.
+    final totale = volumeDi(serieDelGruppo(serie)).metri;
     final prossima = indice + 1 < serie.length ? serie[indice + 1] : null;
 
     final avanti = _BottoneVasca(
@@ -371,7 +401,7 @@ class _UnaAllaVolta extends StatelessWidget {
         if (v < -200) onVai(indice + 1);
         if (v > 200) onVai(indice - 1);
       },
-      child: _SerieInGrande(serie: s, prossima: prossima),
+      child: _SerieInGrande(serie: s, prossima: prossima, perChi: perChi),
     );
     // La serie scorre se non ci sta; l'orologio resta sempre in vista ma
     // non si prende mai più di metà dello spazio: la serie non deve
@@ -614,10 +644,15 @@ class _Avanzamento extends StatelessWidget {
 }
 
 class _SerieInGrande extends StatelessWidget {
-  const _SerieInGrande({required this.serie, required this.prossima});
+  const _SerieInGrande({
+    required this.serie,
+    required this.prossima,
+    required this.perChi,
+  });
 
   final Serie serie;
   final Serie? prossima;
+  final String? Function(Serie s) perChi;
 
   @override
   Widget build(BuildContext context) {
@@ -650,6 +685,10 @@ class _SerieInGrande extends StatelessWidget {
                 ],
               ],
             ),
+            if (perChi(serie) case final chi?) ...[
+              const SizedBox(height: AppSpacing.s12),
+              EtichettaPerChi(chi, grande: true),
+            ],
             const SizedBox(height: AppSpacing.s12),
             Text(
               _testoSerie(serie),
@@ -707,7 +746,7 @@ class _SerieInGrande extends StatelessWidget {
             if (prossima != null) ...[
               const SizedBox(height: AppSpacing.s24),
               Text(
-                'Poi: ${_testoSerie(prossima!)}',
+                'Poi: ${[?perChi(prossima!), _testoSerie(prossima!)].join(': ')}',
                 style: AppTypography.corpo.copyWith(
                   color: colori.testoSecondario,
                 ),
@@ -723,9 +762,14 @@ class _SerieInGrande extends StatelessWidget {
 /// Tutte le serie una sotto l'altra; un tocco su una la apre nel modo
 /// "una alla volta".
 class _TutteLeSerie extends StatelessWidget {
-  const _TutteLeSerie({required this.serie, required this.onApri});
+  const _TutteLeSerie({
+    required this.serie,
+    required this.onApri,
+    required this.perChi,
+  });
 
   final List<Serie> serie;
+  final String? Function(Serie s) perChi;
   final ValueChanged<int> onApri;
 
   @override
@@ -779,6 +823,10 @@ class _TutteLeSerie extends StatelessWidget {
                       ],
                     ],
                   ),
+                  if (perChi(s) case final chi?) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    EtichettaPerChi(chi, grande: true),
+                  ],
                   const SizedBox(height: AppSpacing.s8),
                   Text(
                     _testoSerie(s),

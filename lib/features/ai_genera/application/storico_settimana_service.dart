@@ -1,5 +1,6 @@
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/serie.dart';
+import '../../allenamenti/domain/volume_allenamento.dart';
 
 /// Vero se, fra gli [allenamenti] con almeno una serie (in [seriePerId],
 /// indicizzate per `allenamentoId`), il più vecchio e il più recente
@@ -98,7 +99,11 @@ RiassuntoProgrammazione calcolaRiassunto(
     );
   }
 
-  final tutteSerie = [for (final a in conSerie) ...seriePerId[a.id]!];
+  // Come si allena il gruppo: senza il lavoro dei soli portieri e le
+  // varianti di alcuni atleti.
+  final tutteSerie = [
+    for (final a in conSerie) ...serieDelGruppo(seriePerId[a.id]!),
+  ];
   final volumeTotale = tutteSerie.fold(0, (t, s) => t + s.distanzaTotaleM);
 
   var minData = conSerie.first.data;

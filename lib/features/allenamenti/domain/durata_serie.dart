@@ -1,4 +1,5 @@
 import 'serie.dart';
+import 'volume_allenamento.dart';
 
 /// Passo medio della libreria di blocchi (s/100m, foglio Legenda
 /// dell'Excel): lo stesso che usa la Edge Function `genera-allenamento`
@@ -105,7 +106,7 @@ double secondiSerie(DatiSerie s, {PassoRiferimento? riferimento}) =>
     s.ripetute * secondiPerRipetuta(s, riferimento: riferimento) +
     (s.recuperoDopoS ?? 0);
 
-/// La durata stimata di un allenamento, in minuti interi.
+/// La durata stimata di [serie] una dopo l'altra, in minuti interi.
 int minutiStimati(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) =>
     (serie.fold<double>(
               0,
@@ -113,3 +114,16 @@ int minutiStimati(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) =>
             ) /
             60)
         .round();
+
+/// La durata stimata di una seduta: il lavoro dei portieri e quello dei
+/// giocatori di movimento vanno insieme, quindi dura quanto il più lungo
+/// dei due. Le serie di alcuni atleti (una variante) non la allungano.
+int minutiSeduta(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) {
+  final gruppo = minutiStimati(serieDelGruppo(serie), riferimento: riferimento);
+  if (!haSerieDiRuolo(serie)) return gruppo;
+  final portieri = minutiStimati(
+    serieDeiPortieri(serie),
+    riferimento: riferimento,
+  );
+  return portieri > gruppo ? portieri : gruppo;
+}

@@ -5,6 +5,11 @@ import '../allenamenti/presentation/serie_labels.dart';
 
 typedef AllenamentoConSerie = (Allenamento, List<Serie>);
 
+/// Per chi è una serie, con i nomi in [nomiAtleti] (id → nome); null per
+/// tutto il gruppo. Senza il nome di un atleta: "un atleta".
+String? testoPerChi(Destinatari d, Map<String, String> nomiAtleti) =>
+    etichettaDestinatari(d, (id) => nomiAtleti[id] ?? 'un atleta');
+
 const _intestazione = [
   'Data',
   'Allenamento',
@@ -22,6 +27,7 @@ const _intestazione = [
   'Ripartenza',
   'Attrezzatura',
   'Note',
+  'Per chi',
 ];
 
 String _formattaData(DateTime data) =>
@@ -43,6 +49,7 @@ List<String> _riga(
   Allenamento allenamento,
   Serie s,
   Map<String, String> nomiGruppi,
+  Map<String, String> nomiAtleti,
 ) {
   return [
     _formattaData(allenamento.data),
@@ -61,6 +68,7 @@ List<String> _riga(
     s.ripartenzaS != null ? formatPaceSeconds(s.ripartenzaS!) : '',
     s.attrezzatura ?? '',
     s.note ?? '',
+    testoPerChi(s.destinatari, nomiAtleti) ?? 'Tutti',
   ];
 }
 
@@ -70,11 +78,14 @@ List<String> _riga(
 String generaCsv(
   List<AllenamentoConSerie> allenamenti, {
   Map<String, String> nomiGruppi = const {},
+  Map<String, String> nomiAtleti = const {},
 }) {
   final righe = [_intestazione.map(_cella).join(',')];
   for (final (allenamento, serie) in allenamenti) {
     for (final s in serie) {
-      righe.add(_riga(allenamento, s, nomiGruppi).map(_cella).join(','));
+      righe.add(
+        _riga(allenamento, s, nomiGruppi, nomiAtleti).map(_cella).join(','),
+      );
     }
   }
   return righe.join('\r\n');

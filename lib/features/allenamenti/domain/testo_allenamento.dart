@@ -1,4 +1,6 @@
 import '../../../core/utils/pace_format.dart';
+import '../../atleti/domain/abbina_atleta.dart';
+import '../../atleti/domain/atleta.dart';
 import 'dettato_allenamento.dart';
 import 'riordino_serie.dart';
 import 'serie.dart';
@@ -42,6 +44,12 @@ import 'volume_allenamento.dart';
 ///   2'", "r30''") è il riposo dopo la serie sopra, prima della
 ///   successiva (`recuperoDopoS`): non è una serie e non conta nel
 ///   volume, solo nella durata.
+/// - Per chi sono le serie ([Destinatari]): una riga da sola "Portieri",
+///   "Movimento", "Rossi, Bianchi" (gli atleti del gruppo), "Tutti
+///   tranne Rossi" vale per le righe sotto, fino al prossimo titolo di
+///   blocco o a "Tutti"; davanti a una serie ("Portieri: 10' tiri",
+///   "Rossi: 4x50 gambe") vale solo per quella riga, anche dentro un
+///   "2x".
 ///
 /// [testoDaSerie] fa il contrario: riscrive le serie di un allenamento in
 /// questo formato, in modo che rilette diano le stesse serie.
@@ -63,6 +71,7 @@ class SerieScritta implements DatiSerie {
     this.note,
     this.piramideId,
     this.recuperoDopoS,
+    this.destinatari = Destinatari.tutti,
   });
 
   @override
@@ -98,6 +107,9 @@ class SerieScritta implements DatiSerie {
   @override
   final int? recuperoDopoS;
 
+  @override
+  final Destinatari destinatari;
+
   int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
 
   SerieScritta _conGruppo(String? gruppo) => _copia(gruppo: gruppo);
@@ -105,7 +117,14 @@ class SerieScritta implements DatiSerie {
   SerieScritta _conRecuperoDopo(int secondi) =>
       _copia(gruppo: piramideId, recuperoDopo: secondi);
 
-  SerieScritta _copia({String? gruppo, int? recuperoDopo}) => SerieScritta(
+  SerieScritta _conDestinatari(Destinatari perChi) =>
+      _copia(gruppo: piramideId, destinatari: perChi);
+
+  SerieScritta _copia({
+    String? gruppo,
+    int? recuperoDopo,
+    Destinatari? destinatari,
+  }) => SerieScritta(
     blocco: blocco,
     ripetute: ripetute,
     distanzaM: distanzaM,
@@ -120,10 +139,11 @@ class SerieScritta implements DatiSerie {
     note: note,
     piramideId: gruppo,
     recuperoDopoS: recuperoDopo ?? recuperoDopoS,
+    destinatari: destinatari ?? this.destinatari,
   );
 }
 
-enum TipoRiga { vuota, titolo, giri, serie, recupero, errore }
+enum TipoRiga { vuota, titolo, giri, serie, recupero, destinatari, errore }
 
 /// Come è stata capita una riga del testo, per mostrarlo accanto mentre
 /// si scrive.
@@ -137,6 +157,7 @@ class RigaScritta {
     this.giri = 1,
     this.blocco,
     this.recuperoS,
+    this.destinatari,
   });
 
   final String testo;
@@ -160,6 +181,11 @@ class RigaScritta {
 
   /// Per una riga di recupero fra le serie: quanto, in secondi.
   final int? recuperoS;
+
+  /// Per una riga "Portieri", "Rossi, Bianchi"...: per chi sono le serie
+  /// da qui in giù; per una serie che lo dice davanti ("Rossi: 4x50
+  /// gambe"), per chi è. Le serie lo hanno comunque in `destinatari`.
+  final Destinatari? destinatari;
 }
 
 class AllenamentoScritto {
@@ -170,7 +196,12 @@ class AllenamentoScritto {
   /// Tutte le serie, nell'ordine, con i "2x" già ripetuti.
   final List<SerieScritta> serie;
 
-  int get metri => serie.fold(0, (t, s) => t + s.distanzaTotaleM);
+  /// I metri del gruppo (un giocatore di movimento): senza il lavoro dei
+  /// soli portieri né quello di alcuni atleti.
+  int get metri => serie.fold(
+    0,
+    (t, s) => s.destinatari.delGruppo ? t + s.distanzaTotaleM : t,
+  );
 
   int get righeNonCapite =>
       righe.where((r) => r.tipo == TipoRiga.errore).length;
@@ -421,6 +452,196 @@ int? _leggiRecuperoDopo(String riga) {
   }
   if (secondi == null || secondi <= 0) return null;
   return secondi.round();
+}
+
+// ---------------------------------------------------------------------------
+// Per chi sono le serie
+
+/// Le parole che dicono un gruppo di atleti: il ruolo (null: tutti).
+const _gruppiDestinatari = <String, String?>{
+  'tutti': null,
+  'tutte': null,
+  'portieri': 'portiere',
+  'portiere': 'portiere',
+  'movimento': 'movimento',
+};
+
+/// Parole che si possono mettere davanti, e si saltano: "solo i
+/// portieri", "per i giocatori di movimento".
+const _davantiDestinatari = {
+  'solo',
+  'soltanto',
+  'per',
+  'i',
+  'il',
+  'gli',
+  'la',
+  'le',
+  'lo',
+  'giocatori',
+  'di',
+};
+
+/// "Tutti tranne Rossi", "senza Rossi".
+const _paroleTranne = {
+  'tranne',
+  'senza',
+  'eccetto',
+  'escluso',
+  'esclusa',
+  'esclusi',
+  'meno',
+};
+
+typedef _LetturaDestinatari = ({
+  Destinatari? destinatari,
+  String? problema,
+  String resto,
+});
+
+/// Se la riga [t] dice per chi sono le serie: per chi ([destinatari]) e
+/// cosa resta della riga dopo ([resto], una serie, o vuoto se la riga è
+/// solo questo). null se la riga non lo dice. [attuali] sono i
+/// destinatari delle righe sopra: "tranne Rossi" toglie Rossi da quelli.
+_LetturaDestinatari? _leggiDestinatari(
+  String t,
+  List<Atleta> atleti,
+  Destinatari attuali,
+) {
+  // "Rossi: 4x50 gambe", "Portieri: 10' tiri": prima dei due punti, senza
+  // cifre (in "@1:30" i due punti sono di un tempo).
+  final duePunti = RegExp(r'^([^\d:]+):\s*(.*)$').firstMatch(t);
+  var testa = duePunti?[1]?.trim() ?? t.trim();
+  var resto = duePunti?[2]?.trim() ?? '';
+  final conDuePunti = duePunti != null;
+
+  final parole = testa.toLowerCase().split(RegExp(r'\s+'));
+  var i = 0;
+  while (i < parole.length && _davantiDestinatari.contains(parole[i])) {
+    i++;
+  }
+  final primaParola = parole.isEmpty ? '' : parole.first;
+  final parolaGruppo = i < parole.length ? parole[i] : null;
+  final gruppo = _gruppiDestinatari.containsKey(parolaGruppo);
+
+  // "Portieri 10' tiri", senza i due punti: il gruppo e poi una serie.
+  if (!conDuePunti && gruppo && i + 1 < parole.length) {
+    final dopo = testa.split(RegExp(r'\s+')).sublist(i + 1).join(' ');
+    if (RegExp(r'^\d').hasMatch(dopo)) {
+      testa = testa.split(RegExp(r'\s+')).take(i + 1).join(' ');
+      resto = dopo;
+    }
+  }
+
+  // Un nome non ha cifre: senza un gruppo, una riga con dei numeri è una
+  // serie.
+  if (!gruppo && RegExp(r'\d').hasMatch(testa)) return null;
+  final perChiAvanti =
+      gruppo ||
+      const {'solo', 'soltanto', 'per'}.contains(primaParola) ||
+      _paroleTranne.contains(primaParola);
+
+  // Gli atleti dopo "tranne" o, senza gruppo, tutta la testa.
+  final pezzi = testa.split(RegExp(r'\s+'));
+  final tranneA = pezzi.indexWhere(
+    (p) => _paroleTranne.contains(p.toLowerCase()),
+  );
+  final String? ruolo;
+  final List<String> nomi;
+  final bool tranne;
+  if (gruppo) {
+    // Solo "tutti", "portieri"... e semmai "tranne ...": niente altro.
+    if (tranneA == -1 && pezzi.length != i + 1) return null;
+    if (tranneA != -1 && tranneA != i + 1) return null;
+    ruolo = _gruppiDestinatari[parolaGruppo];
+    tranne = tranneA != -1;
+    nomi = tranne ? _nomiDa(pezzi.sublist(tranneA + 1).join(' ')) : const [];
+    if (tranne && nomi.isEmpty) return null;
+  } else if (tranneA != -1) {
+    // "Tranne Rossi": i destinatari di sopra, senza Rossi.
+    if (pezzi
+        .take(tranneA)
+        .any((p) => !_davantiDestinatari.contains(p.toLowerCase()))) {
+      return null;
+    }
+    ruolo = attuali.soloAtleti.isEmpty ? attuali.ruolo : null;
+    tranne = true;
+    nomi = _nomiDa(pezzi.sublist(tranneA + 1).join(' '));
+    if (nomi.isEmpty) return null;
+  } else {
+    ruolo = null;
+    tranne = false;
+    nomi = _nomiDa(pezzi.skip(i).join(' '));
+    if (nomi.isEmpty) return null;
+  }
+
+  final trovati = <String>[];
+  final mancanti = <String>[];
+  for (final nome in nomi) {
+    final atleta = abbinaAtleta(nome, atleti);
+    if (atleta == null) {
+      mancanti.add(nome);
+    } else if (!trovati.contains(atleta.id)) {
+      trovati.add(atleta.id);
+    }
+  }
+  if (mancanti.isNotEmpty) {
+    // Dei nomi da soli che non sono atleti: la riga parla d'altro (sarà
+    // una serie, o non si capisce come prima).
+    if (!perChiAvanti && !tranne && trovati.isEmpty) return null;
+    return (
+      destinatari: null,
+      problema: mancanti.length == 1
+          ? 'Non trovo «${mancanti.single}» fra gli atleti del gruppo'
+          : 'Non trovo ${mancanti.map((n) => '«$n»').join(', ')} fra gli '
+                'atleti del gruppo',
+      resto: resto,
+    );
+  }
+  final Destinatari destinatari;
+  if (!gruppo && !tranne) {
+    destinatari = Destinatari(soloAtleti: trovati);
+  } else {
+    final esclusi = [
+      if (!gruppo && attuali.soloAtleti.isEmpty) ...attuali.tranneAtleti,
+      for (final id in trovati)
+        if (gruppo || !attuali.tranneAtleti.contains(id)) id,
+    ];
+    destinatari = Destinatari(ruolo: ruolo, tranneAtleti: esclusi);
+  }
+  return (destinatari: destinatari, problema: null, resto: resto);
+}
+
+/// "Rossi, Bianchi e Verdi" → i tre nomi.
+List<String> _nomiDa(String testo) => [
+  for (final n in testo.split(RegExp(r'\s*(?:,|/|\+|&|\s+e\s+|\s+ed\s+)\s*')))
+    if (n.trim().replaceAll(RegExp(r'[.;]+$'), '') case final pulito
+        when pulito.isNotEmpty)
+      pulito,
+];
+
+/// La riga che dice per chi sono le serie sotto: "Tutti", "Portieri",
+/// "Rossi, Bianchi", "Tutti tranne Rossi". null se nessuno degli atleti
+/// è fra quelli che si conoscono.
+String? _testaDestinatari(Destinatari d, List<Atleta> atleti) {
+  String? nomi(List<String> ids) {
+    final scritti = [
+      for (final id in ids)
+        if (atleti.where((a) => a.id == id).firstOrNull case final a?)
+          nomeBreve(a, atleti),
+    ];
+    return scritti.isEmpty ? null : scritti.join(', ');
+  }
+
+  if (d.soloAtleti.isNotEmpty) return nomi(d.soloAtleti);
+  final gruppo = switch (d.ruolo) {
+    'portiere' => 'Portieri',
+    'movimento' => 'Movimento',
+    _ => 'Tutti',
+  };
+  if (d.tranneAtleti.isEmpty) return gruppo;
+  final esclusi = nomi(d.tranneAtleti);
+  return esclusi == null ? gruppo : '$gruppo tranne $esclusi';
 }
 
 /// "5'", "5'30\"", "30\"", "10min" → secondi.
@@ -723,8 +944,9 @@ _LetturaSerie _leggiSerie(String riga, String blocco) {
 /// Ogni pezzo passa da [normalizzaDettato] (numeri in lettere, "8%",
 /// tempi e zone a parole). Un pezzo che da solo non è una serie e non
 /// comincia con un numero ("B1 recupero 20", detto dopo una pausa) si
-/// attacca alla serie della riga prima.
-String righeDaDettato(String dettato) {
+/// attacca alla serie della riga prima — ma non un "per chi" ("portieri",
+/// "Rossi e Bianchi", con gli [atleti] del gruppo): quello è una riga.
+String righeDaDettato(String dettato, {List<Atleta> atleti = const []}) {
   final righe = <String>[];
   final pezzi = dettato.split(
     RegExp(
@@ -742,7 +964,7 @@ String righeDaDettato(String dettato) {
     if (pezzo.isEmpty) continue;
     if (righe.isNotEmpty &&
         !RegExp(r'^\d').hasMatch(pezzo) &&
-        _continuaLaSerie(pezzo, righe.last)) {
+        _continuaLaSerie(pezzo, righe.last, atleti)) {
       righe.last = '${righe.last} $pezzo';
     } else {
       righe.add(pezzo);
@@ -754,37 +976,64 @@ String righeDaDettato(String dettato) {
 /// [pezzo] da solo non si capisce e [prima] è una serie: è il seguito.
 /// Anche "recupero 20" detto dopo una serie è il suo recupero fra le
 /// ripetute; per il recupero fra due serie si dice "pausa".
-bool _continuaLaSerie(String pezzo, String prima) {
-  if (interpretaAllenamento(prima).righe.single.tipo != TipoRiga.serie) {
+bool _continuaLaSerie(String pezzo, String prima, List<Atleta> atleti) {
+  if (interpretaAllenamento(prima, atleti: atleti).righe.single.tipo !=
+      TipoRiga.serie) {
     return false;
   }
   if (_leggiRecuperoDopo(pezzo) != null) {
     return RegExp(r'^rec', caseSensitive: false).hasMatch(pezzo.trim());
   }
-  return interpretaAllenamento(pezzo).righe.single.tipo == TipoRiga.errore;
+  return interpretaAllenamento(pezzo, atleti: atleti).righe.single.tipo ==
+      TipoRiga.errore;
 }
 
 /// Interpreta una riga sola, come quella del pannello "Aggiungi serie":
 /// le sue serie (più d'una per una piramide, con lo stesso `piramideId`
-/// segnaposto) o `null` se non c'è una serie da leggere.
-List<SerieScritta>? leggiRigaSerie(String riga, {required String blocco}) {
-  final testo = riga.trim();
+/// segnaposto) o `null` se non c'è una serie da leggere. Anche con
+/// davanti per chi è ("Portieri: 10' tiri", "Rossi: 4x50 gambe", con gli
+/// [atleti] del gruppo).
+List<SerieScritta>? leggiRigaSerie(
+  String riga, {
+  required String blocco,
+  List<Atleta> atleti = const [],
+}) {
+  var testo = riga.trim();
   if (testo.isEmpty) return null;
+  var perChi = Destinatari.tutti;
+  final destinatari = _leggiDestinatari(testo, atleti, perChi);
+  if (destinatari != null) {
+    if (destinatari.problema != null || destinatari.resto.isEmpty) {
+      return null;
+    }
+    perChi = destinatari.destinatari!;
+    testo = destinatari.resto;
+  }
   final lettura = _leggiSerie(testo, blocco);
   if (lettura.problema != null) return null;
-  final serie = lettura.serie;
+  final serie = [
+    for (final s in lettura.serie)
+      perChi.perTutti ? s : s._conDestinatari(perChi),
+  ];
   return serie.length > 1 ? [for (final s in serie) s._conGruppo('g1')] : serie;
 }
 
-/// Interpreta tutto il testo di un allenamento, riga per riga.
+/// Interpreta tutto il testo di un allenamento, riga per riga. Gli
+/// [atleti] del gruppo servono a capire i nomi delle righe "per chi"
+/// ("Rossi, Bianchi", "Tutti tranne Rossi").
 AllenamentoScritto interpretaAllenamento(
   String testo, {
   String bloccoIniziale = 'principale',
+  List<Atleta> atleti = const [],
 }) {
   final righe = <RigaScritta>[];
   final serie = <SerieScritta>[];
   var blocco = bloccoIniziale;
   var gruppi = 0;
+
+  // Per chi sono le serie da qui in giù: fino al prossimo titolo di
+  // blocco o alla prossima riga "per chi".
+  var perChi = Destinatari.tutti;
 
   // Il "2x" in corso: la sua riga, le volte, le serie da ripetere.
   int? rigaGiro;
@@ -830,6 +1079,7 @@ AllenamentoScritto interpretaAllenamento(
     if (nuovoBlocco != null) {
       chiudiGiro();
       blocco = nuovoBlocco;
+      perChi = Destinatari.tutti;
       t = t.substring(titolo!.end).trim();
       if (t.isEmpty) {
         righe.add(
@@ -898,6 +1148,39 @@ AllenamentoScritto interpretaAllenamento(
       continue;
     }
 
+    // "Portieri", "Rossi, Bianchi": per chi sono le serie sotto (non
+    // chiude un "2x"); "Portieri: 10' tiri": per chi è questa.
+    var perQuesta = perChi;
+    final destinatari = _leggiDestinatari(t, atleti, perChi);
+    if (destinatari != null) {
+      if (destinatari.problema != null) {
+        righe.add(
+          RigaScritta(
+            testo: grezza,
+            tipo: TipoRiga.errore,
+            problema: destinatari.problema,
+            blocco: blocco,
+          ),
+        );
+        continue;
+      }
+      if (destinatari.resto.isEmpty) {
+        perChi = destinatari.destinatari!;
+        righe.add(
+          RigaScritta(
+            testo: grezza,
+            tipo: TipoRiga.destinatari,
+            destinatari: perChi,
+            giri: rigaGiro == null ? 1 : volte,
+            blocco: blocco,
+          ),
+        );
+        continue;
+      }
+      perQuesta = destinatari.destinatari!;
+      t = destinatari.resto;
+    }
+
     final lettura = _leggiSerie(t, blocco);
     if (lettura.problema != null) {
       righe.add(
@@ -911,23 +1194,28 @@ AllenamentoScritto interpretaAllenamento(
       );
       continue;
     }
+    final lette = perQuesta.perTutti
+        ? lettura.serie
+        : [for (final s in lettura.serie) s._conDestinatari(perQuesta)];
     righe.add(
       RigaScritta(
         testo: grezza,
         tipo: TipoRiga.serie,
-        serie: lettura.serie,
+        serie: lette,
         paroleIgnote: lettura.ignote,
         giri: rigaGiro == null ? 1 : volte,
         blocco: blocco,
+        // Solo se la riga lo dice da sé ("Rossi: 4x50 gambe").
+        destinatari: destinatari == null ? null : perQuesta,
       ),
     );
     if (rigaGiro != null) {
-      corpo.addAll(lettura.serie);
-    } else if (lettura.serie.length > 1) {
+      corpo.addAll(lette);
+    } else if (lette.length > 1) {
       final gruppo = 'g${++gruppi}';
-      serie.addAll([for (final s in lettura.serie) s._conGruppo(gruppo)]);
+      serie.addAll([for (final s in lette) s._conGruppo(gruppo)]);
     } else {
-      serie.addAll(lettura.serie);
+      serie.addAll(lette);
     }
   }
   chiudiGiro();
@@ -950,7 +1238,8 @@ bool _stessiAttributi(DatiSerie a, DatiSerie b) =>
     a.passoObiettivoS == b.passoObiettivoS &&
     a.ripartenzaS == b.ripartenzaS &&
     _pieno(a.attrezzatura) == _pieno(b.attrezzatura) &&
-    _pieno(a.note) == _pieno(b.note);
+    _pieno(a.note) == _pieno(b.note) &&
+    a.destinatari == b.destinatari;
 
 /// Due serie con gli stessi dati (non guarda id, ordine e gruppo).
 bool stessaSerie(DatiSerie a, DatiSerie b) =>
@@ -1092,40 +1381,84 @@ String? _rigaPiramide(List<DatiSerie> gruppo) {
 }
 
 /// Le serie di un allenamento (nell'ordine) scritte come testo, con un
-/// titolo per ogni blocco: rilette con [interpretaAllenamento] danno le
-/// stesse serie, gruppi compresi.
-String testoDaSerie(List<DatiSerie> serie) {
+/// titolo per ogni blocco: rilette con [interpretaAllenamento] (con gli
+/// stessi [atleti]) danno le stesse serie, gruppi compresi.
+///
+/// Per chi sono: una riga "Portieri", "Rossi, Bianchi"... prima di un
+/// gruppo di serie per altri; dentro un "2x" con serie per persone
+/// diverse, davanti alla riga ("Rossi: 4x50 gambe"). Una serie solo per
+/// atleti che non ci sono più fra gli [atleti] non si scrive.
+String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
   final righe = <String>[];
   String? blocco;
+  var perChi = Destinatari.tutti;
+  // Dopo una riga "per chi", come dopo un titolo, un "2x" non vuole la
+  // riga vuota prima.
+  var dopoIntestazione = false;
+
+  void aggiungi(String riga) {
+    righe.add(riga);
+    dopoIntestazione = false;
+  }
+
   for (final gruppo in raggruppaPerPiramide(serie)) {
     final primo = gruppo.first;
     if (primo.blocco != blocco) {
       if (righe.isNotEmpty && righe.last.isNotEmpty) righe.add('');
-      righe.add(_nomiBlocco[primo.blocco] ?? primo.blocco);
+      aggiungi(_nomiBlocco[primo.blocco] ?? primo.blocco);
+      dopoIntestazione = true;
       blocco = primo.blocco;
+      perChi = Destinatari.tutti;
     }
+    final uniforme = gruppo.every((s) => s.destinatari == primo.destinatari);
+    // Davanti alla riga, quando nel "2x" le serie sono per persone
+    // diverse; null quando la riga è per chi dice la riga "per chi".
+    String? davanti(DatiSerie s) {
+      if (uniforme || s.destinatari == perChi) return null;
+      return _testaDestinatari(s.destinatari, atleti);
+    }
+
+    bool dimenticata(DatiSerie s) =>
+        s.destinatari.soloAtleti.isNotEmpty &&
+        _testaDestinatari(s.destinatari, atleti) == null;
+
+    if (gruppo.every(dimenticata)) continue;
+    if (uniforme && primo.destinatari != perChi) {
+      final testa = _testaDestinatari(primo.destinatari, atleti)!;
+      if (righe.isNotEmpty && righe.last.isNotEmpty && !dopoIntestazione) {
+        righe.add('');
+      }
+      aggiungi(testa);
+      dopoIntestazione = true;
+      perChi = primo.destinatari;
+    }
+    String riga(DatiSerie s, String testo) =>
+        davanti(s) == null ? testo : '${davanti(s)}: $testo';
+
     final ultimo = gruppo.last.recuperoDopoS;
     if (gruppo.length == 1) {
-      righe.add(_rigaSerie(primo));
-      if (ultimo != null) righe.add(_rigaRecuperoDopo(ultimo));
+      aggiungi(riga(primo, _rigaSerie(primo)));
+      if (ultimo != null) aggiungi(_rigaRecuperoDopo(ultimo));
       continue;
     }
     final piramide = _rigaPiramide(gruppo);
     if (piramide != null) {
-      righe.add(piramide);
-      if (ultimo != null) righe.add(_rigaRecuperoDopo(ultimo));
+      aggiungi(riga(primo, piramide));
+      if (ultimo != null) aggiungi(_rigaRecuperoDopo(ultimo));
       continue;
     }
     final periodo = periodoGruppo(gruppo);
     if (righe.isNotEmpty &&
         righe.last.isNotEmpty &&
+        !dopoIntestazione &&
         !_nomiBlocco.containsValue(righe.last)) {
       righe.add('');
     }
-    righe.add('${gruppo.length ~/ periodo}x');
+    aggiungi('${gruppo.length ~/ periodo}x');
     for (final s in gruppo.take(periodo)) {
-      righe.add(_rigaSerie(s));
-      if (s.recuperoDopoS case final r?) righe.add(_rigaRecuperoDopo(r));
+      if (dimenticata(s)) continue;
+      aggiungi(riga(s, _rigaSerie(s)));
+      if (s.recuperoDopoS case final r?) aggiungi(_rigaRecuperoDopo(r));
     }
     righe.add('');
     // Un recupero diverso dopo l'ultimo giro: fuori dal gruppo, sotto la
@@ -1148,7 +1481,8 @@ typedef VolumeBlocco = ({VolumeAllenamento blocco, VolumeAllenamento totale});
 /// anche con una serie sulla stessa riga): accanto a "Riscaldamento",
 /// "Principale"... nel compilatore. Le serie di un "2x" contano tante
 /// volte quanti i giri. Le serie prima del primo titolo non hanno una
-/// riga a cui stare accanto: contano solo nel totale.
+/// riga a cui stare accanto: contano solo nel totale. È il volume del
+/// gruppo (un giocatore di movimento, [Destinatari.delGruppo]).
 Map<int, VolumeBlocco> volumiPerBlocco(AllenamentoScritto scritto) {
   final volumi = <int, VolumeBlocco>{};
   var totale = VolumeAllenamento.zero;
@@ -1174,11 +1508,10 @@ Map<int, VolumeBlocco> volumiPerBlocco(AllenamentoScritto scritto) {
       delBlocco = VolumeAllenamento.zero;
     }
     if (riga.tipo != TipoRiga.serie) continue;
+    final delGruppo = volumeDi(serieDelGruppo(riga.serie));
     final volume = VolumeAllenamento(
-      metri: riga.giri * riga.serie.fold(0, (t, s) => t + s.distanzaTotaleM),
-      secondi:
-          riga.giri *
-          riga.serie.fold(0, (t, s) => t + s.ripetute * (s.durataS ?? 0)),
+      metri: riga.giri * delGruppo.metri,
+      secondi: riga.giri * delGruppo.secondi,
     );
     delBlocco += volume;
     totale += volume;

@@ -10,6 +10,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../allenamenti/domain/destinatari.dart' show ruoliAtleta;
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
@@ -41,6 +42,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   DateTime? _dataNascita;
   DateTime? _visitaMedicaScadenza;
   String? _sesso;
+  String? _ruolo;
   late String _sport;
   late bool _consensoPrivacy;
 
@@ -79,6 +81,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
       text: _formattaData(_visitaMedicaScadenza),
     );
     _sesso = atleta?.sesso;
+    _ruolo = atleta?.ruolo;
     // Lo sport di un atleta nuovo e' quello del club: prima partiva sempre
     // da "nuoto", anche in un club di pallanuoto.
     final sportClub = ref.read(currentClubProvider).value?.sport;
@@ -195,6 +198,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
           visitaMedicaScadenza: _visitaMedicaScadenza,
+          // Toccato il campo resta quello scelto; altrimenti com'era.
+          ruolo: _sport == 'pallanuoto' ? _ruolo : widget.atleta!.ruolo,
         );
       } else {
         await repository.createAtleta(
@@ -211,6 +216,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
           visitaMedicaScadenza: _visitaMedicaScadenza,
+          ruolo: _sport == 'pallanuoto' ? _ruolo : null,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -342,6 +348,18 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                   AppTextField(
                     etichetta: 'N. tessera FIN (facoltativo)',
                     controller: _numeroTesseraFinController,
+                  ),
+                // Nelle sedute le serie possono essere solo per i portieri
+                // o solo per i giocatori di movimento.
+                if (_sport == 'pallanuoto')
+                  AppSelect<String>(
+                    etichetta: 'Ruolo',
+                    value: _ruolo ?? 'movimento',
+                    items: [
+                      for (final (valore, etichetta) in ruoliAtleta)
+                        DropdownMenuItem(value: valore, child: Text(etichetta)),
+                    ],
+                    onChanged: (value) => setState(() => _ruolo = value),
                   ),
                 AppSelect<String?>(
                   etichetta: 'Gruppo (facoltativo)',

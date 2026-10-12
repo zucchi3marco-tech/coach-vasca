@@ -42,6 +42,11 @@ class SerieRepository {
       piramideId: row.piramideId,
       esito: row.esito,
       recuperoDopoS: row.recuperoDopoS,
+      destinatari: Destinatari.daCampi(
+        perRuolo: row.perRuolo,
+        soloAtleti: row.soloAtletiJson,
+        tranneAtleti: row.tranneAtletiJson,
+      ),
     );
   }
 
@@ -66,6 +71,7 @@ class SerieRepository {
       piramideId: map['piramide_id'] as String?,
       esito: map['esito'] as String?,
       recuperoDopoS: map['recupero_dopo_s'] as int?,
+      destinatari: Destinatari.fromMap(map),
     );
   }
 
@@ -90,6 +96,10 @@ class SerieRepository {
       piramideId: Value(map['piramide_id'] as String?),
       esito: Value(map['esito'] as String?),
       recuperoDopoS: Value(map['recupero_dopo_s'] as int?),
+      // Dal database arrivano liste di id: nella copia locale, JSON.
+      perRuolo: Value(map['per_ruolo'] as String?),
+      soloAtletiJson: Value(Destinatari.fromMap(map).soloAtletiJson),
+      tranneAtletiJson: Value(Destinatari.fromMap(map).tranneAtletiJson),
     );
   }
 
@@ -262,6 +272,7 @@ class SerieRepository {
     String? note,
     String? piramideId,
     int? recuperoDopoS,
+    Destinatari destinatari = Destinatari.tutti,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -282,6 +293,7 @@ class SerieRepository {
       'note': note,
       'piramide_id': piramideId,
       'recupero_dopo_s': recuperoDopoS,
+      ...destinatari.campi,
     };
     try {
       final row = await _client.from('serie').insert(payload).select().single();
@@ -335,6 +347,10 @@ class SerieRepository {
     /// Come [piramide]: senza, il recupero dopo la serie resta com'è (il
     /// modulo della singola serie non lo tocca).
     ({int? secondi})? recuperoDopo,
+
+    /// Senza, la serie resta per chi era (spostarla o cambiarle blocco
+    /// non lo cambia).
+    Destinatari? destinatari,
   }) async {
     final payload = {
       'ordine': ordine,
@@ -352,6 +368,7 @@ class SerieRepository {
       'note': note,
       if (piramide != null) 'piramide_id': piramide.id,
       if (recuperoDopo != null) 'recupero_dopo_s': recuperoDopo.secondi,
+      ...?destinatari?.campi,
     };
     try {
       final row = await _client
@@ -387,6 +404,15 @@ class SerieRepository {
           recuperoDopoS: recuperoDopo == null
               ? const Value.absent()
               : Value(recuperoDopo.secondi),
+          perRuolo: destinatari == null
+              ? const Value.absent()
+              : Value(destinatari.campi['per_ruolo'] as String?),
+          soloAtletiJson: destinatari == null
+              ? const Value.absent()
+              : Value(destinatari.soloAtletiJson),
+          tranneAtletiJson: destinatari == null
+              ? const Value.absent()
+              : Value(destinatari.tranneAtletiJson),
         ),
       );
       await enqueueOperation(

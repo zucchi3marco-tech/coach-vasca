@@ -547,6 +547,15 @@ class $AtletiTableTable extends AtletiTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _ruoloMeta = const VerificationMeta('ruolo');
+  @override
+  late final GeneratedColumn<String> ruolo = GeneratedColumn<String>(
+    'ruolo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -566,6 +575,7 @@ class $AtletiTableTable extends AtletiTable
     numeroTesseraFin,
     userId,
     visitaMedicaScadenza,
+    ruolo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -711,6 +721,12 @@ class $AtletiTableTable extends AtletiTable
         ),
       );
     }
+    if (data.containsKey('ruolo')) {
+      context.handle(
+        _ruoloMeta,
+        ruolo.isAcceptableOrUnknown(data['ruolo']!, _ruoloMeta),
+      );
+    }
     return context;
   }
 
@@ -788,6 +804,10 @@ class $AtletiTableTable extends AtletiTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}visita_medica_scadenza'],
       ),
+      ruolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ruolo'],
+      ),
     );
   }
 
@@ -815,6 +835,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
   final String? numeroTesseraFin;
   final String? userId;
   final DateTime? visitaMedicaScadenza;
+
+  /// Pallanuoto: 'portiere' | 'movimento'; null se non indicato (conta
+  /// come movimento).
+  final String? ruolo;
   const AtletiTableData({
     required this.id,
     required this.clubId,
@@ -833,6 +857,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     this.numeroTesseraFin,
     this.userId,
     this.visitaMedicaScadenza,
+    this.ruolo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -872,6 +897,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     if (!nullToAbsent || visitaMedicaScadenza != null) {
       map['visita_medica_scadenza'] = Variable<DateTime>(visitaMedicaScadenza);
     }
+    if (!nullToAbsent || ruolo != null) {
+      map['ruolo'] = Variable<String>(ruolo);
+    }
     return map;
   }
 
@@ -910,6 +938,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       visitaMedicaScadenza: visitaMedicaScadenza == null && nullToAbsent
           ? const Value.absent()
           : Value(visitaMedicaScadenza),
+      ruolo: ruolo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ruolo),
     );
   }
 
@@ -942,6 +973,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       visitaMedicaScadenza: serializer.fromJson<DateTime?>(
         json['visitaMedicaScadenza'],
       ),
+      ruolo: serializer.fromJson<String?>(json['ruolo']),
     );
   }
   @override
@@ -967,6 +999,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       'visitaMedicaScadenza': serializer.toJson<DateTime?>(
         visitaMedicaScadenza,
       ),
+      'ruolo': serializer.toJson<String?>(ruolo),
     };
   }
 
@@ -988,6 +1021,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     Value<String?> numeroTesseraFin = const Value.absent(),
     Value<String?> userId = const Value.absent(),
     Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
+    Value<String?> ruolo = const Value.absent(),
   }) => AtletiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -1017,6 +1051,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     visitaMedicaScadenza: visitaMedicaScadenza.present
         ? visitaMedicaScadenza.value
         : this.visitaMedicaScadenza,
+    ruolo: ruolo.present ? ruolo.value : this.ruolo,
   );
   AtletiTableData copyWithCompanion(AtletiTableCompanion data) {
     return AtletiTableData(
@@ -1051,6 +1086,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       visitaMedicaScadenza: data.visitaMedicaScadenza.present
           ? data.visitaMedicaScadenza.value
           : this.visitaMedicaScadenza,
+      ruolo: data.ruolo.present ? data.ruolo.value : this.ruolo,
     );
   }
 
@@ -1073,7 +1109,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ..write('attivo: $attivo, ')
           ..write('numeroTesseraFin: $numeroTesseraFin, ')
           ..write('userId: $userId, ')
-          ..write('visitaMedicaScadenza: $visitaMedicaScadenza')
+          ..write('visitaMedicaScadenza: $visitaMedicaScadenza, ')
+          ..write('ruolo: $ruolo')
           ..write(')'))
         .toString();
   }
@@ -1097,6 +1134,7 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     numeroTesseraFin,
     userId,
     visitaMedicaScadenza,
+    ruolo,
   );
   @override
   bool operator ==(Object other) =>
@@ -1118,7 +1156,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           other.attivo == this.attivo &&
           other.numeroTesseraFin == this.numeroTesseraFin &&
           other.userId == this.userId &&
-          other.visitaMedicaScadenza == this.visitaMedicaScadenza);
+          other.visitaMedicaScadenza == this.visitaMedicaScadenza &&
+          other.ruolo == this.ruolo);
 }
 
 class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
@@ -1139,6 +1178,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
   final Value<String?> numeroTesseraFin;
   final Value<String?> userId;
   final Value<DateTime?> visitaMedicaScadenza;
+  final Value<String?> ruolo;
   final Value<int> rowid;
   const AtletiTableCompanion({
     this.id = const Value.absent(),
@@ -1158,6 +1198,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.numeroTesseraFin = const Value.absent(),
     this.userId = const Value.absent(),
     this.visitaMedicaScadenza = const Value.absent(),
+    this.ruolo = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AtletiTableCompanion.insert({
@@ -1178,6 +1219,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.numeroTesseraFin = const Value.absent(),
     this.userId = const Value.absent(),
     this.visitaMedicaScadenza = const Value.absent(),
+    this.ruolo = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -1203,6 +1245,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Expression<String>? numeroTesseraFin,
     Expression<String>? userId,
     Expression<DateTime>? visitaMedicaScadenza,
+    Expression<String>? ruolo,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1226,6 +1269,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       if (userId != null) 'user_id': userId,
       if (visitaMedicaScadenza != null)
         'visita_medica_scadenza': visitaMedicaScadenza,
+      if (ruolo != null) 'ruolo': ruolo,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1248,6 +1292,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Value<String?>? numeroTesseraFin,
     Value<String?>? userId,
     Value<DateTime?>? visitaMedicaScadenza,
+    Value<String?>? ruolo,
     Value<int>? rowid,
   }) {
     return AtletiTableCompanion(
@@ -1269,6 +1314,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       numeroTesseraFin: numeroTesseraFin ?? this.numeroTesseraFin,
       userId: userId ?? this.userId,
       visitaMedicaScadenza: visitaMedicaScadenza ?? this.visitaMedicaScadenza,
+      ruolo: ruolo ?? this.ruolo,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1333,6 +1379,9 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
         visitaMedicaScadenza.value,
       );
     }
+    if (ruolo.present) {
+      map['ruolo'] = Variable<String>(ruolo.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1359,6 +1408,7 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
           ..write('numeroTesseraFin: $numeroTesseraFin, ')
           ..write('userId: $userId, ')
           ..write('visitaMedicaScadenza: $visitaMedicaScadenza, ')
+          ..write('ruolo: $ruolo, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5196,6 +5246,39 @@ class $SerieTableTable extends SerieTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _perRuoloMeta = const VerificationMeta(
+    'perRuolo',
+  );
+  @override
+  late final GeneratedColumn<String> perRuolo = GeneratedColumn<String>(
+    'per_ruolo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _soloAtletiJsonMeta = const VerificationMeta(
+    'soloAtletiJson',
+  );
+  @override
+  late final GeneratedColumn<String> soloAtletiJson = GeneratedColumn<String>(
+    'solo_atleti_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tranneAtletiJsonMeta = const VerificationMeta(
+    'tranneAtletiJson',
+  );
+  @override
+  late final GeneratedColumn<String> tranneAtletiJson = GeneratedColumn<String>(
+    'tranne_atleti_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5217,6 +5300,9 @@ class $SerieTableTable extends SerieTable
     piramideId,
     esito,
     recuperoDopoS,
+    perRuolo,
+    soloAtletiJson,
+    tranneAtletiJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5372,6 +5458,30 @@ class $SerieTableTable extends SerieTable
         ),
       );
     }
+    if (data.containsKey('per_ruolo')) {
+      context.handle(
+        _perRuoloMeta,
+        perRuolo.isAcceptableOrUnknown(data['per_ruolo']!, _perRuoloMeta),
+      );
+    }
+    if (data.containsKey('solo_atleti_json')) {
+      context.handle(
+        _soloAtletiJsonMeta,
+        soloAtletiJson.isAcceptableOrUnknown(
+          data['solo_atleti_json']!,
+          _soloAtletiJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tranne_atleti_json')) {
+      context.handle(
+        _tranneAtletiJsonMeta,
+        tranneAtletiJson.isAcceptableOrUnknown(
+          data['tranne_atleti_json']!,
+          _tranneAtletiJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5457,6 +5567,18 @@ class $SerieTableTable extends SerieTable
         DriftSqlType.int,
         data['${effectivePrefix}recupero_dopo_s'],
       ),
+      perRuolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}per_ruolo'],
+      ),
+      soloAtletiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}solo_atleti_json'],
+      ),
+      tranneAtletiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tranne_atleti_json'],
+      ),
     );
   }
 
@@ -5499,6 +5621,13 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
 
   /// Recupero dopo la serie, prima della successiva (secondi).
   final int? recuperoDopoS;
+
+  /// Per chi è la serie (vedi `Destinatari`): un ruolo ('portiere' |
+  /// 'movimento'), solo alcuni atleti o tutti tranne alcuni (id in JSON);
+  /// tutto null per una serie di tutto il gruppo.
+  final String? perRuolo;
+  final String? soloAtletiJson;
+  final String? tranneAtletiJson;
   const SerieTableData({
     required this.id,
     required this.allenamentoId,
@@ -5519,6 +5648,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     this.piramideId,
     this.esito,
     this.recuperoDopoS,
+    this.perRuolo,
+    this.soloAtletiJson,
+    this.tranneAtletiJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5564,6 +5696,15 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     if (!nullToAbsent || recuperoDopoS != null) {
       map['recupero_dopo_s'] = Variable<int>(recuperoDopoS);
     }
+    if (!nullToAbsent || perRuolo != null) {
+      map['per_ruolo'] = Variable<String>(perRuolo);
+    }
+    if (!nullToAbsent || soloAtletiJson != null) {
+      map['solo_atleti_json'] = Variable<String>(soloAtletiJson);
+    }
+    if (!nullToAbsent || tranneAtletiJson != null) {
+      map['tranne_atleti_json'] = Variable<String>(tranneAtletiJson);
+    }
     return map;
   }
 
@@ -5606,6 +5747,15 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       recuperoDopoS: recuperoDopoS == null && nullToAbsent
           ? const Value.absent()
           : Value(recuperoDopoS),
+      perRuolo: perRuolo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(perRuolo),
+      soloAtletiJson: soloAtletiJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(soloAtletiJson),
+      tranneAtletiJson: tranneAtletiJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tranneAtletiJson),
     );
   }
 
@@ -5634,6 +5784,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       piramideId: serializer.fromJson<String?>(json['piramideId']),
       esito: serializer.fromJson<String?>(json['esito']),
       recuperoDopoS: serializer.fromJson<int?>(json['recuperoDopoS']),
+      perRuolo: serializer.fromJson<String?>(json['perRuolo']),
+      soloAtletiJson: serializer.fromJson<String?>(json['soloAtletiJson']),
+      tranneAtletiJson: serializer.fromJson<String?>(json['tranneAtletiJson']),
     );
   }
   @override
@@ -5659,6 +5812,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       'piramideId': serializer.toJson<String?>(piramideId),
       'esito': serializer.toJson<String?>(esito),
       'recuperoDopoS': serializer.toJson<int?>(recuperoDopoS),
+      'perRuolo': serializer.toJson<String?>(perRuolo),
+      'soloAtletiJson': serializer.toJson<String?>(soloAtletiJson),
+      'tranneAtletiJson': serializer.toJson<String?>(tranneAtletiJson),
     };
   }
 
@@ -5682,6 +5838,9 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     Value<String?> piramideId = const Value.absent(),
     Value<String?> esito = const Value.absent(),
     Value<int?> recuperoDopoS = const Value.absent(),
+    Value<String?> perRuolo = const Value.absent(),
+    Value<String?> soloAtletiJson = const Value.absent(),
+    Value<String?> tranneAtletiJson = const Value.absent(),
   }) => SerieTableData(
     id: id ?? this.id,
     allenamentoId: allenamentoId ?? this.allenamentoId,
@@ -5706,6 +5865,13 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     recuperoDopoS: recuperoDopoS.present
         ? recuperoDopoS.value
         : this.recuperoDopoS,
+    perRuolo: perRuolo.present ? perRuolo.value : this.perRuolo,
+    soloAtletiJson: soloAtletiJson.present
+        ? soloAtletiJson.value
+        : this.soloAtletiJson,
+    tranneAtletiJson: tranneAtletiJson.present
+        ? tranneAtletiJson.value
+        : this.tranneAtletiJson,
   );
   SerieTableData copyWithCompanion(SerieTableCompanion data) {
     return SerieTableData(
@@ -5742,6 +5908,13 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
       recuperoDopoS: data.recuperoDopoS.present
           ? data.recuperoDopoS.value
           : this.recuperoDopoS,
+      perRuolo: data.perRuolo.present ? data.perRuolo.value : this.perRuolo,
+      soloAtletiJson: data.soloAtletiJson.present
+          ? data.soloAtletiJson.value
+          : this.soloAtletiJson,
+      tranneAtletiJson: data.tranneAtletiJson.present
+          ? data.tranneAtletiJson.value
+          : this.tranneAtletiJson,
     );
   }
 
@@ -5766,13 +5939,16 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           ..write('note: $note, ')
           ..write('piramideId: $piramideId, ')
           ..write('esito: $esito, ')
-          ..write('recuperoDopoS: $recuperoDopoS')
+          ..write('recuperoDopoS: $recuperoDopoS, ')
+          ..write('perRuolo: $perRuolo, ')
+          ..write('soloAtletiJson: $soloAtletiJson, ')
+          ..write('tranneAtletiJson: $tranneAtletiJson')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     allenamentoId,
     clubId,
@@ -5792,7 +5968,10 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
     piramideId,
     esito,
     recuperoDopoS,
-  );
+    perRuolo,
+    soloAtletiJson,
+    tranneAtletiJson,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5815,7 +5994,10 @@ class SerieTableData extends DataClass implements Insertable<SerieTableData> {
           other.note == this.note &&
           other.piramideId == this.piramideId &&
           other.esito == this.esito &&
-          other.recuperoDopoS == this.recuperoDopoS);
+          other.recuperoDopoS == this.recuperoDopoS &&
+          other.perRuolo == this.perRuolo &&
+          other.soloAtletiJson == this.soloAtletiJson &&
+          other.tranneAtletiJson == this.tranneAtletiJson);
 }
 
 class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
@@ -5838,6 +6020,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
   final Value<String?> piramideId;
   final Value<String?> esito;
   final Value<int?> recuperoDopoS;
+  final Value<String?> perRuolo;
+  final Value<String?> soloAtletiJson;
+  final Value<String?> tranneAtletiJson;
   final Value<int> rowid;
   const SerieTableCompanion({
     this.id = const Value.absent(),
@@ -5859,6 +6044,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     this.piramideId = const Value.absent(),
     this.esito = const Value.absent(),
     this.recuperoDopoS = const Value.absent(),
+    this.perRuolo = const Value.absent(),
+    this.soloAtletiJson = const Value.absent(),
+    this.tranneAtletiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SerieTableCompanion.insert({
@@ -5881,6 +6069,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     this.piramideId = const Value.absent(),
     this.esito = const Value.absent(),
     this.recuperoDopoS = const Value.absent(),
+    this.perRuolo = const Value.absent(),
+    this.soloAtletiJson = const Value.absent(),
+    this.tranneAtletiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        allenamentoId = Value(allenamentoId),
@@ -5910,6 +6101,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Expression<String>? piramideId,
     Expression<String>? esito,
     Expression<int>? recuperoDopoS,
+    Expression<String>? perRuolo,
+    Expression<String>? soloAtletiJson,
+    Expression<String>? tranneAtletiJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5932,6 +6126,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       if (piramideId != null) 'piramide_id': piramideId,
       if (esito != null) 'esito': esito,
       if (recuperoDopoS != null) 'recupero_dopo_s': recuperoDopoS,
+      if (perRuolo != null) 'per_ruolo': perRuolo,
+      if (soloAtletiJson != null) 'solo_atleti_json': soloAtletiJson,
+      if (tranneAtletiJson != null) 'tranne_atleti_json': tranneAtletiJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5956,6 +6153,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     Value<String?>? piramideId,
     Value<String?>? esito,
     Value<int?>? recuperoDopoS,
+    Value<String?>? perRuolo,
+    Value<String?>? soloAtletiJson,
+    Value<String?>? tranneAtletiJson,
     Value<int>? rowid,
   }) {
     return SerieTableCompanion(
@@ -5978,6 +6178,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
       piramideId: piramideId ?? this.piramideId,
       esito: esito ?? this.esito,
       recuperoDopoS: recuperoDopoS ?? this.recuperoDopoS,
+      perRuolo: perRuolo ?? this.perRuolo,
+      soloAtletiJson: soloAtletiJson ?? this.soloAtletiJson,
+      tranneAtletiJson: tranneAtletiJson ?? this.tranneAtletiJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6042,6 +6245,15 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
     if (recuperoDopoS.present) {
       map['recupero_dopo_s'] = Variable<int>(recuperoDopoS.value);
     }
+    if (perRuolo.present) {
+      map['per_ruolo'] = Variable<String>(perRuolo.value);
+    }
+    if (soloAtletiJson.present) {
+      map['solo_atleti_json'] = Variable<String>(soloAtletiJson.value);
+    }
+    if (tranneAtletiJson.present) {
+      map['tranne_atleti_json'] = Variable<String>(tranneAtletiJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6070,6 +6282,9 @@ class SerieTableCompanion extends UpdateCompanion<SerieTableData> {
           ..write('piramideId: $piramideId, ')
           ..write('esito: $esito, ')
           ..write('recuperoDopoS: $recuperoDopoS, ')
+          ..write('perRuolo: $perRuolo, ')
+          ..write('soloAtletiJson: $soloAtletiJson, ')
+          ..write('tranneAtletiJson: $tranneAtletiJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -14781,6 +14996,7 @@ typedef $$AtletiTableTableCreateCompanionBuilder =
       Value<String?> numeroTesseraFin,
       Value<String?> userId,
       Value<DateTime?> visitaMedicaScadenza,
+      Value<String?> ruolo,
       Value<int> rowid,
     });
 typedef $$AtletiTableTableUpdateCompanionBuilder =
@@ -14802,6 +15018,7 @@ typedef $$AtletiTableTableUpdateCompanionBuilder =
       Value<String?> numeroTesseraFin,
       Value<String?> userId,
       Value<DateTime?> visitaMedicaScadenza,
+      Value<String?> ruolo,
       Value<int> rowid,
     });
 
@@ -14896,6 +15113,11 @@ class $$AtletiTableTableFilterComposer
 
   ColumnFilters<DateTime> get visitaMedicaScadenza => $composableBuilder(
     column: $table.visitaMedicaScadenza,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -14993,6 +15215,11 @@ class $$AtletiTableTableOrderingComposer
     column: $table.visitaMedicaScadenza,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AtletiTableTableAnnotationComposer
@@ -15068,6 +15295,9 @@ class $$AtletiTableTableAnnotationComposer
     column: $table.visitaMedicaScadenza,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get ruolo =>
+      $composableBuilder(column: $table.ruolo, builder: (column) => column);
 }
 
 class $$AtletiTableTableTableManager
@@ -15118,6 +15348,7 @@ class $$AtletiTableTableTableManager
                 Value<String?> numeroTesseraFin = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
+                Value<String?> ruolo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion(
                 id: id,
@@ -15137,6 +15368,7 @@ class $$AtletiTableTableTableManager
                 numeroTesseraFin: numeroTesseraFin,
                 userId: userId,
                 visitaMedicaScadenza: visitaMedicaScadenza,
+                ruolo: ruolo,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15158,6 +15390,7 @@ class $$AtletiTableTableTableManager
                 Value<String?> numeroTesseraFin = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
+                Value<String?> ruolo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion.insert(
                 id: id,
@@ -15177,6 +15410,7 @@ class $$AtletiTableTableTableManager
                 numeroTesseraFin: numeroTesseraFin,
                 userId: userId,
                 visitaMedicaScadenza: visitaMedicaScadenza,
+                ruolo: ruolo,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -17212,6 +17446,9 @@ typedef $$SerieTableTableCreateCompanionBuilder = SerieTableCompanion Function({
   Value<String?> piramideId,
   Value<String?> esito,
   Value<int?> recuperoDopoS,
+  Value<String?> perRuolo,
+  Value<String?> soloAtletiJson,
+  Value<String?> tranneAtletiJson,
   Value<int> rowid,
 });
 typedef $$SerieTableTableUpdateCompanionBuilder = SerieTableCompanion Function({
@@ -17234,6 +17471,9 @@ typedef $$SerieTableTableUpdateCompanionBuilder = SerieTableCompanion Function({
   Value<String?> piramideId,
   Value<String?> esito,
   Value<int?> recuperoDopoS,
+  Value<String?> perRuolo,
+  Value<String?> soloAtletiJson,
+  Value<String?> tranneAtletiJson,
   Value<int> rowid,
 });
 
@@ -17338,6 +17578,21 @@ class $$SerieTableTableFilterComposer
 
   ColumnFilters<int> get recuperoDopoS => $composableBuilder(
     column: $table.recuperoDopoS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get perRuolo => $composableBuilder(
+    column: $table.perRuolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -17445,6 +17700,21 @@ class $$SerieTableTableOrderingComposer
     column: $table.recuperoDopoS,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get perRuolo => $composableBuilder(
+    column: $table.perRuolo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SerieTableTableAnnotationComposer
@@ -17526,6 +17796,19 @@ class $$SerieTableTableAnnotationComposer
     column: $table.recuperoDopoS,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get perRuolo =>
+      $composableBuilder(column: $table.perRuolo, builder: (column) => column);
+
+  GeneratedColumn<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
+    builder: (column) => column,
+  );
 }
 
 class $$SerieTableTableTableManager
@@ -17578,6 +17861,9 @@ class $$SerieTableTableTableManager
                 Value<String?> piramideId = const Value.absent(),
                 Value<String?> esito = const Value.absent(),
                 Value<int?> recuperoDopoS = const Value.absent(),
+                Value<String?> perRuolo = const Value.absent(),
+                Value<String?> soloAtletiJson = const Value.absent(),
+                Value<String?> tranneAtletiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieTableCompanion(
                 id: id,
@@ -17599,6 +17885,9 @@ class $$SerieTableTableTableManager
                 piramideId: piramideId,
                 esito: esito,
                 recuperoDopoS: recuperoDopoS,
+                perRuolo: perRuolo,
+                soloAtletiJson: soloAtletiJson,
+                tranneAtletiJson: tranneAtletiJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -17622,6 +17911,9 @@ class $$SerieTableTableTableManager
                 Value<String?> piramideId = const Value.absent(),
                 Value<String?> esito = const Value.absent(),
                 Value<int?> recuperoDopoS = const Value.absent(),
+                Value<String?> perRuolo = const Value.absent(),
+                Value<String?> soloAtletiJson = const Value.absent(),
+                Value<String?> tranneAtletiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieTableCompanion.insert(
                 id: id,
@@ -17643,6 +17935,9 @@ class $$SerieTableTableTableManager
                 piramideId: piramideId,
                 esito: esito,
                 recuperoDopoS: recuperoDopoS,
+                perRuolo: perRuolo,
+                soloAtletiJson: soloAtletiJson,
+                tranneAtletiJson: tranneAtletiJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

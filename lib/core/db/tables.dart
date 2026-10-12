@@ -42,6 +42,10 @@ class AtletiTable extends Table {
   TextColumn get userId => text().nullable()();
   DateTimeColumn get visitaMedicaScadenza => dateTime().nullable()();
 
+  /// Pallanuoto: 'portiere' | 'movimento'; null se non indicato (conta
+  /// come movimento).
+  TextColumn get ruolo => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -213,6 +217,13 @@ class SerieTable extends Table {
 
   /// Recupero dopo la serie, prima della successiva (secondi).
   IntColumn get recuperoDopoS => integer().nullable()();
+
+  /// Per chi è la serie (vedi `Destinatari`): un ruolo ('portiere' |
+  /// 'movimento'), solo alcuni atleti o tutti tranne alcuni (id in JSON);
+  /// tutto null per una serie di tutto il gruppo.
+  TextColumn get perRuolo => text().nullable()();
+  TextColumn get soloAtletiJson => text().nullable()();
+  TextColumn get tranneAtletiJson => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

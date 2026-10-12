@@ -34,7 +34,16 @@ class _Serie implements SerieRepository {
   _Serie(this.originali);
 
   final List<Serie> originali;
-  final create = <({String allenamentoId, int? durataS, String? gruppo})>[];
+  final create =
+      <
+        ({
+          String allenamentoId,
+          int ordine,
+          int? durataS,
+          String? gruppo,
+          Destinatari destinatari,
+        })
+      >[];
 
   @override
   Future<List<Serie>> fetchPerAllenamento(String allenamentoId) async =>
@@ -58,11 +67,14 @@ class _Serie implements SerieRepository {
     String? note,
     String? piramideId,
     int? recuperoDopoS,
+    Destinatari destinatari = Destinatari.tutti,
   }) async {
     create.add((
       allenamentoId: allenamentoId,
+      ordine: ordine,
       durataS: durataS,
       gruppo: piramideId,
+      destinatari: destinatari,
     ));
     return originali.first;
   }
@@ -71,7 +83,12 @@ class _Serie implements SerieRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Serie _serie(int ordine, {String? piramideId, int? durataS}) => Serie(
+Serie _serie(
+  int ordine, {
+  String? piramideId,
+  int? durataS,
+  Destinatari destinatari = Destinatari.tutti,
+}) => Serie(
   id: 's$ordine',
   allenamentoId: 'a1',
   clubId: 'c1',
@@ -84,6 +101,7 @@ Serie _serie(int ordine, {String? piramideId, int? durataS}) => Serie(
   esecuzione: 'nuoto',
   piramideId: piramideId,
   esito: 'fatta',
+  destinatari: destinatari,
 );
 
 void main() {
@@ -120,4 +138,56 @@ void main() {
     expect(serie.create[1].gruppo, isNot('g-vecchio'));
     expect(serie.create[3].durataS, 300);
   });
+
+  test(
+    "per chi: per la stessa squadra resta, per un'altra solo il ruolo",
+    () async {
+      Allenamento sorgente() => Allenamento(
+        id: 'a1',
+        clubId: 'c1',
+        data: DateTime(2026, 10, 8, 18),
+        gruppoId: 'u14',
+      );
+      List<Serie> originali() => [
+        _serie(1, destinatari: Destinatari.portieri),
+        _serie(2, destinatari: const Destinatari(soloAtleti: ['rossi'])),
+        _serie(
+          3,
+          destinatari: const Destinatari(
+            ruolo: 'movimento',
+            tranneAtleti: ['rossi'],
+          ),
+        ),
+      ];
+
+      final stessa = _Serie(originali());
+      await DuplicazioneSettimanaService(
+        _Allenamenti(),
+        stessa,
+      ).copiaAllenamento(
+        sorgente(),
+        data: DateTime(2026, 10, 15, 18),
+        gruppoId: 'u14',
+      );
+      expect(stessa.create.map((c) => c.destinatari), [
+        for (final s in originali()) s.destinatari,
+      ]);
+
+      final altra = _Serie(originali());
+      await DuplicazioneSettimanaService(
+        _Allenamenti(),
+        altra,
+      ).copiaAllenamento(
+        sorgente(),
+        data: DateTime(2026, 10, 9, 18),
+        gruppoId: 'u16',
+      );
+      // La variante di Rossi non va all'altra squadra; l'ordine si ricompatta.
+      expect(altra.create.map((c) => c.ordine), [1, 2]);
+      expect(altra.create.map((c) => c.destinatari), [
+        Destinatari.portieri,
+        Destinatari.movimento,
+      ]);
+    },
+  );
 }

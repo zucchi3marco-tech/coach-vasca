@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/utils/giorni.dart';
 import '../domain/allenamento.dart';
+import '../domain/serie.dart';
 import 'allenamenti_repository.dart';
 import 'serie_repository.dart';
 
@@ -23,6 +24,9 @@ class DuplicazioneSettimanaService {
   /// [gruppoId] — anche un'altra squadra ("Duplica" nel dettaglio,
   /// richiesta del coach 2026-10-08). Le piramidi e i "2x" restano
   /// gruppi, con un `piramideId` nuovo; l'esito (fatta/saltata) no.
+  /// Per un'altra squadra le serie restano dei portieri o del movimento,
+  /// ma non di alcuni atleti: quelle solo per loro non si copiano, e chi
+  /// era escluso da una serie qui la fa.
   Future<Allenamento> copiaAllenamento(
     Allenamento sorgente, {
     required DateTime data,
@@ -36,13 +40,17 @@ class DuplicazioneSettimanaService {
       note: sorgente.note,
     );
 
-    final serie = await _serie.fetchPerAllenamento(sorgente.id);
+    final stessaSquadra = gruppoId == sorgente.gruppoId;
+    final serie = [
+      for (final s in await _serie.fetchPerAllenamento(sorgente.id))
+        if (stessaSquadra || s.destinatari.soloAtleti.isEmpty) s,
+    ];
     final gruppi = <String, String>{};
     await Future.wait([
-      for (final s in serie)
+      for (final (i, s) in serie.indexed)
         _serie.createSerie(
           allenamentoId: nuovo.id,
-          ordine: s.ordine,
+          ordine: i + 1,
           blocco: s.blocco,
           ripetute: s.ripetute,
           distanzaM: s.distanzaM,
@@ -59,6 +67,9 @@ class DuplicazioneSettimanaService {
               ? null
               : gruppi.putIfAbsent(s.piramideId!, () => const Uuid().v4()),
           recuperoDopoS: s.recuperoDopoS,
+          destinatari: stessaSquadra
+              ? s.destinatari
+              : Destinatari(ruolo: s.destinatari.ruolo),
         ),
     ]);
     return nuovo;

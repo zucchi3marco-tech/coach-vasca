@@ -26,8 +26,10 @@ import '../../allenamenti/domain/piano_salvataggio_testo.dart';
 import '../../allenamenti/domain/testo_allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
 import '../../allenamenti/presentation/editor_testo_allenamento.dart';
+import '../../allenamenti/presentation/per_chi_serie.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/atleta.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
@@ -171,13 +173,31 @@ class _GeneraAllenamentoFormScreenState
     }
   }
 
+  /// Gli atleti della squadra scelta in alto (tutto il club senza), per i
+  /// nomi delle righe "per chi" ("Rossi: 4x50 gambe").
+  List<Atleta> _atletiDelGruppo() => atletiDellAllenamento(
+    ref
+            .read(
+              atletiListProvider((
+                clubId: widget.clubId,
+                includeInactive: false,
+              )),
+            )
+            .value ??
+        const [],
+    gruppoId: ref.read(selezioneGruppoProvider)?.gruppoId,
+  );
+
   /// "Scrivi o detta": le serie le legge l'app dal testo, come in
   /// "Scrivi l'allenamento" — niente AI. Si crea l'allenamento nella data
   /// scelta, poi le sue serie nell'ordine scritto (con i gruppi dei "2x" e
   /// delle piramidi), e si apre il dettaglio.
   Future<void> _creaDaTesto() async {
     _editorKey.currentState?.ferma();
-    final scritto = interpretaAllenamento(_serieController.text);
+    final scritto = interpretaAllenamento(
+      _serieController.text,
+      atleti: _atletiDelGruppo(),
+    );
     if (scritto.serie.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -252,6 +272,7 @@ class _GeneraAllenamentoFormScreenState
           note: s.note,
           piramideId: c.piramideId,
           recuperoDopoS: s.recuperoDopoS,
+          destinatari: s.destinatari,
         );
         create++;
       }
@@ -473,8 +494,15 @@ class _GeneraAllenamentoFormScreenState
     final volumeLavoroCentraleClampato = (_volumeLavoroCentraleMetri ?? 0)
         .clamp(0, _volumeMetri)
         .toDouble();
+    // Per ridisegnare quando arrivano gli atleti (letti da _atletiDelGruppo).
+    ref.watch(
+      atletiListProvider((clubId: widget.clubId, includeInactive: false)),
+    );
     final scrivi = _modo == _Modo.scrivi;
-    final scritto = interpretaAllenamento(_serieController.text);
+    final scritto = interpretaAllenamento(
+      _serieController.text,
+      atleti: _atletiDelGruppo(),
+    );
     final riferimento = scrivi
         ? ref.watch(
             passoRiferimentoProvider((
@@ -627,6 +655,7 @@ class _GeneraAllenamentoFormScreenState
                 controller: _serieController,
                 scritto: scritto,
                 riferimento: riferimento,
+                atleti: _atletiDelGruppo(),
                 sottoIlTesto: [
                   const SizedBox(height: AppSpacing.s16),
                   PrimaryButton(

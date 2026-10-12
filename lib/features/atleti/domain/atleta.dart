@@ -17,6 +17,7 @@ class Atleta {
     this.numeroTesseraFin,
     this.userId,
     this.visitaMedicaScadenza,
+    this.ruolo,
   });
 
   final String id;
@@ -41,6 +42,12 @@ class Atleta {
 
   /// Scadenza del certificato medico sportivo (facoltativa).
   final DateTime? visitaMedicaScadenza;
+
+  /// Pallanuoto: 'portiere' | 'movimento'; null se non indicato, conta
+  /// come movimento (vedi `Destinatari`).
+  final String? ruolo;
+
+  bool get portiere => ruolo == 'portiere';
 
   String get nomeCompleto => '$cognome $nome';
 
@@ -80,6 +87,7 @@ class Atleta {
       visitaMedicaScadenza: map['visita_medica_scadenza'] == null
           ? null
           : DateTime.parse(map['visita_medica_scadenza'] as String),
+      ruolo: map['ruolo'] as String?,
     );
   }
 }

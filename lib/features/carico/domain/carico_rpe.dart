@@ -75,6 +75,7 @@ class SerieCarico implements DatiSerie {
     this.ripartenzaS,
     this.passoObiettivoS,
     this.recuperoDopoS,
+    this.destinatari = Destinatari.tutti,
   });
 
   factory SerieCarico.fromMap(Map<String, dynamic> r) => SerieCarico(
@@ -88,6 +89,7 @@ class SerieCarico implements DatiSerie {
     ripartenzaS: (r['ripartenza_s'] as num?)?.toDouble(),
     passoObiettivoS: (r['passo_obiettivo_s'] as num?)?.toDouble(),
     recuperoDopoS: r['recupero_dopo_s'] as int?,
+    destinatari: Destinatari.fromMap(r),
   );
 
   final String allenamentoId;
@@ -109,6 +111,11 @@ class SerieCarico implements DatiSerie {
   final double? passoObiettivoS;
   @override
   final int? recuperoDopoS;
+
+  /// All'atleta collegato `serie_per_carico` dà solo le sue serie, senza
+  /// gli elenchi di atleti: qui resta il ruolo.
+  @override
+  final Destinatari destinatari;
 
   @override
   String get blocco => 'centrale';
@@ -352,6 +359,10 @@ String formattaAcwr(double rapporto) =>
 /// - una partita in cui era convocato, giocata prima di [oggi], o a cui
 ///   ha dato l'RPE.
 /// Le sedute senza la sua risposta hanno un carico stimato.
+///
+/// Di un allenamento contano solo le serie che fa lui ([atletaId], con il
+/// suo [ruolo]): non quelle dei soli portieri se è di movimento, né la
+/// variante di un compagno. Senza [atletaId], tutte.
 List<CaricoSeduta> seduteDiAtleta({
   required Map<String, DateTime> dataAllenamenti,
   required Map<String, List<DatiSerie>> seriePerAllenamento,
@@ -359,6 +370,8 @@ List<CaricoSeduta> seduteDiAtleta({
   required Map<String, DateTime> dataPartite,
   required Set<String> partiteConvocato,
   required Map<(String, String), int> rpe,
+  String? atletaId,
+  String? ruolo,
   DateTime? oggi,
 }) {
   final inizioOggi = soloData(oggi ?? DateTime.now());
@@ -376,11 +389,17 @@ List<CaricoSeduta> seduteDiAtleta({
   for (final id in allenamenti) {
     final data = dataAllenamenti[id];
     if (data == null) continue;
+    final serie = seriePerAllenamento[id] ?? const <DatiSerie>[];
     sedute.add(
       caricoAllenamento(
         id: id,
         giorno: data,
-        serie: seriePerAllenamento[id] ?? const [],
+        serie: atletaId == null
+            ? serie
+            : [
+                for (final s in serie)
+                  if (s.destinatari.perAtleta(atletaId, ruolo)) s,
+              ],
         rpe: rpe[('allenamento', id)],
       ),
     );

@@ -34,8 +34,13 @@ String? labelStileSerie(DatiSerie s) =>
 
 /// Il titolo di più serie raggruppate: "50-100-200m Libero" o
 /// "2×(50-100)m Libero" per una piramide, "2 × (3×200m Libero + 4×75m
-/// Dorso)" per un "2x" scritto a testo.
-String titoloGruppo(List<DatiSerie> gruppo) {
+/// Dorso)" per un "2x" scritto a testo. Con [perChi], in un "2x" con
+/// serie per persone diverse, davanti a ognuna per chi è ("2 × (4×50m
+/// Tiri + Rossi: 4×50m Gambe)").
+String titoloGruppo(
+  List<DatiSerie> gruppo, {
+  String? Function(DatiSerie s)? perChi,
+}) {
   final primo = gruppo.first;
   final piramide = strutturaPiramide(gruppo);
   if (piramide != null) {
@@ -54,7 +59,13 @@ String titoloGruppo(List<DatiSerie> gruppo) {
   }
   final periodo = periodoGruppo(gruppo);
   final volte = gruppo.length ~/ periodo;
-  final corpo = gruppo.take(periodo).map(titoloSerie).join(' + ');
+  final misto = gruppo.any((s) => s.destinatari != primo.destinatari);
+  String pezzo(DatiSerie s) {
+    final chi = misto ? perChi?.call(s) : null;
+    return chi == null ? titoloSerie(s) : '$chi: ${titoloSerie(s)}';
+  }
+
+  final corpo = gruppo.take(periodo).map(pezzo).join(' + ');
   if (volte == 1) return corpo;
   return periodo > 1 ? '$volte × ($corpo)' : '$volte × $corpo';
 }

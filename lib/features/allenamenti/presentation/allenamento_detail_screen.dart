@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
+import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -16,6 +18,10 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/abbina_atleta.dart';
+import '../../atleti/domain/atleta.dart';
+import '../../benessere/application/benessere_providers.dart';
 import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../libreria_blocchi/data/training_blocks_repository.dart';
@@ -30,6 +36,8 @@ import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
+import '../domain/variante_spalla.dart';
+import '../domain/volume_allenamento.dart';
 import 'allenamento_form_screen.dart';
 import 'duplica_allenamento_dialog.dart';
 import 'grafico_intensita.dart';
@@ -37,6 +45,7 @@ import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
 import 'riga_gruppo_piramide.dart';
 import 'nota_serie.dart';
+import 'per_chi_serie.dart';
 import 'riga_serie.dart';
 import 'scheda_bordo_vasca_screen.dart';
 import 'scrivi_allenamento_screen.dart';
@@ -69,6 +78,22 @@ class _AllenamentoDetailScreenState
     return serie.fold<int>(0, (m, s) => s.ordine > m ? s.ordine : m) + 1;
   }
 
+  /// Gli atleti di cui parlano le serie "per chi" (vedi
+  /// [atletiDellAllenamento]).
+  List<Atleta> _atleti() => atletiDellAllenamento(
+    ref
+            .read(
+              atletiListProvider((
+                clubId: widget.allenamento.clubId,
+                includeInactive: true,
+              )),
+            )
+            .value ??
+        const [],
+    gruppoId: widget.allenamento.gruppoId,
+    serie: ref.read(serieListProvider(widget.allenamento.id)).value ?? const [],
+  );
+
   void _apriSerieCompleta({required Serie? serie}) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -76,6 +101,7 @@ class _AllenamentoDetailScreenState
           allenamentoId: widget.allenamento.id,
           ordineSuccessivo: _ordineSuccessivo(),
           serie: serie,
+          atleti: _atleti(),
         ),
       ),
     );
@@ -89,6 +115,7 @@ class _AllenamentoDetailScreenState
           serie:
               ref.read(serieListProvider(widget.allenamento.id)).value ??
               const [],
+          atleti: _atleti(),
         ),
       ),
     );
@@ -102,6 +129,7 @@ class _AllenamentoDetailScreenState
       aggiungiRapida: _aggiungiRapida,
       onScrivi: _apriScriviAllenamento,
       onSerieCompleta: () => _apriSerieCompleta(serie: null),
+      atleti: _atleti(),
     );
   }
 
@@ -134,6 +162,7 @@ class _AllenamentoDetailScreenState
           attrezzatura: parsed.attrezzatura,
           note: parsed.note,
           piramideId: piramideId,
+          destinatari: parsed.destinatari,
         );
         ordine++;
       }
@@ -281,6 +310,7 @@ class _AllenamentoDetailScreenState
             note: s.note,
             piramideId: nuovoPiramideId,
             recuperoDopoS: s.recuperoDopoS,
+            destinatari: s.destinatari,
           ),
         );
         ordineProvvisorio++;
@@ -368,6 +398,145 @@ class _AllenamentoDetailScreenState
           if (i != index) ...gruppi[i],
       ];
       await _scriviOrdine(restanti);
+    } catch (e) {
+      _errore(e);
+    }
+  }
+
+  /// La variante con le gambe per chi ha un dolore alla spalla (vedi
+  /// [pianoVarianteSpalla]): dopo la conferma, l'atleta esce dalle serie
+  /// con la palla o le braccia e ne riceve una copia con le gambe, subito
+  /// dopo. Si modifica poi come le altre serie.
+  Future<void> _preparaVariante(Atleta atleta, List<Atleta> atleti) async {
+    final serie =
+        ref.read(serieListProvider(widget.allenamento.id)).value ?? const [];
+    final piano = pianoVarianteSpalla(
+      serie,
+      atletaId: atleta.id,
+      ruolo: atleta.ruolo,
+    );
+    if (piano.vuoto) return;
+    final nome = nomeBreve(atleta, atleti);
+    final toccate = [
+      for (final e in piano.esclusioni) e.serie,
+      ...piano.inGambe,
+    ]..sort((a, b) => a.ordine.compareTo(b.ordine));
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final colori = dialogContext.colori;
+        return AlertDialog(
+          title: Text('Variante per $nome'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Queste serie le fa con le gambe, stessa distanza o durata:',
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              for (final s in toccate)
+                Text(
+                  '${s.ordine}. ${titoloSerie(s)}',
+                  style: AppTypography.numerica(AppTypography.corpoForte)
+                      .copyWith(color: colori.testo),
+                ),
+              const SizedBox(height: AppSpacing.s8),
+              Text(
+                'Poi le cambi come le altre serie.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Prepara la variante'),
+            ),
+          ],
+        );
+      },
+    );
+    if (conferma != true || !mounted) return;
+    final messaggero = ScaffoldMessenger.of(context);
+    try {
+      final repository = ref.read(serieRepositoryProvider);
+      // Le serie aggiornate, per riscrivere l'ordine senza riportarle
+      // com'erano.
+      final aggiornate = <String, Serie>{};
+      Future<void> aggiorna(
+        Serie s, {
+        Destinatari? destinatari,
+        bool gambe = false,
+      }) async {
+        aggiornate[s.id] = await repository.updateSerie(
+          id: s.id,
+          ordine: s.ordine,
+          blocco: s.blocco,
+          ripetute: s.ripetute,
+          distanzaM: s.distanzaM,
+          durataS: s.durataS,
+          stile: gambe && s.esecuzione != 'braccia' && s.esecuzione != 'pull'
+              ? 'libero'
+              : s.stile,
+          esecuzione: gambe ? 'gambe' : s.esecuzione,
+          zona: s.zona,
+          passoObiettivoS: s.passoObiettivoS,
+          recuperoS: s.recuperoS,
+          ripartenzaS: s.ripartenzaS,
+          attrezzatura: gambe ? null : s.attrezzatura,
+          note: s.note,
+          destinatari: destinatari,
+        );
+      }
+
+      for (final e in piano.esclusioni) {
+        await aggiorna(e.serie, destinatari: e.destinatari);
+      }
+      for (final s in piano.inGambe) {
+        await aggiorna(s, gambe: true);
+      }
+      final nuove = <int, List<Serie>>{};
+      var ordine = _ordineSuccessivo();
+      for (final MapEntry(key: indice, value: copie) in piano.nuove.entries) {
+        final piramideId = copie.length > 1 ? const Uuid().v4() : null;
+        for (final c in copie) {
+          (nuove[indice] ??= []).add(
+            await repository.createSerie(
+              allenamentoId: widget.allenamento.id,
+              ordine: ordine++,
+              blocco: c.blocco,
+              ripetute: c.ripetute,
+              distanzaM: c.distanzaM,
+              durataS: c.durataS,
+              stile: c.stile,
+              esecuzione: c.esecuzione,
+              zona: c.zona,
+              recuperoS: c.recuperoS,
+              note: c.note,
+              piramideId: piramideId,
+              destinatari: c.destinatari,
+            ),
+          );
+        }
+      }
+      final gruppi = raggruppaPerPiramide(serie);
+      await _scriviOrdine([
+        for (final (i, gruppo) in gruppi.indexed) ...[
+          for (final s in gruppo) aggiornate[s.id] ?? s,
+          ...?nuove[i],
+        ],
+      ]);
+      messaggero.showSnackBar(
+        SnackBar(content: Text('Variante pronta per $nome')),
+      );
     } catch (e) {
       _errore(e);
     }
@@ -471,7 +640,26 @@ class _AllenamentoDetailScreenState
         gruppoId: allenamento.gruppoId,
       )),
     );
-    final metri = serieCaricate.fold<int>(0, (t, s) => t + s.distanzaTotaleM);
+    final atleti = atletiDellAllenamento(
+      ref
+              .watch(
+                atletiListProvider((
+                  clubId: allenamento.clubId,
+                  includeInactive: true,
+                )),
+              )
+              .value ??
+          const [],
+      gruppoId: allenamento.gruppoId,
+      serie: serieCaricate,
+    );
+    String? perChi(Destinatari d) => labelPerChi(d, atleti);
+    // I metri del gruppo (un giocatore di movimento) e, se ci sono serie
+    // per ruolo, quelli dei portieri a parte.
+    final metri = volumeDi(serieDelGruppo(serieCaricate)).metri;
+    final portieri = haSerieDiRuolo(serieCaricate)
+        ? volumeDi(serieDeiPortieri(serieCaricate))
+        : null;
 
     // Le due cose che si fanno a bordo vasca stanno in vista nella
     // testata (prima erano nel menu ⋮); "Aggiungi serie" resta il "+".
@@ -488,13 +676,20 @@ class _AllenamentoDetailScreenState
                     valore: formattaMetri(metri),
                     etichetta: 'Metri',
                   ),
+                  if (portieri case final p? when !p.vuoto)
+                    NumeroTestata(
+                      valore: p.metri > 0
+                          ? formattaMetri(p.metri)
+                          : formattaTempoLavoro(p.secondi),
+                      etichetta: p.metri > 0 ? 'Metri portieri' : 'Portieri',
+                    ),
                   NumeroTestata(
                     valore: '${raggruppaPerPiramide(serieCaricate).length}',
                     etichetta: 'Serie',
                   ),
                   NumeroTestata(
                     valore:
-                        "${minutiStimati(serieCaricate, riferimento: riferimento)}'",
+                        "${minutiSeduta(serieCaricate, riferimento: riferimento)}'",
                     etichetta: 'Durata stimata',
                   ),
                 ],
@@ -525,6 +720,12 @@ class _AllenamentoDetailScreenState
           const SizedBox(height: AppSpacing.s12),
           PoolCard(child: _NoteCompatte(allenamento.note!)),
         ],
+        _AvvisoSpalla(
+          allenamento: allenamento,
+          serie: serieCaricate,
+          atleti: atleti,
+          onPrepara: (atleta) => _preparaVariante(atleta, atleti),
+        ),
         const SizedBox(height: AppSpacing.s16),
       ],
     );
@@ -545,6 +746,7 @@ class _AllenamentoDetailScreenState
               context,
               titoloDocumento: titolo,
               nomiGruppi: nomiGruppi,
+              nomiAtleti: {for (final a in atleti) a.id: nomeBreve(a, atleti)},
               caricaDati: () async => [
                 (
                   allenamento,
@@ -639,12 +841,17 @@ class _AllenamentoDetailScreenState
                     left: 4,
                     bottom: AppSpacing.s12,
                   ),
-                  child: RiepilogoVolumi(serie: serie, mostraTotale: false),
+                  // La forma e le zone della seduta del gruppo: il lavoro
+                  // dei portieri e le varianti si leggono nell'elenco.
+                  child: RiepilogoVolumi(
+                    serie: serieDelGruppo(serie),
+                    mostraTotale: false,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.s16),
                   child: GraficoIntensita(
-                    serie: serie,
+                    serie: serieDelGruppo(serie),
                     riferimento: riferimento,
                   ),
                 ),
@@ -667,6 +874,7 @@ class _AllenamentoDetailScreenState
                       primo: index == 0,
                       ultimo: index == gruppi.length - 1,
                       maniglia: maniglia,
+                      perChi: perChi(gruppo.single.destinatari),
                       onApri: () => _apriSerieCompleta(serie: gruppo.single),
                       onAzione: (azione) =>
                           _azioneGruppo(gruppi, index, azione),
@@ -676,6 +884,7 @@ class _AllenamentoDetailScreenState
                       primo: index == 0,
                       ultimo: index == gruppi.length - 1,
                       maniglia: maniglia,
+                      perChi: perChi,
                       onAzione: (azione) =>
                           _azioneGruppo(gruppi, index, azione),
                     );
@@ -709,6 +918,96 @@ class _AllenamentoDetailScreenState
                 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
             dettaglioTecnico: messaggioErrore(error),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Chi del gruppo ha segnato un dolore alla spalla negli ultimi giorni e
+/// in questa seduta ha del lavoro con la palla o con le braccia: per
+/// ognuno la proposta di fare quelle serie con le gambe. Solo per le
+/// sedute di oggi e in programma; sparisce una volta preparata la
+/// variante (l'atleta non fa più quelle serie).
+class _AvvisoSpalla extends ConsumerWidget {
+  const _AvvisoSpalla({
+    required this.allenamento,
+    required this.serie,
+    required this.atleti,
+    required this.onPrepara,
+  });
+
+  final Allenamento allenamento;
+  final List<Serie> serie;
+  final List<Atleta> atleti;
+  final ValueChanged<Atleta> onPrepara;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final oggi = DateTime.now();
+    if (serie.isEmpty || soloData(allenamento.data).isBefore(soloData(oggi))) {
+      return const SizedBox.shrink();
+    }
+    final delGruppo = [
+      for (final a in atleti)
+        if (a.attivo &&
+            (allenamento.gruppoId == null ||
+                a.gruppoId == allenamento.gruppoId))
+          a,
+    ];
+    final schede =
+        ref.watch(schedeBenessereClubProvider(allenamento.clubId)).value ??
+        const [];
+    final doloranti = conDoloreSpalla(schede, {
+      for (final a in delGruppo) a.id,
+    }, oggi: oggi);
+    final proposte = [
+      for (final a in delGruppo)
+        if (doloranti[a.id] case final giorno?)
+          if (pianoVarianteSpalla(serie, atletaId: a.id, ruolo: a.ruolo)
+              case final piano when !piano.vuoto)
+            (atleta: a, giorno: giorno, serie: piano.serieToccate),
+    ];
+    if (proposte.isEmpty) return const SizedBox.shrink();
+
+    final colori = context.colori;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colori.attenzioneTenue,
+          borderRadius: BorderRadius.circular(AppRadius.pannello),
+          border: Border(left: BorderSide(color: colori.attenzione, width: 3)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s16,
+          AppSpacing.s12,
+          AppSpacing.s8,
+          AppSpacing.s12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final p in proposte)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${nomeBreve(p.atleta, atleti)}: dolore alla spalla '
+                      '(${traQuanto(p.giorno).toLowerCase()}). '
+                      '${p.serie == 1 ? 'Una serie con la palla o le braccia' : '${p.serie} serie con la palla o le braccia'} '
+                      'le può fare con le gambe.',
+                      style: AppTypography.corpo.copyWith(color: colori.testo),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s8),
+                  TextButton(
+                    onPressed: () => onPrepara(p.atleta),
+                    child: const Text('Prepara la variante'),
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );

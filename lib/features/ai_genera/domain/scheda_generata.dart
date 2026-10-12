@@ -122,6 +122,8 @@ class SerieGenerata implements DatiSerie {
   String? get piramideId => null;
   @override
   int? get recuperoDopoS => null;
+  @override
+  Destinatari get destinatari => Destinatari.tutti;
 
   /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
   /// la generazione non aveva passi di riferimento da usare, o se questo

@@ -396,6 +396,7 @@ class _DialogSelezionaAtleta extends ConsumerWidget {
                               partitaId: partita.id,
                               atletaId: atleta.id,
                               numeroCalottina: numero,
+                              portiere: atleta.portiere,
                             );
                       } catch (e) {
                         if (context.mounted) {

@@ -8,6 +8,7 @@ import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
 import '../domain/serie.dart';
 import 'nota_serie.dart';
+import 'per_chi_serie.dart';
 import 'serie_labels.dart';
 
 enum AzioneSerie { su, giu, cambiaBlocco, duplica, salvaComeBlocco, elimina }
@@ -28,8 +29,13 @@ class RigaSerie extends StatelessWidget {
     required this.ultimo,
     required this.onApri,
     required this.onAzione,
+    this.perChi,
     super.key,
   });
+
+  /// Per chi è la serie ("Portieri", "Rossi"), se non è di tutto il
+  /// gruppo: sopra il titolo.
+  final String? perChi;
 
   final Serie serie;
   final Widget maniglia;
@@ -88,6 +94,11 @@ class RigaSerie extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (perChi case final chi?)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: EtichettaPerChi(chi),
+                            ),
                           Text.rich(
                             TextSpan(
                               children: [

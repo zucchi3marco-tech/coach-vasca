@@ -87,6 +87,10 @@ class DistintaRepository {
     required String partitaId,
     required String atletaId,
     required int numeroCalottina,
+
+    /// Di solito dal ruolo nella scheda dell'atleta: si cambia per la
+    /// singola partita dalla riga del convocato.
+    bool portiere = false,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -94,6 +98,7 @@ class DistintaRepository {
       'partita_id': partitaId,
       'atleta_id': atletaId,
       'numero_calottina': numeroCalottina,
+      if (portiere) 'portiere': true,
     };
     try {
       final row = await _client

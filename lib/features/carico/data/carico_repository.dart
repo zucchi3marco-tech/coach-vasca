@@ -148,6 +148,33 @@ class CaricoRepository {
     }
   }
 
+  /// Il ruolo di ogni atleta del club che ne ha uno (chiave: id): per
+  /// contare a ognuno solo le sue serie. All'atleta collegato arriva solo
+  /// il suo.
+  Future<Map<String, String>> _ruoli(String clubId) async {
+    List<Map<String, dynamic>> righe;
+    try {
+      righe = await leggiAPagine(
+        (da, a) => _client
+            .from('atleti')
+            .select('id, ruolo')
+            .eq('club_id', clubId)
+            .not('ruolo', 'is', null)
+            .order('id')
+            .range(da, a),
+      );
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final locali = await (_db.select(
+        _db.atletiTable,
+      )..where((t) => t.clubId.equals(clubId) & t.ruolo.isNotNull())).get();
+      righe = [
+        for (final r in locali) {'id': r.id, 'ruolo': r.ruolo},
+      ];
+    }
+    return {for (final r in righe) r['id'] as String: r['ruolo'] as String};
+  }
+
   /// Le sedute di ogni atleta (chiave: id atleta) a partire da
   /// [presenze], [convocazioni] e risposte [rpe]: un atleta senza
   /// nessuna di queste non compare.
@@ -159,6 +186,7 @@ class CaricoRepository {
   }) async {
     final dataAllenamenti = await _dataPerAllenamento(clubId);
     final dataPartite = await _dataPerPartita(clubId);
+    final ruoli = await _ruoli(clubId);
     final seriePerAllenamento = <String, List<SerieCarico>>{};
     for (final r in await _serieDelClub(clubId)) {
       final s = SerieCarico.fromMap(r);
@@ -196,6 +224,8 @@ class CaricoRepository {
           dataPartite: dataPartite,
           partiteConvocato: convocazioniPerAtleta[atletaId] ?? const {},
           rpe: rpePerAtleta[atletaId] ?? const {},
+          atletaId: atletaId,
+          ruolo: ruoli[atletaId],
         ),
     };
   }
@@ -264,6 +294,9 @@ class CaricoRepository {
             'ripartenza_s': r.ripartenzaS,
             'passo_obiettivo_s': r.passoObiettivoS,
             'recupero_dopo_s': r.recuperoDopoS,
+            'per_ruolo': r.perRuolo,
+            'solo_atleti': r.soloAtletiJson,
+            'tranne_atleti': r.tranneAtletiJson,
           },
       ];
     }
@@ -271,14 +304,19 @@ class CaricoRepository {
 
   /// Volume (metri e lavoro a tempo) di un atleta scomposto per zona e
   /// per tipo di lavoro, contato solo negli allenamenti a cui risulta
-  /// presente.
+  /// presente e solo con le serie che fa lui.
   Future<VolumiAtleta> volumiPerAtleta({
     required String atletaId,
     required String clubId,
-  }) async => VolumiAtleta.daSerie(await _serieDelClub(clubId), {
-    for (final p in await _presenze(clubId: clubId, atletaId: atletaId))
-      if (p['stato'] == 'presente') p['allenamento_id'] as String,
-  });
+  }) async => VolumiAtleta.daSerie(
+    await _serieDelClub(clubId),
+    {
+      for (final p in await _presenze(clubId: clubId, atletaId: atletaId))
+        if (p['stato'] == 'presente') p['allenamento_id'] as String,
+    },
+    atletaId: atletaId,
+    ruolo: (await _ruoli(clubId))[atletaId],
+  );
 }
 
 final caricoRepositoryProvider = Provider<CaricoRepository>((ref) {

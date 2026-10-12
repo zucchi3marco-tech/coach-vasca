@@ -7,6 +7,7 @@ import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
+import '../../atleti/domain/atleta.dart';
 import '../application/passo_riferimento_provider.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
@@ -28,6 +29,7 @@ class ScriviAllenamentoScreen extends ConsumerStatefulWidget {
   const ScriviAllenamentoScreen({
     required this.allenamento,
     required this.serie,
+    this.atleti = const [],
     super.key,
   });
 
@@ -36,6 +38,10 @@ class ScriviAllenamentoScreen extends ConsumerStatefulWidget {
   /// Le serie salvate ora, nell'ordine.
   final List<Serie> serie;
 
+  /// Gli atleti del gruppo, per i nomi delle righe "per chi" (vedi
+  /// `atletiDellAllenamento`).
+  final List<Atleta> atleti;
+
   @override
   ConsumerState<ScriviAllenamentoScreen> createState() =>
       _ScriviAllenamentoScreenState();
@@ -43,7 +49,10 @@ class ScriviAllenamentoScreen extends ConsumerStatefulWidget {
 
 class _ScriviAllenamentoScreenState
     extends ConsumerState<ScriviAllenamentoScreen> {
-  late final String _testoIniziale = testoDaSerie(widget.serie);
+  late final String _testoIniziale = testoDaSerie(
+    widget.serie,
+    atleti: widget.atleti,
+  );
   late final _controller = TextEditingController(text: _testoIniziale)
     ..addListener(_aggiorna);
   final _editorKey = GlobalKey<EditorTestoAllenamentoState>();
@@ -84,7 +93,10 @@ class _ScriviAllenamentoScreenState
 
   Future<void> _salva() async {
     _editorKey.currentState?.ferma();
-    final scritto = interpretaAllenamento(_controller.text);
+    final scritto = interpretaAllenamento(
+      _controller.text,
+      atleti: widget.atleti,
+    );
     final nonCapite = scritto.righeNonCapite;
     if (nonCapite > 0 &&
         !await _conferma(
@@ -138,6 +150,7 @@ class _ScriviAllenamentoScreenState
           note: s.note,
           piramide: (id: a.piramideId),
           recuperoDopo: (secondi: s.recuperoDopoS),
+          destinatari: s.destinatari,
         );
       }
       for (final c in piano.crea) {
@@ -159,6 +172,7 @@ class _ScriviAllenamentoScreenState
           note: s.note,
           piramideId: c.piramideId,
           recuperoDopoS: s.recuperoDopoS,
+          destinatari: s.destinatari,
         );
       }
       for (final s in piano.elimina) {
@@ -193,7 +207,10 @@ class _ScriviAllenamentoScreenState
 
   @override
   Widget build(BuildContext context) {
-    final scritto = interpretaAllenamento(_controller.text);
+    final scritto = interpretaAllenamento(
+      _controller.text,
+      atleti: widget.atleti,
+    );
     final riferimento = ref.watch(
       passoRiferimentoProvider((
         clubId: widget.allenamento.clubId,
@@ -233,6 +250,7 @@ class _ScriviAllenamentoScreenState
           controller: _controller,
           scritto: scritto,
           riferimento: riferimento,
+          atleti: widget.atleti,
           sottoIlTesto: [
             if (_errore != null) ...[
               const SizedBox(height: AppSpacing.s12),

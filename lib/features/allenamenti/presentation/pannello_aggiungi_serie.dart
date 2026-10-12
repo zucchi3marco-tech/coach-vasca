@@ -6,6 +6,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../atleti/domain/atleta.dart';
 import '../domain/testo_allenamento.dart';
 import 'serie_labels.dart';
 
@@ -25,6 +26,7 @@ Future<void> mostraPannelloAggiungiSerie(
   required Future<void> Function(List<SerieScritta> serie) aggiungiRapida,
   required VoidCallback onScrivi,
   required VoidCallback onSerieCompleta,
+  List<Atleta> atleti = const [],
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -34,6 +36,7 @@ Future<void> mostraPannelloAggiungiSerie(
       bloccoIniziale: bloccoIniziale,
       onBloccoCambiato: onBloccoCambiato,
       aggiungiRapida: aggiungiRapida,
+      atleti: atleti,
       onScrivi: () {
         Navigator.of(sheetContext).pop();
         onScrivi();
@@ -53,6 +56,7 @@ class PannelloAggiungiSerie extends StatefulWidget {
     required this.aggiungiRapida,
     required this.onScrivi,
     required this.onSerieCompleta,
+    this.atleti = const [],
     super.key,
   });
 
@@ -63,6 +67,9 @@ class PannelloAggiungiSerie extends StatefulWidget {
   final Future<void> Function(List<SerieScritta> serie) aggiungiRapida;
   final VoidCallback onScrivi;
   final VoidCallback onSerieCompleta;
+
+  /// Gli atleti del gruppo: "Rossi: 4x50 gambe" vale solo per Rossi.
+  final List<Atleta> atleti;
 
   @override
   State<PannelloAggiungiSerie> createState() => _PannelloAggiungiSerieState();
@@ -101,7 +108,11 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
   }
 
   Future<void> _aggiungi() async {
-    final parsed = leggiRigaSerie(_controller.text, blocco: _blocco);
+    final parsed = leggiRigaSerie(
+      _controller.text,
+      blocco: _blocco,
+      atleti: widget.atleti,
+    );
     if (parsed == null || _inCorso) return;
     setState(() => _inCorso = true);
     try {
@@ -122,7 +133,11 @@ class _PannelloAggiungiSerieState extends State<PannelloAggiungiSerie> {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final parsed = leggiRigaSerie(_controller.text, blocco: _blocco);
+    final parsed = leggiRigaSerie(
+      _controller.text,
+      blocco: _blocco,
+      atleti: widget.atleti,
+    );
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.s16,

@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -407,6 +407,22 @@ class AppDatabase extends _$AppDatabase {
       if (from < 33) {
         if (!await _hasColumn(m, 'serie_table', 'recupero_dopo_s')) {
           await m.addColumn(serieTable, serieTable.recuperoDopoS);
+        }
+      }
+      // v33 -> v34: sedute per ruolo — ruolo dell'atleta e destinatari
+      // delle serie.
+      if (from < 34) {
+        if (!await _hasColumn(m, 'atleti_table', 'ruolo')) {
+          await m.addColumn(atletiTable, atletiTable.ruolo);
+        }
+        for (final (nome, colonna) in [
+          ('per_ruolo', serieTable.perRuolo),
+          ('solo_atleti_json', serieTable.soloAtletiJson),
+          ('tranne_atleti_json', serieTable.tranneAtletiJson),
+        ]) {
+          if (!await _hasColumn(m, 'serie_table', nome)) {
+            await m.addColumn(serieTable, colonna);
+          }
         }
       }
     },

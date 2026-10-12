@@ -339,6 +339,10 @@ Il grafico Banister (pagina Carico: fitness/fatica/forma) è l'unico grafico a l
 
 Il grafico del **carico per settimana** (pagina Carico, colonne divise per tipo di carico) usa i colori che quei dati hanno già nell'app: acqua `evidenzaCiano` (come gli allenamenti), partita `evidenzaAmbra` (come le partite), secco `evidenzaViola`. Fra un pezzo e l'altro 2px di stacco; la legenda con le tre voci sta sopra e i numeri della settimana scelta sono scritti sotto, perché il ciano su fondo chiaro sta sotto 3:1 e il colore non deve portare il dato da solo. La settimana scelta ha un contorno in `testo`. Il rapporto della settimana con il solito (ACWR) è un numero con la fascia: "Nella norma" in `ok`, "In salita" e "Molto sopra il solito" in `attenzione`, mai `rosso`.
 
+### Per chi è una serie
+
+Una serie dei soli portieri, dei soli giocatori di movimento o di alcuni atleti dice per chi è sopra il titolo, con `EtichettaPerChi` (`per_chi_serie.dart`): icona `group` in `testoSecondario` e i destinatari ("Portieri", "Rossi, Bianchi", "Tutti tranne Rossi") in `etichetta` 600 `testo`; a bordo vasca in `corpoForte` con icona 20. È un dato della serie, non uno stato: nessun colore. Le serie di tutto il gruppo non hanno etichetta. In un "2x" con serie per persone diverse, il destinatario va davanti al pezzo nel titolo ("2 × (4×50m Tiri + Rossi: 4×50m Gambe)"). Le proposte di variante (un atleta con dolore alla spalla) sono un avviso `attenzioneTenue` con filetto `attenzione` e un'azione testuale "Prepara la variante".
+
 Gli **obiettivi delle fasi** della stagione sono una lineetta orizzontale di 2px in `testo` sulla colonna della settimana (nel volume per settimana e nel carico), con la voce "Obiettivo della fase" in legenda. Le settimane con una partita (o una gara) hanno un punto di 7px in `evidenzaAmbra` sotto la data.
 
 Regole di lettura valide per ogni grafico:

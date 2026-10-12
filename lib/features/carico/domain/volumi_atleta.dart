@@ -1,3 +1,5 @@
+import '../../allenamenti/domain/destinatari.dart';
+
 /// Volume di allenamento di un atleta, contato solo nei giorni in cui
 /// risulta "presente" — stesso perimetro dati del modello Banister (vedi
 /// [PuntoBanister]), scomposto per zona di intensità e per tipo di lavoro
@@ -17,12 +19,15 @@ class VolumiAtleta {
   });
 
   /// Le [serie] (righe di `serie_per_carico`: allenamento_id, ripetute,
-  /// distanza_m, durata_s, zona, esecuzione) degli allenamenti
-  /// [presenti].
+  /// distanza_m, durata_s, zona, esecuzione, destinatari) degli
+  /// allenamenti [presenti]. Con [atletaId] solo quelle che fa lui, con il
+  /// suo [ruolo] (vedi `Destinatari.perAtleta`).
   factory VolumiAtleta.daSerie(
     Iterable<Map<String, dynamic>> serie,
-    Set<String> presenti,
-  ) {
+    Set<String> presenti, {
+    String? atletaId,
+    String? ruolo,
+  }) {
     var metri = 0;
     var secondi = 0;
     final perZona = <String, int>{};
@@ -35,6 +40,10 @@ class VolumiAtleta {
 
     for (final r in serie) {
       if (!presenti.contains(r['allenamento_id'] as String)) continue;
+      if (atletaId != null &&
+          !Destinatari.fromMap(r).perAtleta(atletaId, ruolo)) {
+        continue;
+      }
       final ripetute = r['ripetute'] as int;
       final volume = ripetute * (r['distanza_m'] as int? ?? 0);
       final tempo = ripetute * (r['durata_s'] as int? ?? 0);

@@ -25,18 +25,47 @@ class VolumeAllenamento {
 }
 
 /// Il volume di ogni allenamento (chiave: id) che ha delle [serie].
+/// Conta il volume del gruppo ([Destinatari.delGruppo]): quello di un
+/// giocatore di movimento, senza il lavoro dei soli portieri né le serie
+/// di alcuni atleti.
 Map<String, VolumeAllenamento> volumiPerAllenamento(Iterable<Serie> serie) {
   final volumi = <String, VolumeAllenamento>{};
   for (final s in serie) {
+    if (!s.destinatari.delGruppo) continue;
     volumi[s.allenamentoId] =
-        (volumi[s.allenamentoId] ?? VolumeAllenamento.zero) +
-        VolumeAllenamento(
-          metri: s.distanzaTotaleM,
-          secondi: s.ripetute * (s.durataS ?? 0),
-        );
+        (volumi[s.allenamentoId] ?? VolumeAllenamento.zero) + volumeSerie(s);
   }
   return volumi;
 }
+
+/// Metri e lavoro a tempo di una serie.
+VolumeAllenamento volumeSerie(DatiSerie s) => VolumeAllenamento(
+  metri: s.ripetute * (s.distanzaM ?? 0),
+  secondi: s.ripetute * (s.durataS ?? 0),
+);
+
+/// Il volume di [serie], tutte quelle passate.
+VolumeAllenamento volumeDi(Iterable<DatiSerie> serie) =>
+    serie.fold(VolumeAllenamento.zero, (t, s) => t + volumeSerie(s));
+
+/// Le serie che fa il gruppo, cioè un giocatore di movimento qualunque
+/// ([Destinatari.delGruppo]).
+List<T> serieDelGruppo<T extends DatiSerie>(Iterable<T> serie) => [
+  for (final s in serie)
+    if (s.destinatari.delGruppo) s,
+];
+
+/// Le serie che fa un portiere ([Destinatari.deiPortieri]).
+List<T> serieDeiPortieri<T extends DatiSerie>(Iterable<T> serie) => [
+  for (final s in serie)
+    if (s.destinatari.deiPortieri) s,
+];
+
+/// C'è almeno una serie dei soli portieri (o dei soli giocatori di
+/// movimento): allora i portieri hanno un volume loro.
+bool haSerieDiRuolo(Iterable<DatiSerie> serie) => serie.any(
+  (s) => s.destinatari.ruolo != null && s.destinatari.soloAtleti.isEmpty,
+);
 
 /// Il lunedì (a mezzanotte) della settimana di [data].
 DateTime lunediDi(DateTime data) =>

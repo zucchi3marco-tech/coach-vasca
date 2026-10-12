@@ -41,6 +41,7 @@ class AtletiRepository {
       numeroTesseraFin: row.numeroTesseraFin,
       userId: row.userId,
       visitaMedicaScadenza: row.visitaMedicaScadenza,
+      ruolo: row.ruolo,
     );
   }
 
@@ -106,6 +107,7 @@ class AtletiRepository {
             ? null
             : DateTime.parse(map['visita_medica_scadenza'] as String),
       ),
+      ruolo: Value(map['ruolo'] as String?),
     );
   }
 
@@ -161,6 +163,7 @@ class AtletiRepository {
     String? note,
     String? numeroTesseraFin,
     DateTime? visitaMedicaScadenza,
+    String? ruolo,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -184,6 +187,7 @@ class AtletiRepository {
         'numero_tessera_fin': numeroTesseraFin,
       if (visitaMedicaScadenza != null)
         'visita_medica_scadenza': formatDateOnly(visitaMedicaScadenza),
+      'ruolo': ?ruolo,
     };
     try {
       final row = await _client
@@ -226,6 +230,7 @@ class AtletiRepository {
     String? note,
     String? numeroTesseraFin,
     DateTime? visitaMedicaScadenza,
+    String? ruolo,
   }) async {
     final id = originale.id;
     final nuovaConsensoData = consensoPrivacyFirmato
@@ -259,6 +264,7 @@ class AtletiRepository {
         'visita_medica_scadenza': visitaMedicaScadenza == null
             ? null
             : formatDateOnly(visitaMedicaScadenza),
+      if (ruolo != originale.ruolo) 'ruolo': ruolo,
     };
     if (payload.isEmpty) return originale;
 
@@ -313,6 +319,9 @@ class AtletiRepository {
               : const Value.absent(),
           visitaMedicaScadenza: payload.containsKey('visita_medica_scadenza')
               ? Value(visitaMedicaScadenza)
+              : const Value.absent(),
+          ruolo: payload.containsKey('ruolo')
+              ? Value(ruolo)
               : const Value.absent(),
         ),
       );

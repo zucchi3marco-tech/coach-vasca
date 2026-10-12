@@ -1,6 +1,7 @@
 import 'package:coach_vasca/features/allenamenti/data/serie_repository.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
+import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/allenamenti/presentation/grafico_intensita.dart';
 import 'package:coach_vasca/features/allenamenti/presentation/scrivi_allenamento_screen.dart';
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
@@ -32,10 +33,12 @@ class _SerieFinta implements SerieRepository {
     String? note,
     String? piramideId,
     int? recuperoDopoS,
+    Destinatari destinatari = Destinatari.tutti,
   }) async {
     operazioni.add('crea $ordine');
     create.add({
       'ordine': ordine,
+      'destinatari': destinatari,
       'blocco': blocco,
       'ripetute': ripetute,
       'distanzaM': distanzaM,
@@ -63,6 +66,7 @@ class _SerieFinta implements SerieRepository {
     String? note,
     ({String? id})? piramide,
     ({int? secondi})? recuperoDopo,
+    Destinatari? destinatari,
   }) async {
     operazioni.add('aggiorna $id');
     aggiornate.add({'id': id, 'ripetute': ripetute, 'distanzaM': distanzaM});
@@ -108,6 +112,7 @@ Future<void> _apri(
   List<Serie> serie = const [],
   ThemeData? tema,
   Size schermo = const Size(400, 1600),
+  List<Atleta> atleti = const [],
 }) async {
   tester.view.physicalSize = schermo;
   tester.view.devicePixelRatio = 1;
@@ -129,6 +134,7 @@ Future<void> _apri(
                     builder: (_) => ScriviAllenamentoScreen(
                       allenamento: _allenamento,
                       serie: serie,
+                      atleti: atleti,
                     ),
                   ),
                 ),
@@ -215,6 +221,52 @@ void main() {
     expect(gruppi, hasLength(1));
     expect(gruppi.single, isNotNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('le righe "per chi" arrivano fino al salvataggio', (
+    tester,
+  ) async {
+    final repository = _SerieFinta();
+    await _apri(
+      tester,
+      repository: repository,
+      atleti: [
+        Atleta(
+          id: 'bi',
+          clubId: 'c1',
+          nome: 'Sofia',
+          cognome: 'Bianchi',
+          dataNascita: DateTime(2011),
+          sport: 'pallanuoto',
+          consensoPrivacyFirmato: true,
+          attivo: true,
+        ),
+      ],
+    );
+
+    await tester.enterText(
+      _testo,
+      "Portieri\n10' tiri\n\nTutti\n400 sl\nBianchi: 200 gambe",
+    );
+    await tester.pump();
+
+    // "Come le ho capite": la riga dei portieri e la serie solo sua.
+    expect(find.bySemanticsLabel('Per: Portieri'), findsOneWidget);
+    expect(find.bySemanticsLabel('Per: Bianchi'), findsOneWidget);
+    expect(find.textContaining('non diventa una serie'), findsNothing);
+    // In alto i metri del gruppo: non i 200 di Bianchi.
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Allenamento: 400 metri, ')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    expect(repository.create.map((c) => c['destinatari']), [
+      Destinatari.portieri,
+      Destinatari.tutti,
+      const Destinatari(soloAtleti: ['bi']),
+    ]);
   });
 
   testWidgets('su schermo largo testo e anteprima stanno affiancati', (
