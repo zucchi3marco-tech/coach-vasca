@@ -34,6 +34,7 @@ import '../../presenze/presentation/presenze_screen.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../../test/presentation/tempi_da_foto_screen.dart';
+import '../../test/presentation/test_club_screen.dart';
 import '../atleta/grafica_pallanuoto.dart';
 import '../atleta/home_atleta_widgets.dart';
 
@@ -202,6 +203,16 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
             GaraFormScreen(clubId: club.id, stagione: stagione),
           ),
         ),
+      AzioneRapida(
+        icona: Icons.leaderboard_outlined,
+        titolo: 'Test e classifiche',
+        sottotitolo: pallanuoto ? 'Sprint, verticale, tiro' : 'I test del club',
+        colore: dominio.evidenzaViola,
+        onTap: () => _apri(
+          context,
+          TestClubScreen(clubId: club.id, pallanuoto: pallanuoto),
+        ),
+      ),
       AzioneRapida(
         icona: Icons.document_scanner_outlined,
         titolo: 'Tempi da una foto',

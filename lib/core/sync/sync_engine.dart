@@ -37,6 +37,7 @@ class SyncEngine {
     'referti_partita': 'partita_id',
     'schede_benessere': 'atleta_id,data',
     'rpe_sedute': 'atleta_id,evento_tipo,evento_id',
+    'test_risultati': 'test_id,atleta_id,data',
   };
 
   Future<void> processQueue() async {

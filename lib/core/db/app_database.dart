@@ -30,6 +30,8 @@ part 'app_database.g.dart';
     TrainingBlockPartiTable,
     SchedeBenessereTable,
     RpeSeduteTable,
+    TestClubTable,
+    TestRisultatiTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -39,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -423,6 +425,15 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'serie_table', nome)) {
             await m.addColumn(serieTable, colonna);
           }
+        }
+      }
+      // v34 -> v35: i test del club e i loro risultati.
+      if (from < 35) {
+        if (!await _hasTable(m, 'test_club_table')) {
+          await m.createTable(testClubTable);
+        }
+        if (!await _hasTable(m, 'test_risultati_table')) {
+          await m.createTable(testRisultatiTable);
         }
       }
     },

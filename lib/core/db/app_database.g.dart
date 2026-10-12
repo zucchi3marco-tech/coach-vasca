@@ -14697,6 +14697,1065 @@ class RpeSeduteTableCompanion extends UpdateCompanion<RpeSeduteTableData> {
   }
 }
 
+class $TestClubTableTable extends TestClubTable
+    with TableInfo<$TestClubTableTable, TestClubTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TestClubTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descrizioneMeta = const VerificationMeta(
+    'descrizione',
+  );
+  @override
+  late final GeneratedColumn<String> descrizione = GeneratedColumn<String>(
+    'descrizione',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unitaMeta = const VerificationMeta('unita');
+  @override
+  late final GeneratedColumn<String> unita = GeneratedColumn<String>(
+    'unita',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _miglioreMeta = const VerificationMeta(
+    'migliore',
+  );
+  @override
+  late final GeneratedColumn<String> migliore = GeneratedColumn<String>(
+    'migliore',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proveMeta = const VerificationMeta('prove');
+  @override
+  late final GeneratedColumn<int> prove = GeneratedColumn<int>(
+    'prove',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _punteggioMeta = const VerificationMeta(
+    'punteggio',
+  );
+  @override
+  late final GeneratedColumn<String> punteggio = GeneratedColumn<String>(
+    'punteggio',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('migliore'),
+  );
+  static const VerificationMeta _modelloMeta = const VerificationMeta(
+    'modello',
+  );
+  @override
+  late final GeneratedColumn<String> modello = GeneratedColumn<String>(
+    'modello',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _archiviatoMeta = const VerificationMeta(
+    'archiviato',
+  );
+  @override
+  late final GeneratedColumn<bool> archiviato = GeneratedColumn<bool>(
+    'archiviato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archiviato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    nome,
+    descrizione,
+    unita,
+    migliore,
+    prove,
+    punteggio,
+    modello,
+    archiviato,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'test_club_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TestClubTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('descrizione')) {
+      context.handle(
+        _descrizioneMeta,
+        descrizione.isAcceptableOrUnknown(
+          data['descrizione']!,
+          _descrizioneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('unita')) {
+      context.handle(
+        _unitaMeta,
+        unita.isAcceptableOrUnknown(data['unita']!, _unitaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_unitaMeta);
+    }
+    if (data.containsKey('migliore')) {
+      context.handle(
+        _miglioreMeta,
+        migliore.isAcceptableOrUnknown(data['migliore']!, _miglioreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_miglioreMeta);
+    }
+    if (data.containsKey('prove')) {
+      context.handle(
+        _proveMeta,
+        prove.isAcceptableOrUnknown(data['prove']!, _proveMeta),
+      );
+    }
+    if (data.containsKey('punteggio')) {
+      context.handle(
+        _punteggioMeta,
+        punteggio.isAcceptableOrUnknown(data['punteggio']!, _punteggioMeta),
+      );
+    }
+    if (data.containsKey('modello')) {
+      context.handle(
+        _modelloMeta,
+        modello.isAcceptableOrUnknown(data['modello']!, _modelloMeta),
+      );
+    }
+    if (data.containsKey('archiviato')) {
+      context.handle(
+        _archiviatoMeta,
+        archiviato.isAcceptableOrUnknown(data['archiviato']!, _archiviatoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TestClubTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TestClubTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      descrizione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descrizione'],
+      ),
+      unita: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unita'],
+      )!,
+      migliore: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}migliore'],
+      )!,
+      prove: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prove'],
+      )!,
+      punteggio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}punteggio'],
+      )!,
+      modello: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modello'],
+      ),
+      archiviato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archiviato'],
+      )!,
+    );
+  }
+
+  @override
+  $TestClubTableTable createAlias(String alias) {
+    return $TestClubTableTable(attachedDatabase, alias);
+  }
+}
+
+class TestClubTableData extends DataClass
+    implements Insertable<TestClubTableData> {
+  final String id;
+  final String clubId;
+  final String nome;
+  final String? descrizione;
+  final String unita;
+  final String migliore;
+  final int prove;
+  final String punteggio;
+  final String? modello;
+  final bool archiviato;
+  const TestClubTableData({
+    required this.id,
+    required this.clubId,
+    required this.nome,
+    this.descrizione,
+    required this.unita,
+    required this.migliore,
+    required this.prove,
+    required this.punteggio,
+    this.modello,
+    required this.archiviato,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    if (!nullToAbsent || descrizione != null) {
+      map['descrizione'] = Variable<String>(descrizione);
+    }
+    map['unita'] = Variable<String>(unita);
+    map['migliore'] = Variable<String>(migliore);
+    map['prove'] = Variable<int>(prove);
+    map['punteggio'] = Variable<String>(punteggio);
+    if (!nullToAbsent || modello != null) {
+      map['modello'] = Variable<String>(modello);
+    }
+    map['archiviato'] = Variable<bool>(archiviato);
+    return map;
+  }
+
+  TestClubTableCompanion toCompanion(bool nullToAbsent) {
+    return TestClubTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      descrizione: descrizione == null && nullToAbsent
+          ? const Value.absent()
+          : Value(descrizione),
+      unita: Value(unita),
+      migliore: Value(migliore),
+      prove: Value(prove),
+      punteggio: Value(punteggio),
+      modello: modello == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modello),
+      archiviato: Value(archiviato),
+    );
+  }
+
+  factory TestClubTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TestClubTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      descrizione: serializer.fromJson<String?>(json['descrizione']),
+      unita: serializer.fromJson<String>(json['unita']),
+      migliore: serializer.fromJson<String>(json['migliore']),
+      prove: serializer.fromJson<int>(json['prove']),
+      punteggio: serializer.fromJson<String>(json['punteggio']),
+      modello: serializer.fromJson<String?>(json['modello']),
+      archiviato: serializer.fromJson<bool>(json['archiviato']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'descrizione': serializer.toJson<String?>(descrizione),
+      'unita': serializer.toJson<String>(unita),
+      'migliore': serializer.toJson<String>(migliore),
+      'prove': serializer.toJson<int>(prove),
+      'punteggio': serializer.toJson<String>(punteggio),
+      'modello': serializer.toJson<String?>(modello),
+      'archiviato': serializer.toJson<bool>(archiviato),
+    };
+  }
+
+  TestClubTableData copyWith({
+    String? id,
+    String? clubId,
+    String? nome,
+    Value<String?> descrizione = const Value.absent(),
+    String? unita,
+    String? migliore,
+    int? prove,
+    String? punteggio,
+    Value<String?> modello = const Value.absent(),
+    bool? archiviato,
+  }) => TestClubTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    descrizione: descrizione.present ? descrizione.value : this.descrizione,
+    unita: unita ?? this.unita,
+    migliore: migliore ?? this.migliore,
+    prove: prove ?? this.prove,
+    punteggio: punteggio ?? this.punteggio,
+    modello: modello.present ? modello.value : this.modello,
+    archiviato: archiviato ?? this.archiviato,
+  );
+  TestClubTableData copyWithCompanion(TestClubTableCompanion data) {
+    return TestClubTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      descrizione: data.descrizione.present
+          ? data.descrizione.value
+          : this.descrizione,
+      unita: data.unita.present ? data.unita.value : this.unita,
+      migliore: data.migliore.present ? data.migliore.value : this.migliore,
+      prove: data.prove.present ? data.prove.value : this.prove,
+      punteggio: data.punteggio.present ? data.punteggio.value : this.punteggio,
+      modello: data.modello.present ? data.modello.value : this.modello,
+      archiviato: data.archiviato.present
+          ? data.archiviato.value
+          : this.archiviato,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestClubTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('unita: $unita, ')
+          ..write('migliore: $migliore, ')
+          ..write('prove: $prove, ')
+          ..write('punteggio: $punteggio, ')
+          ..write('modello: $modello, ')
+          ..write('archiviato: $archiviato')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    nome,
+    descrizione,
+    unita,
+    migliore,
+    prove,
+    punteggio,
+    modello,
+    archiviato,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TestClubTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.descrizione == this.descrizione &&
+          other.unita == this.unita &&
+          other.migliore == this.migliore &&
+          other.prove == this.prove &&
+          other.punteggio == this.punteggio &&
+          other.modello == this.modello &&
+          other.archiviato == this.archiviato);
+}
+
+class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<String?> descrizione;
+  final Value<String> unita;
+  final Value<String> migliore;
+  final Value<int> prove;
+  final Value<String> punteggio;
+  final Value<String?> modello;
+  final Value<bool> archiviato;
+  final Value<int> rowid;
+  const TestClubTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.descrizione = const Value.absent(),
+    this.unita = const Value.absent(),
+    this.migliore = const Value.absent(),
+    this.prove = const Value.absent(),
+    this.punteggio = const Value.absent(),
+    this.modello = const Value.absent(),
+    this.archiviato = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TestClubTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String nome,
+    this.descrizione = const Value.absent(),
+    required String unita,
+    required String migliore,
+    this.prove = const Value.absent(),
+    this.punteggio = const Value.absent(),
+    this.modello = const Value.absent(),
+    this.archiviato = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       nome = Value(nome),
+       unita = Value(unita),
+       migliore = Value(migliore);
+  static Insertable<TestClubTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<String>? descrizione,
+    Expression<String>? unita,
+    Expression<String>? migliore,
+    Expression<int>? prove,
+    Expression<String>? punteggio,
+    Expression<String>? modello,
+    Expression<bool>? archiviato,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (descrizione != null) 'descrizione': descrizione,
+      if (unita != null) 'unita': unita,
+      if (migliore != null) 'migliore': migliore,
+      if (prove != null) 'prove': prove,
+      if (punteggio != null) 'punteggio': punteggio,
+      if (modello != null) 'modello': modello,
+      if (archiviato != null) 'archiviato': archiviato,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TestClubTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<String?>? descrizione,
+    Value<String>? unita,
+    Value<String>? migliore,
+    Value<int>? prove,
+    Value<String>? punteggio,
+    Value<String?>? modello,
+    Value<bool>? archiviato,
+    Value<int>? rowid,
+  }) {
+    return TestClubTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      descrizione: descrizione ?? this.descrizione,
+      unita: unita ?? this.unita,
+      migliore: migliore ?? this.migliore,
+      prove: prove ?? this.prove,
+      punteggio: punteggio ?? this.punteggio,
+      modello: modello ?? this.modello,
+      archiviato: archiviato ?? this.archiviato,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (descrizione.present) {
+      map['descrizione'] = Variable<String>(descrizione.value);
+    }
+    if (unita.present) {
+      map['unita'] = Variable<String>(unita.value);
+    }
+    if (migliore.present) {
+      map['migliore'] = Variable<String>(migliore.value);
+    }
+    if (prove.present) {
+      map['prove'] = Variable<int>(prove.value);
+    }
+    if (punteggio.present) {
+      map['punteggio'] = Variable<String>(punteggio.value);
+    }
+    if (modello.present) {
+      map['modello'] = Variable<String>(modello.value);
+    }
+    if (archiviato.present) {
+      map['archiviato'] = Variable<bool>(archiviato.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestClubTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('unita: $unita, ')
+          ..write('migliore: $migliore, ')
+          ..write('prove: $prove, ')
+          ..write('punteggio: $punteggio, ')
+          ..write('modello: $modello, ')
+          ..write('archiviato: $archiviato, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TestRisultatiTableTable extends TestRisultatiTable
+    with TableInfo<$TestRisultatiTableTable, TestRisultatiTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TestRisultatiTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _testIdMeta = const VerificationMeta('testId');
+  @override
+  late final GeneratedColumn<String> testId = GeneratedColumn<String>(
+    'test_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<DateTime> data = GeneratedColumn<DateTime>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valoriJsonMeta = const VerificationMeta(
+    'valoriJson',
+  );
+  @override
+  late final GeneratedColumn<String> valoriJson = GeneratedColumn<String>(
+    'valori_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    testId,
+    atletaId,
+    clubId,
+    data,
+    valoriJson,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'test_risultati_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TestRisultatiTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('test_id')) {
+      context.handle(
+        _testIdMeta,
+        testId.isAcceptableOrUnknown(data['test_id']!, _testIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_testIdMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('valori_json')) {
+      context.handle(
+        _valoriJsonMeta,
+        valoriJson.isAcceptableOrUnknown(data['valori_json']!, _valoriJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valoriJsonMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TestRisultatiTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TestRisultatiTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      testId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}test_id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data'],
+      )!,
+      valoriJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}valori_json'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $TestRisultatiTableTable createAlias(String alias) {
+    return $TestRisultatiTableTable(attachedDatabase, alias);
+  }
+}
+
+class TestRisultatiTableData extends DataClass
+    implements Insertable<TestRisultatiTableData> {
+  final String id;
+  final String testId;
+  final String atletaId;
+  final String clubId;
+  final DateTime data;
+  final String valoriJson;
+  final String? note;
+  const TestRisultatiTableData({
+    required this.id,
+    required this.testId,
+    required this.atletaId,
+    required this.clubId,
+    required this.data,
+    required this.valoriJson,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['test_id'] = Variable<String>(testId);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['data'] = Variable<DateTime>(data);
+    map['valori_json'] = Variable<String>(valoriJson);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  TestRisultatiTableCompanion toCompanion(bool nullToAbsent) {
+    return TestRisultatiTableCompanion(
+      id: Value(id),
+      testId: Value(testId),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      data: Value(data),
+      valoriJson: Value(valoriJson),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory TestRisultatiTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TestRisultatiTableData(
+      id: serializer.fromJson<String>(json['id']),
+      testId: serializer.fromJson<String>(json['testId']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      data: serializer.fromJson<DateTime>(json['data']),
+      valoriJson: serializer.fromJson<String>(json['valoriJson']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'testId': serializer.toJson<String>(testId),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'data': serializer.toJson<DateTime>(data),
+      'valoriJson': serializer.toJson<String>(valoriJson),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  TestRisultatiTableData copyWith({
+    String? id,
+    String? testId,
+    String? atletaId,
+    String? clubId,
+    DateTime? data,
+    String? valoriJson,
+    Value<String?> note = const Value.absent(),
+  }) => TestRisultatiTableData(
+    id: id ?? this.id,
+    testId: testId ?? this.testId,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    data: data ?? this.data,
+    valoriJson: valoriJson ?? this.valoriJson,
+    note: note.present ? note.value : this.note,
+  );
+  TestRisultatiTableData copyWithCompanion(TestRisultatiTableCompanion data) {
+    return TestRisultatiTableData(
+      id: data.id.present ? data.id.value : this.id,
+      testId: data.testId.present ? data.testId.value : this.testId,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      data: data.data.present ? data.data.value : this.data,
+      valoriJson: data.valoriJson.present
+          ? data.valoriJson.value
+          : this.valoriJson,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestRisultatiTableData(')
+          ..write('id: $id, ')
+          ..write('testId: $testId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('data: $data, ')
+          ..write('valoriJson: $valoriJson, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, testId, atletaId, clubId, data, valoriJson, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TestRisultatiTableData &&
+          other.id == this.id &&
+          other.testId == this.testId &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.data == this.data &&
+          other.valoriJson == this.valoriJson &&
+          other.note == this.note);
+}
+
+class TestRisultatiTableCompanion
+    extends UpdateCompanion<TestRisultatiTableData> {
+  final Value<String> id;
+  final Value<String> testId;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<DateTime> data;
+  final Value<String> valoriJson;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const TestRisultatiTableCompanion({
+    this.id = const Value.absent(),
+    this.testId = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.data = const Value.absent(),
+    this.valoriJson = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TestRisultatiTableCompanion.insert({
+    required String id,
+    required String testId,
+    required String atletaId,
+    required String clubId,
+    required DateTime data,
+    required String valoriJson,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       testId = Value(testId),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       data = Value(data),
+       valoriJson = Value(valoriJson);
+  static Insertable<TestRisultatiTableData> custom({
+    Expression<String>? id,
+    Expression<String>? testId,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<DateTime>? data,
+    Expression<String>? valoriJson,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (testId != null) 'test_id': testId,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (data != null) 'data': data,
+      if (valoriJson != null) 'valori_json': valoriJson,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TestRisultatiTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? testId,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<DateTime>? data,
+    Value<String>? valoriJson,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return TestRisultatiTableCompanion(
+      id: id ?? this.id,
+      testId: testId ?? this.testId,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      data: data ?? this.data,
+      valoriJson: valoriJson ?? this.valoriJson,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (testId.present) {
+      map['test_id'] = Variable<String>(testId.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<DateTime>(data.value);
+    }
+    if (valoriJson.present) {
+      map['valori_json'] = Variable<String>(valoriJson.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestRisultatiTableCompanion(')
+          ..write('id: $id, ')
+          ..write('testId: $testId, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('data: $data, ')
+          ..write('valoriJson: $valoriJson, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -14737,6 +15796,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SchedeBenessereTableTable schedeBenessereTable =
       $SchedeBenessereTableTable(this);
   late final $RpeSeduteTableTable rpeSeduteTable = $RpeSeduteTableTable(this);
+  late final $TestClubTableTable testClubTable = $TestClubTableTable(this);
+  late final $TestRisultatiTableTable testRisultatiTable =
+      $TestRisultatiTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -14765,6 +15827,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     trainingBlockPartiTable,
     schedeBenessereTable,
     rpeSeduteTable,
+    testClubTable,
+    testRisultatiTable,
   ];
 }
 
@@ -22319,6 +23383,582 @@ typedef $$RpeSeduteTableTableProcessedTableManager =
       RpeSeduteTableData,
       PrefetchHooks Function()
     >;
+typedef $$TestClubTableTableCreateCompanionBuilder =
+    TestClubTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String nome,
+      Value<String?> descrizione,
+      required String unita,
+      required String migliore,
+      Value<int> prove,
+      Value<String> punteggio,
+      Value<String?> modello,
+      Value<bool> archiviato,
+      Value<int> rowid,
+    });
+typedef $$TestClubTableTableUpdateCompanionBuilder =
+    TestClubTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<String?> descrizione,
+      Value<String> unita,
+      Value<String> migliore,
+      Value<int> prove,
+      Value<String> punteggio,
+      Value<String?> modello,
+      Value<bool> archiviato,
+      Value<int> rowid,
+    });
+
+class $$TestClubTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TestClubTableTable> {
+  $$TestClubTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unita => $composableBuilder(
+    column: $table.unita,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get migliore => $composableBuilder(
+    column: $table.migliore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prove => $composableBuilder(
+    column: $table.prove,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get punteggio => $composableBuilder(
+    column: $table.punteggio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modello => $composableBuilder(
+    column: $table.modello,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TestClubTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TestClubTableTable> {
+  $$TestClubTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unita => $composableBuilder(
+    column: $table.unita,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get migliore => $composableBuilder(
+    column: $table.migliore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prove => $composableBuilder(
+    column: $table.prove,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get punteggio => $composableBuilder(
+    column: $table.punteggio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modello => $composableBuilder(
+    column: $table.modello,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TestClubTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TestClubTableTable> {
+  $$TestClubTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get unita =>
+      $composableBuilder(column: $table.unita, builder: (column) => column);
+
+  GeneratedColumn<String> get migliore =>
+      $composableBuilder(column: $table.migliore, builder: (column) => column);
+
+  GeneratedColumn<int> get prove =>
+      $composableBuilder(column: $table.prove, builder: (column) => column);
+
+  GeneratedColumn<String> get punteggio =>
+      $composableBuilder(column: $table.punteggio, builder: (column) => column);
+
+  GeneratedColumn<String> get modello =>
+      $composableBuilder(column: $table.modello, builder: (column) => column);
+
+  GeneratedColumn<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => column,
+  );
+}
+
+class $$TestClubTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TestClubTableTable,
+          TestClubTableData,
+          $$TestClubTableTableFilterComposer,
+          $$TestClubTableTableOrderingComposer,
+          $$TestClubTableTableAnnotationComposer,
+          $$TestClubTableTableCreateCompanionBuilder,
+          $$TestClubTableTableUpdateCompanionBuilder,
+          (
+            TestClubTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TestClubTableTable,
+              TestClubTableData
+            >,
+          ),
+          TestClubTableData,
+          PrefetchHooks Function()
+        > {
+  $$TestClubTableTableTableManager(_$AppDatabase db, $TestClubTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TestClubTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TestClubTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TestClubTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String?> descrizione = const Value.absent(),
+                Value<String> unita = const Value.absent(),
+                Value<String> migliore = const Value.absent(),
+                Value<int> prove = const Value.absent(),
+                Value<String> punteggio = const Value.absent(),
+                Value<String?> modello = const Value.absent(),
+                Value<bool> archiviato = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TestClubTableCompanion(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                descrizione: descrizione,
+                unita: unita,
+                migliore: migliore,
+                prove: prove,
+                punteggio: punteggio,
+                modello: modello,
+                archiviato: archiviato,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String nome,
+                Value<String?> descrizione = const Value.absent(),
+                required String unita,
+                required String migliore,
+                Value<int> prove = const Value.absent(),
+                Value<String> punteggio = const Value.absent(),
+                Value<String?> modello = const Value.absent(),
+                Value<bool> archiviato = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TestClubTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                descrizione: descrizione,
+                unita: unita,
+                migliore: migliore,
+                prove: prove,
+                punteggio: punteggio,
+                modello: modello,
+                archiviato: archiviato,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TestClubTableTable, TestClubTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TestClubTableTable,
+                    TestClubTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TestClubTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TestClubTableTable,
+      TestClubTableData,
+      $$TestClubTableTableFilterComposer,
+      $$TestClubTableTableOrderingComposer,
+      $$TestClubTableTableAnnotationComposer,
+      $$TestClubTableTableCreateCompanionBuilder,
+      $$TestClubTableTableUpdateCompanionBuilder,
+      (
+        TestClubTableData,
+        BaseReferences<_$AppDatabase, $TestClubTableTable, TestClubTableData>,
+      ),
+      TestClubTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$TestRisultatiTableTableCreateCompanionBuilder =
+    TestRisultatiTableCompanion Function({
+      required String id,
+      required String testId,
+      required String atletaId,
+      required String clubId,
+      required DateTime data,
+      required String valoriJson,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$TestRisultatiTableTableUpdateCompanionBuilder =
+    TestRisultatiTableCompanion Function({
+      Value<String> id,
+      Value<String> testId,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<DateTime> data,
+      Value<String> valoriJson,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$TestRisultatiTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TestRisultatiTableTable> {
+  $$TestRisultatiTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get testId => $composableBuilder(
+    column: $table.testId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valoriJson => $composableBuilder(
+    column: $table.valoriJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TestRisultatiTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TestRisultatiTableTable> {
+  $$TestRisultatiTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get testId => $composableBuilder(
+    column: $table.testId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valoriJson => $composableBuilder(
+    column: $table.valoriJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TestRisultatiTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TestRisultatiTableTable> {
+  $$TestRisultatiTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get testId =>
+      $composableBuilder(column: $table.testId, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get valoriJson => $composableBuilder(
+    column: $table.valoriJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$TestRisultatiTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TestRisultatiTableTable,
+          TestRisultatiTableData,
+          $$TestRisultatiTableTableFilterComposer,
+          $$TestRisultatiTableTableOrderingComposer,
+          $$TestRisultatiTableTableAnnotationComposer,
+          $$TestRisultatiTableTableCreateCompanionBuilder,
+          $$TestRisultatiTableTableUpdateCompanionBuilder,
+          (
+            TestRisultatiTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TestRisultatiTableTable,
+              TestRisultatiTableData
+            >,
+          ),
+          TestRisultatiTableData,
+          PrefetchHooks Function()
+        > {
+  $$TestRisultatiTableTableTableManager(
+    _$AppDatabase db,
+    $TestRisultatiTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TestRisultatiTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TestRisultatiTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TestRisultatiTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> testId = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<DateTime> data = const Value.absent(),
+                Value<String> valoriJson = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TestRisultatiTableCompanion(
+                id: id,
+                testId: testId,
+                atletaId: atletaId,
+                clubId: clubId,
+                data: data,
+                valoriJson: valoriJson,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String testId,
+                required String atletaId,
+                required String clubId,
+                required DateTime data,
+                required String valoriJson,
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TestRisultatiTableCompanion.insert(
+                id: id,
+                testId: testId,
+                atletaId: atletaId,
+                clubId: clubId,
+                data: data,
+                valoriJson: valoriJson,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TestRisultatiTableTable, TestRisultatiTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TestRisultatiTableTable,
+                    TestRisultatiTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TestRisultatiTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TestRisultatiTableTable,
+      TestRisultatiTableData,
+      $$TestRisultatiTableTableFilterComposer,
+      $$TestRisultatiTableTableOrderingComposer,
+      $$TestRisultatiTableTableAnnotationComposer,
+      $$TestRisultatiTableTableCreateCompanionBuilder,
+      $$TestRisultatiTableTableUpdateCompanionBuilder,
+      (
+        TestRisultatiTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $TestRisultatiTableTable,
+          TestRisultatiTableData
+        >,
+      ),
+      TestRisultatiTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22378,4 +24018,8 @@ class $AppDatabaseManager {
       $$SchedeBenessereTableTableTableManager(_db, _db.schedeBenessereTable);
   $$RpeSeduteTableTableTableManager get rpeSeduteTable =>
       $$RpeSeduteTableTableTableManager(_db, _db.rpeSeduteTable);
+  $$TestClubTableTableTableManager get testClubTable =>
+      $$TestClubTableTableTableManager(_db, _db.testClubTable);
+  $$TestRisultatiTableTableTableManager get testRisultatiTable =>
+      $$TestRisultatiTableTableTableManager(_db, _db.testRisultatiTable);
 }

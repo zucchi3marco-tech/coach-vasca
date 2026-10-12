@@ -436,6 +436,40 @@ class RpeSeduteTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// I test del club (sprint, verticale, tiro...): cosa si misura e come
+/// si legge — vedi `TestClub`.
+class TestClubTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  TextColumn get descrizione => text().nullable()();
+  TextColumn get unita => text()();
+  TextColumn get migliore => text()(); // minore | maggiore
+  IntColumn get prove => integer().withDefault(const Constant(1))();
+  TextColumn get punteggio =>
+      text().withDefault(const Constant('migliore'))(); // migliore|media|somma
+  TextColumn get modello => text().nullable()();
+  BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Un risultato di un test: un atleta, un giorno, il valore di ogni
+/// prova (lista JSON di numeri).
+class TestRisultatiTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get testId => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  DateTimeColumn get data => dateTime()();
+  TextColumn get valoriJson => text()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Libreria di blocchi di allenamento approvati (RIPROGETTAZIONE AI,
 /// FASE 1) — cache locale, stesso pattern di [SerieTable]/[AllenamentiTable].
 class TrainingBlocksTable extends Table {

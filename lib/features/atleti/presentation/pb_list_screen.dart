@@ -6,6 +6,7 @@ import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/pace_format.dart';
 import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_list_panel.dart';
 import '../../../widgets/app_list_row.dart';
@@ -19,7 +20,9 @@ import '../../../widgets/testata_pagina.dart';
 import '../../tabelle_passi/application/tabelle_passi_providers.dart';
 import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../../test/application/test_providers.dart';
+import '../../test/application/test_club_providers.dart';
 import '../../test/data/test_repository.dart';
+import '../../test/domain/test_club.dart';
 import '../../test/domain/test_ingresso.dart';
 import '../../test/presentation/test_form_screen.dart';
 import '../application/personal_best_providers.dart';
@@ -184,6 +187,7 @@ class PbListScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.s24),
               ],
+              _TestDiSquadra(atleta: atleta),
               TitoloSezione(
                 'Test BVS',
                 conteggio: test?.length,
@@ -237,6 +241,66 @@ class PbListScreen extends ConsumerWidget {
             dettaglioTecnico: messaggioErrore(error),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// I risultati dell'atleta nei test della squadra (sprint, verticale,
+/// tiro...): per ognuno l'ultimo e il migliore. Niente se non ne ha.
+class _TestDiSquadra extends ConsumerWidget {
+  const _TestDiSquadra({required this.atleta});
+
+  final Atleta atleta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final test = ref.watch(testClubProvider(atleta.clubId)).value ?? const [];
+    final risultati =
+        ref.watch(risultatiTestClubProvider(atleta.clubId)).value ?? const [];
+    final righe = [
+      for (final t in test)
+        if (storicoAtleta(t, risultati, atleta.id) case final suoi
+            when suoi.isNotEmpty)
+          (test: t, suoi: suoi),
+    ];
+    if (righe.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TitoloSezione('Test di squadra', conteggio: righe.length),
+          AppListPanel(
+            righe: [
+              for (final (:test, :suoi) in righe)
+                Builder(
+                  builder: (context) {
+                    final punteggi = [
+                      for (final r in suoi) test.punteggioDi(r.valori),
+                    ];
+                    final migliore = punteggi.reduce(
+                      (a, b) => test.meglio(a, b) ? a : b,
+                    );
+                    return AppListRow(
+                      titolo: test.nome,
+                      sottotitolo: [
+                        traQuanto(suoi.last.data),
+                        if (suoi.length > 1)
+                          'migliore ${formattaValore(test.unita, migliore)}',
+                      ].join(' · '),
+                      trailing: Text(
+                        formattaValore(test.unita, punteggi.last),
+                        style: AppTypography.numerica(AppTypography.numeroMedio)
+                            .copyWith(color: colori.testo),
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -329,7 +329,7 @@ Nella distinta e negli eventi partita, il numero dell'atleta sta dentro un cerch
 
 ### Grafici
 
-Il grafico Banister (pagina Carico: fitness/fatica/forma) è l'unico grafico a linee dell'app. Usa token esistenti, scelti per restare fuori dalla regola sul rosso — **mai** una linea rossa in questo grafico.
+Il grafico Banister (pagina Carico: fitness/fatica/forma) è uno dei due grafici a linee dell'app (l'altro è il confronto in un test, più sotto). Usa token esistenti, scelti per restare fuori dalla regola sul rosso — **mai** una linea rossa in questo grafico.
 
 | Curva | Token |
 | --- | --- |
@@ -342,6 +342,8 @@ Il grafico del **carico per settimana** (pagina Carico, colonne divise per tipo 
 ### Per chi è una serie
 
 Una serie dei soli portieri, dei soli giocatori di movimento o di alcuni atleti dice per chi è sopra il titolo, con `EtichettaPerChi` (`per_chi_serie.dart`): icona `group` in `testoSecondario` e i destinatari ("Portieri", "Rossi, Bianchi", "Tutti tranne Rossi") in `etichetta` 600 `testo`; a bordo vasca in `corpoForte` con icona 20. È un dato della serie, non uno stato: nessun colore. Le serie di tutto il gruppo non hanno etichetta. In un "2x" con serie per persone diverse, il destinatario va davanti al pezzo nel titolo ("2 × (4×50m Tiri + Rossi: 4×50m Gambe)"). Le proposte di variante (un atleta con dolore alla spalla) sono un avviso `attenzioneTenue` con filetto `attenzione` e un'azione testuale "Prepara la variante".
+
+Il **confronto in un test** (fino a cinque atleti, `confronto_test_screen.dart`) è il secondo grafico a linee: una linea per atleta nei colori `azione`, `evidenzaAmbra`, `evidenzaVerde`, `evidenzaViola`, `evidenzaCiano` (mai `rosso`), con la legenda dei nomi sopra. A differenza della regola generale i punti si vedono sempre (raggio 3): un test si fa poche volte, e un atleta con un risultato solo altrimenti non comparirebbe. Sotto il grafico si scrive se è meglio più in basso o più in alto. Per un test con più prove, le prove dell'ultima volta sono barre affiancate per atleta, negli stessi colori.
 
 Gli **obiettivi delle fasi** della stagione sono una lineetta orizzontale di 2px in `testo` sulla colonna della settimana (nel volume per settimana e nel carico), con la voce "Obiettivo della fase" in legenda. Le settimane con una partita (o una gara) hanno un punto di 7px in `evidenzaAmbra` sotto la data.
 
@@ -810,6 +812,7 @@ Sono un'altra cosa. Riguardano: allenamento in esecuzione, segna presenze, event
 - Lo schermo non si spegne mentre una sessione è attiva: le schermate da bordo vasca sono avvolte in `SchermoAcceso` (Screen Wake Lock del browser).
 - **Scheda bordo vasca, "una serie alla volta"** (il modo predefinito per l'allenatore): a sinistra "Serie 3 di 8" con barra e metri fatti, al centro la serie in `displayTablet` con ripartenza, recupero e passo in grande e "Poi:" la serie dopo, a destra "Avanti" (72, pieno) e "Indietro" (64); il centro si sfoglia col dito. "Tutte le serie" resta a un tocco nella barra in alto. Ripartenze e recuperi si scrivono come al pace clock: `1'40"`, `40"`, mai `0:40.00`.
 - Le scelte di un evento dal vivo (esito di una superiorità, tempo di gioco) sono bottoni da 64 in un bottom sheet: un tocco sull'esito salva, il tempo scelto resta per l'evento dopo.
+- **Inserire i risultati di un test** (`inserisci_risultati_screen.dart`) è una schermata da bordo vasca: l'atleta in corso in `titoloXl`, la fila delle prove (quella in corso in `azioneTenue` con bordo `azione`), il valore che si scrive in `display`/`displayTablet` e un tastierino di tasti da 64 (cifre, virgola solo per chili e km/h, ⌫). Il tastierino è l'unica eccezione alla regola "nessun form": le cifre sono bersagli grandi, non un campo di testo. Azioni: "Registra" (piena) e "Salta" / "Basta prove". Su schermo largo il tastierino sta a destra, largo 360.
 - Nessuna animazione oltre al punto rosso che pulsa e al cambio delle cifre.
 
 ---
