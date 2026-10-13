@@ -46,6 +46,8 @@ class EsercizioSecco {
     this.descrizione,
     this.modello,
     this.archiviato = false,
+    this.videoYoutube,
+    this.videoDaS,
   });
 
   final String id;
@@ -63,6 +65,11 @@ class EsercizioSecco {
   final String? modello;
   final bool archiviato;
 
+  /// Il video di YouTube che mostra come si fa (l'id), e da che secondo
+  /// parte: lo vede anche l'atleta.
+  final String? videoYoutube;
+  final int? videoDaS;
+
   bool get aTempo => misura == MisuraEsercizio.tempo;
 
   Map<String, dynamic> toPayload() => {
@@ -73,6 +80,8 @@ class EsercizioSecco {
     'descrizione': _pieno(descrizione),
     'modello': modello,
     'archiviato': archiviato,
+    'video_youtube': videoYoutube,
+    'video_da_s': videoYoutube == null ? null : videoDaS,
   };
 
   EsercizioSecco copyWith({bool? archiviato}) => EsercizioSecco(
@@ -85,6 +94,8 @@ class EsercizioSecco {
     descrizione: descrizione,
     modello: modello,
     archiviato: archiviato ?? this.archiviato,
+    videoYoutube: videoYoutube,
+    videoDaS: videoDaS,
   );
 }
 
@@ -162,6 +173,8 @@ class EsercizioSedutaAtleta {
           misura: MisuraEsercizio.daNome(m['misura'] as String?),
           attrezzo: m['attrezzo'] as String?,
           descrizione: m['descrizione'] as String?,
+          videoYoutube: m['video_youtube'] as String?,
+          videoDaS: (m['video_da_s'] as num?)?.toInt(),
         ),
         riga: EsercizioSeduta(
           id: m['id'] as String,

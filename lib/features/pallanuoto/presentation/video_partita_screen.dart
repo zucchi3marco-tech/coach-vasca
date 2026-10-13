@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/video/lettore_youtube.dart';
+import '../../../core/video/link_youtube.dart';
 import '../../../theme/app_layout.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';

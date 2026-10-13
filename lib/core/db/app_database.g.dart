@@ -17540,6 +17540,28 @@ class $EserciziSeccoTableTable extends EserciziSeccoTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _videoYoutubeMeta = const VerificationMeta(
+    'videoYoutube',
+  );
+  @override
+  late final GeneratedColumn<String> videoYoutube = GeneratedColumn<String>(
+    'video_youtube',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _videoDaSMeta = const VerificationMeta(
+    'videoDaS',
+  );
+  @override
+  late final GeneratedColumn<int> videoDaS = GeneratedColumn<int>(
+    'video_da_s',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -17551,6 +17573,8 @@ class $EserciziSeccoTableTable extends EserciziSeccoTable
     descrizione,
     modello,
     archiviato,
+    videoYoutube,
+    videoDaS,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17626,6 +17650,21 @@ class $EserciziSeccoTableTable extends EserciziSeccoTable
         archiviato.isAcceptableOrUnknown(data['archiviato']!, _archiviatoMeta),
       );
     }
+    if (data.containsKey('video_youtube')) {
+      context.handle(
+        _videoYoutubeMeta,
+        videoYoutube.isAcceptableOrUnknown(
+          data['video_youtube']!,
+          _videoYoutubeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('video_da_s')) {
+      context.handle(
+        _videoDaSMeta,
+        videoDaS.isAcceptableOrUnknown(data['video_da_s']!, _videoDaSMeta),
+      );
+    }
     return context;
   }
 
@@ -17671,6 +17710,14 @@ class $EserciziSeccoTableTable extends EserciziSeccoTable
         DriftSqlType.bool,
         data['${effectivePrefix}archiviato'],
       )!,
+      videoYoutube: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_youtube'],
+      ),
+      videoDaS: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}video_da_s'],
+      ),
     );
   }
 
@@ -17695,6 +17742,10 @@ class EserciziSeccoTableData extends DataClass
   final String? descrizione;
   final String? modello;
   final bool archiviato;
+
+  /// Il video di YouTube che mostra come si fa, e da che secondo parte.
+  final String? videoYoutube;
+  final int? videoDaS;
   const EserciziSeccoTableData({
     required this.id,
     required this.clubId,
@@ -17705,6 +17756,8 @@ class EserciziSeccoTableData extends DataClass
     this.descrizione,
     this.modello,
     required this.archiviato,
+    this.videoYoutube,
+    this.videoDaS,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17724,6 +17777,12 @@ class EserciziSeccoTableData extends DataClass
       map['modello'] = Variable<String>(modello);
     }
     map['archiviato'] = Variable<bool>(archiviato);
+    if (!nullToAbsent || videoYoutube != null) {
+      map['video_youtube'] = Variable<String>(videoYoutube);
+    }
+    if (!nullToAbsent || videoDaS != null) {
+      map['video_da_s'] = Variable<int>(videoDaS);
+    }
     return map;
   }
 
@@ -17744,6 +17803,12 @@ class EserciziSeccoTableData extends DataClass
           ? const Value.absent()
           : Value(modello),
       archiviato: Value(archiviato),
+      videoYoutube: videoYoutube == null && nullToAbsent
+          ? const Value.absent()
+          : Value(videoYoutube),
+      videoDaS: videoDaS == null && nullToAbsent
+          ? const Value.absent()
+          : Value(videoDaS),
     );
   }
 
@@ -17762,6 +17827,8 @@ class EserciziSeccoTableData extends DataClass
       descrizione: serializer.fromJson<String?>(json['descrizione']),
       modello: serializer.fromJson<String?>(json['modello']),
       archiviato: serializer.fromJson<bool>(json['archiviato']),
+      videoYoutube: serializer.fromJson<String?>(json['videoYoutube']),
+      videoDaS: serializer.fromJson<int?>(json['videoDaS']),
     );
   }
   @override
@@ -17777,6 +17844,8 @@ class EserciziSeccoTableData extends DataClass
       'descrizione': serializer.toJson<String?>(descrizione),
       'modello': serializer.toJson<String?>(modello),
       'archiviato': serializer.toJson<bool>(archiviato),
+      'videoYoutube': serializer.toJson<String?>(videoYoutube),
+      'videoDaS': serializer.toJson<int?>(videoDaS),
     };
   }
 
@@ -17790,6 +17859,8 @@ class EserciziSeccoTableData extends DataClass
     Value<String?> descrizione = const Value.absent(),
     Value<String?> modello = const Value.absent(),
     bool? archiviato,
+    Value<String?> videoYoutube = const Value.absent(),
+    Value<int?> videoDaS = const Value.absent(),
   }) => EserciziSeccoTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -17800,6 +17871,8 @@ class EserciziSeccoTableData extends DataClass
     descrizione: descrizione.present ? descrizione.value : this.descrizione,
     modello: modello.present ? modello.value : this.modello,
     archiviato: archiviato ?? this.archiviato,
+    videoYoutube: videoYoutube.present ? videoYoutube.value : this.videoYoutube,
+    videoDaS: videoDaS.present ? videoDaS.value : this.videoDaS,
   );
   EserciziSeccoTableData copyWithCompanion(EserciziSeccoTableCompanion data) {
     return EserciziSeccoTableData(
@@ -17816,6 +17889,10 @@ class EserciziSeccoTableData extends DataClass
       archiviato: data.archiviato.present
           ? data.archiviato.value
           : this.archiviato,
+      videoYoutube: data.videoYoutube.present
+          ? data.videoYoutube.value
+          : this.videoYoutube,
+      videoDaS: data.videoDaS.present ? data.videoDaS.value : this.videoDaS,
     );
   }
 
@@ -17830,7 +17907,9 @@ class EserciziSeccoTableData extends DataClass
           ..write('attrezzo: $attrezzo, ')
           ..write('descrizione: $descrizione, ')
           ..write('modello: $modello, ')
-          ..write('archiviato: $archiviato')
+          ..write('archiviato: $archiviato, ')
+          ..write('videoYoutube: $videoYoutube, ')
+          ..write('videoDaS: $videoDaS')
           ..write(')'))
         .toString();
   }
@@ -17846,6 +17925,8 @@ class EserciziSeccoTableData extends DataClass
     descrizione,
     modello,
     archiviato,
+    videoYoutube,
+    videoDaS,
   );
   @override
   bool operator ==(Object other) =>
@@ -17859,7 +17940,9 @@ class EserciziSeccoTableData extends DataClass
           other.attrezzo == this.attrezzo &&
           other.descrizione == this.descrizione &&
           other.modello == this.modello &&
-          other.archiviato == this.archiviato);
+          other.archiviato == this.archiviato &&
+          other.videoYoutube == this.videoYoutube &&
+          other.videoDaS == this.videoDaS);
 }
 
 class EserciziSeccoTableCompanion
@@ -17873,6 +17956,8 @@ class EserciziSeccoTableCompanion
   final Value<String?> descrizione;
   final Value<String?> modello;
   final Value<bool> archiviato;
+  final Value<String?> videoYoutube;
+  final Value<int?> videoDaS;
   final Value<int> rowid;
   const EserciziSeccoTableCompanion({
     this.id = const Value.absent(),
@@ -17884,6 +17969,8 @@ class EserciziSeccoTableCompanion
     this.descrizione = const Value.absent(),
     this.modello = const Value.absent(),
     this.archiviato = const Value.absent(),
+    this.videoYoutube = const Value.absent(),
+    this.videoDaS = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EserciziSeccoTableCompanion.insert({
@@ -17896,6 +17983,8 @@ class EserciziSeccoTableCompanion
     this.descrizione = const Value.absent(),
     this.modello = const Value.absent(),
     this.archiviato = const Value.absent(),
+    this.videoYoutube = const Value.absent(),
+    this.videoDaS = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -17911,6 +18000,8 @@ class EserciziSeccoTableCompanion
     Expression<String>? descrizione,
     Expression<String>? modello,
     Expression<bool>? archiviato,
+    Expression<String>? videoYoutube,
+    Expression<int>? videoDaS,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -17923,6 +18014,8 @@ class EserciziSeccoTableCompanion
       if (descrizione != null) 'descrizione': descrizione,
       if (modello != null) 'modello': modello,
       if (archiviato != null) 'archiviato': archiviato,
+      if (videoYoutube != null) 'video_youtube': videoYoutube,
+      if (videoDaS != null) 'video_da_s': videoDaS,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -17937,6 +18030,8 @@ class EserciziSeccoTableCompanion
     Value<String?>? descrizione,
     Value<String?>? modello,
     Value<bool>? archiviato,
+    Value<String?>? videoYoutube,
+    Value<int?>? videoDaS,
     Value<int>? rowid,
   }) {
     return EserciziSeccoTableCompanion(
@@ -17949,6 +18044,8 @@ class EserciziSeccoTableCompanion
       descrizione: descrizione ?? this.descrizione,
       modello: modello ?? this.modello,
       archiviato: archiviato ?? this.archiviato,
+      videoYoutube: videoYoutube ?? this.videoYoutube,
+      videoDaS: videoDaS ?? this.videoDaS,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -17983,6 +18080,12 @@ class EserciziSeccoTableCompanion
     if (archiviato.present) {
       map['archiviato'] = Variable<bool>(archiviato.value);
     }
+    if (videoYoutube.present) {
+      map['video_youtube'] = Variable<String>(videoYoutube.value);
+    }
+    if (videoDaS.present) {
+      map['video_da_s'] = Variable<int>(videoDaS.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18001,6 +18104,8 @@ class EserciziSeccoTableCompanion
           ..write('descrizione: $descrizione, ')
           ..write('modello: $modello, ')
           ..write('archiviato: $archiviato, ')
+          ..write('videoYoutube: $videoYoutube, ')
+          ..write('videoDaS: $videoDaS, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -28181,6 +28286,8 @@ typedef $$EserciziSeccoTableTableCreateCompanionBuilder =
       Value<String?> descrizione,
       Value<String?> modello,
       Value<bool> archiviato,
+      Value<String?> videoYoutube,
+      Value<int?> videoDaS,
       Value<int> rowid,
     });
 typedef $$EserciziSeccoTableTableUpdateCompanionBuilder =
@@ -28194,6 +28301,8 @@ typedef $$EserciziSeccoTableTableUpdateCompanionBuilder =
       Value<String?> descrizione,
       Value<String?> modello,
       Value<bool> archiviato,
+      Value<String?> videoYoutube,
+      Value<int?> videoDaS,
       Value<int> rowid,
     });
 
@@ -28248,6 +28357,16 @@ class $$EserciziSeccoTableTableFilterComposer
 
   ColumnFilters<bool> get archiviato => $composableBuilder(
     column: $table.archiviato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get videoYoutube => $composableBuilder(
+    column: $table.videoYoutube,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get videoDaS => $composableBuilder(
+    column: $table.videoDaS,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -28305,6 +28424,16 @@ class $$EserciziSeccoTableTableOrderingComposer
     column: $table.archiviato,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get videoYoutube => $composableBuilder(
+    column: $table.videoYoutube,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get videoDaS => $composableBuilder(
+    column: $table.videoDaS,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EserciziSeccoTableTableAnnotationComposer
@@ -28346,6 +28475,14 @@ class $$EserciziSeccoTableTableAnnotationComposer
     column: $table.archiviato,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get videoYoutube => $composableBuilder(
+    column: $table.videoYoutube,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get videoDaS =>
+      $composableBuilder(column: $table.videoDaS, builder: (column) => column);
 }
 
 class $$EserciziSeccoTableTableTableManager
@@ -28397,6 +28534,8 @@ class $$EserciziSeccoTableTableTableManager
                 Value<String?> descrizione = const Value.absent(),
                 Value<String?> modello = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
+                Value<String?> videoYoutube = const Value.absent(),
+                Value<int?> videoDaS = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EserciziSeccoTableCompanion(
                 id: id,
@@ -28408,6 +28547,8 @@ class $$EserciziSeccoTableTableTableManager
                 descrizione: descrizione,
                 modello: modello,
                 archiviato: archiviato,
+                videoYoutube: videoYoutube,
+                videoDaS: videoDaS,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -28421,6 +28562,8 @@ class $$EserciziSeccoTableTableTableManager
                 Value<String?> descrizione = const Value.absent(),
                 Value<String?> modello = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
+                Value<String?> videoYoutube = const Value.absent(),
+                Value<int?> videoDaS = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EserciziSeccoTableCompanion.insert(
                 id: id,
@@ -28432,6 +28575,8 @@ class $$EserciziSeccoTableTableTableManager
                 descrizione: descrizione,
                 modello: modello,
                 archiviato: archiviato,
+                videoYoutube: videoYoutube,
+                videoDaS: videoDaS,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

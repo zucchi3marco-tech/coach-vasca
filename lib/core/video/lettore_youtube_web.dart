@@ -82,11 +82,15 @@ class LettoreYoutube extends StatefulWidget {
   const LettoreYoutube({
     required this.videoId,
     required this.controllore,
+    this.inizio,
     super.key,
   });
 
   final String videoId;
   final ControlloreVideo controllore;
+
+  /// Il secondo da cui parte il video (null: dall'inizio).
+  final int? inizio;
 
   @override
   State<LettoreYoutube> createState() => _LettoreYoutubeState();
@@ -153,6 +157,9 @@ class _LettoreYoutubeState extends State<LettoreYoutube>
       ..['rel'] = 0.toJS
       ..['modestbranding'] = 1.toJS
       ..['origin'] = web.window.location.origin.toJS;
+    if (widget.inizio case final inizio? when inizio > 0) {
+      variabili['start'] = inizio.toJS;
+    }
     final eventi = JSObject()
       ..['onReady'] = ((JSObject _) {
         _pronto = true;

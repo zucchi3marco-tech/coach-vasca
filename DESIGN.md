@@ -808,6 +808,7 @@ Una seduta a secco è un allenamento a parte, con gli esercizi al posto delle se
 - **Scegliere gli esercizi**: una pagina con i filtri per categoria (chip che scorrono) e gli esercizi per categoria, quelli del club e quelli pronti insieme. Si toccano nell'ordine in cui farli: il cerchio diventa `azione` con il numero. "Aggiungi 3 esercizi" in fondo; ogni esercizio entra con la prescrizione dell'ultima volta o di quello pronto. La (i) apre come si fa.
 - **L'elenco del club** ("Esercizi a secco", dal menu della seduta): schede per categoria, "Nuovo esercizio" e "Aggiungi l'elenco pronto" in testata, gli archiviati in fondo. Un esercizio già usato in una seduta non si elimina: si archivia.
 - **L'atleta** apre la seduta dalla scheda "Prossima seduta a secco" della sua home: gli esercizi con quanto farne e, a un tocco, come si fanno.
+- **Il video di un esercizio** è un link di YouTube, nel modulo dell'esercizio sotto "Come si fa", con "Cerca su YouTube" (testuale, la ricerca con il nome dell'esercizio in una scheda nuova) e l'anteprima. Dove c'è, nella riga dell'esercizio accanto all'attrezzo c'è "video" e nell'elenco del club l'icona `smart_display`. Nel foglio dell'esercizio (allenatore e atleta) sta sotto "come si fa": prima un pulsante secondario "Guarda il video" (il lettore si carica solo se serve), poi il video 16:9 con raggio 12, nero in entrambi i temi come nel video della partita, dal secondo del link; un errore del lettore si scrive sotto in `attenzione`.
 
 ### Programmi a secco
 

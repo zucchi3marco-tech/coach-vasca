@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:coach_vasca/core/video/link_youtube.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/clip_video.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/video_partita.dart';

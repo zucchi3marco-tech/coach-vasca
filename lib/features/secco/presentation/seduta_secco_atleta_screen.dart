@@ -17,6 +17,7 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../application/secco_providers.dart';
 import '../domain/esercizio_secco.dart';
 import 'secco_widgets.dart';
+import 'video_esercizio.dart';
 
 /// Una seduta a secco vista dall'atleta: gli esercizi in ordine con
 /// quanto farne e, a un tocco, come si fanno. Le note dell'allenatore
@@ -139,10 +140,19 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.s16),
                   Text(
                     descrizione == null || descrizione.trim().isEmpty
-                        ? 'Per come si fa, chiedi all\'allenatore.'
+                        ? e.esercizio.videoYoutube == null
+                              ? 'Per come si fa, chiedi all\'allenatore.'
+                              : 'Come si fa: guarda il video.'
                         : descrizione,
                     style: AppTypography.corpo.copyWith(color: colori.testo),
                   ),
+                  if (e.esercizio.videoYoutube case final video?) ...[
+                    const SizedBox(height: AppSpacing.s16),
+                    VideoEsercizio(
+                      videoId: video,
+                      inizio: e.esercizio.videoDaS,
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/condivisione/apri_indirizzo.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/video/link_youtube.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -14,6 +17,7 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../data/secco_repository.dart';
 import '../domain/esercizio_secco.dart';
+import 'video_esercizio.dart';
 
 /// Un esercizio dell'elenco del club, nuovo o da cambiare: nome, per che
 /// cosa, a ripetizioni o a tempo, attrezzo e come si fa. Da un esercizio
@@ -44,6 +48,15 @@ class _EsercizioSeccoFormScreenState
   late final _descrizione = TextEditingController(
     text: widget.esercizio?.descrizione ?? '',
   );
+  late final _video = TextEditingController(
+    text: switch (widget.esercizio) {
+      EsercizioSecco(:final videoYoutube?, :final videoDaS) => linkYoutube(
+        videoYoutube,
+        da: videoDaS,
+      ),
+      _ => '',
+    },
+  );
   late CategoriaEsercizio _categoria =
       widget.esercizio?.categoria ?? CategoriaEsercizio.spalla;
   late MisuraEsercizio _misura =
@@ -58,6 +71,7 @@ class _EsercizioSeccoFormScreenState
     _nome.dispose();
     _attrezzo.dispose();
     _descrizione.dispose();
+    _video.dispose();
     super.dispose();
   }
 
@@ -71,6 +85,8 @@ class _EsercizioSeccoFormScreenState
     descrizione: _descrizione.text,
     modello: widget.esercizio?.modello,
     archiviato: archiviato ?? widget.esercizio?.archiviato ?? false,
+    videoYoutube: idYoutubeDa(_video.text),
+    videoDaS: inizioYoutubeDa(_video.text),
   );
 
   Future<void> _salva({bool? archiviato}) async {
@@ -92,6 +108,20 @@ class _EsercizioSeccoFormScreenState
     } finally {
       if (mounted) setState(() => _salvo = false);
     }
+  }
+
+  /// La ricerca di YouTube con il nome dell'esercizio, in una scheda nuova
+  /// (o, se non si può, l'indirizzo negli appunti).
+  void _cercaSuYoutube() {
+    final nome = _nome.text.trim();
+    final indirizzo =
+        'https://www.youtube.com/results?search_query='
+        '${Uri.encodeQueryComponent(nome.isEmpty ? 'esercizio prevenzione spalla' : '$nome esercizio')}';
+    if (apriIndirizzo(indirizzo)) return;
+    Clipboard.setData(ClipboardData(text: indirizzo));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Indirizzo della ricerca copiato.')),
+    );
   }
 
   Future<void> _elimina() async {
@@ -248,6 +278,42 @@ class _EsercizioSeccoFormScreenState
                   controller: _descrizione,
                   maxLines: 5,
                   aiuto: 'Lo legge anche l\'atleta nella sua seduta.',
+                ),
+                AppTextField(
+                  etichetta: 'Video su YouTube (facoltativo)',
+                  controller: _video,
+                  keyboardType: TextInputType.url,
+                  aiuto:
+                      'Incolla il link del video, anche «non in elenco»: se '
+                      'ha il minuto di partenza, parte da lì. Lo vede anche '
+                      'l\'atleta.',
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty || idYoutubeDa(v) != null
+                      ? null
+                      : 'Non è un link di YouTube: copialo da «Condividi» '
+                            'sotto il video',
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _cercaSuYoutube,
+                    icon: const Icon(Icons.search),
+                    label: const Text('Cerca su YouTube'),
+                  ),
+                ),
+                // L'anteprima del video del link, per controllare che sia
+                // quello giusto.
+                ValueListenableBuilder(
+                  valueListenable: _video,
+                  builder: (context, valore, _) {
+                    final id = idYoutubeDa(valore.text);
+                    return id == null
+                        ? const SizedBox.shrink()
+                        : VideoEsercizio(
+                            videoId: id,
+                            inizio: inizioYoutubeDa(valore.text),
+                          );
+                  },
                 ),
               ],
             ),

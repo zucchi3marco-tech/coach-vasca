@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
@@ -87,6 +88,13 @@ class EserciziSeccoScreen extends ConsumerWidget {
               if (e.aTempo) 'a tempo',
             ].join(' · '),
             attenuata: e.archiviato,
+            trailing: e.videoYoutube == null
+                ? null
+                : Icon(
+                    Icons.smart_display_outlined,
+                    color: context.colori.testoSecondario,
+                    semanticLabel: 'Con il video',
+                  ),
             onTap: () => _apri(
               context,
               EsercizioSeccoFormScreen(clubId: clubId, esercizio: e),

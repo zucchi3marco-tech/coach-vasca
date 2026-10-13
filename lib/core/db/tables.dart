@@ -228,6 +228,10 @@ class EserciziSeccoTable extends Table {
   TextColumn get modello => text().nullable()();
   BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
 
+  /// Il video di YouTube che mostra come si fa, e da che secondo parte.
+  TextColumn get videoYoutube => text().nullable()();
+  IntColumn get videoDaS => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

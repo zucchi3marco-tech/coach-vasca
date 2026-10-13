@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:coach_vasca/core/video/lettore_youtube.dart';
 import 'package:coach_vasca/features/allenamenti/application/allenamenti_providers.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
@@ -189,6 +190,8 @@ void main() {
                   categoria: CategoriaEsercizio.core,
                   misura: MisuraEsercizio.tempo,
                   descrizione: 'Sugli avambracci, il corpo in linea.',
+                  videoYoutube: 'dQw4w9WgXcQ',
+                  videoDaS: 15,
                 ),
                 riga: EsercizioSeduta(
                   id: 'r1',
@@ -214,8 +217,16 @@ void main() {
 
     expect(find.text('Plank frontale'), findsOneWidget);
     expect(find.text("3 × 40'' · recupero 30''"), findsOneWidget);
+    // Nella riga si vede che c'è il video.
+    expect(find.text('video'), findsOneWidget);
     await tester.tap(find.text('Plank frontale'));
     await tester.pumpAndSettle();
     expect(find.text('Sugli avambracci, il corpo in linea.'), findsOneWidget);
+    // Il video si carica solo quando lo si chiede.
+    expect(find.byType(LettoreYoutube), findsNothing);
+    await tester.tap(find.text('Guarda il video'));
+    await tester.pumpAndSettle();
+    final lettore = tester.widget<LettoreYoutube>(find.byType(LettoreYoutube));
+    expect((lettore.videoId, lettore.inizio), ('dQw4w9WgXcQ', 15));
   });
 }

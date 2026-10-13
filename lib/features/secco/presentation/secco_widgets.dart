@@ -78,7 +78,11 @@ class RigaEsercizio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final attrezzo = esercizio?.attrezzo;
+    // L'attrezzo e, se c'è, il video: chi lo vede sa che toccando lo trova.
+    final attrezzo = [
+      if (esercizio?.attrezzo case final a? when a.trim().isNotEmpty) a,
+      if (esercizio?.videoYoutube != null) 'video',
+    ].join(' · ');
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
@@ -120,7 +124,7 @@ class RigaEsercizio extends StatelessWidget {
                       style: AppTypography.numerica(AppTypography.corpo)
                           .copyWith(color: colori.testo),
                     ),
-                    if (attrezzo != null && attrezzo.isNotEmpty) ...[
+                    if (attrezzo.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         attrezzo,

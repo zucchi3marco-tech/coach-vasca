@@ -9,6 +9,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../domain/esercizio_secco.dart';
+import 'video_esercizio.dart';
 
 /// Il foglio di un esercizio di una seduta (o di una seduta di un
 /// programma): come si fa, poi serie, ripetizioni o tempo, carico,
@@ -120,6 +121,10 @@ class _FoglioEsercizioState extends State<_FoglioEsercizio> {
                   color: colori.testoSecondario,
                 ),
               ),
+            ],
+            if (e?.videoYoutube case final video?) ...[
+              const SizedBox(height: AppSpacing.s12),
+              VideoEsercizio(videoId: video, inizio: e!.videoDaS),
             ],
             const SizedBox(height: AppSpacing.s20),
             _Contatore(

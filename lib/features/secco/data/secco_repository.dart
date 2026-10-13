@@ -40,6 +40,8 @@ class SeccoRepository {
     descrizione: r.descrizione,
     modello: r.modello,
     archiviato: r.archiviato,
+    videoYoutube: r.videoYoutube,
+    videoDaS: r.videoDaS,
   );
 
   EserciziSeccoTableCompanion _esercizioDaMap(Map<String, dynamic> m) =>
@@ -53,6 +55,8 @@ class SeccoRepository {
         descrizione: Value(m['descrizione'] as String?),
         modello: Value(m['modello'] as String?),
         archiviato: Value(m['archiviato'] as bool? ?? false),
+        videoYoutube: Value(m['video_youtube'] as String?),
+        videoDaS: Value((m['video_da_s'] as num?)?.toInt()),
       );
 
   EsercizioSeduta _rigaDaRiga(EserciziSedutaTableData r) => EsercizioSeduta(

@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -509,6 +509,17 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'programmi_secco_table')) {
           await m.createTable(programmiSeccoTable);
+        }
+      }
+      // v40 -> v41: il video degli esercizi a secco.
+      if (from < 41) {
+        for (final (nome, colonna) in [
+          ('video_youtube', eserciziSeccoTable.videoYoutube),
+          ('video_da_s', eserciziSeccoTable.videoDaS),
+        ]) {
+          if (!await _hasColumn(m, 'esercizi_secco_table', nome)) {
+            await m.addColumn(eserciziSeccoTable, colonna);
+          }
         }
       }
     },

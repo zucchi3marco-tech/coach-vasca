@@ -98,33 +98,6 @@ double? secondoNelVideo(
       momento.difference(punto.momento).inMilliseconds / 1000;
 }
 
-/// L'id del video da un link di YouTube (watch, youtu.be, shorts, live,
-/// embed, anche con `&t=` o `?si=`) o dall'id da solo; null se non è un
-/// video di YouTube.
-String? idYoutubeDa(String testo) {
-  final t = testo.trim();
-  final soloId = RegExp(r'^[A-Za-z0-9_-]{11}$');
-  if (soloId.hasMatch(t)) return t;
-  final uri = Uri.tryParse(t.contains('://') ? t : 'https://$t');
-  if (uri == null) return null;
-  final host = uri.host.toLowerCase().replaceFirst(RegExp(r'^(www|m)\.'), '');
-  String? candidato;
-  if (host == 'youtu.be') {
-    candidato = uri.pathSegments.firstOrNull;
-  } else if (host == 'youtube.com' ||
-      host == 'youtube-nocookie.com' ||
-      host == 'music.youtube.com') {
-    final segmenti = uri.pathSegments;
-    if (segmenti.firstOrNull == 'watch') {
-      candidato = uri.queryParameters['v'];
-    } else if (segmenti.length >= 2 &&
-        const ['embed', 'shorts', 'live', 'v'].contains(segmenti.first)) {
-      candidato = segmenti[1];
-    }
-  }
-  return candidato != null && soloId.hasMatch(candidato) ? candidato : null;
-}
-
 /// Una nota su un fotogramma del video ([secondo]): frecce e cerchi
 /// disegnati sopra e un testo, per tutta la squadra ([atletaId] null) o
 /// per un convocato. [eventoId] è la clip da cui è nata, se c'è.

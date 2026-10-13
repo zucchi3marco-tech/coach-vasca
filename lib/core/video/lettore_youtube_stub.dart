@@ -10,11 +10,15 @@ class LettoreYoutube extends StatefulWidget {
   const LettoreYoutube({
     required this.videoId,
     required this.controllore,
+    this.inizio,
     super.key,
   });
 
   final String videoId;
   final ControlloreVideo controllore;
+
+  /// Il secondo da cui parte il video (null: dall'inizio).
+  final int? inizio;
 
   @override
   State<LettoreYoutube> createState() => _LettoreYoutubeState();
