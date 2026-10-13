@@ -32,6 +32,8 @@ class AllenamentiRepository {
       note: row.note,
       tipo: row.tipo,
       durataMin: row.durataMin,
+      programmaId: row.programmaId,
+      programmaSettimana: row.programmaSettimana,
     );
   }
 
@@ -45,6 +47,8 @@ class AllenamentiRepository {
       note: Value(map['note'] as String?),
       tipo: Value(map['tipo'] as String? ?? 'acqua'),
       durataMin: Value((map['durata_min'] as num?)?.toInt()),
+      programmaId: Value(map['programma_id'] as String?),
+      programmaSettimana: Value((map['programma_settimana'] as num?)?.toInt()),
     );
   }
 

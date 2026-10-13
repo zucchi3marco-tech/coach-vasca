@@ -12,7 +12,6 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/tonal_chip.dart';
-import '../../allenamenti/domain/allenamento.dart';
 import '../application/secco_providers.dart';
 import '../data/secco_repository.dart';
 import '../domain/esercizio_secco.dart';
@@ -32,19 +31,23 @@ typedef _Voce = ({
   ModelloEsercizio? pronto,
 });
 
-/// Si scelgono gli esercizi da aggiungere alla seduta, nell'ordine in cui
-/// farli (il numero accanto lo dice): quelli del club e quelli pronti,
-/// per categoria. Ognuno entra con la prescrizione dell'ultima volta (o
+/// Si scelgono gli esercizi da aggiungere a una seduta (o a una seduta di
+/// un programma), nell'ordine in cui farli (il numero accanto lo dice):
+/// quelli del club e quelli pronti, per categoria. Chi apre la pagina li
+/// mette nella seduta, di solito con la prescrizione dell'ultima volta (o
 /// quella dell'esercizio pronto), da cambiare poi con un tocco.
 class ScegliEserciziScreen extends ConsumerStatefulWidget {
   const ScegliEserciziScreen({
-    required this.allenamento,
-    required this.ordineSuccessivo,
+    required this.clubId,
+    required this.aggiungi,
     super.key,
   });
 
-  final Allenamento allenamento;
-  final int ordineSuccessivo;
+  final String clubId;
+
+  /// Riceve gli esercizi scelti in ordine (quelli pronti già aggiunti
+  /// all'elenco del club) e li mette nella seduta.
+  final Future<void> Function(List<EsercizioSecco> scelti) aggiungi;
 
   @override
   ConsumerState<ScegliEserciziScreen> createState() =>
@@ -65,8 +68,7 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
   Future<void> _nuovo() async {
     final creato = await Navigator.of(context).push<EsercizioSecco>(
       MaterialPageRoute(
-        builder: (_) =>
-            EsercizioSeccoFormScreen(clubId: widget.allenamento.clubId),
+        builder: (_) => EsercizioSeccoFormScreen(clubId: widget.clubId),
       ),
     );
     if (creato != null && mounted) {
@@ -81,47 +83,29 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
     });
     final repository = ref.read(seccoRepositoryProvider);
     final messaggero = ScaffoldMessenger.of(context);
-    final a = widget.allenamento;
-    var ordine = widget.ordineSuccessivo;
-    var aggiunti = 0;
     try {
+      final scelti = <EsercizioSecco>[];
       for (final chiave in _scelte) {
         final voce = voci[chiave];
         if (voce == null) continue;
-        final esercizio =
-            voce.delClub ??
-            await repository.creaEsercizio(
-              EsercizioSecco(
-                id: '',
-                clubId: a.clubId,
-                nome: voce.pronto!.nome,
-                categoria: voce.pronto!.categoria,
-                misura: voce.pronto!.misura,
-                attrezzo: voce.pronto!.attrezzo,
-                descrizione: voce.pronto!.descrizione,
-                modello: voce.pronto!.chiave,
+        scelti.add(
+          voce.delClub ??
+              await repository.creaEsercizio(
+                EsercizioSecco(
+                  id: '',
+                  clubId: widget.clubId,
+                  nome: voce.pronto!.nome,
+                  categoria: voce.pronto!.categoria,
+                  misura: voce.pronto!.misura,
+                  attrezzo: voce.pronto!.attrezzo,
+                  descrizione: voce.pronto!.descrizione,
+                  modello: voce.pronto!.chiave,
+                ),
               ),
-            );
-        final p = prescrizioneProposta(
-          esercizio,
-          ultima: await repository.ultimaVolta(esercizio.id),
         );
-        await repository.aggiungiAllaSeduta(
-          EsercizioSeduta(
-            id: '',
-            allenamentoId: a.id,
-            clubId: a.clubId,
-            esercizioId: esercizio.id,
-            ordine: ordine++,
-            serie: p.serie,
-            ripetizioni: p.ripetizioni,
-            durataS: p.durataS,
-            carico: p.carico,
-            recuperoS: p.recuperoS,
-          ),
-        );
-        aggiunti++;
       }
+      await widget.aggiungi(scelti);
+      final aggiunti = scelti.length;
       if (!mounted) return;
       Navigator.of(context).pop();
       messaggero.showSnackBar(
@@ -160,9 +144,7 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final eserciziAsync = ref.watch(
-      eserciziSeccoProvider(widget.allenamento.clubId),
-    );
+    final eserciziAsync = ref.watch(eserciziSeccoProvider(widget.clubId));
 
     return AppScaffold(
       appBar: AppBar(

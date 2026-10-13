@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../features/secco/domain/esercizio_secco.dart';
+import '../../features/secco/domain/programma_secco.dart';
 import '../db/app_database.dart';
 import '../utils/giorni.dart';
 
@@ -34,7 +35,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 9;
+const _versioneDati = 10;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -641,6 +642,25 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
           }
         }
       }
+      // Un programma pronto già nel club, da mettere nel calendario.
+      final spalla = modelliProgrammi.first;
+      await db
+          .into(db.programmiSeccoTable)
+          .insert(
+            ProgrammiSeccoTableCompanion.insert(
+              id: uuid.v4(),
+              clubId: clubId,
+              nome: spalla.nome,
+              descrizione: Value(spalla.descrizione),
+              durataMin: Value(spalla.durataMin),
+              settimaneJson: Value(
+                jsonEncode([
+                  for (final s in spalla.settimaneCon(esercizi)) s.toMap(),
+                ]),
+              ),
+              modello: Value(spalla.chiave),
+            ),
+          );
     }
 
     if (sport == 'nuoto') {

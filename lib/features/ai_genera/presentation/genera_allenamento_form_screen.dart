@@ -45,6 +45,7 @@ import 'campi_generatore.dart';
 import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
+import '../../secco/presentation/programmi_secco_screen.dart';
 import '../../secco/presentation/seduta_secco_screen.dart';
 
 // Oltre questa attesa, il calcolo delle corsie/della libreria blocchi
@@ -767,6 +768,26 @@ class _GeneraAllenamentoFormScreenState
                         : 'Crea e scegli gli esercizi',
                     isLoading: _creazioneSeccoInCorso,
                     onPressed: _occupato ? null : _creaSecco,
+                  ),
+                  Text(
+                    'Più settimane di sedute già scritte, come la '
+                    'prevenzione della spalla? Mettile nel calendario da un '
+                    'programma.',
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  SecondaryButton(
+                    label: 'Programmi a secco',
+                    icon: Icons.event_repeat,
+                    onPressed: _occupato
+                        ? null
+                        : () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  ProgrammiSeccoScreen(clubId: widget.clubId),
+                            ),
+                          ),
                   ),
                 ],
               ),

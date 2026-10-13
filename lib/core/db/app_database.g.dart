@@ -4727,6 +4727,27 @@ class $AllenamentiTableTable extends AllenamentiTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _programmaIdMeta = const VerificationMeta(
+    'programmaId',
+  );
+  @override
+  late final GeneratedColumn<String> programmaId = GeneratedColumn<String>(
+    'programma_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _programmaSettimanaMeta =
+      const VerificationMeta('programmaSettimana');
+  @override
+  late final GeneratedColumn<int> programmaSettimana = GeneratedColumn<int>(
+    'programma_settimana',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4737,6 +4758,8 @@ class $AllenamentiTableTable extends AllenamentiTable
     note,
     tipo,
     durataMin,
+    programmaId,
+    programmaSettimana,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4801,6 +4824,24 @@ class $AllenamentiTableTable extends AllenamentiTable
         durataMin.isAcceptableOrUnknown(data['durata_min']!, _durataMinMeta),
       );
     }
+    if (data.containsKey('programma_id')) {
+      context.handle(
+        _programmaIdMeta,
+        programmaId.isAcceptableOrUnknown(
+          data['programma_id']!,
+          _programmaIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('programma_settimana')) {
+      context.handle(
+        _programmaSettimanaMeta,
+        programmaSettimana.isAcceptableOrUnknown(
+          data['programma_settimana']!,
+          _programmaSettimanaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4842,6 +4883,14 @@ class $AllenamentiTableTable extends AllenamentiTable
         DriftSqlType.int,
         data['${effectivePrefix}durata_min'],
       ),
+      programmaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}programma_id'],
+      ),
+      programmaSettimana: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}programma_settimana'],
+      ),
     );
   }
 
@@ -4865,6 +4914,10 @@ class AllenamentiTableData extends DataClass
 
   /// Quanto dura una seduta a secco (i minuti del carico).
   final int? durataMin;
+
+  /// Il programma a secco da cui è nata la seduta, e di quale settimana.
+  final String? programmaId;
+  final int? programmaSettimana;
   const AllenamentiTableData({
     required this.id,
     required this.clubId,
@@ -4874,6 +4927,8 @@ class AllenamentiTableData extends DataClass
     this.note,
     required this.tipo,
     this.durataMin,
+    this.programmaId,
+    this.programmaSettimana,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4894,6 +4949,12 @@ class AllenamentiTableData extends DataClass
     if (!nullToAbsent || durataMin != null) {
       map['durata_min'] = Variable<int>(durataMin);
     }
+    if (!nullToAbsent || programmaId != null) {
+      map['programma_id'] = Variable<String>(programmaId);
+    }
+    if (!nullToAbsent || programmaSettimana != null) {
+      map['programma_settimana'] = Variable<int>(programmaSettimana);
+    }
     return map;
   }
 
@@ -4913,6 +4974,12 @@ class AllenamentiTableData extends DataClass
       durataMin: durataMin == null && nullToAbsent
           ? const Value.absent()
           : Value(durataMin),
+      programmaId: programmaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programmaId),
+      programmaSettimana: programmaSettimana == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programmaSettimana),
     );
   }
 
@@ -4930,6 +4997,8 @@ class AllenamentiTableData extends DataClass
       note: serializer.fromJson<String?>(json['note']),
       tipo: serializer.fromJson<String>(json['tipo']),
       durataMin: serializer.fromJson<int?>(json['durataMin']),
+      programmaId: serializer.fromJson<String?>(json['programmaId']),
+      programmaSettimana: serializer.fromJson<int?>(json['programmaSettimana']),
     );
   }
   @override
@@ -4944,6 +5013,8 @@ class AllenamentiTableData extends DataClass
       'note': serializer.toJson<String?>(note),
       'tipo': serializer.toJson<String>(tipo),
       'durataMin': serializer.toJson<int?>(durataMin),
+      'programmaId': serializer.toJson<String?>(programmaId),
+      'programmaSettimana': serializer.toJson<int?>(programmaSettimana),
     };
   }
 
@@ -4956,6 +5027,8 @@ class AllenamentiTableData extends DataClass
     Value<String?> note = const Value.absent(),
     String? tipo,
     Value<int?> durataMin = const Value.absent(),
+    Value<String?> programmaId = const Value.absent(),
+    Value<int?> programmaSettimana = const Value.absent(),
   }) => AllenamentiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -4965,6 +5038,10 @@ class AllenamentiTableData extends DataClass
     note: note.present ? note.value : this.note,
     tipo: tipo ?? this.tipo,
     durataMin: durataMin.present ? durataMin.value : this.durataMin,
+    programmaId: programmaId.present ? programmaId.value : this.programmaId,
+    programmaSettimana: programmaSettimana.present
+        ? programmaSettimana.value
+        : this.programmaSettimana,
   );
   AllenamentiTableData copyWithCompanion(AllenamentiTableCompanion data) {
     return AllenamentiTableData(
@@ -4976,6 +5053,12 @@ class AllenamentiTableData extends DataClass
       note: data.note.present ? data.note.value : this.note,
       tipo: data.tipo.present ? data.tipo.value : this.tipo,
       durataMin: data.durataMin.present ? data.durataMin.value : this.durataMin,
+      programmaId: data.programmaId.present
+          ? data.programmaId.value
+          : this.programmaId,
+      programmaSettimana: data.programmaSettimana.present
+          ? data.programmaSettimana.value
+          : this.programmaSettimana,
     );
   }
 
@@ -4989,14 +5072,26 @@ class AllenamentiTableData extends DataClass
           ..write('gruppoId: $gruppoId, ')
           ..write('note: $note, ')
           ..write('tipo: $tipo, ')
-          ..write('durataMin: $durataMin')
+          ..write('durataMin: $durataMin, ')
+          ..write('programmaId: $programmaId, ')
+          ..write('programmaSettimana: $programmaSettimana')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, clubId, data, titolo, gruppoId, note, tipo, durataMin);
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    data,
+    titolo,
+    gruppoId,
+    note,
+    tipo,
+    durataMin,
+    programmaId,
+    programmaSettimana,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5008,7 +5103,9 @@ class AllenamentiTableData extends DataClass
           other.gruppoId == this.gruppoId &&
           other.note == this.note &&
           other.tipo == this.tipo &&
-          other.durataMin == this.durataMin);
+          other.durataMin == this.durataMin &&
+          other.programmaId == this.programmaId &&
+          other.programmaSettimana == this.programmaSettimana);
 }
 
 class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
@@ -5020,6 +5117,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
   final Value<String?> note;
   final Value<String> tipo;
   final Value<int?> durataMin;
+  final Value<String?> programmaId;
+  final Value<int?> programmaSettimana;
   final Value<int> rowid;
   const AllenamentiTableCompanion({
     this.id = const Value.absent(),
@@ -5030,6 +5129,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     this.note = const Value.absent(),
     this.tipo = const Value.absent(),
     this.durataMin = const Value.absent(),
+    this.programmaId = const Value.absent(),
+    this.programmaSettimana = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AllenamentiTableCompanion.insert({
@@ -5041,6 +5142,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     this.note = const Value.absent(),
     this.tipo = const Value.absent(),
     this.durataMin = const Value.absent(),
+    this.programmaId = const Value.absent(),
+    this.programmaSettimana = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -5054,6 +5157,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     Expression<String>? note,
     Expression<String>? tipo,
     Expression<int>? durataMin,
+    Expression<String>? programmaId,
+    Expression<int>? programmaSettimana,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5065,6 +5170,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
       if (note != null) 'note': note,
       if (tipo != null) 'tipo': tipo,
       if (durataMin != null) 'durata_min': durataMin,
+      if (programmaId != null) 'programma_id': programmaId,
+      if (programmaSettimana != null) 'programma_settimana': programmaSettimana,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5078,6 +5185,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     Value<String?>? note,
     Value<String>? tipo,
     Value<int?>? durataMin,
+    Value<String?>? programmaId,
+    Value<int?>? programmaSettimana,
     Value<int>? rowid,
   }) {
     return AllenamentiTableCompanion(
@@ -5089,6 +5198,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
       note: note ?? this.note,
       tipo: tipo ?? this.tipo,
       durataMin: durataMin ?? this.durataMin,
+      programmaId: programmaId ?? this.programmaId,
+      programmaSettimana: programmaSettimana ?? this.programmaSettimana,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5120,6 +5231,12 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
     if (durataMin.present) {
       map['durata_min'] = Variable<int>(durataMin.value);
     }
+    if (programmaId.present) {
+      map['programma_id'] = Variable<String>(programmaId.value);
+    }
+    if (programmaSettimana.present) {
+      map['programma_settimana'] = Variable<int>(programmaSettimana.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5137,6 +5254,8 @@ class AllenamentiTableCompanion extends UpdateCompanion<AllenamentiTableData> {
           ..write('note: $note, ')
           ..write('tipo: $tipo, ')
           ..write('durataMin: $durataMin, ')
+          ..write('programmaId: $programmaId, ')
+          ..write('programmaSettimana: $programmaSettimana, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18555,6 +18674,482 @@ class EserciziSedutaTableCompanion
   }
 }
 
+class $ProgrammiSeccoTableTable extends ProgrammiSeccoTable
+    with TableInfo<$ProgrammiSeccoTableTable, ProgrammiSeccoTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgrammiSeccoTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descrizioneMeta = const VerificationMeta(
+    'descrizione',
+  );
+  @override
+  late final GeneratedColumn<String> descrizione = GeneratedColumn<String>(
+    'descrizione',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durataMinMeta = const VerificationMeta(
+    'durataMin',
+  );
+  @override
+  late final GeneratedColumn<int> durataMin = GeneratedColumn<int>(
+    'durata_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(20),
+  );
+  static const VerificationMeta _settimaneJsonMeta = const VerificationMeta(
+    'settimaneJson',
+  );
+  @override
+  late final GeneratedColumn<String> settimaneJson = GeneratedColumn<String>(
+    'settimane_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _modelloMeta = const VerificationMeta(
+    'modello',
+  );
+  @override
+  late final GeneratedColumn<String> modello = GeneratedColumn<String>(
+    'modello',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    nome,
+    descrizione,
+    durataMin,
+    settimaneJson,
+    modello,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'programmi_secco_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgrammiSeccoTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('descrizione')) {
+      context.handle(
+        _descrizioneMeta,
+        descrizione.isAcceptableOrUnknown(
+          data['descrizione']!,
+          _descrizioneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('durata_min')) {
+      context.handle(
+        _durataMinMeta,
+        durataMin.isAcceptableOrUnknown(data['durata_min']!, _durataMinMeta),
+      );
+    }
+    if (data.containsKey('settimane_json')) {
+      context.handle(
+        _settimaneJsonMeta,
+        settimaneJson.isAcceptableOrUnknown(
+          data['settimane_json']!,
+          _settimaneJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('modello')) {
+      context.handle(
+        _modelloMeta,
+        modello.isAcceptableOrUnknown(data['modello']!, _modelloMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgrammiSeccoTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgrammiSeccoTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      descrizione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descrizione'],
+      ),
+      durataMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}durata_min'],
+      )!,
+      settimaneJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}settimane_json'],
+      )!,
+      modello: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modello'],
+      ),
+    );
+  }
+
+  @override
+  $ProgrammiSeccoTableTable createAlias(String alias) {
+    return $ProgrammiSeccoTableTable(attachedDatabase, alias);
+  }
+}
+
+class ProgrammiSeccoTableData extends DataClass
+    implements Insertable<ProgrammiSeccoTableData> {
+  final String id;
+  final String clubId;
+  final String nome;
+  final String? descrizione;
+  final int durataMin;
+
+  /// Le settimane con le loro sedute, come lista JSON (vedi
+  /// `ProgrammaSecco`).
+  final String settimaneJson;
+  final String? modello;
+  const ProgrammiSeccoTableData({
+    required this.id,
+    required this.clubId,
+    required this.nome,
+    this.descrizione,
+    required this.durataMin,
+    required this.settimaneJson,
+    this.modello,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    map['nome'] = Variable<String>(nome);
+    if (!nullToAbsent || descrizione != null) {
+      map['descrizione'] = Variable<String>(descrizione);
+    }
+    map['durata_min'] = Variable<int>(durataMin);
+    map['settimane_json'] = Variable<String>(settimaneJson);
+    if (!nullToAbsent || modello != null) {
+      map['modello'] = Variable<String>(modello);
+    }
+    return map;
+  }
+
+  ProgrammiSeccoTableCompanion toCompanion(bool nullToAbsent) {
+    return ProgrammiSeccoTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      nome: Value(nome),
+      descrizione: descrizione == null && nullToAbsent
+          ? const Value.absent()
+          : Value(descrizione),
+      durataMin: Value(durataMin),
+      settimaneJson: Value(settimaneJson),
+      modello: modello == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modello),
+    );
+  }
+
+  factory ProgrammiSeccoTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgrammiSeccoTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      descrizione: serializer.fromJson<String?>(json['descrizione']),
+      durataMin: serializer.fromJson<int>(json['durataMin']),
+      settimaneJson: serializer.fromJson<String>(json['settimaneJson']),
+      modello: serializer.fromJson<String?>(json['modello']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'nome': serializer.toJson<String>(nome),
+      'descrizione': serializer.toJson<String?>(descrizione),
+      'durataMin': serializer.toJson<int>(durataMin),
+      'settimaneJson': serializer.toJson<String>(settimaneJson),
+      'modello': serializer.toJson<String?>(modello),
+    };
+  }
+
+  ProgrammiSeccoTableData copyWith({
+    String? id,
+    String? clubId,
+    String? nome,
+    Value<String?> descrizione = const Value.absent(),
+    int? durataMin,
+    String? settimaneJson,
+    Value<String?> modello = const Value.absent(),
+  }) => ProgrammiSeccoTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    nome: nome ?? this.nome,
+    descrizione: descrizione.present ? descrizione.value : this.descrizione,
+    durataMin: durataMin ?? this.durataMin,
+    settimaneJson: settimaneJson ?? this.settimaneJson,
+    modello: modello.present ? modello.value : this.modello,
+  );
+  ProgrammiSeccoTableData copyWithCompanion(ProgrammiSeccoTableCompanion data) {
+    return ProgrammiSeccoTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      descrizione: data.descrizione.present
+          ? data.descrizione.value
+          : this.descrizione,
+      durataMin: data.durataMin.present ? data.durataMin.value : this.durataMin,
+      settimaneJson: data.settimaneJson.present
+          ? data.settimaneJson.value
+          : this.settimaneJson,
+      modello: data.modello.present ? data.modello.value : this.modello,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammiSeccoTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('durataMin: $durataMin, ')
+          ..write('settimaneJson: $settimaneJson, ')
+          ..write('modello: $modello')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clubId,
+    nome,
+    descrizione,
+    durataMin,
+    settimaneJson,
+    modello,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgrammiSeccoTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.nome == this.nome &&
+          other.descrizione == this.descrizione &&
+          other.durataMin == this.durataMin &&
+          other.settimaneJson == this.settimaneJson &&
+          other.modello == this.modello);
+}
+
+class ProgrammiSeccoTableCompanion
+    extends UpdateCompanion<ProgrammiSeccoTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String> nome;
+  final Value<String?> descrizione;
+  final Value<int> durataMin;
+  final Value<String> settimaneJson;
+  final Value<String?> modello;
+  final Value<int> rowid;
+  const ProgrammiSeccoTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.descrizione = const Value.absent(),
+    this.durataMin = const Value.absent(),
+    this.settimaneJson = const Value.absent(),
+    this.modello = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgrammiSeccoTableCompanion.insert({
+    required String id,
+    required String clubId,
+    required String nome,
+    this.descrizione = const Value.absent(),
+    this.durataMin = const Value.absent(),
+    this.settimaneJson = const Value.absent(),
+    this.modello = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       nome = Value(nome);
+  static Insertable<ProgrammiSeccoTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? nome,
+    Expression<String>? descrizione,
+    Expression<int>? durataMin,
+    Expression<String>? settimaneJson,
+    Expression<String>? modello,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (nome != null) 'nome': nome,
+      if (descrizione != null) 'descrizione': descrizione,
+      if (durataMin != null) 'durata_min': durataMin,
+      if (settimaneJson != null) 'settimane_json': settimaneJson,
+      if (modello != null) 'modello': modello,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgrammiSeccoTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String>? nome,
+    Value<String?>? descrizione,
+    Value<int>? durataMin,
+    Value<String>? settimaneJson,
+    Value<String?>? modello,
+    Value<int>? rowid,
+  }) {
+    return ProgrammiSeccoTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      nome: nome ?? this.nome,
+      descrizione: descrizione ?? this.descrizione,
+      durataMin: durataMin ?? this.durataMin,
+      settimaneJson: settimaneJson ?? this.settimaneJson,
+      modello: modello ?? this.modello,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (descrizione.present) {
+      map['descrizione'] = Variable<String>(descrizione.value);
+    }
+    if (durataMin.present) {
+      map['durata_min'] = Variable<int>(durataMin.value);
+    }
+    if (settimaneJson.present) {
+      map['settimane_json'] = Variable<String>(settimaneJson.value);
+    }
+    if (modello.present) {
+      map['modello'] = Variable<String>(modello.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgrammiSeccoTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('nome: $nome, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('durataMin: $durataMin, ')
+          ..write('settimaneJson: $settimaneJson, ')
+          ..write('modello: $modello, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -18605,6 +19200,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $EserciziSeccoTableTable(this);
   late final $EserciziSedutaTableTable eserciziSedutaTable =
       $EserciziSedutaTableTable(this);
+  late final $ProgrammiSeccoTableTable programmiSeccoTable =
+      $ProgrammiSeccoTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -18639,6 +19236,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     noteVideoTable,
     eserciziSeccoTable,
     eserciziSedutaTable,
+    programmiSeccoTable,
   ];
 }
 
@@ -21070,6 +21668,8 @@ typedef $$AllenamentiTableTableCreateCompanionBuilder =
       Value<String?> note,
       Value<String> tipo,
       Value<int?> durataMin,
+      Value<String?> programmaId,
+      Value<int?> programmaSettimana,
       Value<int> rowid,
     });
 typedef $$AllenamentiTableTableUpdateCompanionBuilder =
@@ -21082,6 +21682,8 @@ typedef $$AllenamentiTableTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<String> tipo,
       Value<int?> durataMin,
+      Value<String?> programmaId,
+      Value<int?> programmaSettimana,
       Value<int> rowid,
     });
 
@@ -21131,6 +21733,16 @@ class $$AllenamentiTableTableFilterComposer
 
   ColumnFilters<int> get durataMin => $composableBuilder(
     column: $table.durataMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programmaId => $composableBuilder(
+    column: $table.programmaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get programmaSettimana => $composableBuilder(
+    column: $table.programmaSettimana,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -21183,6 +21795,16 @@ class $$AllenamentiTableTableOrderingComposer
     column: $table.durataMin,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get programmaId => $composableBuilder(
+    column: $table.programmaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get programmaSettimana => $composableBuilder(
+    column: $table.programmaSettimana,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AllenamentiTableTableAnnotationComposer
@@ -21217,6 +21839,16 @@ class $$AllenamentiTableTableAnnotationComposer
 
   GeneratedColumn<int> get durataMin =>
       $composableBuilder(column: $table.durataMin, builder: (column) => column);
+
+  GeneratedColumn<String> get programmaId => $composableBuilder(
+    column: $table.programmaId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get programmaSettimana => $composableBuilder(
+    column: $table.programmaSettimana,
+    builder: (column) => column,
+  );
 }
 
 class $$AllenamentiTableTableTableManager
@@ -21264,6 +21896,8 @@ class $$AllenamentiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String> tipo = const Value.absent(),
                 Value<int?> durataMin = const Value.absent(),
+                Value<String?> programmaId = const Value.absent(),
+                Value<int?> programmaSettimana = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AllenamentiTableCompanion(
                 id: id,
@@ -21274,6 +21908,8 @@ class $$AllenamentiTableTableTableManager
                 note: note,
                 tipo: tipo,
                 durataMin: durataMin,
+                programmaId: programmaId,
+                programmaSettimana: programmaSettimana,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21286,6 +21922,8 @@ class $$AllenamentiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String> tipo = const Value.absent(),
                 Value<int?> durataMin = const Value.absent(),
+                Value<String?> programmaId = const Value.absent(),
+                Value<int?> programmaSettimana = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AllenamentiTableCompanion.insert(
                 id: id,
@@ -21296,6 +21934,8 @@ class $$AllenamentiTableTableTableManager
                 note: note,
                 tipo: tipo,
                 durataMin: durataMin,
+                programmaId: programmaId,
+                programmaSettimana: programmaSettimana,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -28182,6 +28822,276 @@ typedef $$EserciziSedutaTableTableProcessedTableManager =
       EserciziSedutaTableData,
       PrefetchHooks Function()
     >;
+typedef $$ProgrammiSeccoTableTableCreateCompanionBuilder =
+    ProgrammiSeccoTableCompanion Function({
+      required String id,
+      required String clubId,
+      required String nome,
+      Value<String?> descrizione,
+      Value<int> durataMin,
+      Value<String> settimaneJson,
+      Value<String?> modello,
+      Value<int> rowid,
+    });
+typedef $$ProgrammiSeccoTableTableUpdateCompanionBuilder =
+    ProgrammiSeccoTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String> nome,
+      Value<String?> descrizione,
+      Value<int> durataMin,
+      Value<String> settimaneJson,
+      Value<String?> modello,
+      Value<int> rowid,
+    });
+
+class $$ProgrammiSeccoTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgrammiSeccoTableTable> {
+  $$ProgrammiSeccoTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durataMin => $composableBuilder(
+    column: $table.durataMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settimaneJson => $composableBuilder(
+    column: $table.settimaneJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modello => $composableBuilder(
+    column: $table.modello,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgrammiSeccoTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgrammiSeccoTableTable> {
+  $$ProgrammiSeccoTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durataMin => $composableBuilder(
+    column: $table.durataMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get settimaneJson => $composableBuilder(
+    column: $table.settimaneJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modello => $composableBuilder(
+    column: $table.modello,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgrammiSeccoTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgrammiSeccoTableTable> {
+  $$ProgrammiSeccoTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durataMin =>
+      $composableBuilder(column: $table.durataMin, builder: (column) => column);
+
+  GeneratedColumn<String> get settimaneJson => $composableBuilder(
+    column: $table.settimaneJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modello =>
+      $composableBuilder(column: $table.modello, builder: (column) => column);
+}
+
+class $$ProgrammiSeccoTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgrammiSeccoTableTable,
+          ProgrammiSeccoTableData,
+          $$ProgrammiSeccoTableTableFilterComposer,
+          $$ProgrammiSeccoTableTableOrderingComposer,
+          $$ProgrammiSeccoTableTableAnnotationComposer,
+          $$ProgrammiSeccoTableTableCreateCompanionBuilder,
+          $$ProgrammiSeccoTableTableUpdateCompanionBuilder,
+          (
+            ProgrammiSeccoTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ProgrammiSeccoTableTable,
+              ProgrammiSeccoTableData
+            >,
+          ),
+          ProgrammiSeccoTableData,
+          PrefetchHooks Function()
+        > {
+  $$ProgrammiSeccoTableTableTableManager(
+    _$AppDatabase db,
+    $ProgrammiSeccoTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgrammiSeccoTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgrammiSeccoTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProgrammiSeccoTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String?> descrizione = const Value.absent(),
+                Value<int> durataMin = const Value.absent(),
+                Value<String> settimaneJson = const Value.absent(),
+                Value<String?> modello = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammiSeccoTableCompanion(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                descrizione: descrizione,
+                durataMin: durataMin,
+                settimaneJson: settimaneJson,
+                modello: modello,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                required String nome,
+                Value<String?> descrizione = const Value.absent(),
+                Value<int> durataMin = const Value.absent(),
+                Value<String> settimaneJson = const Value.absent(),
+                Value<String?> modello = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgrammiSeccoTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: nome,
+                descrizione: descrizione,
+                durataMin: durataMin,
+                settimaneJson: settimaneJson,
+                modello: modello,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ProgrammiSeccoTableTable,
+                    ProgrammiSeccoTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ProgrammiSeccoTableTable,
+                    ProgrammiSeccoTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgrammiSeccoTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgrammiSeccoTableTable,
+      ProgrammiSeccoTableData,
+      $$ProgrammiSeccoTableTableFilterComposer,
+      $$ProgrammiSeccoTableTableOrderingComposer,
+      $$ProgrammiSeccoTableTableAnnotationComposer,
+      $$ProgrammiSeccoTableTableCreateCompanionBuilder,
+      $$ProgrammiSeccoTableTableUpdateCompanionBuilder,
+      (
+        ProgrammiSeccoTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ProgrammiSeccoTableTable,
+          ProgrammiSeccoTableData
+        >,
+      ),
+      ProgrammiSeccoTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -28253,4 +29163,6 @@ class $AppDatabaseManager {
       $$EserciziSeccoTableTableTableManager(_db, _db.eserciziSeccoTable);
   $$EserciziSedutaTableTableTableManager get eserciziSedutaTable =>
       $$EserciziSedutaTableTableTableManager(_db, _db.eserciziSedutaTable);
+  $$ProgrammiSeccoTableTableTableManager get programmiSeccoTable =>
+      $$ProgrammiSeccoTableTableTableManager(_db, _db.programmiSeccoTable);
 }

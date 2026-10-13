@@ -102,10 +102,11 @@ class _EsercizioSeccoFormScreenState
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text('${e.nome} è in una seduta'),
+          title: Text('${e.nome} è già usato'),
           content: const Text(
-            'Un esercizio usato in una seduta non si elimina: archivialo, '
-            'così non compare più fra quelli da scegliere.',
+            'Un esercizio usato in una seduta o in un programma non si '
+            'elimina: archivialo, così non compare più fra quelli da '
+            'scegliere.',
           ),
           actions: [
             TextButton(

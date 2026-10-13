@@ -186,6 +186,28 @@ class AllenamentiTable extends Table {
   /// Quanto dura una seduta a secco (i minuti del carico).
   IntColumn get durataMin => integer().nullable()();
 
+  /// Il programma a secco da cui è nata la seduta, e di quale settimana.
+  TextColumn get programmaId => text().nullable()();
+  IntColumn get programmaSettimana => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// I programmi a secco del club: settimane di sedute già scritte, da
+/// mettere nel calendario di una squadra.
+class ProgrammiSeccoTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+  TextColumn get descrizione => text().nullable()();
+  IntColumn get durataMin => integer().withDefault(const Constant(20))();
+
+  /// Le settimane con le loro sedute, come lista JSON (vedi
+  /// `ProgrammaSecco`).
+  TextColumn get settimaneJson => text().withDefault(const Constant('[]'))();
+  TextColumn get modello => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -8,6 +8,8 @@ class Allenamento {
     this.note,
     this.tipo = 'acqua',
     this.durataMin,
+    this.programmaId,
+    this.programmaSettimana,
   });
 
   final String id;
@@ -24,6 +26,11 @@ class Allenamento {
   /// Quanto dura una seduta a secco, in minuti (i minuti del carico): per
   /// l'acqua la durata si stima dalle serie.
   final int? durataMin;
+
+  /// Il programma a secco da cui è nata la seduta (vedi `ProgrammaSecco`),
+  /// e di quale settimana: null per una seduta scritta a mano.
+  final String? programmaId;
+  final int? programmaSettimana;
 
   bool get secco => tipo == 'secco';
 
@@ -44,6 +51,8 @@ class Allenamento {
       note: map['note'] as String?,
       tipo: map['tipo'] as String? ?? 'acqua',
       durataMin: (map['durata_min'] as num?)?.toInt(),
+      programmaId: map['programma_id'] as String?,
+      programmaSettimana: (map['programma_settimana'] as num?)?.toInt(),
     );
   }
 }

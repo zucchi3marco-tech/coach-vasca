@@ -809,6 +809,15 @@ Una seduta a secco è un allenamento a parte, con gli esercizi al posto delle se
 - **L'elenco del club** ("Esercizi a secco", dal menu della seduta): schede per categoria, "Nuovo esercizio" e "Aggiungi l'elenco pronto" in testata, gli archiviati in fondo. Un esercizio già usato in una seduta non si elimina: si archivia.
 - **L'atleta** apre la seduta dalla scheda "Prossima seduta a secco" della sua home: gli esercizi con quanto farne e, a un tocco, come si fanno.
 
+### Programmi a secco
+
+Settimane di sedute a secco già scritte (la prevenzione della spalla, il core, le gambe), da mettere nel calendario di una squadra. Si aprono da "Nuovo allenamento → A secco" ("Programmi a secco", pulsante secondario sotto quello principale) e dal menu di una seduta a secco.
+
+- **L'elenco**: in testata "Nuovo programma"; i programmi del club in schede viola (`event_repeat`) con "6 settimane · 2 sedute da 15'" e la pastiglia `ok` "Nel calendario" se hanno sedute da fare; sotto i **programmi pronti** non ancora aggiunti, con la descrizione e un + in `azione`: un tocco li aggiunge al club con i loro esercizi e li apre.
+- **Il programma**: in testata settimane, sedute a settimana e minuti, con "Metti nel calendario" come azione principale; la descrizione in un riquadro; "Nel calendario" (una riga per squadra: dal… al…, quante passate, il menu per togliere le sedute da oggi in poi). Poi le **settimane come chip corti**, tutti in vista e a capo ("1", "2", "4 · scarico"), mai una fila che scorre: sono pochi e vanno visti tutti. Sotto la settimana scelta: "Settimana 2 di 6" con il suo menu (rifarla dalla settimana prima, toglierla), l'interruttore "Settimana di scarico" (acceso, "Togli una serie a ogni esercizio"), e le sedute ("Seduta A", "Seduta B"; "La seduta" se è una sola) con le stesse righe e lo stesso foglio delle sedute a secco. In fondo "Aggiungi la settimana 7", secondario, con sotto che cosa copia.
+- **Metti nel calendario** è un form: per chi (la squadra o tutto il club), il primo giorno (proposto il prossimo lunedì), i giorni della settimana come chip (tanti quante le sedute: se mancano o avanzano lo dice in `attenzione` e il pulsante resta spento), i minuti. Sotto **le date di ogni settimana** in un pannello ("A mar 20 ott, B gio 22 ott"), da controllare prima; le sedute senza esercizi in `attenzione`. Il pulsante dice quante sedute crea ("Metti 12 sedute nel calendario").
+- **Le sedute nate da un programma** sono sedute a secco come le altre; in testata "Programma a secco di 6 settimane" (o "· settimana di scarico") e l'azione "Programma". Cambiare il programma non le tocca.
+
 ### Assistente
 
 Una chat per l'allenatore (azione rapida "Assistente" in "Oggi"), larga fino a 820.
