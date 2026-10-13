@@ -16,6 +16,7 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../campionati/presentation/classifica_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/data/stagioni_repository.dart';
@@ -212,6 +213,20 @@ class PartiteListScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  AzioneTestata(
+                    icona: Icons.leaderboard_outlined,
+                    etichetta: 'Classifica',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ClassificaScreen(
+                          clubId: clubId,
+                          gruppoId: filtroGruppoId,
+                          nomeSquadra: nomeSquadra,
+                          puoModificare: true,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

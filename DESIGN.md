@@ -820,6 +820,16 @@ Una chat per l'allenatore (azione rapida "Assistente" in "Oggi"), larga fino a 8
 - **La salute** sta in una scheda a parte, calcolata sul telefono: prontezza, dolori e sintomi per atleta, chi non ha la scheda, e in fondo "Calcolato sul telefono: all'AI non arriva".
 - In basso la casella "Chiedi sui dati della squadra" e il pulsante con la freccia. "Ricomincia" nella barra in alto svuota la chat: la conversazione non si salva.
 
+### Classifica del campionato
+
+Classifica e calendario del girone FIN della squadra, letti dal sito della FIN Lombardia. Si apre con "Classifica" dalla testata delle partite, per l'allenatore e per l'atleta.
+
+- **La testata** dice campionato, fase e girone; i numeri sono la posizione della squadra, i punti e le giocate. Con più fasi collegate (Fase 1, Finali…), una fila di chip sotto la testata, la più recente per prima.
+- **La tabella** sta tutta nello schermo, senza scorrere di lato: posizione, squadra, punti, giocate e differenza reti; da 560 di larghezza anche vinte, pari, perse e gol. Righe da 48, intestazione su `superficieAlt`, la squadra del club in `corpoForte` su `azioneTenue`. Sotto, in `piccolo`, "Fonte: FIN Lombardia · aggiornata alle 17:05"; "Sito FIN" nel titolo della sezione apre la pagina originale.
+- **Le nostre partite** come nell'elenco delle partite: data nel riquadro, "vs Avversario", quando e piscina; le giocate spente con il risultato in una pastiglia (`ok` vinta, `attenzione` pari, `rosso` persa), la prossima in evidenza ambra con "Prossima · 3a giornata", il riposo come scheda spenta. "Tutto il calendario" (chip) mostra ogni giornata in un pannello: "Casa 14-7 Ospite", la squadra del club in grassetto.
+- **Senza rete**, o se il sito non risponde, l'ultima copia salvata con un riquadro che dice di quando è.
+- **L'allenatore** collega un girone in due passi (stagione e girone dall'elenco FIN raggruppato per campionato, poi la sua squadra nella classifica) e lo toglie con "Togli questo girone" in fondo, con conferma. Stagione non ancora pubblicata: un riquadro lo dice, niente pagina vuota.
+
 ---
 
 ---

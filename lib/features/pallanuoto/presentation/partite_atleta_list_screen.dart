@@ -14,6 +14,7 @@ import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/current_atleta_provider.dart';
+import '../../campionati/presentation/classifica_screen.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../application/video_partita_providers.dart';
@@ -162,6 +163,20 @@ class PartiteAtletaListScreen extends ConsumerWidget {
             children: [
               TestataPagina(
                 titolo: vistaAllenatore ? 'Partite' : 'Le mie partite',
+                azioni: [
+                  AzioneTestata(
+                    icona: Icons.leaderboard_outlined,
+                    etichetta: 'Classifica',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ClassificaScreen(
+                          clubId: clubId,
+                          gruppoId: filtroGruppoId,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 numeri: [
                   NumeroTestata(
                     valore: '${giocate.length}',
