@@ -254,6 +254,41 @@ class EserciziSedutaTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Le serie a secco fatte, registrate dall'atleta dal suo telefono: una
+/// riga per serie, con quante ripetizioni (o secondi) e che carico.
+class SerieSeccoFatteTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get atletaId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get allenamentoId => text()();
+
+  /// L'esercizio della seduta (`esercizi_seduta`) e quello dell'elenco.
+  TextColumn get rigaId => text()();
+  TextColumn get esercizioId => text()();
+  IntColumn get serie => integer()();
+  IntColumn get ripetizioni => integer().nullable()();
+  IntColumn get durataS => integer().nullable()();
+  TextColumn get carico => text().nullable()();
+
+  /// Il carico che aveva scritto l'allenatore quando è stata fatta.
+  TextColumn get caricoPrevisto => text().nullable()();
+  DateTimeColumn get fattaIl => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// L'ultima copia di una seduta a secco come la vede l'atleta (la
+/// risposta di `esercizi_seduta_atleta`), per aprirla anche senza rete.
+class SeduteSeccoAtletaTable extends Table {
+  TextColumn get allenamentoId => text()();
+  TextColumn get eserciziJson => text()();
+  DateTimeColumn get lettaIl => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {allenamentoId};
+}
+
 class SerieTable extends Table {
   TextColumn get id => text()();
   TextColumn get allenamentoId => text()();

@@ -20,6 +20,7 @@ import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
+import '../secco/presentation/card_secco_da_fare.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../allenamenti/domain/allenamento.dart';
@@ -323,6 +324,9 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                     // La domanda di fine seduta: la risponde solo
                     // l'atleta.
                     if (!vistaAllenatore) blocco(CardRpe(atleta: atleta)),
+                    // Le sedute a secco da registrare, serie per serie.
+                    if (!vistaAllenatore)
+                      blocco(CardSeccoDaFare(atleta: atleta)),
                     const SizedBox(height: 12),
                     if (largo && prossimi.length == 2)
                       blocco(

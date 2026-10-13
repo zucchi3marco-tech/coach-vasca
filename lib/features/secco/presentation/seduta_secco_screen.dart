@@ -26,10 +26,12 @@ import '../../presenze/presentation/presenze_screen.dart';
 import '../application/secco_providers.dart';
 import '../data/secco_repository.dart';
 import '../domain/esercizio_secco.dart';
+import '../domain/serie_fatta.dart';
 import 'esercizi_secco_screen.dart';
 import 'foglio_esercizio.dart';
 import 'programma_secco_screen.dart';
 import 'programmi_secco_screen.dart';
+import 'registrazioni_seduta.dart';
 import 'scegli_esercizi_screen.dart';
 import 'secco_widgets.dart';
 
@@ -90,8 +92,8 @@ class SedutaSeccoScreen extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminare la seduta a secco?'),
         content: const Text(
-          'Verranno eliminati per sempre anche i suoi esercizi e le presenze '
-          'registrate.',
+          'Verranno eliminati per sempre anche i suoi esercizi, le presenze '
+          'e le serie registrate dagli atleti.',
         ),
         actions: [
           TextButton(
@@ -170,6 +172,40 @@ class SedutaSeccoScreen extends ConsumerWidget {
     List<EsercizioSeduta> righe,
     EsercizioSeduta riga,
   ) async {
+    // Se qualcuno l'ha già fatto, togliendolo si perdono le sue serie.
+    final chi = {
+      for (final f
+          in ref.read(serieFatteSedutaProvider(riga.allenamentoId)).value ??
+              const <SerieFatta>[])
+        if (f.rigaId == riga.id) f.atletaId,
+    };
+    if (chi.isNotEmpty) {
+      final conferma = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Togliere l\'esercizio dalla seduta?'),
+          content: Text(
+            chi.length == 1
+                ? 'Un atleta l\'ha già registrato: si perdono anche le sue '
+                      'serie.'
+                : '${chi.length} atleti l\'hanno già registrato: si perdono '
+                      'anche le loro serie.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annulla'),
+            ),
+            DangerButton(
+              label: 'Togli',
+              expanded: false,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        ),
+      );
+      if (conferma != true || !context.mounted) return;
+    }
     try {
       final repository = ref.read(seccoRepositoryProvider);
       await repository.eliminaRiga(riga.id);
@@ -402,6 +438,11 @@ class SedutaSeccoScreen extends ConsumerWidget {
                             ),
                           ),
                       ],
+                    ),
+                    RegistrazioniSeduta(
+                      allenamento: a,
+                      righe: righe,
+                      esercizi: esercizi,
                     ),
                   ],
             loading: () => const [LoadingSkeletonList(righe: 4)],

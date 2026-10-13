@@ -380,6 +380,10 @@ class SeccoRepository {
     await (_db.delete(
       _db.eserciziSedutaTable,
     )..where((t) => t.id.equals(id))).go();
+    // Sul server se ne vanno anche le serie fatte dagli atleti.
+    await (_db.delete(
+      _db.serieSeccoFatteTable,
+    )..where((t) => t.rigaId.equals(id))).go();
   }
 
   /// Rinumera da 1 nell'ordine dato, scrivendo solo le righe che cambiano.
@@ -415,17 +419,61 @@ class SeccoRepository {
   }
 
   /// Gli esercizi di una seduta come li vede l'atleta collegato: con come
-  /// si fa, senza le note (funzione `esercizi_seduta_atleta`). Solo da
-  /// rete, come le serie dell'atleta.
+  /// si fa, senza le note (funzione `esercizi_seduta_atleta`). Ogni
+  /// lettura ne lascia una copia sul telefono: senza rete (in palestra) la
+  /// seduta si apre e si registra lo stesso. Senza copia, quelli nella
+  /// cache dell'allenatore (la demo, dove allenatore e atleta stanno
+  /// sullo stesso telefono); se no l'errore.
   Future<List<EsercizioSedutaAtleta>> perAtleta(String allenamentoId) async {
-    final righe = await _client.rpc(
-      'esercizi_seduta_atleta',
-      params: {'p_allenamento_id': allenamentoId},
-    );
-    return [
-      for (final r in righe as List)
-        EsercizioSedutaAtleta.fromMap(r as Map<String, dynamic>),
-    ];
+    try {
+      final righe = (await _client.rpc(
+        'esercizi_seduta_atleta',
+        params: {'p_allenamento_id': allenamentoId},
+      ) as List).cast<Map<String, dynamic>>();
+      await _db
+          .into(_db.seduteSeccoAtletaTable)
+          .insertOnConflictUpdate(
+            SeduteSeccoAtletaTableCompanion.insert(
+              allenamentoId: allenamentoId,
+              eserciziJson: jsonEncode(righe),
+              lettaIl: DateTime.now(),
+            ),
+          );
+      return [for (final r in righe) EsercizioSedutaAtleta.fromMap(r)];
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final copia = await (_db.select(
+        _db.seduteSeccoAtletaTable,
+      )..where((t) => t.allenamentoId.equals(allenamentoId))).getSingleOrNull();
+      if (copia != null) {
+        return [
+          for (final r in jsonDecode(copia.eserciziJson) as List)
+            EsercizioSedutaAtleta.fromMap((r as Map).cast<String, dynamic>()),
+        ];
+      }
+      final righe =
+          await (_db.select(_db.eserciziSedutaTable)
+                ..where((t) => t.allenamentoId.equals(allenamentoId))
+                ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
+              .get();
+      if (righe.isEmpty) rethrow;
+      final esercizi = {
+        for (final e
+            in await (_db.select(_db.eserciziSeccoTable)..where(
+                  (t) => t.id.isIn({for (final r in righe) r.esercizioId}),
+                ))
+                .get())
+          e.id: _esercizioDaRiga(e),
+      };
+      return [
+        for (final r in righe)
+          if (esercizi[r.esercizioId] case final e?)
+            EsercizioSedutaAtleta(
+              esercizio: e,
+              riga: _rigaDaRiga(r).senzaNote(),
+            ),
+      ];
+    }
   }
 
   // -------------------------------------------------------------------------

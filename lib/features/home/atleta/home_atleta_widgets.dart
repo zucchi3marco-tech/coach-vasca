@@ -748,7 +748,10 @@ class CardProssimoAllenamento extends ConsumerWidget {
                 // A secco gli esercizi con come si fanno; in acqua la scheda
                 // di bordo vasca.
                 builder: (_) => secco
-                    ? SedutaSeccoAtletaScreen(allenamento: prossimo)
+                    ? SedutaSeccoAtletaScreen(
+                        allenamento: prossimo,
+                        atleta: atleta,
+                      )
                     : SchedaBordoVascaScreen(
                         allenamento: prossimo,
                         perAtleta: true,

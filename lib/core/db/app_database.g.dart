@@ -19255,6 +19255,1025 @@ class ProgrammiSeccoTableCompanion
   }
 }
 
+class $SerieSeccoFatteTableTable extends SerieSeccoFatteTable
+    with TableInfo<$SerieSeccoFatteTableTable, SerieSeccoFatteTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SerieSeccoFatteTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atletaIdMeta = const VerificationMeta(
+    'atletaId',
+  );
+  @override
+  late final GeneratedColumn<String> atletaId = GeneratedColumn<String>(
+    'atleta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _allenamentoIdMeta = const VerificationMeta(
+    'allenamentoId',
+  );
+  @override
+  late final GeneratedColumn<String> allenamentoId = GeneratedColumn<String>(
+    'allenamento_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rigaIdMeta = const VerificationMeta('rigaId');
+  @override
+  late final GeneratedColumn<String> rigaId = GeneratedColumn<String>(
+    'riga_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _esercizioIdMeta = const VerificationMeta(
+    'esercizioId',
+  );
+  @override
+  late final GeneratedColumn<String> esercizioId = GeneratedColumn<String>(
+    'esercizio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serieMeta = const VerificationMeta('serie');
+  @override
+  late final GeneratedColumn<int> serie = GeneratedColumn<int>(
+    'serie',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ripetizioniMeta = const VerificationMeta(
+    'ripetizioni',
+  );
+  @override
+  late final GeneratedColumn<int> ripetizioni = GeneratedColumn<int>(
+    'ripetizioni',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durataSMeta = const VerificationMeta(
+    'durataS',
+  );
+  @override
+  late final GeneratedColumn<int> durataS = GeneratedColumn<int>(
+    'durata_s',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caricoMeta = const VerificationMeta('carico');
+  @override
+  late final GeneratedColumn<String> carico = GeneratedColumn<String>(
+    'carico',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caricoPrevistoMeta = const VerificationMeta(
+    'caricoPrevisto',
+  );
+  @override
+  late final GeneratedColumn<String> caricoPrevisto = GeneratedColumn<String>(
+    'carico_previsto',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fattaIlMeta = const VerificationMeta(
+    'fattaIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fattaIl = GeneratedColumn<DateTime>(
+    'fatta_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    atletaId,
+    clubId,
+    allenamentoId,
+    rigaId,
+    esercizioId,
+    serie,
+    ripetizioni,
+    durataS,
+    carico,
+    caricoPrevisto,
+    fattaIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'serie_secco_fatte_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SerieSeccoFatteTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('atleta_id')) {
+      context.handle(
+        _atletaIdMeta,
+        atletaId.isAcceptableOrUnknown(data['atleta_id']!, _atletaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_atletaIdMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('allenamento_id')) {
+      context.handle(
+        _allenamentoIdMeta,
+        allenamentoId.isAcceptableOrUnknown(
+          data['allenamento_id']!,
+          _allenamentoIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_allenamentoIdMeta);
+    }
+    if (data.containsKey('riga_id')) {
+      context.handle(
+        _rigaIdMeta,
+        rigaId.isAcceptableOrUnknown(data['riga_id']!, _rigaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rigaIdMeta);
+    }
+    if (data.containsKey('esercizio_id')) {
+      context.handle(
+        _esercizioIdMeta,
+        esercizioId.isAcceptableOrUnknown(
+          data['esercizio_id']!,
+          _esercizioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_esercizioIdMeta);
+    }
+    if (data.containsKey('serie')) {
+      context.handle(
+        _serieMeta,
+        serie.isAcceptableOrUnknown(data['serie']!, _serieMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serieMeta);
+    }
+    if (data.containsKey('ripetizioni')) {
+      context.handle(
+        _ripetizioniMeta,
+        ripetizioni.isAcceptableOrUnknown(
+          data['ripetizioni']!,
+          _ripetizioniMeta,
+        ),
+      );
+    }
+    if (data.containsKey('durata_s')) {
+      context.handle(
+        _durataSMeta,
+        durataS.isAcceptableOrUnknown(data['durata_s']!, _durataSMeta),
+      );
+    }
+    if (data.containsKey('carico')) {
+      context.handle(
+        _caricoMeta,
+        carico.isAcceptableOrUnknown(data['carico']!, _caricoMeta),
+      );
+    }
+    if (data.containsKey('carico_previsto')) {
+      context.handle(
+        _caricoPrevistoMeta,
+        caricoPrevisto.isAcceptableOrUnknown(
+          data['carico_previsto']!,
+          _caricoPrevistoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fatta_il')) {
+      context.handle(
+        _fattaIlMeta,
+        fattaIl.isAcceptableOrUnknown(data['fatta_il']!, _fattaIlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fattaIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SerieSeccoFatteTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SerieSeccoFatteTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      atletaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}atleta_id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      allenamentoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allenamento_id'],
+      )!,
+      rigaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}riga_id'],
+      )!,
+      esercizioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esercizio_id'],
+      )!,
+      serie: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}serie'],
+      )!,
+      ripetizioni: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ripetizioni'],
+      ),
+      durataS: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}durata_s'],
+      ),
+      carico: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}carico'],
+      ),
+      caricoPrevisto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}carico_previsto'],
+      ),
+      fattaIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fatta_il'],
+      )!,
+    );
+  }
+
+  @override
+  $SerieSeccoFatteTableTable createAlias(String alias) {
+    return $SerieSeccoFatteTableTable(attachedDatabase, alias);
+  }
+}
+
+class SerieSeccoFatteTableData extends DataClass
+    implements Insertable<SerieSeccoFatteTableData> {
+  final String id;
+  final String atletaId;
+  final String clubId;
+  final String allenamentoId;
+
+  /// L'esercizio della seduta (`esercizi_seduta`) e quello dell'elenco.
+  final String rigaId;
+  final String esercizioId;
+  final int serie;
+  final int? ripetizioni;
+  final int? durataS;
+  final String? carico;
+
+  /// Il carico che aveva scritto l'allenatore quando è stata fatta.
+  final String? caricoPrevisto;
+  final DateTime fattaIl;
+  const SerieSeccoFatteTableData({
+    required this.id,
+    required this.atletaId,
+    required this.clubId,
+    required this.allenamentoId,
+    required this.rigaId,
+    required this.esercizioId,
+    required this.serie,
+    this.ripetizioni,
+    this.durataS,
+    this.carico,
+    this.caricoPrevisto,
+    required this.fattaIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['atleta_id'] = Variable<String>(atletaId);
+    map['club_id'] = Variable<String>(clubId);
+    map['allenamento_id'] = Variable<String>(allenamentoId);
+    map['riga_id'] = Variable<String>(rigaId);
+    map['esercizio_id'] = Variable<String>(esercizioId);
+    map['serie'] = Variable<int>(serie);
+    if (!nullToAbsent || ripetizioni != null) {
+      map['ripetizioni'] = Variable<int>(ripetizioni);
+    }
+    if (!nullToAbsent || durataS != null) {
+      map['durata_s'] = Variable<int>(durataS);
+    }
+    if (!nullToAbsent || carico != null) {
+      map['carico'] = Variable<String>(carico);
+    }
+    if (!nullToAbsent || caricoPrevisto != null) {
+      map['carico_previsto'] = Variable<String>(caricoPrevisto);
+    }
+    map['fatta_il'] = Variable<DateTime>(fattaIl);
+    return map;
+  }
+
+  SerieSeccoFatteTableCompanion toCompanion(bool nullToAbsent) {
+    return SerieSeccoFatteTableCompanion(
+      id: Value(id),
+      atletaId: Value(atletaId),
+      clubId: Value(clubId),
+      allenamentoId: Value(allenamentoId),
+      rigaId: Value(rigaId),
+      esercizioId: Value(esercizioId),
+      serie: Value(serie),
+      ripetizioni: ripetizioni == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ripetizioni),
+      durataS: durataS == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durataS),
+      carico: carico == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carico),
+      caricoPrevisto: caricoPrevisto == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caricoPrevisto),
+      fattaIl: Value(fattaIl),
+    );
+  }
+
+  factory SerieSeccoFatteTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SerieSeccoFatteTableData(
+      id: serializer.fromJson<String>(json['id']),
+      atletaId: serializer.fromJson<String>(json['atletaId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      allenamentoId: serializer.fromJson<String>(json['allenamentoId']),
+      rigaId: serializer.fromJson<String>(json['rigaId']),
+      esercizioId: serializer.fromJson<String>(json['esercizioId']),
+      serie: serializer.fromJson<int>(json['serie']),
+      ripetizioni: serializer.fromJson<int?>(json['ripetizioni']),
+      durataS: serializer.fromJson<int?>(json['durataS']),
+      carico: serializer.fromJson<String?>(json['carico']),
+      caricoPrevisto: serializer.fromJson<String?>(json['caricoPrevisto']),
+      fattaIl: serializer.fromJson<DateTime>(json['fattaIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'atletaId': serializer.toJson<String>(atletaId),
+      'clubId': serializer.toJson<String>(clubId),
+      'allenamentoId': serializer.toJson<String>(allenamentoId),
+      'rigaId': serializer.toJson<String>(rigaId),
+      'esercizioId': serializer.toJson<String>(esercizioId),
+      'serie': serializer.toJson<int>(serie),
+      'ripetizioni': serializer.toJson<int?>(ripetizioni),
+      'durataS': serializer.toJson<int?>(durataS),
+      'carico': serializer.toJson<String?>(carico),
+      'caricoPrevisto': serializer.toJson<String?>(caricoPrevisto),
+      'fattaIl': serializer.toJson<DateTime>(fattaIl),
+    };
+  }
+
+  SerieSeccoFatteTableData copyWith({
+    String? id,
+    String? atletaId,
+    String? clubId,
+    String? allenamentoId,
+    String? rigaId,
+    String? esercizioId,
+    int? serie,
+    Value<int?> ripetizioni = const Value.absent(),
+    Value<int?> durataS = const Value.absent(),
+    Value<String?> carico = const Value.absent(),
+    Value<String?> caricoPrevisto = const Value.absent(),
+    DateTime? fattaIl,
+  }) => SerieSeccoFatteTableData(
+    id: id ?? this.id,
+    atletaId: atletaId ?? this.atletaId,
+    clubId: clubId ?? this.clubId,
+    allenamentoId: allenamentoId ?? this.allenamentoId,
+    rigaId: rigaId ?? this.rigaId,
+    esercizioId: esercizioId ?? this.esercizioId,
+    serie: serie ?? this.serie,
+    ripetizioni: ripetizioni.present ? ripetizioni.value : this.ripetizioni,
+    durataS: durataS.present ? durataS.value : this.durataS,
+    carico: carico.present ? carico.value : this.carico,
+    caricoPrevisto: caricoPrevisto.present
+        ? caricoPrevisto.value
+        : this.caricoPrevisto,
+    fattaIl: fattaIl ?? this.fattaIl,
+  );
+  SerieSeccoFatteTableData copyWithCompanion(
+    SerieSeccoFatteTableCompanion data,
+  ) {
+    return SerieSeccoFatteTableData(
+      id: data.id.present ? data.id.value : this.id,
+      atletaId: data.atletaId.present ? data.atletaId.value : this.atletaId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      allenamentoId: data.allenamentoId.present
+          ? data.allenamentoId.value
+          : this.allenamentoId,
+      rigaId: data.rigaId.present ? data.rigaId.value : this.rigaId,
+      esercizioId: data.esercizioId.present
+          ? data.esercizioId.value
+          : this.esercizioId,
+      serie: data.serie.present ? data.serie.value : this.serie,
+      ripetizioni: data.ripetizioni.present
+          ? data.ripetizioni.value
+          : this.ripetizioni,
+      durataS: data.durataS.present ? data.durataS.value : this.durataS,
+      carico: data.carico.present ? data.carico.value : this.carico,
+      caricoPrevisto: data.caricoPrevisto.present
+          ? data.caricoPrevisto.value
+          : this.caricoPrevisto,
+      fattaIl: data.fattaIl.present ? data.fattaIl.value : this.fattaIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SerieSeccoFatteTableData(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('allenamentoId: $allenamentoId, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('esercizioId: $esercizioId, ')
+          ..write('serie: $serie, ')
+          ..write('ripetizioni: $ripetizioni, ')
+          ..write('durataS: $durataS, ')
+          ..write('carico: $carico, ')
+          ..write('caricoPrevisto: $caricoPrevisto, ')
+          ..write('fattaIl: $fattaIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    atletaId,
+    clubId,
+    allenamentoId,
+    rigaId,
+    esercizioId,
+    serie,
+    ripetizioni,
+    durataS,
+    carico,
+    caricoPrevisto,
+    fattaIl,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SerieSeccoFatteTableData &&
+          other.id == this.id &&
+          other.atletaId == this.atletaId &&
+          other.clubId == this.clubId &&
+          other.allenamentoId == this.allenamentoId &&
+          other.rigaId == this.rigaId &&
+          other.esercizioId == this.esercizioId &&
+          other.serie == this.serie &&
+          other.ripetizioni == this.ripetizioni &&
+          other.durataS == this.durataS &&
+          other.carico == this.carico &&
+          other.caricoPrevisto == this.caricoPrevisto &&
+          other.fattaIl == this.fattaIl);
+}
+
+class SerieSeccoFatteTableCompanion
+    extends UpdateCompanion<SerieSeccoFatteTableData> {
+  final Value<String> id;
+  final Value<String> atletaId;
+  final Value<String> clubId;
+  final Value<String> allenamentoId;
+  final Value<String> rigaId;
+  final Value<String> esercizioId;
+  final Value<int> serie;
+  final Value<int?> ripetizioni;
+  final Value<int?> durataS;
+  final Value<String?> carico;
+  final Value<String?> caricoPrevisto;
+  final Value<DateTime> fattaIl;
+  final Value<int> rowid;
+  const SerieSeccoFatteTableCompanion({
+    this.id = const Value.absent(),
+    this.atletaId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.allenamentoId = const Value.absent(),
+    this.rigaId = const Value.absent(),
+    this.esercizioId = const Value.absent(),
+    this.serie = const Value.absent(),
+    this.ripetizioni = const Value.absent(),
+    this.durataS = const Value.absent(),
+    this.carico = const Value.absent(),
+    this.caricoPrevisto = const Value.absent(),
+    this.fattaIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SerieSeccoFatteTableCompanion.insert({
+    required String id,
+    required String atletaId,
+    required String clubId,
+    required String allenamentoId,
+    required String rigaId,
+    required String esercizioId,
+    required int serie,
+    this.ripetizioni = const Value.absent(),
+    this.durataS = const Value.absent(),
+    this.carico = const Value.absent(),
+    this.caricoPrevisto = const Value.absent(),
+    required DateTime fattaIl,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       atletaId = Value(atletaId),
+       clubId = Value(clubId),
+       allenamentoId = Value(allenamentoId),
+       rigaId = Value(rigaId),
+       esercizioId = Value(esercizioId),
+       serie = Value(serie),
+       fattaIl = Value(fattaIl);
+  static Insertable<SerieSeccoFatteTableData> custom({
+    Expression<String>? id,
+    Expression<String>? atletaId,
+    Expression<String>? clubId,
+    Expression<String>? allenamentoId,
+    Expression<String>? rigaId,
+    Expression<String>? esercizioId,
+    Expression<int>? serie,
+    Expression<int>? ripetizioni,
+    Expression<int>? durataS,
+    Expression<String>? carico,
+    Expression<String>? caricoPrevisto,
+    Expression<DateTime>? fattaIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (atletaId != null) 'atleta_id': atletaId,
+      if (clubId != null) 'club_id': clubId,
+      if (allenamentoId != null) 'allenamento_id': allenamentoId,
+      if (rigaId != null) 'riga_id': rigaId,
+      if (esercizioId != null) 'esercizio_id': esercizioId,
+      if (serie != null) 'serie': serie,
+      if (ripetizioni != null) 'ripetizioni': ripetizioni,
+      if (durataS != null) 'durata_s': durataS,
+      if (carico != null) 'carico': carico,
+      if (caricoPrevisto != null) 'carico_previsto': caricoPrevisto,
+      if (fattaIl != null) 'fatta_il': fattaIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SerieSeccoFatteTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? atletaId,
+    Value<String>? clubId,
+    Value<String>? allenamentoId,
+    Value<String>? rigaId,
+    Value<String>? esercizioId,
+    Value<int>? serie,
+    Value<int?>? ripetizioni,
+    Value<int?>? durataS,
+    Value<String?>? carico,
+    Value<String?>? caricoPrevisto,
+    Value<DateTime>? fattaIl,
+    Value<int>? rowid,
+  }) {
+    return SerieSeccoFatteTableCompanion(
+      id: id ?? this.id,
+      atletaId: atletaId ?? this.atletaId,
+      clubId: clubId ?? this.clubId,
+      allenamentoId: allenamentoId ?? this.allenamentoId,
+      rigaId: rigaId ?? this.rigaId,
+      esercizioId: esercizioId ?? this.esercizioId,
+      serie: serie ?? this.serie,
+      ripetizioni: ripetizioni ?? this.ripetizioni,
+      durataS: durataS ?? this.durataS,
+      carico: carico ?? this.carico,
+      caricoPrevisto: caricoPrevisto ?? this.caricoPrevisto,
+      fattaIl: fattaIl ?? this.fattaIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (atletaId.present) {
+      map['atleta_id'] = Variable<String>(atletaId.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (allenamentoId.present) {
+      map['allenamento_id'] = Variable<String>(allenamentoId.value);
+    }
+    if (rigaId.present) {
+      map['riga_id'] = Variable<String>(rigaId.value);
+    }
+    if (esercizioId.present) {
+      map['esercizio_id'] = Variable<String>(esercizioId.value);
+    }
+    if (serie.present) {
+      map['serie'] = Variable<int>(serie.value);
+    }
+    if (ripetizioni.present) {
+      map['ripetizioni'] = Variable<int>(ripetizioni.value);
+    }
+    if (durataS.present) {
+      map['durata_s'] = Variable<int>(durataS.value);
+    }
+    if (carico.present) {
+      map['carico'] = Variable<String>(carico.value);
+    }
+    if (caricoPrevisto.present) {
+      map['carico_previsto'] = Variable<String>(caricoPrevisto.value);
+    }
+    if (fattaIl.present) {
+      map['fatta_il'] = Variable<DateTime>(fattaIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SerieSeccoFatteTableCompanion(')
+          ..write('id: $id, ')
+          ..write('atletaId: $atletaId, ')
+          ..write('clubId: $clubId, ')
+          ..write('allenamentoId: $allenamentoId, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('esercizioId: $esercizioId, ')
+          ..write('serie: $serie, ')
+          ..write('ripetizioni: $ripetizioni, ')
+          ..write('durataS: $durataS, ')
+          ..write('carico: $carico, ')
+          ..write('caricoPrevisto: $caricoPrevisto, ')
+          ..write('fattaIl: $fattaIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SeduteSeccoAtletaTableTable extends SeduteSeccoAtletaTable
+    with TableInfo<$SeduteSeccoAtletaTableTable, SeduteSeccoAtletaTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SeduteSeccoAtletaTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _allenamentoIdMeta = const VerificationMeta(
+    'allenamentoId',
+  );
+  @override
+  late final GeneratedColumn<String> allenamentoId = GeneratedColumn<String>(
+    'allenamento_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eserciziJsonMeta = const VerificationMeta(
+    'eserciziJson',
+  );
+  @override
+  late final GeneratedColumn<String> eserciziJson = GeneratedColumn<String>(
+    'esercizi_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lettaIlMeta = const VerificationMeta(
+    'lettaIl',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lettaIl = GeneratedColumn<DateTime>(
+    'letta_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [allenamentoId, eserciziJson, lettaIl];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sedute_secco_atleta_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SeduteSeccoAtletaTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('allenamento_id')) {
+      context.handle(
+        _allenamentoIdMeta,
+        allenamentoId.isAcceptableOrUnknown(
+          data['allenamento_id']!,
+          _allenamentoIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_allenamentoIdMeta);
+    }
+    if (data.containsKey('esercizi_json')) {
+      context.handle(
+        _eserciziJsonMeta,
+        eserciziJson.isAcceptableOrUnknown(
+          data['esercizi_json']!,
+          _eserciziJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eserciziJsonMeta);
+    }
+    if (data.containsKey('letta_il')) {
+      context.handle(
+        _lettaIlMeta,
+        lettaIl.isAcceptableOrUnknown(data['letta_il']!, _lettaIlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lettaIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {allenamentoId};
+  @override
+  SeduteSeccoAtletaTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SeduteSeccoAtletaTableData(
+      allenamentoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allenamento_id'],
+      )!,
+      eserciziJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esercizi_json'],
+      )!,
+      lettaIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}letta_il'],
+      )!,
+    );
+  }
+
+  @override
+  $SeduteSeccoAtletaTableTable createAlias(String alias) {
+    return $SeduteSeccoAtletaTableTable(attachedDatabase, alias);
+  }
+}
+
+class SeduteSeccoAtletaTableData extends DataClass
+    implements Insertable<SeduteSeccoAtletaTableData> {
+  final String allenamentoId;
+  final String eserciziJson;
+  final DateTime lettaIl;
+  const SeduteSeccoAtletaTableData({
+    required this.allenamentoId,
+    required this.eserciziJson,
+    required this.lettaIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['allenamento_id'] = Variable<String>(allenamentoId);
+    map['esercizi_json'] = Variable<String>(eserciziJson);
+    map['letta_il'] = Variable<DateTime>(lettaIl);
+    return map;
+  }
+
+  SeduteSeccoAtletaTableCompanion toCompanion(bool nullToAbsent) {
+    return SeduteSeccoAtletaTableCompanion(
+      allenamentoId: Value(allenamentoId),
+      eserciziJson: Value(eserciziJson),
+      lettaIl: Value(lettaIl),
+    );
+  }
+
+  factory SeduteSeccoAtletaTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SeduteSeccoAtletaTableData(
+      allenamentoId: serializer.fromJson<String>(json['allenamentoId']),
+      eserciziJson: serializer.fromJson<String>(json['eserciziJson']),
+      lettaIl: serializer.fromJson<DateTime>(json['lettaIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'allenamentoId': serializer.toJson<String>(allenamentoId),
+      'eserciziJson': serializer.toJson<String>(eserciziJson),
+      'lettaIl': serializer.toJson<DateTime>(lettaIl),
+    };
+  }
+
+  SeduteSeccoAtletaTableData copyWith({
+    String? allenamentoId,
+    String? eserciziJson,
+    DateTime? lettaIl,
+  }) => SeduteSeccoAtletaTableData(
+    allenamentoId: allenamentoId ?? this.allenamentoId,
+    eserciziJson: eserciziJson ?? this.eserciziJson,
+    lettaIl: lettaIl ?? this.lettaIl,
+  );
+  SeduteSeccoAtletaTableData copyWithCompanion(
+    SeduteSeccoAtletaTableCompanion data,
+  ) {
+    return SeduteSeccoAtletaTableData(
+      allenamentoId: data.allenamentoId.present
+          ? data.allenamentoId.value
+          : this.allenamentoId,
+      eserciziJson: data.eserciziJson.present
+          ? data.eserciziJson.value
+          : this.eserciziJson,
+      lettaIl: data.lettaIl.present ? data.lettaIl.value : this.lettaIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeduteSeccoAtletaTableData(')
+          ..write('allenamentoId: $allenamentoId, ')
+          ..write('eserciziJson: $eserciziJson, ')
+          ..write('lettaIl: $lettaIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(allenamentoId, eserciziJson, lettaIl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SeduteSeccoAtletaTableData &&
+          other.allenamentoId == this.allenamentoId &&
+          other.eserciziJson == this.eserciziJson &&
+          other.lettaIl == this.lettaIl);
+}
+
+class SeduteSeccoAtletaTableCompanion
+    extends UpdateCompanion<SeduteSeccoAtletaTableData> {
+  final Value<String> allenamentoId;
+  final Value<String> eserciziJson;
+  final Value<DateTime> lettaIl;
+  final Value<int> rowid;
+  const SeduteSeccoAtletaTableCompanion({
+    this.allenamentoId = const Value.absent(),
+    this.eserciziJson = const Value.absent(),
+    this.lettaIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SeduteSeccoAtletaTableCompanion.insert({
+    required String allenamentoId,
+    required String eserciziJson,
+    required DateTime lettaIl,
+    this.rowid = const Value.absent(),
+  }) : allenamentoId = Value(allenamentoId),
+       eserciziJson = Value(eserciziJson),
+       lettaIl = Value(lettaIl);
+  static Insertable<SeduteSeccoAtletaTableData> custom({
+    Expression<String>? allenamentoId,
+    Expression<String>? eserciziJson,
+    Expression<DateTime>? lettaIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (allenamentoId != null) 'allenamento_id': allenamentoId,
+      if (eserciziJson != null) 'esercizi_json': eserciziJson,
+      if (lettaIl != null) 'letta_il': lettaIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SeduteSeccoAtletaTableCompanion copyWith({
+    Value<String>? allenamentoId,
+    Value<String>? eserciziJson,
+    Value<DateTime>? lettaIl,
+    Value<int>? rowid,
+  }) {
+    return SeduteSeccoAtletaTableCompanion(
+      allenamentoId: allenamentoId ?? this.allenamentoId,
+      eserciziJson: eserciziJson ?? this.eserciziJson,
+      lettaIl: lettaIl ?? this.lettaIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (allenamentoId.present) {
+      map['allenamento_id'] = Variable<String>(allenamentoId.value);
+    }
+    if (eserciziJson.present) {
+      map['esercizi_json'] = Variable<String>(eserciziJson.value);
+    }
+    if (lettaIl.present) {
+      map['letta_il'] = Variable<DateTime>(lettaIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeduteSeccoAtletaTableCompanion(')
+          ..write('allenamentoId: $allenamentoId, ')
+          ..write('eserciziJson: $eserciziJson, ')
+          ..write('lettaIl: $lettaIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -19307,6 +20326,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $EserciziSedutaTableTable(this);
   late final $ProgrammiSeccoTableTable programmiSeccoTable =
       $ProgrammiSeccoTableTable(this);
+  late final $SerieSeccoFatteTableTable serieSeccoFatteTable =
+      $SerieSeccoFatteTableTable(this);
+  late final $SeduteSeccoAtletaTableTable seduteSeccoAtletaTable =
+      $SeduteSeccoAtletaTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -19342,6 +20365,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     eserciziSeccoTable,
     eserciziSedutaTable,
     programmiSeccoTable,
+    serieSeccoFatteTable,
+    seduteSeccoAtletaTable,
   ];
 }
 
@@ -29237,6 +30262,572 @@ typedef $$ProgrammiSeccoTableTableProcessedTableManager =
       ProgrammiSeccoTableData,
       PrefetchHooks Function()
     >;
+typedef $$SerieSeccoFatteTableTableCreateCompanionBuilder =
+    SerieSeccoFatteTableCompanion Function({
+      required String id,
+      required String atletaId,
+      required String clubId,
+      required String allenamentoId,
+      required String rigaId,
+      required String esercizioId,
+      required int serie,
+      Value<int?> ripetizioni,
+      Value<int?> durataS,
+      Value<String?> carico,
+      Value<String?> caricoPrevisto,
+      required DateTime fattaIl,
+      Value<int> rowid,
+    });
+typedef $$SerieSeccoFatteTableTableUpdateCompanionBuilder =
+    SerieSeccoFatteTableCompanion Function({
+      Value<String> id,
+      Value<String> atletaId,
+      Value<String> clubId,
+      Value<String> allenamentoId,
+      Value<String> rigaId,
+      Value<String> esercizioId,
+      Value<int> serie,
+      Value<int?> ripetizioni,
+      Value<int?> durataS,
+      Value<String?> carico,
+      Value<String?> caricoPrevisto,
+      Value<DateTime> fattaIl,
+      Value<int> rowid,
+    });
+
+class $$SerieSeccoFatteTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SerieSeccoFatteTableTable> {
+  $$SerieSeccoFatteTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get esercizioId => $composableBuilder(
+    column: $table.esercizioId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serie => $composableBuilder(
+    column: $table.serie,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durataS => $composableBuilder(
+    column: $table.durataS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get carico => $composableBuilder(
+    column: $table.carico,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get caricoPrevisto => $composableBuilder(
+    column: $table.caricoPrevisto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fattaIl => $composableBuilder(
+    column: $table.fattaIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SerieSeccoFatteTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SerieSeccoFatteTableTable> {
+  $$SerieSeccoFatteTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get atletaId => $composableBuilder(
+    column: $table.atletaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get esercizioId => $composableBuilder(
+    column: $table.esercizioId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serie => $composableBuilder(
+    column: $table.serie,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durataS => $composableBuilder(
+    column: $table.durataS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get carico => $composableBuilder(
+    column: $table.carico,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get caricoPrevisto => $composableBuilder(
+    column: $table.caricoPrevisto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fattaIl => $composableBuilder(
+    column: $table.fattaIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SerieSeccoFatteTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SerieSeccoFatteTableTable> {
+  $$SerieSeccoFatteTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get atletaId =>
+      $composableBuilder(column: $table.atletaId, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rigaId =>
+      $composableBuilder(column: $table.rigaId, builder: (column) => column);
+
+  GeneratedColumn<String> get esercizioId => $composableBuilder(
+    column: $table.esercizioId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serie =>
+      $composableBuilder(column: $table.serie, builder: (column) => column);
+
+  GeneratedColumn<int> get ripetizioni => $composableBuilder(
+    column: $table.ripetizioni,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durataS =>
+      $composableBuilder(column: $table.durataS, builder: (column) => column);
+
+  GeneratedColumn<String> get carico =>
+      $composableBuilder(column: $table.carico, builder: (column) => column);
+
+  GeneratedColumn<String> get caricoPrevisto => $composableBuilder(
+    column: $table.caricoPrevisto,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fattaIl =>
+      $composableBuilder(column: $table.fattaIl, builder: (column) => column);
+}
+
+class $$SerieSeccoFatteTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SerieSeccoFatteTableTable,
+          SerieSeccoFatteTableData,
+          $$SerieSeccoFatteTableTableFilterComposer,
+          $$SerieSeccoFatteTableTableOrderingComposer,
+          $$SerieSeccoFatteTableTableAnnotationComposer,
+          $$SerieSeccoFatteTableTableCreateCompanionBuilder,
+          $$SerieSeccoFatteTableTableUpdateCompanionBuilder,
+          (
+            SerieSeccoFatteTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $SerieSeccoFatteTableTable,
+              SerieSeccoFatteTableData
+            >,
+          ),
+          SerieSeccoFatteTableData,
+          PrefetchHooks Function()
+        > {
+  $$SerieSeccoFatteTableTableTableManager(
+    _$AppDatabase db,
+    $SerieSeccoFatteTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SerieSeccoFatteTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SerieSeccoFatteTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SerieSeccoFatteTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> atletaId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String> allenamentoId = const Value.absent(),
+                Value<String> rigaId = const Value.absent(),
+                Value<String> esercizioId = const Value.absent(),
+                Value<int> serie = const Value.absent(),
+                Value<int?> ripetizioni = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
+                Value<String?> carico = const Value.absent(),
+                Value<String?> caricoPrevisto = const Value.absent(),
+                Value<DateTime> fattaIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SerieSeccoFatteTableCompanion(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                allenamentoId: allenamentoId,
+                rigaId: rigaId,
+                esercizioId: esercizioId,
+                serie: serie,
+                ripetizioni: ripetizioni,
+                durataS: durataS,
+                carico: carico,
+                caricoPrevisto: caricoPrevisto,
+                fattaIl: fattaIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String atletaId,
+                required String clubId,
+                required String allenamentoId,
+                required String rigaId,
+                required String esercizioId,
+                required int serie,
+                Value<int?> ripetizioni = const Value.absent(),
+                Value<int?> durataS = const Value.absent(),
+                Value<String?> carico = const Value.absent(),
+                Value<String?> caricoPrevisto = const Value.absent(),
+                required DateTime fattaIl,
+                Value<int> rowid = const Value.absent(),
+              }) => SerieSeccoFatteTableCompanion.insert(
+                id: id,
+                atletaId: atletaId,
+                clubId: clubId,
+                allenamentoId: allenamentoId,
+                rigaId: rigaId,
+                esercizioId: esercizioId,
+                serie: serie,
+                ripetizioni: ripetizioni,
+                durataS: durataS,
+                carico: carico,
+                caricoPrevisto: caricoPrevisto,
+                fattaIl: fattaIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $SerieSeccoFatteTableTable,
+                    SerieSeccoFatteTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SerieSeccoFatteTableTable,
+                    SerieSeccoFatteTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SerieSeccoFatteTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SerieSeccoFatteTableTable,
+      SerieSeccoFatteTableData,
+      $$SerieSeccoFatteTableTableFilterComposer,
+      $$SerieSeccoFatteTableTableOrderingComposer,
+      $$SerieSeccoFatteTableTableAnnotationComposer,
+      $$SerieSeccoFatteTableTableCreateCompanionBuilder,
+      $$SerieSeccoFatteTableTableUpdateCompanionBuilder,
+      (
+        SerieSeccoFatteTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $SerieSeccoFatteTableTable,
+          SerieSeccoFatteTableData
+        >,
+      ),
+      SerieSeccoFatteTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$SeduteSeccoAtletaTableTableCreateCompanionBuilder =
+    SeduteSeccoAtletaTableCompanion Function({
+      required String allenamentoId,
+      required String eserciziJson,
+      required DateTime lettaIl,
+      Value<int> rowid,
+    });
+typedef $$SeduteSeccoAtletaTableTableUpdateCompanionBuilder =
+    SeduteSeccoAtletaTableCompanion Function({
+      Value<String> allenamentoId,
+      Value<String> eserciziJson,
+      Value<DateTime> lettaIl,
+      Value<int> rowid,
+    });
+
+class $$SeduteSeccoAtletaTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SeduteSeccoAtletaTableTable> {
+  $$SeduteSeccoAtletaTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eserciziJson => $composableBuilder(
+    column: $table.eserciziJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lettaIl => $composableBuilder(
+    column: $table.lettaIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SeduteSeccoAtletaTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SeduteSeccoAtletaTableTable> {
+  $$SeduteSeccoAtletaTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eserciziJson => $composableBuilder(
+    column: $table.eserciziJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lettaIl => $composableBuilder(
+    column: $table.lettaIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SeduteSeccoAtletaTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SeduteSeccoAtletaTableTable> {
+  $$SeduteSeccoAtletaTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get allenamentoId => $composableBuilder(
+    column: $table.allenamentoId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get eserciziJson => $composableBuilder(
+    column: $table.eserciziJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lettaIl =>
+      $composableBuilder(column: $table.lettaIl, builder: (column) => column);
+}
+
+class $$SeduteSeccoAtletaTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SeduteSeccoAtletaTableTable,
+          SeduteSeccoAtletaTableData,
+          $$SeduteSeccoAtletaTableTableFilterComposer,
+          $$SeduteSeccoAtletaTableTableOrderingComposer,
+          $$SeduteSeccoAtletaTableTableAnnotationComposer,
+          $$SeduteSeccoAtletaTableTableCreateCompanionBuilder,
+          $$SeduteSeccoAtletaTableTableUpdateCompanionBuilder,
+          (
+            SeduteSeccoAtletaTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $SeduteSeccoAtletaTableTable,
+              SeduteSeccoAtletaTableData
+            >,
+          ),
+          SeduteSeccoAtletaTableData,
+          PrefetchHooks Function()
+        > {
+  $$SeduteSeccoAtletaTableTableTableManager(
+    _$AppDatabase db,
+    $SeduteSeccoAtletaTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SeduteSeccoAtletaTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$SeduteSeccoAtletaTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SeduteSeccoAtletaTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> allenamentoId = const Value.absent(),
+                Value<String> eserciziJson = const Value.absent(),
+                Value<DateTime> lettaIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SeduteSeccoAtletaTableCompanion(
+                allenamentoId: allenamentoId,
+                eserciziJson: eserciziJson,
+                lettaIl: lettaIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String allenamentoId,
+                required String eserciziJson,
+                required DateTime lettaIl,
+                Value<int> rowid = const Value.absent(),
+              }) => SeduteSeccoAtletaTableCompanion.insert(
+                allenamentoId: allenamentoId,
+                eserciziJson: eserciziJson,
+                lettaIl: lettaIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $SeduteSeccoAtletaTableTable,
+                    SeduteSeccoAtletaTableData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SeduteSeccoAtletaTableTable,
+                    SeduteSeccoAtletaTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SeduteSeccoAtletaTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SeduteSeccoAtletaTableTable,
+      SeduteSeccoAtletaTableData,
+      $$SeduteSeccoAtletaTableTableFilterComposer,
+      $$SeduteSeccoAtletaTableTableOrderingComposer,
+      $$SeduteSeccoAtletaTableTableAnnotationComposer,
+      $$SeduteSeccoAtletaTableTableCreateCompanionBuilder,
+      $$SeduteSeccoAtletaTableTableUpdateCompanionBuilder,
+      (
+        SeduteSeccoAtletaTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $SeduteSeccoAtletaTableTable,
+          SeduteSeccoAtletaTableData
+        >,
+      ),
+      SeduteSeccoAtletaTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -29310,4 +30901,11 @@ class $AppDatabaseManager {
       $$EserciziSedutaTableTableTableManager(_db, _db.eserciziSedutaTable);
   $$ProgrammiSeccoTableTableTableManager get programmiSeccoTable =>
       $$ProgrammiSeccoTableTableTableManager(_db, _db.programmiSeccoTable);
+  $$SerieSeccoFatteTableTableTableManager get serieSeccoFatteTable =>
+      $$SerieSeccoFatteTableTableTableManager(_db, _db.serieSeccoFatteTable);
+  $$SeduteSeccoAtletaTableTableTableManager get seduteSeccoAtletaTable =>
+      $$SeduteSeccoAtletaTableTableTableManager(
+        _db,
+        _db.seduteSeccoAtletaTable,
+      );
 }

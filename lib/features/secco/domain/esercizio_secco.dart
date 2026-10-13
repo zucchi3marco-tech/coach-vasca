@@ -140,6 +140,20 @@ class EsercizioSeduta {
     'note': _pieno(note),
   };
 
+  /// Come la vede l'atleta: senza le note dell'allenatore.
+  EsercizioSeduta senzaNote() => EsercizioSeduta(
+    id: id,
+    allenamentoId: allenamentoId,
+    clubId: clubId,
+    esercizioId: esercizioId,
+    ordine: ordine,
+    serie: serie,
+    ripetizioni: ripetizioni,
+    durataS: durataS,
+    carico: carico,
+    recuperoS: recuperoS,
+  );
+
   EsercizioSeduta copyWith({int? ordine}) => EsercizioSeduta(
     id: id,
     allenamentoId: allenamentoId,

@@ -37,6 +37,8 @@ part 'app_database.g.dart';
     EserciziSeccoTable,
     EserciziSedutaTable,
     ProgrammiSeccoTable,
+    SerieSeccoFatteTable,
+    SeduteSeccoAtletaTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -46,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 41;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -520,6 +522,16 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'esercizi_secco_table', nome)) {
             await m.addColumn(eserciziSeccoTable, colonna);
           }
+        }
+      }
+      // v41 -> v42: le serie a secco registrate dall'atleta e la copia
+      // della seduta per aprirla senza rete.
+      if (from < 42) {
+        if (!await _hasTable(m, 'serie_secco_fatte_table')) {
+          await m.createTable(serieSeccoFatteTable);
+        }
+        if (!await _hasTable(m, 'sedute_secco_atleta_table')) {
+          await m.createTable(seduteSeccoAtletaTable);
         }
       }
     },

@@ -14,25 +14,62 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../atleti/domain/atleta.dart';
 import '../application/secco_providers.dart';
-import '../domain/esercizio_secco.dart';
+import '../domain/serie_fatta.dart';
+import 'come_si_fa.dart';
+import 'registra_secco_screen.dart';
 import 'secco_widgets.dart';
-import 'video_esercizio.dart';
 
 /// Una seduta a secco vista dall'atleta: gli esercizi in ordine con
 /// quanto farne e, a un tocco, come si fanno. Le note dell'allenatore
-/// non arrivano (come per le serie).
+/// non arrivano (come per le serie). Con l'atleta collegato, in testata
+/// "Comincia la seduta": la registra serie per serie
+/// ([RegistraSeccoScreen]).
 class SedutaSeccoAtletaScreen extends ConsumerWidget {
-  const SedutaSeccoAtletaScreen({required this.allenamento, super.key});
+  const SedutaSeccoAtletaScreen({
+    required this.allenamento,
+    this.atleta,
+    super.key,
+  });
 
   final Allenamento allenamento;
+
+  /// Chi la registra; null = solo da leggere (la vista dell'allenatore).
+  final Atleta? atleta;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eserciziAsync = ref.watch(
       eserciziSedutaAtletaProvider(allenamento.id),
     );
-    final numero = eserciziAsync.value?.length;
+    final esercizi = eserciziAsync.value;
+    final atleta = this.atleta;
+    final fatte = atleta == null
+        ? const <SerieFatta>[]
+        : [
+            for (final f
+                in ref.watch(serieFatteAtletaProvider(atleta.id)).value ??
+                    const <SerieFatta>[])
+              if (f.allenamentoId == allenamento.id) f,
+          ];
+    final conto = esercizi == null
+        ? null
+        : contaSerie([for (final e in esercizi) e.riga], fatte);
+
+    void registra() {
+      if (atleta == null || esercizi == null || esercizi.isEmpty) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RegistraSeccoScreen(
+            allenamento: allenamento,
+            atleta: atleta,
+            esercizi: esercizi,
+          ),
+        ),
+      );
+    }
+
     return AppScaffold(
       appBar: AppBar(title: const Text('Seduta a secco')),
       body: ListView(
@@ -42,12 +79,38 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
             occhiello: quandoEsteso(allenamento.data),
             titolo: allenamento.titoloMostrato,
             numeri: [
-              if (numero != null)
-                NumeroTestata(valore: '$numero', etichetta: 'Esercizi'),
+              if (esercizi != null)
+                NumeroTestata(
+                  valore: '${esercizi.length}',
+                  etichetta: 'Esercizi',
+                ),
               NumeroTestata(
                 valore: "${minutiSeduta(allenamento)}'",
                 etichetta: 'Durata',
               ),
+              if (conto != null && conto.fatte > 0)
+                NumeroTestata(
+                  valore: '${conto.fatte}/${conto.totali}',
+                  etichetta: 'Serie fatte',
+                ),
+            ],
+            azioni: [
+              if (atleta != null &&
+                  esercizi != null &&
+                  esercizi.isNotEmpty &&
+                  conto != null)
+                AzioneTestata(
+                  icona: conto.fatte >= conto.totali
+                      ? Icons.check_circle_outline
+                      : Icons.play_arrow,
+                  etichetta: conto.fatte == 0
+                      ? 'Comincia la seduta'
+                      : conto.fatte < conto.totali
+                      ? 'Continua la seduta'
+                      : 'Rivedi la seduta',
+                  principale: true,
+                  onTap: registra,
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.s24),
@@ -68,7 +131,11 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
                     TitoloSezione(
                       'Esercizi',
                       conteggio: esercizi.length,
-                      spiegazione: 'Tocca un esercizio per vedere come si fa.',
+                      spiegazione: atleta == null
+                          ? 'Tocca un esercizio per vedere come si fa.'
+                          : 'Tocca un esercizio per vedere come si fa. Con '
+                                '"Comincia la seduta" segni ogni serie e il '
+                                'telefono conta il recupero.',
                     ),
                     AppListPanel(
                       righe: [
@@ -77,7 +144,11 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
                             numero: i + 1,
                             esercizio: e.esercizio,
                             riga: e.riga,
-                            onTap: () => _comeSiFa(context, e),
+                            onTap: () => mostraComeSiFa(context, e),
+                            trailing: _Fatte(
+                              fatte: fatteDellaRiga(e.riga.id, fatte).length,
+                              di: e.riga.serie,
+                            ),
                           ),
                       ],
                     ),
@@ -87,8 +158,9 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
               ErrorBanner(
                 messaggio: 'Non è stato possibile caricare gli esercizi.',
                 suggerimento:
-                    'Controlla la connessione e riprova: gli esercizi si '
-                    'leggono dal server.',
+                    'Controlla la connessione e riprova: la prima volta gli '
+                    'esercizi si leggono dal server, poi restano anche sul '
+                    'telefono.',
                 dettaglioTecnico: messaggioErrore(errore),
               ),
             ],
@@ -97,66 +169,35 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _comeSiFa(BuildContext context, EsercizioSedutaAtleta e) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        isScrollControlled: true,
-        builder: (sheetContext) {
-          final colori = sheetContext.colori;
-          final descrizione = e.esercizio.descrizione;
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.s16,
-                0,
-                AppSpacing.s16,
-                AppSpacing.s24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    e.esercizio.nome,
-                    style: AppTypography.sezione.copyWith(color: colori.testo),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
-                  Text(
-                    prescrizioneEsercizio(e.riga),
-                    style: AppTypography.numerica(AppTypography.corpoForte)
-                        .copyWith(color: colori.testo),
-                  ),
-                  if (e.esercizio.attrezzo case final a?
-                      when a.trim().isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.s4),
-                    Text(
-                      a,
-                      style: AppTypography.piccolo.copyWith(
-                        color: colori.testoSecondario,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.s16),
-                  Text(
-                    descrizione == null || descrizione.trim().isEmpty
-                        ? e.esercizio.videoYoutube == null
-                              ? 'Per come si fa, chiedi all\'allenatore.'
-                              : 'Come si fa: guarda il video.'
-                        : descrizione,
-                    style: AppTypography.corpo.copyWith(color: colori.testo),
-                  ),
-                  if (e.esercizio.videoYoutube case final video?) ...[
-                    const SizedBox(height: AppSpacing.s16),
-                    VideoEsercizio(
-                      videoId: video,
-                      inizio: e.esercizio.videoDaS,
-                    ),
-                  ],
-                ],
-              ),
+/// A destra della riga: le serie fatte ("2/3"), la spunta se ci sono
+/// tutte; niente se non è ancora cominciato.
+class _Fatte extends StatelessWidget {
+  const _Fatte({required this.fatte, required this.di});
+
+  final int fatte;
+  final int di;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    if (fatte == 0) return const SizedBox.shrink();
+    final tutte = fatte >= di;
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.s8,
+        right: AppSpacing.s8,
+        top: 2,
+      ),
+      child: tutte
+          ? Icon(Icons.check_circle, color: colori.ok, semanticLabel: 'Fatto')
+          : Text(
+              '$fatte/$di',
+              semanticsLabel: '$fatte serie su $di',
+              style: AppTypography.numerica(AppTypography.corpoForte)
+                  .copyWith(color: colori.testoSecondario),
             ),
-          );
-        },
-      );
+    );
+  }
 }

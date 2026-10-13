@@ -35,7 +35,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 10;
+const _versioneDati = 11;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -607,13 +607,16 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 durataMin: const Value(40),
               ),
             );
+        final righe = <(String, ModelloEsercizio, String?)>[];
         for (final (i, (chiave, carico)) in programma.indexed) {
           final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
+          final rigaId = uuid.v4();
+          righe.add((rigaId, m, carico));
           await db
               .into(db.eserciziSedutaTable)
               .insert(
                 EserciziSedutaTableCompanion.insert(
-                  id: uuid.v4(),
+                  id: rigaId,
                   allenamentoId: sedutaId,
                   clubId: clubId,
                   esercizioId: esercizi[chiave]!,
@@ -628,6 +631,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
         }
         if (data.isBefore(oggi)) {
           for (var a = 0; a < atleti.length; a++) {
+            final presente = (a + d) % 6 != 0;
             await db
                 .into(db.presenzeTable)
                 .insert(
@@ -636,9 +640,45 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                     allenamentoId: sedutaId,
                     atletaId: atleti[a],
                     clubId: clubId,
-                    stato: (a + d) % 6 == 0 ? 'assente' : 'presente',
+                    stato: presente ? 'presente' : 'assente',
                   ),
                 );
+            // Le ultime tre settimane: metà dei presenti l'ha registrata
+            // dal telefono, uno a metà; i più grandi con l'elastico verde.
+            if (!presente || d < -21 || a.isOdd) continue;
+            for (final (k, (rigaId, m, carico)) in righe.indexed) {
+              if (a == 2 && k >= 3) break;
+              for (var s = 1; s <= m.serie; s++) {
+                final usato = carico == null
+                    ? null
+                    : a < 4
+                    ? 'elastico verde'
+                    : carico;
+                await db
+                    .into(db.serieSeccoFatteTable)
+                    .insert(
+                      SerieSeccoFatteTableCompanion.insert(
+                        id: uuid.v4(),
+                        atletaId: atleti[a],
+                        clubId: clubId,
+                        allenamentoId: sedutaId,
+                        rigaId: rigaId,
+                        esercizioId: esercizi[m.chiave]!,
+                        serie: s,
+                        ripetizioni: Value(
+                          m.ripetizioni == null
+                              ? null
+                              : m.ripetizioni! -
+                                    (s == m.serie && a == 6 ? 2 : 0),
+                        ),
+                        durataS: Value(m.durataS),
+                        carico: Value(usato),
+                        caricoPrevisto: Value(carico),
+                        fattaIl: data.add(Duration(minutes: 3 * k + s)),
+                      ),
+                    );
+              }
+            }
           }
         }
       }

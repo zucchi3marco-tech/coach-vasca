@@ -77,3 +77,16 @@ final rpeAtletaProvider = StreamProvider.family<List<RpeSeduta>, String>((
     watch: () => repository.watchPerAtleta(atletaId),
   );
 });
+
+/// Le risposte RPE di tutto il club (per l'allenatore: chi ha detto quanto
+/// è stata dura una seduta).
+final rpeClubProvider = StreamProvider.family<List<RpeSeduta>, String>((
+  ref,
+  clubId,
+) {
+  final repository = ref.watch(rpeRepositoryProvider);
+  return streamConRefreshIniziale(
+    refresh: () => repository.refreshFromRemoteClub(clubId),
+    watch: () => repository.watchPerClub(clubId),
+  );
+});
