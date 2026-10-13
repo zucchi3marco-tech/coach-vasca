@@ -26,6 +26,7 @@ import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../libreria_blocchi/data/training_blocks_repository.dart';
 import '../../presenze/presentation/presenze_screen.dart';
+import '../../secco/presentation/seduta_secco_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../application/passo_riferimento_provider.dart';
 import '../data/allenamenti_repository.dart';
@@ -622,6 +623,9 @@ class _AllenamentoDetailScreenState
   @override
   Widget build(BuildContext context) {
     final allenamento = widget.allenamento;
+    // Una seduta a secco ha esercizi invece delle serie: la sua schermata,
+    // da qualunque elenco la si apra.
+    if (allenamento.secco) return SedutaSeccoScreen(allenamento: allenamento);
     final serieAsync = ref.watch(serieListProvider(allenamento.id));
     final Map<String, String> nomiGruppi = {
       for (final g

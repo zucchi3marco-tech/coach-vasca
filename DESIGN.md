@@ -799,6 +799,18 @@ Si apre dalla testata della partita ("Convocazione", fino al giorno della partit
 - Uscendo, quello che si è scritto si salva senza inviare niente.
 - **Nella home dell'atleta** la convocazione inviata sta dentro la scheda della prossima partita, sotto un filetto: "Sei convocato con il numero 7" e le voci che servono ad arrivare (ritrovo, rientro, da portare, note); data, ora e piscina sono già nel tabellone.
 
+### Sedute a secco
+
+Una seduta a secco è un allenamento a parte, con gli esercizi al posto delle serie. Si crea da "Nuovo allenamento" con il quarto modo, "A secco" (titolo facoltativo e durata in minuti, che contano nel carico del secco). Con quattro modi, sotto i 600 di larghezza la barra dei modi perde le icone: con le icone le parole si spezzavano a metà.
+
+- **Il colore è il viola del secco** (`evidenzaViola`, come nel grafico del carico): negli elenchi il riquadro della data e l'icona (`fitness_center`) sono viola, e a destra, dove l'acqua ha i metri, c'è la durata con "a secco".
+- **La seduta**: in testata data, titolo, esercizi e durata, con "Presenze" come azione principale (il bordo vasca no: non ci sono serie). Sotto gli esercizi in un pannello, una riga per esercizio: il numero, il nome, quanto ("3 × 12, elastico rosso · recupero 1'", cifre tabulari), l'attrezzo e le note. Il menu della riga sposta su e giù e toglie; un tocco apre il foglio dell'esercizio (come si fa, serie e ripetizioni o tempo con − e +, carico, recupero a chip, note "che l'atleta non legge"). Se gli esercizi fatti come scritti durano 5 minuti più o meno della durata, la stima si scrive sotto il titolo della sezione.
+- **Scegliere gli esercizi**: una pagina con i filtri per categoria (chip che scorrono) e gli esercizi per categoria, quelli del club e quelli pronti insieme. Si toccano nell'ordine in cui farli: il cerchio diventa `azione` con il numero. "Aggiungi 3 esercizi" in fondo; ogni esercizio entra con la prescrizione dell'ultima volta o di quello pronto. La (i) apre come si fa.
+- **L'elenco del club** ("Esercizi a secco", dal menu della seduta): schede per categoria, "Nuovo esercizio" e "Aggiungi l'elenco pronto" in testata, gli archiviati in fondo. Un esercizio già usato in una seduta non si elimina: si archivia.
+- **L'atleta** apre la seduta dalla scheda "Prossima seduta a secco" della sua home: gli esercizi con quanto farne e, a un tocco, come si fanno.
+
+---
+
 ---
 
 ## 14. Schermate da bordo vasca

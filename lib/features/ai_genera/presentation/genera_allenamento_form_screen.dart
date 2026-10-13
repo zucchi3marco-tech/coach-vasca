@@ -45,6 +45,7 @@ import 'campi_generatore.dart';
 import 'casella_dettatura.dart';
 import 'scheda_generata_screen.dart';
 import 'storico_generazioni_screen.dart';
+import '../../secco/presentation/seduta_secco_screen.dart';
 
 // Oltre questa attesa, il calcolo delle corsie/della libreria blocchi
 // (migliorano la generazione ma non sono indispensabili) smette di
@@ -62,9 +63,10 @@ const _attrezzaturaLavoroCentraleDisponibile = [
   'pinne',
 ];
 
-/// I tre modi di creare un allenamento: ognuno mostra solo i suoi campi e
-/// ha un solo pulsante principale (DESIGN.md sezione 19).
-enum _Modo { scrivi, genera, vuoto }
+/// I modi di creare un allenamento: ognuno mostra solo i suoi campi e ha
+/// un solo pulsante principale (DESIGN.md sezione 19). "A secco" crea una
+/// seduta a secco, con gli esercizi al posto delle serie.
+enum _Modo { scrivi, genera, vuoto, secco }
 
 const _chiaveModo = 'nuovo_allenamento_modo';
 
@@ -101,6 +103,9 @@ class _GeneraAllenamentoFormScreenState
   );
   bool _creazioneDaTestoInCorso = false;
   bool _creazioneVuotaInCorso = false;
+  bool _creazioneSeccoInCorso = false;
+  final _titoloSeccoController = TextEditingController();
+  final _durataSeccoController = TextEditingController(text: '45');
 
   /// Chi scrive le sue serie non deve passare ogni volta dal generatore:
   /// si riapre nell'ultimo modo usato su questo dispositivo.
@@ -120,6 +125,8 @@ class _GeneraAllenamentoFormScreenState
     _casellaKey.currentState?.ferma();
     _editorKey.currentState?.ferma();
     setState(() => _modo = modo);
+    // Il secco è l'eccezione: la volta dopo si riparte dall'acqua.
+    if (modo == _Modo.secco) return;
     SharedPreferences.getInstance().then(
       (prefs) => prefs.setString(_chiaveModo, modo.name),
     );
@@ -151,7 +158,8 @@ class _GeneraAllenamentoFormScreenState
       _generazioneInCorso ||
       _compilazioneInCorso ||
       _creazioneDaTestoInCorso ||
-      _creazioneVuotaInCorso;
+      _creazioneVuotaInCorso ||
+      _creazioneSeccoInCorso;
 
   String _formattaData(DateTime data) =>
       '${data.day.toString().padLeft(2, '0')}/'
@@ -332,11 +340,53 @@ class _GeneraAllenamentoFormScreenState
     }
   }
 
+  /// Una seduta a secco nella data scelta, con titolo e durata: si apre
+  /// subito, per scegliere gli esercizi.
+  Future<void> _creaSecco() async {
+    final gruppoId = ref.read(selezioneGruppoProvider)?.gruppoId;
+    final minuti = int.tryParse(_durataSeccoController.text.trim());
+    if (minuti == null || minuti < 1 || minuti > 600) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Scrivi la durata in minuti, da 1 a 600')),
+      );
+      return;
+    }
+    setState(() => _creazioneSeccoInCorso = true);
+    try {
+      final seduta = await ref
+          .read(allenamentiRepositoryProvider)
+          .createAllenamento(
+            clubId: widget.clubId,
+            data: _data,
+            titolo: _titoloSeccoController.text.trim(),
+            gruppoId: gruppoId,
+            tipo: 'secco',
+            durataMin: minuti,
+          );
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => SedutaSeccoScreen(allenamento: seduta),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore nella creazione: ${messaggioErrore(e)}'),
+        ),
+      );
+      setState(() => _creazioneSeccoInCorso = false);
+    }
+  }
+
   @override
   void dispose() {
     _vincoliController.dispose();
     _testoController.dispose();
     _serieController.dispose();
+    _titoloSeccoController.dispose();
+    _durataSeccoController.dispose();
     _dataController.dispose();
     super.dispose();
   }
@@ -596,8 +646,9 @@ class _GeneraAllenamentoFormScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tre strade, una alla volta: prima tutte e tre stavano sulla
-            // stessa pagina lunga, con due pulsanti principali.
+            // Le strade, una alla volta: prima stavano tutte sulla stessa
+            // pagina lunga, con due pulsanti principali. Su telefono senza
+            // icone: con quattro scelte le parole si spezzavano a metà.
             SegmentedButton<_Modo>(
               showSelectedIcon: false,
               style: const ButtonStyle(
@@ -605,22 +656,20 @@ class _GeneraAllenamentoFormScreenState
                   Size.fromHeight(AppSpacing.altezzaMinimaBersaglio),
                 ),
               ),
-              segments: const [
-                ButtonSegment(
-                  value: _Modo.scrivi,
-                  icon: Icon(Icons.edit_note),
-                  label: Text('Scrivi o detta'),
-                ),
-                ButtonSegment(
-                  value: _Modo.genera,
-                  icon: Icon(Icons.auto_awesome),
-                  label: Text('Con l\'AI'),
-                ),
-                ButtonSegment(
-                  value: _Modo.vuoto,
-                  icon: Icon(Icons.add_box_outlined),
-                  label: Text('Vuoto'),
-                ),
+              segments: [
+                for (final (modo, icona, etichetta) in const [
+                  (_Modo.scrivi, Icons.edit_note, 'Scrivi o detta'),
+                  (_Modo.genera, Icons.auto_awesome, 'Con l\'AI'),
+                  (_Modo.vuoto, Icons.add_box_outlined, 'Vuoto'),
+                  (_Modo.secco, Icons.fitness_center, 'A secco'),
+                ])
+                  ButtonSegment(
+                    value: modo,
+                    icon: MediaQuery.sizeOf(context).width < 600
+                        ? null
+                        : Icon(icona),
+                    label: Text(etichetta, textAlign: TextAlign.center),
+                  ),
               ],
               selected: {_modo},
               onSelectionChanged: _occupato
@@ -685,6 +734,39 @@ class _GeneraAllenamentoFormScreenState
                     style: AppTypography.corpo.copyWith(
                       color: colori.testoSecondario,
                     ),
+                  ),
+                ],
+              ),
+            if (_modo == _Modo.secco)
+              FormGroup(
+                titolo: 'Seduta a secco',
+                isUltimo: true,
+                campi: [
+                  Text(
+                    'Una seduta a parte, con gli esercizi al posto delle '
+                    'serie: presenze e domanda di fine seduta come in acqua, '
+                    'e il carico va nel secco.',
+                    style: AppTypography.corpo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                  AppTextField(
+                    etichetta: 'Titolo (facoltativo)',
+                    controller: _titoloSeccoController,
+                    aiuto: 'Per esempio: Prevenzione spalla e core.',
+                  ),
+                  AppTextField(
+                    etichetta: 'Durata in minuti',
+                    controller: _durataSeccoController,
+                    keyboardType: TextInputType.number,
+                    aiuto: 'I minuti che contano nel carico del secco.',
+                  ),
+                  PrimaryButton(
+                    label: _creazioneSeccoInCorso
+                        ? 'Sto creando...'
+                        : 'Crea e scegli gli esercizi',
+                    isLoading: _creazioneSeccoInCorso,
+                    onPressed: _occupato ? null : _creaSecco,
                   ),
                 ],
               ),

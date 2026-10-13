@@ -26,10 +26,11 @@ class CaricoRepository {
   final AppDatabase _db;
   final RpeRepository _rpe;
 
-  /// Mappa allenamentoId -> data, per tutti gli allenamenti del club.
-  /// Legge da `allenamenti_per_carico` (RPC): l'atleta collegato non
-  /// legge la tabella degli allenamenti.
-  Future<Map<String, DateTime>> _dataPerAllenamento(String clubId) async {
+  /// Data, tipo e durata (per il secco) di ogni allenamento del club
+  /// (chiave: id). Legge da `allenamenti_per_carico` (RPC): l'atleta
+  /// collegato non legge la tabella degli allenamenti.
+  Future<Map<String, ({DateTime data, String tipo, int? durataMin})>>
+  _allenamenti(String clubId) async {
     List<Map<String, dynamic>> righe;
     try {
       righe = await leggiAPagine(
@@ -44,12 +45,22 @@ class CaricoRepository {
         _db.allenamentiTable,
       )..where((t) => t.clubId.equals(clubId))).get();
       righe = [
-        for (final r in locali) {'id': r.id, 'data': r.data.toIso8601String()},
+        for (final r in locali)
+          {
+            'id': r.id,
+            'data': r.data.toIso8601String(),
+            'tipo': r.tipo,
+            'durata_min': r.durataMin,
+          },
       ];
     }
     return {
       for (final r in righe)
-        r['id'] as String: DateTime.parse(r['data'] as String),
+        r['id'] as String: (
+          data: DateTime.parse(r['data'] as String),
+          tipo: r['tipo'] as String? ?? 'acqua',
+          durataMin: (r['durata_min'] as num?)?.toInt(),
+        ),
     };
   }
 
@@ -184,7 +195,16 @@ class CaricoRepository {
     required List<Map<String, dynamic>> convocazioni,
     required List<RpeSeduta> rpe,
   }) async {
-    final dataAllenamenti = await _dataPerAllenamento(clubId);
+    final allenamenti = await _allenamenti(clubId);
+    final dataAllenamenti = {
+      for (final MapEntry(:key, :value) in allenamenti.entries) key: value.data,
+    };
+    // Le sedute a secco valgono i loro minuti, tutti nel secco.
+    final minutiSecco = {
+      for (final MapEntry(:key, :value) in allenamenti.entries)
+        if (value.tipo == 'secco')
+          key: value.durataMin ?? minutiSeccoPredefiniti,
+    };
     final dataPartite = await _dataPerPartita(clubId);
     final ruoli = await _ruoli(clubId);
     final seriePerAllenamento = <String, List<SerieCarico>>{};
@@ -220,6 +240,7 @@ class CaricoRepository {
         atletaId: seduteDiAtleta(
           dataAllenamenti: dataAllenamenti,
           seriePerAllenamento: seriePerAllenamento,
+          minutiSecco: minutiSecco,
           statoPresenze: presenzePerAtleta[atletaId] ?? const {},
           dataPartite: dataPartite,
           partiteConvocato: convocazioniPerAtleta[atletaId] ?? const {},

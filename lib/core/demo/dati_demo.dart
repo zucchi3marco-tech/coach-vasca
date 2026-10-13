@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../features/secco/domain/esercizio_secco.dart';
 import '../db/app_database.dart';
 import '../utils/giorni.dart';
 
@@ -33,7 +34,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 8;
+const _versioneDati = 9;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -547,6 +548,97 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   stato: stato,
                 ),
               );
+        }
+      }
+    }
+
+    if (sport == 'pallanuoto') {
+      // L'elenco degli esercizi a secco (quelli pronti) e, il mercoledì,
+      // una seduta a secco di prevenzione per la squadra.
+      final esercizi = <String, String>{};
+      for (final m in modelliEsercizi) {
+        final id = uuid.v4();
+        esercizi[m.chiave] = id;
+        await db
+            .into(db.eserciziSeccoTable)
+            .insert(
+              EserciziSeccoTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: m.nome,
+                categoria: m.categoria.name,
+                misura: Value(m.misura.name),
+                attrezzo: Value(m.attrezzo),
+                descrizione: Value(m.descrizione),
+                modello: Value(m.chiave),
+              ),
+            );
+      }
+      const programma = [
+        ('extrarotazione_elastico', 'elastico rosso'),
+        ('ytw_prono', null),
+        ('plank_frontale', null),
+        ('squat_muro', null),
+        ('sleeper_stretch', null),
+      ];
+      for (
+        var g = DateTime(2026, 9, 2);
+        !g.isAfter(DateTime(2027, 6, 30));
+        g = aggiungiGiorni(g, 7)
+      ) {
+        if (!g.isBefore(DateTime(2026, 12, 23)) &&
+            g.isBefore(DateTime(2027, 1, 7))) {
+          continue;
+        }
+        final data = DateTime(g.year, g.month, g.day, 17, 30);
+        final d = giorniTra(giorno, data);
+        final sedutaId = uuid.v4();
+        await db
+            .into(db.allenamentiTable)
+            .insert(
+              AllenamentiTableCompanion.insert(
+                id: sedutaId,
+                clubId: clubId,
+                data: data,
+                titolo: const Value('Prevenzione spalla e core'),
+                gruppoId: Value(gruppi[0]),
+                tipo: const Value('secco'),
+                durataMin: const Value(40),
+              ),
+            );
+        for (final (i, (chiave, carico)) in programma.indexed) {
+          final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
+          await db
+              .into(db.eserciziSedutaTable)
+              .insert(
+                EserciziSedutaTableCompanion.insert(
+                  id: uuid.v4(),
+                  allenamentoId: sedutaId,
+                  clubId: clubId,
+                  esercizioId: esercizi[chiave]!,
+                  ordine: i + 1,
+                  serie: Value(m.serie),
+                  ripetizioni: Value(m.ripetizioni),
+                  durataS: Value(m.durataS),
+                  carico: Value(carico),
+                  recuperoS: Value(m.recuperoS),
+                ),
+              );
+        }
+        if (data.isBefore(oggi)) {
+          for (var a = 0; a < atleti.length; a++) {
+            await db
+                .into(db.presenzeTable)
+                .insert(
+                  PresenzeTableCompanion.insert(
+                    id: uuid.v4(),
+                    allenamentoId: sedutaId,
+                    atletaId: atleti[a],
+                    clubId: clubId,
+                    stato: (a + d) % 6 == 0 ? 'assente' : 'presente',
+                  ),
+                );
+          }
         }
       }
     }

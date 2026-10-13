@@ -327,15 +327,25 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
                 : SchedaElenco(
                     leading: RiquadroData(
                       prossimoAllenamento.data,
-                      colore: dominio.evidenzaCiano,
+                      colore: prossimoAllenamento.secco
+                          ? dominio.evidenzaViola
+                          : dominio.evidenzaCiano,
                     ),
-                    occhiello: allenamentoOggi != null
-                        ? 'Allenamento di oggi'
-                        : 'Prossimo allenamento',
+                    occhiello: switch ((
+                      allenamentoOggi != null,
+                      prossimoAllenamento.secco,
+                    )) {
+                      (true, false) => 'Allenamento di oggi',
+                      (true, true) => 'Seduta a secco di oggi',
+                      (false, false) => 'Prossimo allenamento',
+                      (false, true) => 'Prossima seduta a secco',
+                    },
                     evidenza: allenamentoOggi != null
-                        ? dominio.evidenzaCiano
+                        ? (prossimoAllenamento.secco
+                              ? dominio.evidenzaViola
+                              : dominio.evidenzaCiano)
                         : null,
-                    titolo: prossimoAllenamento.titolo ?? 'Allenamento',
+                    titolo: prossimoAllenamento.titoloMostrato,
                     sottotitolo:
                         '${traQuanto(prossimoAllenamento.data)}, '
                         '${dataEstesa(prossimoAllenamento.data)}',

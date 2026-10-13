@@ -35,6 +35,7 @@ import '../domain/allenamento.dart';
 import '../domain/volume_allenamento.dart';
 import 'allenamento_detail_screen.dart';
 import 'calendario/allenamenti_per_giorno.dart';
+import '../../secco/presentation/secco_widgets.dart';
 import 'calendario/calendario_mensile_view.dart';
 import 'calendario/calendario_settimanale_view.dart';
 import 'giorno_allenamenti_screen.dart';
@@ -229,6 +230,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
         g.id: g.nome,
     };
     final ciano = context.dominio.evidenzaCiano;
+    final viola = context.dominio.evidenzaViola;
     final volumi =
         ref.watch(volumiAllenamentiProvider(widget.clubId)).value ??
         const <String, VolumeAllenamento>{};
@@ -273,13 +275,14 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
           : widget.filtroGruppoId == null
           ? nomiGruppi[a.gruppoId]
           : null;
+      // Le sedute a secco nel viola del secco (come nel grafico del
+      // carico), con la durata al posto dei metri.
+      final colore = a.secco ? viola : ciano;
       return SchedaElenco(
-        leading: RiquadroData(a.data, colore: ciano, spento: passato),
-        occhiello: oggi ? 'Oggi' : null,
-        evidenza: oggi ? ciano : null,
-        titolo: a.titolo != null && a.titolo!.isNotEmpty
-            ? a.titolo!
-            : 'Allenamento',
+        leading: RiquadroData(a.data, colore: colore, spento: passato),
+        occhiello: oggi ? (a.secco ? 'Oggi · a secco' : 'Oggi') : null,
+        evidenza: oggi ? colore : null,
+        titolo: a.titoloMostrato,
         sottotitolo: [
           oggi
               ? giornoSettimana(a.data)
@@ -289,10 +292,12 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
         attenuata: passato,
         // Il volume accanto al titolo, sempre sott'occhio (richiesta del
         // coach 2026-10-08).
-        trailing: switch (volumi[a.id]) {
-          final v? => VolumeScheda(v, attenuato: passato),
-          null => null,
-        },
+        trailing: a.secco
+            ? DurataSecco(a, attenuato: passato)
+            : switch (volumi[a.id]) {
+                final v? => VolumeScheda(v, attenuato: passato),
+                null => null,
+              },
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AllenamentoDetailScreen(allenamento: a),

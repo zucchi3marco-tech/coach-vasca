@@ -14,6 +14,8 @@ import '../../atleti/domain/atleta.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
+import '../../secco/presentation/secco_widgets.dart';
+import '../../secco/presentation/seduta_secco_atleta_screen.dart';
 import 'dati_home_atleta.dart';
 import 'grafica_pallanuoto.dart';
 
@@ -728,7 +730,8 @@ class CardProssimoAllenamento extends ConsumerWidget {
     final colori = context.colori;
     final riepilogo = ref.watch(riepilogoAllenamentiAtletaProvider(atleta));
     final prossimo = riepilogo?.prossimo;
-    final serie = prossimo == null
+    final secco = prossimo?.secco ?? false;
+    final serie = prossimo == null || secco
         ? null
         : ref.watch(serieAtletaProvider(prossimo.id)).value;
     final metri = serie == null ? null : metriTotaliSerie(serie);
@@ -736,15 +739,20 @@ class CardProssimoAllenamento extends ConsumerWidget {
     return Premibile(
       etichetta: prossimo == null
           ? 'Nessun allenamento in programma'
-          : 'Prossimo allenamento, ${dataEstesa(prossimo.data)}: apri la scheda',
+          : '${secco ? 'Prossima seduta a secco' : 'Prossimo allenamento'}, '
+                '${dataEstesa(prossimo.data)}: apri la scheda',
       onTap: prossimo == null
           ? null
           : () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => SchedaBordoVascaScreen(
-                  allenamento: prossimo,
-                  perAtleta: true,
-                ),
+                // A secco gli esercizi con come si fanno; in acqua la scheda
+                // di bordo vasca.
+                builder: (_) => secco
+                    ? SedutaSeccoAtletaScreen(allenamento: prossimo)
+                    : SchedaBordoVascaScreen(
+                        allenamento: prossimo,
+                        perAtleta: true,
+                      ),
               ),
             ),
       child: Container(
@@ -795,7 +803,7 @@ class CardProssimoAllenamento extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Prossimo allenamento',
+                    secco ? 'Prossima seduta a secco' : 'Prossimo allenamento',
                     style: AppTypography.etichetta.copyWith(
                       color: colori.testoSecondario,
                     ),
@@ -804,7 +812,7 @@ class CardProssimoAllenamento extends ConsumerWidget {
                   Text(
                     prossimo == null
                         ? 'Nessuno in programma'
-                        : prossimo.titolo ?? 'Allenamento',
+                        : prossimo.titoloMostrato,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.corpoForte.copyWith(
@@ -817,6 +825,7 @@ class CardProssimoAllenamento extends ConsumerWidget {
                       [
                         '${traQuanto(prossimo.data)}, ${dataEstesa(prossimo.data)}',
                         if (metri != null && metri > 0) formattaMetri(metri),
+                        if (secco) "${minutiSeduta(prossimo)}' a secco",
                       ].join(' · '),
                       style: AppTypography.piccolo.copyWith(
                         color: colori.testoSecondario,

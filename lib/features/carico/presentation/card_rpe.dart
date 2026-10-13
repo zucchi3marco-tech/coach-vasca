@@ -67,7 +67,9 @@ final seduteDaValutareProvider = Provider.autoDispose
               tipo: 'allenamento',
               id: a.id,
               data: soloData(a.data),
-              descrizione: 'Allenamento ${quando(a.data)}',
+              descrizione:
+                  '${a.secco ? 'Seduta a secco' : 'Allenamento'} '
+                  '${quando(a.data)}',
             ),
       ];
 

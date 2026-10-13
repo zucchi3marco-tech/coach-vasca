@@ -30,6 +30,8 @@ class AllenamentiRepository {
       titolo: row.titolo,
       gruppoId: row.gruppoId,
       note: row.note,
+      tipo: row.tipo,
+      durataMin: row.durataMin,
     );
   }
 
@@ -41,6 +43,8 @@ class AllenamentiRepository {
       titolo: Value(map['titolo'] as String?),
       gruppoId: Value(map['gruppo_id'] as String?),
       note: Value(map['note'] as String?),
+      tipo: Value(map['tipo'] as String? ?? 'acqua'),
+      durataMin: Value((map['durata_min'] as num?)?.toInt()),
     );
   }
 
@@ -143,6 +147,8 @@ class AllenamentiRepository {
     String? titolo,
     String? gruppoId,
     String? note,
+    String tipo = 'acqua',
+    int? durataMin,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -152,6 +158,8 @@ class AllenamentiRepository {
       if (titolo != null && titolo.isNotEmpty) 'titolo': titolo,
       'gruppo_id': ?gruppoId,
       if (note != null && note.isNotEmpty) 'note': note,
+      if (tipo != 'acqua') 'tipo': tipo,
+      'durata_min': ?durataMin,
     };
     try {
       final row = await _client
@@ -189,6 +197,7 @@ class AllenamentiRepository {
     String? titolo,
     String? gruppoId,
     String? note,
+    int? durataMin,
   }) async {
     final id = originale.id;
     final payload = <String, dynamic>{
@@ -196,6 +205,7 @@ class AllenamentiRepository {
       if (titolo != originale.titolo) 'titolo': titolo,
       if (gruppoId != originale.gruppoId) 'gruppo_id': gruppoId,
       if (note != originale.note) 'note': note,
+      if (durataMin != originale.durataMin) 'durata_min': durataMin,
     };
     if (payload.isEmpty) return originale;
 
@@ -226,6 +236,9 @@ class AllenamentiRepository {
               : const Value.absent(),
           note: payload.containsKey('note')
               ? Value(note)
+              : const Value.absent(),
+          durataMin: payload.containsKey('durata_min')
+              ? Value(durataMin)
               : const Value.absent(),
         ),
       );
@@ -260,6 +273,9 @@ class AllenamentiRepository {
       )..where((t) => t.allenamentoId.equals(id))).go();
       await (_db.delete(
         _db.presenzeTable,
+      )..where((t) => t.allenamentoId.equals(id))).go();
+      await (_db.delete(
+        _db.eserciziSedutaTable,
       )..where((t) => t.allenamentoId.equals(id))).go();
       await (_db.delete(
         _db.allenamentiTable,

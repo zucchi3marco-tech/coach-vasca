@@ -112,8 +112,9 @@ class CaricoAtletaScreen extends ConsumerWidget {
                         'dal carico di ogni seduta: quanto è stata dura '
                         '(RPE da 0 a 10, detto dall\'atleta a fine seduta) '
                         'per quanti minuti è durata. Contano gli '
-                        'allenamenti in cui era presente, il lavoro a secco '
-                        'e le partite in cui era convocato (60 minuti). '
+                        'allenamenti in cui era presente, anche le sedute '
+                        'a secco, e le partite in cui era convocato (60 '
+                        'minuti). '
                         'Senza la sua risposta l\'RPE si stima dalle zone '
                         'delle serie. È un indice relativo utile per '
                         'valutare l\'andamento nel tempo, non un valore '
@@ -182,10 +183,11 @@ class _SezioneCarico extends ConsumerWidget {
             spiegazione:
                 'Il carico di una seduta è l\'RPE (quanto è stata dura, '
                 'da 0 a 10) per i minuti: il metodo di Foster. L\'acqua '
-                'e il secco vengono dagli allenamenti (i minuti delle '
-                'serie a secco vanno nel secco), la partita dalle partite '
-                'in cui era convocato. Le sedute senza la risposta '
-                'dell\'atleta hanno un carico stimato dalle serie.',
+                'e il secco vengono dagli allenamenti (le sedute a secco '
+                'con la loro durata e i minuti delle serie a secco vanno '
+                'nel secco), la partita dalle partite in cui era '
+                'convocato. Le sedute senza la risposta dell\'atleta hanno '
+                'un carico stimato dalle serie.',
           ),
           PoolCard(
             child: CaricoSettimane(

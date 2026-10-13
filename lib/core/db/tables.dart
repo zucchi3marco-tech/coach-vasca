@@ -180,6 +180,50 @@ class AllenamentiTable extends Table {
   TextColumn get gruppoId => text().nullable()();
   TextColumn get note => text().nullable()();
 
+  /// acqua | secco — una seduta a secco ha esercizi invece delle serie.
+  TextColumn get tipo => text().withDefault(const Constant('acqua'))();
+
+  /// Quanto dura una seduta a secco (i minuti del carico).
+  IntColumn get durataMin => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// L'elenco degli esercizi a secco del club.
+class EserciziSeccoTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+  TextColumn get nome => text()();
+
+  /// spalla | scapole | core | gambe | forza | mobilita | altro
+  TextColumn get categoria => text()();
+
+  /// ripetizioni | tempo
+  TextColumn get misura => text().withDefault(const Constant('ripetizioni'))();
+  TextColumn get attrezzo => text().nullable()();
+  TextColumn get descrizione => text().nullable()();
+  TextColumn get modello => text().nullable()();
+  BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Gli esercizi di una seduta a secco.
+class EserciziSedutaTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get allenamentoId => text()();
+  TextColumn get clubId => text()();
+  TextColumn get esercizioId => text()();
+  IntColumn get ordine => integer()();
+  IntColumn get serie => integer().withDefault(const Constant(3))();
+  IntColumn get ripetizioni => integer().nullable()();
+  IntColumn get durataS => integer().nullable()();
+  TextColumn get carico => text().nullable()();
+  IntColumn get recuperoS => integer().nullable()();
+  TextColumn get note => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

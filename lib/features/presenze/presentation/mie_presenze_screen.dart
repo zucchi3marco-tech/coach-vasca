@@ -223,9 +223,7 @@ class _Contenuto extends StatelessWidget {
                               colore: colore,
                               dimensione: 48,
                             ),
-                      titolo: a?.titolo != null && a!.titolo!.isNotEmpty
-                          ? a.titolo!
-                          : 'Allenamento',
+                      titolo: a?.titoloMostrato ?? 'Allenamento',
                       sottotitolo: a == null ? null : giornoSettimana(a.data),
                       trailing: Pastiglia(
                         _etichettaStato(p.stato),

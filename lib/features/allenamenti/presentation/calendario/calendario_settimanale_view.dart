@@ -281,7 +281,7 @@ class _CalendarioSettimanaleViewState
                       titolo: _nomiGiorni[index],
                       sottotitolo: sessioni.isEmpty
                           ? 'Nessun allenamento'
-                          : '${sessioni.map((a) => a.titolo != null && a.titolo!.isNotEmpty ? a.titolo! : 'Allenamento').join(', ')} · $volumeGiorno',
+                          : '${sessioni.map((a) => a.titoloMostrato).join(', ')} · $volumeGiorno',
                       onTap: () => widget.onGiornoSelezionato(data),
                     );
                   },

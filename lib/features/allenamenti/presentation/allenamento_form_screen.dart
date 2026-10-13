@@ -38,12 +38,15 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
   String? _gruppoId;
   late final TextEditingController _noteController;
   late final TextEditingController _dataController;
+  late final TextEditingController _durataController;
   late DateTime _data;
 
   bool _isSubmitting = false;
   String? _errorMessage;
 
   bool get _isEditing => widget.allenamento != null;
+
+  bool get _secco => widget.allenamento?.secco ?? false;
 
   @override
   void initState() {
@@ -54,6 +57,9 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     _noteController = TextEditingController(text: a?.note ?? '');
     _data = a?.data ?? widget.dataPredefinita ?? DateTime.now();
     _dataController = TextEditingController(text: _formattaData(_data));
+    _durataController = TextEditingController(
+      text: a?.durataMin?.toString() ?? '',
+    );
   }
 
   @override
@@ -61,6 +67,7 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     _titoloController.dispose();
     _noteController.dispose();
     _dataController.dispose();
+    _durataController.dispose();
     super.dispose();
   }
 
@@ -96,6 +103,9 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
           titolo: _titoloController.text.trim(),
           gruppoId: _gruppoId,
           note: _noteController.text.trim(),
+          durataMin: _secco
+              ? int.tryParse(_durataController.text.trim())
+              : widget.allenamento!.durataMin,
         );
       } else {
         await repository.createAllenamento(
@@ -127,7 +137,13 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Modifica allenamento' : 'Nuovo allenamento'),
+        title: Text(
+          _secco
+              ? 'Modifica seduta a secco'
+              : _isEditing
+              ? 'Modifica allenamento'
+              : 'Nuovo allenamento',
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -148,6 +164,19 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
                   etichetta: 'Titolo (facoltativo)',
                   controller: _titoloController,
                 ),
+                if (_secco)
+                  AppTextField(
+                    etichetta: 'Durata in minuti',
+                    controller: _durataController,
+                    keyboardType: TextInputType.number,
+                    aiuto: 'I minuti che contano nel carico del secco.',
+                    validator: (v) {
+                      final minuti = int.tryParse(v?.trim() ?? '');
+                      return minuti == null || minuti < 1 || minuti > 600
+                          ? 'Scrivi i minuti, da 1 a 600'
+                          : null;
+                    },
+                  ),
               ],
             ),
             FormGroup(

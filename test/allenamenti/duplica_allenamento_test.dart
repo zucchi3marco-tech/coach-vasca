@@ -3,10 +3,20 @@ import 'package:coach_vasca/features/allenamenti/data/duplicazione_settimana_ser
 import 'package:coach_vasca/features/allenamenti/data/serie_repository.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
+import 'package:coach_vasca/features/secco/data/secco_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _Allenamenti implements AllenamentiRepository {
-  final creati = <({DateTime data, String? gruppoId, String? titolo})>[];
+  final creati =
+      <
+        ({
+          DateTime data,
+          String? gruppoId,
+          String? titolo,
+          String tipo,
+          int? durataMin,
+        })
+      >[];
 
   @override
   Future<Allenamento> createAllenamento({
@@ -15,16 +25,41 @@ class _Allenamenti implements AllenamentiRepository {
     String? titolo,
     String? gruppoId,
     String? note,
+    String tipo = 'acqua',
+    int? durataMin,
   }) async {
-    creati.add((data: data, gruppoId: gruppoId, titolo: titolo));
+    creati.add((
+      data: data,
+      gruppoId: gruppoId,
+      titolo: titolo,
+      tipo: tipo,
+      durataMin: durataMin,
+    ));
     return Allenamento(
       id: 'copia',
       clubId: clubId,
       data: data,
       titolo: titolo,
       gruppoId: gruppoId,
+      tipo: tipo,
+      durataMin: durataMin,
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Gli esercizi a secco: annota le sedute copiate.
+class _Secco implements SeccoRepository {
+  final copie = <({String da, String a})>[];
+
+  @override
+  Future<void> copiaSeduta({
+    required String daAllenamentoId,
+    required String aAllenamentoId,
+    required String clubId,
+  }) async => copie.add((da: daAllenamentoId, a: aAllenamentoId));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -113,8 +148,12 @@ void main() {
       _serie(3, piramideId: 'g-vecchio'),
       _serie(4, durataS: 300),
     ]);
-    final copia = await DuplicazioneSettimanaService(allenamenti, serie)
-        .copiaAllenamento(
+    final copia =
+        await DuplicazioneSettimanaService(
+          allenamenti,
+          serie,
+          _Secco(),
+        ).copiaAllenamento(
           Allenamento(
             id: 'a1',
             clubId: 'c1',
@@ -164,6 +203,7 @@ void main() {
       await DuplicazioneSettimanaService(
         _Allenamenti(),
         stessa,
+        _Secco(),
       ).copiaAllenamento(
         sorgente(),
         data: DateTime(2026, 10, 15, 18),
@@ -177,6 +217,7 @@ void main() {
       await DuplicazioneSettimanaService(
         _Allenamenti(),
         altra,
+        _Secco(),
       ).copiaAllenamento(
         sorgente(),
         data: DateTime(2026, 10, 9, 18),
@@ -188,6 +229,37 @@ void main() {
         Destinatari.portieri,
         Destinatari.movimento,
       ]);
+    },
+  );
+
+  test(
+    'una seduta a secco si copia con durata ed esercizi, senza serie',
+    () async {
+      final allenamenti = _Allenamenti();
+      final serie = _Serie(const []);
+      final secco = _Secco();
+      await DuplicazioneSettimanaService(
+        allenamenti,
+        serie,
+        secco,
+      ).copiaAllenamento(
+        Allenamento(
+          id: 's1',
+          clubId: 'c1',
+          data: DateTime(2026, 10, 14),
+          titolo: 'Prevenzione spalla',
+          gruppoId: 'u14',
+          tipo: 'secco',
+          durataMin: 40,
+        ),
+        data: DateTime(2026, 10, 21),
+        gruppoId: 'u14',
+      );
+
+      expect(allenamenti.creati.single.tipo, 'secco');
+      expect(allenamenti.creati.single.durataMin, 40);
+      expect(secco.copie.single, (da: 's1', a: 'copia'));
+      expect(serie.create, isEmpty);
     },
   );
 }

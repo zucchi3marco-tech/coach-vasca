@@ -41,6 +41,11 @@ const minutiAllenamentoSenzaSerie = 90;
 const rpeStimatoAllenamento = 5.0;
 const rpeStimatoPartita = 6.0;
 
+/// Una seduta a secco senza durata scritta, e il suo RPE stimato quando
+/// l'atleta non ha risposto.
+const minutiSeccoPredefiniti = 45;
+const rpeStimatoSecco = 5.0;
+
 /// RPE che una serie fa percepire, dalla zona di intensità o, senza zona,
 /// dal tipo di lavoro. Serve solo a stimare il carico delle sedute senza
 /// la risposta dell'atleta: una stima di partenza, da ritoccare con l'uso.
@@ -200,6 +205,27 @@ CaricoSeduta caricoAllenamento({
     stimato: rpe == null,
     acqua: totale * (1 - quotaSecco),
     secco: totale * quotaSecco,
+  );
+}
+
+/// Il carico di una seduta a secco: RPE × i suoi [minuti], tutto nel
+/// secco.
+CaricoSeduta caricoSecco({
+  required String id,
+  required DateTime giorno,
+  required int minuti,
+  int? rpe,
+}) {
+  final rpeUsato = rpe?.toDouble() ?? rpeStimatoSecco;
+  final durata = minuti.clamp(1, 600);
+  return CaricoSeduta(
+    giorno: soloData(giorno),
+    tipo: 'allenamento',
+    eventoId: id,
+    minuti: durata,
+    rpe: rpeUsato,
+    stimato: rpe == null,
+    secco: rpeUsato * durata,
   );
 }
 
@@ -363,9 +389,13 @@ String formattaAcwr(double rapporto) =>
 /// Di un allenamento contano solo le serie che fa lui ([atletaId], con il
 /// suo [ruolo]): non quelle dei soli portieri se è di movimento, né la
 /// variante di un compagno. Senza [atletaId], tutte.
+///
+/// Le sedute a secco ([minutiSecco]: id -> minuti) valgono i loro minuti,
+/// tutti nel secco.
 List<CaricoSeduta> seduteDiAtleta({
   required Map<String, DateTime> dataAllenamenti,
   required Map<String, List<DatiSerie>> seriePerAllenamento,
+  Map<String, int> minutiSecco = const {},
   required Map<String, String> statoPresenze,
   required Map<String, DateTime> dataPartite,
   required Set<String> partiteConvocato,
@@ -389,6 +419,17 @@ List<CaricoSeduta> seduteDiAtleta({
   for (final id in allenamenti) {
     final data = dataAllenamenti[id];
     if (data == null) continue;
+    if (minutiSecco[id] case final minuti?) {
+      sedute.add(
+        caricoSecco(
+          id: id,
+          giorno: data,
+          minuti: minuti,
+          rpe: rpe[('allenamento', id)],
+        ),
+      );
+      continue;
+    }
     final serie = seriePerAllenamento[id] ?? const <DatiSerie>[];
     sedute.add(
       caricoAllenamento(

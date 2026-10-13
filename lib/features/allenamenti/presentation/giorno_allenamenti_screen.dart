@@ -15,6 +15,7 @@ import '../../../widgets/section_header.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/allenamenti_providers.dart';
+import '../../secco/presentation/secco_widgets.dart';
 import 'allenamento_detail_screen.dart';
 import 'calendario/allenamenti_per_giorno.dart';
 import 'riepilogo_volumi.dart';
@@ -78,20 +79,22 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
                   for (final a in delGiorno)
                     SchedaElenco(
                       leading: IconaRiquadro(
-                        Icons.pool,
-                        colore: context.dominio.evidenzaCiano,
+                        a.secco ? Icons.fitness_center : Icons.pool,
+                        colore: a.secco
+                            ? context.dominio.evidenzaViola
+                            : context.dominio.evidenzaCiano,
                         dimensione: 48,
                       ),
-                      titolo: a.titolo != null && a.titolo!.isNotEmpty
-                          ? a.titolo!
-                          : 'Allenamento',
+                      titolo: a.titoloMostrato,
                       sottotitolo: a.gruppoId == null
                           ? 'Tutto il club'
                           : nomiGruppi[a.gruppoId],
-                      trailing: switch (volumi[a.id]) {
-                        final v? => VolumeScheda(v),
-                        null => null,
-                      },
+                      trailing: a.secco
+                          ? DurataSecco(a)
+                          : switch (volumi[a.id]) {
+                              final v? => VolumeScheda(v),
+                              null => null,
+                            },
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) =>

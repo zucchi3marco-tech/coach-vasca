@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/utils/giorni.dart';
+import '../../secco/data/secco_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import 'allenamenti_repository.dart';
@@ -15,10 +16,11 @@ import 'serie_repository.dart';
 /// (online-first, coda locale se offline) di ogni altra creazione
 /// nell'app.
 class DuplicazioneSettimanaService {
-  DuplicazioneSettimanaService(this._allenamenti, this._serie);
+  DuplicazioneSettimanaService(this._allenamenti, this._serie, this._secco);
 
   final AllenamentiRepository _allenamenti;
   final SerieRepository _serie;
+  final SeccoRepository _secco;
 
   /// Copia un allenamento con tutte le sue serie in [data], per
   /// [gruppoId] — anche un'altra squadra ("Duplica" nel dettaglio,
@@ -27,6 +29,7 @@ class DuplicazioneSettimanaService {
   /// Per un'altra squadra le serie restano dei portieri o del movimento,
   /// ma non di alcuni atleti: quelle solo per loro non si copiano, e chi
   /// era escluso da una serie qui la fa.
+  /// Una seduta a secco si copia con la sua durata e i suoi esercizi.
   Future<Allenamento> copiaAllenamento(
     Allenamento sorgente, {
     required DateTime data,
@@ -38,7 +41,17 @@ class DuplicazioneSettimanaService {
       titolo: sorgente.titolo,
       gruppoId: gruppoId,
       note: sorgente.note,
+      tipo: sorgente.tipo,
+      durataMin: sorgente.durataMin,
     );
+    if (sorgente.secco) {
+      await _secco.copiaSeduta(
+        daAllenamentoId: sorgente.id,
+        aAllenamentoId: nuovo.id,
+        clubId: sorgente.clubId,
+      );
+      return nuovo;
+    }
 
     final stessaSquadra = gruppoId == sorgente.gruppoId;
     final serie = [
@@ -125,5 +138,6 @@ final duplicazioneSettimanaServiceProvider =
       return DuplicazioneSettimanaService(
         ref.watch(allenamentiRepositoryProvider),
         ref.watch(serieRepositoryProvider),
+        ref.watch(seccoRepositoryProvider),
       );
     });

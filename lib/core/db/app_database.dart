@@ -34,6 +34,8 @@ part 'app_database.g.dart';
     TestRisultatiTable,
     VideoPartiteTable,
     NoteVideoTable,
+    EserciziSeccoTable,
+    EserciziSedutaTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -43,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -475,6 +477,23 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'partite_table', nome)) {
             await m.addColumn(partiteTable, colonna);
           }
+        }
+      }
+      // v38 -> v39: le sedute a secco e i loro esercizi.
+      if (from < 39) {
+        for (final (nome, colonna) in [
+          ('tipo', allenamentiTable.tipo),
+          ('durata_min', allenamentiTable.durataMin),
+        ]) {
+          if (!await _hasColumn(m, 'allenamenti_table', nome)) {
+            await m.addColumn(allenamentiTable, colonna);
+          }
+        }
+        if (!await _hasTable(m, 'esercizi_secco_table')) {
+          await m.createTable(eserciziSeccoTable);
+        }
+        if (!await _hasTable(m, 'esercizi_seduta_table')) {
+          await m.createTable(eserciziSedutaTable);
         }
       }
     },

@@ -27,7 +27,11 @@ Future<({DateTime data, String? gruppoId})?> chiediDoveDuplicare(
       builder: (context, aggiorna) {
         final colori = context.colori;
         return AlertDialog(
-          title: const Text('Duplica allenamento'),
+          title: Text(
+            allenamento.secco
+                ? 'Duplica seduta a secco'
+                : 'Duplica allenamento',
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,8 +84,12 @@ Future<({DateTime data, String? gruppoId})?> chiediDoveDuplicare(
               ),
               const SizedBox(height: AppSpacing.s12),
               Text(
-                'Si copiano titolo, note e tutte le serie. Recuperi e '
-                'ripartenze restano questi: controllali per la squadra nuova.',
+                allenamento.secco
+                    ? 'Si copiano titolo, durata, note e tutti gli esercizi '
+                          'con serie, carichi e recuperi.'
+                    : 'Si copiano titolo, note e tutte le serie. Recuperi e '
+                          'ripartenze restano questi: controllali per la '
+                          'squadra nuova.',
                 style: AppTypography.piccolo.copyWith(
                   color: colori.testoSecondario,
                 ),
