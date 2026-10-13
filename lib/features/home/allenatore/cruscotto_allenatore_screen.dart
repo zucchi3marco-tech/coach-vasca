@@ -11,6 +11,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/griglia_azioni.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
+import '../../assistente/presentation/assistente_screen.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
@@ -221,6 +222,20 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         onTap: () => _apri(
           context,
           TempiDaFotoScreen(
+            clubId: club.id,
+            sport: pallanuoto ? 'pallanuoto' : 'nuoto',
+            gruppoId: gruppoId,
+          ),
+        ),
+      ),
+      AzioneRapida(
+        icona: Icons.forum_outlined,
+        titolo: 'Assistente',
+        sottotitolo: 'Chiedi sui dati della squadra',
+        colore: dominio.evidenzaCiano,
+        onTap: () => _apri(
+          context,
+          AssistenteScreen(
             clubId: club.id,
             sport: pallanuoto ? 'pallanuoto' : 'nuoto',
             gruppoId: gruppoId,

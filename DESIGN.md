@@ -809,6 +809,17 @@ Una seduta a secco è un allenamento a parte, con gli esercizi al posto delle se
 - **L'elenco del club** ("Esercizi a secco", dal menu della seduta): schede per categoria, "Nuovo esercizio" e "Aggiungi l'elenco pronto" in testata, gli archiviati in fondo. Un esercizio già usato in una seduta non si elimina: si archivia.
 - **L'atleta** apre la seduta dalla scheda "Prossima seduta a secco" della sua home: gli esercizi con quanto farne e, a un tocco, come si fanno.
 
+### Assistente
+
+Una chat per l'allenatore (azione rapida "Assistente" in "Oggi"), larga fino a 820.
+
+- **In cima, sempre**, la riga con il lucchetto: nomi e dati sulla salute restano sul telefono. È una promessa, non una nota: all'AI arrivano codici (G1, G2…) e numeri già calcolati, e benessere e dolori mai.
+- **Vuota**, l'invito ("Chiedi all'assistente", icona 48 in `testoTenue`, due righe) con le domande d'esempio come chip da toccare.
+- **Le domande** dell'allenatore a destra, in un fumetto `azioneTenue`; **le risposte** a sinistra, in un pannello `superficie`, testo selezionabile, e sotto in `testoTenue` cosa ha letto ("Ha letto: partite, statistiche delle partite"). Mentre pensa: uno scheletro e "Sto leggendo: presenze" (niente rotellina).
+- **Le proposte** sono schede con bordo `lineaForte` e icona `azione`: la distinta (numero, nome, "(portiere)", quanti già in distinta e il massimo; oltre il massimo il pulsante è spento e lo dice in `attenzione`) e la seduta (il testo come in "Scrivi l'allenamento", metri e serie, le righe non capite in `attenzione`). Un pulsante pieno largo quanto la scritta ("Convoca", "Crea la seduta") e "Scarta"; fatta, una spunta `ok` con "Convocati in distinta" o "Seduta creata" e "Apri". Mai un'azione senza la conferma.
+- **La salute** sta in una scheda a parte, calcolata sul telefono: prontezza, dolori e sintomi per atleta, chi non ha la scheda, e in fondo "Calcolato sul telefono: all'AI non arriva".
+- In basso la casella "Chiedi sui dati della squadra" e il pulsante con la freccia. "Ricomincia" nella barra in alto svuota la chat: la conversazione non si salva.
+
 ---
 
 ---

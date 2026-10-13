@@ -1,0 +1,423 @@
+// Edge Function: assistente
+//
+// La chat dell'allenatore (proposta 9 del piano "Il Mako della
+// pallanuoto"): risponde sui dati del club e propone azioni (una
+// convocazione, una seduta) che l'allenatore conferma nell'app.
+//
+// Decisione del 13 ottobre 2026, per i dati di minorenni: i dati restano
+// sul telefono. Questa funzione non legge niente del club: e' solo il
+// "cervello". Riceve la conversazione e restituisce la risposta del
+// modello o le chiamate agli strumenti, che l'app esegue sul telefono
+// (con i suoi conti) rimandando qui solo il risultato: codici al posto dei
+// nomi (G1, G2...) e numeri gia' calcolati. Benessere, dolori e sintomi
+// non arrivano mai: i filtri sulla salute li applica l'app
+// (`scegli_atleti`), e i dati sulla salute li mostra direttamente
+// all'allenatore (`mostra_benessere`). Quando il modello sul telefono sara'
+// pronto (piano dell'AI locale) prendera' il posto di questo.
+//
+// Solo per gli allenatori: si controlla che chi chiama sia membro del club.
+// File autonomo come le altre Edge Function (nessun codice condiviso).
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const MODELLO = Deno.env.get("ASSISTENTE_MODEL") ?? Deno.env.get("TEXT_MODEL") ??
+  "gpt-4o-mini";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+}
+
+const MESSAGGI_MASSIMI = 80;
+const CARATTERI_MASSIMI = 120_000;
+const TENTATIVI_MASSIMI = 3;
+const ATTESE_MS = [1500, 3000];
+const TEMPO_MASSIMO_MS = 55_000;
+const LIMITE_TENTATIVO_MS = 30_000;
+
+// Gli strumenti: li esegue l'app, qui c'e' solo come chiamarli.
+const STRUMENTI = [
+  {
+    type: "function",
+    function: {
+      name: "squadra",
+      description:
+        "Gli atleti della squadra scelta nell'app, con codice (G1, G2...) e ruolo. Non ci sono nomi.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "partite",
+      description:
+        "Le partite della squadra: prossime o giocate, con id, data, ora, avversario, casa o trasferta, risultato, convocati e massimo dei convocati.",
+      parameters: {
+        type: "object",
+        properties: {
+          quali: { type: "string", enum: ["prossime", "giocate"] },
+          quante: { type: "integer", minimum: 1, maximum: 20 },
+        },
+        required: ["quali"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "statistiche_partite",
+      description:
+        "Le statistiche calcolate dall'app dagli eventi registrati dal vivo: gol fatti e subiti, tiri, superiorita' e inferiorita' (con i gol), rigori, espulsioni, palle perse e recuperate, assist; per squadra e per atleta (codici). O le ultime N partite giocate o le partite indicate.",
+      parameters: {
+        type: "object",
+        properties: {
+          ultime: { type: "integer", minimum: 1, maximum: 30 },
+          partite_id: { type: "array", items: { type: "string" }, maxItems: 30 },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "presenze",
+      description:
+        "Le presenze agli allenamenti degli ultimi N giorni, per atleta (codici): presente, assente, giustificato, percentuale.",
+      parameters: {
+        type: "object",
+        properties: { giorni: { type: "integer", minimum: 1, maximum: 365 } },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "carico",
+      description:
+        "Il carico di allenamento di ogni atleta (codici): carico degli ultimi 7 giorni, rapporto con la media delle ultime 4 settimane (ACWR) e la sua fascia. E' carico di lavoro, non salute.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "allenamenti",
+      description:
+        "Le sedute della squadra fra due date (AAAA-MM-GG): data, tipo (acqua o secco), titolo, metri, lavoro a tempo, durata del secco, quanti presenti.",
+      parameters: {
+        type: "object",
+        properties: {
+          da: { type: "string", description: "AAAA-MM-GG" },
+          a: { type: "string", description: "AAAA-MM-GG" },
+        },
+        required: ["da", "a"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "scegli_atleti",
+      description:
+        "Gli atleti della squadra (codici) che passano i filtri. I filtri sulla salute li applica l'app con le schede benessere degli ultimi 3 giorni: tu ricevi solo chi resta, mai i motivi. Usalo per convocare o preparare sedute 'escludendo chi ha male alla spalla' e simili.",
+      parameters: {
+        type: "object",
+        properties: {
+          escludi_dolore_spalla: { type: "boolean" },
+          escludi_dolori: { type: "boolean", description: "qualsiasi dolore" },
+          escludi_sintomi: { type: "boolean", description: "febbre, raffreddore..." },
+          escludi_da_sentire: {
+            type: "boolean",
+            description: "chi ha la prontezza 'da sentire'",
+          },
+          ruolo: { type: "string", enum: ["portieri", "movimento"] },
+          ordina_per: { type: "string", enum: ["presenze", "carico_basso"] },
+          quanti: { type: "integer", minimum: 1, maximum: 40 },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "mostra_benessere",
+      description:
+        "Mostra direttamente all'allenatore, in una scheda dell'app, il benessere della squadra (prontezza, dolori, sintomi). Tu non ricevi i dati: usalo quando ti chiede di salute, dolori o benessere, poi digli che li trova nella scheda.",
+      parameters: {
+        type: "object",
+        properties: {
+          cosa: { type: "string", enum: ["tutto", "dolori", "sintomi", "da_sentire"] },
+          giorni: { type: "integer", minimum: 1, maximum: 14 },
+        },
+        required: ["cosa"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_convocazione",
+      description:
+        "Propone all'allenatore la distinta di una partita: l'app gli mostra i convocati e lui conferma. Non e' ancora fatta finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          partita_id: { type: "string" },
+          atleti: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 20 },
+        },
+        required: ["partita_id", "atleti"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_seduta",
+      description:
+        "Propone all'allenatore una seduta in acqua scritta nel formato di 'Scrivi l'allenamento' (vedi le istruzioni): l'app la legge, gliela mostra e lui la crea. Non e' ancora creata finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          data: { type: "string", description: "AAAA-MM-GG" },
+          titolo: { type: "string" },
+          testo: { type: "string", description: "Una serie per riga" },
+        },
+        required: ["data", "testo"],
+        additionalProperties: false,
+      },
+    },
+  },
+];
+
+const NOMI_STRUMENTI = new Set(STRUMENTI.map((s) => s.function.name));
+
+function istruzioni(contesto: Record<string, unknown>): string {
+  const sport = contesto.sport === "nuoto" ? "nuoto" : "pallanuoto";
+  return `Sei l'assistente di un allenatore di ${sport} di un club italiano, dentro l'app WaterTactics.
+Oggi e' ${contesto.giorno ?? ""} ${contesto.oggi ?? ""}. Squadra scelta nell'app: ${contesto.squadra ?? "tutto il club"}.
+
+Regole:
+- Gli atleti sono minorenni. Li conosci solo per codice (G1, G2...): scrivi sempre il codice, l'app lo trasforma nel nome. Non inventare nomi e non chiederli.
+- Non hai dati sulla salute (benessere, dolori, sintomi) e non devi chiederli. Per scegliere atleti con filtri sulla salute usa scegli_atleti; se l'allenatore chiede di salute o dolori usa mostra_benessere e digli che li trova nella scheda.
+- Prima di rispondere sui numeri leggi i dati con gli strumenti. Non inventare numeri: se un dato manca, dillo.
+- Per fare qualcosa (convocare, preparare una seduta) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- Niente diagnosi mediche. Il carico (ACWR) e' una fascia di riferimento, non una previsione di infortuni.
+- Rispondi in italiano, breve e concreto, come un collega competente. Niente punti esclamativi, niente elenchi lunghi se non servono.
+
+Formato delle sedute (proponi_seduta), una serie per riga:
+- titoli di blocco da soli su una riga: Riscaldamento, Principale, Defaticamento, Altro;
+- "400 sl A1" una distanza; "8x100 sl B1 @1:40 r15" ripetute con zona, ripartenza e recupero; "3x5' uomo in +" serie a tempo;
+- stili: sl, do, ra, df, mix; esecuzioni: gambe, braccia, pull, tecnica; pallanuoto senza stile: palleggio, tiri, schemi, gioco da schierati, partita, uomo in +, uomo in -, tecnico-tattico;
+- zone: A1 A2 B1 B2 C1 C2 C3 D; "rec 2'" da solo su una riga = recupero dopo la serie sopra; "2x" da solo ripete le righe sotto fino alla riga vuota;
+- "Portieri", "Movimento" o "G3, G7" da soli su una riga: per chi sono le serie sotto, fino al prossimo titolo; "Portieri: 10' tiri" davanti a una serie vale solo per quella.`;
+}
+
+type Messaggio = {
+  role: string;
+  content?: unknown;
+  tool_calls?: unknown;
+  tool_call_id?: unknown;
+};
+
+// Solo i campi che servono, con i tipi giusti: il resto si scarta.
+function pulisciMessaggi(grezzi: unknown): Messaggio[] | string {
+  if (!Array.isArray(grezzi) || grezzi.length === 0) return "Conversazione vuota";
+  if (grezzi.length > MESSAGGI_MASSIMI) return "Conversazione troppo lunga: ricominciala";
+  let caratteri = 0;
+  const puliti: Messaggio[] = [];
+  for (const m of grezzi) {
+    if (typeof m !== "object" || m === null) return "Messaggio non valido";
+    const r = m as Record<string, unknown>;
+    const contenuto = typeof r.content === "string" ? r.content : null;
+    caratteri += contenuto?.length ?? 0;
+    if (r.role === "user") {
+      if (!contenuto) return "Domanda vuota";
+      puliti.push({ role: "user", content: contenuto });
+    } else if (r.role === "assistant") {
+      const chiamate = Array.isArray(r.tool_calls)
+        ? r.tool_calls.flatMap((c) => {
+          const cc = c as Record<string, unknown>;
+          const f = cc.function as Record<string, unknown> | undefined;
+          if (typeof cc.id !== "string" || !f || typeof f.name !== "string") return [];
+          if (!NOMI_STRUMENTI.has(f.name)) return [];
+          const argomenti = typeof f.arguments === "string" ? f.arguments : "{}";
+          caratteri += argomenti.length;
+          return [{ id: cc.id, type: "function", function: { name: f.name, arguments: argomenti } }];
+        })
+        : [];
+      puliti.push({
+        role: "assistant",
+        content: contenuto,
+        ...(chiamate.length > 0 ? { tool_calls: chiamate } : {}),
+      });
+    } else if (r.role === "tool") {
+      if (typeof r.tool_call_id !== "string") return "Risultato senza chiamata";
+      puliti.push({ role: "tool", tool_call_id: r.tool_call_id, content: contenuto ?? "{}" });
+    } else {
+      return "Ruolo non valido";
+    }
+  }
+  if (caratteri > CARATTERI_MASSIMI) return "Conversazione troppo lunga: ricominciala";
+  return puliti;
+}
+
+function messaggioErroreOpenAi(status: number, corpoGrezzo: string): string {
+  let codice: string | undefined;
+  try {
+    const corpo = JSON.parse(corpoGrezzo);
+    codice = corpo?.error?.code ?? corpo?.error?.type;
+  } catch {
+    // corpo non JSON: messaggio generico.
+  }
+  if (codice === "insufficient_quota") {
+    return "Il credito del servizio AI è esaurito: va ricaricato l'account " +
+      "OpenAI prima di poter usare di nuovo l'assistente.";
+  }
+  if (status === 401) {
+    return "La chiave del servizio AI non è valida: va controllata nelle " +
+      "impostazioni del server.";
+  }
+  if (status === 429 || codice === "rate_limit_exceeded") {
+    return "Troppe richieste al servizio AI in poco tempo. Aspetta un minuto e riprova.";
+  }
+  if (status >= 500) {
+    return "Il servizio AI è momentaneamente sovraccarico. Riprova tra qualche istante.";
+  }
+  return `Il servizio AI ha risposto con un errore (${status}). Riprova.`;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Metodo non supportato" }, 405);
+  }
+  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return jsonResponse({ error: "Assistente non configurato sul server" }, 500);
+  }
+
+  let richiesta: { club_id?: unknown; contesto?: unknown; messaggi?: unknown };
+  try {
+    richiesta = await req.json();
+  } catch {
+    return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
+  }
+  if (typeof richiesta.club_id !== "string") {
+    return jsonResponse({ error: "Club mancante" }, 400);
+  }
+
+  // Solo un allenatore del club: la chiave dell'AI costa.
+  const autorizzazione = req.headers.get("Authorization") ?? "";
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: autorizzazione } },
+    auth: { persistSession: false },
+  });
+  const { data: utente } = await db.auth.getUser(
+    autorizzazione.replace(/^Bearer\s+/i, ""),
+  );
+  if (!utente?.user) {
+    return jsonResponse({ error: "Accesso richiesto" }, 401);
+  }
+  const { data: membro, error: erroreMembro } = await db.rpc("is_membro_club", {
+    p_club_id: richiesta.club_id,
+  });
+  if (erroreMembro || membro !== true) {
+    return jsonResponse({ error: "L'assistente è solo per gli allenatori del club" }, 403);
+  }
+
+  const messaggi = pulisciMessaggi(richiesta.messaggi);
+  if (typeof messaggi === "string") {
+    return jsonResponse({ error: messaggi }, 400);
+  }
+  const contesto = typeof richiesta.contesto === "object" && richiesta.contesto !== null
+    ? richiesta.contesto as Record<string, unknown>
+    : {};
+
+  const inizio = Date.now();
+  let risposta: Response | undefined;
+  let corpoErrore = "";
+  let erroreRete: unknown;
+  for (let tentativo = 1; tentativo <= TENTATIVI_MASSIMI; tentativo++) {
+    try {
+      risposta = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: AbortSignal.timeout(
+          Math.min(LIMITE_TENTATIVO_MS, TEMPO_MASSIMO_MS - (Date.now() - inizio)),
+        ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODELLO,
+          messages: [{ role: "system", content: istruzioni(contesto) }, ...messaggi],
+          tools: STRUMENTI,
+          temperature: 0.2,
+        }),
+      });
+      erroreRete = undefined;
+    } catch (errore) {
+      erroreRete = errore;
+      risposta = undefined;
+    }
+    corpoErrore = risposta !== undefined && !risposta.ok ? await risposta.text() : "";
+    const daRiprovare = erroreRete !== undefined ||
+      (risposta !== undefined && [429, 500, 502, 503].includes(risposta.status) &&
+        !corpoErrore.includes("insufficient_quota"));
+    const attesa = ATTESE_MS[tentativo - 1];
+    const tempoRimasto = TEMPO_MASSIMO_MS - (Date.now() - inizio) - (attesa ?? 0);
+    if (!daRiprovare || tentativo === TENTATIVI_MASSIMI || tempoRimasto < 10_000) break;
+    await new Promise((r) => setTimeout(r, attesa));
+  }
+
+  if (erroreRete instanceof DOMException && erroreRete.name === "TimeoutError") {
+    return jsonResponse({
+      error: "Il servizio AI sta impiegando troppo a rispondere. Riprova tra qualche istante.",
+    }, 504);
+  }
+  if (erroreRete !== undefined || risposta === undefined) {
+    return jsonResponse({ error: "Impossibile contattare il servizio AI. Riprova." }, 502);
+  }
+  if (!risposta.ok) {
+    return jsonResponse({ error: messaggioErroreOpenAi(risposta.status, corpoErrore) }, 502);
+  }
+
+  const dati = await risposta.json();
+  const messaggio = dati?.choices?.[0]?.message;
+  if (!messaggio) {
+    return jsonResponse({ error: "Il servizio AI non ha risposto. Riprova." }, 502);
+  }
+  const chiamate = Array.isArray(messaggio.tool_calls)
+    ? messaggio.tool_calls.filter((c: { function?: { name?: string } }) =>
+      NOMI_STRUMENTI.has(c?.function?.name ?? "")
+    )
+    : [];
+  return jsonResponse({
+    messaggio: {
+      role: "assistant",
+      content: typeof messaggio.content === "string" ? messaggio.content : null,
+      ...(chiamate.length > 0 ? { tool_calls: chiamate } : {}),
+    },
+    gettoni: dati?.usage?.total_tokens ?? null,
+  });
+});
