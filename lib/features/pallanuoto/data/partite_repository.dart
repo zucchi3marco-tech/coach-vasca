@@ -41,6 +41,12 @@ class PartiteRepository {
       nostraSquadra: row.nostraSquadra,
       importanza: row.importanza,
       eventiLive: row.eventiLive,
+      ritrovoOra: row.ritrovoOra,
+      ritrovoLuogo: row.ritrovoLuogo,
+      rientroOra: row.rientroOra,
+      daPortare: row.daPortare,
+      noteConvocazione: row.noteConvocazione,
+      convocazioneInviataIl: row.convocazioneInviataIl,
     );
   }
 
@@ -66,6 +72,16 @@ class PartiteRepository {
       nostraSquadra: Value(map['nostra_squadra'] as String? ?? 'casa'),
       importanza: Value(map['importanza'] as String? ?? 'media'),
       eventiLive: Value(map['eventi_live'] as String? ?? 'essenziale'),
+      ritrovoOra: Value(map['ritrovo_ora'] as String?),
+      ritrovoLuogo: Value(map['ritrovo_luogo'] as String?),
+      rientroOra: Value(map['rientro_ora'] as String?),
+      daPortare: Value(map['da_portare'] as String?),
+      noteConvocazione: Value(map['note_convocazione'] as String?),
+      convocazioneInviataIl: Value(
+        map['convocazione_inviata_at'] == null
+            ? null
+            : DateTime.parse(map['convocazione_inviata_at'] as String),
+      ),
     );
   }
 
@@ -275,6 +291,90 @@ class PartiteRepository {
           nostraSquadra: Value(nostraSquadra),
           importanza: Value(importanza),
           eventiLive: Value(eventiLive),
+        ),
+      );
+      await enqueueOperation(
+        _db,
+        tabella: 'partite',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    return _rileggiLocale(id);
+  }
+
+  /// "Da portare" dell'ultima convocazione del club che l'aveva scritto:
+  /// di solito è sempre lo stesso elenco, si propone già compilato.
+  Future<String?> ultimoDaPortare(String clubId) async {
+    final rows =
+        await (_db.select(_db.partiteTable)
+              ..where((t) => t.clubId.equals(clubId))
+              ..where((t) => t.daPortare.isNotNull())
+              ..orderBy([(t) => OrderingTerm.desc(t.data)]))
+            .get();
+    for (final r in rows) {
+      final testo = r.daPortare?.trim() ?? '';
+      if (testo.isNotEmpty) return testo;
+    }
+    return null;
+  }
+
+  /// La convocazione della partita: ora e piscina (gli stessi campi della
+  /// partita), ritrovo, rientro, cosa portare e la nota per le famiglie.
+  /// Con [invia] segna anche l'invio ai convocati: l'avviso agli atleti
+  /// lo manda il database quando la modifica arriva (anche dalla coda
+  /// offline).
+  Future<Partita> salvaConvocazione({
+    required String id,
+    String? ora,
+    String? luogo,
+    String? ritrovoOra,
+    String? ritrovoLuogo,
+    String? rientroOra,
+    String? daPortare,
+    String? note,
+    bool invia = false,
+  }) async {
+    String? pulito(String? t) =>
+        t == null || t.trim().isEmpty ? null : t.trim();
+    final inviataIl = invia ? DateTime.now() : null;
+    final payload = {
+      'ora': pulito(ora),
+      'luogo': pulito(luogo),
+      'ritrovo_ora': pulito(ritrovoOra),
+      'ritrovo_luogo': pulito(ritrovoLuogo),
+      'rientro_ora': pulito(rientroOra),
+      'da_portare': pulito(daPortare),
+      'note_convocazione': pulito(note),
+      if (inviataIl != null)
+        'convocazione_inviata_at': inviataIl.toUtc().toIso8601String(),
+    };
+    try {
+      final row = await _client
+          .from('partite')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      await _db
+          .into(_db.partiteTable)
+          .insertOnConflictUpdate(_companionFromMap(row));
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await (_db.update(_db.partiteTable)..where((t) => t.id.equals(id))).write(
+        PartiteTableCompanion(
+          ora: Value(pulito(ora)),
+          luogo: Value(pulito(luogo)),
+          ritrovoOra: Value(pulito(ritrovoOra)),
+          ritrovoLuogo: Value(pulito(ritrovoLuogo)),
+          rientroOra: Value(pulito(rientroOra)),
+          daPortare: Value(pulito(daPortare)),
+          noteConvocazione: Value(pulito(note)),
+          convocazioneInviataIl: inviataIl == null
+              ? const Value.absent()
+              : Value(inviataIl),
         ),
       );
       await enqueueOperation(

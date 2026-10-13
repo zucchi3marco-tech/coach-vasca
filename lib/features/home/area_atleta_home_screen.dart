@@ -15,6 +15,7 @@ import '../carico/application/carico_providers.dart';
 import '../carico/presentation/card_rpe.dart';
 import '../carico/presentation/carico_atleta_screen.dart';
 import '../carico/presentation/grafico_banister.dart';
+import '../pallanuoto/application/pallanuoto_providers.dart';
 import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
@@ -24,6 +25,7 @@ import '../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../allenamenti/domain/allenamento.dart';
 import '../benessere/presentation/card_benessere.dart';
 import '../benessere/presentation/scheda_benessere_screen.dart';
+import '../pallanuoto/domain/convocazione.dart';
 import '../pallanuoto/domain/partita.dart';
 import 'atleta/dati_home_atleta.dart';
 import 'atleta/grafica_pallanuoto.dart';
@@ -86,6 +88,26 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
       Navigator.of(context)
           .push(MaterialPageRoute<void>(builder: (_) => schermata));
 
+  /// La convocazione della prossima partita, solo quando l'allenatore
+  /// l'ha inviata e l'atleta e' fra i convocati.
+  ConvocazioneInScheda? _convocazione(WidgetRef ref, Partita? partita) {
+    if (partita == null || !partita.convocazioneInviata) return null;
+    final mia = ref
+        .watch(distintaListProvider(partita.id))
+        .value
+        ?.where((g) => g.atletaId == atleta.id)
+        .firstOrNull;
+    if (mia == null) return null;
+    final convocato = atleta.sesso == 'F' ? 'convocata' : 'convocato';
+    return (
+      titolo: vistaAllenatore
+          ? '${convocato[0].toUpperCase()}${convocato.substring(1)} con il '
+                'numero ${mia.numeroCalottina}'
+          : 'Sei $convocato con il numero ${mia.numeroCalottina}',
+      voci: vociConvocazioneAtleta(partita),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pallanuoto = atleta.sport == 'pallanuoto';
@@ -95,6 +117,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
     final partita = pallanuoto
         ? ref.watch(prossimaPartitaAtletaProvider(atleta))
         : null;
+    final convocazione = _convocazione(ref, partita);
     final pb = ref.watch(personalBestListProvider(atleta.id)).value;
     final schemi = pallanuoto
         ? ref
@@ -267,6 +290,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                   if (partita != null)
                     CardProssimaPartita(
                       partita: partita,
+                      convocazione: convocazione,
                       onTap: () => _apri(
                         context,
                         PartiteAtletaListScreen(

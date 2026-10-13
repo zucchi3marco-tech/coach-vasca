@@ -33,7 +33,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 7;
+const _versioneDati = 8;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -752,6 +752,17 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 importanza: Value(alta ? 'alta' : 'media'),
                 // Le partite si seguono con gli eventi completi.
                 eventiLive: const Value('completa'),
+                // Le giocate erano state convocate: la prossima
+                // convocazione ripropone il loro "da portare".
+                ritrovoOra: Value(giorni < 0 ? '14:00' : null),
+                daPortare: Value(
+                  giorni < 0
+                      ? 'Accappatoio, ciabatte, cuffia di riserva, documento'
+                      : null,
+                ),
+                convocazioneInviataIl: Value(
+                  giorni < 0 ? aggiungiGiorni(giorno, giorni - 2) : null,
+                ),
               ),
             );
         for (var a = 0; a < 11; a++) {

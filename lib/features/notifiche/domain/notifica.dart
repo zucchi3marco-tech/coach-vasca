@@ -1,6 +1,7 @@
 /// Un avviso in app (e, con le notifiche push, anche sul telefono): tipi
 /// `atleta_registrato` (per il coach), `convocazione_gara` e
-/// `convocazione_partita` (per l'atleta), `visita_medica` (coach e atleta),
+/// `convocazione_partita` (per l'atleta; per le partite parte quando
+/// l'allenatore invia la convocazione), `visita_medica` (coach e atleta),
 /// `benessere` (per il coach: scheda da sentire o molto sotto il solito),
 /// `video_partita` (per l'atleta convocato: il video della partita o una
 /// nota per lui).

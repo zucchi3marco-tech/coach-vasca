@@ -404,10 +404,26 @@ class _FasciaStatistiche extends StatelessWidget {
 // Prossima partita: un tabellone con le due squadre.
 // ---------------------------------------------------------------------------
 
+/// La convocazione nella scheda della prossima partita: "Sei convocato con
+/// il numero 7" e le voci che servono per arrivare (ritrovo, rientro, cosa
+/// portare, note).
+typedef ConvocazioneInScheda = ({
+  String titolo,
+  List<({String etichetta, String valore})> voci,
+});
+
 class CardProssimaPartita extends StatelessWidget {
-  const CardProssimaPartita({required this.partita, this.onTap, super.key});
+  const CardProssimaPartita({
+    required this.partita,
+    this.convocazione,
+    this.onTap,
+    super.key,
+  });
 
   final Partita partita;
+
+  /// Solo quando l'allenatore l'ha inviata e l'atleta è fra i convocati.
+  final ConvocazioneInScheda? convocazione;
   final VoidCallback? onTap;
 
   @override
@@ -584,6 +600,61 @@ class CardProssimaPartita extends StatelessWidget {
                 ],
               ),
             ),
+            if (convocazione case final c?) ...[
+              Divider(height: 1, thickness: 1, color: colori.linea),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.campaign_outlined,
+                          size: 20,
+                          color: colori.azione,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            c.titolo,
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    for (final v in c.voci)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 120,
+                              child: Text(
+                                v.etichetta,
+                                style: AppTypography.piccolo.copyWith(
+                                  color: colori.testoSecondario,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                v.valore,
+                                style: AppTypography.corpo.copyWith(
+                                  color: colori.testo,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

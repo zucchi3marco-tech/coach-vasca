@@ -274,6 +274,15 @@ class PartiteTable extends Table {
   TextColumn get eventiLive =>
       text().withDefault(const Constant('essenziale'))();
 
+  /// La convocazione: ritrovo, rientro, cosa portare, una nota per le
+  /// famiglie e quando l'allenatore l'ha inviata ai convocati.
+  TextColumn get ritrovoOra => text().nullable()();
+  TextColumn get ritrovoLuogo => text().nullable()();
+  TextColumn get rientroOra => text().nullable()();
+  TextColumn get daPortare => text().nullable()();
+  TextColumn get noteConvocazione => text().nullable()();
+  DateTimeColumn get convocazioneInviataIl => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

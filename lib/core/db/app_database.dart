@@ -43,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 37;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -460,6 +460,21 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'note_video_table')) {
           await m.createTable(noteVideoTable);
+        }
+      }
+      // v37 -> v38: la convocazione della partita.
+      if (from < 38) {
+        for (final (nome, colonna) in [
+          ('ritrovo_ora', partiteTable.ritrovoOra),
+          ('ritrovo_luogo', partiteTable.ritrovoLuogo),
+          ('rientro_ora', partiteTable.rientroOra),
+          ('da_portare', partiteTable.daPortare),
+          ('note_convocazione', partiteTable.noteConvocazione),
+          ('convocazione_inviata_il', partiteTable.convocazioneInviataIl),
+        ]) {
+          if (!await _hasColumn(m, 'partite_table', nome)) {
+            await m.addColumn(partiteTable, colonna);
+          }
         }
       }
     },

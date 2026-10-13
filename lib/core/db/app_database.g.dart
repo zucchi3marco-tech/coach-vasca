@@ -7312,6 +7312,72 @@ class $PartiteTableTable extends PartiteTable
     requiredDuringInsert: false,
     defaultValue: const Constant('essenziale'),
   );
+  static const VerificationMeta _ritrovoOraMeta = const VerificationMeta(
+    'ritrovoOra',
+  );
+  @override
+  late final GeneratedColumn<String> ritrovoOra = GeneratedColumn<String>(
+    'ritrovo_ora',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ritrovoLuogoMeta = const VerificationMeta(
+    'ritrovoLuogo',
+  );
+  @override
+  late final GeneratedColumn<String> ritrovoLuogo = GeneratedColumn<String>(
+    'ritrovo_luogo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rientroOraMeta = const VerificationMeta(
+    'rientroOra',
+  );
+  @override
+  late final GeneratedColumn<String> rientroOra = GeneratedColumn<String>(
+    'rientro_ora',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _daPortareMeta = const VerificationMeta(
+    'daPortare',
+  );
+  @override
+  late final GeneratedColumn<String> daPortare = GeneratedColumn<String>(
+    'da_portare',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteConvocazioneMeta = const VerificationMeta(
+    'noteConvocazione',
+  );
+  @override
+  late final GeneratedColumn<String> noteConvocazione = GeneratedColumn<String>(
+    'note_convocazione',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _convocazioneInviataIlMeta =
+      const VerificationMeta('convocazioneInviataIl');
+  @override
+  late final GeneratedColumn<DateTime> convocazioneInviataIl =
+      GeneratedColumn<DateTime>(
+        'convocazione_inviata_il',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7332,6 +7398,12 @@ class $PartiteTableTable extends PartiteTable
     nostraSquadra,
     importanza,
     eventiLive,
+    ritrovoOra,
+    ritrovoLuogo,
+    rientroOra,
+    daPortare,
+    noteConvocazione,
+    convocazioneInviataIl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7484,6 +7556,51 @@ class $PartiteTableTable extends PartiteTable
         eventiLive.isAcceptableOrUnknown(data['eventi_live']!, _eventiLiveMeta),
       );
     }
+    if (data.containsKey('ritrovo_ora')) {
+      context.handle(
+        _ritrovoOraMeta,
+        ritrovoOra.isAcceptableOrUnknown(data['ritrovo_ora']!, _ritrovoOraMeta),
+      );
+    }
+    if (data.containsKey('ritrovo_luogo')) {
+      context.handle(
+        _ritrovoLuogoMeta,
+        ritrovoLuogo.isAcceptableOrUnknown(
+          data['ritrovo_luogo']!,
+          _ritrovoLuogoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rientro_ora')) {
+      context.handle(
+        _rientroOraMeta,
+        rientroOra.isAcceptableOrUnknown(data['rientro_ora']!, _rientroOraMeta),
+      );
+    }
+    if (data.containsKey('da_portare')) {
+      context.handle(
+        _daPortareMeta,
+        daPortare.isAcceptableOrUnknown(data['da_portare']!, _daPortareMeta),
+      );
+    }
+    if (data.containsKey('note_convocazione')) {
+      context.handle(
+        _noteConvocazioneMeta,
+        noteConvocazione.isAcceptableOrUnknown(
+          data['note_convocazione']!,
+          _noteConvocazioneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('convocazione_inviata_il')) {
+      context.handle(
+        _convocazioneInviataIlMeta,
+        convocazioneInviataIl.isAcceptableOrUnknown(
+          data['convocazione_inviata_il']!,
+          _convocazioneInviataIlMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7565,6 +7682,30 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.string,
         data['${effectivePrefix}eventi_live'],
       )!,
+      ritrovoOra: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ritrovo_ora'],
+      ),
+      ritrovoLuogo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ritrovo_luogo'],
+      ),
+      rientroOra: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rientro_ora'],
+      ),
+      daPortare: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}da_portare'],
+      ),
+      noteConvocazione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note_convocazione'],
+      ),
+      convocazioneInviataIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}convocazione_inviata_il'],
+      ),
     );
   }
 
@@ -7602,6 +7743,15 @@ class PartiteTableData extends DataClass
 
   /// essenziale | completa — quali eventi si segnano dal vivo.
   final String eventiLive;
+
+  /// La convocazione: ritrovo, rientro, cosa portare, una nota per le
+  /// famiglie e quando l'allenatore l'ha inviata ai convocati.
+  final String? ritrovoOra;
+  final String? ritrovoLuogo;
+  final String? rientroOra;
+  final String? daPortare;
+  final String? noteConvocazione;
+  final DateTime? convocazioneInviataIl;
   const PartiteTableData({
     required this.id,
     required this.clubId,
@@ -7621,6 +7771,12 @@ class PartiteTableData extends DataClass
     required this.nostraSquadra,
     required this.importanza,
     required this.eventiLive,
+    this.ritrovoOra,
+    this.ritrovoLuogo,
+    this.rientroOra,
+    this.daPortare,
+    this.noteConvocazione,
+    this.convocazioneInviataIl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7655,6 +7811,26 @@ class PartiteTableData extends DataClass
     map['nostra_squadra'] = Variable<String>(nostraSquadra);
     map['importanza'] = Variable<String>(importanza);
     map['eventi_live'] = Variable<String>(eventiLive);
+    if (!nullToAbsent || ritrovoOra != null) {
+      map['ritrovo_ora'] = Variable<String>(ritrovoOra);
+    }
+    if (!nullToAbsent || ritrovoLuogo != null) {
+      map['ritrovo_luogo'] = Variable<String>(ritrovoLuogo);
+    }
+    if (!nullToAbsent || rientroOra != null) {
+      map['rientro_ora'] = Variable<String>(rientroOra);
+    }
+    if (!nullToAbsent || daPortare != null) {
+      map['da_portare'] = Variable<String>(daPortare);
+    }
+    if (!nullToAbsent || noteConvocazione != null) {
+      map['note_convocazione'] = Variable<String>(noteConvocazione);
+    }
+    if (!nullToAbsent || convocazioneInviataIl != null) {
+      map['convocazione_inviata_il'] = Variable<DateTime>(
+        convocazioneInviataIl,
+      );
+    }
     return map;
   }
 
@@ -7686,6 +7862,24 @@ class PartiteTableData extends DataClass
       nostraSquadra: Value(nostraSquadra),
       importanza: Value(importanza),
       eventiLive: Value(eventiLive),
+      ritrovoOra: ritrovoOra == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ritrovoOra),
+      ritrovoLuogo: ritrovoLuogo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ritrovoLuogo),
+      rientroOra: rientroOra == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rientroOra),
+      daPortare: daPortare == null && nullToAbsent
+          ? const Value.absent()
+          : Value(daPortare),
+      noteConvocazione: noteConvocazione == null && nullToAbsent
+          ? const Value.absent()
+          : Value(noteConvocazione),
+      convocazioneInviataIl: convocazioneInviataIl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convocazioneInviataIl),
     );
   }
 
@@ -7715,6 +7909,14 @@ class PartiteTableData extends DataClass
       nostraSquadra: serializer.fromJson<String>(json['nostraSquadra']),
       importanza: serializer.fromJson<String>(json['importanza']),
       eventiLive: serializer.fromJson<String>(json['eventiLive']),
+      ritrovoOra: serializer.fromJson<String?>(json['ritrovoOra']),
+      ritrovoLuogo: serializer.fromJson<String?>(json['ritrovoLuogo']),
+      rientroOra: serializer.fromJson<String?>(json['rientroOra']),
+      daPortare: serializer.fromJson<String?>(json['daPortare']),
+      noteConvocazione: serializer.fromJson<String?>(json['noteConvocazione']),
+      convocazioneInviataIl: serializer.fromJson<DateTime?>(
+        json['convocazioneInviataIl'],
+      ),
     );
   }
   @override
@@ -7739,6 +7941,14 @@ class PartiteTableData extends DataClass
       'nostraSquadra': serializer.toJson<String>(nostraSquadra),
       'importanza': serializer.toJson<String>(importanza),
       'eventiLive': serializer.toJson<String>(eventiLive),
+      'ritrovoOra': serializer.toJson<String?>(ritrovoOra),
+      'ritrovoLuogo': serializer.toJson<String?>(ritrovoLuogo),
+      'rientroOra': serializer.toJson<String?>(rientroOra),
+      'daPortare': serializer.toJson<String?>(daPortare),
+      'noteConvocazione': serializer.toJson<String?>(noteConvocazione),
+      'convocazioneInviataIl': serializer.toJson<DateTime?>(
+        convocazioneInviataIl,
+      ),
     };
   }
 
@@ -7761,6 +7971,12 @@ class PartiteTableData extends DataClass
     String? nostraSquadra,
     String? importanza,
     String? eventiLive,
+    Value<String?> ritrovoOra = const Value.absent(),
+    Value<String?> ritrovoLuogo = const Value.absent(),
+    Value<String?> rientroOra = const Value.absent(),
+    Value<String?> daPortare = const Value.absent(),
+    Value<String?> noteConvocazione = const Value.absent(),
+    Value<DateTime?> convocazioneInviataIl = const Value.absent(),
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -7782,6 +7998,16 @@ class PartiteTableData extends DataClass
     nostraSquadra: nostraSquadra ?? this.nostraSquadra,
     importanza: importanza ?? this.importanza,
     eventiLive: eventiLive ?? this.eventiLive,
+    ritrovoOra: ritrovoOra.present ? ritrovoOra.value : this.ritrovoOra,
+    ritrovoLuogo: ritrovoLuogo.present ? ritrovoLuogo.value : this.ritrovoLuogo,
+    rientroOra: rientroOra.present ? rientroOra.value : this.rientroOra,
+    daPortare: daPortare.present ? daPortare.value : this.daPortare,
+    noteConvocazione: noteConvocazione.present
+        ? noteConvocazione.value
+        : this.noteConvocazione,
+    convocazioneInviataIl: convocazioneInviataIl.present
+        ? convocazioneInviataIl.value
+        : this.convocazioneInviataIl,
   );
   PartiteTableData copyWithCompanion(PartiteTableCompanion data) {
     return PartiteTableData(
@@ -7825,6 +8051,22 @@ class PartiteTableData extends DataClass
       eventiLive: data.eventiLive.present
           ? data.eventiLive.value
           : this.eventiLive,
+      ritrovoOra: data.ritrovoOra.present
+          ? data.ritrovoOra.value
+          : this.ritrovoOra,
+      ritrovoLuogo: data.ritrovoLuogo.present
+          ? data.ritrovoLuogo.value
+          : this.ritrovoLuogo,
+      rientroOra: data.rientroOra.present
+          ? data.rientroOra.value
+          : this.rientroOra,
+      daPortare: data.daPortare.present ? data.daPortare.value : this.daPortare,
+      noteConvocazione: data.noteConvocazione.present
+          ? data.noteConvocazione.value
+          : this.noteConvocazione,
+      convocazioneInviataIl: data.convocazioneInviataIl.present
+          ? data.convocazioneInviataIl.value
+          : this.convocazioneInviataIl,
     );
   }
 
@@ -7848,13 +8090,19 @@ class PartiteTableData extends DataClass
           ..write('modalitaSuperiorita: $modalitaSuperiorita, ')
           ..write('nostraSquadra: $nostraSquadra, ')
           ..write('importanza: $importanza, ')
-          ..write('eventiLive: $eventiLive')
+          ..write('eventiLive: $eventiLive, ')
+          ..write('ritrovoOra: $ritrovoOra, ')
+          ..write('ritrovoLuogo: $ritrovoLuogo, ')
+          ..write('rientroOra: $rientroOra, ')
+          ..write('daPortare: $daPortare, ')
+          ..write('noteConvocazione: $noteConvocazione, ')
+          ..write('convocazioneInviataIl: $convocazioneInviataIl')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     clubId,
     gruppoId,
@@ -7873,7 +8121,13 @@ class PartiteTableData extends DataClass
     nostraSquadra,
     importanza,
     eventiLive,
-  );
+    ritrovoOra,
+    ritrovoLuogo,
+    rientroOra,
+    daPortare,
+    noteConvocazione,
+    convocazioneInviataIl,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7895,7 +8149,13 @@ class PartiteTableData extends DataClass
           other.modalitaSuperiorita == this.modalitaSuperiorita &&
           other.nostraSquadra == this.nostraSquadra &&
           other.importanza == this.importanza &&
-          other.eventiLive == this.eventiLive);
+          other.eventiLive == this.eventiLive &&
+          other.ritrovoOra == this.ritrovoOra &&
+          other.ritrovoLuogo == this.ritrovoLuogo &&
+          other.rientroOra == this.rientroOra &&
+          other.daPortare == this.daPortare &&
+          other.noteConvocazione == this.noteConvocazione &&
+          other.convocazioneInviataIl == this.convocazioneInviataIl);
 }
 
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
@@ -7917,6 +8177,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<String> nostraSquadra;
   final Value<String> importanza;
   final Value<String> eventiLive;
+  final Value<String?> ritrovoOra;
+  final Value<String?> ritrovoLuogo;
+  final Value<String?> rientroOra;
+  final Value<String?> daPortare;
+  final Value<String?> noteConvocazione;
+  final Value<DateTime?> convocazioneInviataIl;
   final Value<int> rowid;
   const PartiteTableCompanion({
     this.id = const Value.absent(),
@@ -7937,6 +8203,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.nostraSquadra = const Value.absent(),
     this.importanza = const Value.absent(),
     this.eventiLive = const Value.absent(),
+    this.ritrovoOra = const Value.absent(),
+    this.ritrovoLuogo = const Value.absent(),
+    this.rientroOra = const Value.absent(),
+    this.daPortare = const Value.absent(),
+    this.noteConvocazione = const Value.absent(),
+    this.convocazioneInviataIl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PartiteTableCompanion.insert({
@@ -7958,6 +8230,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.nostraSquadra = const Value.absent(),
     this.importanza = const Value.absent(),
     this.eventiLive = const Value.absent(),
+    this.ritrovoOra = const Value.absent(),
+    this.ritrovoLuogo = const Value.absent(),
+    this.rientroOra = const Value.absent(),
+    this.daPortare = const Value.absent(),
+    this.noteConvocazione = const Value.absent(),
+    this.convocazioneInviataIl = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -7983,6 +8261,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Expression<String>? nostraSquadra,
     Expression<String>? importanza,
     Expression<String>? eventiLive,
+    Expression<String>? ritrovoOra,
+    Expression<String>? ritrovoLuogo,
+    Expression<String>? rientroOra,
+    Expression<String>? daPortare,
+    Expression<String>? noteConvocazione,
+    Expression<DateTime>? convocazioneInviataIl,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8006,6 +8290,13 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       if (nostraSquadra != null) 'nostra_squadra': nostraSquadra,
       if (importanza != null) 'importanza': importanza,
       if (eventiLive != null) 'eventi_live': eventiLive,
+      if (ritrovoOra != null) 'ritrovo_ora': ritrovoOra,
+      if (ritrovoLuogo != null) 'ritrovo_luogo': ritrovoLuogo,
+      if (rientroOra != null) 'rientro_ora': rientroOra,
+      if (daPortare != null) 'da_portare': daPortare,
+      if (noteConvocazione != null) 'note_convocazione': noteConvocazione,
+      if (convocazioneInviataIl != null)
+        'convocazione_inviata_il': convocazioneInviataIl,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8029,6 +8320,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Value<String>? nostraSquadra,
     Value<String>? importanza,
     Value<String>? eventiLive,
+    Value<String?>? ritrovoOra,
+    Value<String?>? ritrovoLuogo,
+    Value<String?>? rientroOra,
+    Value<String?>? daPortare,
+    Value<String?>? noteConvocazione,
+    Value<DateTime?>? convocazioneInviataIl,
     Value<int>? rowid,
   }) {
     return PartiteTableCompanion(
@@ -8050,6 +8347,13 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       nostraSquadra: nostraSquadra ?? this.nostraSquadra,
       importanza: importanza ?? this.importanza,
       eventiLive: eventiLive ?? this.eventiLive,
+      ritrovoOra: ritrovoOra ?? this.ritrovoOra,
+      ritrovoLuogo: ritrovoLuogo ?? this.ritrovoLuogo,
+      rientroOra: rientroOra ?? this.rientroOra,
+      daPortare: daPortare ?? this.daPortare,
+      noteConvocazione: noteConvocazione ?? this.noteConvocazione,
+      convocazioneInviataIl:
+          convocazioneInviataIl ?? this.convocazioneInviataIl,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8111,6 +8415,26 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     if (eventiLive.present) {
       map['eventi_live'] = Variable<String>(eventiLive.value);
     }
+    if (ritrovoOra.present) {
+      map['ritrovo_ora'] = Variable<String>(ritrovoOra.value);
+    }
+    if (ritrovoLuogo.present) {
+      map['ritrovo_luogo'] = Variable<String>(ritrovoLuogo.value);
+    }
+    if (rientroOra.present) {
+      map['rientro_ora'] = Variable<String>(rientroOra.value);
+    }
+    if (daPortare.present) {
+      map['da_portare'] = Variable<String>(daPortare.value);
+    }
+    if (noteConvocazione.present) {
+      map['note_convocazione'] = Variable<String>(noteConvocazione.value);
+    }
+    if (convocazioneInviataIl.present) {
+      map['convocazione_inviata_il'] = Variable<DateTime>(
+        convocazioneInviataIl.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8138,6 +8462,12 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
           ..write('nostraSquadra: $nostraSquadra, ')
           ..write('importanza: $importanza, ')
           ..write('eventiLive: $eventiLive, ')
+          ..write('ritrovoOra: $ritrovoOra, ')
+          ..write('ritrovoLuogo: $ritrovoLuogo, ')
+          ..write('rientroOra: $rientroOra, ')
+          ..write('daPortare: $daPortare, ')
+          ..write('noteConvocazione: $noteConvocazione, ')
+          ..write('convocazioneInviataIl: $convocazioneInviataIl, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20682,6 +21012,12 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
       Value<String> nostraSquadra,
       Value<String> importanza,
       Value<String> eventiLive,
+      Value<String?> ritrovoOra,
+      Value<String?> ritrovoLuogo,
+      Value<String?> rientroOra,
+      Value<String?> daPortare,
+      Value<String?> noteConvocazione,
+      Value<DateTime?> convocazioneInviataIl,
       Value<int> rowid,
     });
 typedef $$PartiteTableTableUpdateCompanionBuilder =
@@ -20704,6 +21040,12 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
       Value<String> nostraSquadra,
       Value<String> importanza,
       Value<String> eventiLive,
+      Value<String?> ritrovoOra,
+      Value<String?> ritrovoLuogo,
+      Value<String?> rientroOra,
+      Value<String?> daPortare,
+      Value<String?> noteConvocazione,
+      Value<DateTime?> convocazioneInviataIl,
       Value<int> rowid,
     });
 
@@ -20803,6 +21145,36 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<String> get eventiLive => $composableBuilder(
     column: $table.eventiLive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ritrovoOra => $composableBuilder(
+    column: $table.ritrovoOra,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ritrovoLuogo => $composableBuilder(
+    column: $table.ritrovoLuogo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rientroOra => $composableBuilder(
+    column: $table.rientroOra,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get daPortare => $composableBuilder(
+    column: $table.daPortare,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get noteConvocazione => $composableBuilder(
+    column: $table.noteConvocazione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get convocazioneInviataIl => $composableBuilder(
+    column: $table.convocazioneInviataIl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -20905,6 +21277,36 @@ class $$PartiteTableTableOrderingComposer
     column: $table.eventiLive,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get ritrovoOra => $composableBuilder(
+    column: $table.ritrovoOra,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ritrovoLuogo => $composableBuilder(
+    column: $table.ritrovoLuogo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rientroOra => $composableBuilder(
+    column: $table.rientroOra,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get daPortare => $composableBuilder(
+    column: $table.daPortare,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get noteConvocazione => $composableBuilder(
+    column: $table.noteConvocazione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get convocazioneInviataIl => $composableBuilder(
+    column: $table.convocazioneInviataIl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PartiteTableTableAnnotationComposer
@@ -20991,6 +21393,34 @@ class $$PartiteTableTableAnnotationComposer
     column: $table.eventiLive,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get ritrovoOra => $composableBuilder(
+    column: $table.ritrovoOra,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ritrovoLuogo => $composableBuilder(
+    column: $table.ritrovoLuogo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rientroOra => $composableBuilder(
+    column: $table.rientroOra,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get daPortare =>
+      $composableBuilder(column: $table.daPortare, builder: (column) => column);
+
+  GeneratedColumn<String> get noteConvocazione => $composableBuilder(
+    column: $table.noteConvocazione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get convocazioneInviataIl => $composableBuilder(
+    column: $table.convocazioneInviataIl,
+    builder: (column) => column,
+  );
 }
 
 class $$PartiteTableTableTableManager
@@ -21042,6 +21472,12 @@ class $$PartiteTableTableTableManager
                 Value<String> nostraSquadra = const Value.absent(),
                 Value<String> importanza = const Value.absent(),
                 Value<String> eventiLive = const Value.absent(),
+                Value<String?> ritrovoOra = const Value.absent(),
+                Value<String?> ritrovoLuogo = const Value.absent(),
+                Value<String?> rientroOra = const Value.absent(),
+                Value<String?> daPortare = const Value.absent(),
+                Value<String?> noteConvocazione = const Value.absent(),
+                Value<DateTime?> convocazioneInviataIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion(
                 id: id,
@@ -21062,6 +21498,12 @@ class $$PartiteTableTableTableManager
                 nostraSquadra: nostraSquadra,
                 importanza: importanza,
                 eventiLive: eventiLive,
+                ritrovoOra: ritrovoOra,
+                ritrovoLuogo: ritrovoLuogo,
+                rientroOra: rientroOra,
+                daPortare: daPortare,
+                noteConvocazione: noteConvocazione,
+                convocazioneInviataIl: convocazioneInviataIl,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21084,6 +21526,12 @@ class $$PartiteTableTableTableManager
                 Value<String> nostraSquadra = const Value.absent(),
                 Value<String> importanza = const Value.absent(),
                 Value<String> eventiLive = const Value.absent(),
+                Value<String?> ritrovoOra = const Value.absent(),
+                Value<String?> ritrovoLuogo = const Value.absent(),
+                Value<String?> rientroOra = const Value.absent(),
+                Value<String?> daPortare = const Value.absent(),
+                Value<String?> noteConvocazione = const Value.absent(),
+                Value<DateTime?> convocazioneInviataIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion.insert(
                 id: id,
@@ -21104,6 +21552,12 @@ class $$PartiteTableTableTableManager
                 nostraSquadra: nostraSquadra,
                 importanza: importanza,
                 eventiLive: eventiLive,
+                ritrovoOra: ritrovoOra,
+                ritrovoLuogo: ritrovoLuogo,
+                rientroOra: rientroOra,
+                daPortare: daPortare,
+                noteConvocazione: noteConvocazione,
+                convocazioneInviataIl: convocazioneInviataIl,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

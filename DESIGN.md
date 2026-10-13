@@ -533,7 +533,7 @@ Il campo di ricerca e la fila di chip restano fissi sopra la lista, non scorrono
 └──────────────────────────────────────┘
 ```
 
-L'azione principale di una pagina di dettaglio sta nella testata ad acqua (`AzioneTestata`, vedi 2bis): ad esempio "Bordo vasca" e "Presenze" nel dettaglio allenamento, "Dal vivo", "Statistiche" e "Referto" nella partita (e dal giorno della partita una quarta, "Video": prima non c'è niente da guardare). Il "+" resta per aggiungere elementi all'elenco della pagina; nella barra in alto solo esporta, modifica ed elimina.
+L'azione principale di una pagina di dettaglio sta nella testata ad acqua (`AzioneTestata`, vedi 2bis): ad esempio "Bordo vasca" e "Presenze" nel dettaglio allenamento, "Dal vivo", "Statistiche" e "Referto" nella partita (più "Convocazione" fino al giorno della partita e "Video" dal giorno della partita: prima non c'è niente da guardare). Il "+" resta per aggiungere elementi all'elenco della pagina; nella barra in alto solo esporta, modifica ed elimina.
 
 **C. Pagina form**
 
@@ -788,6 +788,16 @@ Si guarda alla scrivania o sul divano, non a bordo vasca: valgono le regole norm
 - **Il disegno** usa gli inchiostri della lavagna tattica (`ColoreLavagna.inchiostri`) e la stessa punta di freccia, più spessi (4 px con un alone di 8 nel controcolore) perché il video sotto è pieno di dettagli. Freccia (curva se il dito curva) e cerchio; "Togli l'ultimo" annulla un segno. Mentre si disegna il video non riceve tocchi.
 - **Le clip** sono righe di elenco con l'icona dell'evento e la stessa descrizione della cronologia ("Tiro — Rossi — Gol (T1)"), sotto il punto del video; quella in onda ha icona ed etichetta "In onda" in `azione`. I filtri sono chip in una fila che scorre (solo quelli con almeno una clip) e, per l'allenatore, il chip del giocatore che apre l'elenco dei convocati.
 - L'atleta vede prima "Le tue azioni", poi "Tutta la partita", senza disegno, allineamento né menu.
+
+### Convocazione
+
+Si apre dalla testata della partita ("Convocazione", fino al giorno della partita). È un form, con le regole dei form.
+
+- **Tre gruppi**: "La partita" (inizio e piscina, gli stessi campi della partita, e la calottina scritta sotto), "Ritrovo e rientro", "Per le famiglie" (da portare, note). Tutto facoltativo; il ritrovo si propone un'ora prima della partita e "Da portare" uguale all'ultima convocazione. Un'ora già scelta si toglie con la ×.
+- **Il messaggio per le famiglie** è testo vero, in un pannello `superficie`, che cambia mentre si scrive: su schermo largo (da 960) sta accanto ai campi, su telefono sotto. Sotto due pulsanti secondari affiancati, "Condividi" (il foglio di condivisione del telefono, se no copia) e "Copia il messaggio". Il grassetto con gli asterischi è quello di WhatsApp.
+- **"Invia ai convocati"** è il pulsante principale, in fondo, con sopra cosa succede: a quanti arriva l'avviso e quanti, senza account, vanno raggiunti con WhatsApp; dopo l'invio, quando è partita. Chiede conferma ("Inviare la convocazione a 9 convocati?"), poi "Convocazione inviata". Senza convocati è spento.
+- Uscendo, quello che si è scritto si salva senza inviare niente.
+- **Nella home dell'atleta** la convocazione inviata sta dentro la scheda della prossima partita, sotto un filetto: "Sei convocato con il numero 7" e le voci che servono ad arrivare (ritrovo, rientro, da portare, note); data, ora e piscina sono già nel tabellone.
 
 ---
 

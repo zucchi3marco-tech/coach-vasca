@@ -18,6 +18,12 @@ class Partita {
     this.nostraSquadra = 'casa',
     this.importanza = 'media',
     this.eventiLive = 'essenziale',
+    this.ritrovoOra,
+    this.ritrovoLuogo,
+    this.rientroOra,
+    this.daPortare,
+    this.noteConvocazione,
+    this.convocazioneInviataIl,
   });
 
   final String id;
@@ -49,6 +55,57 @@ class Partita {
   /// espulsioni o rigori guadagnati.
   final String eventiLive;
 
+  /// La convocazione, nata dalla distinta: ritrovo ("HH:MM" e dove),
+  /// rientro previsto, cosa portare e una nota per le famiglie.
+  final String? ritrovoOra;
+  final String? ritrovoLuogo;
+  final String? rientroOra;
+  final String? daPortare;
+  final String? noteConvocazione;
+
+  /// Quando l'allenatore l'ha inviata ai convocati (l'ultima volta):
+  /// l'avviso agli atleti parte solo da qui.
+  final DateTime? convocazioneInviataIl;
+
+  bool get convocazioneInviata => convocazioneInviataIl != null;
+
+  /// La stessa partita con la convocazione che si sta scrivendo (per
+  /// l'anteprima del messaggio prima di salvare).
+  Partita conConvocazione({
+    String? ora,
+    String? luogo,
+    String? ritrovoOra,
+    String? ritrovoLuogo,
+    String? rientroOra,
+    String? daPortare,
+    String? noteConvocazione,
+  }) => Partita(
+    id: id,
+    clubId: clubId,
+    gruppoId: gruppoId,
+    data: data,
+    ora: ora,
+    luogo: luogo,
+    campionato: campionato,
+    coloreCalottina: coloreCalottina,
+    squadraCasa: squadraCasa,
+    squadraTrasferta: squadraTrasferta,
+    numeroMaxConvocati: numeroMaxConvocati,
+    note: note,
+    dettaglioTiro: dettaglioTiro,
+    tracciaTempo: tracciaTempo,
+    modalitaSuperiorita: modalitaSuperiorita,
+    nostraSquadra: nostraSquadra,
+    importanza: importanza,
+    eventiLive: eventiLive,
+    ritrovoOra: ritrovoOra,
+    ritrovoLuogo: ritrovoLuogo,
+    rientroOra: rientroOra,
+    daPortare: daPortare,
+    noteConvocazione: noteConvocazione,
+    convocazioneInviataIl: convocazioneInviataIl,
+  );
+
   bool get eventiCompleti => eventiLive == 'completa';
 
   bool get inCasa => nostraSquadra != 'trasferta';
@@ -78,6 +135,14 @@ class Partita {
       nostraSquadra: map['nostra_squadra'] as String? ?? 'casa',
       importanza: map['importanza'] as String? ?? 'media',
       eventiLive: map['eventi_live'] as String? ?? 'essenziale',
+      ritrovoOra: map['ritrovo_ora'] as String?,
+      ritrovoLuogo: map['ritrovo_luogo'] as String?,
+      rientroOra: map['rientro_ora'] as String?,
+      daPortare: map['da_portare'] as String?,
+      noteConvocazione: map['note_convocazione'] as String?,
+      convocazioneInviataIl: map['convocazione_inviata_at'] == null
+          ? null
+          : DateTime.parse(map['convocazione_inviata_at'] as String).toLocal(),
     );
   }
 }

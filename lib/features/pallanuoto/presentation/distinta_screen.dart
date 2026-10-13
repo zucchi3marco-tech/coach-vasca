@@ -4,6 +4,7 @@ import 'package:printing/printing.dart';
 
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -23,6 +24,7 @@ import '../data/distinta_repository.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/partita.dart';
 import '../pdf/distinta_pdf.dart';
+import 'convocazione_screen.dart';
 import 'partita_form_screen.dart';
 import 'partita_live_screen.dart';
 import 'statistiche_partita_screen.dart';
@@ -106,6 +108,13 @@ class DistintaScreen extends ConsumerWidget {
           principale: true,
           onTap: () => apri(PartitaLiveScreen(partita: partita)),
         ),
+        // La convocazione serve prima: fino al giorno della partita.
+        if (!partita.data.isBefore(soloData(DateTime.now())))
+          AzioneTestata(
+            icona: Icons.campaign_outlined,
+            etichetta: 'Convocazione',
+            onTap: () => apri(ConvocazioneScreen(partita: partita)),
+          ),
         AzioneTestata(
           icona: Icons.bar_chart,
           etichetta: 'Statistiche',
