@@ -38,6 +38,7 @@ class TestClubRepository {
     punteggio: PunteggioTest.daNome(r.punteggio),
     modello: r.modello,
     archiviato: r.archiviato,
+    esercizioId: r.esercizioId,
   );
 
   TestClubTableCompanion _testDaMap(Map<String, dynamic> m) =>
@@ -52,6 +53,7 @@ class TestClubRepository {
         punteggio: Value(m['punteggio'] as String? ?? 'migliore'),
         modello: Value(m['modello'] as String?),
         archiviato: Value(m['archiviato'] as bool? ?? false),
+        esercizioId: Value(m['esercizio_id'] as String?),
       );
 
   RisultatoTest _risultatoDaRiga(TestRisultatiTableData r) => RisultatoTest(
@@ -62,6 +64,8 @@ class TestClubRepository {
     data: r.data,
     valori: valoriDa(r.valoriJson),
     note: r.note,
+    caricoKg: r.caricoKg,
+    ripetizioni: r.ripetizioni,
   );
 
   TestRisultatiTableCompanion _risultatoDaMap(Map<String, dynamic> m) =>
@@ -73,6 +77,8 @@ class TestClubRepository {
         data: DateTime.parse(m['data'] as String),
         valoriJson: jsonEncode(valoriDa(m['valori'])),
         note: Value(m['note'] as String?),
+        caricoKg: Value((m['carico_kg'] as num?)?.toDouble()),
+        ripetizioni: Value((m['ripetizioni'] as num?)?.toInt()),
       );
 
   // -------------------------------------------------------------------------
@@ -229,7 +235,9 @@ class TestClubRepository {
   }
 
   /// Salva il risultato di un atleta in un giorno: rifarlo lo stesso
-  /// giorno lo sostituisce (chiave test, atleta, giorno).
+  /// giorno lo sostituisce (chiave test, atleta, giorno). Per un
+  /// massimale [valori] è il massimale stimato, con i chili sollevati
+  /// ([caricoKg]) e le [ripetizioni].
   Future<void> salvaRisultato({
     required String testId,
     required String atletaId,
@@ -237,6 +245,8 @@ class TestClubRepository {
     required DateTime data,
     required List<double> valori,
     String? note,
+    double? caricoKg,
+    int? ripetizioni,
   }) async {
     final giorno = DateTime(data.year, data.month, data.day);
     final esistente =
@@ -255,6 +265,8 @@ class TestClubRepository {
       'data': formatDateOnly(giorno),
       'valori': valori,
       'note': note,
+      'carico_kg': caricoKg,
+      'ripetizioni': ripetizioni,
     };
     try {
       final riga = await _client

@@ -11,7 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RepositoryFinto implements TestClubRepository {
-  final salvati = <({String atletaId, List<double> valori})>[];
+  final salvati =
+      <({String atletaId, List<double> valori, double? kg, int? rip})>[];
 
   @override
   Future<void> salvaRisultato({
@@ -21,7 +22,14 @@ class _RepositoryFinto implements TestClubRepository {
     required DateTime data,
     required List<double> valori,
     String? note,
-  }) async => salvati.add((atletaId: atletaId, valori: valori));
+    double? caricoKg,
+    int? ripetizioni,
+  }) async => salvati.add((
+    atletaId: atletaId,
+    valori: valori,
+    kg: caricoKg,
+    rip: ripetizioni,
+  ));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -61,13 +69,17 @@ Widget _app(_RepositoryFinto repository, Widget figlio) => ProviderScope(
   child: MaterialApp(theme: AppTheme.chiaro, home: figlio),
 );
 
-Future<void> _apri(WidgetTester tester, _RepositoryFinto repository) async {
+Future<void> _apri(
+  WidgetTester tester,
+  _RepositoryFinto repository, {
+  TestClub test = _test,
+}) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    _app(repository, const InserisciRisultatiScreen(test: _test)),
+    _app(repository, InserisciRisultatiScreen(test: test)),
   );
   await tester.pumpAndSettle();
 }
@@ -130,6 +142,51 @@ void main() {
     await tester.pump();
     expect(find.text('8,62 s', findRichText: true), findsOneWidget);
     expect(find.text('Registra'), findsOneWidget);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('un massimale: chili, poi ripetizioni, e si salva la stima', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      test: const TestClub.massimale(
+        id: 'm1',
+        clubId: 'c1',
+        nome: 'Massimale squat',
+        esercizioId: 'e1',
+      ),
+    );
+    expect(find.text('Chili sollevati'), findsOneWidget);
+    await _digita(tester, '40');
+    expect(find.text('40 kg', findRichText: true), findsOneWidget);
+    await tester.tap(find.text('Avanti'));
+    await tester.pump();
+    expect(find.text('Chili 40', findRichText: true), findsOneWidget);
+    expect(find.text('Ripetizioni fatte (fino a 10)'), findsOneWidget);
+
+    // Oltre le 10 ripetizioni la stima non regge: non si registra.
+    await _digita(tester, '12');
+    expect(find.textContaining('oltre, la stima non regge'), findsOneWidget);
+    final registra = find.widgetWithText(FilledButton, 'Registra e avanti');
+    expect(tester.widget<FilledButton>(registra).onPressed, isNull);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '⌫'));
+    await tester.tap(find.widgetWithText(OutlinedButton, '⌫'));
+    await tester.pump();
+    await _digita(tester, '5');
+    expect(find.text('Massimale stimato: 45 kg'), findsOneWidget);
+    await tester.tap(registra);
+    await tester.pumpAndSettle();
+
+    final salvato = repository.salvati.single;
+    expect(salvato.atletaId, 'a');
+    expect(salvato.valori, [45]);
+    expect(salvato.kg, 40);
+    expect(salvato.rip, 5);
+    expect(find.text('Rossi X'), findsOneWidget);
     await _chiudi(tester, repository);
   });
 }

@@ -134,9 +134,9 @@ class _EsercizioSeccoFormScreenState
         builder: (dialogContext) => AlertDialog(
           title: Text('${e.nome} è già usato'),
           content: const Text(
-            'Un esercizio usato in una seduta o in un programma non si '
-            'elimina: archivialo, così non compare più fra quelli da '
-            'scegliere.',
+            'Un esercizio usato in una seduta, in un programma o con un '
+            'massimale non si elimina: archivialo, così non compare più fra '
+            'quelli da scegliere.',
           ),
           actions: [
             TextButton(

@@ -21,6 +21,7 @@ import '../../atleti/domain/atleta.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
+import '../domain/massimale.dart';
 import '../domain/tastierino_test.dart';
 import '../domain/test_club.dart';
 
@@ -31,6 +32,9 @@ import '../domain/test_club.dart';
 /// atleta il risultato si salva (anche senza rete: parte appena torna) e
 /// si passa al prossimo. Il tasto ⌫ a campo vuoto riapre l'ultima prova
 /// per correggerla. Gli atleti sono quelli della squadra scelta in alto.
+///
+/// Per un massimale i due campi sono i chili sollevati e le ripetizioni
+/// (fino a [ripetizioniMassimeStima]): si salva il massimale stimato.
 class InserisciRisultatiScreen extends ConsumerStatefulWidget {
   const InserisciRisultatiScreen({required this.test, super.key});
 
@@ -62,7 +66,10 @@ class _InserisciRisultatiScreenState
   final _focus = FocusNode();
 
   TestClub get _test => widget.test;
-  UnitaTest get _unita => _test.unita;
+
+  /// L'unità del campo che si sta scrivendo: per un massimale prima i
+  /// chili, poi le ripetizioni.
+  UnitaTest get _unita => unitaDelCampo(_test, _prove.length);
 
   @override
   void dispose() {
@@ -93,27 +100,36 @@ class _InserisciRisultatiScreenState
     if (_salvataggio || _finito) return;
     if (t == '⌫' && _testo.isEmpty && _prove.isNotEmpty) {
       // Riapre l'ultima prova per correggerla.
-      setState(() => _testo = testoDaValore(_unita, _prove.removeLast()));
+      setState(() {
+        final ultima = _prove.removeLast();
+        _testo = testoDaValore(_unita, ultima);
+      });
       return;
     }
     setState(() => _testo = conTasto(_unita, _testo, t));
   }
 
   Future<void> _registra() async {
-    final valore = valoreDigitato(_unita, _testo);
+    final valore = valoreDelCampo(_test, _prove.length, _testo);
     if (valore == null || _salvataggio) return;
     setState(() {
       _prove.add(valore);
       _testo = '';
     });
-    if (_prove.length >= _test.prove) await _chiudiAtleta();
+    if (_prove.length >= campiPerAtleta(_test)) await _chiudiAtleta();
   }
 
-  /// Salva le prove dell'atleta (se ce ne sono) e passa al prossimo.
+  /// Salva le prove dell'atleta (se ce ne sono) e passa al prossimo. Di
+  /// un massimale si salva solo se ci sono chili e ripetizioni.
   Future<void> _chiudiAtleta() async {
     final atleti = _atleti!;
     final atleta = atleti[_indice];
+    final massimale = _test.massimale;
+    if (massimale && _prove.length < 2) _prove.clear();
     if (_prove.isNotEmpty) {
+      final valori = massimale
+          ? [stimaMassimale(_prove[0], _prove[1].round())]
+          : List.of(_prove);
       setState(() => _salvataggio = true);
       try {
         await ref
@@ -123,9 +139,11 @@ class _InserisciRisultatiScreenState
               atletaId: atleta.id,
               clubId: _test.clubId,
               data: _data,
-              valori: List.of(_prove),
+              valori: valori,
+              caricoKg: massimale ? _prove[0] : null,
+              ripetizioni: massimale ? _prove[1].round() : null,
             );
-        _salvati[atleta.id] = List.of(_prove);
+        _salvati[atleta.id] = valori;
       } catch (e) {
         if (mounted) {
           setState(() => _salvataggio = false);
@@ -393,8 +411,29 @@ class _Raffica extends StatelessWidget {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final tablet = Breakpoint.of(context) != Breakpoint.compatto;
-    final valido = valoreDigitato(test.unita, testo) != null;
+    final massimale = test.massimale;
+    final unita = unitaDelCampo(test, prove.length);
+    final valore = valoreDelCampo(test, prove.length, testo);
+    final valido = valore != null;
     final prova = prove.length + 1;
+    final ultimoCampo = prova >= campiPerAtleta(test);
+    // Per un massimale: cosa si scrive adesso e, con chili e ripetizioni,
+    // il massimale che ne viene.
+    final etichettaCampo = !massimale
+        ? null
+        : prove.isEmpty
+        ? 'Chili sollevati'
+        : 'Ripetizioni fatte (fino a $ripetizioniMassimeStima)';
+    final stima = massimale && prove.length == 1 && valore != null
+        ? stimaMassimale(prove.first, valore.round())
+        : null;
+    final troppe =
+        massimale &&
+        prove.length == 1 &&
+        valore == null &&
+        (valoreDigitato(UnitaTest.ripetizioni, testo) ?? 0) >
+            ripetizioniMassimeStima;
+    final semantica = massimale ? (etichettaCampo ?? '') : 'Prova $prova';
 
     final info = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,14 +462,33 @@ class _Raffica extends StatelessWidget {
             ),
           ),
         const SizedBox(height: AppSpacing.s16),
-        if (test.prove > 1)
+        if (massimale)
+          Wrap(
+            spacing: AppSpacing.s8,
+            runSpacing: AppSpacing.s8,
+            children: [
+              _Prova(
+                etichetta: 'Chili',
+                valore: prove.isNotEmpty
+                    ? formattaValore(UnitaTest.chili, prove[0], sigla: false)
+                    : null,
+                inCorso: prove.isEmpty,
+              ),
+              _Prova(
+                etichetta: 'Ripetizioni',
+                valore: prove.length > 1 ? '${prove[1].round()}' : null,
+                inCorso: prove.length == 1,
+              ),
+            ],
+          )
+        else if (test.prove > 1)
           Wrap(
             spacing: AppSpacing.s8,
             runSpacing: AppSpacing.s8,
             children: [
               for (var i = 0; i < test.prove; i++)
                 _Prova(
-                  numero: i + 1,
+                  etichetta: '${i + 1}ª',
                   valore: i < prove.length
                       ? formattaValore(test.unita, prove[i], sigla: false)
                       : null,
@@ -439,19 +497,26 @@ class _Raffica extends StatelessWidget {
             ],
           ),
         const SizedBox(height: AppSpacing.s16),
+        if (etichettaCampo != null)
+          Text(
+            etichettaCampo,
+            style: AppTypography.corpoForte.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
         Semantics(
           liveRegion: true,
           label: testo.isEmpty
-              ? 'Prova $prova: da scrivere'
-              : 'Prova $prova: ${testoMostrato(test.unita, testo)} ${test.unita.sigla}',
+              ? '$semantica: da scrivere'
+              : '$semantica: ${testoMostrato(unita, testo)} ${unita.sigla}',
           child: ExcludeSemantics(
             child: Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
                     text: testo.isEmpty
-                        ? (test.unita == UnitaTest.secondi ? '0,00' : '0')
-                        : testoMostrato(test.unita, testo),
+                        ? (unita == UnitaTest.secondi ? '0,00' : '0')
+                        : testoMostrato(unita, testo),
                     style: AppTypography.numerica(
                       (tablet
                               ? AppTypography.displayTablet
@@ -464,7 +529,7 @@ class _Raffica extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: ' ${test.unita.sigla}',
+                    text: ' ${unita.sigla}',
                     style: AppTypography.titolo.copyWith(
                       color: colori.testoSecondario,
                     ),
@@ -474,18 +539,30 @@ class _Raffica extends StatelessWidget {
             ),
           ),
         ),
+        if (stima != null)
+          Text(
+            'Massimale stimato: ${formattaValore(UnitaTest.chili, stima)}',
+            style: AppTypography.numerica(AppTypography.corpoForte)
+                .copyWith(color: colori.testo),
+          ),
+        if (troppe)
+          Text(
+            'Fino a $ripetizioniMassimeStima ripetizioni: oltre, la stima '
+            'non regge. Prova con un carico più pesante.',
+            style: AppTypography.piccolo.copyWith(color: colori.attenzione),
+          ),
       ],
     );
 
     final tastierino = _Tastierino(
-      conVirgola: test.unita.conDecimali,
+      conVirgola: unita.conDecimali,
       onTasto: salvataggio ? null : onTasto,
     );
     final azioni = Row(
       children: [
         Expanded(
           child: _Bottone(
-            etichetta: prove.isEmpty ? 'Salta' : 'Basta prove',
+            etichetta: prove.isEmpty || massimale ? 'Salta' : 'Basta prove',
             onTap: salvataggio ? null : onSalta,
           ),
         ),
@@ -493,7 +570,11 @@ class _Raffica extends StatelessWidget {
         Expanded(
           flex: 2,
           child: _Bottone(
-            etichetta: prova >= test.prove ? 'Registra e avanti' : 'Registra',
+            etichetta: ultimoCampo
+                ? 'Registra e avanti'
+                : massimale
+                ? 'Avanti'
+                : 'Registra',
             principale: true,
             onTap: valido && !salvataggio ? onRegistra : null,
           ),
@@ -544,11 +625,12 @@ class _Raffica extends StatelessWidget {
   }
 }
 
-/// Una prova nella fila sopra il valore: fatta, in corso o da fare.
+/// Una prova nella fila sopra il valore ("2ª", o "Chili" e "Ripetizioni"
+/// per un massimale): fatta, in corso o da fare.
 class _Prova extends StatelessWidget {
-  const _Prova({required this.numero, this.valore, this.inCorso = false});
+  const _Prova({required this.etichetta, this.valore, this.inCorso = false});
 
-  final int numero;
+  final String etichetta;
   final String? valore;
   final bool inCorso;
 
@@ -569,7 +651,7 @@ class _Prova extends StatelessWidget {
         TextSpan(
           children: [
             TextSpan(
-              text: '$numeroª ',
+              text: '$etichetta ',
               style: AppTypography.etichetta.copyWith(
                 color: colori.testoSecondario,
               ),

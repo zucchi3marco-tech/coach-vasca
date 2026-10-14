@@ -1,3 +1,4 @@
+import '../../test/domain/massimale.dart';
 import 'esercizio_secco.dart';
 
 /// Una serie a secco fatta, registrata dall'atleta dal suo telefono:
@@ -86,9 +87,11 @@ int? prossimaSerie(EsercizioSeduta riga, Iterable<SerieFatta> fatteRiga) {
 }
 
 /// Il carico da proporre per la prossima serie: quello della serie prima
-/// in questa seduta; se è la prima, quello dell'ultima volta che l'atleta
-/// ha fatto l'esercizio, se l'allenatore non ha cambiato il carico da
-/// allora; se no quello scritto dall'allenatore.
+/// in questa seduta; se è la prima e l'allenatore l'ha scritto come
+/// percentuale ("70%"), i chili dal [massimale] dell'atleta; se no quello
+/// dell'ultima volta che l'atleta ha fatto l'esercizio, se l'allenatore
+/// non ha cambiato il carico da allora; se no quello scritto
+/// dall'allenatore.
 ///
 /// [precedenti] sono le serie fatte dall'atleta in altre sedute, con lo
 /// stesso esercizio dell'elenco.
@@ -96,10 +99,14 @@ String? caricoProposto({
   required EsercizioSeduta riga,
   required List<SerieFatta> fatteRiga,
   required Iterable<SerieFatta> precedenti,
+  double? massimale,
 }) {
   if (fatteRiga.isNotEmpty) {
     return fatteRiga.reduce((a, b) => b.serie > a.serie ? b : a).carico;
   }
+  // Dal massimale di adesso, non dai chili dell'ultima volta: se il
+  // massimale è cresciuto, crescono anche loro.
+  if (chiliProposti(riga.carico, massimale) case final chili?) return chili;
   SerieFatta? ultima;
   for (final p in precedenti) {
     if (p.esercizioId != riga.esercizioId ||

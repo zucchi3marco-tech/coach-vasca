@@ -12,15 +12,19 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../secco/application/secco_providers.dart';
+import '../../secco/domain/esercizio_secco.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
+import '../domain/massimale.dart';
 import '../domain/test_club.dart';
 import 'test_club_widgets.dart';
 
 /// Nuovo test del club, o la modifica di uno che c'è. Dopo i primi
 /// risultati cosa si misura, quante prove e quale valore vince non si
 /// cambiano più (le classifiche vecchie non tornerebbero): restano nome,
-/// descrizione e archivio.
+/// descrizione e archivio. Un test può essere il **massimale** di un
+/// esercizio a secco a ripetizioni: in chili, da chili × ripetizioni.
 class TestClubFormScreen extends ConsumerStatefulWidget {
   const TestClubFormScreen({required this.clubId, this.test, super.key});
 
@@ -42,8 +46,37 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
   late bool _piuBassoMeglio = widget.test?.piuBassoMeglio ?? true;
   late PunteggioTest _punteggio =
       widget.test?.punteggio ?? PunteggioTest.migliore;
+  late bool _massimale = widget.test?.massimale ?? false;
+  late String? _esercizioId = widget.test?.esercizioId;
+
+  /// Il nome proposto dall'ultimo esercizio scelto: se l'allenatore non
+  /// l'ha cambiato, cambia con l'esercizio.
+  String? _nomeProposto;
+  bool _senzaEsercizio = false;
   bool _salvataggio = false;
   String? _errore;
+
+  void _scegliEsercizio(EsercizioSecco e) {
+    final proposto =
+        'Massimale ${e.nome.substring(0, 1).toLowerCase()}${e.nome.substring(1)}';
+    setState(() {
+      _esercizioId = e.id;
+      _senzaEsercizio = false;
+      if (_nome.text.trim().isEmpty || _nome.text == _nomeProposto) {
+        _nome.text = proposto;
+      }
+      _nomeProposto = proposto;
+    });
+  }
+
+  void _cambiaTipo(bool massimale) => setState(() {
+    _massimale = massimale;
+    if (massimale && _descrizione.text.trim().isEmpty) {
+      _descrizione.text = comeSiFaMassimale;
+    } else if (!massimale && _descrizione.text == comeSiFaMassimale) {
+      _descrizione.clear();
+    }
+  });
 
   @override
   void dispose() {
@@ -56,24 +89,38 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
   int get _numeroProve => int.tryParse(_prove.text.trim()) ?? 1;
 
   Future<void> _salva() async {
-    if (!_formKey.currentState!.validate()) return;
+    final esercizioMancante = _massimale && _esercizioId == null;
+    if (!_formKey.currentState!.validate() || esercizioMancante) {
+      if (esercizioMancante) setState(() => _senzaEsercizio = true);
+      return;
+    }
     setState(() {
       _salvataggio = true;
       _errore = null;
     });
     final originale = widget.test;
-    final test = TestClub(
-      id: originale?.id ?? '',
-      clubId: widget.clubId,
-      nome: _nome.text.trim(),
-      descrizione: _descrizione.text.trim(),
-      unita: _unita,
-      piuBassoMeglio: _piuBassoMeglio,
-      prove: _numeroProve,
-      punteggio: _numeroProve > 1 ? _punteggio : PunteggioTest.migliore,
-      modello: originale?.modello,
-      archiviato: originale?.archiviato ?? false,
-    );
+    final test = _massimale
+        ? TestClub.massimale(
+            id: originale?.id ?? '',
+            clubId: widget.clubId,
+            nome: _nome.text.trim(),
+            esercizioId: _esercizioId!,
+            descrizione: _descrizione.text.trim(),
+            modello: originale?.modello,
+            archiviato: originale?.archiviato ?? false,
+          )
+        : TestClub(
+            id: originale?.id ?? '',
+            clubId: widget.clubId,
+            nome: _nome.text.trim(),
+            descrizione: _descrizione.text.trim(),
+            unita: _unita,
+            piuBassoMeglio: _piuBassoMeglio,
+            prove: _numeroProve,
+            punteggio: _numeroProve > 1 ? _punteggio : PunteggioTest.migliore,
+            modello: originale?.modello,
+            archiviato: originale?.archiviato ?? false,
+          );
     try {
       final repository = ref.read(testClubRepositoryProvider);
       if (originale == null) {
@@ -94,20 +141,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
     try {
       await ref
           .read(testClubRepositoryProvider)
-          .aggiornaTest(
-            TestClub(
-              id: test.id,
-              clubId: test.clubId,
-              nome: test.nome,
-              descrizione: test.descrizione,
-              unita: test.unita,
-              piuBassoMeglio: test.piuBassoMeglio,
-              prove: test.prove,
-              punteggio: test.punteggio,
-              modello: test.modello,
-              archiviato: !test.archiviato,
-            ),
-          );
+          .aggiornaTest(test.copyWith(archiviato: !test.archiviato));
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) setState(() => _errore = messaggioErrore(e));
@@ -163,6 +197,72 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
               .where((r) => r.testId == test.id)
               .length;
     final bloccato = risultati > 0;
+    // Per un massimale: gli esercizi a ripetizioni del club che non hanno
+    // già il loro massimale.
+    final esercizi = _massimale
+        ? ref.watch(eserciziSeccoProvider(widget.clubId)).value ??
+              const <EsercizioSecco>[]
+        : const <EsercizioSecco>[];
+    final altriMassimali = _massimale
+        ? {
+            for (final t
+                in ref.watch(testClubProvider(widget.clubId)).value ??
+                    const <TestClub>[])
+              if (t.id != test?.id) ?t.esercizioId,
+          }
+        : const <String>{};
+    final scegliibili = [
+      for (final e in esercizi)
+        if (!e.aTempo &&
+            (!e.archiviato || e.id == _esercizioId) &&
+            !altriMassimali.contains(e.id))
+          e,
+    ];
+    final esercizioScelto = esercizi
+        .where((e) => e.id == _esercizioId)
+        .firstOrNull;
+
+    final Widget campoEsercizio;
+    if (bloccato || (test != null && test.massimale && scegliibili.isEmpty)) {
+      campoEsercizio = Text(
+        'Di: ${esercizioScelto?.nome ?? 'esercizio tolto dall\'elenco'}',
+        style: AppTypography.corpoForte.copyWith(color: colori.testo),
+      );
+    } else if (scegliibili.isEmpty) {
+      campoEsercizio = Text(
+        'Nell\'elenco esercizi a secco del club non ci sono esercizi a '
+        'ripetizioni senza un massimale: aggiungili dall\'elenco, o usa un '
+        'massimale pronto.',
+        style: AppTypography.corpo.copyWith(color: colori.testoSecondario),
+      );
+    } else {
+      campoEsercizio = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSelect<String>(
+            etichetta: 'Di quale esercizio',
+            value: _esercizioId,
+            hint: 'Scegli l\'esercizio',
+            items: [
+              for (final e in scegliibili)
+                DropdownMenuItem(value: e.id, child: Text(e.nome)),
+            ],
+            onChanged: (id) {
+              final e = scegliibili.where((e) => e.id == id).firstOrNull;
+              if (e != null) _scegliEsercizio(e);
+            },
+          ),
+          if (_senzaEsercizio)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.s4),
+              child: Text(
+                'Scegli l\'esercizio',
+                style: AppTypography.piccolo.copyWith(color: colori.rosso),
+              ),
+            ),
+        ],
+      );
+    }
 
     return AppScaffold(
       scrollabile: true,
@@ -195,6 +295,35 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
             FormGroup(
               titolo: 'Il test',
               campi: [
+                if (test == null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Che test è',
+                        style: AppTypography.etichetta.copyWith(
+                          color: colori.testoSecondario,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      SegmentedButton<bool>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(
+                            value: false,
+                            label: Text('Una misura'),
+                          ),
+                          ButtonSegment(
+                            value: true,
+                            label: Text('Un massimale'),
+                          ),
+                        ],
+                        selected: {_massimale},
+                        onSelectionChanged: (s) => _cambiaTipo(s.first),
+                      ),
+                    ],
+                  ),
+                if (_massimale) campoEsercizio,
                 AppTextField(
                   etichetta: 'Nome',
                   controller: _nome,
@@ -205,7 +334,9 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
                   etichetta: 'Come si fa (facoltativo)',
                   controller: _descrizione,
                   maxLines: 3,
-                  aiuto: 'Distanza, partenza, peso, recupero fra le prove',
+                  aiuto: _massimale
+                      ? 'Riscaldamento, quante ripetizioni, chi assiste'
+                      : 'Distanza, partenza, peso, recupero fra le prove',
                 ),
               ],
             ),
@@ -215,7 +346,19 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
               spiegazione: bloccato
                   ? 'Non si cambia: ci sono già $risultati risultati.'
                   : null,
-              campi: bloccato
+              campi: _massimale
+                  ? [
+                      Text(
+                        'In chili, vince il più alto. Per ogni atleta si '
+                        'scrivono i chili sollevati e le ripetizioni fatte '
+                        '(fino a $ripetizioniMassimeStima): l\'app stima il '
+                        'massimale. Con una ripetizione è quello provato.',
+                        style: AppTypography.corpo.copyWith(
+                          color: colori.testo,
+                        ),
+                      ),
+                    ]
+                  : bloccato
                   ? [
                       Text(
                         descrizioneMisura(test!),

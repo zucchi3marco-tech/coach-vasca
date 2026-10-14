@@ -18,12 +18,15 @@ IconData iconaTest(UnitaTest unita) => switch (unita) {
   UnitaTest.ripetizioni => Icons.repeat,
 };
 
-/// "Tempo · 2 prove · vince il più basso".
-String descrizioneMisura(TestClub t) => [
-  t.unita.etichetta,
-  t.comeSiLegge,
-  if (t.piuBassoMeglio) 'vince il più basso' else 'vince il più alto',
-].join(' · ');
+/// "Tempo · 2 prove · vince il più basso"; "Massimale in chili · da chili
+/// × ripetizioni".
+String descrizioneMisura(TestClub t) => t.massimale
+    ? 'Massimale in chili · da chili × ripetizioni'
+    : [
+        t.unita.etichetta,
+        t.comeSiLegge,
+        if (t.piuBassoMeglio) 'vince il più basso' else 'vince il più alto',
+      ].join(' · ');
 
 /// Sceglie un test da un elenco (bottom sheet); null se si chiude.
 Future<TestClub?> scegliTest(

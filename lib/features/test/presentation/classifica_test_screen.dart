@@ -28,6 +28,7 @@ import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
+import '../domain/massimale.dart';
 import '../domain/test_club.dart';
 import 'confronto_test_screen.dart';
 import 'inserisci_risultati_screen.dart';
@@ -383,6 +384,8 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
                     AppListRow(
                       titolo: dataEstesa(r.data),
                       sottotitolo: [
+                        if (test.massimale)
+                          ?descriviSollevato(r.caricoKg, r.ripetizioni),
                         if (test.prove > 1)
                           r.valori
                               .map(
@@ -490,6 +493,10 @@ class _RigaClassifica extends StatelessWidget {
         differenza != 0 &&
         test.meglio(p.punteggio, precedente!);
     final affaticamento = indiceAffaticamento(test, p.risultato.valori);
+    // Per un massimale, da cosa viene: "40 kg × 5".
+    final sollevato = test.massimale
+        ? descriviSollevato(p.risultato.caricoKg, p.risultato.ripetizioni)
+        : null;
     return AppListRow(
       leading: modoConfronto
           ? Checkbox(value: scelto, onChanged: (_) => onTap())
@@ -522,6 +529,12 @@ class _RigaClassifica extends StatelessWidget {
           if (affaticamento != null)
             Text(
               'affaticamento ${formattaPercentuale(affaticamento)}',
+              style: AppTypography.numerica(AppTypography.piccolo)
+                  .copyWith(color: colori.testoSecondario),
+            ),
+          if (sollevato != null)
+            Text(
+              sollevato,
               style: AppTypography.numerica(AppTypography.piccolo)
                   .copyWith(color: colori.testoSecondario),
             ),

@@ -12,6 +12,8 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../carico/domain/carico_rpe.dart';
+import '../../test/application/test_club_providers.dart';
+import '../../test/domain/massimale.dart';
 import '../application/secco_providers.dart';
 import '../domain/esercizio_secco.dart';
 import '../domain/serie_fatta.dart';
@@ -61,6 +63,11 @@ class RegistrazioniSeduta extends ConsumerWidget {
     for (final f in fatte) {
       (perAtleta[f.atletaId] ??= []).add(f);
     }
+    // I massimali, solo se qualche carico è in percentuale: il previsto
+    // di ognuno si legge in chili.
+    final massimali = righe.any((r) => percentualeDelCarico(r.carico) != null)
+        ? ref.watch(massimaliProvider(allenamento.clubId))
+        : const <String, Map<String, Massimale>>{};
     String nome(String id) => atleti[id]?.nomeCompleto ?? 'Atleta tolto';
     final ordine = perAtleta.keys.toList()
       ..sort((a, b) => nome(a).toLowerCase().compareTo(nome(b).toLowerCase()));
@@ -97,6 +104,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
                     if (rpe[id] case final v?) descriviRpe(v),
                   ].join(' · '),
                   fatte: perAtleta[id]!,
+                  massimale: (esercizioId) => massimali[esercizioId]?[id]?.kg,
                 ),
               ),
           ],
@@ -111,6 +119,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
     required String nome,
     required String riassunto,
     required List<SerieFatta> fatte,
+    required double? Function(String esercizioId) massimale,
   }) => showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -148,6 +157,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
                         'Esercizio tolto dall\'elenco',
                     riga: r,
                     fatte: fatteDellaRiga(r.id, fatte),
+                    massimale: massimale(r.esercizioId),
                   ),
                 ),
               ],
@@ -166,11 +176,13 @@ class _RigaFatta extends StatelessWidget {
     required this.nome,
     required this.riga,
     required this.fatte,
+    this.massimale,
   });
 
   final String nome;
   final EsercizioSeduta riga;
   final List<SerieFatta> fatte;
+  final double? massimale;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +209,7 @@ class _RigaFatta extends StatelessWidget {
           ).copyWith(color: fatto == null ? colori.testoTenue : colori.testo),
         ),
         Text(
-          'Previsto: ${prescrizioneEsercizio(riga)}',
+          'Previsto: ${prescrizioneEsercizio(riga, massimale: massimale)}',
           style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
         ),
       ],

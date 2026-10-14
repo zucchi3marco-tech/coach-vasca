@@ -18,8 +18,12 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../secco/application/secco_providers.dart';
+import '../../secco/data/secco_repository.dart';
+import '../../secco/domain/esercizio_secco.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
+import '../domain/massimale.dart';
 import '../domain/test_club.dart';
 import 'classifica_test_screen.dart';
 import 'inserisci_risultati_screen.dart';
@@ -82,6 +86,45 @@ class TestClubScreen extends ConsumerWidget {
     }
   }
 
+  /// Un massimale pronto nel club, con il suo esercizio pronto (aggiunto
+  /// all'elenco degli esercizi a secco se manca).
+  Future<void> _aggiungiMassimale(
+    BuildContext context,
+    WidgetRef ref,
+    ModelloMassimale m,
+  ) async {
+    final messaggero = ScaffoldMessenger.of(context);
+    try {
+      final esercizio = await ref
+          .read(seccoRepositoryProvider)
+          .esercizioPronto(
+            clubId,
+            modelliEsercizi.firstWhere((e) => e.chiave == m.esercizio),
+          );
+      final test = await ref
+          .read(testClubRepositoryProvider)
+          .creaTest(
+            TestClub.massimale(
+              id: '',
+              clubId: clubId,
+              nome: m.nome,
+              esercizioId: esercizio.id,
+              descrizione: comeSiFaMassimale,
+              modello: m.chiave,
+            ),
+          );
+      messaggero
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('${test.nome}: aggiunto ai test del club')),
+        );
+    } catch (e) {
+      messaggero
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dominio = context.dominio;
@@ -96,6 +139,9 @@ class TestClubScreen extends ConsumerWidget {
     final gruppoId = ref.watch(selezioneGruppoProvider)?.gruppoId;
     final gruppi = ref.watch(gruppiListProvider(clubId)).value ?? const [];
     final nomeSquadra = gruppi.where((g) => g.id == gruppoId).firstOrNull?.nome;
+    final esercizi =
+        ref.watch(eserciziSeccoProvider(clubId)).value ??
+        const <EsercizioSecco>[];
     // I risultati della squadra scelta in alto (di tutto il club senza).
     final squadra = {
       for (final a in atleti)
@@ -127,6 +173,19 @@ class TestClubScreen extends ConsumerWidget {
                     if (!giaAggiunti.contains(m.chiave)) m,
                 ]
               : const <ModelloTest>[];
+          // Un massimale pronto sparisce anche se il suo esercizio ha già
+          // un massimale fatto dall'allenatore.
+          final conMassimale = {for (final t in tutti) ?t.esercizioId};
+          final modelloEsercizio = {for (final e in esercizi) e.id: e.modello};
+          final esercizioConMassimale = {
+            for (final id in conMassimale) ?modelloEsercizio[id],
+          };
+          final massimaliPronti = [
+            for (final m in modelliMassimali)
+              if (!giaAggiunti.contains(m.chiave) &&
+                  !esercizioConMassimale.contains(m.esercizio))
+                m,
+          ];
 
           Widget schedaTest(TestClub t) {
             final suoi = [
@@ -231,6 +290,35 @@ class TestClubScreen extends ConsumerWidget {
                         ].join(' · '),
                         mostraFreccia: false,
                         onTap: () => _aggiungiModello(context, ref, m),
+                      ),
+                  ],
+                ),
+              ],
+              if (massimaliPronti.isNotEmpty) ...[
+                if (attivi.isNotEmpty || pronti.isNotEmpty)
+                  const SizedBox(height: AppSpacing.s28),
+                const TitoloSezione(
+                  'Massimali pronti',
+                  spiegazione:
+                      'Per i più grandi: si scrivono chili × ripetizioni e '
+                      "l'app stima il massimale. Nelle sedute a secco un "
+                      'carico «70%» diventa i chili di ognuno.',
+                ),
+                GrigliaSchede(
+                  figli: [
+                    for (final m in massimaliPronti)
+                      SchedaElenco(
+                        leading: IconaRiquadro(
+                          Icons.add,
+                          colore: dominio.evidenzaViola,
+                          dimensione: 56,
+                        ),
+                        titolo: m.nome,
+                        sottotitolo: modelliEsercizi
+                            .firstWhere((e) => e.chiave == m.esercizio)
+                            .nome,
+                        mostraFreccia: false,
+                        onTap: () => _aggiungiMassimale(context, ref, m),
                       ),
                   ],
                 ),

@@ -15,7 +15,10 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../test/application/test_club_providers.dart';
+import '../../test/domain/massimale.dart';
 import '../application/secco_providers.dart';
+import '../domain/esercizio_secco.dart';
 import '../domain/serie_fatta.dart';
 import 'come_si_fa.dart';
 import 'registra_secco_screen.dart';
@@ -56,6 +59,17 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
     final conto = esercizi == null
         ? null
         : contaSerie([for (final e in esercizi) e.riga], fatte);
+    // I massimali dell'atleta, solo se qualche carico è in percentuale:
+    // "70%" diventa i suoi chili.
+    final massimali =
+        atleta != null &&
+            (esercizi ?? const []).any(
+              (e) => percentualeDelCarico(e.riga.carico) != null,
+            )
+        ? ref.watch(massimaliProvider(atleta.clubId))
+        : const <String, Map<String, Massimale>>{};
+    double? massimaleDi(EsercizioSedutaAtleta e) =>
+        atleta == null ? null : massimali[e.riga.esercizioId]?[atleta.id]?.kg;
 
     void registra() {
       if (atleta == null || esercizi == null || esercizi.isEmpty) return;
@@ -144,7 +158,12 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
                             numero: i + 1,
                             esercizio: e.esercizio,
                             riga: e.riga,
-                            onTap: () => mostraComeSiFa(context, e),
+                            massimale: massimaleDi(e),
+                            onTap: () => mostraComeSiFa(
+                              context,
+                              e,
+                              massimale: massimaleDi(e),
+                            ),
                             trailing: _Fatte(
                               fatte: fatteDellaRiga(e.riga.id, fatte).length,
                               di: e.riga.serie,

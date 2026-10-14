@@ -578,12 +578,16 @@ class TestClubTable extends Table {
   TextColumn get modello => text().nullable()();
   BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
 
+  /// L'esercizio a secco di cui è il massimale; null per gli altri test.
+  TextColumn get esercizioId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
 
 /// Un risultato di un test: un atleta, un giorno, il valore di ogni
-/// prova (lista JSON di numeri).
+/// prova (lista JSON di numeri). Per un massimale anche i chili
+/// sollevati e le ripetizioni.
 class TestRisultatiTable extends Table {
   TextColumn get id => text()();
   TextColumn get testId => text()();
@@ -592,6 +596,8 @@ class TestRisultatiTable extends Table {
   DateTimeColumn get data => dateTime()();
   TextColumn get valoriJson => text()();
   TextColumn get note => text().nullable()();
+  RealColumn get caricoKg => real().nullable()();
+  IntColumn get ripetizioni => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

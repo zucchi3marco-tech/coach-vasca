@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 42;
+  int get schemaVersion => 43;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -532,6 +532,21 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable(m, 'sedute_secco_atleta_table')) {
           await m.createTable(seduteSeccoAtletaTable);
+        }
+      }
+      // v42 -> v43: i massimali (un test legato a un esercizio a secco,
+      // con chili e ripetizioni nei risultati).
+      if (from < 43) {
+        if (!await _hasColumn(m, 'test_club_table', 'esercizio_id')) {
+          await m.addColumn(testClubTable, testClubTable.esercizioId);
+        }
+        for (final (nome, colonna) in [
+          ('carico_kg', testRisultatiTable.caricoKg),
+          ('ripetizioni', testRisultatiTable.ripetizioni),
+        ]) {
+          if (!await _hasColumn(m, 'test_risultati_table', nome)) {
+            await m.addColumn(testRisultatiTable, colonna);
+          }
         }
       }
     },

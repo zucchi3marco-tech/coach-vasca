@@ -22,6 +22,7 @@ import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../../test/application/test_providers.dart';
 import '../../test/application/test_club_providers.dart';
 import '../../test/data/test_repository.dart';
+import '../../test/domain/massimale.dart';
 import '../../test/domain/test_club.dart';
 import '../../test/domain/test_ingresso.dart';
 import '../../test/presentation/test_form_screen.dart';
@@ -283,11 +284,20 @@ class _TestDiSquadra extends ConsumerWidget {
                     final migliore = punteggi.reduce(
                       (a, b) => test.meglio(a, b) ? a : b,
                     );
+                    // Di un massimale, da cosa viene l'ultimo: "40 kg × 5".
+                    final sollevato = test.massimale
+                        ? descriviSollevato(
+                            suoi.last.caricoKg,
+                            suoi.last.ripetizioni,
+                          )
+                        : null;
                     return AppListRow(
                       titolo: test.nome,
                       sottotitolo: [
                         traQuanto(suoi.last.data),
-                        if (suoi.length > 1)
+                        if (sollevato != null)
+                          sollevato
+                        else if (suoi.length > 1)
                           'migliore ${formattaValore(test.unita, migliore)}',
                       ].join(' · '),
                       trailing: Text(

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../features/secco/domain/esercizio_secco.dart';
 import '../../features/secco/domain/programma_secco.dart';
+import '../../features/test/domain/massimale.dart';
 import '../db/app_database.dart';
 import '../utils/giorni.dart';
 
@@ -35,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 11;
+const _versioneDati = 12;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -701,6 +702,157 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               modello: Value(spalla.chiave),
             ),
           );
+
+      // I massimali di squat e panca dei più grandi (nati entro il 2010),
+      // misurati due volte, e il lunedì una seduta di forza con i carichi
+      // in percentuale.
+      final testMassimale = <String, String>{};
+      for (final m in modelliMassimali.take(2)) {
+        final id = uuid.v4();
+        testMassimale[m.esercizio] = id;
+        await db
+            .into(db.testClubTable)
+            .insert(
+              TestClubTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                nome: m.nome,
+                descrizione: const Value(comeSiFaMassimale),
+                unita: 'chili',
+                migliore: 'maggiore',
+                modello: Value(m.chiave),
+                esercizioId: Value(esercizi[m.esercizio]),
+              ),
+            );
+      }
+      final grandi = [
+        for (final (i, (_, _, _, anno)) in anagrafiche.indexed)
+          if (anno <= 2010) i,
+      ];
+      // L'ultimo massimale di ognuno, per i chili delle sedute.
+      final massimaleOra = <(String, int), double>{};
+      for (final (k, a) in grandi.indexed) {
+        for (final (esercizio, base) in const [
+          ('squat_bilanciere', 50.0),
+          ('panca_piana', 35.0),
+        ]) {
+          for (final (quando, inPiu) in const [(-42, 0.0), (-14, 5.0)]) {
+            final kg = base + 2.5 * k + inPiu;
+            const ripetizioni = 5;
+            final massimale = stimaMassimale(kg, ripetizioni);
+            massimaleOra[(esercizio, a)] = massimale;
+            await db
+                .into(db.testRisultatiTable)
+                .insert(
+                  TestRisultatiTableCompanion.insert(
+                    id: uuid.v4(),
+                    testId: testMassimale[esercizio]!,
+                    atletaId: atleti[a],
+                    clubId: clubId,
+                    data: aggiungiGiorni(giorno, quando),
+                    valoriJson: jsonEncode([massimale]),
+                    caricoKg: Value(kg),
+                    ripetizioni: const Value(ripetizioni),
+                  ),
+                );
+          }
+        }
+      }
+      const forza = [
+        ('squat_bilanciere', '70%'),
+        ('panca_piana', '70%'),
+        ('rematore_manubrio', '12 kg'),
+      ];
+      for (
+        var g = DateTime(2026, 9, 7);
+        !g.isAfter(DateTime(2027, 6, 28));
+        g = aggiungiGiorni(g, 7)
+      ) {
+        if (!g.isBefore(DateTime(2026, 12, 23)) &&
+            g.isBefore(DateTime(2027, 1, 7))) {
+          continue;
+        }
+        final data = DateTime(g.year, g.month, g.day, 17, 30);
+        final d = giorniTra(giorno, data);
+        final sedutaId = uuid.v4();
+        await db
+            .into(db.allenamentiTable)
+            .insert(
+              AllenamentiTableCompanion.insert(
+                id: sedutaId,
+                clubId: clubId,
+                data: data,
+                titolo: const Value('Forza'),
+                gruppoId: Value(gruppi[0]),
+                tipo: const Value('secco'),
+                durataMin: const Value(45),
+              ),
+            );
+        final righe = <(String, ModelloEsercizio, String)>[];
+        for (final (i, (chiave, carico)) in forza.indexed) {
+          final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
+          final rigaId = uuid.v4();
+          righe.add((rigaId, m, carico));
+          await db
+              .into(db.eserciziSedutaTable)
+              .insert(
+                EserciziSedutaTableCompanion.insert(
+                  id: rigaId,
+                  allenamentoId: sedutaId,
+                  clubId: clubId,
+                  esercizioId: esercizi[chiave]!,
+                  ordine: i + 1,
+                  serie: Value(m.serie),
+                  ripetizioni: Value(m.ripetizioni),
+                  carico: Value(carico),
+                  recuperoS: Value(m.recuperoS),
+                ),
+              );
+        }
+        if (!data.isBefore(oggi)) continue;
+        for (var a = 0; a < atleti.length; a++) {
+          final presente = (a + d) % 6 != 0;
+          await db
+              .into(db.presenzeTable)
+              .insert(
+                PresenzeTableCompanion.insert(
+                  id: uuid.v4(),
+                  allenamentoId: sedutaId,
+                  atletaId: atleti[a],
+                  clubId: clubId,
+                  stato: presente ? 'presente' : 'assente',
+                ),
+              );
+          // Le ultime due settimane i più grandi l'hanno registrata dal
+          // telefono, con i chili dal loro massimale.
+          if (!presente || d < -14 || !grandi.contains(a)) continue;
+          for (final (k, (rigaId, m, carico)) in righe.indexed) {
+            final massimale = massimaleOra[(m.chiave, a)];
+            final usato = massimale == null
+                ? carico
+                : chiliProposti(carico, massimale) ?? carico;
+            for (var s = 1; s <= m.serie; s++) {
+              await db
+                  .into(db.serieSeccoFatteTable)
+                  .insert(
+                    SerieSeccoFatteTableCompanion.insert(
+                      id: uuid.v4(),
+                      atletaId: atleti[a],
+                      clubId: clubId,
+                      allenamentoId: sedutaId,
+                      rigaId: rigaId,
+                      esercizioId: esercizi[m.chiave]!,
+                      serie: s,
+                      ripetizioni: Value(m.ripetizioni),
+                      carico: Value(usato),
+                      caricoPrevisto: Value(carico),
+                      fattaIl: data.add(Duration(minutes: 4 * k + 2 * s)),
+                    ),
+                  );
+            }
+          }
+        }
+      }
     }
 
     if (sport == 'nuoto') {

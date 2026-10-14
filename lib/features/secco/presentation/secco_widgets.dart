@@ -63,6 +63,7 @@ class RigaEsercizio extends StatelessWidget {
     this.sotto,
     this.trailing,
     this.onTap,
+    this.massimale,
     super.key,
   });
 
@@ -74,6 +75,10 @@ class RigaEsercizio extends StatelessWidget {
   final String? sotto;
   final Widget? trailing;
   final VoidCallback? onTap;
+
+  /// Il massimale dell'atleta che la guarda: un carico «70%» diventa i
+  /// suoi chili.
+  final double? massimale;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +125,7 @@ class RigaEsercizio extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      prescrizioneEsercizio(riga),
+                      prescrizioneEsercizio(riga, massimale: massimale),
                       style: AppTypography.numerica(AppTypography.corpo)
                           .copyWith(color: colori.testo),
                     ),

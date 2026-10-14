@@ -1,3 +1,4 @@
+import 'massimale.dart';
 import 'test_club.dart';
 
 /// Quello che si digita sul tastierino di "Inserisci risultati" per una
@@ -79,4 +80,28 @@ String testoDaValore(UnitaTest unita, double valore) {
       .replaceFirst(RegExp(r'0+$'), '')
       .replaceFirst(RegExp(r'\.$'), '');
   return testo.replaceAll('.', ',');
+}
+
+/// Quanti campi si scrivono per un atleta: le prove del test o, per un
+/// massimale, i chili sollevati e le ripetizioni.
+int campiPerAtleta(TestClub test) => test.massimale ? 2 : test.prove;
+
+/// L'unità del campo [indice] (dallo 0): per un massimale prima i chili,
+/// poi le ripetizioni; per gli altri test quella del test.
+UnitaTest unitaDelCampo(TestClub test, int indice) => test.massimale
+    ? (indice == 0 ? UnitaTest.chili : UnitaTest.ripetizioni)
+    : test.unita;
+
+/// Il valore del campo [indice] digitato come [testo]; null se non c'è o
+/// non va bene (le ripetizioni di un massimale da 1 a
+/// [ripetizioniMassimeStima]).
+double? valoreDelCampo(TestClub test, int indice, String testo) {
+  final unita = unitaDelCampo(test, indice);
+  final v = valoreDigitato(unita, testo);
+  if (v == null) return null;
+  if (test.massimale && indice == 1 && v > ripetizioniMassimeStima) {
+    return null;
+  }
+  if (test.massimale && indice == 0 && v > 500) return null;
+  return v;
 }

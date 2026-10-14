@@ -148,7 +148,9 @@ class _FoglioEsercizioState extends State<_FoglioEsercizio> {
             AppTextField(
               etichetta: 'Carico (facoltativo)',
               controller: _carico,
-              aiuto: 'Per esempio «8 kg» o «elastico rosso».',
+              aiuto:
+                  'Per esempio «8 kg», «elastico rosso» o «70%» del '
+                  'massimale: ognuno vede i suoi chili.',
             ),
             const SizedBox(height: AppSpacing.s16),
             Text(

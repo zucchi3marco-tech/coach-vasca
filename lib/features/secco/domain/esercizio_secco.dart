@@ -1,3 +1,5 @@
+import '../../test/domain/massimale.dart';
+
 /// Per che cosa è un esercizio a secco: la prevenzione della spalla prima
 /// di tutto (la cuffia dei rotatori e le scapole del tiro), il core, le
 /// gambe della bicicletta, la forza e la mobilità.
@@ -225,9 +227,13 @@ String volumeEsercizio(EsercizioSeduta e) {
 }
 
 /// "3 × 12, elastico rosso · recupero 1'": quanto, con che carico e il
-/// recupero fra le serie.
-String prescrizioneEsercizio(EsercizioSeduta e) => [
-  [volumeEsercizio(e), ?_pieno(e.carico)].join(', '),
+/// recupero fra le serie. Con il [massimale] di un atleta un carico in
+/// percentuale diventa i suoi chili: "4 × 6, 56 kg (70%)".
+String prescrizioneEsercizio(EsercizioSeduta e, {double? massimale}) => [
+  [
+    volumeEsercizio(e),
+    ?_pieno(caricoPerAtleta(e.carico, massimale)),
+  ].join(', '),
   if (e.recuperoS != null && e.recuperoS! > 0)
     'recupero ${formattaSecondi(e.recuperoS!)}',
 ].join(' · ');
@@ -666,5 +672,52 @@ const modelliEsercizi = <ModelloEsercizio>[
     ripetizioni: 10,
     durataS: null,
     recuperoS: 60,
+  ),
+  // Forza con il bilanciere: quelli dei massimali pronti
+  // (`modelliMassimali`), per i ragazzi più grandi.
+  (
+    chiave: 'squat_bilanciere',
+    nome: 'Squat con bilanciere',
+    categoria: CategoriaEsercizio.forza,
+    attrezzo: 'Bilanciere',
+    descrizione:
+        'Bilanciere sulle spalle, non sul collo, piedi alla larghezza delle '
+        'spalle. Scendere con la schiena dritta fino alle cosce parallele a '
+        'terra, ginocchia nella direzione delle punte, e risalire spingendo '
+        'con i talloni. Con i carichi pesanti, sempre qualcuno che assiste.',
+    serie: 4,
+    ripetizioni: 6,
+    durataS: null,
+    recuperoS: 120,
+  ),
+  (
+    chiave: 'panca_piana',
+    nome: 'Panca piana',
+    categoria: CategoriaEsercizio.forza,
+    attrezzo: 'Bilanciere e panca',
+    descrizione:
+        'Sdraiati sulla panca, piedi a terra e scapole strette. Scendere con '
+        'il bilanciere fino a sfiorare il petto, gomiti a circa 45° dal '
+        'corpo, e spingere su. Sempre con qualcuno che assiste dietro la '
+        'testa.',
+    serie: 4,
+    ripetizioni: 6,
+    durataS: null,
+    recuperoS: 120,
+  ),
+  (
+    chiave: 'stacco_terra',
+    nome: 'Stacco da terra',
+    categoria: CategoriaEsercizio.forza,
+    attrezzo: 'Bilanciere',
+    descrizione:
+        'Bilanciere sopra la metà del piede, presa appena fuori dalle gambe. '
+        'Schiena dritta e petto in fuori: sollevare spingendo con le gambe e '
+        'portando avanti le anche, il bilanciere vicino alle gambe, e '
+        'scendere allo stesso modo.',
+    serie: 4,
+    ripetizioni: 5,
+    durataS: null,
+    recuperoS: 120,
   ),
 ];

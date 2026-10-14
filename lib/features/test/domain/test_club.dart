@@ -47,7 +47,9 @@ enum PunteggioTest {
 
 /// Un test del club (fase 2 del "Mako della pallanuoto", proposta 3):
 /// uno sprint, uno sprint ripetuto, la verticale, il tiro... Lo inventa
-/// l'allenatore o parte da uno pronto ([modelliTest]).
+/// l'allenatore o parte da uno pronto ([modelliTest]). Legato a un
+/// esercizio a secco è il suo **massimale** (vedi `massimale.dart`): in
+/// chili, vince il più alto, una prova.
 class TestClub {
   const TestClub({
     required this.id,
@@ -60,7 +62,22 @@ class TestClub {
     this.punteggio = PunteggioTest.migliore,
     this.modello,
     this.archiviato = false,
+    this.esercizioId,
   });
+
+  /// Il massimale dell'esercizio a secco [esercizioId].
+  const TestClub.massimale({
+    required this.id,
+    required this.clubId,
+    required this.nome,
+    required String this.esercizioId,
+    this.descrizione,
+    this.modello,
+    this.archiviato = false,
+  }) : unita = UnitaTest.chili,
+       piuBassoMeglio = false,
+       prove = 1,
+       punteggio = PunteggioTest.migliore;
 
   factory TestClub.fromMap(Map<String, dynamic> m) => TestClub(
     id: m['id'] as String,
@@ -73,6 +90,7 @@ class TestClub {
     punteggio: PunteggioTest.daNome(m['punteggio'] as String? ?? 'migliore'),
     modello: m['modello'] as String?,
     archiviato: m['archiviato'] as bool? ?? false,
+    esercizioId: m['esercizio_id'] as String?,
   );
 
   final String id;
@@ -92,6 +110,12 @@ class TestClub {
   final String? modello;
   final bool archiviato;
 
+  /// L'esercizio a secco di cui è il massimale, null per gli altri test.
+  final String? esercizioId;
+
+  /// È il massimale di un esercizio: si scrive chili × ripetizioni.
+  bool get massimale => esercizioId != null;
+
   /// Il primo dei due valori è migliore del secondo?
   bool meglio(double a, double b) => piuBassoMeglio ? a < b : a > b;
 
@@ -105,8 +129,10 @@ class TestClub {
     };
   }
 
-  /// "Migliore di 3 prove", "Media di 6 prove", "1 prova".
+  /// "Migliore di 3 prove", "Media di 6 prove", "1 prova", "Chili ×
+  /// ripetizioni" per un massimale.
   String get comeSiLegge {
+    if (massimale) return 'Chili × ripetizioni';
     if (prove == 1) return '1 prova';
     return switch (punteggio) {
       PunteggioTest.migliore => 'Migliore di $prove prove',
@@ -126,10 +152,28 @@ class TestClub {
     'punteggio': punteggio.name,
     'modello': modello,
     'archiviato': archiviato,
+    'esercizio_id': esercizioId,
   };
+
+  TestClub copyWith({String? nome, String? descrizione, bool? archiviato}) =>
+      TestClub(
+        id: id,
+        clubId: clubId,
+        nome: nome ?? this.nome,
+        descrizione: descrizione ?? this.descrizione,
+        unita: unita,
+        piuBassoMeglio: piuBassoMeglio,
+        prove: prove,
+        punteggio: punteggio,
+        modello: modello,
+        archiviato: archiviato ?? this.archiviato,
+        esercizioId: esercizioId,
+      );
 }
 
-/// Un risultato: un atleta, un giorno, il valore di ogni prova.
+/// Un risultato: un atleta, un giorno, il valore di ogni prova. Per un
+/// massimale il valore è il massimale stimato, e ci sono anche i chili
+/// sollevati e le ripetizioni da cui viene.
 class RisultatoTest {
   const RisultatoTest({
     required this.id,
@@ -139,6 +183,8 @@ class RisultatoTest {
     required this.data,
     required this.valori,
     this.note,
+    this.caricoKg,
+    this.ripetizioni,
   });
 
   factory RisultatoTest.fromMap(Map<String, dynamic> m) => RisultatoTest(
@@ -149,6 +195,8 @@ class RisultatoTest {
     data: DateTime.parse(m['data'] as String),
     valori: valoriDa(m['valori']),
     note: m['note'] as String?,
+    caricoKg: (m['carico_kg'] as num?)?.toDouble(),
+    ripetizioni: (m['ripetizioni'] as num?)?.toInt(),
   );
 
   final String id;
@@ -158,6 +206,8 @@ class RisultatoTest {
   final DateTime data;
   final List<double> valori;
   final String? note;
+  final double? caricoKg;
+  final int? ripetizioni;
 }
 
 /// I valori di un risultato: lista dal database, testo JSON dalla copia
@@ -366,7 +416,9 @@ String csvClassifica(TestClub test, List<PostoClassifica> posti) {
       'Anno di nascita',
       'Data',
       '${test.nome} (${test.unita.sigla})',
-      for (var i = 1; i <= test.prove; i++) 'Prova $i',
+      if (test.massimale) ...['Chili sollevati', 'Ripetizioni'],
+      if (!test.massimale)
+        for (var i = 1; i <= test.prove; i++) 'Prova $i',
       if (conAffaticamento) 'Affaticamento %',
     ],
     for (final p in posti)
@@ -378,10 +430,22 @@ String csvClassifica(TestClub test, List<PostoClassifica> posti) {
             '${p.risultato.data.month.toString().padLeft(2, '0')}/'
             '${p.risultato.data.year}',
         formattaValore(test.unita, p.punteggio, sigla: false),
-        for (var i = 0; i < test.prove; i++)
-          i < p.risultato.valori.length
-              ? formattaValore(test.unita, p.risultato.valori[i], sigla: false)
-              : '',
+        if (test.massimale) ...[
+          switch (p.risultato.caricoKg) {
+            final kg? => formattaValore(UnitaTest.chili, kg, sigla: false),
+            null => '',
+          },
+          '${p.risultato.ripetizioni ?? ''}',
+        ],
+        if (!test.massimale)
+          for (var i = 0; i < test.prove; i++)
+            i < p.risultato.valori.length
+                ? formattaValore(
+                    test.unita,
+                    p.risultato.valori[i],
+                    sigla: false,
+                  )
+                : '',
         if (conAffaticamento)
           switch (indiceAffaticamento(test, p.risultato.valori)) {
             final v? => v.toStringAsFixed(1).replaceAll('.', ','),

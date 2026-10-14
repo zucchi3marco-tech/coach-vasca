@@ -27,6 +27,7 @@ import '../application/secco_providers.dart';
 import '../data/secco_repository.dart';
 import '../domain/esercizio_secco.dart';
 import '../domain/serie_fatta.dart';
+import 'chili_di_ognuno.dart';
 import 'esercizi_secco_screen.dart';
 import 'foglio_esercizio.dart';
 import 'programma_secco_screen.dart';
@@ -438,6 +439,11 @@ class SedutaSeccoScreen extends ConsumerWidget {
                             ),
                           ),
                       ],
+                    ),
+                    ChiliDiOgnuno(
+                      allenamento: a,
+                      righe: righe,
+                      esercizi: esercizi,
                     ),
                     RegistrazioniSeduta(
                       allenamento: a,

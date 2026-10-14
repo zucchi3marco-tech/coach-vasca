@@ -20,6 +20,9 @@ import '../../atleti/domain/atleta.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../carico/data/rpe_repository.dart';
 import '../../carico/presentation/card_rpe.dart' show ScalaRpe;
+import '../../test/application/test_club_providers.dart';
+import '../../test/domain/massimale.dart';
+import '../../test/domain/test_club.dart' show UnitaTest, formattaValore;
 import '../application/secco_providers.dart';
 import '../data/serie_fatte_repository.dart';
 import '../domain/esercizio_secco.dart';
@@ -91,6 +94,10 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
   final _segnate = <SerieFatta>[];
   final _tolte = <(String, int)>{};
 
+  /// I massimali dell'atleta (id esercizio → id atleta → massimale), letti
+  /// solo se qualche carico è in percentuale.
+  Map<String, Map<String, Massimale>> _massimali = const {};
+
   @override
   void dispose() {
     _battito?.cancel();
@@ -122,6 +129,9 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
 
   int _proposto(EsercizioSeduta r) => r.durataS ?? r.ripetizioni ?? 0;
 
+  double? _massimaleDi(EsercizioSeduta r) =>
+      _massimali[r.esercizioId]?[widget.atleta.id]?.kg;
+
   String? _carico(EsercizioSeduta r, List<SerieFatta> tutte) => _caricoCambiato
       ? _caricoScelto
       : caricoProposto(
@@ -131,6 +141,7 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
             for (final f in tutte)
               if (f.allenamentoId != _seduta) f,
           ],
+          massimale: _massimaleDi(r),
         );
 
   void _bip({bool lungo = false}) => widget.suona(lungo: lungo);
@@ -374,7 +385,10 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
       for (final f in tutte)
         if (f.esercizioId == r.esercizioId && f.carico != null) f,
     ]..sort((a, b) => b.fattaIl.compareTo(a.fattaIl));
-    for (final c in [?r.carico, for (final f in dello) f.carico!]) {
+    // Un carico in percentuale si propone già in chili, dal massimale.
+    final massimale = _massimaleDi(r);
+    final chili = chiliProposti(r.carico, massimale);
+    for (final c in [?(chili ?? r.carico), for (final f in dello) f.carico!]) {
       final t = c.trim();
       if (t.isNotEmpty && !recenti.contains(t) && recenti.length < 4) {
         recenti.add(t);
@@ -383,7 +397,10 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
     final scelta = await _chiediCarico(
       context,
       attuale: _carico(r, tutte),
-      previsto: r.carico,
+      previsto: chili == null || massimale == null
+          ? r.carico
+          : '${r.carico!.trim()}, con il tuo massimale di '
+                '${formattaValore(UnitaTest.chili, massimale)} sono $chili',
       proposte: recenti,
     );
     if (scelta == null || !mounted) return;
@@ -423,6 +440,10 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
     );
     final fatteAsync = ref.watch(serieFatteAtletaProvider(widget.atleta.id));
     final esercizi = widget.esercizi;
+    _massimali =
+        esercizi.any((e) => percentualeDelCarico(e.riga.carico) != null)
+        ? ref.watch(massimaliProvider(widget.atleta.clubId))
+        : const {};
     Widget corpo;
     EsercizioSedutaAtleta? attuale;
     List<SerieFatta> fatteRiga = const [];
@@ -478,6 +499,7 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
           fase: _fase,
           quanto: _quanto ?? _proposto(r),
           carico: _carico(r, tutte),
+          massimale: _massimaleDi(r),
           restano: _restano,
           poi: _fase == _Fase.recupero
               ? prossima != null
@@ -535,7 +557,8 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
             IconButton(
               tooltip: 'Come si fa',
               icon: const Icon(Icons.info_outline),
-              onPressed: () => mostraComeSiFa(context, e),
+              onPressed: () =>
+                  mostraComeSiFa(context, e, massimale: _massimaleDi(e.riga)),
             ),
           const BottoneTemaBordoVasca(),
           if (e != null && indice != null)
@@ -595,6 +618,7 @@ class _Esercizio extends StatelessWidget {
     required this.fase,
     required this.quanto,
     required this.carico,
+    required this.massimale,
     required this.restano,
     required this.poi,
     required this.onMeno,
@@ -621,6 +645,10 @@ class _Esercizio extends StatelessWidget {
   final _Fase fase;
   final int quanto;
   final String? carico;
+
+  /// Il massimale dell'atleta nell'esercizio: un carico «70%» si legge
+  /// in chili.
+  final double? massimale;
   final Duration restano;
   final String? poi;
   final VoidCallback onMeno;
@@ -838,7 +866,7 @@ class _Esercizio extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.s4),
                   Text(
-                    prescrizioneEsercizio(r),
+                    prescrizioneEsercizio(r, massimale: massimale),
                     style: AppTypography.numerica(AppTypography.corpo)
                         .copyWith(color: colori.testoSecondario),
                   ),

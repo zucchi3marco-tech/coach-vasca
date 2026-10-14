@@ -241,8 +241,34 @@ class SeccoRepository {
     }
   }
 
-  /// Se l'esercizio è in qualche seduta o in qualche programma (sul
-  /// telefono): allora non si elimina, si archivia.
+  /// L'esercizio pronto [m] del club: quello già nell'elenco (tolto
+  /// dall'archivio, se c'era finito) o, se manca, aggiunto adesso.
+  Future<EsercizioSecco> esercizioPronto(
+    String clubId,
+    ModelloEsercizio m,
+  ) async {
+    final riga =
+        await (_db.select(_db.eserciziSeccoTable)..where(
+              (t) => t.clubId.equals(clubId) & t.modello.equals(m.chiave),
+            ))
+            .getSingleOrNull();
+    if (riga == null) {
+      await aggiungiModelli(clubId, [m]);
+      final nuovo =
+          await (_db.select(_db.eserciziSeccoTable)..where(
+                (t) => t.clubId.equals(clubId) & t.modello.equals(m.chiave),
+              ))
+              .getSingle();
+      return _esercizioDaRiga(nuovo);
+    }
+    final esercizio = _esercizioDaRiga(riga);
+    return esercizio.archiviato
+        ? aggiornaEsercizio(esercizio.copyWith(archiviato: false))
+        : esercizio;
+  }
+
+  /// Se l'esercizio è in qualche seduta, in qualche programma o ha un
+  /// massimale (sul telefono): allora non si elimina, si archivia.
   Future<bool> inUso(String esercizioId) async {
     final righe =
         await (_db.select(_db.eserciziSedutaTable)
@@ -255,7 +281,13 @@ class SeccoRepository {
               ..where((t) => t.settimaneJson.like('%$esercizioId%'))
               ..limit(1))
             .get();
-    return programmi.isNotEmpty;
+    if (programmi.isNotEmpty) return true;
+    final massimali =
+        await (_db.select(_db.testClubTable)
+              ..where((t) => t.esercizioId.equals(esercizioId))
+              ..limit(1))
+            .get();
+    return massimali.isNotEmpty;
   }
 
   Future<void> eliminaEsercizio(String id) async {
