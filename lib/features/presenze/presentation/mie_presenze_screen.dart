@@ -15,6 +15,7 @@ import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import '../application/presenze_providers.dart';
 import '../domain/presenza.dart';
 
@@ -135,8 +136,18 @@ class _Contenuto extends StatelessWidget {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final haGruppo = atleta.gruppoId != null;
+    // Quelli in cui era atteso (anche con l'altra squadra, nei suoi
+    // giorni) e quelli in cui è stato segnato.
+    final segnati = {for (final p in presenze) p.allenamentoId};
     final delGruppo = haGruppo
-        ? allenamenti.where((a) => a.gruppoId == atleta.gruppoId).toList()
+        ? allenamenti
+              .where(
+                (a) =>
+                    a.gruppoId != null &&
+                    (atleta.attesoA(a.gruppoId, a.data) ||
+                        segnati.contains(a.id)),
+              )
+              .toList()
         : allenamenti;
     final rilevanti = delGruppo.isEmpty ? allenamenti : delGruppo;
 

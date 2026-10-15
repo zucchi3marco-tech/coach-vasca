@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/text_format.dart';
+import '../../../theme/app_spacing.dart';
+import '../../../theme/app_typography.dart';
+import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
@@ -10,12 +13,15 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/domain/destinatari.dart' show ruoliAtleta;
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
+import '../domain/squadre_atleta.dart';
 
 class AtletaFormScreen extends ConsumerStatefulWidget {
   const AtletaFormScreen({required this.clubId, this.atleta, super.key});
@@ -43,6 +49,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   DateTime? _visitaMedicaScadenza;
   String? _sesso;
   String? _ruolo;
+
+  /// L'altra squadra con cui si allena in giorni fissi, e quei giorni.
+  String? _altroGruppoId;
+  late Set<int> _giorniAltroGruppo;
   late String _sport;
   late bool _consensoPrivacy;
 
@@ -82,6 +92,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     );
     _sesso = atleta?.sesso;
     _ruolo = atleta?.ruolo;
+    _altroGruppoId = atleta?.altroGruppoId;
+    _giorniAltroGruppo = {...?atleta?.giorniAltroGruppo};
     // Lo sport di un atleta nuovo e' quello del club: prima partiva sempre
     // da "nuoto", anche in un club di pallanuoto.
     final sportClub = ref.read(currentClubProvider).value?.sport;
@@ -200,6 +212,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           visitaMedicaScadenza: _visitaMedicaScadenza,
           // Toccato il campo resta quello scelto; altrimenti com'era.
           ruolo: _sport == 'pallanuoto' ? _ruolo : widget.atleta!.ruolo,
+          altroGruppoId: _altroGruppo,
+          giorniAltroGruppo: _giorniAltroGruppo.toList()..sort(),
         );
       } else {
         await repository.createAtleta(
@@ -217,6 +231,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
           visitaMedicaScadenza: _visitaMedicaScadenza,
           ruolo: _sport == 'pallanuoto' ? _ruolo : null,
+          altroGruppoId: _altroGruppo,
+          giorniAltroGruppo: _giorniAltroGruppo.toList()..sort(),
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -227,6 +243,92 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  /// L'altra squadra da salvare: nessuna senza una squadra sua, o se è
+  /// la stessa.
+  String? get _altroGruppo =>
+      _gruppoId == null || _altroGruppoId == _gruppoId ? null : _altroGruppoId;
+
+  /// "Si allena anche con" e, scelta l'altra squadra, i giorni con lei.
+  List<Widget> _altraSquadra(List<Gruppo> gruppi) {
+    final altre = [
+      for (final g in gruppi)
+        if (g.id != _gruppoId) g,
+    ];
+    if (_gruppoId == null || (altre.isEmpty && _altroGruppoId == null)) {
+      return const [];
+    }
+    final colori = context.colori;
+    final nomeAltra = altre
+        .where((g) => g.id == _altroGruppo)
+        .firstOrNull
+        ?.nome;
+    final giorni = _giorniAltroGruppo.toList()..sort();
+    return [
+      AppSelect<String?>(
+        etichetta: 'Si allena anche con (facoltativo)',
+        value: _altroGruppo,
+        hint: 'Solo con la sua squadra',
+        items: [
+          const DropdownMenuItem(
+            value: null,
+            child: Text('Solo con la sua squadra'),
+          ),
+          for (final g in altre)
+            DropdownMenuItem(value: g.id, child: Text(g.nome)),
+          if (_altroGruppo != null && !altre.any((g) => g.id == _altroGruppo))
+            DropdownMenuItem(
+              value: _altroGruppo,
+              child: const Text('Squadra non trovata'),
+            ),
+        ],
+        onChanged: (value) => setState(() => _altroGruppoId = value),
+      ),
+      if (_altroGruppo != null)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'I giorni con ${nomeAltra ?? "l'altra squadra"}',
+              style: AppTypography.etichetta.copyWith(color: colori.testo),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Wrap(
+              spacing: AppSpacing.s8,
+              runSpacing: AppSpacing.s8,
+              children: [
+                for (final (i, nome) in nomiGiorni.indexed)
+                  TonalChip(
+                    etichetta: nome,
+                    selezionato: _giorniAltroGruppo.contains(i + 1),
+                    onSelezionato: (scelto) => setState(() {
+                      if (scelto) {
+                        _giorniAltroGruppo.add(i + 1);
+                      } else {
+                        _giorniAltroGruppo.remove(i + 1);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Text(
+              giorni.isEmpty
+                  ? 'Vede gli allenamenti e le partite di tutte e due le '
+                        'squadre. Segna i giorni in cui si allena con '
+                        "l'altra: quei giorni è nelle sue presenze."
+                  : 'Vede gli allenamenti e le partite di tutte e due le '
+                        'squadre. Nei giorni segnati (${etichettaGiorni(giorni)}) '
+                        'è nelle presenze di ${nomeAltra ?? "quella squadra"}, '
+                        'gli altri giorni in quelle della sua.',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ],
+        ),
+    ];
   }
 
   Future<void> _confermaArchiviazione() async {
@@ -383,6 +485,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                   ],
                   onChanged: (value) => setState(() => _gruppoId = value),
                 ),
+                ..._altraSquadra(gruppi),
                 AppTextField(
                   etichetta: 'Scadenza visita medica (facoltativo)',
                   controller: _visitaMedicaController,

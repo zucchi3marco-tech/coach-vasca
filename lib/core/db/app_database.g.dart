@@ -556,6 +556,29 @@ class $AtletiTableTable extends AtletiTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _altroGruppoIdMeta = const VerificationMeta(
+    'altroGruppoId',
+  );
+  @override
+  late final GeneratedColumn<String> altroGruppoId = GeneratedColumn<String>(
+    'altro_gruppo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _giorniAltroGruppoMeta = const VerificationMeta(
+    'giorniAltroGruppo',
+  );
+  @override
+  late final GeneratedColumn<String> giorniAltroGruppo =
+      GeneratedColumn<String>(
+        'giorni_altro_gruppo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -576,6 +599,8 @@ class $AtletiTableTable extends AtletiTable
     userId,
     visitaMedicaScadenza,
     ruolo,
+    altroGruppoId,
+    giorniAltroGruppo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -727,6 +752,24 @@ class $AtletiTableTable extends AtletiTable
         ruolo.isAcceptableOrUnknown(data['ruolo']!, _ruoloMeta),
       );
     }
+    if (data.containsKey('altro_gruppo_id')) {
+      context.handle(
+        _altroGruppoIdMeta,
+        altroGruppoId.isAcceptableOrUnknown(
+          data['altro_gruppo_id']!,
+          _altroGruppoIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('giorni_altro_gruppo')) {
+      context.handle(
+        _giorniAltroGruppoMeta,
+        giorniAltroGruppo.isAcceptableOrUnknown(
+          data['giorni_altro_gruppo']!,
+          _giorniAltroGruppoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -808,6 +851,14 @@ class $AtletiTableTable extends AtletiTable
         DriftSqlType.string,
         data['${effectivePrefix}ruolo'],
       ),
+      altroGruppoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}altro_gruppo_id'],
+      ),
+      giorniAltroGruppo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}giorni_altro_gruppo'],
+      ),
     );
   }
 
@@ -839,6 +890,11 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
   /// Pallanuoto: 'portiere' | 'movimento' | 'centroboa' | 'marcatore' |
   /// 'esterno'; null se non indicato (conta come movimento).
   final String? ruolo;
+
+  /// L'altra squadra con cui si allena in giorni fissi, e i giorni (1 =
+  /// lunedì … 7 = domenica, separati da virgole: "2,4").
+  final String? altroGruppoId;
+  final String? giorniAltroGruppo;
   const AtletiTableData({
     required this.id,
     required this.clubId,
@@ -858,6 +914,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     this.userId,
     this.visitaMedicaScadenza,
     this.ruolo,
+    this.altroGruppoId,
+    this.giorniAltroGruppo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -900,6 +958,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     if (!nullToAbsent || ruolo != null) {
       map['ruolo'] = Variable<String>(ruolo);
     }
+    if (!nullToAbsent || altroGruppoId != null) {
+      map['altro_gruppo_id'] = Variable<String>(altroGruppoId);
+    }
+    if (!nullToAbsent || giorniAltroGruppo != null) {
+      map['giorni_altro_gruppo'] = Variable<String>(giorniAltroGruppo);
+    }
     return map;
   }
 
@@ -941,6 +1005,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
       ruolo: ruolo == null && nullToAbsent
           ? const Value.absent()
           : Value(ruolo),
+      altroGruppoId: altroGruppoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altroGruppoId),
+      giorniAltroGruppo: giorniAltroGruppo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(giorniAltroGruppo),
     );
   }
 
@@ -974,6 +1044,10 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
         json['visitaMedicaScadenza'],
       ),
       ruolo: serializer.fromJson<String?>(json['ruolo']),
+      altroGruppoId: serializer.fromJson<String?>(json['altroGruppoId']),
+      giorniAltroGruppo: serializer.fromJson<String?>(
+        json['giorniAltroGruppo'],
+      ),
     );
   }
   @override
@@ -1000,6 +1074,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
         visitaMedicaScadenza,
       ),
       'ruolo': serializer.toJson<String?>(ruolo),
+      'altroGruppoId': serializer.toJson<String?>(altroGruppoId),
+      'giorniAltroGruppo': serializer.toJson<String?>(giorniAltroGruppo),
     };
   }
 
@@ -1022,6 +1098,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     Value<String?> userId = const Value.absent(),
     Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
     Value<String?> ruolo = const Value.absent(),
+    Value<String?> altroGruppoId = const Value.absent(),
+    Value<String?> giorniAltroGruppo = const Value.absent(),
   }) => AtletiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -1052,6 +1130,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
         ? visitaMedicaScadenza.value
         : this.visitaMedicaScadenza,
     ruolo: ruolo.present ? ruolo.value : this.ruolo,
+    altroGruppoId: altroGruppoId.present
+        ? altroGruppoId.value
+        : this.altroGruppoId,
+    giorniAltroGruppo: giorniAltroGruppo.present
+        ? giorniAltroGruppo.value
+        : this.giorniAltroGruppo,
   );
   AtletiTableData copyWithCompanion(AtletiTableCompanion data) {
     return AtletiTableData(
@@ -1087,6 +1171,12 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ? data.visitaMedicaScadenza.value
           : this.visitaMedicaScadenza,
       ruolo: data.ruolo.present ? data.ruolo.value : this.ruolo,
+      altroGruppoId: data.altroGruppoId.present
+          ? data.altroGruppoId.value
+          : this.altroGruppoId,
+      giorniAltroGruppo: data.giorniAltroGruppo.present
+          ? data.giorniAltroGruppo.value
+          : this.giorniAltroGruppo,
     );
   }
 
@@ -1110,7 +1200,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           ..write('numeroTesseraFin: $numeroTesseraFin, ')
           ..write('userId: $userId, ')
           ..write('visitaMedicaScadenza: $visitaMedicaScadenza, ')
-          ..write('ruolo: $ruolo')
+          ..write('ruolo: $ruolo, ')
+          ..write('altroGruppoId: $altroGruppoId, ')
+          ..write('giorniAltroGruppo: $giorniAltroGruppo')
           ..write(')'))
         .toString();
   }
@@ -1135,6 +1227,8 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
     userId,
     visitaMedicaScadenza,
     ruolo,
+    altroGruppoId,
+    giorniAltroGruppo,
   );
   @override
   bool operator ==(Object other) =>
@@ -1157,7 +1251,9 @@ class AtletiTableData extends DataClass implements Insertable<AtletiTableData> {
           other.numeroTesseraFin == this.numeroTesseraFin &&
           other.userId == this.userId &&
           other.visitaMedicaScadenza == this.visitaMedicaScadenza &&
-          other.ruolo == this.ruolo);
+          other.ruolo == this.ruolo &&
+          other.altroGruppoId == this.altroGruppoId &&
+          other.giorniAltroGruppo == this.giorniAltroGruppo);
 }
 
 class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
@@ -1179,6 +1275,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
   final Value<String?> userId;
   final Value<DateTime?> visitaMedicaScadenza;
   final Value<String?> ruolo;
+  final Value<String?> altroGruppoId;
+  final Value<String?> giorniAltroGruppo;
   final Value<int> rowid;
   const AtletiTableCompanion({
     this.id = const Value.absent(),
@@ -1199,6 +1297,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.userId = const Value.absent(),
     this.visitaMedicaScadenza = const Value.absent(),
     this.ruolo = const Value.absent(),
+    this.altroGruppoId = const Value.absent(),
+    this.giorniAltroGruppo = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AtletiTableCompanion.insert({
@@ -1220,6 +1320,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     this.userId = const Value.absent(),
     this.visitaMedicaScadenza = const Value.absent(),
     this.ruolo = const Value.absent(),
+    this.altroGruppoId = const Value.absent(),
+    this.giorniAltroGruppo = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -1246,6 +1348,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Expression<String>? userId,
     Expression<DateTime>? visitaMedicaScadenza,
     Expression<String>? ruolo,
+    Expression<String>? altroGruppoId,
+    Expression<String>? giorniAltroGruppo,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1270,6 +1374,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       if (visitaMedicaScadenza != null)
         'visita_medica_scadenza': visitaMedicaScadenza,
       if (ruolo != null) 'ruolo': ruolo,
+      if (altroGruppoId != null) 'altro_gruppo_id': altroGruppoId,
+      if (giorniAltroGruppo != null) 'giorni_altro_gruppo': giorniAltroGruppo,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1293,6 +1399,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     Value<String?>? userId,
     Value<DateTime?>? visitaMedicaScadenza,
     Value<String?>? ruolo,
+    Value<String?>? altroGruppoId,
+    Value<String?>? giorniAltroGruppo,
     Value<int>? rowid,
   }) {
     return AtletiTableCompanion(
@@ -1315,6 +1423,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
       userId: userId ?? this.userId,
       visitaMedicaScadenza: visitaMedicaScadenza ?? this.visitaMedicaScadenza,
       ruolo: ruolo ?? this.ruolo,
+      altroGruppoId: altroGruppoId ?? this.altroGruppoId,
+      giorniAltroGruppo: giorniAltroGruppo ?? this.giorniAltroGruppo,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1382,6 +1492,12 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
     if (ruolo.present) {
       map['ruolo'] = Variable<String>(ruolo.value);
     }
+    if (altroGruppoId.present) {
+      map['altro_gruppo_id'] = Variable<String>(altroGruppoId.value);
+    }
+    if (giorniAltroGruppo.present) {
+      map['giorni_altro_gruppo'] = Variable<String>(giorniAltroGruppo.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1409,6 +1525,8 @@ class AtletiTableCompanion extends UpdateCompanion<AtletiTableData> {
           ..write('userId: $userId, ')
           ..write('visitaMedicaScadenza: $visitaMedicaScadenza, ')
           ..write('ruolo: $ruolo, ')
+          ..write('altroGruppoId: $altroGruppoId, ')
+          ..write('giorniAltroGruppo: $giorniAltroGruppo, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20818,6 +20936,8 @@ typedef $$AtletiTableTableCreateCompanionBuilder =
       Value<String?> userId,
       Value<DateTime?> visitaMedicaScadenza,
       Value<String?> ruolo,
+      Value<String?> altroGruppoId,
+      Value<String?> giorniAltroGruppo,
       Value<int> rowid,
     });
 typedef $$AtletiTableTableUpdateCompanionBuilder =
@@ -20840,6 +20960,8 @@ typedef $$AtletiTableTableUpdateCompanionBuilder =
       Value<String?> userId,
       Value<DateTime?> visitaMedicaScadenza,
       Value<String?> ruolo,
+      Value<String?> altroGruppoId,
+      Value<String?> giorniAltroGruppo,
       Value<int> rowid,
     });
 
@@ -20939,6 +21061,16 @@ class $$AtletiTableTableFilterComposer
 
   ColumnFilters<String> get ruolo => $composableBuilder(
     column: $table.ruolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get altroGruppoId => $composableBuilder(
+    column: $table.altroGruppoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get giorniAltroGruppo => $composableBuilder(
+    column: $table.giorniAltroGruppo,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -21041,6 +21173,16 @@ class $$AtletiTableTableOrderingComposer
     column: $table.ruolo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get altroGruppoId => $composableBuilder(
+    column: $table.altroGruppoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get giorniAltroGruppo => $composableBuilder(
+    column: $table.giorniAltroGruppo,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AtletiTableTableAnnotationComposer
@@ -21119,6 +21261,16 @@ class $$AtletiTableTableAnnotationComposer
 
   GeneratedColumn<String> get ruolo =>
       $composableBuilder(column: $table.ruolo, builder: (column) => column);
+
+  GeneratedColumn<String> get altroGruppoId => $composableBuilder(
+    column: $table.altroGruppoId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get giorniAltroGruppo => $composableBuilder(
+    column: $table.giorniAltroGruppo,
+    builder: (column) => column,
+  );
 }
 
 class $$AtletiTableTableTableManager
@@ -21170,6 +21322,8 @@ class $$AtletiTableTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
                 Value<String?> ruolo = const Value.absent(),
+                Value<String?> altroGruppoId = const Value.absent(),
+                Value<String?> giorniAltroGruppo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion(
                 id: id,
@@ -21190,6 +21344,8 @@ class $$AtletiTableTableTableManager
                 userId: userId,
                 visitaMedicaScadenza: visitaMedicaScadenza,
                 ruolo: ruolo,
+                altroGruppoId: altroGruppoId,
+                giorniAltroGruppo: giorniAltroGruppo,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21212,6 +21368,8 @@ class $$AtletiTableTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime?> visitaMedicaScadenza = const Value.absent(),
                 Value<String?> ruolo = const Value.absent(),
+                Value<String?> altroGruppoId = const Value.absent(),
+                Value<String?> giorniAltroGruppo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AtletiTableCompanion.insert(
                 id: id,
@@ -21232,6 +21390,8 @@ class $$AtletiTableTableTableManager
                 userId: userId,
                 visitaMedicaScadenza: visitaMedicaScadenza,
                 ruolo: ruolo,
+                altroGruppoId: altroGruppoId,
+                giorniAltroGruppo: giorniAltroGruppo,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

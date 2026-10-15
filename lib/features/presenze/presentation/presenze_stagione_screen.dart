@@ -90,9 +90,13 @@ class _PresenzeStagioneScreenState
           final risultato = presenzeStagione(
             allenamenti: allenamenti,
             presenze: presenze,
+            // Anche chi si allena con la squadra in giorni fissi.
             atleti: [
               for (final a in atleti)
-                if (gruppoId == null || a.gruppoId == gruppoId) a,
+                if (gruppoId == null ||
+                    a.gruppoId == gruppoId ||
+                    a.altroGruppoId == gruppoId)
+                  a,
             ],
             gruppoId: gruppoId,
             dal: dal,

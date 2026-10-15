@@ -25,7 +25,11 @@ List<Atleta> atletiDellAllenamento(
   };
   return [
     for (final a in tutti)
-      if ((a.attivo && (gruppoId == null || a.gruppoId == gruppoId)) ||
+      if ((a.attivo &&
+              (gruppoId == null ||
+                  a.gruppoId == gruppoId ||
+                  // Chi si allena con questo gruppo in giorni fissi.
+                  a.altroGruppoId == gruppoId)) ||
           nominati.contains(a.id))
         a,
   ];

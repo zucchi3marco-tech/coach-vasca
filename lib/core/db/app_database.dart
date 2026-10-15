@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -553,6 +553,17 @@ class AppDatabase extends _$AppDatabase {
       if (from < 44) {
         if (!await _hasColumn(m, 'serie_table', 'momento_id')) {
           await m.addColumn(serieTable, serieTable.momentoId);
+        }
+      }
+      // v44 -> v45: l'altra squadra di un atleta, in giorni fissi.
+      if (from < 45) {
+        for (final (nome, colonna) in [
+          ('altro_gruppo_id', atletiTable.altroGruppoId),
+          ('giorni_altro_gruppo', atletiTable.giorniAltroGruppo),
+        ]) {
+          if (!await _hasColumn(m, 'atleti_table', nome)) {
+            await m.addColumn(atletiTable, colonna);
+          }
         }
       }
     },

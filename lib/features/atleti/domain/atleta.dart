@@ -18,6 +18,8 @@ class Atleta {
     this.userId,
     this.visitaMedicaScadenza,
     this.ruolo,
+    this.altroGruppoId,
+    this.giorniAltroGruppo = const [],
   });
 
   final String id;
@@ -43,9 +45,16 @@ class Atleta {
   /// Scadenza del certificato medico sportivo (facoltativa).
   final DateTime? visitaMedicaScadenza;
 
-  /// Pallanuoto: 'portiere' | 'movimento'; null se non indicato, conta
-  /// come movimento (vedi `Destinatari`).
+  /// Pallanuoto: 'portiere' | 'movimento' | 'centroboa' | 'marcatore' |
+  /// 'esterno'; null se non indicato, conta come movimento (vedi
+  /// `Destinatari`).
   final String? ruolo;
+
+  /// L'altra squadra con cui si allena in giorni fissi (richiesta del
+  /// coach 2026-10-15), e quei giorni (1 = lunedì … 7 = domenica, come
+  /// `DateTime.weekday`). Vedi `SquadreAtleta`.
+  final String? altroGruppoId;
+  final List<int> giorniAltroGruppo;
 
   bool get portiere => ruolo == 'portiere';
 
@@ -88,6 +97,25 @@ class Atleta {
           ? null
           : DateTime.parse(map['visita_medica_scadenza'] as String),
       ruolo: map['ruolo'] as String?,
+      altroGruppoId: map['altro_gruppo_id'] as String?,
+      giorniAltroGruppo: leggiGiorni(map['giorni_altro_gruppo']),
     );
   }
+
+  /// I giorni come arrivano dal database (una lista di numeri) o dalla
+  /// copia locale ("2,4"), in ordine e senza doppioni.
+  static List<int> leggiGiorni(Object? valore) {
+    final giorni = switch (valore) {
+      final List<dynamic> lista => [for (final g in lista) (g as num).toInt()],
+      final String testo when testo.trim().isNotEmpty => [
+        for (final g in testo.split(',')) ?int.tryParse(g.trim()),
+      ],
+      _ => const <int>[],
+    };
+    return ({...giorni.where((g) => g >= 1 && g <= 7)}.toList()..sort());
+  }
+
+  /// I giorni per la copia locale: "2,4"; null senza giorni.
+  static String? scriviGiorni(List<int> giorni) =>
+      giorni.isEmpty ? null : giorni.join(',');
 }

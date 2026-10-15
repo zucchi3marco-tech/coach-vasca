@@ -29,6 +29,7 @@ import '../../presenze/domain/presenza.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
+import '../domain/squadre_atleta.dart';
 import 'atleta_form_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
 
@@ -98,6 +99,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
           presenze: presenze,
           atletaId: a.id,
           gruppoAtleta: a.gruppoId,
+          atteso: (all) => a.attesoA(all.gruppoId, all.data),
         ),
     ];
     final presenzeMedie = percentuali.isEmpty
@@ -340,13 +342,35 @@ class _AtletiList extends StatelessWidget {
     presenze: presenze,
     atletaId: a.id,
     gruppoAtleta: a.gruppoId,
+    atteso: (all) => a.attesoA(all.gruppoId, all.data),
   );
+
+  /// "Da Under 14 · mar, gio" per chi viene da un'altra squadra in giorni
+  /// fissi, "Anche Prima squadra · mar, gio" per chi va da un'altra.
+  String? _altraSquadra(Atleta a, Map<String, String> nomeGruppo) {
+    final altro = a.altroGruppoId;
+    if (altro == null) return null;
+    final giorni = a.giorniAltroGruppo.isEmpty
+        ? ''
+        : ' · ${etichettaGiorni(a.giorniAltroGruppo)}';
+    if (filtroGruppoId != null && a.gruppoId != filtroGruppoId) {
+      return 'Da ${nomeGruppo[a.gruppoId] ?? "un'altra squadra"}$giorni';
+    }
+    return 'Anche ${nomeGruppo[altro] ?? "un'altra squadra"}$giorni';
+  }
 
   List<Atleta> _filtrati() {
     final query = ricerca.trim().toLowerCase();
+    // Nella squadra anche chi si allena con lei in giorni fissi.
     var filtrati = filtroGruppoId == null
         ? [...atleti]
-        : atleti.where((a) => a.gruppoId == filtroGruppoId).toList();
+        : atleti
+              .where(
+                (a) =>
+                    a.gruppoId == filtroGruppoId ||
+                    a.altroGruppoId == filtroGruppoId,
+              )
+              .toList();
     if (query.isNotEmpty) {
       filtrati = filtrati
           .where((a) => a.nomeCompleto.toLowerCase().contains(query))
@@ -413,6 +437,7 @@ class _AtletiList extends StatelessWidget {
             sotto:
                 !atleta.attivo ||
                     _ruoloInPastiglia(atleta) != null ||
+                    atleta.conAltraSquadra ||
                     atleta.visitaMedicaScaduta ||
                     atleta.visitaMedicaInScadenza
                 ? Wrap(
@@ -421,6 +446,8 @@ class _AtletiList extends StatelessWidget {
                     children: [
                       if (!atleta.attivo)
                         Pastiglia('Inattivo', colore: colori.testoSecondario),
+                      if (_altraSquadra(atleta, nomeGruppo) case final altra?)
+                        Pastiglia(altra, colore: colori.testoSecondario),
                       // Le serie "Portieri", "Centroboa"... sono per loro:
                       // si vede chi è.
                       if (_ruoloInPastiglia(atleta) case final ruolo?)

@@ -160,7 +160,12 @@ class StrumentiAssistente {
     final gruppo = fonte.gruppoId;
     return [
       for (final a in await fonte.atleti())
-        if (a.attivo && (gruppo == null || a.gruppoId == gruppo)) a,
+        // Anche chi si allena con la squadra in giorni fissi.
+        if (a.attivo &&
+            (gruppo == null ||
+                a.gruppoId == gruppo ||
+                a.altroGruppoId == gruppo))
+          a,
     ]..sort(
       (a, b) => (pseudonimi.codice(a.id) ?? '').compareTo(
         pseudonimi.codice(b.id) ?? '',

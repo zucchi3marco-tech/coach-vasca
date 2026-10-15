@@ -18,6 +18,8 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/distinta_repository.dart';
@@ -377,6 +379,12 @@ class _DialogSelezionaAtleta extends ConsumerWidget {
         width: double.maxFinite,
         child: atletiAsync.when(
           data: (atleti) {
+            // Prima la squadra della partita, con chi si allena con lei in
+            // giorni fissi; poi gli altri del club.
+            bool dellaSquadra(Atleta a) =>
+                partita.gruppoId == null ||
+                a.gruppoId == partita.gruppoId ||
+                a.altroGruppoId == partita.gruppoId;
             final disponibili =
                 atleti
                     .where(
@@ -385,7 +393,26 @@ class _DialogSelezionaAtleta extends ConsumerWidget {
                           !idGiaConvocati.contains(a.id),
                     )
                     .toList()
-                  ..sort((a, b) => a.cognome.compareTo(b.cognome));
+                  ..sort((a, b) {
+                    final squadra =
+                        (dellaSquadra(a) ? 0 : 1) - (dellaSquadra(b) ? 0 : 1);
+                    return squadra != 0
+                        ? squadra
+                        : a.cognome.compareTo(b.cognome);
+                  });
+            final nomiGruppi = {
+              for (final g
+                  in ref.watch(gruppiListProvider(partita.clubId)).value ??
+                      const <Gruppo>[])
+                g.id: g.nome,
+            };
+            // La squadra di chi non è della squadra della partita.
+            String? daAltraSquadra(Atleta a) =>
+                partita.gruppoId == null ||
+                    a.gruppoId == null ||
+                    a.gruppoId == partita.gruppoId
+                ? null
+                : nomiGruppi[a.gruppoId];
             if (disponibili.isEmpty) {
               return Text(
                 'Nessun atleta di pallanuoto disponibile da convocare.',
@@ -403,6 +430,10 @@ class _DialogSelezionaAtleta extends ConsumerWidget {
                   final atleta = disponibili[index];
                   return ListTile(
                     title: Text(atleta.nomeCompleto),
+                    subtitle: switch (daAltraSquadra(atleta)) {
+                      final squadra? => Text(squadra),
+                      null => null,
+                    },
                     onTap: () async {
                       final numero = _prossimoNumeroLibero;
                       Navigator.of(context).pop();

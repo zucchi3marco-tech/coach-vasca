@@ -32,6 +32,7 @@ class PartiteAtletaListScreen extends ConsumerWidget {
   const PartiteAtletaListScreen({
     required this.clubId,
     this.filtroGruppoId,
+    this.altroGruppoId,
     this.vistaAllenatore = false,
     super.key,
   });
@@ -40,6 +41,10 @@ class PartiteAtletaListScreen extends ConsumerWidget {
 
   /// null = nessun filtro (mostra le partite di tutti i gruppi).
   final String? filtroGruppoId;
+
+  /// L'altra squadra con cui l'atleta si allena in giorni fissi: anche le
+  /// sue partite.
+  final String? altroGruppoId;
 
   /// Aperta dall'allenatore dalla scheda di un atleta: titolo non in
   /// prima persona.
@@ -119,7 +124,10 @@ class PartiteAtletaListScreen extends ConsumerWidget {
         : tuttePartite.whenData(
             (partite) => partite
                 .where(
-                  (p) => p.gruppoId == filtroGruppoId || p.gruppoId == null,
+                  (p) =>
+                      p.gruppoId == filtroGruppoId ||
+                      p.gruppoId == null ||
+                      (altroGruppoId != null && p.gruppoId == altroGruppoId),
                 )
                 .toList(),
           );

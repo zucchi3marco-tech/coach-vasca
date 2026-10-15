@@ -22,6 +22,9 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/application/personal_best_providers.dart';
 import '../../atleti/domain/personal_best.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
+import '../../gruppi/application/gruppi_providers.dart';
+import '../../gruppi/domain/gruppo.dart';
 import '../application/presenze_providers.dart';
 import '../data/presenze_repository.dart';
 import '../../../widgets/nascondi_barra_club.dart';
@@ -53,22 +56,60 @@ class PresenzeScreen extends ConsumerWidget {
       ),
       body: atletiAsync.when(
         data: (tuttiGliAtleti) {
-          // Un allenamento con gruppo assegnato mostra solo gli atleti di
-          // quel gruppo (bug: prima si vedevano — e si potevano segnare —
-          // le presenze di tutto il club); un atleta senza gruppo
-          // assegnato resta comunque visibile, non deve sparire
-          // dall'elenco.
-          final atleti = allenamento.gruppoId == null
-              ? tuttiGliAtleti
-              : tuttiGliAtleti
-                    .where(
-                      (a) =>
-                          a.gruppoId == allenamento.gruppoId ||
-                          a.gruppoId == null,
-                    )
-                    .toList();
           return presenzeAsync.when(
             data: (presenze) {
+              final conPresenza = {for (final p in presenze) p.atletaId};
+              // Un allenamento con gruppo assegnato mostra solo chi è
+              // atteso (bug: prima si vedevano — e si potevano segnare —
+              // le presenze di tutto il club): gli atleti del gruppo, tranne
+              // nei giorni in cui si allenano con un'altra squadra, e chi
+              // quel giorno viene da un'altra squadra. Un atleta senza
+              // gruppo resta visibile; chi è già segnato non sparisce (un
+              // cambio di un giorno, "Aggiungi un atleta").
+              final atleti = [
+                for (final a in tuttiGliAtleti)
+                  if (a.attesoA(allenamento.gruppoId, allenamento.data) ||
+                      conPresenza.contains(a.id))
+                    a,
+              ];
+              final altri = [
+                for (final a in tuttiGliAtleti)
+                  if (!atleti.contains(a)) a,
+              ];
+              final nomiGruppi = {
+                for (final g
+                    in ref
+                            .watch(gruppiListProvider(allenamento.clubId))
+                            .value ??
+                        const <Gruppo>[])
+                  g.id: g.nome,
+              };
+              // "da Under 14": chi quel giorno si allena con un'altra
+              // squadra, non con la sua.
+              String? daAltraSquadra(Atleta a) =>
+                  allenamento.gruppoId == null ||
+                      a.gruppoId == null ||
+                      a.gruppoId == allenamento.gruppoId
+                  ? null
+                  : 'da ${nomiGruppi[a.gruppoId] ?? "un'altra squadra"}';
+              Future<void> aggiungi() async {
+                final scelto = await showDialog<Atleta>(
+                  context: context,
+                  builder: (_) => _DialogAggiungiAtleta(
+                    atleti: altri,
+                    nomiGruppi: nomiGruppi,
+                  ),
+                );
+                if (scelto == null) return;
+                await ref
+                    .read(presenzeRepositoryProvider)
+                    .segnaPresenza(
+                      allenamentoId: allenamento.id,
+                      atletaId: scelto.id,
+                      stato: 'presente',
+                    );
+              }
+
               if (atleti.isEmpty) {
                 return EmptyState(
                   icona: Icons.groups_outlined,
@@ -144,6 +185,7 @@ class PresenzeScreen extends ConsumerWidget {
                           atleta: atleta,
                           corsia: corsie.numeroCorsia(atleta.id),
                           statoAttuale: statoPerAtleta[atleta.id],
+                          daAltraSquadra: daAltraSquadra(atleta),
                           onSelect: (nuovoStato) => ref
                               .read(presenzeRepositoryProvider)
                               .segnaPresenza(
@@ -154,6 +196,16 @@ class PresenzeScreen extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  if (altri.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.s12),
+                    // Un cambio di un giorno: oggi si allena qui un atleta
+                    // di un'altra squadra.
+                    TextButton.icon(
+                      onPressed: aggiungi,
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      label: const Text('Aggiungi un atleta'),
+                    ),
+                  ],
                 ],
               );
             },
@@ -262,6 +314,7 @@ class _RigaPresenza extends StatelessWidget {
     required this.corsia,
     required this.statoAttuale,
     required this.onSelect,
+    this.daAltraSquadra,
   });
 
   final Atleta atleta;
@@ -270,6 +323,9 @@ class _RigaPresenza extends StatelessWidget {
   final int? corsia;
   final String? statoAttuale;
   final ValueChanged<String> onSelect;
+
+  /// "da Under 14": oggi si allena con questa squadra, non con la sua.
+  final String? daAltraSquadra;
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +350,19 @@ class _RigaPresenza extends StatelessWidget {
                   style: AppTypography.corpoForte.copyWith(color: colori.testo),
                 ),
               ),
+              if (daAltraSquadra case final da?) ...[
+                const SizedBox(width: AppSpacing.s8),
+                Flexible(
+                  child: Text(
+                    da,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: AppSpacing.s12),
@@ -332,6 +401,63 @@ class _RigaPresenza extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Aggiungi un atleta": un atleta del club che oggi si allena con
+/// questa squadra (un cambio di un giorno). Segnato presente, resta
+/// nell'elenco di questo allenamento.
+class _DialogAggiungiAtleta extends StatelessWidget {
+  const _DialogAggiungiAtleta({required this.atleti, required this.nomiGruppi});
+
+  final List<Atleta> atleti;
+  final Map<String, String> nomiGruppi;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final ordinati = [...atleti]
+      ..sort((a, b) => a.nomeCompleto.compareTo(b.nomeCompleto));
+    return AlertDialog(
+      title: const Text('Aggiungi un atleta'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Oggi si allena con questa squadra: lo segni presente qui.',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: ordinati.length,
+                itemBuilder: (context, i) {
+                  final a = ordinati[i];
+                  return ListTile(
+                    title: Text(a.nomeCompleto),
+                    subtitle: a.gruppoId == null
+                        ? null
+                        : Text(nomiGruppi[a.gruppoId] ?? ''),
+                    onTap: () => Navigator.of(context).pop(a),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+      ],
     );
   }
 }

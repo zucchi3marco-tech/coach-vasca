@@ -46,6 +46,11 @@ class AtletiTable extends Table {
   /// 'esterno'; null se non indicato (conta come movimento).
   TextColumn get ruolo => text().nullable()();
 
+  /// L'altra squadra con cui si allena in giorni fissi, e i giorni (1 =
+  /// lunedì … 7 = domenica, separati da virgole: "2,4").
+  TextColumn get altroGruppoId => text().nullable()();
+  TextColumn get giorniAltroGruppo => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -62,6 +62,9 @@ Atleta _atletaDaRiga(AtletiTableData r) => Atleta.fromMap({
   'numero_tessera_fin': r.numeroTesseraFin,
   'user_id': r.userId,
   'visita_medica_scadenza': r.visitaMedicaScadenza?.toIso8601String(),
+  'ruolo': r.ruolo,
+  'altro_gruppo_id': r.altroGruppoId,
+  'giorni_altro_gruppo': r.giorniAltroGruppo,
 });
 
 /// Se nessun atleta e' collegato a [userId] (database demo ricreato),

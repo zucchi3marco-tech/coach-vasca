@@ -2,11 +2,11 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/database_provider.dart';
-import '../../../core/utils/gruppo_visibilita.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../presenze/application/presenze_providers.dart';
@@ -47,13 +47,10 @@ final prossimaPartitaAtletaProvider = Provider.autoDispose
       final inizio = DateTime(oggi.year, oggi.month, oggi.day);
       final future =
           partite
+              // Anche quelle dell'altra squadra con cui si allena.
               .where(
                 (p) =>
-                    !p.data.isBefore(inizio) &&
-                    visibileNelGruppo(
-                      gruppoDelRecord: p.gruppoId,
-                      gruppoSelezionato: atleta.gruppoId,
-                    ),
+                    !p.data.isBefore(inizio) && atleta.vedeGruppo(p.gruppoId),
               )
               .toList()
             ..sort((a, b) => a.data.compareTo(b.data));
@@ -76,12 +73,12 @@ final riepilogoAllenamentiAtletaProvider = Provider.autoDispose
           .value;
       final presenze = ref.watch(presenzePerAtletaProvider(atleta.id)).value;
       if (allenamenti == null) return null;
+      // Quelli in cui è atteso: della sua squadra, e dell'altra nei giorni
+      // in cui si allena con lei; più quelli in cui è stato segnato.
+      final segnati = {for (final p in presenze ?? const []) p.allenamentoId};
       final rilevanti = allenamenti
           .where(
-            (a) => visibileNelGruppo(
-              gruppoDelRecord: a.gruppoId,
-              gruppoSelezionato: atleta.gruppoId,
-            ),
+            (a) => atleta.attesoA(a.gruppoId, a.data) || segnati.contains(a.id),
           )
           .toList();
       final adesso = DateTime.now();
@@ -97,7 +94,7 @@ final riepilogoAllenamentiAtletaProvider = Provider.autoDispose
                 )
                 .length;
       return (
-        prossimo: prossimoAllenamento(rilevanti, atleta.gruppoId),
+        prossimo: prossimoAllenamento(rilevanti, null),
         percentualePresenze: passati.isEmpty || presenze == null
             ? null
             : (presente / passati.length * 100).round(),

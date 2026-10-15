@@ -5,13 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/giorni.dart';
-import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../presenze/application/presenze_providers.dart';
 import '../application/carico_providers.dart';
@@ -47,22 +47,25 @@ final seduteDaValutareProvider = Provider.autoDispose
         _ => 'di ${dataEstesa(d)}',
       };
 
+      final presenzeAtleta =
+          ref.watch(presenzePerAtletaProvider(atleta.id)).value ?? const [];
       final assenti = {
-        for (final p
-            in ref.watch(presenzePerAtletaProvider(atleta.id)).value ??
-                const [])
+        for (final p in presenzeAtleta)
           if (p.stato != 'presente') p.allenamentoId,
+      };
+      final presenti = {
+        for (final p in presenzeAtleta)
+          if (p.stato == 'presente') p.allenamentoId,
       };
       final sedute = <SedutaDaValutare>[
         for (final a
             in ref.watch(allenamentiAtletaProvider(atleta.clubId)).value ??
                 const [])
+          // Quelle a cui era atteso (anche con l'altra squadra, nei suoi
+          // giorni) o in cui è segnato presente.
           if (recente(a.data) &&
               !assenti.contains(a.id) &&
-              visibileNelGruppo(
-                gruppoDelRecord: a.gruppoId,
-                gruppoSelezionato: atleta.gruppoId,
-              ))
+              (atleta.attesoA(a.gruppoId, a.data) || presenti.contains(a.id)))
             (
               tipo: 'allenamento',
               id: a.id,
@@ -77,11 +80,8 @@ final seduteDaValutareProvider = Provider.autoDispose
         for (final p
             in ref.watch(partiteListProvider(atleta.clubId)).value ??
                 const []) {
-          if (!recente(p.data) ||
-              !visibileNelGruppo(
-                gruppoDelRecord: p.gruppoId,
-                gruppoSelezionato: atleta.gruppoId,
-              )) {
+          // Anche le partite dell'altra squadra con cui si allena.
+          if (!recente(p.data) || !atleta.vedeGruppo(p.gruppoId)) {
             continue;
           }
           // Una partita di oggi che non è ancora cominciata.

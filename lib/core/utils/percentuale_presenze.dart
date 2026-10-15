@@ -12,11 +12,17 @@ import 'gruppo_visibilita.dart';
 /// segnata): quelli programmati nelle settimane successive non sono
 /// assenze, e contarli faceva crollare la percentuale a chi pianifica in
 /// anticipo.
+///
+/// Con [atteso] contano gli allenamenti in cui l'atleta era atteso
+/// (`SquadreAtleta.attesoA`: chi si allena certi giorni con un'altra
+/// squadra) invece di quelli del suo gruppo; in ogni caso anche quelli in
+/// cui è stato segnato (un cambio di un giorno).
 double? percentualePresenze({
   required List<Allenamento> allenamenti,
   required List<Presenza> presenze,
   required String atletaId,
   required String? gruppoAtleta,
+  bool Function(Allenamento a)? atteso,
   DateTime? adesso,
 }) {
   final ora = adesso ?? DateTime.now();
@@ -27,11 +33,13 @@ double? percentualePresenze({
   final rilevanti = allenamenti
       .where(
         (a) =>
-            (a.data.isBefore(ora) || conPresenza.contains(a.id)) &&
-            visibileNelGruppo(
-              gruppoDelRecord: a.gruppoId,
-              gruppoSelezionato: gruppoAtleta,
-            ),
+            conPresenza.contains(a.id) ||
+            (a.data.isBefore(ora) &&
+                (atteso?.call(a) ??
+                    visibileNelGruppo(
+                      gruppoDelRecord: a.gruppoId,
+                      gruppoSelezionato: gruppoAtleta,
+                    ))),
       )
       .toList();
   if (rilevanti.isEmpty) return null;

@@ -36,7 +36,11 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 13;
+const _versioneDati = 14;
+
+/// Gli atleti (per posizione) che il martedì e il giovedì si allenano con
+/// la prima squadra: Rossi e Bianchi, l'atleta della demo.
+const _conLaPrima = {1, 3};
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -258,6 +262,16 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                         5 => 'marcatore',
                         _ => null,
                       },
+              ),
+              // Rossi e Bianchi (l'atleta della demo) il martedì e il
+              // giovedì si allenano con la prima squadra.
+              altroGruppoId: Value(
+                sport == 'pallanuoto' && _conLaPrima.contains(i)
+                    ? gruppi[1]
+                    : null,
+              ),
+              giorniAltroGruppo: Value(
+                sport == 'pallanuoto' && _conLaPrima.contains(i) ? '2,4' : null,
               ),
               consensoPrivacyFirmato: Value(i % 4 != 0),
               consensoPrivacyData: Value(
@@ -586,6 +600,13 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
       }
       if (data.isBefore(oggi)) {
         for (var a = 0; a < atleti.length; a++) {
+          // Il martedì e il giovedì Rossi e Bianchi sono con la prima
+          // squadra: qui non sono attesi.
+          if (sport == 'pallanuoto' &&
+              _conLaPrima.contains(a) &&
+              const {2, 4}.contains(data.weekday)) {
+            continue;
+          }
           final stato = (a + d) % 5 == 0
               ? 'assente'
               : (a + d) % 7 == 0
@@ -602,6 +623,77 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   stato: stato,
                 ),
               );
+        }
+      }
+    }
+
+    if (sport == 'pallanuoto') {
+      // La prima squadra si allena il martedì e il giovedì alle 20, fino
+      // a Natale: Rossi e Bianchi vengono dall'Under 14 (altra squadra in
+      // giorni fissi, 2026-10-15). Le presenze solo le loro.
+      const titoliPrima = [
+        'Superiorità e tiri da fuori',
+        'Contropiede e difesa a zona',
+      ];
+      var n = 0;
+      for (
+        var g = DateTime(2026, 9, 1);
+        g.isBefore(DateTime(2026, 12, 23));
+        g = aggiungiGiorni(g, 1)
+      ) {
+        if (!const {2, 4}.contains(g.weekday)) continue;
+        final data = DateTime(g.year, g.month, g.day, 20);
+        final allenamentoId = uuid.v4();
+        await db
+            .into(db.allenamentiTable)
+            .insert(
+              AllenamentiTableCompanion.insert(
+                id: allenamentoId,
+                clubId: clubId,
+                data: data,
+                titolo: Value(titoliPrima[n++ % titoliPrima.length]),
+                gruppoId: Value(gruppi[1]),
+              ),
+            );
+        for (final (i, (blocco, rip, dist, dur, esec, zona)) in [
+          ('riscaldamento', 1, 800, null, 'nuoto', 'A1'),
+          ('principale', 4, null, 360, 'gioco da schierati', null),
+          ('principale', 3, null, 300, 'tiri', null),
+          ('defaticamento', 1, 300, null, 'nuoto', 'A1'),
+        ].indexed) {
+          await db
+              .into(db.serieTable)
+              .insert(
+                SerieTableCompanion.insert(
+                  id: uuid.v4(),
+                  allenamentoId: allenamentoId,
+                  clubId: clubId,
+                  ordine: i + 1,
+                  blocco: blocco,
+                  ripetute: rip,
+                  distanzaM: Value(dist),
+                  durataS: Value(dur),
+                  stile: 'libero',
+                  esecuzione: esec,
+                  zona: Value(zona),
+                  recuperoS: const Value(30),
+                ),
+              );
+        }
+        if (data.isBefore(oggi)) {
+          for (final a in _conLaPrima) {
+            await db
+                .into(db.presenzeTable)
+                .insert(
+                  PresenzeTableCompanion.insert(
+                    id: uuid.v4(),
+                    allenamentoId: allenamentoId,
+                    atletaId: atleti[a],
+                    clubId: clubId,
+                    stato: (n + a) % 6 == 0 ? 'assente' : 'presente',
+                  ),
+                );
+          }
         }
       }
     }

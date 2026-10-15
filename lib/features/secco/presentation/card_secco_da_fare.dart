@@ -12,6 +12,7 @@ import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../presenze/application/presenze_providers.dart';
 import '../application/secco_providers.dart';
@@ -35,6 +36,10 @@ List<({Allenamento seduta, int serieFatte})> seduteSeccoDaFare({
   required List<SerieFatta> fatte,
   required String? prossimoId,
   required DateTime oggi,
+
+  /// Le sedute a cui l'atleta è atteso (anche con l'altra squadra, nei
+  /// suoi giorni): al posto di quelle del suo gruppo.
+  bool Function(Allenamento a)? atteso,
 }) {
   final giorno = soloData(oggi);
   final dal = aggiungiGiorni(giorno, -giorniPerFinireSecco);
@@ -51,10 +56,11 @@ List<({Allenamento seduta, int serieFatte})> seduteSeccoDaFare({
           !soloData(a.data).isAfter(giorno) &&
           !soloData(a.data).isBefore(dal) &&
           (soloData(a.data) == giorno || (perSeduta[a.id] ?? 0) > 0) &&
-          visibileNelGruppo(
-            gruppoDelRecord: a.gruppoId,
-            gruppoSelezionato: gruppoAtleta,
-          ))
+          (atteso?.call(a) ??
+              visibileNelGruppo(
+                gruppoDelRecord: a.gruppoId,
+                gruppoSelezionato: gruppoAtleta,
+              )))
         (seduta: a, serieFatte: perSeduta[a.id] ?? 0),
   ]..sort((x, y) => y.seduta.data.compareTo(x.seduta.data));
   return sedute;
@@ -76,9 +82,11 @@ class CardSeccoDaFare extends ConsumerWidget {
         ref.watch(allenamentiAtletaProvider(atleta.clubId)).value ??
         const <Allenamento>[];
     final oggi = DateTime.now();
+    bool atteso(Allenamento a) => atleta.attesoA(a.gruppoId, a.data);
     final sedute = seduteSeccoDaFare(
       allenamenti: allenamenti,
       gruppoAtleta: atleta.gruppoId,
+      atteso: atteso,
       assenti: {
         for (final p
             in ref.watch(presenzePerAtletaProvider(atleta.id)).value ??
@@ -91,7 +99,10 @@ class CardSeccoDaFare extends ConsumerWidget {
           if (r.eventoTipo == 'allenamento') r.eventoId,
       },
       fatte: ref.watch(serieFatteAtletaProvider(atleta.id)).value ?? const [],
-      prossimoId: prossimoAllenamento(allenamenti, atleta.gruppoId)?.id,
+      prossimoId: prossimoAllenamento([
+        for (final a in allenamenti)
+          if (atteso(a)) a,
+      ], null)?.id,
       oggi: oggi,
     );
     if (sedute.isEmpty) return const SizedBox.shrink();

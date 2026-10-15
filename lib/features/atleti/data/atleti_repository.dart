@@ -15,6 +15,10 @@ import '../domain/atleta.dart';
 
 const _uuid = Uuid();
 
+/// Gli stessi giorni della settimana, in qualsiasi ordine.
+bool _stessiGiorni(List<int> a, List<int> b) =>
+    a.toSet().length == b.toSet().length && a.toSet().containsAll(b);
+
 class AtletiRepository {
   AtletiRepository(this._client, this._db, this._syncEngine);
 
@@ -42,6 +46,8 @@ class AtletiRepository {
       userId: row.userId,
       visitaMedicaScadenza: row.visitaMedicaScadenza,
       ruolo: row.ruolo,
+      altroGruppoId: row.altroGruppoId,
+      giorniAltroGruppo: Atleta.leggiGiorni(row.giorniAltroGruppo),
     );
   }
 
@@ -108,6 +114,10 @@ class AtletiRepository {
             : DateTime.parse(map['visita_medica_scadenza'] as String),
       ),
       ruolo: Value(map['ruolo'] as String?),
+      altroGruppoId: Value(map['altro_gruppo_id'] as String?),
+      giorniAltroGruppo: Value(
+        Atleta.scriviGiorni(Atleta.leggiGiorni(map['giorni_altro_gruppo'])),
+      ),
     );
   }
 
@@ -164,6 +174,8 @@ class AtletiRepository {
     String? numeroTesseraFin,
     DateTime? visitaMedicaScadenza,
     String? ruolo,
+    String? altroGruppoId,
+    List<int> giorniAltroGruppo = const [],
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -188,6 +200,11 @@ class AtletiRepository {
       if (visitaMedicaScadenza != null)
         'visita_medica_scadenza': formatDateOnly(visitaMedicaScadenza),
       'ruolo': ?ruolo,
+      if (altroGruppoId != null) ...{
+        'altro_gruppo_id': altroGruppoId,
+        if (giorniAltroGruppo.isNotEmpty)
+          'giorni_altro_gruppo': giorniAltroGruppo,
+      },
     };
     try {
       final row = await _client
@@ -231,8 +248,13 @@ class AtletiRepository {
     String? numeroTesseraFin,
     DateTime? visitaMedicaScadenza,
     String? ruolo,
+    String? altroGruppoId,
+    List<int> giorniAltroGruppo = const [],
   }) async {
     final id = originale.id;
+    // Senza altra squadra non restano giorni (come nel database).
+    final giorni = altroGruppoId == null ? const <int>[] : giorniAltroGruppo;
+    final giorniCambiati = !_stessiGiorni(giorni, originale.giorniAltroGruppo);
     final nuovaConsensoData = consensoPrivacyFirmato
         ? (consensoPrivacyData ??
               originale.consensoPrivacyData ??
@@ -265,6 +287,9 @@ class AtletiRepository {
             ? null
             : formatDateOnly(visitaMedicaScadenza),
       if (ruolo != originale.ruolo) 'ruolo': ruolo,
+      if (altroGruppoId != originale.altroGruppoId)
+        'altro_gruppo_id': altroGruppoId,
+      if (giorniCambiati) 'giorni_altro_gruppo': giorni.isEmpty ? null : giorni,
     };
     if (payload.isEmpty) return originale;
 
@@ -322,6 +347,12 @@ class AtletiRepository {
               : const Value.absent(),
           ruolo: payload.containsKey('ruolo')
               ? Value(ruolo)
+              : const Value.absent(),
+          altroGruppoId: payload.containsKey('altro_gruppo_id')
+              ? Value(altroGruppoId)
+              : const Value.absent(),
+          giorniAltroGruppo: giorniCambiati
+              ? Value(Atleta.scriviGiorni(giorni))
               : const Value.absent(),
         ),
       );

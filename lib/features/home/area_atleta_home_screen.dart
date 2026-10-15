@@ -9,6 +9,7 @@ import '../../theme/tokens_dominio.dart';
 import '../../widgets/section_header.dart';
 import '../atleti/application/personal_best_providers.dart';
 import '../atleti/domain/atleta.dart';
+import '../atleti/domain/squadre_atleta.dart';
 import '../atleti/presentation/atleta_form_screen.dart';
 import '../atleti/presentation/pb_list_screen.dart';
 import '../carico/application/carico_providers.dart';
@@ -28,6 +29,7 @@ import '../benessere/presentation/card_benessere.dart';
 import '../benessere/presentation/scheda_benessere_screen.dart';
 import '../pallanuoto/domain/convocazione.dart';
 import '../pallanuoto/domain/partita.dart';
+import 'atleta/allenamenti_squadre_screen.dart';
 import 'atleta/dati_home_atleta.dart';
 import 'atleta/grafica_pallanuoto.dart';
 import 'atleta/home_atleta_widgets.dart';
@@ -222,6 +224,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             PartiteAtletaListScreen(
               clubId: atleta.clubId,
               filtroGruppoId: atleta.gruppoId,
+              altroGruppoId: atleta.altroGruppoId,
               vistaAllenatore: vistaAllenatore,
             ),
           ),
@@ -248,6 +251,24 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, PbListScreen(atleta: atleta)),
       ),
+      // Chi si allena anche con un'altra squadra vede gli allenamenti di
+      // tutte e due, con i suoi segnati.
+      if (atleta.conAltraSquadra)
+        VoceRiquadro(
+          soggetto: SoggettoRiquadro.stagione,
+          titolo: 'Allenamenti',
+          descrizione: vistaAllenatore
+              ? 'Delle sue due squadre, i suoi segnati'
+              : 'Delle tue due squadre, i tuoi segnati',
+          accento: dominio.evidenzaCiano,
+          onTap: () => _apri(
+            context,
+            AllenamentiSquadreScreen(
+              atleta: atleta,
+              vistaAllenatore: vistaAllenatore,
+            ),
+          ),
+        ),
       VoceRiquadro(
         soggetto: SoggettoRiquadro.presenze,
         titolo: titolo('Le mie presenze', 'Presenze'),
@@ -297,6 +318,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                         PartiteAtletaListScreen(
                           clubId: atleta.clubId,
                           filtroGruppoId: atleta.gruppoId,
+                          altroGruppoId: atleta.altroGruppoId,
                         ),
                       ),
                     ),

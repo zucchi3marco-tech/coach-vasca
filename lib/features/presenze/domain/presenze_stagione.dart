@@ -1,6 +1,7 @@
 import '../../../core/utils/gruppo_visibilita.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import 'presenza.dart';
 
 /// Come risulta un atleta a un allenamento, nella griglia delle presenze.
@@ -115,10 +116,10 @@ PresenzeStagione presenzeStagione({
   for (final atleta in atleti) {
     final stati = [
       for (final a in delPeriodo)
-        if (!visibileNelGruppo(
-          gruppoDelRecord: a.gruppoId,
-          gruppoSelezionato: atleta.gruppoId,
-        ))
+        // Suo se era atteso (anche con l'altra squadra, nei suoi giorni)
+        // o se è stato segnato (un cambio di un giorno).
+        if (!atleta.attesoA(a.gruppoId, a.data) &&
+            !statoPer.containsKey((atleta.id, a.id)))
           StatoPresenza.nonSuo
         else
           switch (statoPer[(atleta.id, a.id)]) {
