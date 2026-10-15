@@ -112,7 +112,7 @@ as $$
 $$;
 
 revoke execute on function public.serie_fatta_da(public.serie, uuid, text)
-  from public;
+  from public, anon, authenticated;
 
 -- L'atleta che apre il prossimo allenamento vede solo le serie che fa.
 -- Il tipo di ritorno non cambia.
