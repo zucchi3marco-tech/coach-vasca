@@ -151,6 +151,7 @@ class _ScriviAllenamentoScreenState
           piramide: (id: a.piramideId),
           recuperoDopo: (secondi: s.recuperoDopoS),
           destinatari: s.destinatari,
+          momento: (id: a.momentoId),
         );
       }
       for (final c in piano.crea) {
@@ -173,6 +174,7 @@ class _ScriviAllenamentoScreenState
           piramideId: c.piramideId,
           recuperoDopoS: s.recuperoDopoS,
           destinatari: s.destinatari,
+          momentoId: c.momentoId,
         );
       }
       for (final s in piano.elimina) {

@@ -25,7 +25,8 @@ class DuplicazioneSettimanaService {
   /// Copia un allenamento con tutte le sue serie in [data], per
   /// [gruppoId] — anche un'altra squadra ("Duplica" nel dettaglio,
   /// richiesta del coach 2026-10-08). Le piramidi e i "2x" restano
-  /// gruppi, con un `piramideId` nuovo; l'esito (fatta/saltata) no.
+  /// gruppi, con un `piramideId` nuovo, e i momenti in parallelo lo
+  /// stesso; l'esito (fatta/saltata) no.
   /// Per un'altra squadra le serie restano dei portieri o del movimento,
   /// ma non di alcuni atleti: quelle solo per loro non si copiano, e chi
   /// era escluso da una serie qui la fa.
@@ -59,6 +60,7 @@ class DuplicazioneSettimanaService {
         if (stessaSquadra || s.destinatari.soloAtleti.isEmpty) s,
     ];
     final gruppi = <String, String>{};
+    final momenti = <String, String>{};
     await Future.wait([
       for (final (i, s) in serie.indexed)
         _serie.createSerie(
@@ -83,6 +85,9 @@ class DuplicazioneSettimanaService {
           destinatari: stessaSquadra
               ? s.destinatari
               : Destinatari(ruolo: s.destinatari.ruolo),
+          momentoId: s.momentoId == null
+              ? null
+              : momenti.putIfAbsent(s.momentoId!, () => const Uuid().v4()),
         ),
     ]);
     return nuovo;

@@ -12,7 +12,9 @@ import '../domain/destinatari.dart';
 import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/testo_allenamento.dart';
+import '../domain/volume_allenamento.dart' show serieDelGruppo;
 import 'grafico_intensita.dart';
+import 'momento_parallelo.dart';
 import 'nota_serie.dart';
 import 'per_chi_serie.dart';
 import 'riepilogo_volumi.dart';
@@ -394,6 +396,7 @@ class EditorTestoAllenamentoState extends State<EditorTestoAllenamento> {
       scritto: scritto,
       volumi: volumi,
       atleti: widget.atleti,
+      riferimento: widget.riferimento,
     );
 
     return LayoutBuilder(
@@ -442,7 +445,12 @@ class _Andamento extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GraficoIntensita(serie: scritto.serie, riferimento: riferimento),
+          // La forma della seduta del gruppo, come nel dettaglio: il lavoro
+          // in parallelo dei portieri non si mette in fila.
+          GraficoIntensita(
+            serie: serieDelGruppo(scritto.serie),
+            riferimento: riferimento,
+          ),
           const SizedBox(height: AppSpacing.s8),
           Text(
             riferimento == null
@@ -476,9 +484,15 @@ String _testoRecupero(int secondi) =>
 /// "Da qui le serie sono per: Portieri", per una riga "per chi".
 String _testoPerChi(Destinatari d, List<Atleta> atleti) {
   final chi = labelPerChi(d, atleti);
-  return chi == null
-      ? 'Da qui le serie sono per tutti'
-      : 'Da qui le serie sono per: $chi';
+  if (d.base) {
+    return chi == null
+        ? 'Da qui le serie sono per tutti: si riparte insieme, fino al '
+              'prossimo titolo'
+        : 'Da qui le serie sono per: $chi. Si riparte insieme, fino al '
+              'prossimo titolo';
+  }
+  return 'Da qui le serie sono per: $chi, in parallelo con quelle di tutti '
+      'sopra, fino a "Tutti" o al prossimo titolo';
 }
 
 /// "8×100m Libero · B1 · rip 1:30" per la riga sotto il cursore.
@@ -494,9 +508,7 @@ String _comeCapita(
   TipoRiga.recupero => _testoRecupero(riga.recuperoS!),
   TipoRiga.giri =>
     'Ripete ${riga.giri} volte le righe sotto, fino alla prima riga vuota',
-  TipoRiga.destinatari =>
-    '${_testoPerChi(riga.destinatari!, atleti)}, fino '
-        'al prossimo titolo',
+  TipoRiga.destinatari => _testoPerChi(riga.destinatari!, atleti),
   TipoRiga.errore => riga.problema!,
   TipoRiga.serie => [
     ?labelPerChi(riga.serie.first.destinatari, atleti),
@@ -508,25 +520,62 @@ String _comeCapita(
   ].join(' · '),
 };
 
+/// Il momento in parallelo di cui fa parte la riga [i]: quello della sua
+/// serie; per un "per chi" o un "2x" quello della prima serie sotto, per
+/// un recupero quello della serie sopra (fino a un titolo). null fuori
+/// dai momenti.
+String? _momentoDellaRiga(List<RigaScritta> righe, int i) {
+  final riga = righe[i];
+  switch (riga.tipo) {
+    case TipoRiga.serie:
+      return riga.serie.first.momentoId;
+    case TipoRiga.destinatari || TipoRiga.giri:
+      for (var j = i + 1; j < righe.length; j++) {
+        if (righe[j].tipo == TipoRiga.titolo) return null;
+        if (righe[j].tipo == TipoRiga.serie) {
+          return righe[j].serie.first.momentoId;
+        }
+      }
+      return null;
+    case TipoRiga.recupero:
+      for (var j = i - 1; j >= 0; j--) {
+        if (righe[j].tipo == TipoRiga.titolo) return null;
+        if (righe[j].tipo == TipoRiga.serie) {
+          return righe[j].serie.first.momentoId;
+        }
+      }
+      return null;
+    case TipoRiga.vuota || TipoRiga.titolo || TipoRiga.errore:
+      return null;
+  }
+}
+
 /// Come è stato capito il testo, riga per riga: i titoli dei blocchi, i
-/// "2x" con le serie che ripetono, le righe non capite in rosso.
+/// "2x" con le serie che ripetono, le righe non capite in rosso. Un
+/// momento in parallelo si vede a colonne, con i minuti di ognuna.
 class _Anteprima extends StatelessWidget {
   const _Anteprima({
     required this.scritto,
     required this.volumi,
     required this.atleti,
+    required this.riferimento,
   });
 
   final AllenamentoScritto scritto;
   final Map<int, VolumeBlocco> volumi;
   final List<Atleta> atleti;
+  final PassoRiferimento? riferimento;
 
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
-    final righe = [
+    final mostrati = <String>{};
+    final righe = <({int indice, RigaScritta riga, String? momento})>[
       for (final (i, r) in scritto.righe.indexed)
-        if (r.tipo != TipoRiga.vuota) (indice: i, riga: r),
+        if (r.tipo != TipoRiga.vuota)
+          if (_momentoDellaRiga(scritto.righe, i) case final m
+              when m == null || mostrati.add(m))
+            (indice: i, riga: r, momento: m),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -549,13 +598,65 @@ class _Anteprima extends StatelessWidget {
           if (volumi[r.indice] case final volume?
               when r.riga.tipo != TipoRiga.titolo)
             _TitoloBlocco(blocco: r.riga.blocco!, volume: volume),
-          _RigaAnteprima(
-            riga: r.riga,
-            volume: volumi[r.indice],
-            atleti: atleti,
-          ),
+          if (r.momento case final m?)
+            _MomentoAnteprima(
+              serie: [
+                for (final s in scritto.serie)
+                  if (s.momentoId == m) s,
+              ],
+              atleti: atleti,
+              riferimento: riferimento,
+            )
+          else
+            _RigaAnteprima(
+              riga: r.riga,
+              volume: volumi[r.indice],
+              atleti: atleti,
+            ),
         ],
       ],
+    );
+  }
+}
+
+/// Un momento in parallelo nell'anteprima: le colonne affiancate, con i
+/// minuti di ognuna e quanto prima finisce chi ha meno lavoro.
+class _MomentoAnteprima extends StatelessWidget {
+  const _MomentoAnteprima({
+    required this.serie,
+    required this.atleti,
+    required this.riferimento,
+  });
+
+  final List<SerieScritta> serie;
+  final List<Atleta> atleti;
+  final PassoRiferimento? riferimento;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final colonne = colonneConTempo(serie, riferimento: riferimento);
+    final minuti = colonne.fold(0, (a, c) => c.minuti > a ? c.minuti : a);
+    return Container(
+      margin: const EdgeInsets.only(top: AppSpacing.s8),
+      padding: const EdgeInsets.all(AppSpacing.s12),
+      decoration: BoxDecoration(
+        color: colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border.all(color: colori.linea),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TestaMomento(minuti: minuti),
+          const SizedBox(height: AppSpacing.s8),
+          ColonneMomento<SerieScritta>(
+            serie: serie,
+            nome: (d) => labelPerChi(d, atleti) ?? 'Tutti',
+            riferimento: riferimento,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -808,6 +909,16 @@ void mostraAiutoScrittura(BuildContext context) {
           'Portieri  Movimento  Tutti',
           'da soli su una riga: per chi sono le serie sotto, fino al '
               'prossimo titolo',
+        ),
+        (
+          'Centroboa  Marcatori  Esterni',
+          'come "Portieri", per i ruoli scritti nella scheda dell\'atleta',
+        ),
+        (
+          "8x100 A2\nPortieri\n20' parate\nTutti",
+          'in parallelo: mentre gli altri fanno le righe sopra, i portieri '
+              'fanno le loro; da "Tutti" (o dal prossimo titolo) si riparte '
+              'insieme',
         ),
         (
           'Rossi, Bianchi',

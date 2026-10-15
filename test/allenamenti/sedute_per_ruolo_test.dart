@@ -55,6 +55,7 @@ List<Serie> _salvate(List<SerieScritta> scritte) => [
       piramideId: s.piramideId,
       recuperoDopoS: s.recuperoDopoS,
       destinatari: s.destinatari,
+      momentoId: s.momentoId,
     ),
 ];
 
@@ -329,8 +330,11 @@ void main() {
         nuove: _leggi('400 sl\nPortieri: 200 gambe').serie,
         nuovoId: () => 'nuovo',
       );
-      expect(piano.aggiorna.single.vecchia.id, 's1');
-      expect(piano.aggiorna.single.nuova.destinatari, Destinatari.portieri);
+      // Le due serie ora vanno in parallelo: tutte e due entrano nello
+      // stesso momento, e la seconda è dei portieri.
+      expect(piano.aggiorna.map((a) => a.vecchia.id), ['s0', 's1']);
+      expect(piano.aggiorna.last.nuova.destinatari, Destinatari.portieri);
+      expect(piano.aggiorna.map((a) => a.momentoId).toSet(), {'nuovo'});
       expect(piano.crea, isEmpty);
     });
   });
@@ -379,6 +383,9 @@ void main() {
           '4x50 sl\n'
           '4x50 braccia do\n'
           '\n'
+          // In un altro blocco: non in parallelo (per quello vedi
+          // `lavori_in_parallelo_test.dart`).
+          "Altro\n"
           "Portieri: 10' tiri",
         ).serie,
       );
@@ -448,6 +455,22 @@ void main() {
 
   group('volume e durata', () {
     test('la seduta dura quanto il più lungo fra portieri e movimento', () {
+      // In blocchi diversi: una serie dopo l'altra, come prima dei lavori
+      // in parallelo.
+      final serie = _salvate(
+        _leggi(
+          "10' sl\n"
+          "Altro\nPortieri: 30' tiri\n"
+          "Defaticamento\nMovimento: 20' tiri\n"
+          "Riscaldamento\nBianchi: 60' gambe",
+        ).serie,
+      );
+      expect(minutiSeduta(serie), 40);
+      expect(volumiPerAllenamento(serie)['a1']!.secondi, 30 * 60);
+      expect(volumeDi(serieDeiPortieri(serie)).secondi, 40 * 60);
+    });
+
+    test('in parallelo dura quanto la colonna più lunga', () {
       final serie = _salvate(
         _leggi(
           "10' sl\n"
@@ -456,9 +479,10 @@ void main() {
           "Bianchi: 60' gambe",
         ).serie,
       );
-      expect(minutiSeduta(serie), 40);
-      expect(volumiPerAllenamento(serie)['a1']!.secondi, 30 * 60);
-      expect(volumeDi(serieDeiPortieri(serie)).secondi, 40 * 60);
+      expect(minutiSeduta(serie), 60);
+      // Il gruppo fa la colonna "movimento", i portieri la loro.
+      expect(volumiPerAllenamento(serie)['a1']!.secondi, 20 * 60);
+      expect(volumeDi(serieDeiPortieri(serie)).secondi, 30 * 60);
     });
 
     test('il carico di ognuno conta solo le sue serie', () {
@@ -484,9 +508,10 @@ void main() {
             ruolo: ruolo,
             oggi: DateTime(2026, 10, 2),
           );
+      // Le tre righe vanno in parallelo: ognuno ha la sua colonna.
       expect(sedute('rm', null).single.minuti, 30);
-      expect(sedute('ve', 'portiere').single.minuti, 60);
-      expect(sedute('bi', null).single.minuti, 90);
+      expect(sedute('ve', 'portiere').single.minuti, 30);
+      expect(sedute('bi', null).single.minuti, 60);
     });
 
     test('i volumi dell\'atleta contano solo le sue serie', () {

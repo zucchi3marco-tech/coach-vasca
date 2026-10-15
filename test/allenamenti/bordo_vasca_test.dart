@@ -263,4 +263,42 @@ void main() {
 
     await _chiudi(tester, repository);
   });
+
+  testWidgets('un lavoro in parallelo si vede a colonne, anche tutto', (
+    tester,
+  ) async {
+    Serie nelMomento(int ordine, Destinatari d, String esecuzione) => Serie(
+      id: 's$ordine',
+      allenamentoId: 'a1',
+      clubId: 'c1',
+      ordine: ordine,
+      blocco: 'principale',
+      ripetute: 3,
+      durataS: 360,
+      stile: 'libero',
+      esecuzione: esecuzione,
+      destinatari: d,
+      momentoId: 'm1',
+    );
+    final repository = _SerieFinta([
+      nelMomento(1, Destinatari.tutti, 'partita'),
+      nelMomento(2, Destinatari.portieri, 'tiri'),
+      _serie(3),
+    ]);
+    await _apri(tester, repository);
+    expect(tester.takeException(), isNull);
+    // Sotto la serie in corso, le colonne del momento.
+    expect(find.text("In parallelo · 18'"), findsOneWidget);
+    expect(find.text('Portieri'), findsOneWidget);
+    expect(find.text("6' in meno"), findsNothing);
+
+    await tester.tap(find.byTooltip('Mostra tutte le serie'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // Una scheda sola per il momento, poi la serie normale.
+    expect(find.text("In parallelo · 18'"), findsOneWidget);
+    expect(find.text('4×100m Libero Nuoto'), findsOneWidget);
+
+    await _chiudi(tester, repository);
+  });
 }

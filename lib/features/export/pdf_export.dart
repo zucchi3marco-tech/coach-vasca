@@ -4,7 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../allenamenti/domain/serie.dart';
 import '../allenamenti/presentation/serie_labels.dart';
-import 'csv_export.dart' show AllenamentoConSerie, testoPerChi;
+import 'csv_export.dart' show AllenamentoConSerie, numeriMomenti, testoPerChi;
 
 String _formattaData(DateTime data) =>
     '${data.day.toString().padLeft(2, '0')}/'
@@ -23,8 +23,16 @@ Future<Uint8List> generaPdf(
 
   for (final (allenamento, serie) in allenamenti) {
     final nomeGruppo = nomiGruppi[allenamento.gruppoId];
-    // La colonna "Per chi" solo se qualche serie non è di tutti.
+    // La colonna "Per chi" solo se qualche serie non è di tutti. Nei
+    // momenti in parallelo dice anche con chi va insieme ("Portieri ·
+    // insieme 1": le serie con lo stesso numero si fanno nello stesso
+    // tempo).
+    final momenti = numeriMomenti(serie);
     final perChi = serie.any((s) => !s.destinatari.perTutti);
+    String colonnaPerChi(Serie s) => [
+      testoPerChi(s.destinatari, nomiAtleti) ?? 'Tutti',
+      if (momenti[s.momentoId] case final n?) 'insieme $n',
+    ].join(' · ');
     doc.addPage(
       pw.MultiPage(
         build: (context) => [
@@ -60,7 +68,7 @@ Future<Uint8List> generaPdf(
               for (final s in serie)
                 [
                   ..._rigaTabella(s).take(6),
-                  if (perChi) testoPerChi(s.destinatari, nomiAtleti) ?? 'Tutti',
+                  if (perChi) colonnaPerChi(s),
                   ..._rigaTabella(s).skip(6),
                 ],
             ],

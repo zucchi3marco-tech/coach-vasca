@@ -3,7 +3,33 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 /// I ruoli di pallanuoto nella scheda dell'atleta, nell'ordine dei menu.
-const ruoliAtleta = [('movimento', 'Movimento'), ('portiere', 'Portiere')];
+/// Centroboa, marcatore (il difensore sul centroboa) ed esterno sono
+/// giocatori di movimento con un lavoro loro (richiesta del coach
+/// 2026-10-15): una serie per "movimento" vale anche per loro.
+const ruoliAtleta = [
+  ('movimento', 'Movimento'),
+  ('portiere', 'Portiere'),
+  ('centroboa', 'Centroboa'),
+  ('marcatore', 'Marcatore'),
+  ('esterno', 'Esterno'),
+];
+
+/// Il nome di un ruolo per un gruppo di atleti: "Portieri", "Centroboa".
+const nomiGruppoRuolo = {
+  'portiere': 'Portieri',
+  'movimento': 'Movimento',
+  'centroboa': 'Centroboa',
+  'marcatore': 'Marcatori',
+  'esterno': 'Esterni',
+};
+
+/// Una serie per il ruolo [ruoloSerie] è per chi ha il ruolo
+/// [ruoloAtleta] (null: non indicato, conta come movimento)?
+bool ruoloComprende(String ruoloSerie, String? ruoloAtleta) {
+  final ruolo = ruoloAtleta ?? 'movimento';
+  if (ruoloSerie == ruolo) return true;
+  return ruoloSerie == 'movimento' && ruolo != 'portiere';
+}
 
 /// Per chi è una serie (fase 2 del "Mako della pallanuoto", proposta 2):
 /// in quasi ogni seduta i portieri fanno un lavoro diverso, e capita che
@@ -57,7 +83,7 @@ class Destinatari {
     tranneAtleti: map['tranne_atleti'],
   );
 
-  /// 'portiere' | 'movimento' | null (tutti i ruoli).
+  /// Uno dei [ruoliAtleta] | null (tutti i ruoli).
   final String? ruolo;
   final List<String> soloAtleti;
   final List<String> tranneAtleti;
@@ -65,11 +91,32 @@ class Destinatari {
   bool get perTutti =>
       ruolo == null && soloAtleti.isEmpty && tranneAtleti.isEmpty;
 
+  /// La colonna "di tutti" di un momento in parallelo: nessun ruolo né
+  /// nomi (può avere degli esclusi).
+  bool get base => ruolo == null && soloAtleti.isEmpty;
+
+  /// Quanto è precisa questa colonna in un momento in parallelo: alcuni
+  /// atleti 3, un ruolo 2, "movimento" 1, tutti 0. Ognuno fa la colonna
+  /// più precisa fra quelle che lo comprendono (la stessa regola nel
+  /// database, `precedenza_destinatari`).
+  int get precedenza {
+    if (soloAtleti.isNotEmpty) return 3;
+    return switch (ruolo) {
+      null => 0,
+      'movimento' => 1,
+      _ => 2,
+    };
+  }
+
   /// La serie è anche per l'atleta [atletaId], che ha il [ruoloAtleta]
-  /// (null: non indicato, conta come movimento)?
-  bool perAtleta(String atletaId, String? ruoloAtleta) {
+  /// (null: non indicato, conta come movimento)? Con [atletaId] null, per
+  /// un atleta qualunque di quel ruolo: non è fra i nomi né fra gli
+  /// esclusi.
+  bool perAtleta(String? atletaId, String? ruoloAtleta) {
     if (soloAtleti.isNotEmpty) return soloAtleti.contains(atletaId);
-    if (ruolo != null && ruolo != (ruoloAtleta ?? 'movimento')) return false;
+    if (ruolo case final r? when !ruoloComprende(r, ruoloAtleta)) {
+      return false;
+    }
     return !tranneAtleti.contains(atletaId);
   }
 
@@ -77,10 +124,14 @@ class Destinatari {
   /// movimento qualunque: non le serie dei soli portieri, né quelle di
   /// alcuni atleti (una variante per un infortunato, il lavoro di un
   /// centroboa). Gli esclusi da una serie non la tolgono dal gruppo.
-  bool get delGruppo => soloAtleti.isEmpty && ruolo != 'portiere';
+  /// Nemmeno le serie dei centroboa, dei marcatori, degli esterni. Non
+  /// guarda i momenti in parallelo: per quelli `serieDelGruppo`.
+  bool get delGruppo =>
+      soloAtleti.isEmpty && (ruolo == null || ruolo == 'movimento');
 
   /// Come [delGruppo], per un portiere.
-  bool get deiPortieri => soloAtleti.isEmpty && ruolo != 'movimento';
+  bool get deiPortieri =>
+      soloAtleti.isEmpty && (ruolo == null || ruolo == 'portiere');
 
   /// I campi per il database: tutti e tre sempre, così una modifica
   /// cancella anche quelli che non servono più.
@@ -145,11 +196,7 @@ String? etichettaDestinatari(
   }
 
   if (d.soloAtleti.isNotEmpty) return elenco(d.soloAtleti);
-  final gruppo = switch (d.ruolo) {
-    'portiere' => 'Portieri',
-    'movimento' => 'Movimento',
-    _ => null,
-  };
+  final gruppo = nomiGruppoRuolo[d.ruolo];
   if (d.tranneAtleti.isEmpty) return gruppo;
   return '${gruppo ?? 'Tutti'} tranne ${elenco(d.tranneAtleti)}';
 }

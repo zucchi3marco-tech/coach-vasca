@@ -79,6 +79,7 @@ class _Serie implements SerieRepository {
           Destinatari destinatari,
         })
       >[];
+  final momenti = <String?>[];
 
   @override
   Future<List<Serie>> fetchPerAllenamento(String allenamentoId) async =>
@@ -103,6 +104,7 @@ class _Serie implements SerieRepository {
     String? piramideId,
     int? recuperoDopoS,
     Destinatari destinatari = Destinatari.tutti,
+    String? momentoId,
   }) async {
     create.add((
       allenamentoId: allenamentoId,
@@ -111,6 +113,7 @@ class _Serie implements SerieRepository {
       gruppo: piramideId,
       destinatari: destinatari,
     ));
+    momenti.add(momentoId);
     return originali.first;
   }
 
@@ -123,7 +126,9 @@ Serie _serie(
   String? piramideId,
   int? durataS,
   Destinatari destinatari = Destinatari.tutti,
+  String? momentoId,
 }) => Serie(
+  momentoId: momentoId,
   id: 's$ordine',
   allenamentoId: 'a1',
   clubId: 'c1',
@@ -176,6 +181,32 @@ void main() {
     expect(serie.create[1].gruppo, serie.create[2].gruppo);
     expect(serie.create[1].gruppo, isNot('g-vecchio'));
     expect(serie.create[3].durataS, 300);
+  });
+
+  test('un lavoro in parallelo resta insieme, con un momento nuovo', () async {
+    final serie = _Serie([
+      _serie(1, momentoId: 'm-vecchio'),
+      _serie(2, momentoId: 'm-vecchio', destinatari: Destinatari.portieri),
+      _serie(3),
+    ]);
+    await DuplicazioneSettimanaService(
+      _Allenamenti(),
+      serie,
+      _Secco(),
+    ).copiaAllenamento(
+      Allenamento(
+        id: 'a1',
+        clubId: 'c1',
+        data: DateTime(2026, 10, 8, 18),
+        gruppoId: 'u14',
+      ),
+      data: DateTime(2026, 10, 9, 18),
+      gruppoId: 'u16',
+    );
+    expect(serie.momenti[0], isNotNull);
+    expect(serie.momenti[0], isNot('m-vecchio'));
+    expect(serie.momenti[1], serie.momenti[0]);
+    expect(serie.momenti[2], isNull);
   });
 
   test(

@@ -10,6 +10,17 @@ typedef AllenamentoConSerie = (Allenamento, List<Serie>);
 String? testoPerChi(Destinatari d, Map<String, String> nomiAtleti) =>
     etichettaDestinatari(d, (id) => nomiAtleti[id] ?? 'un atleta');
 
+/// Il numero (1, 2…) di ogni momento in parallelo delle [serie] di un
+/// allenamento, nell'ordine: le serie con lo stesso numero si fanno
+/// insieme. Solo i momenti con almeno due colonne.
+Map<String, int> numeriMomenti(List<Serie> serie) {
+  final numeri = <String, int>{};
+  for (final g in raggruppaPerMomento(serie)) {
+    if (eMomento(g)) numeri[g.first.momentoId!] = numeri.length + 1;
+  }
+  return numeri;
+}
+
 const _intestazione = [
   'Data',
   'Allenamento',
@@ -28,6 +39,7 @@ const _intestazione = [
   'Attrezzatura',
   'Note',
   'Per chi',
+  'In parallelo',
 ];
 
 String _formattaData(DateTime data) =>
@@ -50,6 +62,7 @@ List<String> _riga(
   Serie s,
   Map<String, String> nomiGruppi,
   Map<String, String> nomiAtleti,
+  Map<String, int> momenti,
 ) {
   return [
     _formattaData(allenamento.data),
@@ -69,6 +82,8 @@ List<String> _riga(
     s.attrezzatura ?? '',
     s.note ?? '',
     testoPerChi(s.destinatari, nomiAtleti) ?? 'Tutti',
+    // Il numero del momento: le serie con lo stesso si fanno insieme.
+    momenti[s.momentoId]?.toString() ?? '',
   ];
 }
 
@@ -82,9 +97,16 @@ String generaCsv(
 }) {
   final righe = [_intestazione.map(_cella).join(',')];
   for (final (allenamento, serie) in allenamenti) {
+    final momenti = numeriMomenti(serie);
     for (final s in serie) {
       righe.add(
-        _riga(allenamento, s, nomiGruppi, nomiAtleti).map(_cella).join(','),
+        _riga(
+          allenamento,
+          s,
+          nomiGruppi,
+          nomiAtleti,
+          momenti,
+        ).map(_cella).join(','),
       );
     }
   }

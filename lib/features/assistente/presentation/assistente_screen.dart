@@ -251,6 +251,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
           piramideId: c.piramideId,
           recuperoDopoS: s.recuperoDopoS,
           destinatari: s.destinatari,
+          momentoId: c.momentoId,
         );
       }
       _motore?.annota(

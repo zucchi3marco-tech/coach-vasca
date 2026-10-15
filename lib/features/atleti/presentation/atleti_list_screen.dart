@@ -18,6 +18,7 @@ import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/destinatari.dart' show ruoliAtleta;
 import '../../benessere/presentation/benessere_squadra.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -411,7 +412,7 @@ class _AtletiList extends StatelessWidget {
             attenuata: !atleta.attivo,
             sotto:
                 !atleta.attivo ||
-                    atleta.portiere ||
+                    _ruoloInPastiglia(atleta) != null ||
                     atleta.visitaMedicaScaduta ||
                     atleta.visitaMedicaInScadenza
                 ? Wrap(
@@ -420,9 +421,10 @@ class _AtletiList extends StatelessWidget {
                     children: [
                       if (!atleta.attivo)
                         Pastiglia('Inattivo', colore: colori.testoSecondario),
-                      // Le serie "Portieri" sono per loro: si vede chi è.
-                      if (atleta.portiere)
-                        Pastiglia('Portiere', colore: colori.testoSecondario),
+                      // Le serie "Portieri", "Centroboa"... sono per loro:
+                      // si vede chi è.
+                      if (_ruoloInPastiglia(atleta) case final ruolo?)
+                        Pastiglia(ruolo, colore: colori.testoSecondario),
                       if (atleta.visitaMedicaScaduta)
                         Pastiglia('Visita scaduta', colore: colori.rosso)
                       else if (atleta.visitaMedicaInScadenza)
@@ -507,6 +509,14 @@ class _VoceMenu extends StatelessWidget {
 /// Percentuale di presenze nella riga dei metadati. `null` (nessun
 /// allenamento rilevante su cui calcolarla) mostra "—" invece di un
 /// fuorviante 0%.
+/// "Portiere", "Centroboa", "Marcatore", "Esterno"; null per chi gioca di
+/// movimento o non ha il ruolo segnato.
+String? _ruoloInPastiglia(Atleta atleta) => switch (atleta.ruolo) {
+  null || 'movimento' => null,
+  final ruolo =>
+    ruoliAtleta.where((r) => r.$1 == ruolo).firstOrNull?.$2 ?? ruolo,
+};
+
 String _etichettaPresenze(double? percentuale) =>
     'Presenze ${percentuale == null ? '—' : '${percentuale.round()}%'}';
 

@@ -1,5 +1,4 @@
 import 'serie.dart';
-import 'volume_allenamento.dart';
 
 /// Passo medio della libreria di blocchi (s/100m, foglio Legenda
 /// dell'Excel): lo stesso che usa la Edge Function `genera-allenamento`
@@ -115,15 +114,39 @@ int minutiStimati(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) =>
             60)
         .round();
 
-/// La durata stimata di una seduta: il lavoro dei portieri e quello dei
-/// giocatori di movimento vanno insieme, quindi dura quanto il più lungo
-/// dei due. Le serie di alcuni atleti (una variante) non la allungano.
+/// I secondi di [serie] una dopo l'altra.
+double secondiStimati(
+  Iterable<DatiSerie> serie, {
+  PassoRiferimento? riferimento,
+}) => serie.fold<double>(
+  0,
+  (t, s) => t + secondiSerie(s, riferimento: riferimento),
+);
+
+/// La durata stimata di una seduta. Un momento in parallelo dura quanto
+/// la sua colonna più lunga (poi si riparte insieme). Fuori dai momenti
+/// il lavoro dei portieri, dei giocatori di movimento e di ogni ruolo va
+/// insieme, quindi dura quanto il più lungo; le serie di alcuni atleti
+/// (una variante) non la allungano.
 int minutiSeduta(Iterable<DatiSerie> serie, {PassoRiferimento? riferimento}) {
-  final gruppo = minutiStimati(serieDelGruppo(serie), riferimento: riferimento);
-  if (!haSerieDiRuolo(serie)) return gruppo;
-  final portieri = minutiStimati(
-    serieDeiPortieri(serie),
-    riferimento: riferimento,
-  );
-  return portieri > gruppo ? portieri : gruppo;
+  double secondi(Iterable<DatiSerie> s) =>
+      secondiStimati(s, riferimento: riferimento);
+  var totale = 0.0;
+  for (final pezzo in pezziPerMomento(serie.toList())) {
+    if (pezzo.momento) {
+      totale += colonneMomento(pezzo.serie)
+          .map((c) => secondi(c.serie))
+          .fold(0.0, (a, b) => b > a ? b : a);
+      continue;
+    }
+    final ruoli = {
+      'movimento',
+      'portiere',
+      for (final s in pezzo.serie) ?s.destinatari.ruolo,
+    };
+    totale += ruoli
+        .map((r) => secondi(serieDellAtleta(pezzo.serie, null, r)))
+        .fold(0.0, (a, b) => b > a ? b : a);
+  }
+  return (totale / 60).round();
 }

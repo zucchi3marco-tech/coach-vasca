@@ -32,6 +32,7 @@ import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import '../domain/volume_allenamento.dart';
+import 'momento_parallelo.dart';
 import 'pannello_orologio.dart';
 import 'per_chi_serie.dart';
 import 'riepilogo_volumi.dart';
@@ -183,8 +184,21 @@ class _SchedaBordoVascaScreenState
             gruppoId: allenamento.gruppoId,
             serie: serieAsync.value ?? const [],
           );
-    String? perChi(Serie s) =>
-        perAtleta ? null : labelPerChi(s.destinatari, atleti);
+    // In un momento in parallelo anche la colonna di tutti lo dice: accanto
+    // c'è il lavoro dei portieri.
+    final serieCaricate = serieAsync.value ?? const <Serie>[];
+    String? perChi(Serie s) {
+      if (perAtleta) return null;
+      final chi = labelPerChi(s.destinatari, atleti);
+      if (chi != null || s.momentoId == null) return chi;
+      return eMomento([
+            for (final x in serieCaricate)
+              if (x.momentoId == s.momentoId) x,
+          ])
+          ? 'Tutti'
+          : null;
+    }
+
     final telefono = Breakpoint.of(context) == Breakpoint.compatto;
     Widget content = AppScaffold(
       larghezzaMassima: AppLayout.larghezzaMassimaCruscotto,
@@ -231,6 +245,7 @@ class _SchedaBordoVascaScreenState
               ? _UnaAllaVolta(
                   serie: serie,
                   perChi: perChi,
+                  nome: (d) => labelPerChi(d, atleti) ?? 'Tutti',
                   indice: indice,
                   onVai: (i) => _vai(i, serie.length),
                   onPresenze: perAtleta ? null : _apriPresenze,
@@ -268,6 +283,9 @@ class _SchedaBordoVascaScreenState
               : _TutteLeSerie(
                   serie: serie,
                   perChi: perChi,
+                  nome: perAtleta
+                      ? (_) => 'Tutti'
+                      : (d) => labelPerChi(d, atleti) ?? 'Tutti',
                   onApri: (i) => setState(() {
                     _corrente = i;
                     _unaAllaVolta = true;
@@ -338,6 +356,7 @@ class _UnaAllaVolta extends StatelessWidget {
   const _UnaAllaVolta({
     required this.serie,
     required this.perChi,
+    required this.nome,
     required this.indice,
     required this.onVai,
     required this.onPresenze,
@@ -348,6 +367,7 @@ class _UnaAllaVolta extends StatelessWidget {
   final List<Serie> serie;
   final int indice;
   final String? Function(Serie s) perChi;
+  final String Function(Destinatari d) nome;
   final ValueChanged<int> onVai;
   final VoidCallback? onPresenze;
 
@@ -360,12 +380,19 @@ class _UnaAllaVolta extends StatelessWidget {
     final s = serie[indice];
     // I metri fatti: le serie segnate fatte, e quelle già passate senza
     // essere segnate saltate (come le conta il carico).
+    final delGruppo = filtroDellAtleta(serie, null, 'movimento');
     final fatti = [
       for (var i = 0; i < serie.length; i++)
-        if (serie[i].destinatari.delGruppo &&
+        if (delGruppo(serie[i]) &&
             (serie[i].fatta || (i < indice && !serie[i].saltata)))
           serie[i],
     ].fold<int>(0, (t, x) => t + x.distanzaTotaleM);
+    // Le serie del momento in parallelo della serie in corso, se c'è.
+    final momento = [
+      if (s.momentoId != null)
+        for (final x in serie)
+          if (x.momentoId == s.momentoId) x,
+    ];
     final saltate = serie.where((x) => x.saltata).length;
     // I metri del gruppo, come nel dettaglio: non quelli dei soli portieri
     // né delle varianti.
@@ -401,7 +428,13 @@ class _UnaAllaVolta extends StatelessWidget {
         if (v < -200) onVai(indice + 1);
         if (v > 200) onVai(indice - 1);
       },
-      child: _SerieInGrande(serie: s, prossima: prossima, perChi: perChi),
+      child: _SerieInGrande(
+        serie: s,
+        prossima: prossima,
+        perChi: perChi,
+        inParallelo: momento.isNotEmpty && eMomento(momento) ? momento : null,
+        nome: nome,
+      ),
     );
     // La serie scorre se non ci sta; l'orologio resta sempre in vista ma
     // non si prende mai più di metà dello spazio: la serie non deve
@@ -648,11 +681,18 @@ class _SerieInGrande extends StatelessWidget {
     required this.serie,
     required this.prossima,
     required this.perChi,
+    required this.nome,
+    this.inParallelo,
   });
 
   final Serie serie;
   final Serie? prossima;
   final String? Function(Serie s) perChi;
+  final String Function(Destinatari d) nome;
+
+  /// Le serie del momento in parallelo di [serie]: sotto, tutte le colonne
+  /// (mentre il gruppo fa questa, i portieri fanno quella).
+  final List<Serie>? inParallelo;
 
   @override
   Widget build(BuildContext context) {
@@ -663,7 +703,7 @@ class _SerieInGrande extends StatelessWidget {
       rispetto: colori.linea,
     );
     final numeri = _numeriSerie(serie);
-    return LaneRule(
+    final scheda = LaneRule(
       colore: coloreZona,
       child: PoolCard(
         padding: EdgeInsets.all(tablet ? AppSpacing.s24 : AppSpacing.s16),
@@ -756,6 +796,23 @@ class _SerieInGrande extends StatelessWidget {
         ),
       ),
     );
+    final momento = inParallelo;
+    if (momento == null) return scheda;
+    // In una scheda sua, fuori dal filetto: il filetto misura l'altezza
+    // del contenuto, e le colonne si dispongono solo dopo aver visto la
+    // larghezza.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        scheda,
+        const SizedBox(height: AppSpacing.s12),
+        PoolCard(
+          padding: EdgeInsets.all(tablet ? AppSpacing.s24 : AppSpacing.s16),
+          child: _MomentoInVasca(serie: momento, nome: nome),
+        ),
+      ],
+    );
   }
 }
 
@@ -766,20 +823,44 @@ class _TutteLeSerie extends StatelessWidget {
     required this.serie,
     required this.onApri,
     required this.perChi,
+    required this.nome,
   });
 
   final List<Serie> serie;
   final String? Function(Serie s) perChi;
+  final String Function(Destinatari d) nome;
   final ValueChanged<int> onApri;
 
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    // Un momento in parallelo è una scheda sola, con le colonne; le altre
+    // serie una per scheda.
+    final elementi = <List<Serie>>[
+      for (final g in raggruppaPerMomento(serie))
+        if (eMomento(g))
+          g
+        else ...[
+          for (final s in g) [s],
+        ],
+    ];
     return ListView.separated(
-      itemCount: serie.length,
+      itemCount: elementi.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s12),
-      itemBuilder: (context, index) {
-        final s = serie[index];
+      itemBuilder: (context, posizione) {
+        final elemento = elementi[posizione];
+        if (elemento.length > 1) {
+          return PoolCard(
+            padding: const EdgeInsets.all(AppSpacing.s20),
+            child: _MomentoInVasca(
+              serie: elemento,
+              nome: nome,
+              onApri: (s) => onApri(serie.indexOf(s)),
+            ),
+          );
+        }
+        final s = elemento.single;
+        final index = serie.indexOf(s);
         final numeri = _numeriSerie(s);
         return InkWell(
           onTap: () => onApri(index),
@@ -876,6 +957,36 @@ class _TutteLeSerie extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Un momento in parallelo a bordo vasca: "In parallelo" con i minuti e
+/// le colonne affiancate, in grande.
+class _MomentoInVasca extends StatelessWidget {
+  const _MomentoInVasca({required this.serie, required this.nome, this.onApri});
+
+  final List<Serie> serie;
+  final String Function(Destinatari d) nome;
+  final void Function(Serie s)? onApri;
+
+  @override
+  Widget build(BuildContext context) {
+    final colonne = colonneConTempo(serie);
+    final minuti = colonne.fold(0, (a, c) => c.minuti > a ? c.minuti : a);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TestaMomento(minuti: minuti, grande: true),
+        const SizedBox(height: AppSpacing.s8),
+        ColonneMomento<Serie>(
+          serie: serie,
+          nome: nome,
+          onApri: onApri,
+          grande: true,
+        ),
+      ],
     );
   }
 }

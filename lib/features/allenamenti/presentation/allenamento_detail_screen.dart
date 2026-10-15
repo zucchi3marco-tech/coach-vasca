@@ -44,6 +44,7 @@ import 'duplica_allenamento_dialog.dart';
 import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
 import 'riepilogo_volumi.dart';
+import 'momento_parallelo.dart';
 import 'riga_gruppo_piramide.dart';
 import 'nota_serie.dart';
 import 'per_chi_serie.dart';
@@ -287,7 +288,21 @@ class _AllenamentoDetailScreenState
   /// l'elenco nell'ordine finale voluto, toccando solo chi deve cambiare.
   Future<void> _duplicaGruppo(List<List<Serie>> gruppi, int index) async {
     final gruppo = gruppi[index];
-    final nuovoPiramideId = gruppo.length > 1 ? const Uuid().v4() : null;
+    // Un momento in parallelo si copia con le sue piramidi e i suoi "2x";
+    // un gruppo normale è una piramide o un "2x" da solo.
+    final momento = gruppo.first.momentoId == null ? null : const Uuid().v4();
+    final piramidi = <String, String>{};
+    String? nuovoPiramideId(Serie s) {
+      if (momento == null) {
+        return gruppo.length > 1
+            ? piramidi.putIfAbsent('', () => const Uuid().v4())
+            : null;
+      }
+      return s.piramideId == null
+          ? null
+          : piramidi.putIfAbsent(s.piramideId!, () => const Uuid().v4());
+    }
+
     try {
       final repository = ref.read(serieRepositoryProvider);
       final nuove = <Serie>[];
@@ -309,9 +324,10 @@ class _AllenamentoDetailScreenState
             ripartenzaS: s.ripartenzaS,
             attrezzatura: s.attrezzatura,
             note: s.note,
-            piramideId: nuovoPiramideId,
+            piramideId: nuovoPiramideId(s),
             recuperoDopoS: s.recuperoDopoS,
             destinatari: s.destinatari,
+            momentoId: momento,
           ),
         );
         ordineProvvisorio++;
@@ -360,13 +376,23 @@ class _AllenamentoDetailScreenState
   Future<void> _eliminaGruppo(List<List<Serie>> gruppi, int index) async {
     final gruppo = gruppi[index];
     final piramide = gruppo.length > 1;
+    final momento = eMomento(gruppo);
     final prima = gruppo.first;
     final conferma = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(piramide ? 'Eliminare la piramide?' : 'Elimina serie'),
+        title: Text(
+          momento
+              ? 'Eliminare il lavoro in parallelo?'
+              : piramide
+              ? 'Eliminare la piramide?'
+              : 'Elimina serie',
+        ),
         content: Text(
-          piramide
+          momento
+              ? 'Eliminare tutte le ${gruppo.length} serie, di tutte le '
+                    "colonne? L'operazione non si può annullare."
+              : piramide
               ? 'Eliminare le ${gruppo.length} distanze di questa piramide '
                     '(${gruppo.map((s) => s.distanzaM).join('-')})? '
                     "L'operazione non si può annullare."
@@ -507,8 +533,12 @@ class _AllenamentoDetailScreenState
       final nuove = <int, List<Serie>>{};
       var ordine = _ordineSuccessivo();
       for (final MapEntry(key: indice, value: copie) in piano.nuove.entries) {
-        final piramideId = copie.length > 1 ? const Uuid().v4() : null;
+        // I segnaposto dei gruppi ("g3") diventano id veri.
+        final gruppi = <String, String>{};
         for (final c in copie) {
+          final piramideId = c.piramideId == null
+              ? null
+              : gruppi.putIfAbsent(c.piramideId!, () => const Uuid().v4());
           (nuove[indice] ??= []).add(
             await repository.createSerie(
               allenamentoId: widget.allenamento.id,
@@ -521,9 +551,14 @@ class _AllenamentoDetailScreenState
               esecuzione: c.esecuzione,
               zona: c.zona,
               recuperoS: c.recuperoS,
+              passoObiettivoS: c.passoObiettivoS,
+              ripartenzaS: c.ripartenzaS,
+              attrezzatura: c.attrezzatura,
               note: c.note,
               piramideId: piramideId,
+              recuperoDopoS: c.recuperoDopoS,
               destinatari: c.destinatari,
+              momentoId: c.momentoId,
             ),
           );
         }
@@ -831,7 +866,8 @@ class _AllenamentoDetailScreenState
           // via e le serie occupano lo schermo. Una piramide (più righe
           // con lo stesso piramideId) è un solo elemento dell'elenco, non
           // una per distanza — si trascina, duplica ed elimina insieme.
-          final gruppi = raggruppaPerPiramide(serie);
+          // Un momento in parallelo è un elemento solo, con le colonne.
+          final gruppi = raggruppaPerMomento(serie);
           return ReorderableListView.builder(
             buildDefaultDragHandles: false,
             padding: const EdgeInsets.only(bottom: 88),
@@ -872,7 +908,19 @@ class _AllenamentoDetailScreenState
                   color: colori.testoSecondario,
                 ),
               );
-              final riga = gruppo.length == 1
+              final riga = eMomento(gruppo)
+                  ? RigaMomento(
+                      gruppo: gruppo,
+                      primo: index == 0,
+                      ultimo: index == gruppi.length - 1,
+                      maniglia: maniglia,
+                      riferimento: riferimento,
+                      nome: (d) => perChi(d) ?? 'Tutti',
+                      onApri: (s) => _apriSerieCompleta(serie: s),
+                      onAzione: (azione) =>
+                          _azioneGruppo(gruppi, index, azione),
+                    )
+                  : gruppo.length == 1
                   ? RigaSerie(
                       serie: gruppo.single,
                       primo: index == 0,

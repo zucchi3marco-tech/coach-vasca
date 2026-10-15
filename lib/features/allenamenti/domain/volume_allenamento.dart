@@ -29,13 +29,15 @@ class VolumeAllenamento {
 /// giocatore di movimento, senza il lavoro dei soli portieri né le serie
 /// di alcuni atleti.
 Map<String, VolumeAllenamento> volumiPerAllenamento(Iterable<Serie> serie) {
-  final volumi = <String, VolumeAllenamento>{};
+  final perAllenamento = <String, List<Serie>>{};
   for (final s in serie) {
-    if (!s.destinatari.delGruppo) continue;
-    volumi[s.allenamentoId] =
-        (volumi[s.allenamentoId] ?? VolumeAllenamento.zero) + volumeSerie(s);
+    (perAllenamento[s.allenamentoId] ??= []).add(s);
   }
-  return volumi;
+  return {
+    for (final MapEntry(key: id, value: delle) in perAllenamento.entries)
+      if (serieDelGruppo(delle) case final gruppo when gruppo.isNotEmpty)
+        id: volumeDi(gruppo),
+  };
 }
 
 /// Metri e lavoro a tempo di una serie.
@@ -49,20 +51,17 @@ VolumeAllenamento volumeDi(Iterable<DatiSerie> serie) =>
     serie.fold(VolumeAllenamento.zero, (t, s) => t + volumeSerie(s));
 
 /// Le serie che fa il gruppo, cioè un giocatore di movimento qualunque
-/// ([Destinatari.delGruppo]).
-List<T> serieDelGruppo<T extends DatiSerie>(Iterable<T> serie) => [
-  for (final s in serie)
-    if (s.destinatari.delGruppo) s,
-];
+/// ([Destinatari.delGruppo]): in un momento in parallelo la colonna di
+/// tutti, non quella dei portieri o dei centroboa ([serieDellAtleta]).
+List<T> serieDelGruppo<T extends DatiSerie>(Iterable<T> serie) =>
+    serieDellAtleta(serie, null, 'movimento');
 
 /// Le serie che fa un portiere ([Destinatari.deiPortieri]).
-List<T> serieDeiPortieri<T extends DatiSerie>(Iterable<T> serie) => [
-  for (final s in serie)
-    if (s.destinatari.deiPortieri) s,
-];
+List<T> serieDeiPortieri<T extends DatiSerie>(Iterable<T> serie) =>
+    serieDellAtleta(serie, null, 'portiere');
 
-/// C'è almeno una serie dei soli portieri (o dei soli giocatori di
-/// movimento): allora i portieri hanno un volume loro.
+/// C'è almeno una serie per un ruolo (i portieri, i giocatori di
+/// movimento, i centroboa...): allora i portieri hanno un volume loro.
 bool haSerieDiRuolo(Iterable<DatiSerie> serie) => serie.any(
   (s) => s.destinatari.ruolo != null && s.destinatari.soloAtleti.isEmpty,
 );

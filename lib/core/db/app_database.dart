@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -547,6 +547,12 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'test_risultati_table', nome)) {
             await m.addColumn(testRisultatiTable, colonna);
           }
+        }
+      }
+      // v43 -> v44: i lavori in parallelo (il momento di una serie).
+      if (from < 44) {
+        if (!await _hasColumn(m, 'serie_table', 'momento_id')) {
+          await m.addColumn(serieTable, serieTable.momentoId);
         }
       }
     },

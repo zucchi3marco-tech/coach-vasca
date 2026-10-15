@@ -42,8 +42,8 @@ class AtletiTable extends Table {
   TextColumn get userId => text().nullable()();
   DateTimeColumn get visitaMedicaScadenza => dateTime().nullable()();
 
-  /// Pallanuoto: 'portiere' | 'movimento'; null se non indicato (conta
-  /// come movimento).
+  /// Pallanuoto: 'portiere' | 'movimento' | 'centroboa' | 'marcatore' |
+  /// 'esterno'; null se non indicato (conta come movimento).
   TextColumn get ruolo => text().nullable()();
 
   @override
@@ -324,11 +324,16 @@ class SerieTable extends Table {
   IntColumn get recuperoDopoS => integer().nullable()();
 
   /// Per chi è la serie (vedi `Destinatari`): un ruolo ('portiere' |
-  /// 'movimento'), solo alcuni atleti o tutti tranne alcuni (id in JSON);
-  /// tutto null per una serie di tutto il gruppo.
+  /// 'movimento' | 'centroboa' | 'marcatore' | 'esterno'), solo alcuni
+  /// atleti o tutti tranne alcuni (id in JSON); tutto null per una serie
+  /// di tutto il gruppo.
   TextColumn get perRuolo => text().nullable()();
   TextColumn get soloAtletiJson => text().nullable()();
   TextColumn get tranneAtletiJson => text().nullable()();
+
+  /// Le serie con lo stesso momento si fanno in parallelo (vedi
+  /// `serieDellAtleta`); null per una serie normale.
+  TextColumn get momentoId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -66,7 +66,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   String? _zona;
   late bool _aTempo;
 
-  /// Per chi è: 'tutti' | 'portiere' | 'movimento' | 'solo' | 'tranne'.
+  /// Per chi è: 'tutti' | un ruolo (`nomiGruppoRuolo`) | 'solo' | 'tranne'.
   late String _perChi;
   late Set<String> _atletiScelti;
 
@@ -214,8 +214,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   }
 
   Destinatari get _destinatari => switch (_perChi) {
-    'portiere' => Destinatari.portieri,
-    'movimento' => Destinatari.movimento,
+    final ruolo when nomiGruppoRuolo.containsKey(ruolo) => Destinatari(
+      ruolo: ruolo,
+    ),
     'solo' => Destinatari(soloAtleti: _atletiScelti.toList()),
     'tranne' => Destinatari(
       ruolo: _ruoloTranne,
@@ -232,12 +233,16 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   Widget _gruppoPerChi(BuildContext context) {
     final pallanuoto =
         widget.atleti.any((a) => a.sport == 'pallanuoto') ||
-        _perChi == 'portiere' ||
-        _perChi == 'movimento';
+        nomiGruppoRuolo.containsKey(_perChi);
     final scelte = [
       ('tutti', 'Tutto il gruppo'),
-      if (pallanuoto) ('portiere', 'Solo i portieri'),
-      if (pallanuoto) ('movimento', 'Solo i giocatori di movimento'),
+      if (pallanuoto) ...[
+        ('portiere', 'Solo i portieri'),
+        ('movimento', 'Solo i giocatori di movimento'),
+        ('centroboa', 'Solo i centroboa'),
+        ('marcatore', 'Solo i marcatori'),
+        ('esterno', 'Solo gli esterni'),
+      ],
       ('solo', 'Solo alcuni atleti'),
       ('tranne', 'Tutti tranne alcuni'),
     ];

@@ -47,6 +47,7 @@ class SerieRepository {
         soloAtleti: row.soloAtletiJson,
         tranneAtleti: row.tranneAtletiJson,
       ),
+      momentoId: row.momentoId,
     );
   }
 
@@ -72,6 +73,7 @@ class SerieRepository {
       esito: map['esito'] as String?,
       recuperoDopoS: map['recupero_dopo_s'] as int?,
       destinatari: Destinatari.fromMap(map),
+      momentoId: map['momento_id'] as String?,
     );
   }
 
@@ -100,6 +102,7 @@ class SerieRepository {
       perRuolo: Value(map['per_ruolo'] as String?),
       soloAtletiJson: Value(Destinatari.fromMap(map).soloAtletiJson),
       tranneAtletiJson: Value(Destinatari.fromMap(map).tranneAtletiJson),
+      momentoId: Value(map['momento_id'] as String?),
     );
   }
 
@@ -273,6 +276,7 @@ class SerieRepository {
     String? piramideId,
     int? recuperoDopoS,
     Destinatari destinatari = Destinatari.tutti,
+    String? momentoId,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -294,6 +298,9 @@ class SerieRepository {
       'piramide_id': piramideId,
       'recupero_dopo_s': recuperoDopoS,
       ...destinatari.campi,
+      // Solo se c'è: finché la migrazione non è applicata le serie normali
+      // si salvano come prima.
+      'momento_id': ?momentoId,
     };
     try {
       final row = await _client.from('serie').insert(payload).select().single();
@@ -351,6 +358,9 @@ class SerieRepository {
     /// Senza, la serie resta per chi era (spostarla o cambiarle blocco
     /// non lo cambia).
     Destinatari? destinatari,
+
+    /// Come [piramide]: il momento in parallelo, dalla scrittura a testo.
+    ({String? id})? momento,
   }) async {
     final payload = {
       'ordine': ordine,
@@ -369,6 +379,7 @@ class SerieRepository {
       if (piramide != null) 'piramide_id': piramide.id,
       if (recuperoDopo != null) 'recupero_dopo_s': recuperoDopo.secondi,
       ...?destinatari?.campi,
+      if (momento != null) 'momento_id': momento.id,
     };
     try {
       final row = await _client
@@ -413,6 +424,7 @@ class SerieRepository {
           tranneAtletiJson: destinatari == null
               ? const Value.absent()
               : Value(destinatari.tranneAtletiJson),
+          momentoId: momento == null ? const Value.absent() : Value(momento.id),
         ),
       );
       await enqueueOperation(

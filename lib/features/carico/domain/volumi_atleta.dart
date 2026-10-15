@@ -1,4 +1,5 @@
-import '../../allenamenti/domain/destinatari.dart';
+import '../../allenamenti/domain/serie.dart';
+import 'carico_rpe.dart';
 
 /// Volume di allenamento di un atleta, contato solo nei giorni in cui
 /// risulta "presente" — stesso perimetro dati del modello Banister (vedi
@@ -38,12 +39,34 @@ class VolumiAtleta {
       if (valore > 0) mappa[chiave] = (mappa[chiave] ?? 0) + valore;
     }
 
+    // In un momento in parallelo solo la colonna che fa lui: si sceglie
+    // allenamento per allenamento.
+    final sue = <Map<String, dynamic>>{};
+    if (atletaId != null) {
+      final perAllenamento =
+          <String, List<(Map<String, dynamic>, SerieCarico)>>{};
+      for (final r in serie) {
+        (perAllenamento[r['allenamento_id'] as String] ??= []).add((
+          r,
+          SerieCarico.fromMap(r),
+        ));
+      }
+      for (final righe in perAllenamento.values) {
+        final fa = filtroDellAtleta(
+          [for (final (_, s) in righe) s],
+          atletaId,
+          ruolo,
+        );
+        sue.addAll([
+          for (final (r, s) in righe)
+            if (fa(s)) r,
+        ]);
+      }
+    }
+
     for (final r in serie) {
       if (!presenti.contains(r['allenamento_id'] as String)) continue;
-      if (atletaId != null &&
-          !Destinatari.fromMap(r).perAtleta(atletaId, ruolo)) {
-        continue;
-      }
+      if (atletaId != null && !sue.contains(r)) continue;
       final ripetute = r['ripetute'] as int;
       final volume = ripetute * (r['distanza_m'] as int? ?? 0);
       final tempo = ripetute * (r['durata_s'] as int? ?? 0);

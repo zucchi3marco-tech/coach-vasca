@@ -65,7 +65,9 @@ class PianoVariante {
   /// Le serie nuove, solo per lui, dopo il gruppo di serie che
   /// sostituiscono (chiave: la posizione del gruppo, vedi
   /// `raggruppaPerPiramide`). Le serie di un gruppo con più righe hanno
-  /// lo stesso `piramideId` segnaposto.
+  /// lo stesso `piramideId` segnaposto. In un momento in parallelo sono la
+  /// sua colonna, dopo l'ultimo gruppo del momento e con il suo
+  /// `momentoId` (quello vero).
   final Map<int, List<SerieScritta>> nuove;
 
   bool get vuoto => esclusioni.isEmpty && inGambe.isEmpty;
@@ -79,6 +81,11 @@ class PianoVariante {
 /// ([esecuzioniSpalla]) le fanno gli altri, lui le stesse con le gambe
 /// (stessa distanza o durata, stessa zona, senza attrezzi). Vuoto se non
 /// ne fa nessuna.
+///
+/// In un momento in parallelo riceve una colonna sua con tutto quello che
+/// faceva nel momento, le serie per la spalla con le gambe: così resta in
+/// parallelo con gli altri, e la sua colonna (la più precisa) non gli fa
+/// saltare il resto del momento.
 PianoVariante pianoVarianteSpalla(
   List<Serie> serie, {
   required String atletaId,
@@ -87,47 +94,112 @@ PianoVariante pianoVarianteSpalla(
   final esclusioni = <({Serie serie, Destinatari destinatari})>[];
   final inGambe = <Serie>[];
   final nuove = <int, List<SerieScritta>>{};
-  final gruppi = raggruppaPerPiramide(serie);
-  for (final (i, gruppo) in gruppi.indexed) {
-    final daCambiare = [
-      for (final s in gruppo)
-        if (esecuzioniSpalla.contains(s.esecuzione) &&
-            s.destinatari.perAtleta(atletaId, ruolo))
-          s,
-    ];
-    if (daCambiare.isEmpty) continue;
-    final copie = <SerieScritta>[];
-    for (final s in daCambiare) {
-      final senza = s.destinatari.senza(atletaId);
-      if (senza == null) {
-        inGambe.add(s);
-        continue;
-      }
-      esclusioni.add((serie: s, destinatari: senza));
-      copie.add(_inGambe(s, atletaId));
+  final fatte = serieDellAtleta(serie, atletaId, ruolo).toSet();
+  bool daCambiare(Serie s) =>
+      esecuzioniSpalla.contains(s.esecuzione) && fatte.contains(s);
+
+  // Esce dalle serie per la spalla (o, se sono solo sue, le fa con le
+  // gambe): true se gli serve una copia.
+  bool togli(Serie s) {
+    final senza = s.destinatari.senza(atletaId);
+    if (senza == null) {
+      inGambe.add(s);
+      return false;
     }
-    if (copie.isEmpty) continue;
-    nuove[i] = copie.length > 1
-        ? [
-            for (final c in copie)
-              SerieScritta(
-                blocco: c.blocco,
-                ripetute: c.ripetute,
-                distanzaM: c.distanzaM,
-                durataS: c.durataS,
-                stile: c.stile,
-                esecuzione: c.esecuzione,
-                zona: c.zona,
-                recuperoS: c.recuperoS,
-                note: c.note,
-                piramideId: 'g$i',
-                destinatari: c.destinatari,
-              ),
-          ]
-        : copie;
+    esclusioni.add((serie: s, destinatari: senza));
+    return true;
+  }
+
+  final gruppi = raggruppaPerPiramide(serie);
+  final momentiFatti = <String>{};
+  for (final (i, gruppo) in gruppi.indexed) {
+    final momento = gruppo.first.momentoId;
+    if (momento == null) {
+      final copie = <SerieScritta>[
+        for (final s in gruppo)
+          if (daCambiare(s) && togli(s)) _inGambe(s, atletaId),
+      ];
+      if (copie.isEmpty) continue;
+      nuove[i] = copie.length > 1
+          ? [for (final c in copie) c._conGruppo('g$i')]
+          : copie;
+      continue;
+    }
+    if (!momentiFatti.add(momento)) continue;
+    // Tutto il momento: i suoi gruppi, fino all'ultimo.
+    var ultimo = i;
+    while (ultimo + 1 < gruppi.length &&
+        gruppi[ultimo + 1].first.momentoId == momento) {
+      ultimo++;
+    }
+    final delMomento = gruppi.sublist(i, ultimo + 1);
+    if (!delMomento.any((g) => g.any(daCambiare))) continue;
+    final copie = <SerieScritta>[];
+    for (final (j, g) in delMomento.indexed) {
+      final sue = [
+        for (final s in g)
+          if (fatte.contains(s))
+            if (daCambiare(s))
+              // Solo sua: con le gambe dov'è; se no, la sua copia.
+              if (togli(s)) _inGambe(s, atletaId) else null
+            // Una colonna di nomi con lui la fa ancora: vale quanto la sua.
+            else if (s.destinatari.precedenza < 3)
+              _copia(s, atletaId)
+            else
+              null,
+      ].nonNulls.toList();
+      final gruppo = sue.length > 1 ? 'g${i + j}' : null;
+      for (final c in sue) {
+        copie.add(c._conGruppo(gruppo)._nelMomento(momento));
+      }
+    }
+    if (copie.isNotEmpty) nuove[ultimo] = copie;
   }
   return PianoVariante(esclusioni: esclusioni, inGambe: inGambe, nuove: nuove);
 }
+
+extension on SerieScritta {
+  SerieScritta _conGruppo(String? gruppo) => _rifai(piramideId: gruppo);
+  SerieScritta _nelMomento(String momento) =>
+      _rifai(piramideId: piramideId, momentoId: momento);
+
+  SerieScritta _rifai({String? piramideId, String? momentoId}) => SerieScritta(
+    blocco: blocco,
+    ripetute: ripetute,
+    distanzaM: distanzaM,
+    durataS: durataS,
+    stile: stile,
+    esecuzione: esecuzione,
+    zona: zona,
+    passoObiettivoS: passoObiettivoS,
+    recuperoS: recuperoS,
+    ripartenzaS: ripartenzaS,
+    attrezzatura: attrezzatura,
+    note: note,
+    piramideId: piramideId,
+    recuperoDopoS: recuperoDopoS,
+    destinatari: destinatari,
+    momentoId: momentoId ?? this.momentoId,
+  );
+}
+
+/// La stessa serie, solo per lui: nella sua colonna di un momento.
+SerieScritta _copia(Serie s, String atletaId) => SerieScritta(
+  blocco: s.blocco,
+  ripetute: s.ripetute,
+  distanzaM: s.distanzaM,
+  durataS: s.durataS,
+  stile: s.stile,
+  esecuzione: s.esecuzione,
+  zona: s.zona,
+  passoObiettivoS: s.passoObiettivoS,
+  recuperoS: s.recuperoS,
+  ripartenzaS: s.ripartenzaS,
+  attrezzatura: s.attrezzatura,
+  note: s.note,
+  recuperoDopoS: s.recuperoDopoS,
+  destinatari: Destinatari(soloAtleti: [atletaId]),
+);
 
 SerieScritta _inGambe(Serie s, String atletaId) => SerieScritta(
   blocco: s.blocco,

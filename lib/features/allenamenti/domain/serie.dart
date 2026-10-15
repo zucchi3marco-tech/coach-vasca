@@ -1,6 +1,7 @@
 import 'destinatari.dart';
 
 export 'destinatari.dart';
+export 'momenti.dart';
 
 /// Le esecuzioni di una serie, nell'ordine dei menu: i valori dell'enum
 /// `esecuzione_serie` del database. Dopo il nuoto, il lavoro di
@@ -66,6 +67,11 @@ abstract interface class DatiSerie {
 
   /// Per chi è la serie: tutto il gruppo, un ruolo, alcuni atleti.
   Destinatari get destinatari;
+
+  /// Le serie con lo stesso valore si fanno in parallelo, ognuno nella
+  /// sua colonna (vedi `serieDellAtleta`): mentre tutti nuotano, i
+  /// portieri parano. null per una serie normale, una dopo l'altra.
+  String? get momentoId;
 }
 
 class Serie implements DatiSerie {
@@ -90,6 +96,7 @@ class Serie implements DatiSerie {
     this.esito,
     this.recuperoDopoS,
     this.destinatari = Destinatari.tutti,
+    this.momentoId,
   });
 
   final String id;
@@ -135,6 +142,9 @@ class Serie implements DatiSerie {
   @override
   final Destinatari destinatari;
 
+  @override
+  final String? momentoId;
+
   /// 'fatta' | 'saltata', segnato a bordo vasca durante la seduta; null
   /// finché non si segna. Le saltate non contano nel volume reale.
   final String? esito;
@@ -170,6 +180,7 @@ class Serie implements DatiSerie {
       esito: map['esito'] as String?,
       recuperoDopoS: map['recupero_dopo_s'] as int?,
       destinatari: Destinatari.fromMap(map),
+      momentoId: map['momento_id'] as String?,
     );
   }
 }

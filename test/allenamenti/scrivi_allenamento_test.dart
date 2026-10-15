@@ -34,6 +34,7 @@ class _SerieFinta implements SerieRepository {
     String? piramideId,
     int? recuperoDopoS,
     Destinatari destinatari = Destinatari.tutti,
+    String? momentoId,
   }) async {
     operazioni.add('crea $ordine');
     create.add({
@@ -44,6 +45,7 @@ class _SerieFinta implements SerieRepository {
       'distanzaM': distanzaM,
       'zona': zona,
       'piramideId': piramideId,
+      'momentoId': momentoId,
     });
     return _serie(ordine, ripetute: ripetute, distanzaM: distanzaM ?? 100);
   }
@@ -67,6 +69,7 @@ class _SerieFinta implements SerieRepository {
     ({String? id})? piramide,
     ({int? secondi})? recuperoDopo,
     Destinatari? destinatari,
+    ({String? id})? momento,
   }) async {
     operazioni.add('aggiorna $id');
     aggiornate.add({'id': id, 'ripetute': ripetute, 'distanzaM': distanzaM});
@@ -267,6 +270,38 @@ void main() {
       Destinatari.tutti,
       const Destinatari(soloAtleti: ['bi']),
     ]);
+  });
+
+  testWidgets('il lavoro dei portieri va in parallelo con quello di tutti', (
+    tester,
+  ) async {
+    final repository = _SerieFinta();
+    await _apri(tester, repository: repository);
+
+    await tester.enterText(
+      _testo,
+      "Principale\n8x100 A2 @1:45\nPortieri\n3x6' tiri\nTutti\n10' partita",
+    );
+    await tester.pump();
+
+    // Le due colonne affiancate, con i minuti: 8 × 1'45'' = 14', i
+    // portieri 3 × 6' = 18'. Chi ha meno lavoro lo vede.
+    expect(find.text("In parallelo · 18'"), findsOneWidget);
+    // La colonna di tutti, e la riga "Tutti" che fa ripartire insieme.
+    expect(find.bySemanticsLabel('Per: Tutti'), findsNWidgets(2));
+    expect(find.bySemanticsLabel('Per: Portieri'), findsOneWidget);
+    expect(find.text("4' in meno"), findsOneWidget);
+    // In alto la durata: il momento dura quanto i portieri, poi la
+    // partita insieme (18' + 10').
+    expect(find.bySemanticsLabel(RegExp(r'circa 28 minuti')), findsOneWidget);
+
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    final momenti = [for (final c in repository.create) c['momentoId']];
+    expect(momenti[0], isNotNull);
+    expect(momenti[1], momenti[0]);
+    expect(momenti[2], isNull);
+    expect(repository.create[1]['destinatari'], Destinatari.portieri);
   });
 
   testWidgets('su schermo largo testo e anteprima stanno affiancati', (

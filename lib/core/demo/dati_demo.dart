@@ -36,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 12;
+const _versioneDati = 13;
 
 /// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
 /// distanze che il preparatore misura in vasca.
@@ -247,11 +247,17 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 'genitore.${cognome.toLowerCase().replaceAll(RegExp(r"[^a-z]"), "")}@esempio.it',
               ),
               telefonoGenitore: const Value('+39 333 123 4567'),
-              // Come in distinta: i due portieri della squadra.
+              // Come in distinta: i due portieri della squadra; due
+              // centroboa e un marcatore per il lavoro specializzato.
               ruolo: Value(
-                sport == 'pallanuoto' && (i == 0 || i == 10)
-                    ? 'portiere'
-                    : null,
+                sport != 'pallanuoto'
+                    ? null
+                    : switch (i) {
+                        0 || 10 => 'portiere',
+                        3 || 7 => 'centroboa',
+                        5 => 'marcatore',
+                        _ => null,
+                      },
               ),
               consensoPrivacyFirmato: Value(i % 4 != 0),
               consensoPrivacyData: Value(
@@ -491,6 +497,11 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 null,
               ),
             ];
+      // Pallanuoto: lo sprint e la tattica del gruppo sono un momento in
+      // parallelo, mentre i portieri parano e i centroboa lottano in
+      // posizione (lavori in parallelo, 2026-10-15).
+      final momento = sport == 'pallanuoto' ? uuid.v4() : null;
+      final righe = <SerieTableCompanion>[];
       for (var s = 0; s < serie.length; s++) {
         final (
           blocco,
@@ -505,32 +516,73 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
           rip2,
           attr,
         ) = serie[s];
-        await db
-            .into(db.serieTable)
-            .insert(
+        righe.add(
+          SerieTableCompanion.insert(
+            id: uuid.v4(),
+            allenamentoId: allenamentoId,
+            clubId: clubId,
+            ordine: 0,
+            blocco: blocco,
+            ripetute: rip,
+            distanzaM: Value(dist),
+            durataS: Value(dur),
+            stile: stile,
+            esecuzione: esec,
+            zona: Value(zona),
+            passoObiettivoS: Value(passo),
+            recuperoS: Value(rec),
+            ripartenzaS: Value(rip2),
+            attrezzatura: Value(attr),
+            note: Value(
+              s == 2
+                  ? 'Tenere il passo costante, respirazione ogni 3 bracciate'
+                  : null,
+            ),
+            momentoId: Value(s == 1 || s == 2 ? momento : null),
+          ),
+        );
+        if (momento != null && s == 2) {
+          for (final (ruolo, ripetute, durata, esecuzione, nota) in [
+            ('portiere', 3, 360, 'tiri', 'Parate sui tiri dalla distanza'),
+            (
+              'portiere',
+              1,
+              300,
+              'gambe',
+              'Gambe a bicicletta con le braccia fuori',
+            ),
+            (
+              'centroboa',
+              6,
+              150,
+              'pallanuoto tecnico-tattico',
+              'Lotta in posizione con il marcatore',
+            ),
+          ]) {
+            righe.add(
               SerieTableCompanion.insert(
                 id: uuid.v4(),
                 allenamentoId: allenamentoId,
                 clubId: clubId,
-                ordine: s + 1,
-                blocco: blocco,
-                ripetute: rip,
-                distanzaM: Value(dist),
-                durataS: Value(dur),
-                stile: stile,
-                esecuzione: esec,
-                zona: Value(zona),
-                passoObiettivoS: Value(passo),
-                recuperoS: Value(rec),
-                ripartenzaS: Value(rip2),
-                attrezzatura: Value(attr),
-                note: Value(
-                  s == 2
-                      ? 'Tenere il passo costante, respirazione ogni 3 bracciate'
-                      : null,
-                ),
+                ordine: 0,
+                blocco: 'principale',
+                ripetute: ripetute,
+                durataS: Value(durata),
+                stile: 'libero',
+                esecuzione: esecuzione,
+                recuperoS: const Value(30),
+                note: Value(nota),
+                perRuolo: Value(ruolo),
+                momentoId: Value(momento),
               ),
             );
+          }
+        }
+      }
+      for (final (i, riga) in righe.indexed) {
+        await db
+            .into(db.serieTable)
+            .insert(riga.copyWith(ordine: Value(i + 1)));
       }
       if (data.isBefore(oggi)) {
         for (var a = 0; a < atleti.length; a++) {

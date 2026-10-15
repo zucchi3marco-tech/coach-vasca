@@ -22,6 +22,8 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../../widgets/tonal_chip.dart';
+import '../../allenamenti/domain/destinatari.dart'
+    show nomiGruppoRuolo, ruoloComprende;
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -146,7 +148,8 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
             final pallanuoto = squadra.any((a) => a.sport == 'pallanuoto');
             final filtrati = [
               for (final a in squadra)
-                if ((_ruolo == null || (a.ruolo ?? 'movimento') == _ruolo) &&
+                // "Movimento" comprende centroboa, marcatori ed esterni.
+                if ((_ruolo == null || ruoloComprende(_ruolo!, a.ruolo)) &&
                     (_anno == null || a.dataNascita.year == _anno))
                   a,
             ];
@@ -250,10 +253,19 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
                     child: Row(
                       children: [
                         if (pallanuoto) ...[
-                          for (final (valore, etichetta) in const [
+                          for (final (valore, etichetta) in [
                             (null, 'Tutti i ruoli'),
                             ('portiere', 'Portieri'),
                             ('movimento', 'Movimento'),
+                            // I ruoli più precisi, se nella squadra c'è
+                            // qualcuno che li ha.
+                            for (final ruolo in const [
+                              'centroboa',
+                              'marcatore',
+                              'esterno',
+                            ])
+                              if (squadra.any((a) => a.ruolo == ruolo))
+                                (ruolo, nomiGruppoRuolo[ruolo]!),
                           ])
                             Padding(
                               padding: const EdgeInsets.only(

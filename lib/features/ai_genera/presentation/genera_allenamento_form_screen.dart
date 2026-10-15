@@ -282,6 +282,7 @@ class _GeneraAllenamentoFormScreenState
           piramideId: c.piramideId,
           recuperoDopoS: s.recuperoDopoS,
           destinatari: s.destinatari,
+          momentoId: c.momentoId,
         );
         create++;
       }

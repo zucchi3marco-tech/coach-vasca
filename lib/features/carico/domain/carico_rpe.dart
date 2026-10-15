@@ -81,6 +81,7 @@ class SerieCarico implements DatiSerie {
     this.passoObiettivoS,
     this.recuperoDopoS,
     this.destinatari = Destinatari.tutti,
+    this.momentoId,
   });
 
   factory SerieCarico.fromMap(Map<String, dynamic> r) => SerieCarico(
@@ -95,6 +96,7 @@ class SerieCarico implements DatiSerie {
     passoObiettivoS: (r['passo_obiettivo_s'] as num?)?.toDouble(),
     recuperoDopoS: r['recupero_dopo_s'] as int?,
     destinatari: Destinatari.fromMap(r),
+    momentoId: r['momento_id'] as String?,
   );
 
   final String allenamentoId;
@@ -121,6 +123,10 @@ class SerieCarico implements DatiSerie {
   /// gli elenchi di atleti: qui resta il ruolo.
   @override
   final Destinatari destinatari;
+
+  /// All'atleta collegato arriva null: le sue serie sono già scelte.
+  @override
+  final String? momentoId;
 
   @override
   String get blocco => 'centrale';
@@ -437,10 +443,7 @@ List<CaricoSeduta> seduteDiAtleta({
         giorno: data,
         serie: atletaId == null
             ? serie
-            : [
-                for (final s in serie)
-                  if (s.destinatari.perAtleta(atletaId, ruolo)) s,
-              ],
+            : serieDellAtleta(serie, atletaId, ruolo),
         rpe: rpe[('allenamento', id)],
       ),
     );

@@ -125,6 +125,9 @@ class SerieGenerata implements DatiSerie {
   @override
   Destinatari get destinatari => Destinatari.tutti;
 
+  @override
+  String? get momentoId => null;
+
   /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
   /// la generazione non aveva passi di riferimento da usare, o se questo
   /// tipo di serie (es. riscaldamento) non ha una ripartenza sensata.
