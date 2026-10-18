@@ -208,6 +208,186 @@ void main() {
     });
   });
 
+  // Il testo del coach del 2026-10-17: i centroboa lavorano solo nei 20
+  // minuti di palleggio e tiri, poi tutti insieme.
+  group('con il paragrafo sopra', () {
+    const coach =
+        'tutti\n'
+        'Riscaldamento\n'
+        '6x100 sl A2 @2:00 "ultimo 25 mix a rotazione no sl"\n'
+        '4x100 sl A2 @2:15 "ultimo 25 gambe"\n'
+        '\n'
+        'Principale\n'
+        'tutti\n'
+        '3x\n'
+        '50 sl A1 sciolto\n'
+        '6x100 sl B1 @1:40 "1°serie ultimo 25 forte"\n'
+        '\n'
+        "10' palleggio\n"
+        "10' tiri A2\n"
+        '\n'
+        "centroboa:  20' gambe spostamenti con cinture\n"
+        '\n'
+        "30' tecnico-tattico A2 \"gioco a una porta\"\n"
+        '\n'
+        'Defaticamento\n'
+        '200 sl A1 lungo';
+
+    test('il lavoro di un gruppo va con il paragrafo di tutti sopra', () {
+      final scritto = _leggi(coach);
+      expect(scritto.righeNonCapite, 0);
+      final s = scritto.serie;
+      String esecuzione(int i) => s[i].esecuzione;
+      // Il 3x (6 serie) prima, i 30' dopo: di tutti, non in parallelo.
+      for (final i in [0, 1, 2, 3, 4, 5, 6, 7, 11, 12]) {
+        expect(s[i].momentoId, isNull, reason: '$i ${esecuzione(i)}');
+      }
+      expect(esecuzione(8), 'palleggio');
+      expect(esecuzione(10), 'gambe');
+      expect(s[10].destinatari, const Destinatari(ruolo: 'centroboa'));
+      expect(s[8].momentoId, isNotNull);
+      expect(s[9].momentoId, s[8].momentoId);
+      expect(s[10].momentoId, s[8].momentoId);
+    });
+
+    test('un centroboa fa il 3x, le gambe e poi i 30\' con tutti', () {
+      final serie = _salvate(_leggi(coach).serie);
+      List<String> fa(String id, String ruolo) => [
+        for (final s in serieDellAtleta(serie, id, ruolo)) s.esecuzione,
+      ];
+      expect(fa('ce', 'centroboa'), [
+        'nuoto', 'nuoto', // riscaldamento
+        'nuoto', 'nuoto', 'nuoto', 'nuoto', 'nuoto', 'nuoto', // 3x
+        'gambe',
+        'pallanuoto tecnico-tattico',
+        'nuoto',
+      ]);
+      expect(fa('rm', 'movimento'), [
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'nuoto',
+        'palleggio',
+        'tiri',
+        'pallanuoto tecnico-tattico',
+        'nuoto',
+      ]);
+    });
+
+    test('con la riga "Centroboa" da sola è lo stesso', () {
+      final s = _leggi(
+        'Principale\n'
+        '400 sl\n'
+        '\n'
+        "10' palleggio\n"
+        "10' tiri\n"
+        '\n'
+        'Centroboa\n'
+        "20' gambe\n"
+        '\n'
+        "30' tecnico-tattico",
+      ).serie;
+      expect(s[0].momentoId, isNull);
+      expect(s[1].momentoId, isNotNull);
+      expect({s[1].momentoId, s[2].momentoId, s[3].momentoId}, hasLength(1));
+      // Dopo la riga vuota di nuovo tutti, non i centroboa.
+      expect(s[4].destinatari, Destinatari.tutti);
+      expect(s[4].momentoId, isNull);
+    });
+
+    test('più gruppi uno sotto l\'altro vanno con lo stesso paragrafo', () {
+      final s = _leggi(
+        'Principale\n'
+        '8x100 A2\n'
+        '\n'
+        'Portieri\n'
+        "20' parate\n"
+        '\n'
+        "Centroboa: 20' gambe\n"
+        '\n'
+        '4x50 sl',
+      ).serie;
+      expect({for (final x in s.take(3)) x.momentoId}, hasLength(1));
+      expect(s[0].momentoId, isNotNull);
+      expect(s[3].momentoId, isNull);
+      expect(s[3].destinatari, Destinatari.tutti);
+    });
+
+    test('dopo un "2x" del gruppo, la riga "Portieri" lo continua', () {
+      final s = _leggi(
+        'Principale\n'
+        "30' tecnico-tattico\n"
+        'Portieri\n'
+        '2x\n'
+        "5' parate\n"
+        "1' gambe\n"
+        '\n'
+        'Portieri\n'
+        "10' tiri",
+      ).serie;
+      expect(s, hasLength(6));
+      expect({for (final x in s) x.momentoId}, hasLength(1));
+      expect(s[0].momentoId, isNotNull);
+      for (final x in s.skip(1)) {
+        expect(x.destinatari, Destinatari.portieri);
+      }
+    });
+
+    test('una riga vuota subito sotto "Portieri" non lo chiude', () {
+      final s = _leggi("Principale\n8x100\nPortieri\n\n20' parate").serie;
+      expect(s[1].destinatari, Destinatari.portieri);
+      expect(s[1].momentoId, s[0].momentoId);
+      expect(s[0].momentoId, isNotNull);
+    });
+
+    test('rilette, le serie scritte sono le stesse', () {
+      for (final testo in [
+        coach,
+        // Un "2x" alla fine delle righe di tutti, poi i portieri.
+        "Principale\n8x100 A2\n2x\n50 sl\n100 sl\n\nPortieri\n20' parate\n"
+            '\n200 sl',
+        // Un "2x" dei portieri e poi altre loro serie.
+        "Principale\n30' tecnico-tattico\nPortieri\n2x\n5' parate\n"
+            "1' gambe\n\nPortieri\n10' tiri\n\n400 sl",
+        // Il gruppo fra due righe di tutti, nello stesso paragrafo.
+        "Principale\n10' palleggio\nCentroboa: 20' gambe\n10' tiri\n\n400 sl",
+      ]) {
+        final prima = _leggi(testo);
+        expect(prima.righeNonCapite, 0, reason: testo);
+        final salvate = _salvate(prima.serie);
+        final riscritto = testoDaSerie(salvate, atleti: _atleti);
+        final dopo = _leggi(riscritto);
+        expect(dopo.righeNonCapite, 0, reason: riscritto);
+        expect(dopo.serie.length, prima.serie.length, reason: riscritto);
+        for (var i = 0; i < prima.serie.length; i++) {
+          expect(
+            stessaSerie(dopo.serie[i], prima.serie[i]),
+            isTrue,
+            reason: 'serie $i in\n$riscritto',
+          );
+          expect(
+            dopo.serie[i].destinatari,
+            prima.serie[i].destinatari,
+            reason: 'serie $i in\n$riscritto',
+          );
+          for (var j = 0; j < i; j++) {
+            expect(
+              dopo.serie[i].momentoId != null &&
+                  dopo.serie[i].momentoId == dopo.serie[j].momentoId,
+              salvate[i].momentoId != null &&
+                  salvate[i].momentoId == salvate[j].momentoId,
+              reason: 'serie $j e $i in\n$riscritto',
+            );
+          }
+        }
+      }
+    });
+  });
+
   group('chi fa cosa', () {
     final serie = _salvate(_leggi(_seduta).serie);
     List<int> ordini(List<Serie> s) => [for (final x in s) x.ordine];

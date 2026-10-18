@@ -491,8 +491,8 @@ String _testoPerChi(Destinatari d, List<Atleta> atleti) {
         : 'Da qui le serie sono per: $chi. Si riparte insieme, fino al '
               'prossimo titolo';
   }
-  return 'Da qui le serie sono per: $chi, in parallelo con quelle di tutti '
-      'sopra, fino a "Tutti" o al prossimo titolo';
+  return 'Da qui le serie sono per: $chi, in parallelo con il paragrafo di '
+      'tutti sopra, fino alla riga vuota';
 }
 
 /// "8×100m Libero · B1 · rip 1:30" per la riga sotto il cursore.
@@ -907,17 +907,17 @@ void mostraAiutoScrittura(BuildContext context) {
         ('"testo"', 'nota; anche le parole che non conosco finiscono qui'),
         (
           'Portieri  Movimento  Tutti',
-          'da soli su una riga: per chi sono le serie sotto, fino al '
-              'prossimo titolo',
+          'da soli su una riga: per chi sono le serie sotto, fino alla riga '
+              'vuota ("Tutti" fino al prossimo titolo)',
         ),
         (
           'Centroboa  Marcatori  Esterni',
           'come "Portieri", per i ruoli scritti nella scheda dell\'atleta',
         ),
         (
-          "8x100 A2\nPortieri\n20' parate\nTutti",
-          'in parallelo: mentre gli altri fanno le righe sopra, i portieri '
-              'fanno le loro; da "Tutti" (o dal prossimo titolo) si riparte '
+          "10' palleggio\n10' tiri\n\nCentroboa: 20' gambe\n\n30' partita",
+          'in parallelo: mentre gli altri fanno il paragrafo sopra, i '
+              'centroboa fanno il loro; dopo la riga vuota si riparte '
               'insieme',
         ),
         (

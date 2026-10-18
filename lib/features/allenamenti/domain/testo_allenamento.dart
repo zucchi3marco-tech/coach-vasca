@@ -45,25 +45,34 @@ import 'volume_allenamento.dart';
 ///   successiva (`recuperoDopoS`): non è una serie e non conta nel
 ///   volume, solo nella durata.
 /// - Per chi sono le serie ([Destinatari]): una riga da sola "Portieri",
-///   "Movimento", "Rossi, Bianchi" (gli atleti del gruppo), "Tutti
-///   tranne Rossi" vale per le righe sotto, fino al prossimo titolo di
-///   blocco o a "Tutti"; davanti a una serie ("Portieri: 10' tiri",
-///   "Rossi: 4x50 gambe") vale solo per quella riga, anche dentro un
-///   "2x". Anche "Centroboa", "Marcatori", "Esterni".
-/// - Lavori in parallelo (richiesta del coach 2026-10-15): le righe
-///   "Portieri", "Centroboa", "Rossi, Bianchi"... si fanno **insieme** alle
-///   righe di tutti sopra di loro, nello stesso tempo: è un momento
+///   "Movimento", "Rossi, Bianchi" (gli atleti del gruppo) vale per le
+///   righe sotto, fino alla riga vuota, al prossimo titolo di blocco o a
+///   "Tutti"; "Tutti tranne Rossi" fino al prossimo titolo o "Tutti";
+///   davanti a una serie ("Portieri: 10' tiri", "Rossi: 4x50 gambe") vale
+///   solo per quella riga, anche dentro un "2x". Anche "Centroboa",
+///   "Marcatori", "Esterni".
+/// - Lavori in parallelo (richiesta del coach 2026-10-15, rivista il
+///   2026-10-17): il lavoro di "Portieri", "Centroboa", "Rossi,
+///   Bianchi"... si fa **insieme** al paragrafo di tutti subito sopra (le
+///   righe fino alla riga vuota prima), nello stesso tempo: è un momento
 ///   (`momentoId`), e ognuno fa la sua colonna (vedi `serieDellAtleta`).
-///   Un titolo di blocco o una riga "Tutti" (anche "Tutti tranne Rossi")
-///   aprono un momento nuovo: da lì si riparte insieme.
+///   Più gruppi uno sotto l'altro vanno con lo stesso paragrafo. Un
+///   titolo di blocco, una riga "Tutti" (anche "Tutti tranne Rossi") o,
+///   dopo una riga vuota, una riga di tutti aprono un momento nuovo: da lì
+///   si riparte insieme.
 ///
 ///   ```text
 ///   Principale
-///   8x100 A2 @1:45        ← tutti, mentre…
-///   Portieri
-///   3x6' parate           ← …i portieri parano
-///   Tutti
-///   10' partita           ← di nuovo tutti insieme
+///   3x
+///   50 sl A1              ← tutti, e anche i centroboa
+///   6x100 sl B1 @1:40
+///
+///   10' palleggio         ← tutti, mentre…
+///   10' tiri A2
+///
+///   Centroboa: 20' gambe  ← …i centroboa fanno le gambe
+///
+///   30' tecnico-tattico   ← di nuovo tutti insieme
 ///   ```
 ///
 /// [testoDaSerie] fa il contrario: riscrive le serie di un allenamento in
@@ -1060,12 +1069,28 @@ AllenamentoScritto interpretaAllenamento(
   var gruppi = 0;
 
   // Per chi sono le serie da qui in giù: fino al prossimo titolo di
-  // blocco o alla prossima riga "per chi".
+  // blocco o alla prossima riga "per chi"; quelle di un gruppo
+  // ("Portieri") fino alla riga vuota, poi di nuovo [perChiBase].
   var perChi = Destinatari.tutti;
+  var perChiBase = Destinatari.tutti;
+  // Le serie scritte dall'ultima riga "per chi" di un gruppo: la riga
+  // vuota la chiude solo dopo almeno una.
+  var sottoIlGruppo = 0;
 
   // Il momento in corso: le serie per chi è diverso si fanno insieme.
-  // Un titolo o una riga "Tutti" ne aprono uno nuovo.
+  // Un titolo, una riga "Tutti" o un paragrafo nuovo di tutti (dopo una
+  // riga vuota) ne aprono uno nuovo; il lavoro di un gruppo si unisce al
+  // momento in corso, cioè al paragrafo di tutti subito sopra (richiesta
+  // del coach 2026-10-17: "Centroboa: 20' gambe" sotto "10' palleggio,
+  // 10' tiri" vale solo per quei 20 minuti).
   var momento = 1;
+  var dopoRigaVuota = false;
+
+  // Una riga di tutti che apre un paragrafo nuovo apre anche un momento.
+  void rigaDiTutti() {
+    if (dopoRigaVuota) momento++;
+    dopoRigaVuota = false;
+  }
 
   // Il "2x" in corso: la sua riga, le volte, le serie da ripetere.
   int? rigaGiro;
@@ -1100,6 +1125,10 @@ AllenamentoScritto interpretaAllenamento(
     var t = grezza.trim();
     if (t.isEmpty) {
       chiudiGiro();
+      // Il lavoro di un gruppo finisce alla riga vuota: sotto si torna
+      // insieme, salvo un'altra riga "Portieri", "Centroboa"...
+      if (!perChi.base && sottoIlGruppo > 0) perChi = perChiBase;
+      dopoRigaVuota = true;
       righe.add(RigaScritta(testo: grezza, tipo: TipoRiga.vuota));
       continue;
     }
@@ -1112,7 +1141,9 @@ AllenamentoScritto interpretaAllenamento(
       chiudiGiro();
       blocco = nuovoBlocco;
       perChi = Destinatari.tutti;
+      perChiBase = Destinatari.tutti;
       momento++;
+      dopoRigaVuota = false;
       t = t.substring(titolo!.end).trim();
       if (t.isEmpty) {
         righe.add(
@@ -1125,6 +1156,11 @@ AllenamentoScritto interpretaAllenamento(
     final giro = _rxGiri.firstMatch(t);
     if (giro != null) {
       chiudiGiro();
+      if (perChi.base) {
+        rigaDiTutti();
+      } else {
+        dopoRigaVuota = false;
+      }
       final n = int.parse(giro[1]!);
       if (n <= 0) {
         righe.add(
@@ -1200,8 +1236,15 @@ AllenamentoScritto interpretaAllenamento(
       if (destinatari.resto.isEmpty) {
         perChi = destinatari.destinatari!;
         // "Tutti" (anche "tranne Rossi"): si riparte insieme. "Portieri",
-        // "Centroboa", "Rossi, Bianchi": in parallelo con le righe sopra.
-        if (perChi.base) momento++;
+        // "Centroboa", "Rossi, Bianchi": in parallelo con il paragrafo di
+        // tutti sopra (o con il gruppo sopra), fino alla riga vuota.
+        if (perChi.base) {
+          momento++;
+          perChiBase = perChi;
+        } else {
+          sottoIlGruppo = 0;
+        }
+        dopoRigaVuota = false;
         righe.add(
           RigaScritta(
             testo: grezza,
@@ -1230,6 +1273,14 @@ AllenamentoScritto interpretaAllenamento(
       );
       continue;
     }
+    // "Centroboa: 20' gambe", anche dopo una riga vuota: con il paragrafo
+    // sopra. Una riga di tutti dopo una riga vuota: un paragrafo nuovo.
+    if (perQuesta.base) {
+      rigaDiTutti();
+    } else {
+      dopoRigaVuota = false;
+    }
+    if (!perChi.base) sottoIlGruppo++;
     final lette = [
       for (final s in lettura.serie)
         (perQuesta.perTutti ? s : s._conDestinatari(perQuesta))._nelMomento(
@@ -1460,11 +1511,15 @@ String? _rigaPiramide(List<DatiSerie> gruppo) {
 /// quando sopra nello stesso blocco ci sono già delle serie (così non si
 /// unisce a quelle); dentro il momento le serie di tutti che vengono dopo
 /// quelle di altri hanno "Tutti:" davanti, perché una riga "Tutti" lo
-/// chiuderebbe.
+/// chiuderebbe, nessuna riga vuota prima di un "2x" (aprirebbe un
+/// paragrafo nuovo) e, dopo il "2x" di un gruppo, la sua riga "Portieri"
+/// di nuovo.
 String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
   final righe = <String>[];
   String? blocco;
   var perChi = Destinatari.tutti;
+  // A cui si torna dopo la riga vuota che chiude un "2x" di un gruppo.
+  var perChiBase = Destinatari.tutti;
   // Dopo una riga "per chi", come dopo un titolo, un "2x" non vuole la
   // riga vuota prima.
   var dopoIntestazione = false;
@@ -1494,6 +1549,7 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
       dopoIntestazione = true;
       blocco = primo.blocco;
       perChi = Destinatari.tutti;
+      perChiBase = Destinatari.tutti;
       serieScritte = false;
     }
     final uniforme = gruppo.every((s) => s.destinatari == primo.destinatari);
@@ -1512,10 +1568,14 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
             : Destinatari.tutti;
         intestazione(_testaDestinatari(insieme, atleti)!);
         perChi = insieme;
+        perChiBase = insieme;
         serieScritte = false;
       }
       momento = primo.momentoId;
     }
+    // Nello stesso momento, dopo altre sue serie: una riga vuota prima di
+    // un "2x" aprirebbe un paragrafo nuovo, cioè un altro momento.
+    final dentroIlMomento = momento != null && serieScritte;
 
     // Le serie di tutti dopo quelle di altri, nello stesso momento.
     final tuttiDavanti =
@@ -1535,6 +1595,7 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
     if (uniforme && primo.destinatari != perChi && !tuttiDavanti) {
       intestazione(_testaDestinatari(primo.destinatari, atleti)!);
       perChi = primo.destinatari;
+      if (perChi.base) perChiBase = perChi;
     }
     serieScritte = true;
     String riga(DatiSerie s, String testo) =>
@@ -1556,6 +1617,7 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
     if (righe.isNotEmpty &&
         righe.last.isNotEmpty &&
         !dopoIntestazione &&
+        !dentroIlMomento &&
         !_nomiBlocco.containsValue(righe.last)) {
       righe.add('');
     }
@@ -1566,6 +1628,9 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
       if (s.recuperoDopoS case final r?) aggiungi(_rigaRecuperoDopo(r));
     }
     righe.add('');
+    // La riga vuota chiude anche il lavoro del gruppo: per altre sue serie
+    // la riga "Portieri" va riscritta.
+    if (!perChi.base) perChi = perChiBase;
     // Un recupero diverso dopo l'ultimo giro: fuori dal gruppo, sotto la
     // riga vuota.
     if (ultimo != null && ultimo != gruppo[periodo - 1].recuperoDopoS) {
