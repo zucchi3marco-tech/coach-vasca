@@ -2,6 +2,13 @@
 
 Lista dei passi che dall'app non si possono fare: pannelli esterni, password, acquisti, il telefono. Si spunta quando è fatto.
 
+## 0. Il club e il calendario (pubblicati il 2026-10-18)
+
+- [ ] Menu ☰ → **Il mio club** → **Scrivi il nome**: lo vedono gli altri quando modifichi un allenamento.
+- [ ] Sempre in "Il mio club" → **Capi allenatori**: tocca ogni squadra e scegli il capo (per ora tu).
+- [ ] Per ogni allenatore o assistente: **Invita un allenatore** → Allenatore o Assistente → **Condividi** il codice. Lui si registra come allenatore e in "Crea il tuo club" tocca **Ho un codice da allenatore**.
+- [ ] Menu ☰ → **Partite nel calendario** → collegalo sul tuo telefono e controlla che compaiano le partite.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".
