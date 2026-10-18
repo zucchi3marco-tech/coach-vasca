@@ -32,6 +32,8 @@ import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
 import '../domain/squadre_atleta.dart';
 import 'atleta_form_screen.dart';
+import 'atleti_da_excel_screen.dart';
+import 'foglio_codici_screen.dart';
 import 'gestisci_account_atleta_dialog.dart';
 
 enum _Ordinamento { cognome, dataNascita, percentualePresenze }
@@ -155,6 +157,29 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                       etichetta: 'Nuovo atleta',
                       principale: true,
                       onTap: () => _apriForm(context),
+                    ),
+                  if (puoGestire)
+                    AzioneTestata(
+                      icona: Icons.upload_file,
+                      etichetta: 'Da Excel',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AtletiDaExcelScreen(clubId: widget.clubId),
+                        ),
+                      ),
+                    ),
+                  if (puoGestire)
+                    AzioneTestata(
+                      icona: Icons.qr_code_2,
+                      etichetta: 'Codici',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FoglioCodiciScreen(
+                            gruppoId: widget.filtroGruppoId,
+                          ),
+                        ),
+                      ),
                     ),
                   AzioneTestata(
                     icona: Icons.calendar_view_month,
