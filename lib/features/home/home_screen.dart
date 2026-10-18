@@ -15,8 +15,13 @@ import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/application/current_atleta_provider.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
 import '../club/application/current_club_provider.dart';
+import '../club/application/membri_club_providers.dart';
 import '../club/domain/club.dart';
+import '../club/domain/ruolo_club.dart';
 import '../club/presentation/club_setup_screen.dart';
+import '../configurazione/application/configurazione_providers.dart';
+import '../configurazione/domain/stato_configurazione.dart';
+import '../configurazione/presentation/configurazione_guidata_screen.dart';
 import '../gare/presentation/gare_list_screen.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
@@ -90,11 +95,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// La configurazione guidata nel corpo della home, dalle squadre o dal
+  /// primo passo ancora da fare (almeno gli allenatori) se le squadre ci
+  /// sono già.
+  Widget _configurazioneGuidata(Club club, List<Gruppo> gruppi) {
+    var daPasso = PassoConfigurazione.squadre;
+    if (gruppi.isNotEmpty) {
+      final prossimo = ref
+          .watch(statoConfigurazioneProvider(club.id))
+          .value
+          ?.prossimo;
+      daPasso = prossimo != null && prossimo.index > daPasso.index
+          ? prossimo
+          : PassoConfigurazione.allenatori;
+    }
+    return ConfigurazioneGuidataScreen(
+      club: club,
+      daPasso: daPasso,
+      onFine: () => ref.read(configurazioneInCorsoProvider.notifier).finisci(),
+    );
+  }
+
   Widget _corpoDaCoach(Club club) {
     final gruppiAsync = ref.watch(gruppiListProvider(club.id));
+    final inCorso = ref.watch(configurazioneInCorsoProvider) == club.id;
     return gruppiAsync.when(
       data: (gruppi) {
+        // Appena creato il club, o riaperta l'app a metà: il responsabile
+        // viene guidato passo per passo.
+        if (inCorso) return _configurazioneGuidata(club, gruppi);
         if (gruppi.isEmpty) {
+          final ruolo = ref.watch(mioRuoloProvider(club.id));
+          if (ruolo.isLoading) {
+            return const Padding(
+              padding: EdgeInsets.all(AppSpacing.s16),
+              child: LoadingSkeletonList(righe: 4),
+            );
+          }
+          if (ruolo.value == RuoloClub.responsabile) {
+            return _configurazioneGuidata(club, gruppi);
+          }
           return GruppiOnboardingScreen(clubId: club.id);
         }
         final selezione = ref.watch(selezioneGruppoProvider);
@@ -183,8 +223,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ? const []
         : ref.watch(gruppiListProvider(club.id)).value ?? const [];
     final selezione = ref.watch(selezioneGruppoProvider);
+    // Durante la configurazione guidata niente tab né tour: partono quando
+    // finisce, come sempre.
+    final inCorso =
+        club != null && ref.watch(configurazioneInCorsoProvider) == club.id;
     final mostraTab =
-        !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
+        !areaAtleta &&
+        club != null &&
+        gruppi.isNotEmpty &&
+        selezione != null &&
+        !inCorso;
     if (mostraTab) _controllaOnboarding();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;

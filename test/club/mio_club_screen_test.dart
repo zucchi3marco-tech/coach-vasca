@@ -1,9 +1,17 @@
+import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
+import 'package:coach_vasca/features/club/application/current_club_provider.dart';
+import 'package:coach_vasca/features/club/application/membri_club_providers.dart';
 import 'package:coach_vasca/features/club/data/membri_club_repository.dart';
+import 'package:coach_vasca/features/club/domain/club.dart';
 import 'package:coach_vasca/features/club/domain/ruolo_club.dart';
 import 'package:coach_vasca/features/club/presentation/mio_club_screen.dart';
+import 'package:coach_vasca/features/configurazione/application/configurazione_providers.dart';
+import 'package:coach_vasca/features/configurazione/domain/stato_configurazione.dart';
 import 'package:coach_vasca/features/export/data/dati_club_repository.dart';
 import 'package:coach_vasca/features/export/domain/dati_club.dart';
 import 'package:coach_vasca/features/export/presentation/scarica_dati_club_screen.dart';
+import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
+import 'package:coach_vasca/features/gruppi/domain/gruppo.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
@@ -580,6 +588,99 @@ void main() {
     );
     expect(find.text('Torna indietro'), findsOneWidget);
     expect(server.letture, 0);
+  });
+
+  testWidgets(
+    'il responsabile vede la configurazione guidata, prima dei dati',
+    (tester) async {
+      await _apri(tester, _ClubFinto([_io, _luca]));
+
+      expect(find.text('Per cominciare'), findsOneWidget);
+      expect(find.text('Configurazione guidata'), findsOneWidget);
+      expect(
+        find.text('Squadre, allenatori, atleti e codici, un passo alla volta'),
+        findsOneWidget,
+      );
+      double dy(String testo) => tester.getTopLeft(find.text(testo)).dy;
+      expect(dy('Per cominciare'), greaterThan(dy('Invita un allenatore')));
+      expect(dy('Per cominciare'), lessThan(dy('I dati del club')));
+    },
+  );
+
+  testWidgets('un allenatore non vede la configurazione guidata', (
+    tester,
+  ) async {
+    const allenatore = MembroClub(
+      userId: 'u-io',
+      nome: 'Luca Bianchi',
+      ruolo: RuoloClub.allenatore,
+      sonoIo: true,
+    );
+    await _apri(tester, _ClubFinto([_io.copy(sonoIo: false), allenatore]));
+
+    expect(find.text('Luca Bianchi'), findsOneWidget);
+    expect(find.text('Per cominciare'), findsNothing);
+    expect(find.text('Configurazione guidata'), findsNothing);
+  });
+
+  testWidgets('la riga apre la configurazione dalle squadre e Fine la chiude', (
+    tester,
+  ) async {
+    await _apri(
+      tester,
+      _ClubFinto([_io, _luca]),
+      altri: [
+        currentClubProvider.overrideWith(
+          (ref) async => const Club(
+            id: 'c1',
+            nome: 'Mako Pallanuoto',
+            sport: 'pallanuoto',
+          ),
+        ),
+        gruppiListProvider.overrideWith(
+          (ref, _) => Stream.value(const [
+            Gruppo(id: 'g1', clubId: 'c1', nome: 'U14', ordine: 1),
+          ]),
+        ),
+        atletiListProvider.overrideWith((ref, _) => Stream.value(const [])),
+        mioRuoloProvider.overrideWith((ref, _) async => RuoloClub.responsabile),
+        statoConfigurazioneProvider.overrideWith(
+          (ref, _) async => const StatoConfigurazione(
+            squadre: 1,
+            altriAllenatori: 0,
+            invitiAllenatori: false,
+            allenaDaSolo: false,
+            atleti: 0,
+            atletiConAccount: 0,
+            codiciAtleti: false,
+          ),
+        ),
+      ],
+    );
+
+    await tester.ensureVisible(find.text('Configurazione guidata'));
+    await tester.pump();
+    await tester.tap(find.text('Configurazione guidata'));
+    await _passa(tester);
+
+    expect(find.text('Passo 2 di 5'), findsOneWidget);
+    expect(find.text('Le squadre'), findsOneWidget);
+    expect(find.text('U14'), findsOneWidget);
+
+    // Tutti i passi, lasciando per dopo quelli che si possono: l'ultimo
+    // chiude la pagina e si torna a "Il mio club".
+    await tester.tap(find.text('Avanti'));
+    await _passa(tester);
+    for (final passo in ['Passo 3 di 5', 'Passo 4 di 5', 'Passo 5 di 5']) {
+      expect(find.text(passo), findsOneWidget);
+      await tester.tap(find.text('Lo faccio dopo'));
+      await _passa(tester);
+    }
+
+    // La pagina esce con la sua transizione.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Il mio club'), findsOneWidget);
+    expect(find.text('Passo 5 di 5'), findsNothing);
   });
 }
 

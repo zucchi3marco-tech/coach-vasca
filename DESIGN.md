@@ -1084,7 +1084,7 @@ Tutto il resto (`superficieAlt` con il suo nome, `testoTenue`, `ok`, `attenzione
 
 Vivono in `lib/widgets/`. Una schermata nuova si compone con questi, non ricostruisce nulla da zero.
 
-Esistenti: `TestataPagina`, `SchedaElenco`, `GrigliaSchede`, `RiquadroData`, `IconaRiquadro`, `Pastiglia`, `TitoloSezione`, `GrigliaAzioni`, `Premibile`, `EntrataACascata`, `AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`, `FabAzioni`.
+Esistenti: `TestataPagina`, `SchedaElenco`, `GrigliaSchede`, `RiquadroData`, `IconaRiquadro`, `Pastiglia`, `TitoloSezione`, `GrigliaAzioni`, `Premibile`, `EntrataACascata`, `AppScaffold`, `SectionHeader`, `FormGroup`, `AppTextField`, `AppSelect`, `PrimaryButton`, `SecondaryButton`, `DangerButton`, `AppListPanel`, `ReorderableAppListPanel`, `AppListRow`, `StatPanel`, `ZoneChip`, `CapBadge`, `LaneRule`, `EmptyState`, `ErrorBanner`, `LoadingSkeleton`, `PoolCard`, `OrdineBadge`, `BreadcrumbBar`, `FabAzioni`, `BarraPassi`.
 
 Da aggiungere per il layout e il tema:
 
@@ -1099,7 +1099,7 @@ Da aggiungere per il layout e il tema:
 | `ThemeToggle` | selettore Sistema/Chiaro/Scuro, e la variante a tre stati per bordo vasca |
 | `PoolHeroBlock` | blocco centrale della schermata vasca, unico posto con la sfumatura |
 
-`ReorderableAppListPanel` è la variante di `AppListPanel` con le righe trascinabili, usata dove l'ordine lo decide il coach. `BreadcrumbBar` resta disponibile per una futura gerarchia annidata. `FabAzioni` sostituisce più `FloatingActionButton` impilati: con un'azione sola si comporta come un FAB normale, con più azioni il tocco apre un elenco con etichette sempre visibili.
+`ReorderableAppListPanel` è la variante di `AppListPanel` con le righe trascinabili, usata dove l'ordine lo decide il coach. `BreadcrumbBar` resta disponibile per una futura gerarchia annidata. `FabAzioni` sostituisce più `FloatingActionButton` impilati: con un'azione sola si comporta come un FAB normale, con più azioni il tocco apre un elenco con etichette sempre visibili. `BarraPassi` è la fila di segmenti (fatto, adesso, da fare) in cima a un percorso guidato a più passi, come la configurazione di un club nuovo.
 
 Se serve un componente nuovo, si aggiunge qui e si documenta in questo file. Non si scrive un widget su misura dentro una singola schermata.
 
