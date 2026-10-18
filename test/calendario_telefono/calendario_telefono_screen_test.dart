@@ -2,6 +2,8 @@ import 'package:coach_vasca/features/atleti/application/current_atleta_provider.
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/calendario_telefono/data/calendario_telefono_repository.dart';
 import 'package:coach_vasca/features/calendario_telefono/presentation/calendario_telefono_screen.dart';
+import 'package:coach_vasca/features/club/application/current_club_provider.dart';
+import 'package:coach_vasca/features/club/domain/club.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,13 +22,24 @@ class _CalendarioFinto implements CalendarioTelefonoRepository {
   var _codice = _codiceVecchio;
   final richieste = <bool>[];
   Object? errore;
+  LetturaCalendario? lettura;
+  var letture = 0;
 
   @override
   Future<String> codice({bool nuovo = false}) async {
     richieste.add(nuovo);
     if (errore != null) throw errore!;
-    if (nuovo) _codice = _codiceNuovo;
+    if (nuovo) {
+      _codice = _codiceNuovo;
+      lettura = null;
+    }
     return _codice;
+  }
+
+  @override
+  Future<LetturaCalendario?> ultimaLettura() async {
+    letture++;
+    return lettura;
   }
 
   @override
@@ -48,6 +61,9 @@ Widget _app(_CalendarioFinto server, {Atleta? atleta}) => ProviderScope(
   overrides: [
     calendarioTelefonoRepositoryProvider.overrideWithValue(server),
     currentAtletaProvider.overrideWith((ref) async => atleta),
+    currentClubProvider.overrideWith(
+      (ref) async => const Club(id: 'c1', nome: 'Canottieri Milano'),
+    ),
   ],
   child: MaterialApp(
     theme: AppTheme.chiaro,
@@ -87,7 +103,13 @@ void main() {
     expect(find.textContaining('Tocca «Aggiungi al calendario»'), findsOne);
     expect(find.text(_indirizzo(_codiceVecchio)), findsOneWidget);
     expect(find.text('Aggiungi al calendario'), findsOneWidget);
-    expect(find.text('Google Calendar'), findsOneWidget);
+    expect(find.text('Condividi l\'indirizzo'), findsOneWidget);
+    expect(find.text('Apri in Google Calendar (dal computer)'), findsOne);
+    expect(find.textContaining('serve un computer'), findsOneWidget);
+    expect(
+      find.textContaining('«Partite · Canottieri Milano»'),
+      findsOneWidget,
+    );
     expect(find.text('Copia l\'indirizzo'), findsOneWidget);
     expect(find.text('Cambia indirizzo'), findsOneWidget);
     expect(find.textContaining('L\'indirizzo è personale'), findsOneWidget);
@@ -115,6 +137,7 @@ void main() {
     await _apri(tester, _CalendarioFinto());
 
     await tester.ensureVisible(find.text('Copia l\'indirizzo'));
+    await tester.pump();
     await tester.tap(find.text('Copia l\'indirizzo'));
     await tester.pump();
 
@@ -129,6 +152,7 @@ void main() {
     await _apri(tester, server);
 
     await tester.ensureVisible(find.text('Cambia indirizzo'));
+    await tester.pump();
     await tester.tap(find.text('Cambia indirizzo'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -153,6 +177,60 @@ void main() {
     expect(find.text(_indirizzo(_codiceVecchio)), findsNothing);
     expect(
       find.text('Indirizzo cambiato: collega di nuovo il calendario'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('senza letture dice che il collegamento non è finito', (
+    tester,
+  ) async {
+    final server = _CalendarioFinto();
+    await _apri(tester, server);
+
+    expect(
+      find.textContaining('Nessun calendario l\'ha ancora letto'),
+      findsOneWidget,
+    );
+
+    // Intanto Google l'ha letto: «Controlla di nuovo» lo dice.
+    server.lettura = (
+      quando: DateTime.now().subtract(const Duration(minutes: 5)),
+      app: 'Google Calendar',
+    );
+    await tester.tap(find.text('Controlla di nuovo'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(server.letture, 2);
+    expect(
+      find.text('Collegato: l\'ha letto Google Calendar 5 minuti fa.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Nessun calendario'), findsNothing);
+  });
+
+  testWidgets('dopo «Cambia indirizzo» il collegamento è da rifare', (
+    tester,
+  ) async {
+    final server = _CalendarioFinto()
+      ..lettura = (
+        quando: DateTime.now().subtract(const Duration(minutes: 5)),
+        app: 'iPhone',
+      );
+    await _apri(tester, server);
+    expect(find.textContaining('l\'ha letto iPhone'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Cambia indirizzo'));
+    await tester.pump();
+    await tester.tap(find.text('Cambia indirizzo'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Cambia'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Nessun calendario l\'ha ancora letto'),
       findsOneWidget,
     );
   });

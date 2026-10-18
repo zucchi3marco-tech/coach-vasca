@@ -21,7 +21,28 @@ class CalendarioTelefonoRepository {
     );
     return risposta as String;
   }
+
+  /// Quando e da quale app ("Google Calendar", "iPhone"…) il calendario è
+  /// stato letto l'ultima volta; null se nessuno l'ha ancora letto. Lo
+  /// segna la funzione `calendario` a ogni lettura.
+  Future<LetturaCalendario?> ultimaLettura() async {
+    final utente = _client.auth.currentUser;
+    if (utente == null) return null;
+    final riga = await _client
+        .from('calendari_collegati')
+        .select('letto_at, letto_da')
+        .eq('user_id', utente.id)
+        .maybeSingle();
+    final letto = riga?['letto_at'] as String?;
+    if (letto == null) return null;
+    return (
+      quando: DateTime.parse(letto).toLocal(),
+      app: riga?['letto_da'] as String? ?? 'un calendario',
+    );
+  }
 }
+
+typedef LetturaCalendario = ({DateTime quando, String app});
 
 final calendarioTelefonoRepositoryProvider =
     Provider<CalendarioTelefonoRepository>((ref) {
@@ -53,3 +74,12 @@ final codiceCalendarioProvider =
       // automatici di Riverpod la lascerebbero minuti sullo scheletro.
       retry: (_, _) => null,
     );
+
+/// L'ultima lettura del calendario, per dire se il collegamento è riuscito.
+/// Si rilegge quando cambia il codice ("Cambia indirizzo") e con
+/// `ref.invalidate` ("Controlla di nuovo").
+final letturaCalendarioProvider =
+    FutureProvider.autoDispose<LetturaCalendario?>((ref) async {
+      await ref.watch(codiceCalendarioProvider.future);
+      return ref.read(calendarioTelefonoRepositoryProvider).ultimaLettura();
+    }, retry: (_, _) => null);

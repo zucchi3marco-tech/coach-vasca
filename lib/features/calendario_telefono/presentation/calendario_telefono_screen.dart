@@ -4,7 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/condivisione/apri_indirizzo.dart';
+import '../../../core/condivisione/condividi_testo.dart';
 import '../../../core/demo/modalita_demo.dart';
+import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
@@ -18,6 +20,7 @@ import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/current_atleta_provider.dart';
+import '../../club/application/current_club_provider.dart';
 import '../data/calendario_telefono_repository.dart';
 import '../domain/indirizzi_calendario.dart';
 
@@ -45,6 +48,13 @@ class _CalendarioTelefonoScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Indirizzo copiato')));
+  }
+
+  /// Il foglio "Condividi" del telefono, per mandarsi l'indirizzo sul
+  /// computer; dove non c'è, l'indirizzo si copia.
+  Future<void> _condividi(String indirizzo) async {
+    if (await condividiTesto(indirizzo)) return;
+    await _copia(indirizzo);
   }
 
   Future<void> _cambiaIndirizzo() async {
@@ -116,6 +126,7 @@ class _CalendarioTelefonoScreenState
 
     final codiceAsync = ref.watch(codiceCalendarioProvider);
     final perAtleta = ref.watch(currentAtletaProvider).value != null;
+    final nomeClub = ref.watch(currentClubProvider).value?.nome;
 
     return AppScaffold(
       // La testata porta il titolo: la barra in alto resta vuota.
@@ -158,9 +169,13 @@ class _CalendarioTelefonoScreenState
               https: indirizzoCalendario(_urlSupabase, codice),
               webcal: indirizzoWebcal(_urlSupabase, codice),
               google: indirizzoGoogleCalendar(_urlSupabase, codice),
+              nomeCalendario: nomeClub == null
+                  ? 'Partite'
+                  : 'Partite · $nomeClub',
               perAtleta: perAtleta,
               cambiando: _cambiando,
               onCopia: _copia,
+              onCondividi: _condividi,
               onCambia: _cambiaIndirizzo,
             ),
           ),
@@ -175,18 +190,25 @@ class _Contenuto extends StatelessWidget {
     required this.https,
     required this.webcal,
     required this.google,
+    required this.nomeCalendario,
     required this.perAtleta,
     required this.cambiando,
     required this.onCopia,
+    required this.onCondividi,
     required this.onCambia,
   });
 
   final String https;
   final String webcal;
   final String google;
+
+  /// Come il calendario si chiama nel telefono ("Partite · Canottieri
+  /// Milano", il nome che gli dà la funzione `calendario`).
+  final String nomeCalendario;
   final bool perAtleta;
   final bool cambiando;
   final Future<void> Function(String indirizzo) onCopia;
+  final Future<void> Function(String indirizzo) onCondividi;
   final Future<void> Function() onCambia;
 
   @override
@@ -195,6 +217,8 @@ class _Contenuto extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _StatoCollegamento(),
+        const SizedBox(height: AppSpacing.s24),
         const TitoloSezione('Collegalo una volta'),
         const _Scheda(
           figli: [
@@ -202,27 +226,65 @@ class _Contenuto extends StatelessWidget {
               'iPhone',
               'Tocca «Aggiungi al calendario», poi «Iscriviti».',
             ),
-            _Passo(
-              'Android',
-              'Tocca «Google Calendar», poi «Aggiungi». Compare sul telefono '
-                  'insieme agli altri calendari di Google.',
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        PrimaryButton(
+          label: 'Aggiungi al calendario',
+          onPressed: () => apriCollegamento(webcal),
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        _Scheda(
+          figli: [
+            const _Passo(
+              'Android, con Google Calendar',
+              'Dal telefono Google non aggiunge un calendario da un '
+                  'indirizzo: serve un computer, una volta sola.',
             ),
+            const _Passo(
+              '1.',
+              'Tocca «Condividi l\'indirizzo» e mandalo a te stesso, per '
+                  'email o su WhatsApp.',
+            ),
+            const _Passo(
+              '2.',
+              'Dal computer apri calendar.google.com con lo stesso account '
+                  'Google del telefono. Accanto ad «Altri calendari» tocca '
+                  '«+», poi «Da URL»: incolla l\'indirizzo e tocca «Aggiungi '
+                  'calendario». Dal computer basta anche aprire «Apri in '
+                  'Google Calendar».',
+            ),
+            _Passo(
+              '3.',
+              'Sul telefono, nell\'app Google Calendar: ☰, «Impostazioni», '
+                  'tocca «$nomeCalendario» e accendi «Sincronizzazione».',
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        SecondaryButton(
+          label: 'Condividi l\'indirizzo',
+          icon: Icons.share_outlined,
+          onPressed: () => onCondividi(https),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => apriIndirizzo(google),
+            icon: const Icon(Icons.open_in_new, size: 20),
+            label: const Text('Apri in Google Calendar (dal computer)'),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        const _Scheda(
+          figli: [
             _Passo(
               'Altro calendario',
               'Copia l\'indirizzo e aggiungilo come calendario da indirizzo '
                   '(a volte si chiama «iscrizione»).',
             ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.s16),
-        PrimaryButton(
-          label: 'Aggiungi al calendario',
-          onPressed: () => apriCollegamento(webcal),
-        ),
-        const SizedBox(height: AppSpacing.s12),
-        SecondaryButton(
-          label: 'Google Calendar',
-          onPressed: () => apriIndirizzo(google),
         ),
         const SizedBox(height: AppSpacing.s8),
         Align(
@@ -253,8 +315,9 @@ class _Contenuto extends StatelessWidget {
           figli: [
             const _Nota(
               Icons.sync_outlined,
-              'Le partite nuove o spostate arrivano da sole: è il telefono '
-              'che decide quando aggiornare, di solito entro qualche ora.',
+              'Le partite nuove o spostate arrivano da sole, ma è il '
+              'calendario che decide quando rileggerle: Google ogni qualche '
+              'ora, a volte fino a un giorno; iPhone di solito più spesso.',
             ),
             if (perAtleta)
               const _Nota(
@@ -362,6 +425,71 @@ class _Nota extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Se il collegamento è riuscito: l'ultima volta che un calendario ha letto
+/// l'indirizzo, e da quale app. Senza letture il collegamento non è finito
+/// (di solito su Android, dove dal telefono Google non lo aggiunge).
+class _StatoCollegamento extends ConsumerWidget {
+  const _StatoCollegamento();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colori = context.colori;
+    final lettura = ref.watch(letturaCalendarioProvider);
+    if (lettura.isLoading && !lettura.hasValue) {
+      return const LoadingSkeletonList(righe: 1);
+    }
+    // Senza rete non si sa: meglio non dire niente che dire il falso.
+    if (lettura.hasError && !lettura.hasValue) return const SizedBox.shrink();
+    final ultima = lettura.value;
+    final collegato = ultima != null;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.paddingPannello),
+      decoration: BoxDecoration(
+        color: collegato ? colori.okTenue : colori.attenzioneTenue,
+        borderRadius: BorderRadius.circular(AppRadius.pannello),
+        border: Border.all(color: collegato ? colori.ok : colori.attenzione),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                collegato ? Icons.check_circle_outline : Icons.info_outline,
+                size: 22,
+                color: collegato ? colori.ok : colori.attenzione,
+              ),
+              const SizedBox(width: AppSpacing.s12),
+              Expanded(
+                child: Text(
+                  collegato
+                      ? 'Collegato: l\'ha letto ${ultima.app} '
+                            '${quandoFa(ultima.quando)}.'
+                      : 'Nessun calendario l\'ha ancora letto: il '
+                            'collegamento non è finito. Segui i passi qui '
+                            'sotto, poi torna qui.',
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: lettura.isLoading
+                  ? null
+                  : () => ref.invalidate(letturaCalendarioProvider),
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Controlla di nuovo'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -15,6 +15,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type Calendario, ics } from "./ics.ts";
+import { lettore } from "./lettore.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -53,6 +54,18 @@ Deno.serve(async (req) => {
   if (!data) {
     // Un codice cambiato con "Cambia indirizzo", o inventato.
     return testo("Calendario non trovato", 404);
+  }
+
+  // L'ultima lettura, per la pagina dell'app ("letto da Google Calendar
+  // alle 17:20"). Se non riesce, il calendario si manda lo stesso.
+  if (req.method === "GET") {
+    const { error: erroreLettura } = await db.rpc("segna_lettura_calendario", {
+      p_codice: codice,
+      p_da: lettore(req.headers.get("user-agent")),
+    });
+    if (erroreLettura) {
+      console.error("segna_lettura_calendario", erroreLettura.message);
+    }
   }
 
   return new Response(req.method === "HEAD" ? null : ics(data as Calendario), {

@@ -1,9 +1,10 @@
 // Prova di `ics.ts`, fuori da Supabase: `node supabase/functions/calendario/ics_prova.ts`
 // (Node 24 legge il TypeScript da solo). Non viene pubblicata: la
-// funzione importa solo `ics.ts`.
+// funzione importa solo `ics.ts` e `lettore.ts`.
 
 import assert from "node:assert/strict";
 import { type Calendario, ics, leggiOra, piega } from "./ics.ts";
+import { lettore } from "./lettore.ts";
 
 const calendario: Calendario = {
   nome: "Canottieri Milano",
@@ -102,3 +103,14 @@ for (const pezzo of lunga.split("\r\n")) {
 assert.equal(lunga.replace(/\r\n /g, ""), "DESCRIPTION:" + "è".repeat(60));
 
 console.log("ics.ts: tutto bene");
+
+// Chi legge il calendario, da come si presenta.
+assert.equal(lettore("Google-Calendar-Importer"), "Google Calendar");
+assert.equal(lettore("iOS/18.1 (22B83) dataaccessd/1.0"), "iPhone");
+assert.equal(lettore("Mac OS X/15.1 (24B83) CalendarAgent/1010"), "Mac");
+assert.equal(lettore("Microsoft Office/16.0 (Windows NT 10.0; Microsoft Outlook 16.0)"), "Outlook");
+assert.equal(lettore("ICSx5/2.2 (ical4j/3.2; okhttp/4.12) Android/14"), "ICSx⁵ (Android)");
+assert.equal(lettore(null), "un altro calendario");
+assert.equal(lettore("curl/8.5.0"), "un altro calendario");
+
+console.log("lettore.ts: tutto bene");
