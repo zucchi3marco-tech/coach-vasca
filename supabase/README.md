@@ -98,3 +98,18 @@ Setup una tantum:
 
 Su iPhone/iPad il push funziona solo con l'app aggiunta alla Home da Safari
 (iOS 16.4 o successivo).
+
+## Partite nel calendario del telefono
+
+La Edge Function `calendario` dà a ognuno le sue partite e gare come
+calendario da collegare al telefono (`.ics`), all'indirizzo
+`<SUPABASE_URL>/functions/v1/calendario?c=<codice>`; il codice lo crea
+`mio_calendario` (migrazione `20261018000100_calendario_collegato.sql`)
+dalla pagina "Partite nel calendario" del menu ☰.
+
+1. Applica la migrazione.
+2. **Deploy** senza il controllo dell'utente (il calendario del telefono
+   non ha un account; la chiave è il codice nell'indirizzo):
+   `supabase functions deploy calendario --no-verify-jwt --project-ref <ref>`.
+3. **Prova** del testo del calendario, senza Supabase:
+   `node supabase/functions/calendario/ics_prova.ts`.
