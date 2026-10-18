@@ -2,7 +2,7 @@
 
 Lista dei passi che dall'app non si possono fare: pannelli esterni, password, acquisti, il telefono. Si spunta quando è fatto.
 
-## 0. Il club e il calendario (pubblicati il 2026-10-18)
+## 0. Il club, il calendario e la configurazione guidata (pubblicati il 2026-10-18)
 
 - [ ] Menu ☰ → **Il mio club** → **Scrivi il nome**: lo vedono gli altri quando modifichi un allenamento.
 - [ ] Sempre in "Il mio club" → **Capi allenatori**: tocca ogni squadra e scegli il capo (per ora tu).
