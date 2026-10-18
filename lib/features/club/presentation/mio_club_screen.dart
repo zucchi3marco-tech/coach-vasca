@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/condivisione/condividi_testo.dart';
 import '../../../core/demo/modalita_demo.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
@@ -17,13 +15,16 @@ import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
-import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../configurazione/presentation/configurazione_guidata_screen.dart';
 import '../../export/presentation/scarica_dati_club_screen.dart';
+import '../application/current_club_provider.dart';
 import '../application/membri_club_providers.dart';
 import '../data/membri_club_repository.dart';
+import '../domain/club.dart';
 import '../domain/ruolo_club.dart';
+import 'invita_staff.dart';
 
 enum _AzioneMembro { faiAllenatore, faiAssistente, togli, cambiaNome }
 
@@ -141,31 +142,31 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
   }
 
   Future<void> _invita() async {
-    final ruolo = await showModalBottomSheet<RuoloClub>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => const _ScegliRuoloInvito(),
-    );
-    if (ruolo == null || !mounted) return;
     if (_occupato) return;
-    setState(() => _occupato = true);
-    String? codice;
-    try {
-      codice = await _repository.generaInvito(widget.clubId, ruolo);
-    } catch (e) {
-      if (mounted) {
-        _avviso('Il codice non è stato creato. ${messaggioErrore(e)}');
-      }
-    } finally {
-      if (mounted) setState(() => _occupato = false);
-    }
-    if (codice == null || !mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (_) => _DialogoCodiceInvito(
-        codice: codice!,
-        ruolo: ruolo,
-        clubNome: widget.clubNome,
+    await invitaStaff(
+      context,
+      ref,
+      clubId: widget.clubId,
+      clubNome: widget.clubNome,
+      onOccupato: (occupato) {
+        if (mounted) setState(() => _occupato = occupato);
+      },
+    );
+  }
+
+  /// "Configurazione guidata": solo il responsabile ci arriva. Parte dalle
+  /// squadre e, alla fine, si chiude tornando qui.
+  void _apriConfigurazioneGuidata() {
+    final club =
+        ref.read(currentClubProvider).value ??
+        Club(id: widget.clubId, nome: widget.clubNome);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (paginaContext) => ConfigurazioneGuidataScreen(
+          club: club,
+          comePagina: true,
+          onFine: () => Navigator.of(paginaContext).pop(),
+        ),
       ),
     );
   }
@@ -251,6 +252,7 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
               onTogli: _togli,
               onInvita: _invita,
               onScaricaDati: _scaricaDati,
+              onConfigurazioneGuidata: _apriConfigurazioneGuidata,
             ),
           ),
         ],
@@ -284,6 +286,7 @@ class _Contenuto extends StatelessWidget {
     required this.onTogli,
     required this.onInvita,
     required this.onScaricaDati,
+    required this.onConfigurazioneGuidata,
   });
 
   final List<MembroClub> membri;
@@ -295,6 +298,7 @@ class _Contenuto extends StatelessWidget {
   final Future<void> Function(MembroClub membro) onTogli;
   final Future<void> Function() onInvita;
   final void Function(MembroClub io) onScaricaDati;
+  final VoidCallback onConfigurazioneGuidata;
 
   @override
   Widget build(BuildContext context) {
@@ -449,8 +453,18 @@ class _Contenuto extends StatelessWidget {
           ),
         ],
         // Dopo "Invita un allenatore", che chiude il blocco di chi lavora
-        // nel club: i dati sono un altro discorso, e solo del responsabile.
+        // nel club: la configurazione guidata e i dati sono un altro
+        // discorso, e solo del responsabile.
         if (sonoResponsabile && io != null) ...[
+          const SizedBox(height: AppSpacing.s32),
+          const TitoloSezione('Per cominciare'),
+          SchedaElenco(
+            leading: const IconaRiquadro(Icons.checklist_outlined),
+            titolo: 'Configurazione guidata',
+            sottotitolo:
+                'Squadre, allenatori, atleti e codici, un passo alla volta',
+            onTap: onConfigurazioneGuidata,
+          ),
           const SizedBox(height: AppSpacing.s32),
           const TitoloSezione('I dati del club'),
           SchedaElenco(
@@ -726,144 +740,6 @@ class _RigaMembro extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-/// Il foglio "Chi inviti?": allenatore o assistente.
-class _ScegliRuoloInvito extends StatelessWidget {
-  const _ScegliRuoloInvito();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.s16,
-          0,
-          AppSpacing.s16,
-          AppSpacing.s16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Chi inviti?',
-              style: AppTypography.sezione.copyWith(
-                color: context.colori.testo,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            for (final ruolo in const [
-              RuoloClub.allenatore,
-              RuoloClub.assistente,
-            ])
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(ruolo.etichetta),
-                subtitle: Text(ruolo.descrizione),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).pop(ruolo),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Il codice appena creato, da copiare o mandare.
-class _DialogoCodiceInvito extends StatelessWidget {
-  const _DialogoCodiceInvito({
-    required this.codice,
-    required this.ruolo,
-    required this.clubNome,
-  });
-
-  final String codice;
-  final RuoloClub ruolo;
-  final String clubNome;
-
-  String get _testoInvito =>
-      'Ti invito in $clubNome su WaterTactics come '
-      '${ruolo.etichetta.toLowerCase()}. Registrati come allenatore e '
-      'scegli «Ho un codice da allenatore»: $codice';
-
-  Future<void> _copia(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: codice));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Codice copiato')));
-  }
-
-  Future<void> _condividi(BuildContext context) async {
-    final condiviso = await condividiTesto(_testoInvito);
-    if (condiviso || !context.mounted) return;
-    // Senza il foglio "Condividi" si copia il messaggio intero.
-    await Clipboard.setData(ClipboardData(text: _testoInvito));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Messaggio copiato')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return AlertDialog(
-      title: Text('Codice per ${ruolo.etichetta.toLowerCase()}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.s16,
-              horizontal: AppSpacing.s12,
-            ),
-            decoration: BoxDecoration(
-              color: colori.superficieAlt,
-              borderRadius: BorderRadius.circular(AppRadius.controllo),
-              border: Border.all(color: colori.linea),
-            ),
-            child: SelectableText(
-              codice,
-              textAlign: TextAlign.center,
-              style: AppTypography.numeroMedio.copyWith(
-                color: colori.testo,
-                fontFamily: 'monospace',
-                letterSpacing: 3,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          Text(
-            'Vale 7 giorni, una volta sola.',
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          PrimaryButton(
-            label: 'Condividi',
-            icon: Icons.ios_share,
-            onPressed: () => _condividi(context),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          SecondaryButton(
-            label: 'Copia',
-            icon: Icons.copy_outlined,
-            onPressed: () => _copia(context),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Chiudi'),
-        ),
-      ],
     );
   }
 }

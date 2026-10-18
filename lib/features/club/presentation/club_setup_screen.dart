@@ -11,43 +11,20 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
-import '../../../widgets/tonal_chip.dart';
 import '../../auth/presentation/avviso_solo_allenatori.dart';
 import '../../auth/presentation/riscatta_invito_screen.dart';
-import '../../gruppi/data/gruppi_repository.dart';
+import '../../configurazione/application/configurazione_providers.dart';
+import '../../configurazione/domain/stato_configurazione.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
 import 'entra_con_codice_staff_screen.dart';
 
-const _categorieNuoto = [
-  'Es.C',
-  'Es.B',
-  'Es.A',
-  'Ragazzi',
-  'Juniores',
-  'Cadetti',
-  'Assoluti',
-  'Amatori',
-];
-
-const _categoriePallanuoto = [
-  'U10',
-  'U11',
-  'U12',
-  'U13',
-  'U14',
-  'U15',
-  'U16',
-  'U17',
-  'U18',
-  'U20',
-  'Prima squadra',
-];
-
 const _sportOptions = [('nuoto', 'Nuoto'), ('pallanuoto', 'Pallanuoto')];
 
 /// Mostrato quando l'utente autenticato non e' ancora membro di nessun
-/// club: crea il primo club (diventandone owner tramite il trigger DB).
+/// club: crea il primo club (diventandone owner tramite il trigger DB). E'
+/// il passo 1 della configurazione guidata: squadre, allenatori, atleti e
+/// codici seguono in `ConfigurazioneGuidataScreen`.
 ///
 /// Nota: e' contenuto nel body di HomeScreen (che ha gia' Scaffold e
 /// AppBar), quindi non usa AppScaffold per non annidare due Scaffold.
@@ -64,7 +41,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
   final _cittaController = TextEditingController();
 
   String? _sport;
-  final Set<String> _categorieSelezionate = {};
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -95,29 +71,13 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
             nome: _nomeController.text.trim(),
             citta: _cittaController.text.trim(),
             sport: _sport,
-            categorie: _categorieSelezionate.toList(),
+            categorie: const [],
           );
-      // Un gruppo di allenamento gia' pronto per ciascuna categoria scelta,
-      // cosi' l'allenatore salta l'onboarding gruppi se le ha gia'
-      // indicate qui (puo' comunque rinominarli/aggiungerne altri dopo).
-      // Un eventuale fallimento qui (la coda offline copre la rete) non
-      // deve bloccare la creazione del club appena riuscita.
-      try {
-        final gruppiRepository = ref.read(gruppiRepositoryProvider);
-        final categorieOrdinate = _categorieDisponibili
-            .where(_categorieSelezionate.contains)
-            .toList();
-        for (var i = 0; i < categorieOrdinate.length; i++) {
-          await gruppiRepository.createGruppo(
-            clubId: club.id,
-            nome: categorieOrdinate[i],
-            ordine: i + 1,
-            sport: _categorieNuoto.contains(categorieOrdinate[i])
-                ? 'nuoto'
-                : 'pallanuoto',
-          );
-        }
-      } catch (_) {}
+      // Le squadre, gli allenatori, gli atleti e i codici seguono nella
+      // configurazione guidata: va segnata in corso prima che il club
+      // compaia, altrimenti HomeScreen mostrerebbe la vecchia schermata
+      // delle squadre.
+      ref.read(configurazioneInCorsoProvider.notifier).inizia(club.id);
       ref.invalidate(currentClubProvider);
     } catch (e) {
       if (mounted) {
@@ -127,12 +87,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
-
-  List<String> get _categorieDisponibili => switch (_sport) {
-    'nuoto' => _categorieNuoto,
-    'pallanuoto' => _categoriePallanuoto,
-    _ => const [],
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -149,14 +103,23 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
+                    'Passo ${PassoConfigurazione.club.numero} di '
+                    '${PassoConfigurazione.totale}',
+                    style: AppTypography.etichetta.copyWith(
+                      color: context.colori.testoSecondario,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
                     'Crea il tuo club',
                     style: Theme.of(context).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.s4),
                   Text(
-                    'Ne sarai l\'amministratore: poi aggiungi gruppi e '
-                    'atleti.',
+                    'Ne sarai il responsabile. Poi ti guidiamo fra squadre, '
+                    'allenatori, atleti e codici.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -217,48 +180,8 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                               child: Text(etichetta),
                             ),
                         ],
-                        onChanged: (value) => setState(() {
-                          _sport = value;
-                          _categorieSelezionate.clear();
-                        }),
+                        onChanged: (value) => setState(() => _sport = value),
                       ),
-                      if (_categorieDisponibili.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Categorie allenate (facoltativo)',
-                              style: AppTypography.etichetta.copyWith(
-                                color: context.colori.testoSecondario,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.s8),
-                            Wrap(
-                              spacing: AppSpacing.s8,
-                              runSpacing: AppSpacing.s8,
-                              children: [
-                                for (final categoria in _categorieDisponibili)
-                                  TonalChip(
-                                    etichetta: categoria,
-                                    selezionato: _categorieSelezionate.contains(
-                                      categoria,
-                                    ),
-                                    onSelezionato: (selezionata) => setState(
-                                      () {
-                                        if (selezionata) {
-                                          _categorieSelezionate.add(categoria);
-                                        } else {
-                                          _categorieSelezionate.remove(
-                                            categoria,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
                     ],
                   ),
                   if (_errorMessage != null) ...[
