@@ -39,6 +39,7 @@ import '../../test/presentation/tempi_da_foto_screen.dart';
 import '../../test/presentation/test_club_screen.dart';
 import '../atleta/grafica_pallanuoto.dart';
 import '../atleta/home_atleta_widgets.dart';
+import 'card_da_controllare.dart';
 
 bool _stessoGiorno(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
@@ -289,6 +290,8 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
+          // Solo se un altro ha cambiato un allenamento di una tua squadra.
+          blocco(CardDaControllare(clubId: club.id)),
           blocco(const TitoloSezione('Cosa vuoi fare?')),
           blocco(GrigliaAzioni(azioni: azioni)),
           const SizedBox(height: 20),

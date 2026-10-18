@@ -20,6 +20,7 @@ import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/duplicazione_settimana_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
+import '../../allenamenti/presentation/banner_modifica.dart';
 import '../../allenamenti/presentation/duplica_allenamento_dialog.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../presenze/presentation/presenze_screen.dart';
@@ -306,6 +307,7 @@ class SedutaSeccoScreen extends ConsumerWidget {
               ),
           ],
         ),
+        BannerModifica(allenamento: a),
         if (a.note != null && a.note!.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s12),
           PoolCard(

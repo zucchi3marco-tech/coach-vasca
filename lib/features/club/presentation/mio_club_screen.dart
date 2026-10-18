@@ -59,6 +59,9 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
     try {
       await azione();
       ref.invalidate(membriClubProvider(widget.clubId));
+      // Togliere o cambiare un allenatore può togliergli anche il ruolo di
+      // capo di una squadra.
+      ref.invalidate(squadreConCapoProvider(widget.clubId));
     } catch (e) {
       if (mounted) _avviso('$errore ${messaggioErrore(e)}');
     } finally {
@@ -82,6 +85,25 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
     return _esegui(
       () => _repository.cambiaRuolo(widget.clubId, membro.userId, ruolo),
       'Il ruolo non è stato cambiato.',
+    );
+  }
+
+  /// Il foglio "Capo di {squadra}": un allenatore o il responsabile, oppure
+  /// nessuno.
+  Future<void> _scegliCapo(
+    SquadraConCapo squadra,
+    List<MembroClub> membri,
+  ) async {
+    final scelta = await showModalBottomSheet<({String? userId})>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _ScegliCapo(squadra: squadra, membri: membri),
+    );
+    if (scelta == null || !mounted) return;
+    await _esegui(
+      () => _repository.scegliCapo(squadra.id, scelta.userId),
+      'Il capo non è stato cambiato.',
     );
   }
 
@@ -165,6 +187,7 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
     }
 
     final membriAsync = ref.watch(membriClubProvider(widget.clubId));
+    final squadreAsync = ref.watch(squadreConCapoProvider(widget.clubId));
 
     return AppScaffold(
       // La testata porta il titolo: la barra in alto resta vuota.
@@ -202,6 +225,10 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
             ),
             data: (membri) => _Contenuto(
               membri: membri,
+              // Finché non arrivano (o se non si leggono) la sezione dei
+              // capi non c'è: il resto della pagina non aspetta.
+              squadre: squadreAsync.value ?? const [],
+              onScegliCapo: (squadra) => _scegliCapo(squadra, membri),
               occupato: _occupato,
               onScriviNome: _scriviNome,
               onCambiaRuolo: _cambiaRuolo,
@@ -223,6 +250,8 @@ String _nomeMembro(MembroClub membro) =>
 class _Contenuto extends StatelessWidget {
   const _Contenuto({
     required this.membri,
+    required this.squadre,
+    required this.onScegliCapo,
     required this.occupato,
     required this.onScriviNome,
     required this.onCambiaRuolo,
@@ -231,6 +260,8 @@ class _Contenuto extends StatelessWidget {
   });
 
   final List<MembroClub> membri;
+  final List<SquadraConCapo> squadre;
+  final Future<void> Function(SquadraConCapo squadra) onScegliCapo;
   final bool occupato;
   final Future<void> Function({String? nomeAttuale}) onScriviNome;
   final Future<void> Function(MembroClub membro, RuoloClub ruolo) onCambiaRuolo;
@@ -294,6 +325,10 @@ class _Contenuto extends StatelessWidget {
               for (var i = 0; i < membri.length; i++) ...[
                 _RigaMembro(
                   membro: membri[i],
+                  capoDi: [
+                    for (final s in squadre)
+                      if (s.capoUserId == membri[i].userId) s.nome,
+                  ],
                   sonoResponsabile: sonoResponsabile,
                   occupato: occupato,
                   onScriviNome: onScriviNome,
@@ -306,6 +341,48 @@ class _Contenuto extends StatelessWidget {
             ],
           ),
         ),
+        if (squadre.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s24),
+          const TitoloSezione('Capi allenatori'),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 4,
+              right: 4,
+              bottom: AppSpacing.s12,
+            ),
+            child: Text(
+              'Il capo riceve un avviso quando un altro cambia un '
+              'allenamento della sua squadra, e vede cosa è cambiato.',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: colori.superficie,
+              borderRadius: BorderRadius.circular(AppRadius.pannello),
+              border: Border.all(color: colori.linea),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < squadre.length; i++) ...[
+                  _RigaCapo(
+                    squadra: squadre[i],
+                    capo: membri
+                        .where((m) => m.userId == squadre[i].capoUserId)
+                        .firstOrNull,
+                    modificabile: sonoResponsabile && !occupato,
+                    onTap: () => onScegliCapo(squadre[i]),
+                  ),
+                  if (i != squadre.length - 1)
+                    Divider(height: 1, color: colori.linea),
+                ],
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.s24),
         const TitoloSezione('Cosa può fare chi'),
         Container(
@@ -348,9 +425,139 @@ class _Contenuto extends StatelessWidget {
   }
 }
 
+/// Una squadra e il suo capo allenatore. Il responsabile la tocca per
+/// sceglierne un altro; per gli altri è solo da leggere.
+class _RigaCapo extends StatelessWidget {
+  const _RigaCapo({
+    required this.squadra,
+    required this.capo,
+    required this.modificabile,
+    required this.onTap,
+  });
+
+  final SquadraConCapo squadra;
+
+  /// Null se la squadra non ha un capo (o non è più in elenco).
+  final MembroClub? capo;
+  final bool modificabile;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final haCapo = squadra.capoUserId != null;
+    final nomeCapo = haCapo
+        ? (capo == null ? 'Senza nome' : _nomeMembro(capo!))
+        : 'Nessun capo';
+    final contenuto = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.paddingPannello,
+        vertical: AppSpacing.s12,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  squadra.nome,
+                  style: AppTypography.corpoForte.copyWith(color: colori.testo),
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  nomeCapo,
+                  style: AppTypography.piccolo.copyWith(
+                    color: haCapo ? colori.testoSecondario : colori.testoTenue,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (modificabile)
+            Icon(Icons.chevron_right, color: colori.testoSecondario),
+        ],
+      ),
+    );
+    if (!modificabile) {
+      return Semantics(label: '${squadra.nome}. $nomeCapo', child: contenuto);
+    }
+    return InkWell(
+      onTap: onTap,
+      child: Semantics(
+        button: true,
+        label: 'Capo di ${squadra.nome}. $nomeCapo',
+        excludeSemantics: true,
+        child: contenuto,
+      ),
+    );
+  }
+}
+
+/// Il foglio "Capo di {squadra}": chi può esserlo (il responsabile e gli
+/// allenatori, non gli assistenti) e "Nessun capo". Torna `(userId: …)`;
+/// chiuso senza scegliere torna null.
+class _ScegliCapo extends StatelessWidget {
+  const _ScegliCapo({required this.squadra, required this.membri});
+
+  final SquadraConCapo squadra;
+  final List<MembroClub> membri;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final candidati = [
+      for (final m in membri)
+        if (m.ruolo != RuoloClub.assistente) m,
+    ];
+    Widget segno(bool scelto) => scelto
+        ? Icon(Icons.check, color: colori.azione)
+        : const SizedBox(width: 24);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s16,
+          0,
+          AppSpacing.s16,
+          AppSpacing.s16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Capo di ${squadra.nome}',
+              style: AppTypography.sezione.copyWith(
+                color: colori.testo,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            for (final m in candidati)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(_nomeMembro(m)),
+                subtitle: Text(m.ruolo.etichetta),
+                trailing: segno(squadra.capoUserId == m.userId),
+                onTap: () => Navigator.of(context).pop((userId: m.userId)),
+              ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Nessun capo'),
+              trailing: segno(squadra.capoUserId == null),
+              onTap: () => Navigator.of(context).pop((userId: null)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RigaMembro extends StatelessWidget {
   const _RigaMembro({
     required this.membro,
+    required this.capoDi,
     required this.sonoResponsabile,
     required this.occupato,
     required this.onScriviNome,
@@ -359,6 +566,9 @@ class _RigaMembro extends StatelessWidget {
   });
 
   final MembroClub membro;
+
+  /// I nomi delle squadre di cui è il capo allenatore.
+  final List<String> capoDi;
   final bool sonoResponsabile;
   final bool occupato;
   final Future<void> Function({String? nomeAttuale}) onScriviNome;
@@ -421,6 +631,15 @@ class _RigaMembro extends StatelessWidget {
                         : colori.testo,
                   ),
                 ),
+                if (capoDi.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    'Capo di ${capoDi.join(', ')}',
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.s4),
                 Wrap(
                   spacing: AppSpacing.s8,

@@ -40,6 +40,7 @@ import '../domain/testo_allenamento.dart';
 import '../domain/variante_spalla.dart';
 import '../domain/volume_allenamento.dart';
 import 'allenamento_form_screen.dart';
+import 'banner_modifica.dart';
 import 'duplica_allenamento_dialog.dart';
 import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
@@ -755,6 +756,7 @@ class _AllenamentoDetailScreenState
             ),
           ],
         ),
+        BannerModifica(allenamento: allenamento),
         if (allenamento.note != null && allenamento.note!.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s12),
           PoolCard(child: _NoteCompatte(allenamento.note!)),

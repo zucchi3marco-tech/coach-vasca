@@ -82,3 +82,21 @@ class InvitoStaff {
   final String clubNome;
   final RuoloClub ruolo;
 }
+
+/// Una squadra del club con il suo capo allenatore (`gruppi.capo_user_id`),
+/// per la sezione "Capi allenatori" di "Il mio club".
+class SquadraConCapo {
+  const SquadraConCapo({required this.id, required this.nome, this.capoUserId});
+
+  final String id;
+  final String nome;
+
+  /// Null finché il responsabile non ne sceglie uno.
+  final String? capoUserId;
+
+  factory SquadraConCapo.fromMap(Map<String, dynamic> map) => SquadraConCapo(
+    id: map['id'] as String,
+    nome: map['nome'] as String,
+    capoUserId: map['capo_user_id'] as String?,
+  );
+}

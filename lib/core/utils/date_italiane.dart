@@ -54,6 +54,24 @@ String traQuanto(DateTime d, {DateTime? oggi}) {
   };
 }
 
+/// Quanto tempo fa è successo qualcosa, come lo direbbe un allenatore:
+/// "adesso", "25 minuti fa", "oggi alle 18:30", "ieri alle 18:30", "12 ott
+/// alle 18:30". [momento] e [adesso] sono nello stesso fuso (di solito
+/// quello del telefono).
+String quandoFa(DateTime momento, {DateTime? adesso}) {
+  final ora = adesso ?? DateTime.now();
+  final minuti = ora.difference(momento).inMinutes;
+  if (minuti < 1) return 'adesso';
+  if (minuti < 60) return minuti == 1 ? '1 minuto fa' : '$minuti minuti fa';
+  final alle =
+      '${momento.hour.toString().padLeft(2, '0')}:'
+      '${momento.minute.toString().padLeft(2, '0')}';
+  final giorni = giorniTra(momento, ora);
+  if (giorni <= 0) return 'oggi alle $alle';
+  if (giorni == 1) return 'ieri alle $alle';
+  return '${momento.day} ${mesiBrevi[momento.month - 1]} alle $alle';
+}
+
 /// "giovedì".
 String giornoSettimana(DateTime d) => _giorni[d.weekday - 1];
 

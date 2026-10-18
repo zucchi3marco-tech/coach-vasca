@@ -106,6 +106,30 @@ class MembriClubRepository {
     });
   }
 
+  /// Le squadre del club con il loro capo allenatore. Le legge chiunque
+  /// del club (policy di `gruppi`); online-only: la copia locale dei gruppi
+  /// non ha questa colonna.
+  Future<List<SquadraConCapo>> squadre(String clubId) async {
+    final righe = await _client
+        .from('gruppi')
+        .select('id, nome, capo_user_id')
+        .eq('club_id', clubId)
+        .order('ordine', ascending: true);
+    return [
+      for (final riga in righe)
+        SquadraConCapo.fromMap(Map<String, dynamic>.from(riga)),
+    ];
+  }
+
+  /// Sceglie il capo allenatore di una squadra (solo il responsabile);
+  /// [userId] null = nessun capo.
+  Future<void> scegliCapo(String gruppoId, String? userId) {
+    return _chiama<dynamic>('scegli_capo_squadra', {
+      'p_gruppo_id': gruppoId,
+      'p_user_id': userId,
+    });
+  }
+
   Future<void> scriviMioNome(String clubId, String nome) {
     return _chiama<dynamic>('mio_nome_nel_club', {
       'p_club_id': clubId,

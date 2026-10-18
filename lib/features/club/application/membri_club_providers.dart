@@ -25,6 +25,13 @@ final membriClubProvider = FutureProvider.autoDispose
       retry: (_, _) => null,
     );
 
+/// Le squadre del club con il loro capo allenatore (per "Il mio club").
+final squadreConCapoProvider = FutureProvider.autoDispose
+    .family<List<SquadraConCapo>, String>(
+      (ref, clubId) => ref.watch(membriClubRepositoryProvider).squadre(clubId),
+      retry: (_, _) => null,
+    );
+
 /// Si possono mostrare le azioni che aggiungono o tolgono atleti e squadre
 /// (e i codici per farli entrare)? No per un assistente, e nemmeno finché
 /// non si sa il ruolo. Se il ruolo non si riesce a leggere (offline) sì: il
