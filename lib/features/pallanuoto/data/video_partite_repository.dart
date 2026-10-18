@@ -106,7 +106,7 @@ class VideoPartiteRepository {
         .from('note_video')
         .select()
         .eq('partita_id', partitaId)
-        .order('secondo');
+        .order('secondo', ascending: true);
     await _db.transaction(() async {
       await (_db.delete(
         _db.noteVideoTable,

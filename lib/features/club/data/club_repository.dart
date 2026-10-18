@@ -82,7 +82,7 @@ class ClubRepository {
     final rows = await _client
         .from('club')
         .select('id, nome, citta, sport, categorie')
-        .order('nome');
+        .order('nome', ascending: true);
     await _db.transaction(() async {
       await _db.delete(_db.clubTable).go();
       await _db.batch((batch) {

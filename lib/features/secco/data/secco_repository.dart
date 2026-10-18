@@ -332,7 +332,7 @@ class SeccoRepository {
           .from('esercizi_seduta')
           .select()
           .eq('allenamento_id', allenamentoId)
-          .order('ordine');
+          .order('ordine', ascending: true);
       return [
         for (final r in righe)
           _rigaDaRiga(

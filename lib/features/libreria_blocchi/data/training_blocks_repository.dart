@@ -201,7 +201,7 @@ class TrainingBlocksRepository {
           .from('training_block_parti')
           .select()
           .eq('blocco_id', bloccoId)
-          .order('ordine');
+          .order('ordine', ascending: true);
       return rows.map(TrainingBlockParte.fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
@@ -230,7 +230,7 @@ class TrainingBlocksRepository {
           .from('training_block_parti')
           .select()
           .inFilter('blocco_id', bloccoIds)
-          .order('ordine');
+          .order('ordine', ascending: true);
       parti = rows.map(TrainingBlockParte.fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;

@@ -187,7 +187,10 @@ class SerieRepository {
           .from('serie')
           .select()
           .eq('allenamento_id', allenamentoId)
-          .order('ordine');
+          // Senza `ascending` Supabase ordina dalla più alta: l'esportazione
+          // e la settimana duplicata uscivano al contrario (coach,
+          // 2026-10-17).
+          .order('ordine', ascending: true);
       return rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
