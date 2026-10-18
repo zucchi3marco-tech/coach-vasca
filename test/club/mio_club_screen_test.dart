@@ -1,11 +1,16 @@
 import 'package:coach_vasca/features/club/data/membri_club_repository.dart';
 import 'package:coach_vasca/features/club/domain/ruolo_club.dart';
 import 'package:coach_vasca/features/club/presentation/mio_club_screen.dart';
+import 'package:coach_vasca/features/export/data/dati_club_repository.dart';
+import 'package:coach_vasca/features/export/domain/dati_club.dart';
+import 'package:coach_vasca/features/export/presentation/scarica_dati_club_screen.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 /// Il server finto: tiene l'elenco dei membri e annota cosa gli si chiede.
@@ -100,30 +105,70 @@ const _anna = MembroClub(
   sonoIo: false,
 );
 
-Widget _app(_ClubFinto server) => ProviderScope(
-  overrides: [membriClubRepositoryProvider.overrideWithValue(server)],
-  child: MaterialApp(
-    theme: AppTheme.chiaro,
-    // Come "Riduci movimento": l'acqua della testata è animata senza fine.
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(disableAnimations: true),
-      child: child!,
-    ),
-    home: const MioClubScreen(clubId: 'c1', clubNome: 'Mako Pallanuoto'),
-  ),
-);
+/// Il server dei dati del club: annota chi li chiede e dà un club vuoto.
+class _DatiClubFinti implements DatiClubRepository {
+  final letture = <String>[];
+
+  @override
+  Future<DatiClub> leggi(
+    String clubId, {
+    required bool conBenessere,
+    void Function(String cosa)? avanzamento,
+  }) async {
+    letture.add(clubId);
+    return const DatiClub();
+  }
+
+  @override
+  Future<DateTime?> creatoIl(String clubId) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Il download finto: tiene il file che sarebbe stato scaricato.
+class _AzioniFinte extends AzioniDatiClub {
+  final scaricati = <Uint8List>[];
+
+  @override
+  bool get disponibile => true;
+
+  @override
+  void scarica(Uint8List bytes, String nomeFile) => scaricati.add(bytes);
+}
+
+Widget _app(_ClubFinto server, {List<Override> altri = const []}) =>
+    ProviderScope(
+      overrides: [
+        membriClubRepositoryProvider.overrideWithValue(server),
+        ...altri,
+      ],
+      child: MaterialApp(
+        theme: AppTheme.chiaro,
+        // Come "Riduci movimento": l'acqua della testata è animata senza fine.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
+        home: const MioClubScreen(clubId: 'c1', clubNome: 'Mako Pallanuoto'),
+      ),
+    );
 
 Future<void> _passa(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-Future<void> _apri(WidgetTester tester, _ClubFinto server) async {
+Future<void> _apri(
+  WidgetTester tester,
+  _ClubFinto server, {
+  List<Override> altri = const [],
+}) async {
   // Telefono, alto abbastanza per tutta la lista.
   tester.view.physicalSize = const Size(360, 2000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(_app(server));
+  await tester.pumpWidget(_app(server, altri: altri));
   await _passa(tester);
 }
 
@@ -156,8 +201,90 @@ void main() {
       expect(find.text(ruolo.descrizione), findsOneWidget);
     }
     expect(find.text('Invita un allenatore'), findsOneWidget);
+    // Il responsabile ha anche i dati del club, dopo l'invito.
+    expect(find.text('I dati del club'), findsOneWidget);
+    expect(find.text('Scarica i dati del club'), findsOneWidget);
+    expect(
+      find.text(
+        'Un file Excel con atleti, allenamenti, presenze, partite e il resto.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text('I dati del club')).dy,
+      greaterThan(tester.getTopLeft(find.text('Invita un allenatore')).dy),
+    );
     // Niente scheda «Scrivi il tuo nome»: il nome c'è.
     expect(find.text('Scrivi il tuo nome'), findsNothing);
+  });
+
+  testWidgets('un allenatore non vede i dati del club', (tester) async {
+    const allenatore = MembroClub(
+      userId: 'u-io',
+      nome: 'Luca Bianchi',
+      ruolo: RuoloClub.allenatore,
+      sonoIo: true,
+    );
+    await _apri(tester, _ClubFinto([_io.copy(sonoIo: false), allenatore]));
+
+    expect(find.text('Luca Bianchi'), findsOneWidget);
+    expect(find.text('I dati del club'), findsNothing);
+    expect(find.text('Scarica i dati del club'), findsNothing);
+  });
+
+  testWidgets('la riga dei dati apre la pagina del club, per il responsabile', (
+    tester,
+  ) async {
+    await _apri(tester, _ClubFinto([_io, _luca]));
+
+    await tester.ensureVisible(find.text('Scarica i dati del club'));
+    await tester.pump();
+    await tester.tap(find.text('Scarica i dati del club'));
+    await _passa(tester);
+
+    // Senza il browser la pagina si apre ma non offre il download.
+    expect(
+      find.text('Un file Excel con un foglio per tipo di dato.'),
+      findsOneWidget,
+    );
+    expect(find.text('Scarica il file Excel'), findsNothing);
+  });
+
+  testWidgets('i dati si scaricano a nome del responsabile, per il suo club', (
+    tester,
+  ) async {
+    final dati = _DatiClubFinti();
+    final azioni = _AzioniFinte();
+    await _apri(
+      tester,
+      _ClubFinto([_io, _luca]),
+      altri: [
+        datiClubRepositoryProvider.overrideWithValue(dati),
+        azioniDatiClubProvider.overrideWithValue(azioni),
+      ],
+    );
+
+    await tester.ensureVisible(find.text('Scarica i dati del club'));
+    await tester.pump();
+    await tester.tap(find.text('Scarica i dati del club'));
+    await _passa(tester);
+    await tester.ensureVisible(find.text('Scarica il file Excel'));
+    await tester.pump();
+    await tester.tap(find.text('Scarica il file Excel'));
+    await _passa(tester);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+
+    expect(dati.letture, ['c1']);
+    expect(azioni.scaricati, hasLength(1));
+    final leggimi = Excel.decodeBytes(azioni.scaricati.single)
+        .tables['Leggimi'];
+    String cosa(String etichetta) => leggimi!.rows
+        .firstWhere((r) => r.first?.value.toString() == etichetta)[1]!
+        .value
+        .toString();
+    expect(cosa('Club'), 'Mako Pallanuoto');
+    expect(cosa('Da'), 'Marco Zucchi (marco@example.com)');
   });
 
   testWidgets('il menu del responsabile sugli altri membri', (tester) async {
@@ -211,6 +338,7 @@ void main() {
     await _apri(tester, _ClubFinto([_io.copy(sonoIo: false), assistente]));
 
     expect(find.text('Invita un allenatore'), findsNothing);
+    expect(find.text('Scarica i dati del club'), findsNothing);
     expect(find.byTooltip('Azioni per Marco Zucchi'), findsNothing);
     // Il proprio nome si può cambiare.
     expect(find.byTooltip('Azioni per Anna Verdi'), findsOneWidget);

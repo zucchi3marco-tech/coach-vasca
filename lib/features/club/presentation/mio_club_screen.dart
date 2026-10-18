@@ -16,9 +16,11 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/riquadri.dart';
+import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../export/presentation/scarica_dati_club_screen.dart';
 import '../application/membri_club_providers.dart';
 import '../data/membri_club_repository.dart';
 import '../domain/ruolo_club.dart';
@@ -168,6 +170,20 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
     );
   }
 
+  /// "Scarica i dati del club": solo il responsabile ci arriva. Il nome
+  /// scritto nel file è il suo, con l'email.
+  void _scaricaDati(MembroClub io) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ScaricaDatiClubScreen(
+          clubId: widget.clubId,
+          clubNome: widget.clubNome,
+          scaricatoDa: _scaricatoDa(io),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final inDemo = dotenv.isInitialized && modalitaDemo;
@@ -234,6 +250,7 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
               onCambiaRuolo: _cambiaRuolo,
               onTogli: _togli,
               onInvita: _invita,
+              onScaricaDati: _scaricaDati,
             ),
           ),
         ],
@@ -247,6 +264,15 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
 String _nomeMembro(MembroClub membro) =>
     membro.nome ?? membro.email ?? 'Senza nome';
 
+/// Come chi scarica i dati si firma nel file: "Marco Rossi
+/// (marco@example.com)", o solo quello che c'è.
+String _scaricatoDa(MembroClub io) {
+  final nome = io.nome;
+  final email = io.email;
+  if (nome != null && email != null) return '$nome ($email)';
+  return nome ?? email ?? 'Responsabile del club';
+}
+
 class _Contenuto extends StatelessWidget {
   const _Contenuto({
     required this.membri,
@@ -257,6 +283,7 @@ class _Contenuto extends StatelessWidget {
     required this.onCambiaRuolo,
     required this.onTogli,
     required this.onInvita,
+    required this.onScaricaDati,
   });
 
   final List<MembroClub> membri;
@@ -267,6 +294,7 @@ class _Contenuto extends StatelessWidget {
   final Future<void> Function(MembroClub membro, RuoloClub ruolo) onCambiaRuolo;
   final Future<void> Function(MembroClub membro) onTogli;
   final Future<void> Function() onInvita;
+  final void Function(MembroClub io) onScaricaDati;
 
   @override
   Widget build(BuildContext context) {
@@ -418,6 +446,26 @@ class _Contenuto extends StatelessWidget {
           PrimaryButton(
             label: 'Invita un allenatore',
             onPressed: occupato ? null : onInvita,
+          ),
+        ],
+        // Dopo "Invita un allenatore", che chiude il blocco di chi lavora
+        // nel club: i dati sono un altro discorso, e solo del responsabile.
+        if (sonoResponsabile && io != null) ...[
+          const SizedBox(height: AppSpacing.s32),
+          const TitoloSezione('I dati del club'),
+          SchedaElenco(
+            leading: const IconaRiquadro(Icons.download_outlined),
+            titolo: 'Scarica i dati del club',
+            // Nel sottotitolo (massimo due righe) la frase si taglierebbe
+            // su un telefono: sotto il titolo va a capo quanto serve.
+            sotto: Text(
+              'Un file Excel con atleti, allenamenti, presenze, partite e il '
+              'resto.',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+            onTap: () => onScaricaDati(io),
           ),
         ],
       ],
