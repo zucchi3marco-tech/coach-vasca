@@ -15,6 +15,7 @@ import '../../theme/colori_app.dart';
 import '../../theme/tema_provider.dart';
 import '../atleti/application/current_atleta_provider.dart';
 import '../auth/data/auth_repository.dart';
+import '../calendario_telefono/presentation/calendario_telefono_screen.dart';
 import '../club/application/current_club_provider.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
@@ -113,6 +114,7 @@ class _OsservatoreAggiornamentoPwaState
 enum _AzioneMenu {
   notifiche,
   notifichePush,
+  calendarioTelefono,
   sincronizza,
   installa,
   cambiaGruppo,
@@ -356,6 +358,13 @@ Future<void> _apriMenuPrincipale(
             ),
           ),
         ),
+      const PopupMenuItem(
+        value: _AzioneMenu.calendarioTelefono,
+        child: ListTile(
+          leading: Icon(Icons.event_available_outlined),
+          title: Text('Partite nel calendario'),
+        ),
+      ),
       PopupMenuItem(
         value: _AzioneMenu.sincronizza,
         enabled: inCoda > 0,
@@ -419,6 +428,12 @@ Future<void> _apriMenuPrincipale(
       if (overlayContext.mounted) {
         await _gestisciNotifichePush(ref, overlayContext, statoPushAttuale);
       }
+    case _AzioneMenu.calendarioTelefono:
+      await navigatorKeyApp.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const CalendarioTelefonoScreen(),
+        ),
+      );
     case _AzioneMenu.sincronizza:
       await ref.read(syncEngineProvider).processQueue();
     case _AzioneMenu.installa:
