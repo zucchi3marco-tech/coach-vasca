@@ -7,11 +7,14 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_text_field.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
+import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../club/application/membri_club_providers.dart';
 import '../data/gruppi_repository.dart';
 
 /// Mostrata al primo accesso di un club senza ancora nessun gruppo di
@@ -95,6 +98,25 @@ class _GruppiOnboardingScreenState
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    // Le squadre le crea il responsabile o un allenatore: un assistente
+    // aspetta, senza il modulo che il database rifiuterebbe.
+    final ruolo = ref.watch(mioRuoloProvider(widget.clubId));
+    if (ruolo.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.s16),
+        child: LoadingSkeletonList(righe: 3),
+      );
+    }
+    if (ruolo.value case final r? when !r.puoGestireAtletiESquadre) {
+      return const EmptyState(
+        icona: Icons.groups_outlined,
+        titolo: 'Ancora nessuna squadra',
+        descrizione:
+            'Le squadre le crea il responsabile del club o un allenatore. '
+            'Appena ce n\'è una la trovi qui.',
+        azionePrincipale: 'Ho capito',
+      );
+    }
     // Colonna centrata: a tutta larghezza su schermo largo il form era
     // scomodo da leggere (DESIGN.md sezione 19).
     return SafeArea(

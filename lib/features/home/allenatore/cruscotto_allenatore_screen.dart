@@ -20,6 +20,7 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/presentation/atleta_form_screen.dart';
 import '../../benessere/presentation/benessere_squadra.dart';
+import '../../club/application/membri_club_providers.dart';
 import '../../club/domain/club.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
@@ -242,13 +243,15 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
           ),
         ),
       ),
-      AzioneRapida(
-        icona: Icons.person_add_alt_1,
-        titolo: 'Nuovo atleta',
-        sottotitolo: 'Aggiungilo alla squadra',
-        colore: colori.azione,
-        onTap: () => _apri(context, AtletaFormScreen(clubId: club.id)),
-      ),
+      // Un assistente non aggiunge atleti.
+      if (ref.watch(puoGestireAtletiESquadreProvider(club.id)))
+        AzioneRapida(
+          icona: Icons.person_add_alt_1,
+          titolo: 'Nuovo atleta',
+          sottotitolo: 'Aggiungilo alla squadra',
+          colore: colori.azione,
+          onTap: () => _apri(context, AtletaFormScreen(clubId: club.id)),
+        ),
     ];
 
     var i = 0;

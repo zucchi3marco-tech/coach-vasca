@@ -17,6 +17,7 @@ import '../atleti/application/current_atleta_provider.dart';
 import '../auth/data/auth_repository.dart';
 import '../calendario_telefono/presentation/calendario_telefono_screen.dart';
 import '../club/application/current_club_provider.dart';
+import '../club/presentation/mio_club_screen.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../notifiche/application/push_service.dart';
@@ -113,6 +114,7 @@ class _OsservatoreAggiornamentoPwaState
 
 enum _AzioneMenu {
   notifiche,
+  ilMioClub,
   notifichePush,
   calendarioTelefono,
   sincronizza,
@@ -341,6 +343,14 @@ Future<void> _apriMenuPrincipale(
             trailing: nonLette.isEmpty ? null : Text('${nonLette.length}'),
           ),
         ),
+      if (!areaAtleta && club != null)
+        const PopupMenuItem(
+          value: _AzioneMenu.ilMioClub,
+          child: ListTile(
+            leading: Icon(Icons.groups_2_outlined),
+            title: Text('Il mio club'),
+          ),
+        ),
       if (statoPushAttuale != StatoPush.nonSupportato)
         PopupMenuItem(
           value: _AzioneMenu.notifichePush,
@@ -424,6 +434,13 @@ Future<void> _apriMenuPrincipale(
         ),
       );
       ref.invalidate(notificheNonLetteProvider(clubId));
+    case _AzioneMenu.ilMioClub:
+      if (club == null) return;
+      await navigatorKeyApp.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => MioClubScreen(clubId: club.id, clubNome: club.nome),
+        ),
+      );
     case _AzioneMenu.notifichePush:
       if (overlayContext.mounted) {
         await _gestisciNotifichePush(ref, overlayContext, statoPushAttuale);

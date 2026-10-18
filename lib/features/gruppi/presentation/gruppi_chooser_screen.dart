@@ -8,6 +8,7 @@ import '../../../theme/tokens_dominio.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../club/application/membri_club_providers.dart';
 import '../../home/atleta/grafica_pallanuoto.dart';
 import '../../home/atleta/home_atleta_widgets.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
@@ -135,15 +136,19 @@ class GruppiChooserScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  IconButton.filledTonal(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Gestisci le squadre',
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => GruppiManagementScreen(clubId: clubId),
+                  // Aggiungere, rinominare e togliere squadre (e i loro
+                  // codici) non spetta a un assistente.
+                  if (ref.watch(puoGestireAtletiESquadreProvider(clubId)))
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Gestisci le squadre',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              GruppiManagementScreen(clubId: clubId),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 20),

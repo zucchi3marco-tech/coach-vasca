@@ -10,6 +10,7 @@ import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
+import '../../club/application/membri_club_providers.dart';
 import '../data/atleti_repository.dart';
 import '../data/inviti_atleta_repository.dart';
 import '../domain/atleta.dart';
@@ -158,6 +159,18 @@ class _GestisciAccountAtletaDialogState
                 label: 'Copia codice',
                 icon: Icons.copy_outlined,
                 onPressed: _copiaCodice,
+              ),
+            ] else if (!ref.watch(
+              puoGestireAtletiESquadreProvider(widget.atleta.clubId),
+            )) ...[
+              // Il codice per far entrare un atleta lo crea il responsabile
+              // o un allenatore, non un assistente.
+              Text(
+                'Nessun account collegato. Il codice per l\'atleta lo crea il '
+                'responsabile del club o un allenatore.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
               ),
             ] else ...[
               Text(

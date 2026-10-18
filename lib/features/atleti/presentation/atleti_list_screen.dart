@@ -20,6 +20,7 @@ import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/destinatari.dart' show ruoliAtleta;
 import '../../benessere/presentation/benessere_squadra.dart';
+import '../../club/application/membri_club_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../home/area_atleta_home_screen.dart';
@@ -83,6 +84,11 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
       )),
     );
 
+    // Un assistente non aggiunge né toglie atleti.
+    final puoGestire = ref.watch(
+      puoGestireAtletiESquadreProvider(widget.clubId),
+    );
+
     final delGruppo = (atletiAsync.value ?? const <Atleta>[])
         .where(
           (a) =>
@@ -143,15 +149,17 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                   ),
                 ],
                 azioni: [
-                  AzioneTestata(
-                    icona: Icons.person_add_alt_1,
-                    etichetta: 'Nuovo atleta',
-                    principale: true,
-                    onTap: () => _apriForm(context),
-                  ),
+                  if (puoGestire)
+                    AzioneTestata(
+                      icona: Icons.person_add_alt_1,
+                      etichetta: 'Nuovo atleta',
+                      principale: true,
+                      onTap: () => _apriForm(context),
+                    ),
                   AzioneTestata(
                     icona: Icons.calendar_view_month,
                     etichetta: 'Presenze',
+                    principale: !puoGestire,
                     onTap: _apriPresenze,
                   ),
                 ],
@@ -228,6 +236,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                     builder: (_) => AtletaDashboardScreen(atleta: atleta),
                   ),
                 ),
+                puoGestire: puoGestire,
                 onTapNuovo: () => _apriForm(context),
                 onTapModifica: (atleta) => _apriForm(context, atleta: atleta),
                 onTapElimina: (atleta) => _eliminaAtleta(context, atleta),
@@ -314,6 +323,7 @@ class _AtletiList extends StatelessWidget {
     required this.ricerca,
     required this.ordinamento,
     required this.onTap,
+    required this.puoGestire,
     required this.onTapNuovo,
     required this.onTapModifica,
     required this.onTapElimina,
@@ -329,6 +339,9 @@ class _AtletiList extends StatelessWidget {
 
   /// Tocco sulla riga: apre la dashboard dell'atleta.
   final ValueChanged<Atleta> onTap;
+
+  /// false per un assistente: niente "Nuovo atleta" né "Elimina atleta".
+  final bool puoGestire;
   final VoidCallback onTapNuovo;
 
   /// Menu `⋮`: "Modifica anagrafica" (prima era l'azione della riga).
@@ -406,7 +419,7 @@ class _AtletiList extends StatelessWidget {
             'Aggiungi il primo atleta per iniziare a programmare '
             'allenamenti e tenere le presenze.',
         azionePrincipale: 'Nuovo atleta',
-        onAzionePrincipale: onTapNuovo,
+        onAzionePrincipale: puoGestire ? onTapNuovo : null,
       );
     }
 
@@ -492,14 +505,16 @@ class _AtletiList extends StatelessWidget {
                         etichetta: 'Account atleta',
                       ),
                     ),
-                    const PopupMenuDivider(),
-                    PopupMenuItem(
-                      value: () => onTapElimina(atleta),
-                      child: const _VoceMenu(
-                        icona: Icons.delete_outline,
-                        etichetta: 'Elimina atleta',
+                    if (puoGestire) ...[
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: () => onTapElimina(atleta),
+                        child: const _VoceMenu(
+                          icona: Icons.delete_outline,
+                          etichetta: 'Elimina atleta',
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],

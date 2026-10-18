@@ -10,12 +10,14 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/secondary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../auth/presentation/avviso_solo_allenatori.dart';
 import '../../auth/presentation/riscatta_invito_screen.dart';
 import '../../gruppi/data/gruppi_repository.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
+import 'entra_con_codice_staff_screen.dart';
 
 const _categorieNuoto = [
   'Es.C',
@@ -172,6 +174,20 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                         builder: (_) => const RiscattaInvitoScreen(),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  // Un allenatore o un assistente invitato dal responsabile
+                  // di un club che c'è già non ne crea uno nuovo.
+                  SecondaryButton(
+                    label: 'Ho un codice da allenatore',
+                    icon: Icons.vpn_key_outlined,
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const EntraConCodiceStaffScreen(),
+                            ),
+                          ),
                   ),
                   const SizedBox(height: AppSpacing.s24),
                   FormGroup(
