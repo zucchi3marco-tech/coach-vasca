@@ -22,6 +22,8 @@ import '../../atleti/presentation/atleta_form_screen.dart';
 import '../../benessere/presentation/benessere_squadra.dart';
 import '../../club/application/membri_club_providers.dart';
 import '../../club/domain/club.dart';
+import '../../configurazione/presentation/card_per_cominciare.dart';
+import '../../configurazione/presentation/configurazione_guidata_screen.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
 import '../../gare/presentation/gara_detail_screen.dart';
@@ -292,6 +294,22 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           // Solo se un altro ha cambiato un allenamento di una tua squadra.
           blocco(CardDaControllare(clubId: club.id)),
+          // Solo per il responsabile, finché la configurazione non è finita
+          // (o non l'ha nascosta): ogni passo apre la configurazione da lì.
+          blocco(
+            CardPerCominciare(
+              clubId: club.id,
+              onApriPasso: (passo) => _apri(
+                context,
+                ConfigurazioneGuidataScreen(
+                  club: club,
+                  daPasso: passo,
+                  comePagina: true,
+                  onFine: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ),
+          ),
           blocco(const TitoloSezione('Cosa vuoi fare?')),
           blocco(GrigliaAzioni(azioni: azioni)),
           const SizedBox(height: 20),

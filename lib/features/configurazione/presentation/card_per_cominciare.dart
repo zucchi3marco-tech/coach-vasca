@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../../../widgets/barra_passi.dart';
 import '../../club/application/membri_club_providers.dart';
 import '../../club/domain/ruolo_club.dart';
 import '../application/configurazione_providers.dart';
@@ -102,7 +103,17 @@ class CardPerCominciare extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.s12),
-            _Avanzamento(stato: stato),
+            // La stessa barra dei passi, senza quello "di adesso".
+            BarraPassi(
+              etichetta:
+                  '${stato.fatti} passi fatti su ${PassoConfigurazione.totale}',
+              passi: [
+                for (final passo in PassoConfigurazione.values)
+                  stato.fatto(passo)
+                      ? StatoPassoBarra.fatto
+                      : StatoPassoBarra.daFare,
+              ],
+            ),
             const SizedBox(height: AppSpacing.s4),
             for (final passo in PassoConfigurazione.values)
               _RigaPasso(
@@ -120,38 +131,6 @@ class CardPerCominciare extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Cinque tratti, uno per passo: pieni quelli fatti.
-class _Avanzamento extends StatelessWidget {
-  const _Avanzamento({required this.stato});
-
-  final StatoConfigurazione stato;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Semantics(
-      label: '${stato.fatti} passi fatti su ${PassoConfigurazione.totale}',
-      excludeSemantics: true,
-      child: Row(
-        children: [
-          for (final passo in PassoConfigurazione.values) ...[
-            if (passo.index > 0) const SizedBox(width: 4),
-            Expanded(
-              child: Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: stato.fatto(passo) ? colori.ok : colori.linea,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
