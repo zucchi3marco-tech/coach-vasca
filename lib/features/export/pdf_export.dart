@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -8,6 +7,7 @@ import '../../core/utils/date_italiane.dart';
 import '../allenamenti/domain/allenamento.dart';
 import 'csv_export.dart' show AllenamentoConSerie;
 import 'pdf_allenamento.dart';
+import 'tema_pdf.dart';
 
 // Colori della stampa: inchiostro scuro, grigi per quello che passa in
 // secondo piano, una tinta chiara per i gruppi da ripetere.
@@ -32,19 +32,6 @@ const _volumeLungo = 11;
 const _corpo = 10.5;
 const _volume = 12.0;
 
-/// I font di Roboto (Apache 2.0, in `assets/fonts/`): Helvetica, il font
-/// di base del PDF, non ha gli accenti né "×".
-Future<pw.ThemeData> _tema() async {
-  Future<pw.Font> font(String nome) async =>
-      pw.Font.ttf(await rootBundle.load('assets/fonts/$nome'));
-  return pw.ThemeData.withFont(
-    base: await font('roboto-regular.ttf'),
-    bold: await font('roboto-bold.ttf'),
-    italic: await font('roboto-italic.ttf'),
-    boldItalic: await font('roboto-bold.ttf'),
-  );
-}
-
 /// Un PDF con una o più pagine per allenamento (scheda singola o intera
 /// settimana): in testa titolo, quando, squadra e totali; poi un blocco
 /// alla volta, con le serie in righe larghe e leggibili, i "3x" scritti
@@ -56,7 +43,7 @@ Future<Uint8List> generaPdf(
   Map<String, String> nomiGruppi = const {},
   Map<String, String> nomiAtleti = const {},
 }) async {
-  final tema = await _tema();
+  final tema = await temaPdf();
   final doc = pw.Document(theme: tema, title: 'Allenamento');
 
   for (final (allenamento, serie) in allenamenti) {

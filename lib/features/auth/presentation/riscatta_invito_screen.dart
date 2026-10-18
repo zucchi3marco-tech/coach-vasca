@@ -80,7 +80,9 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
     super.dispose();
   }
 
-  String get _codice => _codiceController.text.trim();
+  // Senza spazi: sul biglietto stampato il codice è in due gruppi da 5
+  // ("A1B2C 3D4E5") e il server lo confronta intero.
+  String get _codice => _codiceController.text.replaceAll(RegExp(r'\s'), '');
 
   Future<void> _verificaCodice() async {
     if (_codice.isEmpty) {
