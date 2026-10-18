@@ -7,7 +7,7 @@ Lista dei passi che dall'app non si possono fare: pannelli esterni, password, ac
 - [ ] Menu ☰ → **Il mio club** → **Scrivi il nome**: lo vedono gli altri quando modifichi un allenamento.
 - [ ] Sempre in "Il mio club" → **Capi allenatori**: tocca ogni squadra e scegli il capo (per ora tu).
 - [ ] Per ogni allenatore o assistente: **Invita un allenatore** → Allenatore o Assistente → **Condividi** il codice. Lui si registra come allenatore e in "Crea il tuo club" tocca **Ho un codice da allenatore**.
-- [ ] Menu ☰ → **Partite nel calendario** → collegalo sul tuo telefono e controlla che compaiano le partite.
+- [ ] Menu ☰ → **Partite nel calendario** → collegalo sul tuo telefono. Con Android e Google Calendar: **Condividi l'indirizzo** e mandatelo; dal computer **calendar.google.com** → accanto ad **Altri calendari** il **+** → **Da URL** → incolla → **Aggiungi calendario**; poi sul telefono app Google Calendar → **☰** → **Impostazioni** → **Partite · Canottieri Milano** → accendi **Sincronizzazione**. Torna nella pagina: in cima deve dire **Collegato: l'ha letto Google Calendar…**.
 
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
