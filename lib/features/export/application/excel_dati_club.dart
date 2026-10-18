@@ -1076,7 +1076,7 @@ class _Fogli {
     return _Foglio(
       nome: 'Statistiche partite',
       contenuto:
-          'Per ogni atleta e partita: tiri, gol, assist, palle e '
+          'Per ogni atleta e partita: tiri, gol, assist, palle ed '
           'espulsioni, contati dalle azioni segnate dal vivo.',
       titoli: const [
         'Data',
