@@ -21,7 +21,7 @@ class ModificheRepository {
         .select(_campi)
         .eq('club_id', clubId)
         .isFilter('visto_at', null)
-        .order('ultima_at');
+        .order('ultima_at', ascending: false);
     return [
       for (final riga in righe)
         ModificaAllenamento.fromMap(Map<String, dynamic>.from(riga)),
