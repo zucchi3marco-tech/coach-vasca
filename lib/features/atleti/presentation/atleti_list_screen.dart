@@ -59,6 +59,12 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
   String _ricerca = '';
   _Ordinamento _ordinamento = _Ordinamento.cognome;
 
+  void _apriExcel() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => AtletiDaExcelScreen(clubId: widget.clubId),
+    ),
+  );
+
   void _apriPresenze() => Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => PresenzeStagioneScreen(
@@ -162,12 +168,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                     AzioneTestata(
                       icona: Icons.upload_file,
                       etichetta: 'Da Excel',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AtletiDaExcelScreen(clubId: widget.clubId),
-                        ),
-                      ),
+                      onTap: _apriExcel,
                     ),
                   if (puoGestire)
                     AzioneTestata(
@@ -263,6 +264,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
                 ),
                 puoGestire: puoGestire,
                 onTapNuovo: () => _apriForm(context),
+                onTapExcel: _apriExcel,
                 onTapModifica: (atleta) => _apriForm(context, atleta: atleta),
                 onTapElimina: (atleta) => _eliminaAtleta(context, atleta),
               ),
@@ -350,6 +352,7 @@ class _AtletiList extends StatelessWidget {
     required this.onTap,
     required this.puoGestire,
     required this.onTapNuovo,
+    required this.onTapExcel,
     required this.onTapModifica,
     required this.onTapElimina,
   });
@@ -368,6 +371,7 @@ class _AtletiList extends StatelessWidget {
   /// false per un assistente: niente "Nuovo atleta" né "Elimina atleta".
   final bool puoGestire;
   final VoidCallback onTapNuovo;
+  final VoidCallback onTapExcel;
 
   /// Menu `⋮`: "Modifica anagrafica" (prima era l'azione della riga).
   final ValueChanged<Atleta> onTapModifica;
@@ -445,6 +449,8 @@ class _AtletiList extends StatelessWidget {
             'allenamenti e tenere le presenze.',
         azionePrincipale: 'Nuovo atleta',
         onAzionePrincipale: puoGestire ? onTapNuovo : null,
+        azioneSecondaria: puoGestire ? 'Da un foglio Excel' : null,
+        onAzioneSecondaria: puoGestire ? onTapExcel : null,
       );
     }
 

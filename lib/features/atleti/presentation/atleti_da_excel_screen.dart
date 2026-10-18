@@ -191,6 +191,7 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
   Future<void> _salva() async {
     final foglio = _foglio;
     if (foglio == null || !foglio.ok) return;
+    if (ref.read(currentClubProvider).value?.sport == null) return;
     final repo = ref.read(atletiRepositoryProvider);
     final sport = _sport;
     final nuovi = foglio.nuovi;
@@ -278,8 +279,10 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
   Widget build(BuildContext context) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId));
     final atleti = ref.watch(atletiListProvider(_filtro));
-    ref.watch(currentClubProvider);
-    final pronto = gruppi.hasValue && atleti.hasValue;
+    // Senza il club non si sa lo sport: un atleta di pallanuoto finirebbe
+    // salvato come nuotatore.
+    final club = ref.watch(currentClubProvider).value;
+    final pronto = gruppi.hasValue && atleti.hasValue && club != null;
 
     return PopScope(
       canPop: _passo != _Passo.salvataggio,
