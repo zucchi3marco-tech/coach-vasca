@@ -102,6 +102,24 @@ class InvitiAtletaRepositoryDemo extends InvitiAtletaRepository {
     return codice;
   }
 
+  @override
+  Future<List<CodiceFoglio>> generaCodiciFoglio(List<String> atletaIds) async {
+    final senzaAccount = await (_db.select(
+      _db.atletiTable,
+    )..where((t) => t.id.isIn(atletaIds) & t.userId.isNull())).get();
+    final inviti = await _leggi(_chiaveInviti)
+      ..removeWhere((_, id) => atletaIds.contains(id));
+    final scade = DateTime.now().add(const Duration(days: 30));
+    final codici = <CodiceFoglio>[];
+    for (final atleta in senzaAccount) {
+      final codice = _nuovoCodice();
+      inviti[codice] = atleta.id;
+      codici.add((atletaId: atleta.id, codice: codice, scade: scade));
+    }
+    await _scrivi(_chiaveInviti, inviti);
+    return codici;
+  }
+
   Future<AtletiTableData?> _atletaDelCodice(String codice) async {
     final c = _normalizza(codice);
     // I codici "di gruppo" fanno l'altro percorso.
