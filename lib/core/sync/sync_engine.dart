@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../db/app_database.dart';
 import '../db/database_provider.dart';
 import '../supabase/supabase_providers.dart';
+import 'modifiche_rifiutate.dart';
 import 'network_failure.dart';
 
 /// Svuota la coda di scritture in sospeso (vedi [PendingOperationsTable])
@@ -22,10 +23,14 @@ import 'network_failure.dart';
 /// stessa riga nel frattempo, la sua modifica viene sovrascritta da questa
 /// sincronizzazione: e' la stessa regola gia' documentata in ROADMAP.md.
 class SyncEngine {
-  SyncEngine(this._db, this._client);
+  SyncEngine(this._db, this._client, {this.suRifiuto});
 
   final AppDatabase _db;
   final SupabaseClient _client;
+
+  /// Una modifica che il server ha rifiutato e che si scarta: la spia
+  /// nella barra la mostra (vedi [ModificaRifiutata]).
+  final void Function(ModificaRifiutata modifica)? suRifiuto;
 
   bool _inCorso = false;
 
@@ -86,10 +91,18 @@ class SyncEngine {
           }
           // Errore reale del server (es. RLS, vincolo violato): scarto
           // l'operazione per non ritentarla all'infinito. La riga locale
-          // resta com'e', l'utente puo' comunque modificarla di nuovo.
+          // resta com'e', l'utente puo' comunque modificarla di nuovo; la
+          // spia nella barra gli dice che non e' partita.
           await (_db.delete(
             _db.pendingOperationsTable,
           )..where((t) => t.id.equals(op.id))).go();
+          suRifiuto?.call(
+            ModificaRifiutata.daErrore(
+              tabella: op.tabella,
+              operazione: op.operazione,
+              errore: e,
+            ),
+          );
         }
       }
     } finally {
@@ -102,6 +115,8 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
   return SyncEngine(
     ref.watch(appDatabaseProvider),
     ref.watch(supabaseClientProvider),
+    suRifiuto: (modifica) =>
+        ref.read(modificheRifiutateProvider.notifier).aggiungi(modifica),
   );
 });
 

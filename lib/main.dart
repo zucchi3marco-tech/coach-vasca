@@ -12,6 +12,7 @@ import 'core/demo/inviti_demo.dart';
 import 'core/demo/modalita_demo.dart';
 import 'core/pwa/aggiornamento_pwa.dart';
 import 'core/pwa/installabilita_pwa.dart';
+import 'core/rete/controllo_rete.dart';
 import 'core/supabase/supabase_providers.dart';
 import 'features/atleti/data/codici_gruppo_repository.dart';
 import 'features/atleti/data/inviti_atleta_repository.dart';
@@ -78,6 +79,9 @@ Future<void> main() async {
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    // Un tempo massimo per ogni chiamata: una rete che non risponde vale
+    // come rete assente (proposta 28).
+    httpClient: clientRete,
   );
 
   runApp(const ProviderScope(child: CoachVascaApp()));
