@@ -13,9 +13,11 @@
 // RIPROGETTAZIONE AI: provider passato da Gemini a OpenAI come già
 // `detta-allenamento` (Gemini restava spesso "sovraccarico" anche dopo i
 // ritentativi). `chiamaGemini` resta nel file, spenta dietro
-// PROVIDER_ATTIVO, per tornare indietro in un attimo. Infrastruttura
-// ai_usage/tetto settimanale copiata a mano da `detta-allenamento`
-// (nessuna cartella `_shared/` in questo repo): tenerle allineate.
+// PROVIDER_ATTIVO, per tornare indietro in un attimo. Chi può chiamare, i
+// tetti e il conteggio in ai_usage sono in `_shared/accesso_ai.ts`,
+// comuni a tutte le funzioni AI.
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 const PROVIDER_ATTIVO: "openai" | "gemini" = "openai";
 
@@ -24,15 +26,6 @@ const GEMINI_MODEL = "gemini-3.6-flash";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const TEXT_MODEL = Deno.env.get("TEXT_MODEL") ?? "gpt-4o-mini";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-// Tetto di richieste AI (qualunque funzione scriva su ai_usage) per
-// persona a settimana — stesso numero di `detta-allenamento`.
-const LIMITE_SETTIMANALE_PER_PERSONA = 30;
-
-const NOME_FUNZIONE = "genera-allenamento";
 
 // Scarto ammesso fra i metri della scheda e il volume richiesto (stesso
 // margine dei controlli sulla settimana, `controlli_settimana_service.dart`):
@@ -1230,121 +1223,6 @@ async function chiamaOpenAi(
   };
 }
 
-/// Decodifica il payload del JWT (già verificato dal gateway Supabase
-/// prima che la richiesta arrivasse qui: non serve riverificarlo) per
-/// sapere chi ha chiamato — serve per il tetto settimanale e per
-/// ai_usage. `null` se l'header manca o non è un JWT valido.
-function idUtenteDaRichiesta(req: Request): string | null {
-  const header = req.headers.get("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-  const jwt = header.slice("Bearer ".length);
-  const parti = jwt.split(".");
-  if (parti.length !== 3) return null;
-  try {
-    const payload = JSON.parse(atob(parti[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return typeof payload.sub === "string" ? payload.sub : null;
-  } catch {
-    return null;
-  }
-}
-
-/// Quante chiamate AI (qualunque funzione) ha già fatto questo utente
-/// negli ultimi 7 giorni. In caso di errore di rete verso il database
-/// non blocca la richiesta per un problema che non è dell'utente:
-/// torna 0 (fail-open), diversamente da un tetto superato per davvero.
-async function richiesteUltimaSettimana(userId: string): Promise<number> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return 0;
-  const seiGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  try {
-    const risposta = await fetch(
-      `${SUPABASE_URL}/rest/v1/ai_usage?select=id&user_id=eq.${userId}&creato_il=gte.${seiGiorniFa}`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: "count=exact",
-        },
-      },
-    );
-    const header = risposta.headers.get("content-range");
-    const totale = header?.split("/")[1];
-    if (totale && totale !== "*") return Number(totale);
-    const righe = await risposta.json();
-    return Array.isArray(righe) ? righe.length : 0;
-  } catch {
-    return 0;
-  }
-}
-
-/// Il club a cui attribuire la chiamata: l'app non lo manda a questa
-/// funzione, quindi si legge dalle iscrizioni dell'utente (in V1 un
-/// coach opera su un solo club). `null` se non si trova.
-async function clubDiUtente(userId: string): Promise<string | null> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
-  try {
-    const risposta = await fetch(
-      `${SUPABASE_URL}/rest/v1/club_membri?select=club_id&user_id=eq.${userId}&limit=1`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      },
-    );
-    const righe = await risposta.json();
-    const clubId = Array.isArray(righe) ? righe[0]?.club_id : null;
-    return typeof clubId === "string" ? clubId : null;
-  } catch {
-    return null;
-  }
-}
-
-/// Registra la chiamata — se fallisce, lo scrive solo nei log: non deve
-/// far fallire una generazione già andata a buon fine.
-async function registraUsoAi(
-  params: { userId: string; modello: string; gettoni: number | null },
-): Promise<void> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
-  try {
-    const clubId = await clubDiUtente(params.userId);
-    if (clubId == null) return;
-    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        club_id: clubId,
-        user_id: params.userId,
-        funzione: NOME_FUNZIONE,
-        modello: params.modello,
-        gettoni: params.gettoni,
-      }),
-    });
-  } catch (errore) {
-    console.error("registraUsoAi fallita:", errore);
-  }
-}
-
-/// Risposta 429 pronta se l'utente ha già raggiunto il tetto settimanale,
-/// `null` se può procedere (o se non si sa chi è).
-async function tettoSuperato(userId: string | null): Promise<Response | null> {
-  if (!userId) return null;
-  const richiesteFatte = await richiesteUltimaSettimana(userId);
-  if (richiesteFatte < LIMITE_SETTIMANALE_PER_PERSONA) return null;
-  return jsonResponse(
-    {
-      error: `Hai raggiunto il limite di ${LIMITE_SETTIMANALE_PER_PERSONA} ` +
-        "richieste AI per questa settimana. Riprova la settimana prossima, " +
-        "o scrivi la scheda a mano.",
-    },
-    429,
-  );
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -1361,9 +1239,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
 
-  const userId = idUtenteDaRichiesta(req);
-  const rifiuto = await tettoSuperato(userId);
-  if (rifiuto) return rifiuto;
+  const accesso = await accessoAi(req, {
+    funzione: "genera-allenamento",
+    modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+  });
+  if (accesso instanceof Response) return accesso;
 
   const prompt = costruisciPrompt(parametri);
 
@@ -1403,13 +1283,7 @@ Deno.serve(async (req) => {
     minutiStimati: minuti,
   };
 
-  if (userId) {
-    await registraUsoAi({
-      userId,
-      modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
-      gettoni: esito.gettoni,
-    });
-  }
+  await accesso.registraGettoni(esito.gettoni);
   return jsonResponse({ scheda });
 });
 

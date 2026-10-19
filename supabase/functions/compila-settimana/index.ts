@@ -5,8 +5,12 @@
 // settimanale, tipo di settimana, focus per giorno, attrezzi, vincoli). Non
 // genera nessuna settimana: il coach rivede il modulo e poi preme Genera.
 // Ogni campo è opzionale (solo ciò che il testo dice davvero) e l'output è
-// rivalidato qui. File autonomo come le altre Edge Function: costanti
-// duplicate a mano, da tenere allineate a `focus_lavoro.dart`.
+// rivalidato qui. Costanti duplicate a mano, da tenere allineate a
+// `focus_lavoro.dart`. In comune con le altre funzioni AI c'è solo
+// `_shared/accesso_ai.ts`: chi può chiamare, i tetti e il conteggio in
+// ai_usage.
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 // RIPROGETTAZIONE AI: provider passato da Gemini a OpenAI come
 // `genera-allenamento`. `chiamaGemini` resta nel file, spenta dietro
@@ -511,6 +515,13 @@ Deno.serve(async (req) => {
   } catch {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
+
+  const accesso = await accessoAi(req, {
+    funzione: "compila-settimana",
+    modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+  });
+  if (accesso instanceof Response) return accesso;
+
   if (!richiesta.testo || richiesta.testo.trim().length < 5) {
     return jsonResponse(
       { error: "Il testo è troppo corto per essere interpretato" },
@@ -530,6 +541,7 @@ Deno.serve(async (req) => {
   if (!risultato.ok) {
     return jsonResponse({ error: risultato.errorMessage }, 502);
   }
+  await accesso.registraGettoni(risultato.gettoni);
 
   let grezzo: unknown;
   try {

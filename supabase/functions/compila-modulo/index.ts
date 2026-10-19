@@ -8,9 +8,12 @@
 // il testo dice davvero, mai un valore inventato per "completare".
 // Output rivalidato qui (valori ammessi, intervalli): l'app riceve sempre
 // campi noti o un errore esplicito.
-// Come le altre Edge Function, è un file autonomo (nessun codice condiviso
-// fra le funzioni): le costanti sono duplicate a mano — tenere allineate a
+// Le costanti sono duplicate a mano — tenere allineate a
 // `lib/features/ai_genera/domain/tipo_lavoro.dart` e `focus_lavoro.dart`.
+// In comune con le altre funzioni AI c'è solo `_shared/accesso_ai.ts`:
+// chi può chiamare, i tetti e il conteggio in ai_usage.
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 // RIPROGETTAZIONE AI: provider passato da Gemini a OpenAI come
 // `genera-allenamento`. `chiamaGemini` resta nel file, spenta dietro
@@ -475,6 +478,13 @@ Deno.serve(async (req) => {
   } catch {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
+
+  const accesso = await accessoAi(req, {
+    funzione: "compila-modulo",
+    modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+  });
+  if (accesso instanceof Response) return accesso;
+
   if (!richiesta.testo || richiesta.testo.trim().length < 5) {
     return jsonResponse(
       { error: "Il testo è troppo corto per essere interpretato" },
@@ -494,6 +504,7 @@ Deno.serve(async (req) => {
   if (!risultato.ok) {
     return jsonResponse({ error: risultato.errorMessage }, 502);
   }
+  await accesso.registraGettoni(risultato.gettoni);
 
   let grezzo: unknown;
   try {

@@ -5,7 +5,11 @@
 // (vision) per estrarne le righe in JSON. Analisi "Il Mako della
 // pallanuoto", proposta 8: lo stesso meccanismo di `leggi-referto`. Il
 // coach controlla e corregge nell'app prima di salvare: qui si legge
-// soltanto, non si scrive niente nel database.
+// soltanto, non si scrive niente nel database (tranne la riga in ai_usage:
+// chi può chiamare, i tetti e il conteggio sono in `_shared/accesso_ai.ts`,
+// comuni a tutte le funzioni AI).
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-3.6-flash";
@@ -129,6 +133,9 @@ Deno.serve(async (req) => {
     );
   }
 
+  const accesso = await accessoAi(req, { funzione: "leggi-tempi", modello: GEMINI_MODEL });
+  if (accesso instanceof Response) return accesso;
+
   if (!corpo.immagineBase64 || !corpo.mimeType) {
     return jsonResponse(
       { error: "Immagine mancante", codice: "richiesta_non_valida" },
@@ -185,6 +192,7 @@ Deno.serve(async (req) => {
 
   const dati = await rispostaGemini.json();
   const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  await accesso.registraGettoni(dati?.usageMetadata?.totalTokenCount);
 
   let grezzo: unknown;
   try {

@@ -44,6 +44,16 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'ai-con-tetto',
+    data: DateTime(2026, 10, 19),
+    titolo: 'L\'AI ha un tetto di richieste',
+    testo:
+        'Genera con l\'AI, il modulo compilato dal testo, la lettura delle '
+        'foto e l\'assistente contano insieme: 30 richieste a settimana a '
+        'persona (da lunedì) e 300 al mese per il club. Arrivati al limite '
+        'l\'app lo dice e si continua a mano.',
+  ),
+  Novita(
     id: 'campionati-fin-sito-nuovo',
     data: DateTime(2026, 10, 19),
     titolo: 'I campionati FIN di nuovo al loro posto',

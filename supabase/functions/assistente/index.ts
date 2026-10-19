@@ -15,16 +15,16 @@
 // all'allenatore (`mostra_benessere`). Quando il modello sul telefono sara'
 // pronto (piano dell'AI locale) prendera' il posto di questo.
 //
-// Solo per gli allenatori: si controlla che chi chiama sia membro del club.
-// File autonomo come le altre Edge Function (nessun codice condiviso).
+// Solo per lo staff del club, con i tetti delle altre funzioni AI: il
+// controllo comune è in `_shared/accesso_ai.ts`. Una domanda conta una
+// volta sola: i passaggi successivi (la conversazione che finisce con il
+// risultato di uno strumento) si segnano a parte.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const MODELLO = Deno.env.get("ASSISTENTE_MODEL") ?? Deno.env.get("TEXT_MODEL") ??
   "gpt-4o-mini";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "Metodo non supportato" }, 405);
   }
-  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (!OPENAI_API_KEY) {
     return jsonResponse({ error: "Assistente non configurato sul server" }, 500);
   }
 
@@ -326,24 +326,18 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Club mancante" }, 400);
   }
 
-  // Solo un allenatore del club: la chiave dell'AI costa.
-  const autorizzazione = req.headers.get("Authorization") ?? "";
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: autorizzazione } },
-    auth: { persistSession: false },
+  // Solo lo staff del club, e la chiave dell'AI costa: prima di tutto il
+  // resto. Se l'ultimo messaggio è il risultato di uno strumento, è un
+  // passaggio della stessa domanda.
+  const grezzi = Array.isArray(richiesta.messaggi) ? richiesta.messaggi : [];
+  const ultimo = grezzi[grezzi.length - 1] as { role?: unknown } | undefined;
+  const accesso = await accessoAi(req, {
+    funzione: "assistente",
+    modello: MODELLO,
+    clubId: richiesta.club_id,
+    passaggio: ultimo?.role === "tool",
   });
-  const { data: utente } = await db.auth.getUser(
-    autorizzazione.replace(/^Bearer\s+/i, ""),
-  );
-  if (!utente?.user) {
-    return jsonResponse({ error: "Accesso richiesto" }, 401);
-  }
-  const { data: membro, error: erroreMembro } = await db.rpc("is_membro_club", {
-    p_club_id: richiesta.club_id,
-  });
-  if (erroreMembro || membro !== true) {
-    return jsonResponse({ error: "L'assistente è solo per gli allenatori del club" }, 403);
-  }
+  if (accesso instanceof Response) return accesso;
 
   const messaggi = pulisciMessaggi(richiesta.messaggi);
   if (typeof messaggi === "string") {
@@ -403,6 +397,7 @@ Deno.serve(async (req) => {
   }
 
   const dati = await risposta.json();
+  await accesso.registraGettoni(dati?.usage?.total_tokens);
   const messaggio = dati?.choices?.[0]?.message;
   if (!messaggio) {
     return jsonResponse({ error: "Il servizio AI non ha risposto. Riprova." }, 502);

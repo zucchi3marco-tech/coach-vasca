@@ -18,10 +18,16 @@
 //
 // Se in futuro si cambia ancora provider, si riscrive solo questo file:
 // il contratto verso l'app (corpo della richiesta e { scheda } in
-// risposta) resta invariato. Nessuna cartella `_shared/` in questo
-// repo (vedi `tipo_lavoro.dart`): l'infrastruttura ai_usage/tetto
-// settimanale qui sotto va risincronizzata a mano quando arriverà
-// anche in `genera-allenamento`/`genera-settimana` (FASE 3).
+// risposta) resta invariato. Chi può chiamare, i tetti e il conteggio in
+// ai_usage sono in `_shared/accesso_ai.ts`, comuni a tutte le funzioni AI.
+//
+// NON DISTRIBUITA dal 2026-10-19: l'app non la chiama più dal 2026-10-08
+// (la dettatura finisce dritta nel testo, senza AI) ed è stata tolta dal
+// server.
+// Il codice resta qui con lo stesso controllo delle altre, nel caso
+// tornasse utile.
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 const PROVIDER_ATTIVO: "openai" | "gemini" = "openai";
 
@@ -30,14 +36,6 @@ const GEMINI_MODEL = "gemini-3.6-flash";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const TEXT_MODEL = Deno.env.get("TEXT_MODEL") ?? "gpt-4o-mini";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-// Tetto di richieste AI (qualunque funzione scriva su ai_usage, non solo
-// questa) per persona a settimana — numero concordato col coach,
-// modificabile qui se serve cambiarlo.
-const LIMITE_SETTIMANALE_PER_PERSONA = 30;
 
 const BLOCCHI = ["riscaldamento", "principale", "defaticamento", "altro"];
 const STILI = ["libero", "dorso", "rana", "delfino", "misti"];
@@ -526,80 +524,6 @@ async function chiamaOpenAi(
   };
 }
 
-/// Decodifica il payload del JWT (già verificato dal gateway Supabase
-/// prima che la richiesta arrivasse qui: non serve riverificarlo) per
-/// sapere chi ha chiamato — serve per il tetto settimanale e per
-/// ai_usage. `null` se l'header manca o non è un JWT valido.
-function idUtenteDaRichiesta(req: Request): string | null {
-  const header = req.headers.get("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-  const jwt = header.slice("Bearer ".length);
-  const parti = jwt.split(".");
-  if (parti.length !== 3) return null;
-  try {
-    const payload = JSON.parse(atob(parti[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return typeof payload.sub === "string" ? payload.sub : null;
-  } catch {
-    return null;
-  }
-}
-
-/// Quante chiamate AI (qualunque funzione) ha già fatto questo utente
-/// negli ultimi 7 giorni. In caso di errore di rete verso il database
-/// non blocca la dettatura per un problema che non è dell'utente:
-/// torna 0 (fail-open), diversamente da un tetto superato per davvero.
-async function richiesteUltimaSettimana(userId: string): Promise<number> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return 0;
-  const seiGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  try {
-    const risposta = await fetch(
-      `${SUPABASE_URL}/rest/v1/ai_usage?select=id&user_id=eq.${userId}&creato_il=gte.${seiGiorniFa}`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: "count=exact",
-        },
-      },
-    );
-    const header = risposta.headers.get("content-range");
-    const totale = header?.split("/")[1];
-    if (totale && totale !== "*") return Number(totale);
-    const righe = await risposta.json();
-    return Array.isArray(righe) ? righe.length : 0;
-  } catch {
-    return 0;
-  }
-}
-
-/// Registra la chiamata — se fallisce, lo scrive solo nei log: non deve
-/// far fallire una dettatura già andata a buon fine.
-async function registraUsoAi(
-  params: { clubId: string; userId: string; modello: string; gettoni: number | null },
-): Promise<void> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        club_id: params.clubId,
-        user_id: params.userId,
-        funzione: "detta-allenamento",
-        modello: params.modello,
-        gettoni: params.gettoni,
-      }),
-    });
-  } catch (errore) {
-    console.error("registraUsoAi fallita:", errore);
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -616,26 +540,17 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Corpo della richiesta non valido" }, 400);
   }
 
+  const accesso = await accessoAi(req, {
+    funzione: "detta-allenamento",
+    modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
+  });
+  if (accesso instanceof Response) return accesso;
+
   if (!richiesta.testo || richiesta.testo.trim().length < 10) {
     return jsonResponse(
       { error: "Il testo dettato è troppo corto per essere interpretato" },
       400,
     );
-  }
-
-  const userId = idUtenteDaRichiesta(req);
-  if (userId) {
-    const richiesteFatte = await richiesteUltimaSettimana(userId);
-    if (richiesteFatte >= LIMITE_SETTIMANALE_PER_PERSONA) {
-      return jsonResponse(
-        {
-          error: `Hai raggiunto il limite di ${LIMITE_SETTIMANALE_PER_PERSONA} ` +
-            "richieste AI per questa settimana. Riprova la settimana prossima, " +
-            "o scrivi la scheda a mano.",
-        },
-        429,
-      );
-    }
   }
 
   const prompt = costruisciPrompt(richiesta);
@@ -647,6 +562,7 @@ Deno.serve(async (req) => {
   if (!risultato.ok) {
     return jsonResponse({ error: risultato.errorMessage }, 502);
   }
+  await accesso.registraGettoni(risultato.gettoni);
 
   let schedaGrezza: unknown;
   try {
@@ -660,14 +576,6 @@ Deno.serve(async (req) => {
 
   try {
     const scheda = validaScheda(schedaGrezza);
-    if (userId && richiesta.clubId) {
-      await registraUsoAi({
-        clubId: richiesta.clubId,
-        userId,
-        modello: PROVIDER_ATTIVO === "openai" ? TEXT_MODEL : GEMINI_MODEL,
-        gettoni: risultato.gettoni,
-      });
-    }
     return jsonResponse({ scheda });
   } catch (errore) {
     return jsonResponse(

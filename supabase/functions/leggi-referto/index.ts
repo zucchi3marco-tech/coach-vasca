@@ -5,7 +5,11 @@
 // JSON strutturato, invece di scrivere un OCR dedicato per un modulo
 // cartaceo pieno di tabelle e abbreviazioni. Stessa architettura di
 // genera-allenamento: chiave del provider solo lato server, output sempre
-// validato prima di tornare all'app.
+// validato prima di tornare all'app. Chi può chiamare, i tetti e il
+// conteggio in ai_usage sono in `_shared/accesso_ai.ts`, comuni a tutte
+// le funzioni AI.
+
+import { accessoAi } from "../_shared/accesso_ai.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-3.6-flash";
@@ -230,6 +234,9 @@ Deno.serve(async (req) => {
     );
   }
 
+  const accesso = await accessoAi(req, { funzione: "leggi-referto", modello: GEMINI_MODEL });
+  if (accesso instanceof Response) return accesso;
+
   if (!corpo.immagineBase64 || !corpo.mimeType) {
     return jsonResponse(
       { error: "Immagine mancante", codice: "richiesta_non_valida" },
@@ -286,6 +293,7 @@ Deno.serve(async (req) => {
 
   const dati = await rispostaGemini.json();
   const testoJson = dati?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  await accesso.registraGettoni(dati?.usageMetadata?.totalTokenCount);
 
   let refertoGrezzo: unknown;
   try {
