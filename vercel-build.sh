@@ -23,4 +23,12 @@ SUPABASE_URL=${SUPABASE_URL}
 SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
 EOF
 
-flutter build web --release
+# La versione che l'app mostra in "Novità" e allega alle segnalazioni: il
+# giorno della build (ora italiana) e il commit (Vercel lo da' in
+# VERCEL_GIT_COMMIT_SHA; se manca, quello del clone).
+VERSIONE_COMMIT="${VERCEL_GIT_COMMIT_SHA:-$(git rev-parse HEAD 2>/dev/null || true)}"
+VERSIONE_DATA="$(TZ=Europe/Rome date +%Y-%m-%d)"
+
+flutter build web --release \
+  --dart-define=VERSIONE_COMMIT="${VERSIONE_COMMIT:0:7}" \
+  --dart-define=VERSIONE_DATA="${VERSIONE_DATA}"

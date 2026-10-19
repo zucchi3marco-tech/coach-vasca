@@ -27,6 +27,25 @@ const mesiBrevi = [
   'dic',
 ];
 
+const _mesiInteri = [
+  'gennaio',
+  'febbraio',
+  'marzo',
+  'aprile',
+  'maggio',
+  'giugno',
+  'luglio',
+  'agosto',
+  'settembre',
+  'ottobre',
+  'novembre',
+  'dicembre',
+];
+
+/// "19 ottobre 2026": la versione dell'app e le novità.
+String dataLunga(DateTime d) =>
+    '${d.day} ${_mesiInteri[d.month - 1]} ${d.year}';
+
 /// "giovedì 8 ott".
 String dataEstesa(DateTime d) =>
     '${_giorni[d.weekday - 1]} ${d.day} ${mesiBrevi[d.month - 1]}';
