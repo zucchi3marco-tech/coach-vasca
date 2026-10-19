@@ -32,6 +32,12 @@ Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al 
 
 - [ ] Apri un allenamento in cui a bordo vasca hai segnato qualche serie **fatta** o **saltata** → in alto l'icona del foglio con le righe (**Scrivi l'allenamento**) → aggiungi una serie in cima → **Salva**. Nel dettaglio i segni devono essere ancora sulle stesse serie. Se non è così, **Scrivimi** da quella pagina.
 
+## 0quinquies. La rete in vista (pubblicata il 2026-10-20)
+
+- [ ] Sul telefono metti la **modalità aereo**, poi segna una presenza o modifica un atleta: in alto, prima del tema, compare la **nuvola barrata** con il numero 1. Toccala: «Senza rete dalle …» e «1 modifica aspetta di partire».
+- [ ] Togli la modalità aereo e non toccare niente: entro 20 secondi la nuvola sparisce da sola. Da un altro telefono o dal computer controlla che la modifica sia arrivata.
+- [ ] In piscina, quando il wifi «c'è ma non va»: le pagine già viste devono comparire subito, e dopo al massimo 8 secondi deve comparire la nuvola, invece della rotellina che gira. Se non succede, usa **Scrivimi** da quella pagina.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".

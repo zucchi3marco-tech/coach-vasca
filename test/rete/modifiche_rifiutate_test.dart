@@ -27,7 +27,7 @@ void main() {
         tabella: 'presenze',
         operazione: 'upsert',
         errore: PostgrestException(
-          message: _rifiutoRls['message']! as String,
+          message: _rifiutoRls['message']!,
           code: '42501',
           details: _rifiutoRls['details'],
         ),
@@ -43,7 +43,7 @@ void main() {
       final m = ModificaRifiutata.daErrore(
         tabella: 'presenze',
         operazione: 'insert',
-        errore: PostgrestException(
+        errore: const PostgrestException(
           message: 'violates check constraint',
           code: '23514',
           details: 'Failing row contains (p1, Luca Bianchi)',

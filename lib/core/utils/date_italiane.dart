@@ -46,6 +46,18 @@ const _mesiInteri = [
 String dataLunga(DateTime d) =>
     '${d.day} ${_mesiInteri[d.month - 1]} ${d.year}';
 
+/// "19 ottobre": il giorno e il mese per esteso, senza l'anno.
+String giornoMese(DateTime d) => '${d.day} ${_mesiInteri[d.month - 1]}';
+
+/// "18:42".
+String oraMinuti(DateTime d) =>
+    '${d.hour.toString().padLeft(2, '0')}:'
+    '${d.minute.toString().padLeft(2, '0')}';
+
+/// "19 ottobre alle 18:42": quando è successo qualcosa, che si legga
+/// anche giorni dopo (a differenza di [quandoFa]).
+String dataEOra(DateTime d) => '${giornoMese(d)} alle ${oraMinuti(d)}';
+
 /// "giovedì 8 ott".
 String dataEstesa(DateTime d) =>
     '${_giorni[d.weekday - 1]} ${d.day} ${mesiBrevi[d.month - 1]}';

@@ -6,12 +6,9 @@ import '../../core/navigation/navigator_key.dart';
 import '../../core/push/push_notifiche.dart';
 import '../../core/pwa/aggiornamento_pwa.dart';
 import '../../core/pwa/installabilita_pwa.dart';
-import '../../core/segnalazioni/dispositivo.dart';
 import '../../core/segnalazioni/schermata_app.dart';
 import '../../core/supabase/supabase_providers.dart';
-import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
-import '../../core/versione/versione_app.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/colori_app.dart';
@@ -21,18 +18,17 @@ import '../auth/data/auth_repository.dart';
 import '../calendario_telefono/presentation/calendario_telefono_screen.dart';
 import '../club/application/current_club_provider.dart';
 import '../club/presentation/mio_club_screen.dart';
-import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../notifiche/application/push_service.dart';
 import '../notifiche/data/notifiche_repository.dart';
 import '../notifiche/presentation/notifiche_screen.dart';
 import '../novita/presentation/novita_screen.dart';
 import '../segnalazioni/data/segnalazioni_repository.dart';
-import '../segnalazioni/domain/segnalazione.dart';
 import '../segnalazioni/presentation/scrivimi_screen.dart';
 import '../segnalazioni/presentation/segnalazioni_screen.dart';
+import 'contesto_segnalazione.dart';
+import 'spia_rete.dart';
 import 'tour_coach.dart';
-import 'voci_home.dart';
 
 /// Mette la barra fissa in alto sopra il Navigator dell'app (nel `builder`
 /// di `MaterialApp`): resta visibile su ogni schermata, tranne quelle che
@@ -130,7 +126,6 @@ enum _AzioneMenu {
   ilMioClub,
   notifichePush,
   calendarioTelefono,
-  sincronizza,
   installa,
   cambiaGruppo,
   guida,
@@ -140,7 +135,8 @@ enum _AzioneMenu {
   esci,
 }
 
-/// La barra: logo (bottone home), nome del club, menu ☰ e tema.
+/// La barra: logo (bottone home), nome del club, spia della rete (solo se
+/// qualcosa non va), tema e menu ☰.
 ///
 /// Sta fuori dal Navigator: niente `PopupMenuButton`, `Tooltip` né
 /// `showDialog` con il proprio contesto. Menu e dialoghi passano dalla
@@ -240,6 +236,8 @@ class BarraClub extends ConsumerWidget {
                     },
                   ),
                 ),
+                // Si vede solo quando qualcosa non va con la rete.
+                const SpiaRete(),
                 Builder(
                   builder: (bottoneContext) => IconButton(
                     icon: Icon(temaScelto.icona),
@@ -327,19 +325,13 @@ Future<void> _apriMenuPrincipale(
 
   final areaAtleta = ref.read(currentAtletaProvider).value != null;
   final club = areaAtleta ? null : ref.read(currentClubProvider).value;
-  final gruppi = club == null
-      ? const []
-      : ref.read(gruppiListProvider(club.id)).value ?? const [];
-  final selezione = ref.read(selezioneGruppoProvider);
-  final mostraTab =
-      !areaAtleta && club != null && gruppi.isNotEmpty && selezione != null;
+  final mostraTab = homeConSchede(ref);
   final clubNotificheId =
       ref.read(currentAtletaProvider).value?.clubId ?? club?.id;
   final mostraNotifiche = clubNotificheId != null;
   final nonLette = clubNotificheId != null
       ? ref.read(notificheNonLetteProvider(clubNotificheId)).value ?? const []
       : const [];
-  final inCoda = ref.read(pendingOperationsCountProvider).value ?? 0;
   final installabile = installabilitaPwa.value;
   // «Scrivimi» per allenatori e assistenti (scelta del coach): gli atleti
   // segnalano al loro allenatore.
@@ -395,21 +387,6 @@ Future<void> _apriMenuPrincipale(
         child: ListTile(
           leading: Icon(Icons.event_available_outlined),
           title: Text('Partite nel calendario'),
-        ),
-      ),
-      PopupMenuItem(
-        value: _AzioneMenu.sincronizza,
-        enabled: inCoda > 0,
-        child: ListTile(
-          leading: Icon(
-            inCoda == 0
-                ? Icons.cloud_done_outlined
-                : Icons.cloud_upload_outlined,
-          ),
-          title: Text(inCoda == 0 ? 'Tutto sincronizzato' : 'Sincronizza'),
-          subtitle: inCoda == 0
-              ? null
-              : Text('$inCoda modifiche in coda, in attesa di rete'),
         ),
       ),
       if (installabile)
@@ -498,8 +475,6 @@ Future<void> _apriMenuPrincipale(
           builder: (_) => const CalendarioTelefonoScreen(),
         ),
       );
-    case _AzioneMenu.sincronizza:
-      await ref.read(syncEngineProvider).processQueue();
     case _AzioneMenu.installa:
       installaPwa();
     case _AzioneMenu.cambiaGruppo:
@@ -524,7 +499,7 @@ Future<void> _apriMenuPrincipale(
       );
     case _AzioneMenu.scrivimi:
       if (club == null) return;
-      final contesto = await _contestoSegnalazione(
+      final contesto = await contestoSegnalazione(
         ref,
         club.sport,
         conSchede: mostraTab,
@@ -551,46 +526,6 @@ Future<void> _apriMenuPrincipale(
         }
       }
   }
-}
-
-/// Il menu impiega un attimo a sparire: la schermata si fa dopo, così
-/// mostra la pagina e non il menu.
-const _attesaChiusuraMenu = Duration(milliseconds: 350);
-
-/// Quello che «Scrivimi» allega da solo: la schermata dove si era, la
-/// pagina (sulla home, la scheda), la versione, lo schermo e il browser.
-/// Si prepara prima di aprire la pagina di «Scrivimi», che la coprirebbe.
-Future<ContestoSegnalazione> _contestoSegnalazione(
-  WidgetRef ref,
-  String? sport, {
-  required bool conSchede,
-}) async {
-  await Future<void>.delayed(_attesaChiusuraMenu);
-  final schermata = await ref.read(catturaSchermataProvider)();
-  String? pagina;
-  if (conSchede && osservatorePagine.soloLaPrima) {
-    final voci = vociHome(sport);
-    final voce = voci[ref.read(tabHomeProvider).clamp(0, voci.length - 1)];
-    pagina = 'Home, scheda ${destinazioneHome(voce, sport).etichettaBreve}';
-  } else {
-    pagina = osservatorePagine.titoloPaginaInCima();
-  }
-  String? schermo;
-  final contesto = contestoNavigatorApp();
-  if (contesto != null && contesto.mounted) {
-    final misura = MediaQuery.sizeOf(contesto);
-    final scala = MediaQuery.textScalerOf(contesto).scale(10) / 10;
-    schermo =
-        '${misura.width.round()}×${misura.height.round()}'
-        '${scala == 1 ? '' : ', testo ${scala.toStringAsFixed(1)}x'}';
-  }
-  return ContestoSegnalazione(
-    versione: VersioneApp.corrente.compatta,
-    pagina: pagina,
-    dispositivo: descrizioneDispositivo(),
-    schermo: schermo,
-    schermata: schermata,
-  );
 }
 
 /// Attivazione delle notifiche push dal menu: il permesso del browser si

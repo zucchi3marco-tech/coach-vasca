@@ -23,7 +23,7 @@ eliminarli senza danni.
 - [ ] Dopo il login (e la scelta del gruppo) in alto vedi il **nome del tuo club**, con il logo a sinistra.
 - [ ] Il logo, da una schermata aperta (es. dettaglio di un allenamento), ti riporta alla tab **Atleti**.
 - [ ] Icona tema (sole/luna): si aprono **Sistema / Chiaro / Scuro** e il cambio si vede subito.
-- [ ] Menu ☰: **Notifiche**, **Sincronizza** (o «Tutto sincronizzato»), **Cambia gruppo**, **Rivedi la guida**, **Esci**.
+- [ ] Menu ☰: **Notifiche**, **Cambia gruppo**, **Rivedi la guida**, **Esci**. (Le modifiche in coda non stanno più qui: le mostra la nuvola in alto, solo quando qualcosa non va.)
 - [ ] «Rivedi la guida» mostra il tour con la frase sulla barra in alto e le tue tab.
 - [ ] La barra **non c'è** su: lavagna tattica, partita dal vivo, eventi partita, segna presenze, scheda bordo vasca. Quando esci da queste, **ricompare**.
 
@@ -71,8 +71,10 @@ eliminarli senza danni.
 ## 3. Senza rete (modalità aereo)
 
 - [ ] Con la rete spenta crei un allenamento o modifichi un atleta: l'app **non dà errore**.
-- [ ] Nel menu ☰ compare «Sincronizza» con il **numero di modifiche in coda**.
-- [ ] Riaccendi la rete: la coda si svuota da sola (o con «Sincronizza») e il menu torna a «Tutto sincronizzato».
+- [ ] In alto, prima del tema, compare la **nuvola barrata** con il **numero di modifiche in coda**; toccandola, il riquadro «La rete» dice da quando manca la rete e quante modifiche aspettano.
+- [ ] Le pagine già aperte prima si vedono subito, senza rotellina.
+- [ ] Riaccendi la rete: entro 20 secondi la nuvola sparisce da sola e la coda si svuota (oppure tocca la nuvola → **Riprova ora** → «Tutto partito.»).
+- [ ] Con il wifi della piscina che «c'è ma non va»: dopo al massimo 8 secondi la pagina mostra i dati del telefono e compare la nuvola barrata, invece di girare a vuoto.
 - [ ] Da un altro dispositivo/browser la modifica risulta arrivata.
 
 ## 4. Telefono

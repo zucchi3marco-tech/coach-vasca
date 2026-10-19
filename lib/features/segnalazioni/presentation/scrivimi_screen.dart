@@ -26,16 +26,20 @@ const lunghezzaMassimaSegnalazione = 4000;
 /// e lo manda a chi sviluppa WaterTactics, con la schermata dove si era e
 /// quello che serve per ritrovare il problema ([contesto], preparato da
 /// chi apre la pagina prima di aprirla). Sotto, le proprie segnalazioni
-/// con lo stato e la risposta.
+/// con lo stato e la risposta. [testoIniziale] riempie già il campo
+/// «Racconta» (la spia della rete lo usa per le modifiche rifiutate):
+/// chi scrive può cambiarlo prima di inviare.
 class ScrivimiScreen extends ConsumerStatefulWidget {
   const ScrivimiScreen({
     required this.clubId,
     required this.contesto,
+    this.testoIniziale,
     super.key,
   });
 
   final String clubId;
   final ContestoSegnalazione contesto;
+  final String? testoIniziale;
 
   @override
   ConsumerState<ScrivimiScreen> createState() => _ScrivimiScreenState();
@@ -43,7 +47,7 @@ class ScrivimiScreen extends ConsumerStatefulWidget {
 
 class _ScrivimiScreenState extends ConsumerState<ScrivimiScreen> {
   final _chiaveForm = GlobalKey<FormState>();
-  final _testo = TextEditingController();
+  late final _testo = TextEditingController(text: widget.testoIniziale);
   late bool _conSchermata = widget.contesto.schermata != null;
   bool _invio = false;
   Object? _errore;

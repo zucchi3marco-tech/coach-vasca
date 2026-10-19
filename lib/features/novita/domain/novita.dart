@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'rete-in-vista',
+    data: DateTime(2026, 10, 20),
+    titolo: 'La rete in vista',
+    testo:
+        'Quando la rete manca o il server non risponde, in alto compare una '
+        'nuvola: toccala per vedere cosa aspetta di partire e riprovare. Le '
+        'pagine mostrano subito i dati salvati sul telefono, e nessuna '
+        'chiamata aspetta più di qualche secondo.',
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'numeri-giusti',
     data: DateTime(2026, 10, 20),
     titolo: 'Metri e segni sempre al posto giusto',
