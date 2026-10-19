@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/db/cache_utente_guard.dart';
 import 'core/demo/modalita_demo.dart';
 import 'core/navigation/navigator_key.dart';
+import 'core/segnalazioni/schermata_app.dart';
 import 'core/supabase/supabase_providers.dart';
 import 'core/sync/connectivity_sync_trigger.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -37,6 +38,8 @@ class CoachVascaApp extends ConsumerWidget {
     return MaterialApp(
       title: 'WaterTactics',
       navigatorKey: navigatorKeyApp,
+      // La pagina in cima, per le segnalazioni di «Scrivimi».
+      navigatorObservers: [osservatorePagine],
       // La barra fissa in alto (logo + nome del club) sta sopra il
       // Navigator, così resta ferma mentre le schermate cambiano.
       builder: (context, child) {

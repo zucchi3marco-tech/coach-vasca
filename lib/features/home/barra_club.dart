@@ -6,9 +6,12 @@ import '../../core/navigation/navigator_key.dart';
 import '../../core/push/push_notifiche.dart';
 import '../../core/pwa/aggiornamento_pwa.dart';
 import '../../core/pwa/installabilita_pwa.dart';
+import '../../core/segnalazioni/dispositivo.dart';
+import '../../core/segnalazioni/schermata_app.dart';
 import '../../core/supabase/supabase_providers.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../core/utils/error_messages.dart';
+import '../../core/versione/versione_app.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/colori_app.dart';
@@ -23,7 +26,13 @@ import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../notifiche/application/push_service.dart';
 import '../notifiche/data/notifiche_repository.dart';
 import '../notifiche/presentation/notifiche_screen.dart';
+import '../novita/presentation/novita_screen.dart';
+import '../segnalazioni/data/segnalazioni_repository.dart';
+import '../segnalazioni/domain/segnalazione.dart';
+import '../segnalazioni/presentation/scrivimi_screen.dart';
+import '../segnalazioni/presentation/segnalazioni_screen.dart';
 import 'tour_coach.dart';
+import 'voci_home.dart';
 
 /// Mette la barra fissa in alto sopra il Navigator dell'app (nel `builder`
 /// di `MaterialApp`): resta visibile su ogni schermata, tranne quelle che
@@ -57,7 +66,11 @@ class BarraClubHost extends ConsumerWidget {
             child: MediaQuery.removePadding(
               context: context,
               removeTop: visibile,
-              child: child ?? const SizedBox.shrink(),
+              // Quello che «Scrivimi» fotografa: le pagine, senza la barra.
+              child: RepaintBoundary(
+                key: chiaveSchermataApp,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         ],
@@ -121,6 +134,9 @@ enum _AzioneMenu {
   installa,
   cambiaGruppo,
   guida,
+  novita,
+  scrivimi,
+  segnalazioni,
   esci,
 }
 
@@ -160,6 +176,8 @@ class BarraClub extends ConsumerWidget {
               const []
         : const [];
     final temaScelto = ref.watch(temaAppProvider);
+    // Tenuto vivo qui, così il menu sa subito se mostrare «Segnalazioni».
+    ref.watch(sonoAmministratoreAppProvider);
 
     return Material(
       color: colori.superficie,
@@ -323,6 +341,10 @@ Future<void> _apriMenuPrincipale(
       : const [];
   final inCoda = ref.read(pendingOperationsCountProvider).value ?? 0;
   final installabile = installabilitaPwa.value;
+  // «Scrivimi» per allenatori e assistenti (scelta del coach): gli atleti
+  // segnalano al loro allenatore.
+  final puoScrivere = !areaAtleta && club != null;
+  final amministratore = ref.read(sonoAmministratoreAppProvider).value ?? false;
   final statoPushAttuale = await ref.read(pushServiceProvider).stato();
   if (!bottoneContext.mounted || !overlayContext.mounted) return;
 
@@ -416,6 +438,31 @@ Future<void> _apriMenuPrincipale(
       ],
       const PopupMenuDivider(),
       const PopupMenuItem(
+        value: _AzioneMenu.novita,
+        child: ListTile(
+          leading: Icon(Icons.new_releases_outlined),
+          title: Text('Novità'),
+        ),
+      ),
+      if (puoScrivere)
+        const PopupMenuItem(
+          value: _AzioneMenu.scrivimi,
+          child: ListTile(
+            leading: Icon(Icons.mark_email_unread_outlined),
+            title: Text('Scrivimi'),
+            subtitle: Text('Segnala un problema'),
+          ),
+        ),
+      if (amministratore)
+        const PopupMenuItem(
+          value: _AzioneMenu.segnalazioni,
+          child: ListTile(
+            leading: Icon(Icons.inbox_outlined),
+            title: Text('Segnalazioni'),
+          ),
+        ),
+      const PopupMenuDivider(),
+      const PopupMenuItem(
         value: _AzioneMenu.esci,
         child: ListTile(leading: Icon(Icons.logout), title: Text('Esci')),
       ),
@@ -459,6 +506,8 @@ Future<void> _apriMenuPrincipale(
       navigatorKeyApp.currentState?.popUntil((route) => route.isFirst);
       ref.read(selezioneGruppoProvider.notifier).scegli(null);
     case _AzioneMenu.guida:
+      // La guida mostra le schede della home: si torna lì.
+      navigatorKeyApp.currentState?.popUntil((route) => route.isFirst);
       final contesto = contestoNavigatorApp();
       if (contesto != null && contesto.mounted) {
         await mostraTourCoach(
@@ -467,6 +516,28 @@ Future<void> _apriMenuPrincipale(
           vaiAllaScheda: ref.read(tabHomeProvider.notifier).imposta,
         );
       }
+    case _AzioneMenu.novita:
+      await navigatorKeyApp.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => NovitaScreen(atleta: areaAtleta),
+        ),
+      );
+    case _AzioneMenu.scrivimi:
+      if (club == null) return;
+      final contesto = await _contestoSegnalazione(
+        ref,
+        club.sport,
+        conSchede: mostraTab,
+      );
+      await navigatorKeyApp.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => ScrivimiScreen(clubId: club.id, contesto: contesto),
+        ),
+      );
+    case _AzioneMenu.segnalazioni:
+      await navigatorKeyApp.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => const SegnalazioniScreen()),
+      );
     case _AzioneMenu.esci:
       try {
         await ref.read(authRepositoryProvider).signOut();
@@ -480,6 +551,46 @@ Future<void> _apriMenuPrincipale(
         }
       }
   }
+}
+
+/// Il menu impiega un attimo a sparire: la schermata si fa dopo, così
+/// mostra la pagina e non il menu.
+const _attesaChiusuraMenu = Duration(milliseconds: 350);
+
+/// Quello che «Scrivimi» allega da solo: la schermata dove si era, la
+/// pagina (sulla home, la scheda), la versione, lo schermo e il browser.
+/// Si prepara prima di aprire la pagina di «Scrivimi», che la coprirebbe.
+Future<ContestoSegnalazione> _contestoSegnalazione(
+  WidgetRef ref,
+  String? sport, {
+  required bool conSchede,
+}) async {
+  await Future<void>.delayed(_attesaChiusuraMenu);
+  final schermata = await catturaSchermata();
+  String? pagina;
+  if (conSchede && osservatorePagine.soloLaPrima) {
+    final voci = vociHome(sport);
+    final voce = voci[ref.read(tabHomeProvider).clamp(0, voci.length - 1)];
+    pagina = 'Home, scheda ${destinazioneHome(voce, sport).etichettaBreve}';
+  } else {
+    pagina = osservatorePagine.titoloPaginaInCima();
+  }
+  String? schermo;
+  final contesto = contestoNavigatorApp();
+  if (contesto != null && contesto.mounted) {
+    final misura = MediaQuery.sizeOf(contesto);
+    final scala = MediaQuery.textScalerOf(contesto).scale(10) / 10;
+    schermo =
+        '${misura.width.round()}×${misura.height.round()}'
+        '${scala == 1 ? '' : ', testo ${scala.toStringAsFixed(1)}x'}';
+  }
+  return ContestoSegnalazione(
+    versione: VersioneApp.corrente.compatta,
+    pagina: pagina,
+    dispositivo: descrizioneDispositivo(),
+    schermo: schermo,
+    schermata: schermata,
+  );
 }
 
 /// Attivazione delle notifiche push dal menu: il permesso del browser si

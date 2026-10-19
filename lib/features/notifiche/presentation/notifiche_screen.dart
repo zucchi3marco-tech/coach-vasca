@@ -27,6 +27,8 @@ class NotificheScreen extends ConsumerWidget {
     'visita_medica' => Icons.medical_services_outlined,
     'benessere' => Icons.favorite_outline,
     'video_partita' => Icons.ondemand_video_outlined,
+    'segnalazione' => Icons.mark_email_unread_outlined,
+    'segnalazione_risposta' => Icons.mark_email_read_outlined,
     _ => Icons.person_add_alt_outlined,
   };
 

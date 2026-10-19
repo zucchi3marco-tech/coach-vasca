@@ -28,6 +28,8 @@ import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../gruppi/domain/gruppo.dart';
 import '../gruppi/presentation/gruppi_chooser_screen.dart';
 import '../gruppi/presentation/gruppi_onboarding_screen.dart';
+import '../novita/data/novita_viste.dart';
+import '../novita/presentation/finestra_novita.dart';
 import '../pallanuoto/presentation/partite_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../stagioni/presentation/stagioni_list_screen.dart';
@@ -63,16 +65,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_onboardingRichiesto) return;
     _onboardingRichiesto = true;
     onboardingCoachGiaVisto().then((visto) {
-      if (visto || !mounted) return;
+      if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          mostraTourCoach(
-            context,
-            ref.read(currentClubProvider).value?.sport,
-            vaiAllaScheda: _vaiAllaTab,
-          );
+        if (!mounted) return;
+        if (visto) {
+          // Dopo un aggiornamento, le novità importanti (una volta sola).
+          mostraNovitaSeServe(context, atleta: false);
+          return;
         }
+        // La guida racconta già le cose nuove: le novità di oggi non si
+        // ripresentano dopo.
+        segnaNovitaViste();
+        mostraTourCoach(
+          context,
+          ref.read(currentClubProvider).value?.sport,
+          vaiAllaScheda: _vaiAllaTab,
+        );
       });
+    });
+  }
+
+  bool _novitaAtletaRichieste = false;
+
+  /// Per l'atleta, all'apertura della sua home: le novità importanti per
+  /// gli atleti dopo un aggiornamento.
+  void _controllaNovitaAtleta() {
+    if (_novitaAtletaRichieste) return;
+    _novitaAtletaRichieste = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) mostraNovitaSeServe(context, atleta: true);
     });
   }
 
@@ -238,6 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         selezione != null &&
         !inCorso;
     if (mostraTab) _controllaOnboarding();
+    if (areaAtleta) _controllaNovitaAtleta();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
     final voci = vociHome(club?.sport);
