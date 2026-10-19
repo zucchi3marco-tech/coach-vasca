@@ -566,7 +566,7 @@ Future<ContestoSegnalazione> _contestoSegnalazione(
   required bool conSchede,
 }) async {
   await Future<void>.delayed(_attesaChiusuraMenu);
-  final schermata = await catturaSchermata();
+  final schermata = await ref.read(catturaSchermataProvider)();
   String? pagina;
   if (conSchede && osservatorePagine.soloLaPrima) {
     final voci = vociHome(sport);

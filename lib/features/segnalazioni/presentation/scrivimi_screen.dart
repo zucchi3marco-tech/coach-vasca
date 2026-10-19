@@ -13,6 +13,7 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/riquadri.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../data/segnalazioni_repository.dart';
@@ -152,12 +153,15 @@ class _ScrivimiScreenState extends ConsumerState<ScrivimiScreen> {
             if (schermata != null) ...[
               const SizedBox(height: AppSpacing.spazioGruppiForm),
               const TitoloSezione('La schermata'),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colori.superficie,
+              // Material e non un riquadro colorato: l'interruttore disegna
+              // il suo tocco sul Material più vicino.
+              Material(
+                color: colori.superficie,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.pannello),
-                  border: Border.all(color: colori.linea),
+                  side: BorderSide(color: colori.linea),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.paddingPannello),
                   child: Column(
@@ -362,31 +366,15 @@ class RigaSegnalazione extends StatelessWidget {
   }
 }
 
-/// "Aperta" o "Risolta", in piccolo.
+/// "Aperta" o "Risolta", in piccolo: verde quando è risolta.
 class PastigliaStato extends StatelessWidget {
   const PastigliaStato({required this.risolta, super.key});
 
   final bool risolta;
 
   @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    final colore = risolta ? colori.ok : colori.testoSecondario;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: risolta ? colori.okTenue : colori.superficieAlt,
-        borderRadius: BorderRadius.circular(AppRadius.pillola),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s8,
-          vertical: AppSpacing.s4,
-        ),
-        child: Text(
-          risolta ? 'Risolta' : 'Aperta',
-          style: AppTypography.etichetta.copyWith(color: colore),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Pastiglia(
+    risolta ? 'Risolta' : 'Aperta',
+    colore: risolta ? context.colori.ok : context.colori.testoSecondario,
+  );
 }

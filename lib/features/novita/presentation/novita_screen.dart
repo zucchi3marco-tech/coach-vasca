@@ -7,6 +7,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/riquadri.dart';
 import '../data/novita_viste.dart';
 import '../domain/novita.dart';
 
@@ -119,7 +120,7 @@ class VoceNovita extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              if (novita.importante) const _EtichettaImportante(),
+              if (novita.importante) const Pastiglia('Importante'),
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
@@ -131,33 +132,6 @@ class VoceNovita extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// La pastiglia «Importante»: fondo e testo dai colori dell'azione.
-class _EtichettaImportante extends StatelessWidget {
-  const _EtichettaImportante();
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s8,
-        vertical: AppSpacing.s4 / 2,
-      ),
-      decoration: BoxDecoration(
-        color: colori.azioneTenue,
-        borderRadius: BorderRadius.circular(AppRadius.pillola),
-      ),
-      child: Text(
-        'Importante',
-        style: AppTypography.etichetta.copyWith(
-          color: colori.azione,
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }

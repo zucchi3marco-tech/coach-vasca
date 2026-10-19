@@ -4,7 +4,9 @@
 /// l'allenatore invia la convocazione), `visita_medica` (coach e atleta),
 /// `benessere` (per il coach: scheda da sentire o molto sotto il solito),
 /// `video_partita` (per l'atleta convocato: il video della partita o una
-/// nota per lui).
+/// nota per lui), `allenamento_modificato` (per il capo della squadra),
+/// `segnalazione` (per chi legge le segnalazioni di «Scrivimi») e
+/// `segnalazione_risposta` (per chi l'ha scritta).
 class Notifica {
   const Notifica({
     required this.id,

@@ -159,7 +159,7 @@ class _TourCoachState extends State<_TourCoach> {
           resto: ': cosa è cambiato',
         ),
         (
-          icona: Icons.chat_bubble_outline,
+          icona: Icons.mark_email_unread_outlined,
           nome: 'Scrivimi',
           resto: ': segnala un problema, con la schermata',
         ),

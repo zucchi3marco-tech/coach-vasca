@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../widgets/testata_pagina.dart';
 
@@ -19,9 +21,14 @@ final chiaveSchermataApp = GlobalKey(debugLabel: 'schermataApp');
 /// viene vuoto.
 Future<Uint8List?> catturaSchermata({double larghezzaMassima = 720}) async {
   try {
-    // Il menu appena chiuso deve sparire dall'immagine, e in debug
-    // `toImage` vuole un riquadro già disegnato.
-    await WidgetsBinding.instance.endOfFrame;
+    // Un disegno in arrivo (il menu che sparisce): si aspetta, anche perché
+    // in debug `toImage` vuole un riquadro già disegnato.
+    if (SchedulerBinding.instance.hasScheduledFrame) {
+      await SchedulerBinding.instance.endOfFrame.timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () {},
+      );
+    }
     final contesto = chiaveSchermataApp.currentContext;
     if (contesto == null || !contesto.mounted) return null;
     final oggetto = contesto.findRenderObject();
@@ -43,6 +50,12 @@ Future<Uint8List?> catturaSchermata({double larghezzaMassima = 720}) async {
     return null;
   }
 }
+
+/// Come si fa la schermata per «Scrivimi»: dietro un provider perché nei
+/// test di widget l'immagine vera non si può fare.
+final catturaSchermataProvider = Provider<Future<Uint8List?> Function()>(
+  (ref) => catturaSchermata,
+);
 
 /// La pila delle pagine aperte nel Navigator dell'app, per dire in una
 /// segnalazione dove si trovava l'utente (registrato in `MaterialApp`).
@@ -128,10 +141,14 @@ String? titoloDellaPagina(BuildContext contesto) {
       return;
     }
     if (w is IndexedStack) {
+      // Le schede stanno nella pila che lo IndexedStack costruisce sotto
+      // di sé, nello stesso ordine.
       final inVista = w.index ?? 0;
-      var i = 0;
-      e.visitChildren((figlio) {
-        if (i++ == inVista) visita(figlio);
+      e.visitChildren((pila) {
+        var i = 0;
+        pila.visitChildren((figlio) {
+          if (i++ == inVista) visita(figlio);
+        });
       });
       return;
     }

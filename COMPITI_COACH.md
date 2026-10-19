@@ -11,6 +11,13 @@ Lista dei passi che dall'app non si possono fare: pannelli esterni, password, ac
 - [ ] Dal computer: menu ☰ → **Il mio club** → in fondo **Scarica i dati del club** → **Scarica il file Excel**. Apri il file in Excel e guarda "Leggimi", "Atleti" e "Presenze": dimmi se manca qualcosa o se una colonna non si capisce.
 - [ ] In **Oggi** guarda la scheda **Per cominciare**: le spunte devono corrispondere a quello che hai già fatto. Tocca un passo da fare e prova i passi fino a **Fine**; oppure menu ☰ → **Il mio club** → **Configurazione guidata**. Se alleni da solo, tocca **Alleno da solo**; se la scheda non ti serve, **Nascondi**.
 
+## 0bis. Scrivimi, Novità e la guida (pubblicati il 2026-10-19)
+
+- [ ] Alla prima apertura parte la guida nuova: scorrila e guarda che dietro cambia la scheda. La rivedi da menu ☰ → **Rivedi la guida**.
+- [ ] Prova **Scrivimi**: apri una pagina qualsiasi (per esempio un allenamento), poi menu ☰ → **Scrivimi**. Controlla che l'anteprima mostri quella pagina, scrivi «Prova» e tocca **Invia**.
+- [ ] Menu ☰ → **Segnalazioni** → tocca la tua prova → scrivi una risposta, accendi **Risolta**, **Salva**. In ☰ → **Scrivimi**, sotto, deve comparire la risposta. (Per le tue segnalazioni non ti arriva la notifica: arriva quando scrive un altro allenatore.)
+- [ ] Ogni volta che in vasca o in partita qualcosa non va, usa **Scrivimi** subito, dalla pagina dove è successo.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".

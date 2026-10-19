@@ -1099,7 +1099,7 @@ Da aggiungere per il layout e il tema:
 | `ThemeToggle` | selettore Sistema/Chiaro/Scuro, e la variante a tre stati per bordo vasca |
 | `PoolHeroBlock` | blocco centrale della schermata vasca, unico posto con la sfumatura |
 
-`ReorderableAppListPanel` è la variante di `AppListPanel` con le righe trascinabili, usata dove l'ordine lo decide il coach. `BreadcrumbBar` resta disponibile per una futura gerarchia annidata. `FabAzioni` sostituisce più `FloatingActionButton` impilati: con un'azione sola si comporta come un FAB normale, con più azioni il tocco apre un elenco con etichette sempre visibili. `BarraPassi` è la fila di segmenti (fatto, adesso, da fare) in cima a un percorso guidato a più passi, come la configurazione di un club nuovo.
+`ReorderableAppListPanel` è la variante di `AppListPanel` con le righe trascinabili, usata dove l'ordine lo decide il coach. `BreadcrumbBar` resta disponibile per una futura gerarchia annidata. `FabAzioni` sostituisce più `FloatingActionButton` impilati: con un'azione sola si comporta come un FAB normale, con più azioni il tocco apre un elenco con etichette sempre visibili. `BarraPassi` è la fila di segmenti (fatto, adesso, da fare) in cima a un percorso guidato a più passi, come la configurazione di un club nuovo. La guida dell'allenatore (`mostraTourCoach`) è un riquadro in basso su un velo leggero, mai un dialogo al centro su fondo scuro: dietro resta la scheda vera di cui parla, e sul telefono la barra delle schede resta scoperta. Per le etichette piccole di stato («Importante», «Aperta», «Risolta») si usa `Pastiglia`.
 
 Se serve un componente nuovo, si aggiunge qui e si documenta in questo file. Non si scrive un widget su misura dentro una singola schermata.
 
