@@ -18,9 +18,11 @@ Lista dei passi che dall'app non si possono fare: pannelli esterni, password, ac
 - [ ] Menu ☰ → **Segnalazioni** → tocca la tua prova → scrivi una risposta, accendi **Risolta**, **Salva**. In ☰ → **Scrivimi**, sotto, deve comparire la risposta. (Per le tue segnalazioni non ti arriva la notifica: arriva quando scrive un altro allenatore.)
 - [ ] Ogni volta che in vasca o in partita qualcosa non va, usa **Scrivimi** subito, dalla pagina dove è successo.
 
-## 0ter. Il tetto di spesa dell'AI, sui siti dei fornitori
+## 0ter. L'AI con il tetto (pubblicata il 2026-10-19) e il tetto di spesa sui siti dei fornitori
 
-Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al mese per il club. Questi passi mettono un secondo tetto, in euro, dove si paga: se un giorno qualcosa sfuggisse all'app, la spesa si ferma lo stesso. Con l'uso di oggi (poche richieste al mese) si spende meno di 1 € al mese.
+Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al mese per il club. Gli ultimi tre passi mettono un secondo tetto, in euro, dove si paga: se un giorno qualcosa sfuggisse all'app, la spesa si ferma lo stesso. Con l'uso di oggi (poche richieste al mese) si spende meno di 1 € al mese.
+
+- [ ] Prova una volta **Genera con AI** (anche solo «Compila dal testo») e una domanda all'**assistente**: devono funzionare come prima. Poi dimmelo, così controllo che le richieste siano state contate. Se compare «Non riesco a controllare le richieste AI» o «Le funzioni AI sono solo per lo staff», usa **Scrivimi** da quella pagina.
 
 - [ ] **OpenAI** (scrive gli allenamenti e risponde nell'assistente): entra in **platform.openai.com** → in alto a destra l'ingranaggio **Settings** → **Billing**. Se c'è la ricarica automatica (**Auto recharge** o **Auto-reload**), **spegnila**: così non si spende più del credito che hai caricato. Se il credito è sotto i 5 $, **Add to credit balance** → 10 $.
 - [ ] Sempre in **Settings** → **Limits** (o, dentro il progetto, **Project** → **Limits**): se c'è un **budget mensile**, mettilo a **10 $** con la tua email per l'avviso. Se c'è anche un limite "duro" (*hard limit*), mettilo a 10 $.
