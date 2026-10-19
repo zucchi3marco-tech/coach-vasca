@@ -6,32 +6,44 @@ const stagioneDemoFin = '2026-2027';
 const squadraDemoFin = 'PN Riviera';
 
 String paginaElencoDemoFin() {
-  const voci = [
-    (228, 'Under 12 (M/F)', 'Fase 1', 'Girone 1'),
-    (229, 'Under 14 (M)', 'Fase 1', 'Girone 1'),
-    (230, '', 'Fase 1', 'Girone 2'),
-    (231, 'Under 16 (F)', 'Fase1', 'Girone1'),
+  // Come il sito: la fase solo sulla prima riga di un campionato.
+  const campionati = [
+    ('Under 12 (M/F)', [(228, 'Fase 1', 'Girone 1')]),
+    ('Under 14 (M)', [(229, 'Fase 1', 'Girone 1'), (230, '', 'Girone 2')]),
+    ('Under 16 (F)', [(231, 'Fase1', 'Girone1')]),
   ];
   final righe = StringBuffer();
-  for (final (id, campionato, fase, girone) in voci) {
-    righe.write('''
-                    <tr style="cursor:pointer" onclick="window.location = 'PN-Incontri.php?CMPid=$id'">
-                        <td> $campionato                        </td>
-                        <td>$fase</td>
-                        <td class="text-center text-nowrap">$girone</td>
-                    </tr>
+  for (final (campionato, gironi) in campionati) {
+    righe.write(
+      '<tr class="campionato-header-row"><td colspan="2"><i class="bi bi-award-fill me-2 text-warning"></i>$campionato</td></tr>',
+    );
+    for (final (id, fase, girone) in gironi) {
+      righe.write('''
+                                <tr class="clickable-row" onclick="window.location='PN-Incontri.php?CMPid=$id';">
+                                    <td class="fw-semibold text-dark">
+                                            $fase                                    </td>
+                                    <td class="text-secondary fw-medium">
+                                        $girone                                    </td>
+                                </tr>
 ''');
+    }
   }
   return '''
 <html><body>
-<h1 class="navbar me-auto ms-3">CAMPIONATI REGIONALI PALLANUOTO $stagioneDemoFin</h1>
-<a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
-    $stagioneDemoFin                    </a>
-<ul class="dropdown-menu">
-    <li><a class="dropdown-item" href="?Stagione=2025-2026">2025-2026</a></li>
-    <li><a class="dropdown-item" href="?Stagione=2026-2027">2026-2027</a></li>
-</ul>
-<table class="table table-borderless table-hover table-sm"><tbody>
+<div class="page-header-title text-uppercase my-1 me-auto ms-3 text-truncate">
+    <i class="bi bi-dribbble me-2 text-warning"></i>Campionati Regionali Pallanuoto $stagioneDemoFin            </div>
+<label class="fw-bold text-dark small text-uppercase mb-0">Stagione:</label>
+<div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-3 fw-semibold" type="button" id="dropStagione" data-bs-toggle="dropdown" aria-expanded="false">
+        $stagioneDemoFin                        </button>
+    <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="dropStagione">
+        <li><a class="dropdown-item fw-medium" href="?Stagione=2025-2026">2025-2026</a></li>
+        <li><a class="dropdown-item fw-medium" href="?Stagione=2026-2027">2026-2027</a></li>
+    </ul>
+</div>
+<table class="table table-custom align-middle mb-0">
+<thead><tr><th style="width: 40%;">Fase</th><th style="width: 30%;">Girone</th></tr></thead>
+<tbody>
 $righe</tbody></table>
 </body></html>
 ''';
@@ -67,10 +79,10 @@ String paginaGironeDemoFin(int cmpId, {DateTime? oggi}) {
         casa,
         ospite,
         data,
-        giocata ? '$golCasa-$golOspite' : null,
+        giocata ? '$golCasa - $golOspite' : null,
       ));
     }
-    giornate.add(('${g + 1}a giornata', incontri));
+    giornate.add(('${g + 1}ª Giornata (Andata)', incontri));
     // Rotazione del metodo "a cerchio": la prima squadra resta ferma.
     rotazione.insert(1, rotazione.removeLast());
   }
@@ -81,7 +93,7 @@ String paginaGironeDemoFin(int cmpId, {DateTime? oggi}) {
   for (final (_, incontri) in giornate) {
     for (final (casa, ospite, _, risultato) in incontri) {
       if (risultato == null) continue;
-      final gol = risultato.split('-').map(int.parse).toList();
+      final gol = [for (final g in risultato.split('-')) int.parse(g.trim())];
       void conta(String s, int fatti, int subiti) {
         final r = punti[s]!;
         r[1]++;
@@ -111,20 +123,25 @@ String paginaGironeDemoFin(int cmpId, {DateTime? oggi}) {
     });
 
   final classifica = StringBuffer();
-  for (final s in ordine) {
+  for (final (posizione, s) in ordine.indexed) {
     final r = punti[s]!;
+    final differenza = r[5] - r[6];
     classifica.write('''
-                        <tr class="text-center">
-                            <td class="text-start">$s</td>
-                            <td>${r[0]}</td>
-                            <td>${r[1]}</td>
-                            <td>${r[2]}</td>
-                            <td>${r[3]}</td>
-                            <td>${r[4]}</td>
-                            <td>${r[5]}</td>
-                            <td>${r[6]}</td>
-                            <td>${r[5] - r[6]}</td>
-                        </tr>
+                                <tr>
+                                    <td class="fw-semibold text-dark">
+                                        <span class="text-secondary small font-monospace me-2">${posizione + 1}.</span>
+                                        $s                                    </td>
+                                    <td class="text-center font-monospace fw-bold text-primary fs-6">
+                                        ${r[0]}                                    </td>
+                                    <td class="text-center font-monospace text-secondary">${r[1]}</td>
+                                    <td class="text-center font-monospace text-success fw-semibold">${r[2]}</td>
+                                    <td class="text-center font-monospace text-warning fw-semibold">${r[3]}</td>
+                                    <td class="text-center font-monospace text-danger fw-semibold">${r[4]}</td>
+                                    <td class="text-center font-monospace text-secondary">${r[5]}</td>
+                                    <td class="text-center font-monospace text-secondary">${r[6]}</td>
+                                    <td class="text-center font-monospace fw-bold text-success">
+                                        ${differenza > 0 ? '+' : ''}$differenza                                    </td>
+                                </tr>
 ''');
   }
   const giorni = [
@@ -140,21 +157,37 @@ String paginaGironeDemoFin(int cmpId, {DateTime? oggi}) {
   final calendario = StringBuffer();
   for (final (nome, incontri) in giornate) {
     calendario.write(
-      '<tr class="border-top"><td class="fst-italic">$nome </td> <td></td> <td></td> <td></td> <td></td></tr>\n',
+      '<tr class="giornata-header-row"><td colspan="6"><i class="bi bi-flag-fill me-2"></i>$nome</td></tr>',
     );
     for (final (casa, ospite, data, risultato) in incontri) {
       final piscina = casa == squadraDemoFin
           ? 'RN-Piscina Comunale Bulgarelli'
           : 'Piscina della squadra di casa';
+      final badge = risultato == null
+          ? '<span class="badge bg-light text-secondary border font-monospace px-2 py-1 fw-normal" title="Stato: Incontro da disputare">\n'
+                '                                                da disputare\n'
+                '                                            </span>'
+          : '<span class="badge font-monospace px-2 py-1 fs-6 bg-success-subtle text-success border border-success-subtle fw-bold" title="Stato: Omologato CRL">\n'
+                '                                                $risultato                                            </span>';
       calendario.write('''
-                    <tr>
-                        <td class="fw-bold text-nowrap">$casa - $ospite</td>
-                        <td class="text-nowrap">$piscina</td>
-                        <td class="text-start">15.00</td>
-                        <td class="text-nowrap">${giorni[data.weekday]} ${data.day}/${data.month}/${data.year}</td>
-                        <td class="text-center text-nowrap fw-bold">${risultato ?? ''}</td>
-                        <td class="text-center">${risultato == null ? '' : '.'}</td>
-                    </tr>
+                                <tr class="clickable-row" onclick="window.location='PN-Incontri-mod.php?INCid=1';">
+                                    <td>
+                                        <div class="fw-bold text-dark">
+                                            $casa                                            <span class="text-muted font-monospace mx-1">—</span>
+                                            $ospite                                        </div>
+                                        <div class="small text-secondary text-truncate" style="max-width: 450px;">
+                                            <i class="bi bi-geo-alt me-1 text-danger opacity-75"></i>$piscina                                            </div>
+                                    </td>
+                                    <td class="text-center font-monospace small text-secondary">
+                                        <i class="bi bi-clock me-1 text-primary opacity-75"></i>15.00                                    </td>
+                                    <td class="small text-secondary">
+                                        ${giorni[data.weekday]} ${data.day}/${data.month}/${data.year}                                    </td>
+                                    <td class="text-center">
+                                        $badge
+                                    </td>
+                                    <td class="small text-secondary">
+                                        -                                    </td>
+                                </tr>
 ''');
     }
   }
@@ -166,18 +199,44 @@ String paginaGironeDemoFin(int cmpId, {DateTime? oggi}) {
   };
   return '''
 <html><body>
-<h1 class="navbar me-auto ms-3">CAMPIONATI REGIONALI PALLANUOTO $stagioneDemoFin</h1>
-<div class="container mt-2">
-<p class="text-center fs-3 fw-bold text-secondary mt-5">$titolo</p>
-<table class="table">
-<thead class="table-light border-light"><tr>
-<th></th><th>Punti</th><th>Giocate</th><th>Vinte</th><th>Paregg.</th><th>Perse</th><th>Gol fatti</th><th>Gol subiti</th><th>Diff. reti</th>
-</tr></thead>
-<tbody class="border-top-0">
-$classifica</tbody>
-</table>
-<table class="table table-borderless table-sm"><tbody>
-$calendario</tbody></table>
+<div class="page-header-title text-uppercase my-1 me-auto ms-3 text-truncate">
+    <i class="bi bi-dribbble me-2 text-warning"></i>Campionati Regionali Pallanuoto $stagioneDemoFin            </div>
+<div class="container-fluid px-4 my-4" style="max-width: 1100px;">
+<div class="card card-custom p-3 mb-4">
+    <div class="d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold text-dark mb-0">$titolo</h5>
+        <span class="badge bg-light text-dark border font-monospace px-3 py-2 fs-6">
+            Stagione: $stagioneDemoFin                </span>
+    </div>
+</div>
+<div class="card card-custom overflow-hidden mb-4">
+    <div class="p-3 border-bottom bg-light d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Classifica Generale</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle mb-0">
+            <thead><tr>
+                <th>Squadra</th><th class="text-center">Punti</th><th class="text-center">G</th><th class="text-center">V</th><th class="text-center">N</th><th class="text-center">P</th><th class="text-center">GF</th><th class="text-center">GS</th><th class="text-center">Diff</th>
+            </tr></thead>
+            <tbody>
+$classifica            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card card-custom overflow-hidden">
+    <div class="p-3 border-bottom bg-light">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-calendar-event me-2 text-primary"></i>Calendario Gare</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle mb-0">
+            <thead><tr>
+                <th>Incontro / Impianto</th><th class="text-center">Orario</th><th>Data Gara</th><th class="text-center">Risultato</th><th>Arbitro</th>
+            </tr></thead>
+            <tbody>
+$calendario            </tbody>
+        </table>
+    </div>
+</div>
 </div>
 </body></html>
 ''';

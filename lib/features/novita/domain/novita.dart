@@ -44,6 +44,16 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'campionati-fin-sito-nuovo',
+    data: DateTime(2026, 10, 19),
+    titolo: 'I campionati FIN di nuovo al loro posto',
+    testo:
+        'La FIN Lombardia ha rifatto il suo sito: l\'app ora lo legge di '
+        'nuovo. Si collegano i gironi, e classifica e calendario tornano '
+        'ad aggiornarsi.',
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'scrivimi-e-novita',
     data: DateTime(2026, 10, 19),
     titolo: 'Scrivimi e le novità',

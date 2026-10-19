@@ -129,7 +129,7 @@ void main() {
       findsOneWidget,
     );
     // Le nostre 5 partite: le prime due giocate, la terza è la prossima.
-    expect(find.text('Prossima · 3a giornata'), findsOneWidget);
+    expect(find.text('Prossima · 3ª Giornata (Andata)'), findsOneWidget);
     expect(find.textContaining('vs '), findsNWidgets(5));
     // Solo l'allenatore collega e toglie.
     expect(find.text('Collega un girone'), findsNothing);
@@ -137,9 +137,9 @@ void main() {
 
     await tester.tap(find.text('Tutto il calendario'));
     await tester.pumpAndSettle();
-    expect(find.text('1a giornata'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('5a giornata'), 300);
-    expect(find.text('5a giornata'), findsOneWidget);
+    expect(find.text('1ª Giornata (Andata)'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('5ª Giornata (Andata)'), 300);
+    expect(find.text('5ª Giornata (Andata)'), findsOneWidget);
     expect(find.textContaining('vs '), findsNothing);
   });
 
