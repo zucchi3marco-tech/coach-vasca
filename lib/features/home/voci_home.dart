@@ -38,9 +38,10 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         etichetta: 'Oggi',
         etichettaBreve: 'Oggi',
         guida:
-            'Il tuo cruscotto: la squadra, cosa c\'è in programma, chi sta '
-            'male e cosa c\'è da sistemare. Le azioni di tutti i giorni '
-            'sono a un tocco.',
+            'La tua home: cosa c\'è in programma, chi sta male, chi ha '
+            'modificato i tuoi allenamenti e le azioni di tutti i giorni a '
+            'un tocco. Se hai appena creato il club, «Per cominciare» ti '
+            'dice cosa manca.',
       ),
       VoceHome.atleti => (
         icona: Icons.groups_outlined,
@@ -48,9 +49,9 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         etichetta: 'Atleti',
         etichettaBreve: 'Atleti',
         guida:
-            'La tua home: il riepilogo del gruppo e l\'elenco dei suoi '
-            'atleti, con profili, personal best, presenze e carico di '
-            'lavoro.',
+            'L\'elenco della squadra con profili, personal best, presenze e '
+            'carico. Da qui aggiungi gli atleti, anche da un foglio Excel, e '
+            'prepari i loro codici.',
       ),
       VoceHome.allenamenti => (
         icona: Icons.calendar_month_outlined,
@@ -64,8 +65,9 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         etichetta: 'Allena­menti',
         etichettaBreve: 'Allenamenti',
         guida:
-            'Pianifica le sedute con le loro serie; a bordo vasca le '
-            'apri in grande e segni le presenze.',
+            'Scrivi o detta le sedute con le loro serie, anche a secco. A '
+            'bordo vasca le apri in grande, con l\'orologio, e segni le '
+            'presenze.',
       ),
       VoceHome.schemi => (
         icona: Icons.sports_outlined,
@@ -82,7 +84,7 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         etichetta: 'Stagioni',
         etichettaBreve: 'Stagioni',
         guida:
-            'Una stagione per gruppo (o per tutti gli atleti) con il suo '
+            'Una stagione per squadra (o per tutti gli atleti) con il suo '
             'calendario: tocca un giorno per aggiungere una partita o una '
             'gara. Qui trovi anche le statistiche di stagione.',
       ),
@@ -102,9 +104,9 @@ DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
         etichetta: 'Partite',
         etichettaBreve: 'Partite',
         guida:
-            'Le partite della stagione in corso, in ordine di data. Si '
-            'aggiungono dal calendario della stagione; aprendone una trovi '
-            'distinta, eventi dal vivo e referto.',
+            'Le partite della stagione in ordine di data, e la classifica '
+            'del campionato. Si aggiungono dal calendario della stagione; '
+            'aprendone una trovi distinta, eventi dal vivo e referto.',
       ),
     };
 

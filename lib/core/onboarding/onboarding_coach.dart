@@ -1,8 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-// `_v2`: il tour è stato riscritto (barra in alto, Schemi tattici, Gare,
-// partite dal calendario): chi l'aveva già visto lo rivede una volta.
-const _chiaveOnboardingCoachVisto = 'onboarding_coach_tab_visto_v2';
+// `_v3`: il tour è stato riscritto e ora mostra le schede vere dietro il
+// riquadro (più la pagina sul menu ☰): chi l'aveva già visto lo rivede una
+// volta.
+const _chiaveOnboardingCoachVisto = 'onboarding_coach_tab_visto_v3';
 
 /// Se il tour della home (barra in alto e tab) è già
 /// stato mostrato su questo device a un account allenatore — persistito

@@ -66,7 +66,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (visto || !mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          mostraTourCoach(context, ref.read(currentClubProvider).value?.sport);
+          mostraTourCoach(
+            context,
+            ref.read(currentClubProvider).value?.sport,
+            vaiAllaScheda: _vaiAllaTab,
+          );
         }
       });
     });

@@ -461,7 +461,11 @@ Future<void> _apriMenuPrincipale(
     case _AzioneMenu.guida:
       final contesto = contestoNavigatorApp();
       if (contesto != null && contesto.mounted) {
-        await mostraTourCoach(contesto, club?.sport);
+        await mostraTourCoach(
+          contesto,
+          club?.sport,
+          vaiAllaScheda: ref.read(tabHomeProvider.notifier).imposta,
+        );
       }
     case _AzioneMenu.esci:
       try {
