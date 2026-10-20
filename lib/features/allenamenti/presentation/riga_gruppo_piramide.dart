@@ -5,6 +5,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
+import '../domain/com_e_andata.dart';
 import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
 import '../domain/volume_allenamento.dart';
@@ -78,16 +79,9 @@ class RigaGruppoPiramide extends StatelessWidget {
     final valoriOrdinati = conteggio.keys.toList()
       ..sort((a, b) => conteggio[b]!.compareTo(conteggio[a]!));
 
-    final fatte = gruppo.where((s) => s.fatta).length;
-    final saltate = gruppo.where((s) => s.saltata).length;
     final dettagli = <String>[
       // Segnate a bordo vasca, una per riga del gruppo.
-      if (fatte == gruppo.length)
-        'fatta'
-      else if (saltate == gruppo.length)
-        'saltata'
-      else if (fatte + saltate > 0)
-        '$fatte fatte, $saltate saltate',
+      ?riassuntoEsiti(gruppo),
       labelBloccoBreve(prima.blocco),
       '${formattaMetri(metriTotali)} m',
       if (piramide && valoriOrdinati.isNotEmpty)

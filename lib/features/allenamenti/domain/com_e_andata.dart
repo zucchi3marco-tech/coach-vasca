@@ -174,6 +174,55 @@ String? esitoDopoTocco(Serie s, String toccato) {
   return s.saltata ? null : toccato;
 }
 
+/// Quanto è stato fatto di quanto era scritto: «2.600 di 3.200 m», con il
+/// lavoro a tempo accanto («· 25' di 30'») e, con [aTempo], la parola «a
+/// tempo» dopo i minuti. Solo i minuti per un lavoro tutto a tempo.
+String fattoDiScritto(
+  VolumeAllenamento scritto,
+  VolumeAllenamento fatto, {
+  bool aTempo = false,
+}) {
+  final metri = scritto.metri > 0
+      ? '${formattaMetri(fatto.metri)} di ${formattaMetri(scritto.metri)} m'
+      : null;
+  final tempo = scritto.secondi > 0
+      ? "${formattaTempoLavoro(fatto.secondi)} di "
+            "${formattaTempoLavoro(scritto.secondi)}${aTempo ? ' a tempo' : ''}"
+      : null;
+  return [?metri, ?tempo].join(' · ');
+}
+
+/// Quanto è rimasto da fare rispetto allo scritto: «−200» (metri), «−5'»
+/// (minuti), entrambi se le due cose sono diverse; null se è stato fatto
+/// tutto.
+String? scartoScritto(VolumeAllenamento scritto, VolumeAllenamento fatto) {
+  final metri = scritto.metri - fatto.metri;
+  final secondi = scritto.secondi - fatto.secondi;
+  final parti = [
+    if (metri > 0) '−${formattaMetri(metri)}',
+    if (secondi > 0) "−${formattaTempoLavoro(secondi)}",
+  ];
+  return parti.isEmpty ? null : parti.join(' · ');
+}
+
+/// Com'è andato un gruppo di serie (una piramide, un «2x»), in una riga:
+/// «fatta» se sono tutte fatte tutte, «saltata» se sono tutte saltate,
+/// altrimenti i pezzi che ci sono: «2 fatte, 1 in parte, 1 saltata». Null
+/// se nessuna è segnata.
+String? riassuntoEsiti(List<Serie> gruppo) {
+  final tutte = gruppo.where((s) => s.fattaTutta).length;
+  final inParte = gruppo.where((s) => s.fatta && s.inParte).length;
+  final saltate = gruppo.where((s) => s.saltata).length;
+  if (gruppo.isEmpty || tutte + inParte + saltate == 0) return null;
+  if (tutte == gruppo.length) return 'fatta';
+  if (saltate == gruppo.length) return 'saltata';
+  return [
+    if (tutte > 0) tutte == 1 ? '1 fatta' : '$tutte fatte',
+    if (inParte > 0) '$inParte in parte',
+    if (saltate > 0) saltate == 1 ? '1 saltata' : '$saltate saltate',
+  ].join(', ');
+}
+
 /// Le famiglie di zona della Com'è andata: A (A1, A2), B (B1, B2), C (C,
 /// C1, C2, C3), D; null per una serie senza zona.
 String? famigliaZona(String? zona) => switch (zona) {

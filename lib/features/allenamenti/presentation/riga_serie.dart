@@ -6,6 +6,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../../widgets/lane_rule.dart';
+import '../domain/com_e_andata.dart';
 import '../domain/serie.dart';
 import 'nota_serie.dart';
 import 'per_chi_serie.dart';
@@ -56,8 +57,8 @@ class RigaSerie extends StatelessWidget {
     final titolo = titoloSerie(s);
 
     final dettagli = <String>[
-      // Segnata a bordo vasca.
-      if (s.fatta) 'fatta',
+      // Segnata a bordo vasca: fatta tutta, in parte (quanto) o saltata.
+      if (s.inParte) descriviFatto(s).toLowerCase() else if (s.fatta) 'fatta',
       if (s.saltata) 'saltata',
       labelBloccoBreve(s.blocco),
       if (s.passoObiettivoS != null)

@@ -42,6 +42,8 @@ import '../domain/variante_spalla.dart';
 import '../domain/volume_allenamento.dart';
 import 'allenamento_form_screen.dart';
 import 'banner_modifica.dart';
+import 'card_com_e_andata.dart';
+import 'com_e_andata_screen.dart';
 import 'duplica_allenamento_dialog.dart';
 import 'grafico_intensita.dart';
 import 'pannello_aggiungi_serie.dart';
@@ -883,6 +885,17 @@ class _AllenamentoDetailScreenState
                   child: GraficoIntensita(
                     serie: serieDelGruppo(serie),
                     riferimento: riferimento,
+                  ),
+                ),
+                // Solo per una seduta di oggi o già passata.
+                CardComEAndata(
+                  allenamento: allenamento,
+                  serie: serie,
+                  onSegna: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ComEAndataScreen(allenamento: allenamento),
+                    ),
                   ),
                 ),
               ],
