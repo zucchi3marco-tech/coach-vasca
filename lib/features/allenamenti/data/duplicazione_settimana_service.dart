@@ -6,6 +6,7 @@ import '../../secco/data/secco_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/serie.dart';
 import 'allenamenti_repository.dart';
+import 'copia_serie.dart';
 import 'serie_repository.dart';
 
 /// Duplica tutti gli allenamenti (e le relative serie) di un intervallo
@@ -63,31 +64,19 @@ class DuplicazioneSettimanaService {
     final momenti = <String, String>{};
     await Future.wait([
       for (final (i, s) in serie.indexed)
-        _serie.createSerie(
+        _serie.copiaSerie(
+          s,
           allenamentoId: nuovo.id,
           ordine: i + 1,
-          blocco: s.blocco,
-          ripetute: s.ripetute,
-          distanzaM: s.distanzaM,
-          durataS: s.durataS,
-          stile: s.stile,
-          esecuzione: s.esecuzione,
-          zona: s.zona,
-          passoObiettivoS: s.passoObiettivoS,
-          recuperoS: s.recuperoS,
-          ripartenzaS: s.ripartenzaS,
-          attrezzatura: s.attrezzatura,
-          note: s.note,
           piramideId: s.piramideId == null
               ? null
               : gruppi.putIfAbsent(s.piramideId!, () => const Uuid().v4()),
-          recuperoDopoS: s.recuperoDopoS,
-          destinatari: stessaSquadra
-              ? s.destinatari
-              : Destinatari(ruolo: s.destinatari.ruolo),
           momentoId: s.momentoId == null
               ? null
               : momenti.putIfAbsent(s.momentoId!, () => const Uuid().v4()),
+          destinatari: stessaSquadra
+              ? s.destinatari
+              : Destinatari(ruolo: s.destinatari.ruolo),
         ),
     ]);
     return nuovo;

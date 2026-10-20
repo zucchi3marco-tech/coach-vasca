@@ -30,6 +30,7 @@ import '../../secco/presentation/seduta_secco_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../application/passo_riferimento_provider.dart';
 import '../data/allenamenti_repository.dart';
+import '../data/copia_serie.dart';
 import '../data/duplicazione_settimana_service.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
@@ -310,24 +311,11 @@ class _AllenamentoDetailScreenState
       var ordineProvvisorio = _ordineSuccessivo();
       for (final s in gruppo) {
         nuove.add(
-          await repository.createSerie(
+          await repository.copiaSerie(
+            s,
             allenamentoId: s.allenamentoId,
             ordine: ordineProvvisorio,
-            blocco: s.blocco,
-            ripetute: s.ripetute,
-            distanzaM: s.distanzaM,
-            durataS: s.durataS,
-            stile: s.stile,
-            esecuzione: s.esecuzione,
-            zona: s.zona,
-            passoObiettivoS: s.passoObiettivoS,
-            recuperoS: s.recuperoS,
-            ripartenzaS: s.ripartenzaS,
-            attrezzatura: s.attrezzatura,
-            note: s.note,
             piramideId: nuovoPiramideId(s),
-            recuperoDopoS: s.recuperoDopoS,
-            destinatari: s.destinatari,
             momentoId: momento,
           ),
         );
