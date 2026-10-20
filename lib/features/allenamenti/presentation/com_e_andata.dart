@@ -389,12 +389,18 @@ List<Widget> bottoniEsito(
   ),
 ];
 
-/// I [bottoni] affiancati in una riga, della stessa larghezza.
-Widget rigaDiBottoni(List<Widget> bottoni) => Row(
-  children: [
-    for (final (i, b) in bottoni.indexed) ...[
-      if (i > 0) const SizedBox(width: AppSpacing.spazioBersagli),
-      Expanded(child: b),
+/// I [bottoni] affiancati in una riga, della stessa larghezza e della
+/// stessa altezza (la più alta: col testo grande uno può crescere più degli
+/// altri). IntrinsicHeight perché una riga che si allunga in una lista
+/// non ha un'altezza a cui allungarsi.
+Widget rigaDiBottoni(List<Widget> bottoni) => IntrinsicHeight(
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final (i, b) in bottoni.indexed) ...[
+        if (i > 0) const SizedBox(width: AppSpacing.spazioBersagli),
+        Expanded(child: b),
+      ],
     ],
-  ],
+  ),
 );

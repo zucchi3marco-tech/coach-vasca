@@ -654,18 +654,27 @@ class _Avanzamento extends StatelessWidget {
                   AppTypography.corpoForte.copyWith(color: colori.testo),
                 ),
               ),
-              const Spacer(),
-              if (saltate > 0)
-                Text(
-                  saltate == 1 ? '1 saltata · ' : '$saltate saltate · ',
-                  style: secondario,
+              // Saltate e metri: a destra, e se col testo grande non ci
+              // stanno si rimpiccioliscono invece di uscire dalla riga.
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      [
+                        if (saltate > 0)
+                          saltate == 1 ? '1 saltata' : '$saltate saltate',
+                        if (metriTotali > 0)
+                          '${formattaMetri(metriFatti)} di '
+                              '${formattaMetri(metriTotali)} m',
+                      ].join(' · '),
+                      maxLines: 1,
+                      style: secondario,
+                    ),
+                  ),
                 ),
-              if (metriTotali > 0)
-                Text(
-                  '${formattaMetri(metriFatti)} di '
-                  '${formattaMetri(metriTotali)} m',
-                  style: secondario,
-                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
@@ -913,10 +922,14 @@ class _TutteLeSerie extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        '${index + 1} · ${labelBlocco(s.blocco)}',
-                        style: AppTypography.etichetta.copyWith(
-                          color: colori.testoSecondario,
+                      Flexible(
+                        child: Text(
+                          '${index + 1} · ${labelBlocco(s.blocco)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.etichetta.copyWith(
+                            color: colori.testoSecondario,
+                          ),
                         ),
                       ),
                       if (s.zona != null) ...[
