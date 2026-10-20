@@ -134,9 +134,8 @@ void main() {
         expect(find.textContaining('svolti'), findsNothing);
       });
 
-      testWidgets('RiepilogoVolumi dice i metri svolti se si è saltato', (
-        tester,
-      ) async {
+      testWidgets('RiepilogoVolumi non dice più i metri svolti: lo dice la '
+          'scheda «Com\'è andata»', (tester) async {
         await tester.pumpWidget(
           _app(
             tema,
@@ -149,10 +148,10 @@ void main() {
             ),
           ),
         );
-        expect(
-          find.text('1 serie saltata: svolti 600 di 1.000 m'),
-          findsOneWidget,
-        );
+        // Il volume scritto resta, anche con una serie saltata.
+        expect(find.textContaining('1.000 m'), findsOneWidget);
+        expect(find.textContaining('svolti'), findsNothing);
+        expect(find.textContaining('saltat'), findsNothing);
       });
 
       testWidgets('RigaSerie sta in una riga bassa e il menu ha le azioni', (
