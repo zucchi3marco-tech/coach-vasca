@@ -302,9 +302,12 @@ class CaricoRepository {
                   (t) => t.esito.isNull() | t.esito.isNotValue('saltata'),
                 ))
               .get();
+      // Le stesse colonne della RPC: senza `momento_id` un portiere
+      // contava anche la colonna di tutti dei lavori in parallelo.
       return [
         for (final r in locali)
           {
+            'id': r.id,
             'allenamento_id': r.allenamentoId,
             'ripetute': r.ripetute,
             'distanza_m': r.distanzaM,
@@ -318,6 +321,7 @@ class CaricoRepository {
             'per_ruolo': r.perRuolo,
             'solo_atleti': r.soloAtletiJson,
             'tranne_atleti': r.tranneAtletiJson,
+            'momento_id': r.momentoId,
           },
       ];
     }

@@ -25,6 +25,16 @@ bool copre60Giorni(
   return maxData.difference(minData).inDays >= 60;
 }
 
+/// I metri medi a settimana delle [serie] di [settimane] settimane: per
+/// ogni allenamento il volume del gruppo ([volumiPerAllenamento]), come
+/// nella testata del dettaglio. Senza il lavoro dei soli portieri, le
+/// varianti di alcuni atleti e le altre colonne dei lavori in parallelo:
+/// sommate tutte, la media usciva più alta del vero e l'avviso di carico
+/// eccessivo di "Genera settimana con AI" poteva non comparire.
+double mediaMetriSettimanali(Iterable<Serie> serie, {int settimane = 4}) =>
+    volumiPerAllenamento(serie).values.fold(0, (t, v) => t + v.metri) /
+    settimane;
+
 /// Come il gruppo è stato allenato finora, distillato in poche cifre da
 /// mandare al prompt di `genera-settimana` — non i dati grezzi (troppi,
 /// costosi da mandare a Gemini), solo un riassunto.

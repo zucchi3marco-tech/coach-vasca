@@ -17,6 +17,9 @@ const _uuid = Uuid();
 class SerieRepository {
   SerieRepository(this._client, this._db, this._syncEngine);
 
+  /// Quanti allenamenti per richiesta in [fetchPerAllenamenti].
+  static const _idPerRichiesta = 100;
+
   final SupabaseClient _client;
   final AppDatabase _db;
   final SyncEngine _syncEngine;
@@ -212,10 +215,23 @@ class SerieRepository {
     if (allenamentoIds.isEmpty) return [];
     List<Serie> serie;
     try {
-      final rows = await _client
-          .from('serie')
-          .select()
-          .inFilter('allenamento_id', allenamentoIds);
+      // A pagine (oltre le 1000 righe Supabase tronca senza errore) e a
+      // gruppi di id (l'elenco va nell'indirizzo della richiesta): 70
+      // giorni di tutto il club superano facilmente l'uno e l'altro.
+      final rows = [
+        for (var i = 0; i < allenamentoIds.length; i += _idPerRichiesta)
+          ...await leggiAPagine(
+            (da, a) => _client
+                .from('serie')
+                .select()
+                .inFilter(
+                  'allenamento_id',
+                  allenamentoIds.skip(i).take(_idPerRichiesta).toList(),
+                )
+                .order('id')
+                .range(da, a),
+          ),
+      ];
       serie = rows.map(_fromMap).toList();
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;

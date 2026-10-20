@@ -38,6 +38,7 @@ import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../application/controlli_settimana_service.dart';
 import '../application/corsie_service.dart';
 import '../application/settimana_ai_providers.dart';
+import '../application/storico_settimana_service.dart';
 import '../data/generazione_ai_repository.dart';
 import '../data/generazioni_ai_repository.dart';
 import '../domain/focus_lavoro.dart';
@@ -426,11 +427,7 @@ class _GeneraSettimanaFormScreenState
         [for (final a in delGruppo) a.id],
       );
       if (delGruppo.isNotEmpty) {
-        final volumeTotale = serie.fold<int>(
-          0,
-          (t, s) => t + s.distanzaTotaleM,
-        );
-        mediaUltimeSettimane = volumeTotale / 4;
+        mediaUltimeSettimane = mediaMetriSettimanali(serie);
       }
     } catch (_) {
       // Nessuno storico: il controllo sul carico resta disattivato.
