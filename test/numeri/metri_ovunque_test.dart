@@ -163,19 +163,15 @@ void main() {
       expect(_metriDi(scritto.serie, idAltro, 'movimento'), 2000);
     });
 
-    test(
-      'serie → testo → serie: Rossi fa ancora 2200 m',
-      skip:
-          'errore trovato: testoDaSerie non separa dal "2x" la variante di un '
-          'atleta fuori dai momenti: riletta è una colonna in parallelo con '
-          'il "2x" e Rossi fa 1600 m invece di 2200',
-      () {
-        final scritto = _riletta(serieSeduta);
-        expect(_metriDi(scritto.serie, idRossi, 'movimento'), 2200);
-        // Il gruppo non se ne accorge: per questo l'errore non si vede.
-        expect(scritto.metri, 2000);
-      },
-    );
+    // Senza la riga "Tutti" prima della variante, riletta diventava una
+    // colonna in parallelo con il "2x" e Rossi faceva 1600 m (errore
+    // trovato da queste prove il 2026-10-20).
+    test('serie → testo → serie: Rossi fa ancora 2200 m', () {
+      final scritto = _riletta(serieSeduta);
+      expect(_metriDi(scritto.serie, idRossi, 'movimento'), 2200);
+      // Il gruppo non se ne accorge: per questo l'errore non si vedeva.
+      expect(scritto.metri, 2000);
+    });
 
     test('il testo è stabile: riscritto una seconda volta non cambia', () {
       final primo = testoDaSerie(serieSeduta, atleti: atletiSeduta);
@@ -202,15 +198,42 @@ void main() {
 
     test(
       'le righe riscritte non mettono il "2x" e la variante in parallelo',
-      skip:
-          'errore trovato: testoDaSerie scrive "Rossi" sotto il "2x" senza '
-          'una riga "Tutti" in mezzo, e rilette le due cose sono nello '
-          'stesso momento',
       () {
         final scritto = _riletta(serieSeduta);
         for (final i in [3, 4, 5, 6, 7]) {
           expect(scritto.serie[i].momentoId, isNull, reason: 'serie $i');
         }
+      },
+    );
+
+    test(
+      'due lavori di alcuni, uno dopo l\'altro, restano uno dopo l\'altro',
+      () {
+        // Una variante per Rossi e poi il lavoro dei soli portieri, senza
+        // nessun lavoro in parallelo: riscritti, non diventano un momento.
+        final serie = [
+          serieSeduta.first,
+          for (final s in serieSeduta.where((s) => s.momentoId == null))
+            if (!s.destinatari.base) s,
+          Serie(
+            id: 'p1',
+            allenamentoId: idAllenamento,
+            clubId: 'c1',
+            ordine: 99,
+            blocco: 'principale',
+            ripetute: 4,
+            distanzaM: 25,
+            stile: 'libero',
+            esecuzione: 'gambe',
+            destinatari: Destinatari.portieri,
+          ),
+        ];
+        final scritto = _riletta(serie);
+        expect(scritto.righeNonCapite, 0);
+        expect(scritto.serie.every((s) => s.momentoId == null), isTrue);
+        expect(scritto.serie.map((s) => s.destinatari), [
+          for (final s in serie) s.destinatari,
+        ]);
       },
     );
   });

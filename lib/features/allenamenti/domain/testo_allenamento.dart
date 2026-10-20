@@ -1592,6 +1592,19 @@ String testoDaSerie(List<DatiSerie> serie, {List<Atleta> atleti = const []}) {
       return _testaDestinatari(s.destinatari, atleti);
     }
 
+    // Il lavoro di alcuni fuori dai momenti (una variante per Rossi, i
+    // soli portieri) dopo altre serie: senza una riga "Tutti" prima,
+    // riletto si unirebbe al paragrafo sopra come lavoro in parallelo, e
+    // Rossi perdeva le serie di tutti.
+    if (momento == null &&
+        serieScritte &&
+        uniforme &&
+        !primo.destinatari.base &&
+        primo.destinatari != perChi) {
+      intestazione(_testaDestinatari(Destinatari.tutti, atleti)!);
+      perChi = Destinatari.tutti;
+      perChiBase = Destinatari.tutti;
+    }
     if (uniforme && primo.destinatari != perChi && !tuttiDavanti) {
       intestazione(_testaDestinatari(primo.destinatari, atleti)!);
       perChi = primo.destinatari;
