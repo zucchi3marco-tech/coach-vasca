@@ -38,6 +38,9 @@ eliminarli senza danni.
 - [ ] Crei un allenamento con qualche serie (riscaldamento, principale, defaticamento).
 - [ ] Dal dettaglio apri la **vista bordo vasca**: serie grandi, barra in alto assente, in orizzontale sul telefono.
 - [ ] Da lì «Segna presenze» funziona e il tema vasca (chiaro/scuro) si cambia.
+- [ ] A bordo vasca, sotto la serie: **Fatta**, **In parte**, **Saltata**. «In parte» chiede quante ripetute (o minuti, o metri) avete fatto, a bottoni grandi; dopo la scelta si passa alla serie dopo. «Fatta» su una serie in parte la fa diventare fatta tutta.
+- [ ] Nel dettaglio di un allenamento di oggi o già fatto c'è il riquadro **Com'è andata**: «Fatti … di … m», le zone con quanto manca, e **Segna com'è andata** per segnarlo dall'ufficio. Per un allenamento di domani il riquadro non c'è.
+- [ ] **Presenze**: quattro bottoni per atleta (Presente, In ritardo, Assente, Giustificato); chi è in ritardo conta fra i presenti e il riepilogo dice «di cui N in ritardo». Sotto ogni nome le presenze della settimana e del mese; accanto al nome il **pallino del benessere** solo per chi quel giorno stava peggio del solito o aveva un dolore (anche riaprendo l'appello di un giorno passato).
 
 ### Stagioni e calendario
 - [ ] «Nuova stagione»: **non** chiede il nome né il gruppo; c'è «Campionato», la **Categoria** (sola lettura) e le date.

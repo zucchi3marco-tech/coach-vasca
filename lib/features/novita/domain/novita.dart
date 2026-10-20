@@ -44,6 +44,29 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'com-e-andata',
+    data: DateTime(2026, 10, 20),
+    titolo: 'Com\'è andata',
+    testo:
+        'A bordo vasca, accanto a «Fatta» e «Saltata», c\'è «In parte»: '
+        'scegli quante ripetute, minuti o metri avete fatto. Nel dettaglio '
+        'di un allenamento già fatto il riquadro «Com\'è andata» mostra i '
+        'metri fatti su quelli scritti, zona per zona, e da «Segna com\'è '
+        'andata» lo segni anche dall\'ufficio. Il carico conta solo la '
+        'parte fatta.',
+  ),
+  Novita(
+    id: 'appello-ritardo',
+    data: DateTime(2026, 10, 20),
+    titolo: 'L\'appello più ricco',
+    testo:
+        'Nelle presenze c\'è «In ritardo»: conta come presente, e il '
+        'riepilogo dice quanti erano in ritardo. Sotto ogni nome le presenze '
+        'della settimana e del mese; accanto al nome un pallino per chi quel '
+        'giorno stava peggio del solito o aveva un dolore: toccalo per '
+        'aprire il suo benessere.',
+  ),
+  Novita(
     id: 'rete-in-vista',
     data: DateTime(2026, 10, 20),
     titolo: 'La rete in vista',

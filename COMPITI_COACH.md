@@ -38,6 +38,12 @@ Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al 
 - [ ] Togli la modalità aereo e non toccare niente: entro 20 secondi la nuvola sparisce da sola. Da un altro telefono o dal computer controlla che la modifica sia arrivata.
 - [ ] In piscina, quando il wifi «c'è ma non va»: le pagine già viste devono comparire subito, e dopo al massimo 8 secondi deve comparire la nuvola, invece della rotellina che gira. Se non succede, usa **Scrivimi** da quella pagina.
 
+## 0sexies. Com'è andata e l'appello più ricco (quando sarà pubblicato)
+
+- [ ] A bordo vasca, in una seduta vera, segna una serie **In parte** (per esempio 6 ripetute di 10). Poi nel dettaglio dell'allenamento il riquadro **Com'è andata** deve dire i metri giusti; il giorno dopo, in **Forma e carico** di un atleta presente, il carico di quella seduta deve essere un po' più basso del solito.
+- [ ] Nell'appello segna qualcuno **In ritardo**: nella sua dashboard le presenze non devono scendere.
+- [ ] Chiedi all'**assistente** «quanti erano in ritardo questa settimana?»: deve rispondere con un numero, senza nomi.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".
