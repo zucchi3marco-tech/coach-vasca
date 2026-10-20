@@ -1,5 +1,5 @@
 import '../../../core/utils/pace_format.dart';
-import '../presentation/riepilogo_volumi.dart' show formattaMetri;
+import '../../../core/utils/text_format.dart' show formattaMetri;
 import 'serie.dart';
 import 'volume_allenamento.dart';
 

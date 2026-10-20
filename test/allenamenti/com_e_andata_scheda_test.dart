@@ -479,6 +479,34 @@ void main() {
       expect(find.textContaining('saltata ·'), findsOneWidget);
     });
 
+    testWidgets('anche dentro un lavoro in parallelo, a 360 px', (
+      tester,
+    ) async {
+      await apri(tester, AppTheme.chiaro, [
+        _s(
+          'm1',
+          1,
+          ripetute: 10,
+          distanzaM: 25,
+          esito: 'fatta',
+          metriFatti: 150,
+          momentoId: 'm',
+        ),
+        _s(
+          'm2',
+          2,
+          ripetute: 3,
+          durataS: 360,
+          esito: 'saltata',
+          destinatari: Destinatari.portieri,
+          momentoId: 'm',
+        ),
+      ], misura: const Size(360, 3000));
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('In parallelo'), findsOneWidget);
+      expect(find.text('in parte · 6 di 10'), findsOneWidget);
+    });
+
     testWidgets('una piramide dice quante sono fatte, in parte e saltate', (
       tester,
     ) async {

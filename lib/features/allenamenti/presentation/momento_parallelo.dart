@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
+import '../domain/com_e_andata.dart';
 import '../domain/durata_serie.dart';
 import '../domain/riordino_serie.dart';
 import '../domain/serie.dart';
@@ -195,6 +196,14 @@ class _Colonna<T extends DatiSerie> extends StatelessWidget {
                     if (dettagliSerie(gruppo.first) case final d
                         when d.isNotEmpty)
                       Text(d.join(' · '), style: dettaglioStile),
+                    if (_fattaInParte(gruppo) case final fatto?)
+                      Text(
+                        fatto,
+                        style: dettaglioStile.copyWith(
+                          color: colori.testo,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     if (gruppo.first.note?.trim() case final nota?
                         when nota.isNotEmpty)
                       Text(
@@ -221,6 +230,22 @@ class _Colonna<T extends DatiSerie> extends StatelessWidget {
   }
 
   static bool _saltata(DatiSerie s) => s is Serie && s.saltata;
+
+  /// «in parte · 6 di 10» per una serie fatta in parte e, per un gruppo
+  /// con qualche serie in parte, com'è andato ([riassuntoEsiti]); null se
+  /// niente è fatto in parte.
+  static String? _fattaInParte(List<DatiSerie> gruppo) {
+    final salvate = [
+      for (final s in gruppo)
+        if (s is Serie) s,
+    ];
+    if (salvate.length != gruppo.length || !salvate.any((s) => s.inParte)) {
+      return null;
+    }
+    return salvate.length == 1
+        ? descriviFatto(salvate.single).toLowerCase()
+        : riassuntoEsiti(salvate);
+  }
 }
 
 /// L'intestazione di un momento: "In parallelo · 20'" (la colonna più

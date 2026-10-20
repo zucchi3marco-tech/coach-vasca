@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/pace_format.dart';
+import '../../../core/utils/text_format.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -8,15 +9,8 @@ import '../domain/serie.dart';
 import '../domain/volume_allenamento.dart';
 import 'serie_labels.dart';
 
-/// 3200 -> "3.200".
-String formattaMetri(int metri) {
-  final cifre = metri.abs().toString();
-  final gruppi = <String>[];
-  for (var fine = cifre.length; fine > 0; fine -= 3) {
-    gruppi.insert(0, cifre.substring(fine - 3 < 0 ? 0 : fine - 3, fine));
-  }
-  return '${metri < 0 ? '-' : ''}${gruppi.join('.')}';
-}
+// Sta con gli altri formati; chi la importava da qui la trova ancora.
+export '../../../core/utils/text_format.dart' show formattaMetri;
 
 /// "4.200 m", "4.200 m + 20'", "45'" (solo lavoro a tempo); null se
 /// l'allenamento non ha ancora serie.

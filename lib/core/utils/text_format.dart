@@ -11,6 +11,16 @@ String capitalizzaNome(String testo) {
       .join(' ');
 }
 
+/// 3200 -> "3.200".
+String formattaMetri(int metri) {
+  final cifre = metri.abs().toString();
+  final gruppi = <String>[];
+  for (var fine = cifre.length; fine > 0; fine -= 3) {
+    gruppi.insert(0, cifre.substring(fine - 3 < 0 ? 0 : fine - 3, fine));
+  }
+  return '${metri < 0 ? '-' : ''}${gruppi.join('.')}';
+}
+
 String _capitalizzaParola(String parola) {
   if (parola.isEmpty) return parola;
   return parola[0].toUpperCase() + parola.substring(1).toLowerCase();
