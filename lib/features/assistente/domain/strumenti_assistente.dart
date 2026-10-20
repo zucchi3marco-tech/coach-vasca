@@ -378,6 +378,7 @@ class StrumentiAssistente {
           {
             'codice': _codice(a.id),
             'presente': conti[a.id]?.presente ?? 0,
+            'di_cui_in_ritardo': conti[a.id]?.inRitardo ?? 0,
             'assente': conti[a.id]?.assente ?? 0,
             'giustificato': conti[a.id]?.giustificato ?? 0,
             'percentuale': ?_percentuale(conti[a.id]),

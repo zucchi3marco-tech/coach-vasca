@@ -1049,6 +1049,42 @@ void main() {
       expect(secco['Durata (min)'], const IntCellValue(40));
     });
 
+    test('chi è in ritardo è tra i presenti, e ha la sua colonna', () {
+      Presenza presenza(String id, String stato) => Presenza(
+        id: 'presenza-$id',
+        allenamentoId: 'allenamento-1',
+        atletaId: 'atleta-$id',
+        clubId: _club,
+        stato: stato,
+      );
+      final dati = DatiClub(
+        allenamenti: [
+          Allenamento(
+            id: 'allenamento-1',
+            clubId: _club,
+            data: DateTime(2026, 10, 10),
+            titolo: 'Resistenza',
+          ),
+        ],
+        presenze: [
+          presenza('a', 'presente'),
+          presenza('b', 'ritardo'),
+          presenza('c', 'assente'),
+        ],
+        squadre: const [
+          Gruppo(id: 'gruppo-1', clubId: _club, nome: 'Under 14', ordine: 1),
+        ],
+      );
+      final excel = Excel.decodeBytes(_file(dati));
+      final riga = _perTitolo(excel, 'Allenamenti').single;
+      expect(riga['Presenti'], const IntCellValue(2));
+      expect(riga['Di cui in ritardo'], const IntCellValue(1));
+      expect(riga['Assenti'], const IntCellValue(1));
+      expect([
+        for (final p in _perTitolo(excel, 'Presenze')) _testo(p['Stato']),
+      ], containsAll(['Presente', 'In ritardo', 'Assente']));
+    });
+
     test('Serie: stesse diciture dell\'app e per chi sono', () {
       final excel = Excel.decodeBytes(_file(_dati()));
       final serie = _perTitolo(excel, 'Serie');

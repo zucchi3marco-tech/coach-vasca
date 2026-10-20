@@ -158,6 +158,14 @@ class _Fonte implements FonteDatiAssistente {
       clubId: 'c1',
       stato: 'presente',
     ),
+    // Arrivata in ritardo: conta come presente, ma si dice a parte.
+    Presenza(
+      id: 'pr4',
+      allenamentoId: 'a2',
+      atletaId: 'verdi',
+      clubId: 'c1',
+      stato: 'ritardo',
+    ),
   ];
 
   @override
@@ -353,10 +361,27 @@ void main() {
           'tipo': 'secco',
           'titolo': 'Seduta a secco',
           'durata_minuti': 40,
-          'presenti': 1,
+          // Rossi presente e Verdi in ritardo.
+          'presenti': 2,
         },
       ]);
       senzaNomiNeSalute(sedute.perModello);
+    });
+
+    test('chi è in ritardo conta come presente, e se ne dice quanti', () async {
+      final presenze = await strumenti.esegui('presenze', const {'giorni': 7});
+      final verdi = (presenze.perModello['per_atleta'] as List).firstWhere(
+        (a) => (a as Map)['codice'] == 'G4',
+      );
+      expect(verdi['presente'], 1);
+      expect(verdi['di_cui_in_ritardo'], 1);
+      expect(verdi['assente'], 0);
+      expect(verdi['percentuale'], 100);
+      // Chi non è mai in ritardo ha zero, non niente.
+      final rossi = (presenze.perModello['per_atleta'] as List).firstWhere(
+        (a) => (a as Map)['codice'] == 'G3',
+      );
+      expect(rossi['di_cui_in_ritardo'], 0);
     });
 
     test(
