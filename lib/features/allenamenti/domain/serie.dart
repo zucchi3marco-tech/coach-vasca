@@ -167,8 +167,15 @@ class Serie implements DatiSerie {
   @override
   final int? secondiFatti;
 
+  /// Segnata fatta, tutta o [inParte].
   bool get fatta => esito == 'fatta';
   bool get saltata => esito == 'saltata';
+
+  /// Fatta solo in parte: ci sono i metri o i secondi fatti.
+  bool get inParte => metriFatti != null || secondiFatti != null;
+
+  /// Fatta tutta, com'era scritta.
+  bool get fattaTutta => fatta && !inParte;
 
   /// Metri totali di nuoto — 0 per una serie a tempo: non si stima una
   /// distanza, i riepiloghi la segnalano a parte (vedi [aTempo]).
