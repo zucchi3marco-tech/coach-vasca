@@ -1085,6 +1085,67 @@ void main() {
       ], containsAll(['Presente', 'In ritardo', 'Assente']));
     });
 
+    test('Com\'è andata: metri fatti per allenamento e serie «In parte»', () {
+      Serie serie(
+        String id,
+        String allenamentoId, {
+        required int ripetute,
+        required int distanzaM,
+        String? esito,
+        int? metriFatti,
+      }) => Serie(
+        id: id,
+        allenamentoId: allenamentoId,
+        clubId: _club,
+        ordine: int.parse(id.substring(1)),
+        blocco: 'principale',
+        ripetute: ripetute,
+        distanzaM: distanzaM,
+        stile: 'libero',
+        esecuzione: 'nuoto',
+        esito: esito,
+        metriFatti: metriFatti,
+      );
+      final dati = DatiClub(
+        allenamenti: [
+          Allenamento(id: 'fatto', clubId: _club, data: DateTime(2026, 10, 10)),
+          // Dopo il giorno in cui si scarica: niente metri fatti.
+          Allenamento(
+            id: 'domani',
+            clubId: _club,
+            data: DateTime(2026, 10, 19),
+          ),
+        ],
+        serie: [
+          serie(
+            's1',
+            'fatto',
+            ripetute: 10,
+            distanzaM: 100,
+            esito: 'fatta',
+            metriFatti: 600,
+          ),
+          serie('s2', 'fatto', ripetute: 4, distanzaM: 200, esito: 'saltata'),
+          serie('s3', 'fatto', ripetute: 1, distanzaM: 400),
+          serie('s4', 'domani', ripetute: 1, distanzaM: 500),
+        ],
+      );
+      final excel = Excel.decodeBytes(_file(dati));
+      final allenamenti = _perTitolo(excel, 'Allenamenti');
+      expect(allenamenti[0]['Metri'], const IntCellValue(1000 + 800 + 400));
+      expect(allenamenti[0]['Metri fatti'], const IntCellValue(600 + 400));
+      expect(allenamenti[1]['Metri'], const IntCellValue(500));
+      expect(allenamenti[1]['Metri fatti'], isNull);
+
+      final righe = _perTitolo(excel, 'Serie');
+      expect(_testo(righe[0]['Esito']), 'In parte');
+      expect(righe[0]['Metri fatti'], const IntCellValue(600));
+      expect(righe[0]['Secondi fatti'], isNull);
+      expect(_testo(righe[1]['Esito']), 'Saltata');
+      expect(righe[1]['Metri fatti'], isNull);
+      expect(righe[2]['Esito'], isNull);
+    });
+
     test('Serie: stesse diciture dell\'app e per chi sono', () {
       final excel = Excel.decodeBytes(_file(_dati()));
       final serie = _perTitolo(excel, 'Serie');

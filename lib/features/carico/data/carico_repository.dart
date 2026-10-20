@@ -323,6 +323,9 @@ class CaricoRepository {
             'solo_atleti': r.soloAtletiJson,
             'tranne_atleti': r.tranneAtletiJson,
             'momento_id': r.momentoId,
+            // Fatta in parte: il carico conta solo quella parte.
+            'metri_fatti': r.metriFatti,
+            'secondi_fatti': r.secondiFatti,
           },
       ];
     }

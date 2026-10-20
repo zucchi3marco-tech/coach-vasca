@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../core/utils/giorni.dart';
 import 'allenamento.dart';
 import 'serie.dart';
@@ -27,8 +29,12 @@ class VolumeAllenamento {
 /// Il volume di ogni allenamento (chiave: id) che ha delle [serie].
 /// Conta il volume del gruppo ([Destinatari.delGruppo]): quello di un
 /// giocatore di movimento, senza il lavoro dei soli portieri né le serie
-/// di alcuni atleti.
-Map<String, VolumeAllenamento> volumiPerAllenamento(Iterable<Serie> serie) {
+/// di alcuni atleti. Con [fatto] quello davvero fatto ([volumeFatto]),
+/// non quello scritto.
+Map<String, VolumeAllenamento> volumiPerAllenamento(
+  Iterable<Serie> serie, {
+  bool fatto = false,
+}) {
   final perAllenamento = <String, List<Serie>>{};
   for (final s in serie) {
     (perAllenamento[s.allenamentoId] ??= []).add(s);
@@ -36,7 +42,7 @@ Map<String, VolumeAllenamento> volumiPerAllenamento(Iterable<Serie> serie) {
   return {
     for (final MapEntry(key: id, value: delle) in perAllenamento.entries)
       if (serieDelGruppo(delle) case final gruppo when gruppo.isNotEmpty)
-        id: volumeDi(gruppo),
+        id: fatto ? volumeFattoDi(gruppo) : volumeDi(gruppo),
   };
 }
 
@@ -49,6 +55,38 @@ VolumeAllenamento volumeSerie(DatiSerie s) => VolumeAllenamento(
 /// Il volume di [serie], tutte quelle passate.
 VolumeAllenamento volumeDi(Iterable<DatiSerie> serie) =>
     serie.fold(VolumeAllenamento.zero, (t, s) => t + volumeSerie(s));
+
+/// Quanto si è fatto di una serie ("Com'è andata"): niente se è saltata,
+/// i metri o i secondi segnati «In parte» (mai più di quelli scritti),
+/// altrimenti tutta, anche se non è segnata: come la conta il carico.
+VolumeAllenamento volumeFatto(DatiSerie s) {
+  if (s.esito == 'saltata') return VolumeAllenamento.zero;
+  final scritto = volumeSerie(s);
+  return VolumeAllenamento(
+    metri: math.min(s.metriFatti ?? scritto.metri, scritto.metri),
+    secondi: math.min(s.secondiFatti ?? scritto.secondi, scritto.secondi),
+  );
+}
+
+/// Il volume fatto di [serie] ([volumeFatto]).
+VolumeAllenamento volumeFattoDi(Iterable<DatiSerie> serie) =>
+    serie.fold(VolumeAllenamento.zero, (t, s) => t + volumeFatto(s));
+
+/// La parte fatta di una serie, da 0 (saltata) a 1 (tutta, o non
+/// segnata): i minuti che contano nel carico sono quelli scritti per
+/// questa quota.
+double quotaFatta(DatiSerie s) {
+  if (s.esito == 'saltata') return 0;
+  final scritto = volumeSerie(s);
+  final fatto = volumeFatto(s);
+  if (s.metriFatti != null && scritto.metri > 0) {
+    return fatto.metri / scritto.metri;
+  }
+  if (s.secondiFatti != null && scritto.secondi > 0) {
+    return fatto.secondi / scritto.secondi;
+  }
+  return 1;
+}
 
 /// Le serie che fa il gruppo, cioè un giocatore di movimento qualunque
 /// ([Destinatari.delGruppo]): in un momento in parallelo la colonna di

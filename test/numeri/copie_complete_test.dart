@@ -150,6 +150,8 @@ final Map<String, Object? Function(Serie)> _valoriSerie = {
   'note': (s) => s.note,
   'piramide_id': (s) => s.piramideId,
   'esito': (s) => s.esito,
+  'metri_fatti': (s) => s.metriFatti,
+  'secondi_fatti': (s) => s.secondiFatti,
   'recupero_dopo_s': (s) => s.recuperoDopoS,
   'per_ruolo': (s) => s.destinatari.ruolo,
   'solo_atleti_json': (s) => s.destinatari.soloAtleti,
@@ -189,8 +191,18 @@ const _serieRifatte = {
 
 /// Quelle che la copia lascia fuori di proposito: `club_id` lo mette il
 /// trigger del server a partire dall'allenamento; `esito` (fatta/saltata)
-/// no, perché una copia non è ancora fatta.
-const _serieLasciate = {'club_id', 'esito'};
+/// e quanto se n'è fatto (`metri_fatti`, `secondi_fatti`) no, perché una
+/// copia non è ancora fatta.
+const _serieLasciate = {'club_id', 'esito', 'metri_fatti', 'secondi_fatti'};
+
+/// Com'è andata [s]: l'esito e, se c'è, quanto se n'è fatto.
+Future<void> _segna(SerieRepository repo, String id, Serie s) =>
+    repo.segnaFatto(
+      id,
+      esito: s.esito,
+      metriFatti: s.metriFatti,
+      secondiFatti: s.secondiFatti,
+    );
 
 /// Una serie con TUTTI i campi pieni e diversi da quelli di partenza. Ha
 /// sia la durata sia la distanza (la app non le fa insieme, ma qui serve
@@ -203,6 +215,9 @@ Serie _serieCompleta({
     ruolo: 'portiere',
     tranneAtleti: ['rossi'],
   ),
+  String esito = 'saltata',
+  int? metriFatti,
+  int? secondiFatti,
 }) => Serie(
   id: id,
   allenamentoId: 'a1',
@@ -221,18 +236,24 @@ Serie _serieCompleta({
   attrezzatura: 'pinne',
   note: 'testa bassa, spinta lunga',
   piramideId: 'g-vecchio',
-  esito: 'saltata',
+  esito: esito,
   recuperoDopoS: 120,
   destinatari: destinatari,
   momentoId: 'm-vecchio',
+  metriFatti: metriFatti,
+  secondiFatti: secondiFatti,
 );
 
 /// La stessa serie, ma per alcuni atleti: così anche `solo_atleti_json`
-/// ha un valore (con i nomi non c'è né ruolo né esclusi).
+/// ha un valore (con i nomi non c'è né ruolo né esclusi). Ed è fatta in
+/// parte, con metri e secondi insieme come la distanza e la durata.
 Serie _serieSoloAtleti({String id = 's2', int ordine = 5}) => _serieCompleta(
   id: id,
   ordine: ordine,
   destinatari: const Destinatari(soloAtleti: ['rossi', 'bianchi']),
+  esito: 'fatta',
+  metriFatti: 450,
+  secondiFatti: 120,
 );
 
 /// Il valore di una colonna è "pieno": non nullo e, se è un elenco, non
@@ -489,7 +510,11 @@ void main() {
       // Se una colonna copiata fosse vuota nella serie di prova, il test
       // sotto passerebbe anche perdendola.
       final prove = [_serieCompleta(), _serieSoloAtleti()];
-      for (final nome in {..._serieCopiate, ..._serieRifatte, 'esito'}) {
+      for (final nome in {
+        ..._serieCopiate,
+        ..._serieRifatte,
+        ..._serieLasciate.difference({'club_id'}),
+      }) {
         expect(
           prove.any((s) => _pieno(_valoriSerie[nome]!(s))),
           isTrue,
@@ -586,7 +611,7 @@ void main() {
         final attese = [_serieCompleta(), _serieSoloAtleti()];
         final create = [for (final s in attese) await _crea(repo, s)];
         for (final (i, s) in attese.indexed) {
-          await repo.segnaEsito(create[i].id, s.esito);
+          await _segna(repo, create[i].id, s);
         }
 
         void controlla(List<Serie> lette, {required String da}) {
@@ -627,7 +652,7 @@ void main() {
       final attese = [_serieCompleta(), _serieSoloAtleti()];
       final create = [for (final s in attese) await _crea(repo, s)];
       for (final (i, s) in attese.indexed) {
-        await repo.segnaEsito(create[i].id, s.esito);
+        await _segna(repo, create[i].id, s);
       }
 
       final lette = await repo.fetchPerAllenamento('a1');
@@ -655,6 +680,8 @@ void main() {
       for (final payload in coda) {
         expect(payload.keys, containsAll(attesi));
         expect(payload.containsKey('esito'), isFalse);
+        expect(payload.containsKey('metri_fatti'), isFalse);
+        expect(payload.containsKey('secondi_fatti'), isFalse);
       }
     });
 
@@ -664,7 +691,7 @@ void main() {
       server.senzaRete = true;
       final originale = _serieCompleta();
       final creata = await _crea(repo, originale);
-      await repo.segnaEsito(creata.id, originale.esito);
+      await _segna(repo, creata.id, originale);
 
       // Come lo spostamento di una riga: solo i campi della riga.
       final dopo = await repo.updateSerie(
@@ -712,6 +739,8 @@ void main() {
         'tranne_atleti',
         'momento_id',
         'esito',
+        'metri_fatti',
+        'secondi_fatti',
       ]) {
         expect(modifica.containsKey(chiave), isFalse, reason: chiave);
       }
@@ -723,13 +752,13 @@ void main() {
         final attese = [_serieCompleta(), _serieSoloAtleti()];
         final create = [for (final s in attese) await _crea(repo, s)];
         for (final (i, s) in attese.indexed) {
-          await repo.segnaEsito(create[i].id, s.esito);
+          await _segna(repo, create[i].id, s);
         }
 
         for (final (i, s) in attese.indexed) {
           final originale = (await repo.fetchPerAllenamento('a1'))
               .firstWhere((x) => x.id == create[i].id);
-          expect(originale.esito, 'saltata');
+          expect(originale.esito, s.esito);
           await repo.copiaSerie(
             originale,
             allenamentoId: 'a2',
@@ -751,6 +780,8 @@ void main() {
               'momento_id': 'm-nuovo',
               // Una copia non è ancora fatta.
               'esito': null,
+              'metri_fatti': null,
+              'secondi_fatti': null,
             },
           );
           expect(copia.id, isNot(originale.id));

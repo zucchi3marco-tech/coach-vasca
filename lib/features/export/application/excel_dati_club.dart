@@ -62,7 +62,12 @@ Uint8List fileExcelDatiClub(
   required PeriodoDati periodo,
   required bool conBenessere,
 }) {
-  final fogli = _Fogli(dati, periodo, conBenessere: conBenessere).tutti();
+  final fogli = _Fogli(
+    dati,
+    periodo,
+    conBenessere: conBenessere,
+    adesso: adesso,
+  ).tutti();
   bool incluso(_Foglio f) =>
       f.sempre || (f.righe.isNotEmpty && (conBenessere || !f.benessere));
 
@@ -311,19 +316,27 @@ class _Foglio {
 
 /// Costruisce i fogli dai [dati], con il [periodo] già applicato.
 class _Fogli {
-  _Fogli(this.dati, this.periodo, {required this.conBenessere})
-    : _atleti = {for (final a in dati.atleti) a.id: a},
-      _squadre = {for (final g in dati.squadre) g.id: g},
-      _membri = {for (final m in dati.membri) m.userId: m},
-      _allenamenti = {for (final a in dati.allenamenti) a.id: a},
-      _partite = {for (final p in dati.partite) p.id: p},
-      _gare = {for (final g in dati.gare) g.id: g},
-      _esercizi = {for (final e in dati.eserciziSecco) e.id: e},
-      _test = {for (final t in dati.testClub) t.id: t};
+  _Fogli(
+    this.dati,
+    this.periodo, {
+    required this.conBenessere,
+    required this.adesso,
+  }) : _atleti = {for (final a in dati.atleti) a.id: a},
+       _squadre = {for (final g in dati.squadre) g.id: g},
+       _membri = {for (final m in dati.membri) m.userId: m},
+       _allenamenti = {for (final a in dati.allenamenti) a.id: a},
+       _partite = {for (final p in dati.partite) p.id: p},
+       _gare = {for (final g in dati.gare) g.id: g},
+       _esercizi = {for (final e in dati.eserciziSecco) e.id: e},
+       _test = {for (final t in dati.testClub) t.id: t};
 
   final DatiClub dati;
   final PeriodoDati periodo;
   final bool conBenessere;
+
+  /// Quando si scarica: un allenamento che deve ancora venire non ha metri
+  /// fatti.
+  final DateTime adesso;
 
   final Map<String, Atleta> _atleti;
   final Map<String, Gruppo> _squadre;
@@ -636,6 +649,9 @@ class _Fogli {
 
   _Foglio _allenamentiFoglio() {
     final volumi = volumiPerAllenamento(dati.serie);
+    // Senza le serie saltate e con solo la parte fatta di quelle «In
+    // parte»; quelle non segnate contano tutte, come nel carico.
+    final fatti = volumiPerAllenamento(dati.serie, fatto: true);
     // «Presenti» comprende chi è arrivato in ritardo, che ha anche la sua
     // colonna «Di cui in ritardo».
     final presenti = <String, int>{};
@@ -656,14 +672,15 @@ class _Fogli {
     return _Foglio(
       nome: 'Allenamenti',
       contenuto:
-          'Un allenamento per riga, con metri, durata (per l\'acqua è '
-          'stimata dalle serie) e presenze.',
+          'Un allenamento per riga, con metri scritti e fatti, durata (per '
+          'l\'acqua è stimata dalle serie) e presenze.',
       titoli: const [
         'Data',
         'Squadra',
         'Tipo',
         'Titolo',
         'Metri',
+        'Metri fatti',
         'Durata (min)',
         'Presenti',
         'Di cui in ritardo',
@@ -680,6 +697,11 @@ class _Fogli {
             _testo(_titolo(a)),
             _intero(
               (volumi[a.id]?.metri ?? 0) > 0 ? volumi[a.id]!.metri : null,
+            ),
+            _intero(
+              (volumi[a.id]?.metri ?? 0) > 0 && !a.data.isAfter(adesso)
+                  ? fatti[a.id]?.metri ?? 0
+                  : null,
             ),
             _intero(
               a.secco
@@ -728,12 +750,16 @@ class _Fogli {
           _testo(perChi ?? 'Tutti'),
           _intero(momenti[s.momentoId]),
           _testo(
-            s.fatta
+            s.metriFatti != null || s.secondiFatti != null
+                ? 'In parte'
+                : s.fatta
                 ? 'Fatta'
                 : s.saltata
                 ? 'Saltata'
                 : null,
           ),
+          _intero(s.metriFatti),
+          _intero(s.secondiFatti),
           _testo(s.note),
         ]);
       }
@@ -763,6 +789,9 @@ class _Fogli {
         'Per chi',
         'In parallelo',
         'Esito',
+        // Solo per una serie fatta «In parte»: quanto se n'è fatto.
+        'Metri fatti',
+        'Secondi fatti',
         'Note',
       ],
       righe: righe,

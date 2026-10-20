@@ -1,7 +1,8 @@
 import '../../../core/utils/giorni.dart';
 import '../../allenamenti/domain/durata_serie.dart';
 import '../../allenamenti/domain/serie.dart';
-import '../../allenamenti/domain/volume_allenamento.dart' show lunediDi;
+import '../../allenamenti/domain/volume_allenamento.dart'
+    show lunediDi, quotaFatta;
 import '../../presenze/domain/presenza.dart';
 
 /// La scala CR-10 di Foster, come la si chiede all'atleta a fine seduta:
@@ -192,31 +193,41 @@ class CaricoSeduta {
 /// Il carico di un allenamento con le sue [serie] (quelle non saltate).
 /// Con l'[rpe] dell'atleta: RPE × minuti stimati della seduta. Senza:
 /// l'RPE si stima dalle serie, ognuna pesata per quanto dura. I minuti
-/// delle serie "a secco" vanno nel secco, il resto nell'acqua.
+/// delle serie "a secco" vanno nel secco, il resto nell'acqua. Di una
+/// serie fatta in parte contano solo i minuti di quella parte
+/// ([quotaFatta]: 6 ripetute di 10 = 60% dei minuti).
 CaricoSeduta caricoAllenamento({
   required String id,
   required DateTime giorno,
   required Iterable<DatiSerie> serie,
   int? rpe,
 }) {
+  var scritti = 0.0;
   var secondi = 0.0;
   var secondiSecco = 0.0;
   var rpePesato = 0.0;
   for (final s in serie) {
-    final durata = secondiSerie(s);
+    final scritta = secondiSerie(s);
+    final durata = scritta * quotaFatta(s);
+    scritti += scritta;
     secondi += durata;
     if (s.esecuzione == 'a secco') secondiSecco += durata;
     rpePesato += durata * rpeStimatoSerie(s.zona, s.esecuzione);
   }
-  final senzaSerie = secondi <= 0;
+  // Senza serie, i minuti tipici di una seduta; con le serie tutte
+  // segnate «In parte» per zero, nessun minuto.
+  final senzaSerie = scritti <= 0;
+  final fattoNiente = !senzaSerie && secondi <= 0;
   final minuti = senzaSerie
       ? minutiAllenamentoSenzaSerie
+      : fattoNiente
+      ? 0
       : (secondi / 60).round().clamp(1, 600);
   final rpeUsato =
       rpe?.toDouble() ??
-      (senzaSerie ? rpeStimatoAllenamento : rpePesato / secondi);
+      (senzaSerie || fattoNiente ? rpeStimatoAllenamento : rpePesato / secondi);
   final totale = rpeUsato * minuti;
-  final quotaSecco = senzaSerie ? 0.0 : secondiSecco / secondi;
+  final quotaSecco = senzaSerie || fattoNiente ? 0.0 : secondiSecco / secondi;
   return CaricoSeduta(
     giorno: soloData(giorno),
     tipo: 'allenamento',

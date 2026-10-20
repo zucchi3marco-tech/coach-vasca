@@ -1,4 +1,5 @@
 import '../../allenamenti/domain/serie.dart';
+import '../../allenamenti/domain/volume_allenamento.dart';
 import 'carico_rpe.dart';
 
 /// Volume di allenamento di un atleta, contato solo nei giorni in cui
@@ -67,9 +68,10 @@ class VolumiAtleta {
     for (final r in serie) {
       if (!presenti.contains(r['allenamento_id'] as String)) continue;
       if (atletaId != null && !sue.contains(r)) continue;
-      final ripetute = r['ripetute'] as int;
-      final volume = ripetute * (r['distanza_m'] as int? ?? 0);
-      final tempo = ripetute * (r['durata_s'] as int? ?? 0);
+      // Di una serie fatta in parte, solo quello che si è fatto.
+      final fatto = volumeFatto(SerieCarico.fromMap(r));
+      final volume = fatto.metri;
+      final tempo = fatto.secondi;
       metri += volume;
       secondi += tempo;
       if (r['zona'] case final String zona) {

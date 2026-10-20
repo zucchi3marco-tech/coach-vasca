@@ -30,9 +30,13 @@ bool copre60Giorni(
 /// nella testata del dettaglio. Senza il lavoro dei soli portieri, le
 /// varianti di alcuni atleti e le altre colonne dei lavori in parallelo:
 /// sommate tutte, la media usciva più alta del vero e l'avviso di carico
-/// eccessivo di "Genera settimana con AI" poteva non comparire.
+/// eccessivo di "Genera settimana con AI" poteva non comparire. Di una
+/// serie fatta in parte conta solo quello che si è fatto.
 double mediaMetriSettimanali(Iterable<Serie> serie, {int settimane = 4}) =>
-    volumiPerAllenamento(serie).values.fold(0, (t, v) => t + v.metri) /
+    volumiPerAllenamento(
+      serie,
+      fatto: true,
+    ).values.fold(0, (t, v) => t + v.metri) /
     settimane;
 
 /// Come il gruppo è stato allenato finora, distillato in poche cifre da
