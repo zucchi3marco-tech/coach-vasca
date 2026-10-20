@@ -140,6 +140,14 @@ class SerieScritta implements DatiSerie {
   @override
   final String? momentoId;
 
+  // Una serie scritta non è ancora stata fatta.
+  @override
+  String? get esito => null;
+  @override
+  int? get metriFatti => null;
+  @override
+  int? get secondiFatti => null;
+
   int get distanzaTotaleM => ripetute * (distanzaM ?? 0);
 
   SerieScritta _conGruppo(String? gruppo) => _copia(gruppo: gruppo);

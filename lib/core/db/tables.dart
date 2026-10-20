@@ -340,6 +340,12 @@ class SerieTable extends Table {
   /// `serieDellAtleta`); null per una serie normale.
   TextColumn get momentoId => text().nullable()();
 
+  /// Quanto si è fatto di una serie fatta in parte ("Com'è andata"): i
+  /// metri di una serie a distanza o i secondi di una a tempo; null se è
+  /// fatta tutta, saltata o non segnata.
+  IntColumn get metriFatti => integer().nullable()();
+  IntColumn get secondiFatti => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

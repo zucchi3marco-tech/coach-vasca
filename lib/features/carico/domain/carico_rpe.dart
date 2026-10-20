@@ -82,6 +82,8 @@ class SerieCarico implements DatiSerie {
     this.recuperoDopoS,
     this.destinatari = Destinatari.tutti,
     this.momentoId,
+    this.metriFatti,
+    this.secondiFatti,
   });
 
   factory SerieCarico.fromMap(Map<String, dynamic> r) => SerieCarico(
@@ -97,6 +99,8 @@ class SerieCarico implements DatiSerie {
     recuperoDopoS: r['recupero_dopo_s'] as int?,
     destinatari: Destinatari.fromMap(r),
     momentoId: r['momento_id'] as String?,
+    metriFatti: r['metri_fatti'] as int?,
+    secondiFatti: r['secondi_fatti'] as int?,
   );
 
   final String allenamentoId;
@@ -138,6 +142,16 @@ class SerieCarico implements DatiSerie {
   String? get note => null;
   @override
   String? get piramideId => null;
+
+  /// Quanto si è fatto di una serie fatta in parte (`serie_per_carico`
+  /// non dà le saltate): con i numeri è 'fatta', senza vale tutta.
+  @override
+  final int? metriFatti;
+  @override
+  final int? secondiFatti;
+  @override
+  String? get esito =>
+      metriFatti != null || secondiFatti != null ? 'fatta' : null;
 }
 
 /// Il carico di una seduta in unità arbitrarie (RPE × minuti, il metodo

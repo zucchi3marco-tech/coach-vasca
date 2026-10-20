@@ -127,6 +127,12 @@ class SerieGenerata implements DatiSerie {
 
   @override
   String? get momentoId => null;
+  @override
+  String? get esito => null;
+  @override
+  int? get metriFatti => null;
+  @override
+  int? get secondiFatti => null;
 
   /// Una voce per corsia richiesta (vedi [CorsiaGenerazione]); vuota se
   /// la generazione non aveva passi di riferimento da usare, o se questo

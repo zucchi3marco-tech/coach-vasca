@@ -72,6 +72,13 @@ abstract interface class DatiSerie {
   /// sua colonna (vedi `serieDellAtleta`): mentre tutti nuotano, i
   /// portieri parano. null per una serie normale, una dopo l'altra.
   String? get momentoId;
+
+  /// Com'è andata: 'fatta' | 'saltata' segnato a bordo vasca e, per una
+  /// serie fatta in parte, quanto se n'è fatto (vedi `volumeFatto`). Solo
+  /// le serie salvate lo hanno; null per quelle scritte o generate.
+  String? get esito;
+  int? get metriFatti;
+  int? get secondiFatti;
 }
 
 class Serie implements DatiSerie {
@@ -97,6 +104,8 @@ class Serie implements DatiSerie {
     this.recuperoDopoS,
     this.destinatari = Destinatari.tutti,
     this.momentoId,
+    this.metriFatti,
+    this.secondiFatti,
   });
 
   final String id;
@@ -147,7 +156,16 @@ class Serie implements DatiSerie {
 
   /// 'fatta' | 'saltata', segnato a bordo vasca durante la seduta; null
   /// finché non si segna. Le saltate non contano nel volume reale.
+  @override
   final String? esito;
+
+  /// Fatta in parte ("Com'è andata"): quanto si è fatto, in metri per una
+  /// serie a distanza o in secondi per una a tempo. null se è fatta tutta,
+  /// saltata o non ancora segnata. Vedi `volumeFatto`.
+  @override
+  final int? metriFatti;
+  @override
+  final int? secondiFatti;
 
   bool get fatta => esito == 'fatta';
   bool get saltata => esito == 'saltata';
@@ -181,6 +199,8 @@ class Serie implements DatiSerie {
       recuperoDopoS: map['recupero_dopo_s'] as int?,
       destinatari: Destinatari.fromMap(map),
       momentoId: map['momento_id'] as String?,
+      metriFatti: map['metri_fatti'] as int?,
+      secondiFatti: map['secondi_fatti'] as int?,
     );
   }
 }

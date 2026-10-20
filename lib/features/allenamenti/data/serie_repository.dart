@@ -51,6 +51,8 @@ class SerieRepository {
         tranneAtleti: row.tranneAtletiJson,
       ),
       momentoId: row.momentoId,
+      metriFatti: row.metriFatti,
+      secondiFatti: row.secondiFatti,
     );
   }
 
@@ -77,6 +79,8 @@ class SerieRepository {
       recuperoDopoS: map['recupero_dopo_s'] as int?,
       destinatari: Destinatari.fromMap(map),
       momentoId: map['momento_id'] as String?,
+      metriFatti: map['metri_fatti'] as int?,
+      secondiFatti: map['secondi_fatti'] as int?,
     );
   }
 
@@ -106,6 +110,8 @@ class SerieRepository {
       soloAtletiJson: Value(Destinatari.fromMap(map).soloAtletiJson),
       tranneAtletiJson: Value(Destinatari.fromMap(map).tranneAtletiJson),
       momentoId: Value(map['momento_id'] as String?),
+      metriFatti: Value(map['metri_fatti'] as int?),
+      secondiFatti: Value(map['secondi_fatti'] as int?),
     );
   }
 
@@ -246,11 +252,28 @@ class SerieRepository {
     ];
   }
 
-  /// Segna la serie come fatta o saltata a bordo vasca (null la riporta
-  /// a "non segnata"). Senza rete si segna in locale e parte appena
-  /// torna, come le altre modifiche.
-  Future<void> segnaEsito(String id, String? esito) async {
-    final payload = {'esito': esito};
+  /// Segna la serie come fatta (tutta) o saltata a bordo vasca, o null per
+  /// "non segnata": quanto si era segnato "in parte" si toglie.
+  Future<void> segnaEsito(String id, String? esito) =>
+      segnaFatto(id, esito: esito);
+
+  /// Com'è andata una serie: [esito] 'fatta' | 'saltata' | null e, se è
+  /// fatta in parte, quanto se n'è fatto: [metriFatti] per una serie a
+  /// distanza, [secondiFatti] per una a tempo. I numeri valgono solo con
+  /// 'fatta' (come vuole il database), altrimenti si tolgono. Senza rete
+  /// si segna in locale e parte appena torna, come le altre modifiche.
+  Future<void> segnaFatto(
+    String id, {
+    required String? esito,
+    int? metriFatti,
+    int? secondiFatti,
+  }) async {
+    final inParte = esito == 'fatta';
+    final payload = {
+      'esito': esito,
+      'metri_fatti': inParte ? metriFatti : null,
+      'secondi_fatti': inParte ? secondiFatti : null,
+    };
     try {
       final row = await _client
           .from('serie')
@@ -264,7 +287,11 @@ class SerieRepository {
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       await (_db.update(_db.serieTable)..where((t) => t.id.equals(id))).write(
-        SerieTableCompanion(esito: Value(esito)),
+        SerieTableCompanion(
+          esito: Value(esito),
+          metriFatti: Value(payload['metri_fatti'] as int?),
+          secondiFatti: Value(payload['secondi_fatti'] as int?),
+        ),
       );
       await enqueueOperation(
         _db,
