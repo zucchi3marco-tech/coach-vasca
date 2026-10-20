@@ -215,7 +215,7 @@ void main() {
           serieSeduta.first,
           for (final s in serieSeduta.where((s) => s.momentoId == null))
             if (!s.destinatari.base) s,
-          Serie(
+          const Serie(
             id: 'p1',
             allenamentoId: idAllenamento,
             clubId: 'c1',

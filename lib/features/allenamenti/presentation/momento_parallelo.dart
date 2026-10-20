@@ -242,10 +242,16 @@ class TestaMomento extends StatelessWidget {
           color: colori.testoSecondario,
         ),
         const SizedBox(width: AppSpacing.s4),
-        Text(
-          "In parallelo · $minuti'",
-          style: (grande ? AppTypography.corpoForte : AppTypography.etichetta)
-              .copyWith(color: colori.testo, fontWeight: FontWeight.w600),
+        // Su un telefono stretto o con il testo grande si accorcia, invece
+        // di uscire dalla riga.
+        Flexible(
+          child: Text(
+            "In parallelo · $minuti'",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: (grande ? AppTypography.corpoForte : AppTypography.etichetta)
+                .copyWith(color: colori.testo, fontWeight: FontWeight.w600),
+          ),
         ),
       ],
     );

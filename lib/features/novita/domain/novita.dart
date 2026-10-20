@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'numeri-giusti',
+    data: DateTime(2026, 10, 20),
+    titolo: 'Metri e segni sempre al posto giusto',
+    testo:
+        'Se riscrivi a testo un allenamento già fatto, «fatta» e «saltata» '
+        'restano sulle loro serie anche se ne aggiungi una sopra. Una '
+        'variante per un solo atleta non diventa più un lavoro in '
+        'parallelo. Il carico senza rete e l\'avviso di carico di «Genera '
+        'settimana con AI» non contano più il lavoro dei portieri come '
+        'quello di tutti.',
+  ),
+  Novita(
     id: 'ai-con-tetto',
     data: DateTime(2026, 10, 19),
     titolo: 'L\'AI ha un tetto di richieste',

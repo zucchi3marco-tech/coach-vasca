@@ -22,11 +22,15 @@ Lista dei passi che dall'app non si possono fare: pannelli esterni, password, ac
 
 Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al mese per il club. Gli ultimi tre passi mettono un secondo tetto, in euro, dove si paga: se un giorno qualcosa sfuggisse all'app, la spesa si ferma lo stesso. Con l'uso di oggi (poche richieste al mese) si spende meno di 1 € al mese.
 
-- [ ] Prova una volta **Genera con AI** (anche solo «Compila dal testo») e una domanda all'**assistente**: devono funzionare come prima. Poi dimmelo, così controllo che le richieste siano state contate. Se compare «Non riesco a controllare le richieste AI» o «Le funzioni AI sono solo per lo staff», usa **Scrivimi** da quella pagina.
+- [x] Prova una volta **Genera con AI** (anche solo «Compila dal testo») e una domanda all'**assistente**: devono funzionare come prima. Poi dimmelo, così controllo che le richieste siano state contate. Se compare «Non riesco a controllare le richieste AI» o «Le funzioni AI sono solo per lo staff», usa **Scrivimi** da quella pagina. *(Fatto il 2026-10-20: tutte e due contate, con i gettoni.)*
 
 - [ ] **OpenAI** (scrive gli allenamenti e risponde nell'assistente): entra in **platform.openai.com** → in alto a destra l'ingranaggio **Settings** → **Billing**. Se c'è la ricarica automatica (**Auto recharge** o **Auto-reload**), **spegnila**: così non si spende più del credito che hai caricato. Se il credito è sotto i 5 $, **Add to credit balance** → 10 $.
 - [ ] Sempre in **Settings** → **Limits** (o, dentro il progetto, **Project** → **Limits**): se c'è un **budget mensile**, mettilo a **10 $** con la tua email per l'avviso. Se c'è anche un limite "duro" (*hard limit*), mettilo a 10 $.
 - [ ] **Google Gemini** (legge le foto dei referti e dei tempi): entra in **aistudio.google.com** → **Dashboard** → scheda **Spend** (Spesa). Se la chiave è sul piano gratuito non c'è niente da pagare e niente da fare. Se c'è una fatturazione collegata: **Monthly spend cap** → **Edit spend cap** → **5 $**.
+
+## 0quater. Numeri giusti (pubblicati il 2026-10-20)
+
+- [ ] Apri un allenamento in cui a bordo vasca hai segnato qualche serie **fatta** o **saltata** → in alto l'icona del foglio con le righe (**Scrivi l'allenamento**) → aggiungi una serie in cima → **Salva**. Nel dettaglio i segni devono essere ancora sulle stesse serie. Se non è così, **Scrivimi** da quella pagina.
 
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
