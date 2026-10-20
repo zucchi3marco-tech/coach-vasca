@@ -36,7 +36,55 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 15;
+const _versioneDati = 16;
+
+/// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
+/// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
+/// svolta): nelle ultime due ci sono serie fatte in parte e saltate, così
+/// «Com'è andata» ha qualcosa da mostrare. Le altre sono fatte tutte; le
+/// sedute più indietro non sono segnate. Chi è fatto in parte ha sempre
+/// l'esito 'fatta'.
+({String? esito, int? metriFatti, int? secondiFatti}) _comEAndataDemo(
+  String sport,
+  int fa,
+  int s,
+) {
+  if (fa < 0 || fa > 1) {
+    return (esito: null, metriFatti: null, secondiFatti: null);
+  }
+  const fatta = (esito: 'fatta', metriFatti: null, secondiFatti: null);
+  const saltata = (esito: 'saltata', metriFatti: null, secondiFatti: null);
+  const nuoto = 'nuoto';
+  if (fa == 0) {
+    return sport == nuoto
+        ? switch (s) {
+            // 5 ripetute su 8 da 100 m, 10 minuti su 15 di tecnica.
+            2 => (esito: 'fatta', metriFatti: 500, secondiFatti: null),
+            3 => saltata,
+            4 => (esito: 'fatta', metriFatti: null, secondiFatti: 600),
+            _ => fatta,
+          }
+        : switch (s) {
+            // 6 ripetute su 10 da 25 m, 12 minuti su 20 di tattica.
+            1 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
+            2 => (esito: 'fatta', metriFatti: null, secondiFatti: 720),
+            3 => saltata,
+            _ => fatta,
+          };
+  }
+  // Una distanza sola fatta in parte: 150 m su 200.
+  return sport == nuoto
+      ? switch (s) {
+          1 => saltata,
+          5 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
+          _ => fatta,
+        }
+      : switch (s) {
+          3 => saltata,
+          4 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
+          _ => fatta,
+        };
+}
 
 /// Gli atleti (per posizione) che il martedì e il giovedì si allenano con
 /// la prima squadra: Rossi e Bianchi, l'atleta della demo.
@@ -343,8 +391,12 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 !g.isBefore(DateTime(2027, 1, 7))))
           DateTime(g.year, g.month, g.day, 18, 30),
     ];
+    // Quante sedute fa è andata una già svolta (0: l'ultima), per dire
+    // com'è andata nelle ultime due.
+    final svolte = sedute.where((x) => x.isBefore(oggi)).length;
     for (final (n, data) in sedute.indexed) {
       final d = giorniTra(giorno, data);
+      final fa = data.isBefore(oggi) ? svolte - 1 - n : -1;
       final allenamentoId = uuid.v4();
       final indice = n % titoli.length;
       await db
@@ -530,6 +582,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
           rip2,
           attr,
         ) = serie[s];
+        final andata = _comEAndataDemo(sport, fa, s);
         righe.add(
           SerieTableCompanion.insert(
             id: uuid.v4(),
@@ -553,6 +606,9 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   : null,
             ),
             momentoId: Value(s == 1 || s == 2 ? momento : null),
+            esito: Value(andata.esito),
+            metriFatti: Value(andata.metriFatti),
+            secondiFatti: Value(andata.secondiFatti),
           ),
         );
         if (momento != null && s == 2) {
