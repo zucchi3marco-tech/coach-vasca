@@ -30,8 +30,10 @@ import '../application/allenamenti_providers.dart';
 import '../application/passo_riferimento_provider.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
+import '../domain/com_e_andata.dart';
 import '../domain/serie.dart';
 import '../domain/volume_allenamento.dart';
+import 'com_e_andata.dart';
 import 'momento_parallelo.dart';
 import 'pannello_orologio.dart';
 import 'per_chi_serie.dart';
@@ -50,10 +52,11 @@ import 'nota_serie.dart';
 /// leggerla da capo a fondo). Lo schermo resta acceso finché è aperta.
 ///
 /// Nel modo "una alla volta" l'allenatore ha anche l'orologio di vasca
-/// ([PannelloOrologio]) sotto la serie e i pulsanti "Fatta" / "Saltata"
-/// (idee prese da Swimtraxx Hub): segnata la serie si passa alla
+/// ([PannelloOrologio]) sotto la serie e i pulsanti "Fatta" / "In parte" /
+/// "Saltata" (idee prese da Swimtraxx Hub): segnata la serie si passa alla
 /// successiva, e quando l'orologio finisce una serie la segna fatta da
-/// solo. Le saltate non contano nel carico degli atleti.
+/// solo. Le saltate non contano nel carico degli atleti, le fatte in
+/// parte solo per quanto se n'è fatto.
 ///
 /// Con [perAtleta] la stessa vista serve all'atleta che apre il suo
 /// prossimo allenamento dalla dashboard: le serie arrivano dalla funzione
@@ -113,10 +116,12 @@ class _SchedaBordoVascaScreenState
     setState(() => _corrente = indice);
   }
 
-  /// Segna [s] come fatta o saltata e passa alla successiva; lo stesso
-  /// tocco su un esito già segnato lo toglie.
+  /// Segna [s] come fatta (tutta) o saltata e passa alla successiva; lo
+  /// stesso tocco su un esito già segnato così lo toglie. «Fatta» su una
+  /// serie fatta in parte la fa diventare fatta tutta (vedi
+  /// [esitoDopoTocco]).
   Future<void> _segna(Serie s, String esito, int indice, int totale) async {
-    final nuovo = s.esito == esito ? null : esito;
+    final nuovo = esitoDopoTocco(s, esito);
     HapticFeedback.selectionClick();
     try {
       await ref.read(serieRepositoryProvider).segnaEsito(s.id, nuovo);
@@ -127,6 +132,30 @@ class _SchedaBordoVascaScreenState
       return;
     }
     if (nuovo != null && mounted) _vai(indice + 1, totale);
+  }
+
+  /// «In parte»: il foglio chiede quanto se n'è fatto, poi si segna e si
+  /// passa alla successiva; «Togli "In parte"» rimette la serie non segnata
+  /// e si resta lì. [contesto] è quello dei bottoni, dentro il tema scelto
+  /// per il bordo vasca.
+  Future<void> _segnaInParte(
+    BuildContext contesto,
+    Serie s,
+    int indice,
+    int totale,
+  ) async {
+    final risposta = await mostraSceltaInParte(contesto, s, bordoVasca: true);
+    if (risposta == null || !mounted) return;
+    HapticFeedback.selectionClick();
+    try {
+      await applicaInParte(ref.read(serieRepositoryProvider), s, risposta);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      return;
+    }
+    if (!risposta.togli && mounted) _vai(indice + 1, totale);
   }
 
   /// L'orologio ha finito la serie: fatta (se non era già segnata), e si
@@ -253,6 +282,14 @@ class _SchedaBordoVascaScreenState
                       ? null
                       : (esito) =>
                             _segna(serie[indice], esito, indice, serie.length),
+                  onInParte: perAtleta
+                      ? null
+                      : (contesto) => _segnaInParte(
+                          contesto,
+                          serie[indice],
+                          indice,
+                          serie.length,
+                        ),
                   orologio: perAtleta
                       ? null
                       : PannelloOrologio(
@@ -361,6 +398,7 @@ class _UnaAllaVolta extends StatelessWidget {
     required this.onVai,
     required this.onPresenze,
     this.onSegna,
+    this.onInParte,
     this.orologio,
   });
 
@@ -371,22 +409,28 @@ class _UnaAllaVolta extends StatelessWidget {
   final ValueChanged<int> onVai;
   final VoidCallback? onPresenze;
 
-  /// Segna la serie in corso come 'fatta' o 'saltata' (null per l'atleta).
+  /// Segna la serie in corso come 'fatta' (tutta) o 'saltata' (null per
+  /// l'atleta).
   final ValueChanged<String>? onSegna;
+
+  /// «In parte» sulla serie in corso, con il contesto dei bottoni (null per
+  /// l'atleta).
+  final void Function(BuildContext contesto)? onInParte;
   final Widget? orologio;
 
   @override
   Widget build(BuildContext context) {
     final s = serie[indice];
-    // I metri fatti: le serie segnate fatte, e quelle già passate senza
-    // essere segnate saltate (come le conta il carico).
+    // I metri fatti: le serie segnate fatte (di quelle in parte, solo i
+    // metri fatti) e quelle già passate senza essere segnate saltate (come
+    // le conta il carico).
     final delGruppo = filtroDellAtleta(serie, null, 'movimento');
     final fatti = [
       for (var i = 0; i < serie.length; i++)
         if (delGruppo(serie[i]) &&
             (serie[i].fatta || (i < indice && !serie[i].saltata)))
           serie[i],
-    ].fold<int>(0, (t, x) => t + x.distanzaTotaleM);
+    ].fold<int>(0, (t, x) => t + volumeFatto(x).metri);
     // Le serie del momento in parallelo della serie in corso, se c'è.
     final momento = [
       if (s.momentoId != null)
@@ -463,26 +507,23 @@ class _UnaAllaVolta extends StatelessWidget {
       saltate: saltate,
     );
     final segna = onSegna;
-    final fatta = segna == null
-        ? null
-        : _BottoneEsito(
-            etichetta: 'Fatta',
-            icona: s.fatta ? Icons.check_circle : Icons.check_circle_outline,
-            scelto: s.fatta,
-            onTap: () => segna('fatta'),
-          );
-    final saltata = segna == null
-        ? null
-        : _BottoneEsito(
-            etichetta: 'Saltata',
-            icona: Icons.redo,
-            scelto: s.saltata,
-            onTap: () => segna('saltata'),
+    final inParte = onInParte;
+    // «Fatta», «In parte» (solo se la serie ha delle scelte) e «Saltata».
+    // Sul telefono stanno in una riga, con l'icona sopra la parola.
+    List<Widget> esiti({required bool impilati}) =>
+        segna == null || inParte == null
+        ? const []
+        : bottoniEsito(
+            s,
+            onEsito: segna,
+            onInParte: () => inParte(context),
+            impilati: impilati,
           );
 
     return LayoutBuilder(
       builder: (context, vincoli) {
         if (vincoli.maxWidth >= 700) {
+          final colonnaEsiti = esiti(impilati: false);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -493,11 +534,12 @@ class _UnaAllaVolta extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     avanzamento,
-                    if (fatta != null && saltata != null) ...[
+                    if (colonnaEsiti.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.s24),
-                      fatta,
-                      const SizedBox(height: AppSpacing.s12),
-                      saltata,
+                      for (final (i, b) in colonnaEsiti.indexed) ...[
+                        if (i > 0) const SizedBox(height: AppSpacing.s12),
+                        b,
+                      ],
                     ],
                   ],
                 ),
@@ -537,15 +579,9 @@ class _UnaAllaVolta extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s12),
             Expanded(child: centro),
-            if (fatta != null && saltata != null) ...[
+            if (esiti(impilati: true) case final riga when riga.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.s12),
-              Row(
-                children: [
-                  Expanded(child: fatta),
-                  const SizedBox(width: AppSpacing.s12),
-                  Expanded(child: saltata),
-                ],
-              ),
+              rigaDiBottoni(riga),
             ],
             const SizedBox(height: AppSpacing.s12),
             Row(
@@ -887,7 +923,8 @@ class _TutteLeSerie extends StatelessWidget {
                         const SizedBox(width: AppSpacing.s8),
                         ZoneChip(sigla: s.zona!),
                       ],
-                      if (s.esito != null) ...[
+                      // Fatta tutta o saltata: a destra, sulla stessa riga.
+                      if (s.esito != null && !s.inParte) ...[
                         const Spacer(),
                         Icon(
                           s.fatta ? Icons.check_circle : Icons.redo,
@@ -904,6 +941,30 @@ class _TutteLeSerie extends StatelessWidget {
                       ],
                     ],
                   ),
+                  // In parte: quanto se n'è fatto è più lungo, va a capo.
+                  if (s.inParte) ...[
+                    const SizedBox(height: AppSpacing.s4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.timelapse,
+                          size: 20,
+                          color: colori.testoSecondario,
+                        ),
+                        const SizedBox(width: AppSpacing.s4),
+                        Flexible(
+                          child: Text(
+                            descriviFatto(s),
+                            style: AppTypography.numerica(
+                              AppTypography.etichetta.copyWith(
+                                color: colori.testo,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (perChi(s) case final chi?) ...[
                     const SizedBox(height: AppSpacing.s8),
                     EtichettaPerChi(chi, grande: true),
@@ -987,53 +1048,6 @@ class _MomentoInVasca extends StatelessWidget {
           grande: true,
         ),
       ],
-    );
-  }
-}
-
-/// "Fatta" / "Saltata": bersaglio da bordo vasca come [_BottoneVasca],
-/// evidenziato quando l'esito è quello segnato.
-class _BottoneEsito extends StatelessWidget {
-  const _BottoneEsito({
-    required this.etichetta,
-    required this.icona,
-    required this.scelto,
-    required this.onTap,
-  });
-
-  final String etichetta;
-  final IconData icona;
-  final bool scelto;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colori = context.colori;
-    return Semantics(
-      selected: scelto,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(
-            AppSpacing.altezzaMinimaBersaglioVasca,
-          ),
-          backgroundColor: scelto ? colori.azioneTenue : null,
-          foregroundColor: colori.testo,
-          side: BorderSide(color: scelto ? colori.azione : colori.lineaForte),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pannello),
-          ),
-          textStyle: AppTypography.corpoForte.copyWith(fontSize: 18),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icona, size: 24),
-            const SizedBox(width: AppSpacing.s8),
-            Flexible(child: Text(etichetta, maxLines: 1)),
-          ],
-        ),
-      ),
     );
   }
 }
