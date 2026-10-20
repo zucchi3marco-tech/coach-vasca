@@ -54,6 +54,14 @@ final _mattine = [
   ),
 ];
 
+/// Un appello passato: il punto viene dalla scheda di quel giorno.
+final _ieri = Allenamento(
+  id: 'ieri',
+  clubId: 'c1',
+  data: _mezzanotte.subtract(const Duration(days: 1)),
+  gruppoId: 'u14',
+);
+
 Presenza _presenza(String atleta, String allenamento, String stato) => Presenza(
   id: '$atleta-$allenamento',
   allenamentoId: allenamento,
@@ -68,11 +76,12 @@ SchedaBenessere _scheda(
   List<String> zone = const [],
   int? intensita,
   List<String> sintomi = const [],
+  DateTime? data,
 }) => SchedaBenessere(
-  id: 'scheda-$atleta',
+  id: 'scheda-$atleta-${data ?? _mezzanotte}',
   atletaId: atleta,
   clubId: 'c1',
-  data: _mezzanotte,
+  data: data ?? _mezzanotte,
   dolori: dolori,
   zoneDolore: zone,
   intensitaDolore: intensita,
@@ -141,12 +150,22 @@ Widget _app(ThemeData tema, _Archivio archivio, Widget figlio) => ProviderScope(
       ]),
     ),
     // Rossi: dolore al ginocchio, ma la prontezza è buona. Verdi: febbre.
-    // Bianchi sta bene, Neri non ha compilato.
+    // Bianchi sta bene, Neri non ha compilato. Ieri invece Bianchi aveva
+    // un dolore alla spalla e gli altri stavano bene.
     schedeBenessereClubProvider.overrideWith(
       (ref, clubId) => Stream.value([
         _scheda('r', dolori: true, zone: const ['ginocchio'], intensita: 3),
         _scheda('b'),
         _scheda('v', sintomi: const ['febbre']),
+        _scheda(
+          'b',
+          data: _ieri.data,
+          dolori: true,
+          zone: const ['spalla'],
+          intensita: 4,
+        ),
+        _scheda('r', data: _ieri.data),
+        _scheda('v', data: _ieri.data),
       ]),
     ),
     gruppiListProvider.overrideWith(
@@ -169,7 +188,11 @@ Widget _app(ThemeData tema, _Archivio archivio, Widget figlio) => ProviderScope(
   ),
 );
 
-Future<_Archivio> _apri(WidgetTester tester, ThemeData tema) async {
+Future<_Archivio> _apri(
+  WidgetTester tester,
+  ThemeData tema, {
+  Allenamento? allenamento,
+}) async {
   SharedPreferences.setMockInitialValues({});
   // 360 di larghezza, alto abbastanza da vedere tutte e quattro le righe.
   tester.view.physicalSize = const Size(360, 3200);
@@ -177,7 +200,7 @@ Future<_Archivio> _apri(WidgetTester tester, ThemeData tema) async {
   addTearDown(tester.view.reset);
   final archivio = _Archivio();
   await tester.pumpWidget(
-    _app(tema, archivio, PresenzeScreen(allenamento: _stasera)),
+    _app(tema, archivio, PresenzeScreen(allenamento: allenamento ?? _stasera)),
   );
   await tester.pumpAndSettle();
   return archivio;
@@ -298,6 +321,23 @@ void main() {
         );
         expect(misura.width, greaterThanOrEqualTo(48));
         expect(misura.height, greaterThanOrEqualTo(48));
+        expect(tester.takeException(), isNull);
+        await _chiudi(tester, tema);
+      });
+
+      testWidgets('in un appello passato, il benessere di quel giorno', (
+        tester,
+      ) async {
+        await _apri(tester, tema, allenamento: _ieri);
+        // Ieri solo Bianchi aveva un dolore; le schede di oggi non contano.
+        expect(find.byKey(const ValueKey('benessere-b')), findsOneWidget);
+        expect(find.byKey(const ValueKey('benessere-r')), findsNothing);
+        expect(find.byKey(const ValueKey('benessere-v')), findsNothing);
+        expect(find.byKey(const ValueKey('benessere-n')), findsNothing);
+        expect(
+          find.byTooltip('Benessere da seguire: dolore spalla 4/10'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
         await _chiudi(tester, tema);
       });

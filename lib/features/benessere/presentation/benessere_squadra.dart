@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -22,8 +23,25 @@ import 'punteggio_widgets.dart';
 /// Prontezza di oggi per ogni atleta del club che ha compilato, calcolata
 /// con la sua eta' e il suo storico (il "suo solito").
 final punteggiOggiClubProvider =
-    Provider.family<Map<String, PunteggioBenessere>, String>((ref, clubId) {
-      final oggi = ref.watch(schedeOggiClubProvider(clubId));
+    Provider.family<Map<String, PunteggioBenessere>, String>(
+      (ref, clubId) => ref.watch(
+        punteggiDelGiornoClubProvider((
+          clubId: clubId,
+          giorno: soloData(DateTime.now()),
+        )),
+      ),
+    );
+
+/// La Prontezza di un giorno qualsiasi, con il suo solito delle 4
+/// settimane prima di quel giorno: per il punto accanto ai nomi anche in
+/// un appello passato.
+final punteggiDelGiornoClubProvider =
+    Provider.family<Map<String, PunteggioBenessere>, GiornoDelClub>((
+      ref,
+      chiave,
+    ) {
+      final clubId = chiave.clubId;
+      final delGiorno = ref.watch(schedeDelGiornoClubProvider(chiave));
       final tutte = ref.watch(schedeBenessereClubProvider(clubId)).value ?? [];
       final atleti = {
         for (final a
@@ -39,7 +57,7 @@ final punteggiOggiClubProvider =
           a.id: a,
       };
       return {
-        for (final MapEntry(key: id, value: s) in oggi.entries)
+        for (final MapEntry(key: id, value: s) in delGiorno.entries)
           id: calcolaPunteggio(
             s,
             dataNascita: atleti[id]?.dataNascita,

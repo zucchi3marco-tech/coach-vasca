@@ -56,18 +56,20 @@ class PresenzeScreen extends ConsumerWidget {
     final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
     final temaVasca = temaBordoVascaDa(overrideVasca);
     // Per «questa settimana» e «a ottobre» accanto ai nomi, e il punto del
-    // benessere di oggi per chi è peggio del solito.
+    // benessere di quel giorno per chi stava peggio del solito: anche in
+    // un appello passato (scelta del coach, 2026-10-20).
     final allenamentiClub =
         ref.watch(allenamentiListProvider(allenamento.clubId)).value ??
         const <Allenamento>[];
     final presenzeClub =
         ref.watch(presenzeClubProvider(allenamento.clubId)).value ??
         const <Presenza>[];
-    final schedeOggi = ref.watch(schedeOggiClubProvider(allenamento.clubId));
-    final punteggiOggi = ref.watch(
-      punteggiOggiClubProvider(allenamento.clubId),
+    final giorno = (
+      clubId: allenamento.clubId,
+      giorno: soloData(allenamento.data),
     );
-    final eOggi = soloData(allenamento.data) == soloData(DateTime.now());
+    final schedeDelGiorno = ref.watch(schedeDelGiornoClubProvider(giorno));
+    final punteggiDelGiorno = ref.watch(punteggiDelGiornoClubProvider(giorno));
 
     final scaffold = AppScaffold(
       scrollabile: true,
@@ -236,12 +238,10 @@ class PresenzeScreen extends ConsumerWidget {
                             sempre: {allenamento.id},
                           ),
                           meseDi: allenamento.data,
-                          benessere: eOggi
-                              ? segnaleBenessere(
-                                  schedeOggi[atleta.id],
-                                  punteggiOggi[atleta.id],
-                                )
-                              : null,
+                          benessere: segnaleBenessere(
+                            schedeDelGiorno[atleta.id],
+                            punteggiDelGiorno[atleta.id],
+                          ),
                           onApriBenessere: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) =>
@@ -394,8 +394,8 @@ class _RiepilogoPresenze extends StatelessWidget {
 /// vedi DESIGN.md sezione 9: a bordo vasca i dati si inseriscono con
 /// "bottoni grandi", altezza minima 64, mai un form o un menu a tendina.
 /// Sotto il nome, quante volte c'era questa settimana e questo mese; a
-/// destra del nome, il punto del benessere solo per chi è peggio del
-/// solito oggi.
+/// destra del nome, il punto del benessere solo per chi quel giorno stava
+/// peggio del solito.
 class _RigaPresenza extends StatelessWidget {
   const _RigaPresenza({
     required this.atleta,
@@ -423,7 +423,7 @@ class _RigaPresenza extends StatelessWidget {
   final ({ConteggioPresenze settimana, ConteggioPresenze mese}) conteggi;
   final DateTime meseDi;
 
-  /// `null` = niente da dire sul benessere di oggi: nessun punto.
+  /// `null` = niente da dire sul benessere di quel giorno: nessun punto.
   final SegnaleBenessere? benessere;
   final VoidCallback onApriBenessere;
 
@@ -583,8 +583,8 @@ class _RigaConteggi extends StatelessWidget {
   }
 }
 
-/// Il punto accanto al nome per chi oggi sta peggio del solito o ha un
-/// dolore: giallo da seguire, rosso da sentire. Un tocco apre il suo
+/// Il punto accanto al nome per chi quel giorno stava peggio del solito o
+/// aveva un dolore: giallo da seguire, rosso da sentire. Un tocco apre il suo
 /// benessere. Bersaglio da 48 anche se il segno è piccolo; il colore non
 /// è l'unico segnale (cuore pieno, testo nella descrizione).
 class _PuntoBenessere extends StatelessWidget {

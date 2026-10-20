@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/refresh_guard.dart';
+import '../../../core/utils/giorni.dart';
 import '../data/schede_benessere_repository.dart';
 import '../domain/scheda_benessere.dart';
 
@@ -25,19 +26,36 @@ final schedeBenessereClubProvider =
       );
     });
 
-/// Scheda di oggi per ogni atleta del club (chiave: id atleta).
-final schedeOggiClubProvider =
-    Provider.family<Map<String, SchedaBenessere>, String>((ref, clubId) {
-      final schede = ref.watch(schedeBenessereClubProvider(clubId)).value ?? [];
-      final oggi = DateTime.now();
+/// Il club e un giorno (a mezzanotte, vedi `soloData`).
+typedef GiornoDelClub = ({String clubId, DateTime giorno});
+
+/// La scheda di un giorno per ogni atleta del club (chiave: id atleta):
+/// quella del giorno dell'appello accanto ai nomi, anche per un appello
+/// passato.
+final schedeDelGiornoClubProvider =
+    Provider.family<Map<String, SchedaBenessere>, GiornoDelClub>((ref, chiave) {
+      final schede =
+          ref.watch(schedeBenessereClubProvider(chiave.clubId)).value ?? [];
+      final giorno = chiave.giorno;
       return {
         for (final s in schede)
-          if (s.data.year == oggi.year &&
-              s.data.month == oggi.month &&
-              s.data.day == oggi.day)
+          if (s.data.year == giorno.year &&
+              s.data.month == giorno.month &&
+              s.data.day == giorno.day)
             s.atletaId: s,
       };
     });
+
+/// Scheda di oggi per ogni atleta del club (chiave: id atleta).
+final schedeOggiClubProvider =
+    Provider.family<Map<String, SchedaBenessere>, String>(
+      (ref, clubId) => ref.watch(
+        schedeDelGiornoClubProvider((
+          clubId: clubId,
+          giorno: soloData(DateTime.now()),
+        )),
+      ),
+    );
 
 /// La scheda di oggi, se gia' compilata.
 final schedaBenessereOggiProvider = Provider.family<SchedaBenessere?, String>((
