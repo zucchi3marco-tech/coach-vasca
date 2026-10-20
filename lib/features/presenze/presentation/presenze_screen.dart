@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
+import '../../../core/utils/percentuale_presenze.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -17,16 +19,22 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/schermo_acceso.dart';
 import '../../ai_genera/application/corsie_service.dart';
+import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/application/personal_best_providers.dart';
 import '../../atleti/domain/personal_best.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
+import '../../benessere/application/benessere_providers.dart';
+import '../../benessere/domain/segnale_benessere.dart';
+import '../../benessere/presentation/benessere_squadra.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
+import '../../home/area_atleta_home_screen.dart';
 import '../application/presenze_providers.dart';
 import '../data/presenze_repository.dart';
+import '../domain/presenza.dart';
 import '../../../widgets/nascondi_barra_club.dart';
 
 /// Schermata da bordo vasca (DESIGN.md sezione 9): bersagli grandi, niente
@@ -47,6 +55,19 @@ class PresenzeScreen extends ConsumerWidget {
     final presenzeAsync = ref.watch(presenzeListProvider(allenamento.id));
     final overrideVasca = ref.watch(temaBordoVascaOverrideProvider);
     final temaVasca = temaBordoVascaDa(overrideVasca);
+    // Per «questa settimana» e «a ottobre» accanto ai nomi, e il punto del
+    // benessere di oggi per chi è peggio del solito.
+    final allenamentiClub =
+        ref.watch(allenamentiListProvider(allenamento.clubId)).value ??
+        const <Allenamento>[];
+    final presenzeClub =
+        ref.watch(presenzeClubProvider(allenamento.clubId)).value ??
+        const <Presenza>[];
+    final schedeOggi = ref.watch(schedeOggiClubProvider(allenamento.clubId));
+    final punteggiOggi = ref.watch(
+      punteggiOggiClubProvider(allenamento.clubId),
+    );
+    final eOggi = soloData(allenamento.data) == soloData(DateTime.now());
 
     final scaffold = AppScaffold(
       scrollabile: true,
@@ -106,7 +127,7 @@ class PresenzeScreen extends ConsumerWidget {
                     .segnaPresenza(
                       allenamentoId: allenamento.id,
                       atletaId: scelto.id,
-                      stato: 'presente',
+                      stato: statoPresente,
                     );
               }
 
@@ -143,16 +164,33 @@ class PresenzeScreen extends ConsumerWidget {
                 for (final a in atleti)
                   if (statoPerAtleta[a.id] == null) a,
               ];
-              int quanti(String stato) =>
-                  atleti.where((a) => statoPerAtleta[a.id] == stato).length;
+              int quanti(bool Function(String? stato) vale) =>
+                  atleti.where((a) => vale(statoPerAtleta[a.id])).length;
+
+              // Le presenze del club con quelle di questo appello al posto
+              // di quelle salvate: i numeri accanto ai nomi seguono ogni
+              // tocco, senza aspettare il giro dal database.
+              final presenzeCosi = [
+                for (final p in presenzeClub)
+                  if (p.allenamentoId != allenamento.id) p,
+                ...presenze,
+              ];
+              final allenamentiCosi = [
+                for (final a in allenamentiClub)
+                  if (a.id != allenamento.id) a,
+                allenamento,
+              ];
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _RiepilogoPresenze(
-                    presenti: quanti('presente'),
-                    assenti: quanti('assente'),
-                    giustificati: quanti('giustificato'),
+                    // Chi è in ritardo c'era: è fra i presenti, e si dice
+                    // anche quanti sono.
+                    presenti: quanti(contaComePresente),
+                    inRitardo: quanti((s) => s == statoRitardo),
+                    assenti: quanti((s) => s == statoAssente),
+                    giustificati: quanti((s) => s == statoGiustificato),
                     daSegnare: daSegnare.length,
                     // Il caso di ogni giorno: quasi tutti presenti. Si
                     // segnano prima le eccezioni, poi gli altri in un tocco.
@@ -166,7 +204,7 @@ class PresenzeScreen extends ConsumerWidget {
                               await repository.segnaPresenza(
                                 allenamentoId: allenamento.id,
                                 atletaId: a.id,
-                                stato: 'presente',
+                                stato: statoPresente,
                               );
                             }
                           },
@@ -186,6 +224,30 @@ class PresenzeScreen extends ConsumerWidget {
                           corsia: corsie.numeroCorsia(atleta.id),
                           statoAttuale: statoPerAtleta[atleta.id],
                           daAltraSquadra: daAltraSquadra(atleta),
+                          conteggi: presenzeSettimanaEMese(
+                            allenamenti: allenamentiCosi,
+                            presenze: presenzeCosi,
+                            atletaId: atleta.id,
+                            gruppoAtleta: atleta.gruppoId,
+                            giorno: allenamento.data,
+                            atteso: (a) => atleta.attesoA(a.gruppoId, a.data),
+                            // Quello che si sta segnando conta comunque,
+                            // anche se comincia fra un'ora.
+                            sempre: {allenamento.id},
+                          ),
+                          meseDi: allenamento.data,
+                          benessere: eOggi
+                              ? segnaleBenessere(
+                                  schedeOggi[atleta.id],
+                                  punteggiOggi[atleta.id],
+                                )
+                              : null,
+                          onApriBenessere: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  AtletaDashboardScreen(atleta: atleta),
+                            ),
+                          ),
                           onSelect: (nuovoStato) => ref
                               .read(presenzeRepositoryProvider)
                               .segnaPresenza(
@@ -238,13 +300,18 @@ class PresenzeScreen extends ConsumerWidget {
 class _RiepilogoPresenze extends StatelessWidget {
   const _RiepilogoPresenze({
     required this.presenti,
+    required this.inRitardo,
     required this.assenti,
     required this.giustificati,
     required this.daSegnare,
     required this.onTuttiPresenti,
   });
 
+  /// Chi c'è: compresi quelli in ritardo.
   final int presenti;
+
+  /// Di quei presenti, quelli arrivati in ritardo.
+  final int inRitardo;
   final int assenti;
   final int giustificati;
   final int daSegnare;
@@ -290,6 +357,24 @@ class _RiepilogoPresenze extends StatelessWidget {
               numero(daSegnare, 'Da segnare', colori.testo),
             ],
           ),
+          if (inRitardo > 0) ...[
+            const SizedBox(height: AppSpacing.s8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.schedule, size: 18, color: colori.azione),
+                const SizedBox(width: AppSpacing.s4),
+                Flexible(
+                  child: Text(
+                    'di cui $inRitardo in ritardo',
+                    style: AppTypography.piccolo.copyWith(
+                      color: colori.testoSecondario,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (onTuttiPresenti != null) ...[
             const SizedBox(height: AppSpacing.s12),
             PrimaryButton(
@@ -305,15 +390,22 @@ class _RiepilogoPresenze extends StatelessWidget {
   }
 }
 
-/// Riga di un atleta con i tre stati possibili come bersagli grandi — vedi
-/// DESIGN.md sezione 9: a bordo vasca i dati si inseriscono con "bottoni
-/// grandi", altezza minima 64, mai un form o un menu a tendina.
+/// Riga di un atleta con i quattro stati possibili come bersagli grandi —
+/// vedi DESIGN.md sezione 9: a bordo vasca i dati si inseriscono con
+/// "bottoni grandi", altezza minima 64, mai un form o un menu a tendina.
+/// Sotto il nome, quante volte c'era questa settimana e questo mese; a
+/// destra del nome, il punto del benessere solo per chi è peggio del
+/// solito oggi.
 class _RigaPresenza extends StatelessWidget {
   const _RigaPresenza({
     required this.atleta,
     required this.corsia,
     required this.statoAttuale,
     required this.onSelect,
+    required this.conteggi,
+    required this.meseDi,
+    required this.onApriBenessere,
+    this.benessere,
     this.daAltraSquadra,
   });
 
@@ -326,6 +418,14 @@ class _RigaPresenza extends StatelessWidget {
 
   /// "da Under 14": oggi si allena con questa squadra, non con la sua.
   final String? daAltraSquadra;
+
+  /// Presenze della settimana e del mese dell'allenamento ([meseDi]).
+  final ({ConteggioPresenze settimana, ConteggioPresenze mese}) conteggi;
+  final DateTime meseDi;
+
+  /// `null` = niente da dire sul benessere di oggi: nessun punto.
+  final SegnaleBenessere? benessere;
+  final VoidCallback onApriBenessere;
 
   @override
   Widget build(BuildContext context) {
@@ -363,43 +463,171 @@ class _RigaPresenza extends StatelessWidget {
                   ),
                 ),
               ],
+              if (benessere case final b?) ...[
+                const SizedBox(width: AppSpacing.s8),
+                _PuntoBenessere(
+                  atletaId: atleta.id,
+                  segnale: b,
+                  onTap: onApriBenessere,
+                ),
+              ],
             ],
           ),
+          _RigaConteggi(conteggi: conteggi, meseDi: meseDi),
           const SizedBox(height: AppSpacing.s12),
-          Row(
-            children: [
-              Expanded(
-                child: _BottoneStato(
-                  etichetta: 'Presente',
-                  icona: Icons.check,
-                  colore: colori.ok,
-                  selezionato: statoAttuale == 'presente',
-                  onTap: () => onSelect('presente'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: _BottoneStato(
-                  etichetta: 'Assente',
-                  icona: Icons.close,
-                  colore: colori.testoSecondario,
-                  selezionato: statoAttuale == 'assente',
-                  onTap: () => onSelect('assente'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: _BottoneStato(
-                  etichetta: 'Giustificato',
-                  icona: Icons.event_note_outlined,
-                  colore: colori.attenzione,
-                  selezionato: statoAttuale == 'giustificato',
-                  onTap: () => onSelect('giustificato'),
-                ),
-              ),
-            ],
+          // Quattro stati: in una riga se c'è posto, altrimenti due per
+          // due (a 360 px con il testo ingrandito, "Giustificato" e "In
+          // ritardo" non stanno uno accanto all'altro in quattro).
+          LayoutBuilder(
+            builder: (context, vincoli) {
+              final presente = _BottoneStato(
+                etichetta: 'Presente',
+                icona: Icons.check,
+                colore: colori.ok,
+                selezionato: statoAttuale == statoPresente,
+                onTap: () => onSelect(statoPresente),
+              );
+              final ritardo = _BottoneStato(
+                etichetta: 'In ritardo',
+                icona: Icons.schedule,
+                colore: colori.azione,
+                selezionato: statoAttuale == statoRitardo,
+                onTap: () => onSelect(statoRitardo),
+              );
+              final assente = _BottoneStato(
+                etichetta: 'Assente',
+                icona: Icons.close,
+                colore: colori.testoSecondario,
+                selezionato: statoAttuale == statoAssente,
+                onTap: () => onSelect(statoAssente),
+              );
+              final giustificato = _BottoneStato(
+                etichetta: 'Giustificato',
+                icona: Icons.event_note_outlined,
+                colore: colori.attenzione,
+                selezionato: statoAttuale == statoGiustificato,
+                onTap: () => onSelect(statoGiustificato),
+              );
+              const spazio = SizedBox(width: AppSpacing.s12);
+              if (vincoli.maxWidth >= 520) {
+                return Row(
+                  children: [
+                    Expanded(child: presente),
+                    spazio,
+                    Expanded(child: ritardo),
+                    spazio,
+                    Expanded(child: assente),
+                    spazio,
+                    Expanded(child: giustificato),
+                  ],
+                );
+              }
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: presente),
+                      spazio,
+                      Expanded(child: ritardo),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  Row(
+                    children: [
+                      Expanded(child: assente),
+                      spazio,
+                      Expanded(child: giustificato),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// «3 su 4 questa settimana» e «11 su 14 a ottobre»: quante volte l'atleta
+/// c'era (presente o in ritardo) sugli allenamenti che lo riguardavano.
+/// Su due righe se non stanno insieme; niente per un periodo senza
+/// allenamenti suoi.
+class _RigaConteggi extends StatelessWidget {
+  const _RigaConteggi({required this.conteggi, required this.meseDi});
+
+  final ({ConteggioPresenze settimana, ConteggioPresenze mese}) conteggi;
+  final DateTime meseDi;
+
+  @override
+  Widget build(BuildContext context) {
+    final stile = AppTypography.etichetta.copyWith(
+      color: context.colori.testoSecondario,
+    );
+    final voci = [
+      if (conteggi.settimana.su > 0)
+        '${conteggi.settimana.presenti} su ${conteggi.settimana.su} '
+            'questa settimana',
+      if (conteggi.mese.su > 0)
+        '${conteggi.mese.presenti} su ${conteggi.mese.su} '
+            '${inMese(meseDi)}',
+    ];
+    if (voci.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s4),
+      child: Wrap(
+        spacing: AppSpacing.s16,
+        children: [for (final v in voci) Text(v, style: stile)],
+      ),
+    );
+  }
+}
+
+/// Il punto accanto al nome per chi oggi sta peggio del solito o ha un
+/// dolore: giallo da seguire, rosso da sentire. Un tocco apre il suo
+/// benessere. Bersaglio da 48 anche se il segno è piccolo; il colore non
+/// è l'unico segnale (cuore pieno, testo nella descrizione).
+class _PuntoBenessere extends StatelessWidget {
+  const _PuntoBenessere({
+    required this.atletaId,
+    required this.segnale,
+    required this.onTap,
+  });
+
+  final String atletaId;
+  final SegnaleBenessere segnale;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final colore = segnale.livello >= 2 ? colori.rosso : colori.attenzione;
+    return Tooltip(
+      message: segnale.testo,
+      child: Semantics(
+        button: true,
+        label: segnale.testo,
+        excludeSemantics: true,
+        child: InkWell(
+          key: ValueKey('benessere-$atletaId'),
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: AppSpacing.altezzaMinimaBersaglio,
+            height: AppSpacing.altezzaMinimaBersaglio,
+            child: Center(
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: colore.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.favorite, size: 18, color: colore),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

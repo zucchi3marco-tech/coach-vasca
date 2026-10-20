@@ -19,38 +19,28 @@ import '../../atleti/domain/squadre_atleta.dart';
 import '../application/presenze_providers.dart';
 import '../domain/presenza.dart';
 
-String _etichettaStato(String stato) {
-  switch (stato) {
-    case 'presente':
-      return 'Presente';
-    case 'giustificato':
-      return 'Giustificato';
-    default:
-      return 'Assente';
-  }
-}
+String _etichettaStato(String stato) =>
+    stato == statoPresente ||
+        stato == statoRitardo ||
+        stato == statoGiustificato
+    ? etichettaStatoPresenza(stato)
+    : 'Assente';
 
-IconData _iconaStato(String stato) {
-  switch (stato) {
-    case 'presente':
-      return Icons.check_circle_outline;
-    case 'giustificato':
-      return Icons.event_note_outlined;
-    default:
-      return Icons.close;
-  }
-}
+IconData _iconaStato(String stato) => switch (stato) {
+  statoPresente => Icons.check_circle_outline,
+  statoRitardo => Icons.schedule,
+  statoGiustificato => Icons.event_note_outlined,
+  _ => Icons.close,
+};
 
-Color _coloreStato(String stato, ColoriApp colori) {
-  switch (stato) {
-    case 'presente':
-      return colori.ok;
-    case 'giustificato':
-      return colori.attenzione;
-    default:
-      return colori.testoSecondario;
-  }
-}
+Color _coloreStato(String stato, ColoriApp colori) => switch (stato) {
+  statoPresente => colori.ok,
+  // In ritardo c'era (conta come presente) ma si vede a parte: stesso blu
+  // della griglia della stagione.
+  statoRitardo => colori.azione,
+  statoGiustificato => colori.attenzione,
+  _ => colori.testoSecondario,
+};
 
 /// Presenze e percentuali del solo atleta collegato (FASE 9). La
 /// percentuale usa come denominatore gli allenamenti del club con lo
@@ -163,12 +153,16 @@ class _Contenuto extends StatelessWidget {
       final idPeriodo = periodo.map((a) => a.id).toSet();
       return presenze
           .where(
-            (p) => p.stato == 'presente' && idPeriodo.contains(p.allenamentoId),
+            (p) =>
+                contaComePresente(p.stato) &&
+                idPeriodo.contains(p.allenamentoId),
           )
           .length;
     }
 
-    final numeroPresenze = presenze.where((p) => p.stato == 'presente').length;
+    final numeroPresenze = presenze
+        .where((p) => contaComePresente(p.stato))
+        .length;
     final percentualeMese = delMese.isEmpty
         ? null
         : contaPresenti(delMese) / delMese.length * 100;

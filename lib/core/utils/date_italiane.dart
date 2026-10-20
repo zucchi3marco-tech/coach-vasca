@@ -115,3 +115,9 @@ String quandoConOra(DateTime d, String? ora) =>
 
 /// "Domani, giovedì 8 ott".
 String quandoEsteso(DateTime d) => '${traQuanto(d)}, ${dataEstesa(d)}';
+
+/// "a ottobre", "ad aprile", "ad agosto": il mese con la preposizione.
+String inMese(DateTime d) {
+  final mese = _mesiInteri[d.month - 1];
+  return '${mese.startsWith('a') ? 'ad' : 'a'} $mese';
+}

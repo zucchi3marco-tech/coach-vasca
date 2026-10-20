@@ -14,6 +14,7 @@ import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../presenze/application/presenze_providers.dart';
+import '../../presenze/domain/presenza.dart';
 import '../application/carico_providers.dart';
 import '../data/rpe_repository.dart';
 import '../domain/carico_rpe.dart';
@@ -51,11 +52,11 @@ final seduteDaValutareProvider = Provider.autoDispose
           ref.watch(presenzePerAtletaProvider(atleta.id)).value ?? const [];
       final assenti = {
         for (final p in presenzeAtleta)
-          if (p.stato != 'presente') p.allenamentoId,
+          if (!contaComePresente(p.stato)) p.allenamentoId,
       };
       final presenti = {
         for (final p in presenzeAtleta)
-          if (p.stato == 'presente') p.allenamentoId,
+          if (contaComePresente(p.stato)) p.allenamentoId,
       };
       final sedute = <SedutaDaValutare>[
         for (final a

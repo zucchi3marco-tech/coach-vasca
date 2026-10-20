@@ -10,6 +10,7 @@ import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../presenze/application/presenze_providers.dart';
+import '../../presenze/domain/presenza.dart';
 
 /// La calottina dell'ultima convocazione dell'atleta: numero, portiere
 /// (calottina rossa) e colore della squadra in quella partita. null se
@@ -89,7 +90,7 @@ final riepilogoAllenamentiAtletaProvider = Provider.autoDispose
           : presenze
                 .where(
                   (p) =>
-                      p.stato == 'presente' &&
+                      contaComePresente(p.stato) &&
                       idPassati.contains(p.allenamentoId),
                 )
                 .length;

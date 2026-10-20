@@ -36,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 14;
+const _versioneDati = 15;
 
 /// Gli atleti (per posizione) che il martedì e il giovedì si allenano con
 /// la prima squadra: Rossi e Bianchi, l'atleta della demo.
@@ -611,6 +611,8 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               ? 'assente'
               : (a + d) % 7 == 0
               ? 'giustificato'
+              : (a + d) % 9 == 4
+              ? 'ritardo'
               : 'presente';
           await db
               .into(db.presenzeTable)

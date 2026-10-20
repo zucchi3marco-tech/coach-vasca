@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 
 import '../../../core/utils/date_italiane.dart';
+import '../../presenze/domain/presenza.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/durata_serie.dart';
 import '../../allenamenti/domain/serie.dart';
@@ -263,12 +264,7 @@ String _tempo(double secondi) =>
 const _eliminato = '(eliminato)';
 const _tuttoIlClub = 'Tutto il club';
 
-String _statoPresenza(String stato) => switch (stato) {
-  'presente' => 'Presente',
-  'assente' => 'Assente',
-  'giustificato' => 'Giustificato',
-  _ => stato,
-};
+String _statoPresenza(String stato) => etichettaStatoPresenza(stato);
 
 String _importanza(String valore) => switch (valore) {
   'bassa' => 'Bassa',
@@ -640,16 +636,22 @@ class _Fogli {
 
   _Foglio _allenamentiFoglio() {
     final volumi = volumiPerAllenamento(dati.serie);
+    // «Presenti» comprende chi è arrivato in ritardo, che ha anche la sua
+    // colonna «Di cui in ritardo».
     final presenti = <String, int>{};
+    final ritardi = <String, int>{};
     final assenti = <String, int>{};
     final giustificati = <String, int>{};
     for (final p in dati.presenze) {
-      final conto = switch (p.stato) {
-        'presente' => presenti,
-        'giustificato' => giustificati,
-        _ => assenti,
-      };
+      final conto = contaComePresente(p.stato)
+          ? presenti
+          : p.stato == statoGiustificato
+          ? giustificati
+          : assenti;
       conto[p.allenamentoId] = (conto[p.allenamentoId] ?? 0) + 1;
+      if (p.stato == statoRitardo) {
+        ritardi[p.allenamentoId] = (ritardi[p.allenamentoId] ?? 0) + 1;
+      }
     }
     return _Foglio(
       nome: 'Allenamenti',
@@ -664,6 +666,7 @@ class _Fogli {
         'Metri',
         'Durata (min)',
         'Presenti',
+        'Di cui in ritardo',
         'Assenti',
         'Giustificati',
         'Note',
@@ -686,6 +689,7 @@ class _Fogli {
                         : minutiSeduta(_di(_seriePer, a.id))),
             ),
             IntCellValue(presenti[a.id] ?? 0),
+            IntCellValue(ritardi[a.id] ?? 0),
             IntCellValue(assenti[a.id] ?? 0),
             IntCellValue(giustificati[a.id] ?? 0),
             _testo(a.note),
@@ -773,7 +777,9 @@ class _Fogli {
     );
     return _Foglio(
       nome: 'Presenze',
-      contenuto: 'Chi era presente, assente o giustificato a ogni allenamento.',
+      contenuto:
+          'Chi era presente, in ritardo, assente o giustificato a ogni '
+          'allenamento.',
       titoli: const [
         'Data',
         'Squadra',

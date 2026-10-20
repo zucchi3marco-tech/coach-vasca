@@ -96,7 +96,7 @@ const STRUMENTI = [
     function: {
       name: "presenze",
       description:
-        "Le presenze agli allenamenti degli ultimi N giorni, per atleta (codici): presente, assente, giustificato, percentuale.",
+        "Le presenze agli allenamenti degli ultimi N giorni, per atleta (codici): presente (chi è in ritardo conta come presente), di_cui_in_ritardo, assente, giustificato, percentuale.",
       parameters: {
         type: "object",
         properties: { giorni: { type: "integer", minimum: 1, maximum: 365 } },

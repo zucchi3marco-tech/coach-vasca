@@ -198,6 +198,7 @@ class _PresenzeStagioneScreenState
 
 Color? _coloreStato(StatoPresenza stato, ColoriApp colori) => switch (stato) {
   StatoPresenza.presente => colori.ok,
+  StatoPresenza.inRitardo => colori.azione,
   StatoPresenza.giustificato => colori.attenzione,
   StatoPresenza.assente => colori.testoTenue,
   StatoPresenza.nonSegnato => colori.linea,
@@ -216,6 +217,7 @@ class _Legenda extends StatelessWidget {
       children: [
         for (final (stato, etichetta) in const [
           (StatoPresenza.presente, 'Presente'),
+          (StatoPresenza.inRitardo, 'In ritardo'),
           (StatoPresenza.giustificato, 'Giustificato'),
           (StatoPresenza.assente, 'Assente'),
           (StatoPresenza.nonSegnato, 'Non segnata'),

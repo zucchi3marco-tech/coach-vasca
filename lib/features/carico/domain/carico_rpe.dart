@@ -2,6 +2,7 @@ import '../../../core/utils/giorni.dart';
 import '../../allenamenti/domain/durata_serie.dart';
 import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/domain/volume_allenamento.dart' show lunediDi;
+import '../../presenze/domain/presenza.dart';
 
 /// La scala CR-10 di Foster, come la si chiede all'atleta a fine seduta:
 /// "Quanto è stato duro?". Le voci senza parole stanno fra le due vicine.
@@ -429,7 +430,7 @@ List<CaricoSeduta> seduteDiAtleta({
 
   final allenamenti = {
     for (final MapEntry(key: id, value: stato) in statoPresenze.entries)
-      if (stato == 'presente') id,
+      if (contaComePresente(stato)) id,
     for (final (tipo, id) in rpe.keys)
       if (tipo == 'allenamento' &&
           statoPresenze[id] != 'assente' &&

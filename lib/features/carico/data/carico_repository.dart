@@ -7,6 +7,7 @@ import '../../../core/db/database_provider.dart';
 import '../../../core/supabase/leggi_a_pagine.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
+import '../../presenze/domain/presenza.dart';
 import '../domain/carico_rpe.dart';
 import '../domain/rpe_seduta.dart';
 import '../domain/volumi_atleta.dart';
@@ -337,7 +338,8 @@ class CaricoRepository {
     await _serieDelClub(clubId),
     {
       for (final p in await _presenze(clubId: clubId, atletaId: atletaId))
-        if (p['stato'] == 'presente') p['allenamento_id'] as String,
+        if (contaComePresente(p['stato'] as String?))
+          p['allenamento_id'] as String,
     },
     atletaId: atletaId,
     ruolo: (await _ruoli(clubId))[atletaId],

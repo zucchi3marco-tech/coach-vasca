@@ -111,6 +111,14 @@ typedef EsitoStrumento = ({
   SchedaAssistente? scheda,
 });
 
+/// Presenze di un atleta: `presente` comprende i ritardi (`inRitardo`).
+typedef _ContiPresenze = ({
+  int presente,
+  int inRitardo,
+  int assente,
+  int giustificato,
+});
+
 /// Gli strumenti dell'assistente, eseguiti sul telefono. Ognuno legge i
 /// dati con la [fonte], li conta come le schermate e restituisce al modello
 /// solo codici ([pseudonimi]) e numeri. Benessere e dolori restano qui:
@@ -325,9 +333,9 @@ class StrumentiAssistente {
   ];
 
   /// Le presenze di ogni atleta (chiave: id) negli allenamenti degli
-  /// ultimi [giorni] giorni.
-  Future<Map<String, ({int presente, int assente, int giustificato})>>
-  _contaPresenze(int giorni) async {
+  /// ultimi [giorni] giorni. `presente` comprende chi è arrivato in
+  /// ritardo (`inRitardo` ne dice quanti erano).
+  Future<Map<String, _ContiPresenze>> _contaPresenze(int giorni) async {
     final inizio = aggiungiGiorni(_oggi, -giorni);
     final sedute = {
       for (final a in await _allenamentiDellaSquadra())
@@ -335,32 +343,26 @@ class StrumentiAssistente {
             !soloData(a.data).isAfter(_oggi))
           a.id,
     };
-    final conti = <String, ({int presente, int assente, int giustificato})>{};
+    final conti = <String, _ContiPresenze>{};
     for (final p in await fonte.presenze()) {
       if (!sedute.contains(p.allenamentoId)) continue;
-      final c = conti[p.atletaId] ?? (presente: 0, assente: 0, giustificato: 0);
-      conti[p.atletaId] = switch (p.stato) {
-        'presente' => (
-          presente: c.presente + 1,
-          assente: c.assente,
-          giustificato: c.giustificato,
-        ),
-        'assente' => (
-          presente: c.presente,
-          assente: c.assente + 1,
-          giustificato: c.giustificato,
-        ),
-        _ => (
-          presente: c.presente,
-          assente: c.assente,
-          giustificato: c.giustificato + 1,
-        ),
-      };
+      final c =
+          conti[p.atletaId] ??
+          (presente: 0, inRitardo: 0, assente: 0, giustificato: 0);
+      conti[p.atletaId] = (
+        presente: c.presente + (contaComePresente(p.stato) ? 1 : 0),
+        inRitardo: c.inRitardo + (p.stato == statoRitardo ? 1 : 0),
+        assente: c.assente + (p.stato == statoAssente ? 1 : 0),
+        // Qualunque altro stato (giustificato) come prima.
+        giustificato:
+            c.giustificato +
+            (contaComePresente(p.stato) || p.stato == statoAssente ? 0 : 1),
+      );
     }
     return conti;
   }
 
-  int? _percentuale(({int presente, int assente, int giustificato})? c) {
+  int? _percentuale(_ContiPresenze? c) {
     if (c == null) return null;
     final totale = c.presente + c.assente + c.giustificato;
     return totale == 0 ? null : (c.presente * 100 / totale).round();
@@ -410,7 +412,7 @@ class StrumentiAssistente {
     final volumi = await fonte.volumi();
     final presenti = <String, int>{};
     for (final p in await fonte.presenze()) {
-      if (p.stato == 'presente') {
+      if (contaComePresente(p.stato)) {
         presenti[p.allenamentoId] = (presenti[p.allenamentoId] ?? 0) + 1;
       }
     }

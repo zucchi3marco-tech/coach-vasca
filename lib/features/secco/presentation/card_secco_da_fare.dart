@@ -15,6 +15,7 @@ import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../presenze/application/presenze_providers.dart';
+import '../../presenze/domain/presenza.dart';
 import '../application/secco_providers.dart';
 import '../domain/serie_fatta.dart';
 import 'seduta_secco_atleta_screen.dart';
@@ -91,7 +92,7 @@ class CardSeccoDaFare extends ConsumerWidget {
         for (final p
             in ref.watch(presenzePerAtletaProvider(atleta.id)).value ??
                 const [])
-          if (p.stato != 'presente') p.allenamentoId,
+          if (!contaComePresente(p.stato)) p.allenamentoId,
       },
       finite: {
         for (final r

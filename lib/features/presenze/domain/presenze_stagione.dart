@@ -7,6 +7,10 @@ import 'presenza.dart';
 /// Come risulta un atleta a un allenamento, nella griglia delle presenze.
 enum StatoPresenza {
   presente,
+
+  /// Arrivato dopo l'inizio: conta come presente (percentuale, di fila),
+  /// ma nella griglia ha il suo segno.
+  inRitardo,
   giustificato,
   assente,
 
@@ -18,11 +22,18 @@ enum StatoPresenza {
   nonSuo,
 }
 
+extension EraPresente on StatoPresenza {
+  /// Presente o in ritardo: c'era (come [contaComePresente]).
+  bool get eraPresente =>
+      this == StatoPresenza.presente || this == StatoPresenza.inRitardo;
+}
+
 class RigaPresenze {
   const RigaPresenze({
     required this.atleta,
     required this.stati,
     required this.presenti,
+    this.inRitardo = 0,
     required this.suoi,
     required this.diFila,
   });
@@ -32,7 +43,12 @@ class RigaPresenze {
   /// Uno per allenamento di [PresenzeStagione.allenamenti], nello stesso
   /// ordine.
   final List<StatoPresenza> stati;
+
+  /// Le volte che c'era, in ritardo comprese.
   final int presenti;
+
+  /// Di quelle, le volte che è arrivato in ritardo.
+  final int inRitardo;
 
   /// Gli allenamenti del periodo che lo riguardano.
   final int suoi;
@@ -123,9 +139,10 @@ PresenzeStagione presenzeStagione({
           StatoPresenza.nonSuo
         else
           switch (statoPer[(atleta.id, a.id)]) {
-            'presente' => StatoPresenza.presente,
-            'giustificato' => StatoPresenza.giustificato,
-            'assente' => StatoPresenza.assente,
+            statoPresente => StatoPresenza.presente,
+            statoRitardo => StatoPresenza.inRitardo,
+            statoGiustificato => StatoPresenza.giustificato,
+            statoAssente => StatoPresenza.assente,
             _ => StatoPresenza.nonSegnato,
           },
     ];
@@ -139,7 +156,7 @@ PresenzeStagione presenzeStagione({
               !segnati.contains(delPeriodo[i].id))) {
         continue;
       }
-      if (stato != StatoPresenza.presente) break;
+      if (!stato.eraPresente) break;
       diFila++;
     }
 
@@ -147,7 +164,8 @@ PresenzeStagione presenzeStagione({
       RigaPresenze(
         atleta: atleta,
         stati: stati,
-        presenti: stati.where((s) => s == StatoPresenza.presente).length,
+        presenti: stati.where((s) => s.eraPresente).length,
+        inRitardo: stati.where((s) => s == StatoPresenza.inRitardo).length,
         suoi: stati.where((s) => s != StatoPresenza.nonSuo).length,
         diFila: diFila,
       ),
@@ -169,7 +187,7 @@ PresenzeStagione presenzeStagione({
   final presentiTotali = presenze
       .where(
         (p) =>
-            p.stato == 'presente' &&
+            contaComePresente(p.stato) &&
             atletiIds.contains(p.atletaId) &&
             conPresenze.contains(p.allenamentoId),
       )
