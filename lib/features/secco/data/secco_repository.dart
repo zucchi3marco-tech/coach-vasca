@@ -14,8 +14,10 @@ import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/utils/date_format.dart';
 import '../../../core/utils/giorni.dart';
+import '../../allenamenti/domain/destinatari.dart';
 import '../domain/esercizio_secco.dart';
 import '../domain/programma_secco.dart';
+import '../domain/varianti_secco.dart';
 
 const _uuid = Uuid();
 
@@ -71,22 +73,32 @@ class SeccoRepository {
     carico: r.carico,
     recuperoS: r.recuperoS,
     note: r.note,
+    varianteDi: r.varianteDi,
+    destinatari: Destinatari.daCampi(
+      soloAtleti: r.soloAtletiJson,
+      tranneAtleti: r.tranneAtletiJson,
+    ),
   );
 
-  EserciziSedutaTableCompanion _rigaDaMap(Map<String, dynamic> m) =>
-      EserciziSedutaTableCompanion.insert(
-        id: m['id'] as String,
-        allenamentoId: m['allenamento_id'] as String,
-        clubId: m['club_id'] as String,
-        esercizioId: m['esercizio_id'] as String,
-        ordine: (m['ordine'] as num).toInt(),
-        serie: Value((m['serie'] as num?)?.toInt() ?? 3),
-        ripetizioni: Value((m['ripetizioni'] as num?)?.toInt()),
-        durataS: Value((m['durata_s'] as num?)?.toInt()),
-        carico: Value(m['carico'] as String?),
-        recuperoS: Value((m['recupero_s'] as num?)?.toInt()),
-        note: Value(m['note'] as String?),
-      );
+  EserciziSedutaTableCompanion _rigaDaMap(Map<String, dynamic> m) {
+    final riga = EsercizioSeduta.fromMap(m);
+    return EserciziSedutaTableCompanion.insert(
+      id: riga.id,
+      allenamentoId: riga.allenamentoId,
+      clubId: riga.clubId,
+      esercizioId: riga.esercizioId,
+      ordine: riga.ordine,
+      serie: Value(riga.serie),
+      ripetizioni: Value(riga.ripetizioni),
+      durataS: Value(riga.durataS),
+      carico: Value(riga.carico),
+      recuperoS: Value(riga.recuperoS),
+      note: Value(riga.note),
+      varianteDi: Value(riga.varianteDi),
+      soloAtletiJson: Value(riga.destinatari.soloAtletiJson),
+      tranneAtletiJson: Value(riga.destinatari.tranneAtletiJson),
+    );
+  }
 
   /// Scrive una riga (insert o update) sul server o, senza rete, sul
   /// telefono e in coda. [locale] la rimette nella copia locale da una
@@ -333,24 +345,7 @@ class SeccoRepository {
           .select()
           .eq('allenamento_id', allenamentoId)
           .order('ordine', ascending: true);
-      return [
-        for (final r in righe)
-          _rigaDaRiga(
-            EserciziSedutaTableData(
-              id: r['id'] as String,
-              allenamentoId: r['allenamento_id'] as String,
-              clubId: r['club_id'] as String,
-              esercizioId: r['esercizio_id'] as String,
-              ordine: (r['ordine'] as num).toInt(),
-              serie: (r['serie'] as num?)?.toInt() ?? 3,
-              ripetizioni: (r['ripetizioni'] as num?)?.toInt(),
-              durataS: (r['durata_s'] as num?)?.toInt(),
-              carico: r['carico'] as String?,
-              recuperoS: (r['recupero_s'] as num?)?.toInt(),
-              note: r['note'] as String?,
-            ),
-          ),
-      ];
+      return [for (final r in righe) EsercizioSeduta.fromMap(r)];
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
       return watchSeduta(allenamentoId).first;
@@ -373,10 +368,12 @@ class SeccoRepository {
       .into(_db.eserciziSedutaTable)
       .insertOnConflictUpdate(_rigaDaMap(riga));
 
-  /// Aggiunge un esercizio in fondo alla seduta.
-  Future<void> aggiungiAllaSeduta(EsercizioSeduta riga) async {
+  /// Aggiunge un esercizio alla seduta (al suo [EsercizioSeduta.ordine]),
+  /// con l'id della [riga] se c'è, se no uno nuovo; restituisce l'id.
+  Future<String> aggiungiAllaSeduta(EsercizioSeduta riga) async {
+    final id = riga.id.isEmpty ? _uuid.v4() : riga.id;
     final payload = {
-      'id': _uuid.v4(),
+      'id': id,
       'allenamento_id': riga.allenamentoId,
       'club_id': riga.clubId,
       'esercizio_id': riga.esercizioId,
@@ -389,6 +386,7 @@ class SeccoRepository {
       completa: (p) => p,
       locale: _salvaRigaLocale,
     );
+    return id;
   }
 
   Future<void> aggiornaRiga(EsercizioSeduta riga) async {
@@ -407,46 +405,133 @@ class SeccoRepository {
     );
   }
 
+  /// Toglie un esercizio dalla seduta, con le sue varianti (sul server le
+  /// toglie la chiave esterna) e le serie fatte di entrambi.
   Future<void> eliminaRiga(String id) async {
     await _elimina('esercizi_seduta', id);
+    final varianti = await (_db.select(
+      _db.eserciziSedutaTable,
+    )..where((t) => t.varianteDi.equals(id))).get();
+    final righe = {id, for (final v in varianti) v.id};
     await (_db.delete(
       _db.eserciziSedutaTable,
-    )..where((t) => t.id.equals(id))).go();
+    )..where((t) => t.id.isIn(righe))).go();
     // Sul server se ne vanno anche le serie fatte dagli atleti.
     await (_db.delete(
       _db.serieSeccoFatteTable,
-    )..where((t) => t.rigaId.equals(id))).go();
+    )..where((t) => t.rigaId.isIn(righe))).go();
   }
 
-  /// Rinumera da 1 nell'ordine dato, scrivendo solo le righe che cambiano.
-  Future<void> riordina(List<EsercizioSeduta> ordinate) async {
+  /// Rinumera da 1 gli esercizi di tutti nell'ordine dato, scrivendo solo
+  /// le righe che cambiano; le varianti in [tutte] (di solito tutte le
+  /// righe della seduta) seguono il loro esercizio.
+  Future<void> riordina(
+    List<EsercizioSeduta> ordinate, {
+    Iterable<EsercizioSeduta> tutte = const [],
+  }) async {
     for (final (i, r) in ordinate.indexed) {
       if (r.ordine != i + 1) await aggiornaRiga(r.copyWith(ordine: i + 1));
+      for (final v in tutte) {
+        if (v.varianteDi == r.id && v.ordine != i + 1) {
+          await aggiornaRiga(v.copyWith(ordine: i + 1));
+        }
+      }
     }
   }
 
-  /// Copia gli esercizi di una seduta in un'altra (per "Duplica").
+  /// La variante di un esercizio per un atleta (vedi `nuovaVariante`):
+  /// se l'atleta era fra chi non lo fa, ora fa la variante.
+  Future<void> aggiungiVariante(
+    EsercizioSeduta riga,
+    EsercizioSeduta variante,
+  ) async {
+    await aggiungiAllaSeduta(variante);
+    var originale = riga;
+    for (final atleta in variante.destinatari.soloAtleti) {
+      if (originale.destinatari.tranneAtleti.contains(atleta)) {
+        originale = senzaEscluso(originale, atleta);
+      }
+    }
+    if (!identical(originale, riga)) await aggiornaRiga(originale);
+  }
+
+  /// [atletaId] non fa [riga] (un esercizio di tutti): fra gli esclusi, e
+  /// senza più le sue varianti di quell'esercizio. [varianti] sono quelle
+  /// di [riga].
+  Future<void> escludiAtleta(
+    EsercizioSeduta riga,
+    String atletaId, {
+    required Iterable<EsercizioSeduta> varianti,
+  }) async {
+    for (final v in varianti) {
+      await _togliDallaVariante(v, atletaId);
+    }
+    await aggiornaRiga(conEscluso(riga, atletaId));
+  }
+
+  /// [atletaId] torna a fare [riga] come tutti: né escluso né con una
+  /// variante.
+  Future<void> comeTutti(
+    EsercizioSeduta riga,
+    String atletaId, {
+    required Iterable<EsercizioSeduta> varianti,
+  }) async {
+    for (final v in varianti) {
+      await _togliDallaVariante(v, atletaId);
+    }
+    if (riga.destinatari.tranneAtleti.contains(atletaId)) {
+      await aggiornaRiga(senzaEscluso(riga, atletaId));
+    }
+  }
+
+  /// Toglie [atletaId] da una variante: se era solo sua, la variante se ne
+  /// va (con le serie fatte).
+  Future<void> _togliDallaVariante(EsercizioSeduta v, String atletaId) async {
+    final solo = v.destinatari.soloAtleti;
+    if (!solo.contains(atletaId)) return;
+    if (solo.length == 1) {
+      await eliminaRiga(v.id);
+      return;
+    }
+    await aggiornaRiga(
+      v.copyWith(
+        destinatari: Destinatari.solo([
+          for (final id in solo)
+            if (id != atletaId) id,
+        ]),
+      ),
+    );
+  }
+
+  /// Copia gli esercizi di una seduta in un'altra (per "Duplica"), con le
+  /// varianti: ognuna sta sulla copia del suo esercizio. Una variante di
+  /// un esercizio non più nella seduta resta fuori.
   Future<void> copiaSeduta({
     required String daAllenamentoId,
     required String aAllenamentoId,
     required String clubId,
   }) async {
-    for (final (i, r) in (await fetchSeduta(daAllenamentoId)).indexed) {
-      await aggiungiAllaSeduta(
-        EsercizioSeduta(
+    final righe = await fetchSeduta(daAllenamentoId);
+    for (final (i, r) in righePrincipali(righe).indexed) {
+      final id = await aggiungiAllaSeduta(
+        r.copyWith(
           id: '',
           allenamentoId: aAllenamentoId,
           clubId: clubId,
-          esercizioId: r.esercizioId,
           ordine: i + 1,
-          serie: r.serie,
-          ripetizioni: r.ripetizioni,
-          durataS: r.durataS,
-          carico: r.carico,
-          recuperoS: r.recuperoS,
-          note: r.note,
         ),
       );
+      for (final v in variantiDi(r, righe)) {
+        await aggiungiAllaSeduta(
+          v.copyWith(
+            id: '',
+            allenamentoId: aAllenamentoId,
+            clubId: clubId,
+            ordine: i + 1,
+            varianteDi: id,
+          ),
+        );
+      }
     }
   }
 
@@ -456,7 +541,14 @@ class SeccoRepository {
   /// seduta si apre e si registra lo stesso. Senza copia, quelli nella
   /// cache dell'allenatore (la demo, dove allenatore e atleta stanno
   /// sullo stesso telefono); se no l'errore.
-  Future<List<EsercizioSedutaAtleta>> perAtleta(String allenamentoId) async {
+  ///
+  /// [atletaId] (l'atleta collegato) serve solo alla cache
+  /// dell'allenatore, che ha tutte le varianti: ne tiene quelle sue,
+  /// come fa il server.
+  Future<List<EsercizioSedutaAtleta>> perAtleta(
+    String allenamentoId, {
+    String? atletaId,
+  }) async {
     try {
       final righe = (await _client.rpc(
         'esercizi_seduta_atleta',
@@ -483,12 +575,18 @@ class SeccoRepository {
             EsercizioSedutaAtleta.fromMap((r as Map).cast<String, dynamic>()),
         ];
       }
-      final righe =
-          await (_db.select(_db.eserciziSedutaTable)
-                ..where((t) => t.allenamentoId.equals(allenamentoId))
-                ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
-              .get();
-      if (righe.isEmpty) rethrow;
+      final tutte = [
+        for (final r
+            in await (_db.select(_db.eserciziSedutaTable)
+                  ..where((t) => t.allenamentoId.equals(allenamentoId))
+                  ..orderBy([(t) => OrderingTerm.asc(t.ordine)]))
+                .get())
+          _rigaDaRiga(r),
+      ];
+      if (tutte.isEmpty) rethrow;
+      final righe = atletaId == null
+          ? righePrincipali(tutte)
+          : eserciziDellAtleta(tutte, atletaId);
       final esercizi = {
         for (final e
             in await (_db.select(_db.eserciziSeccoTable)..where(
@@ -500,10 +598,7 @@ class SeccoRepository {
       return [
         for (final r in righe)
           if (esercizi[r.esercizioId] case final e?)
-            EsercizioSedutaAtleta(
-              esercizio: e,
-              riga: _rigaDaRiga(r).senzaNote(),
-            ),
+            EsercizioSedutaAtleta(esercizio: e, riga: r.senzaNote()),
       ];
     }
   }

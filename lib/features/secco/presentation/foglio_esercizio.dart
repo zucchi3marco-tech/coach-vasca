@@ -71,12 +71,7 @@ class _FoglioEsercizioState extends State<_FoglioEsercizio> {
     final r = widget.riga;
     try {
       await widget.salva(
-        EsercizioSeduta(
-          id: r.id,
-          allenamentoId: r.allenamentoId,
-          clubId: r.clubId,
-          esercizioId: r.esercizioId,
-          ordine: r.ordine,
+        r.conPrescrizione(
           serie: _serie,
           ripetizioni: _aTempo ? null : _quanto,
           durataS: _aTempo ? _quanto : null,

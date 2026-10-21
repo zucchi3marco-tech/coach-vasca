@@ -255,6 +255,13 @@ class EserciziSedutaTable extends Table {
   IntColumn get recuperoS => integer().nullable()();
   TextColumn get note => text().nullable()();
 
+  /// La variante di un esercizio per alcuni atleti (vedi
+  /// `eserciziDellAtleta`): l'esercizio che sostituisce e per chi (id in
+  /// JSON); chi non fa l'esercizio e basta, sull'esercizio di tutti.
+  TextColumn get varianteDi => text().nullable()();
+  TextColumn get soloAtletiJson => text().nullable()();
+  TextColumn get tranneAtletiJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -278,6 +285,10 @@ class SerieSeccoFatteTable extends Table {
   /// Il carico che aveva scritto l'allenatore quando è stata fatta.
   TextColumn get caricoPrevisto => text().nullable()();
   DateTimeColumn get fattaIl => dateTime()();
+
+  /// Com'è andata la serie: 'facile' | 'giusta' | 'dura'; null se non
+  /// l'ha detto.
+  TextColumn get voto => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

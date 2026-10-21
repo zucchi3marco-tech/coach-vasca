@@ -1,9 +1,31 @@
 import '../../test/domain/massimale.dart';
 import 'esercizio_secco.dart';
 
-/// Una serie a secco fatta, registrata dall'atleta dal suo telefono:
-/// quante ripetizioni (o secondi), con che carico, quando. Il carico
-/// previsto è quello che aveva scritto l'allenatore in quel momento.
+/// Com'è andata una serie a secco, detto durante il recupero (proposta
+/// 12): tre parole che capiscono anche i più piccoli.
+enum VotoSerie {
+  facile('Facile', 'facili'),
+  giusta('Giusta', 'giuste'),
+  dura('Dura', 'dure');
+
+  const VotoSerie(this.etichetta, this.plurale);
+
+  final String etichetta;
+
+  /// "facili", "giuste", "dure".
+  final String plurale;
+
+  /// "facile", "giusta", "dura".
+  String get singolare => etichetta.toLowerCase();
+
+  static VotoSerie? daNome(String? nome) =>
+      values.where((v) => v.name == nome).firstOrNull;
+}
+
+/// Una serie a secco fatta, registrata dall'atleta dal suo telefono (o
+/// dal tablet della squadra): quante ripetizioni (o secondi), con che
+/// carico, quando, e com'è andata. Il carico previsto è quello che aveva
+/// scritto l'allenatore in quel momento.
 class SerieFatta {
   const SerieFatta({
     required this.id,
@@ -18,6 +40,7 @@ class SerieFatta {
     this.durataS,
     this.carico,
     this.caricoPrevisto,
+    this.voto,
   });
 
   final String id;
@@ -35,6 +58,26 @@ class SerieFatta {
   final String? caricoPrevisto;
   final DateTime fattaIl;
 
+  /// Null se l'atleta non l'ha detto.
+  final VotoSerie? voto;
+
+  /// La stessa serie con il [voto] (null: lo toglie).
+  SerieFatta conVoto(VotoSerie? voto) => SerieFatta(
+    id: id,
+    atletaId: atletaId,
+    clubId: clubId,
+    allenamentoId: allenamentoId,
+    rigaId: rigaId,
+    esercizioId: esercizioId,
+    serie: serie,
+    fattaIl: fattaIl,
+    ripetizioni: ripetizioni,
+    durataS: durataS,
+    carico: carico,
+    caricoPrevisto: caricoPrevisto,
+    voto: voto,
+  );
+
   factory SerieFatta.fromMap(Map<String, dynamic> m) => SerieFatta(
     id: m['id'] as String,
     atletaId: m['atleta_id'] as String,
@@ -48,6 +91,7 @@ class SerieFatta {
     carico: m['carico'] as String?,
     caricoPrevisto: m['carico_previsto'] as String?,
     fattaIl: DateTime.parse(m['fatta_il'] as String).toLocal(),
+    voto: VotoSerie.daNome(m['voto'] as String?),
   );
 
   Map<String, dynamic> toPayload() => {
@@ -63,6 +107,7 @@ class SerieFatta {
     'carico': _pieno(carico),
     'carico_previsto': _pieno(caricoPrevisto),
     'fatta_il': fattaIl.toUtc().toIso8601String(),
+    'voto': voto?.name,
   };
 }
 
@@ -172,4 +217,51 @@ String? descriviFatte(List<SerieFatta> fatteRiga, {required bool aTempo}) {
     if (c != null && (carichi.isEmpty || carichi.last != c)) carichi.add(c);
   }
   return [volume, if (carichi.isNotEmpty) carichi.join(' → ')].join(', ');
+}
+
+/// Com'è andato un esercizio, dai voti delle sue serie: "giusta" (una
+/// serie), "tutte giuste", "2 giuste · 1 dura" (da facile a dura). Le
+/// serie senza voto non contano; null se nessuna ha il voto.
+String? descriviVoti(Iterable<SerieFatta> fatteRiga) {
+  final voti = [for (final f in fatteRiga) ?f.voto];
+  if (voti.isEmpty) return null;
+  final conti = {for (final v in VotoSerie.values) v: 0};
+  for (final v in voti) {
+    conti[v] = conti[v]! + 1;
+  }
+  final presenti = [
+    for (final v in VotoSerie.values)
+      if (conti[v]! > 0) v,
+  ];
+  if (presenti.length == 1) {
+    final v = presenti.single;
+    return voti.length == 1 ? v.singolare : 'tutte ${v.plurale}';
+  }
+  return [
+    for (final v in presenti)
+      '${conti[v]} ${conti[v] == 1 ? v.singolare : v.plurale}',
+  ].join(' · ');
+}
+
+/// Le serie dell'ultima volta che l'atleta ha fatto l'esercizio di
+/// [riga] in un'altra seduta (quella con la serie più recente), in
+/// ordine; vuota se non l'ha mai fatto. [precedenti] sono le serie fatte
+/// dall'atleta.
+List<SerieFatta> ultimaVoltaDi(
+  EsercizioSeduta riga,
+  Iterable<SerieFatta> precedenti,
+) {
+  SerieFatta? ultima;
+  for (final p in precedenti) {
+    if (p.esercizioId != riga.esercizioId ||
+        p.allenamentoId == riga.allenamentoId) {
+      continue;
+    }
+    if (ultima == null || p.fattaIl.isAfter(ultima.fattaIl)) ultima = p;
+  }
+  if (ultima == null) return const [];
+  return [
+    for (final p in precedenti)
+      if (p.rigaId == ultima.rigaId) p,
+  ]..sort((a, b) => a.serie.compareTo(b.serie));
 }

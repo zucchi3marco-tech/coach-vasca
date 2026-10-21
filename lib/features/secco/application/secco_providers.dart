@@ -37,10 +37,17 @@ final programmiSeccoProvider =
       );
     });
 
-/// Gli esercizi di una seduta come li vede l'atleta collegato.
+/// Una seduta a secco vista da un atleta (null: l'atleta collegato,
+/// senza saperne l'id).
+typedef SedutaDellAtleta = ({String allenamentoId, String? atletaId});
+
+/// Gli esercizi di una seduta come li vede l'atleta collegato: solo i
+/// suoi, con le sue varianti.
 final eserciziSedutaAtletaProvider = FutureProvider.autoDispose
-    .family<List<EsercizioSedutaAtleta>, String>((ref, allenamentoId) {
-      return ref.read(seccoRepositoryProvider).perAtleta(allenamentoId);
+    .family<List<EsercizioSedutaAtleta>, SedutaDellAtleta>((ref, chiave) {
+      return ref
+          .read(seccoRepositoryProvider)
+          .perAtleta(chiave.allenamentoId, atletaId: chiave.atletaId);
     });
 
 /// Le serie a secco fatte da un atleta, in tutte le sedute: quelle della

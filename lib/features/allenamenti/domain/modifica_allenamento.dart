@@ -1,4 +1,6 @@
 import '../../secco/domain/esercizio_secco.dart';
+import '../../secco/domain/varianti_secco.dart';
+import 'destinatari.dart';
 import 'serie.dart';
 
 /// Una modifica di un allenamento fatta da un altro allenatore, in attesa
@@ -109,22 +111,8 @@ class ModificaAllenamento {
       for (final riga in (prima?['esercizi'] as List<dynamic>? ?? const []))
         Map<String, dynamic>.from(riga as Map),
     ];
-    return [
-      for (final m in righe)
-        EsercizioSeduta(
-          id: m['id'] as String,
-          allenamentoId: m['allenamento_id'] as String,
-          clubId: m['club_id'] as String,
-          esercizioId: m['esercizio_id'] as String,
-          ordine: (m['ordine'] as num).toInt(),
-          serie: (m['serie'] as num?)?.toInt() ?? 3,
-          ripetizioni: (m['ripetizioni'] as num?)?.toInt(),
-          durataS: (m['durata_s'] as num?)?.toInt(),
-          carico: m['carico'] as String?,
-          recuperoS: (m['recupero_s'] as num?)?.toInt(),
-          note: m['note'] as String?,
-        ),
-    ]..sort((a, b) => a.ordine.compareTo(b.ordine));
+    return [for (final m in righe) EsercizioSeduta.fromMap(m)]
+      ..sort((a, b) => a.ordine.compareTo(b.ordine));
   }
 }
 
@@ -200,18 +188,31 @@ List<RigaConfronto> confrontaRighe(List<String> prima, List<String> ora) {
 
 /// Le righe di una seduta a secco per il confronto:
 /// "{nome} {serie}×{ripetizioni o durata} {carico}". [nomi] sono i nomi
-/// degli esercizi del club per id; uno non trovato è "Esercizio".
+/// degli esercizi del club per id; uno non trovato è "Esercizio". Ogni
+/// variante viene dopo il suo esercizio, con per chi è ("Rossi: …"); chi
+/// non fa un esercizio sta fra parentesi ("(tutti tranne Rossi)").
+/// [nomeAtleta] dà il nome breve di un atleta (null: non lo si conosce).
 List<String> righeSecco(
   List<EsercizioSeduta> esercizi,
-  Map<String, String> nomi,
-) {
-  final ordinati = [...esercizi]..sort((a, b) => a.ordine.compareTo(b.ordine));
+  Map<String, String> nomi, {
+  String? Function(String atletaId)? nomeAtleta,
+}) {
+  String riga(EsercizioSeduta e) => [
+    nomi[e.esercizioId] ?? 'Esercizio',
+    '${e.serie}×${e.durataS != null ? formattaSecondi(e.durataS!) : (e.ripetizioni ?? 0)}',
+    if (e.carico != null && e.carico!.trim().isNotEmpty) e.carico!.trim(),
+  ].join(' ');
+  String? perChi(EsercizioSeduta e) => e.destinatari.perTutti
+      ? null
+      : etichettaDestinatari(e.destinatari, nomeAtleta ?? (_) => 'un atleta');
   return [
-    for (final e in ordinati)
-      [
-        nomi[e.esercizioId] ?? 'Esercizio',
-        '${e.serie}×${e.durataS != null ? formattaSecondi(e.durataS!) : (e.ripetizioni ?? 0)}',
-        if (e.carico != null && e.carico!.trim().isNotEmpty) e.carico!.trim(),
-      ].join(' '),
+    for (final e in righePrincipali(esercizi)) ...[
+      switch (perChi(e)) {
+        final chi? => '${riga(e)} (${chi[0].toLowerCase()}${chi.substring(1)})',
+        null => riga(e),
+      },
+      for (final v in variantiDi(e, esercizi))
+        '${perChi(v) ?? 'Variante'}: ${riga(v)}',
+    ],
   ];
 }

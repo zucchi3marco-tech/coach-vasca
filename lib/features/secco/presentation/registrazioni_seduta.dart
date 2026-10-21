@@ -17,6 +17,7 @@ import '../../test/domain/massimale.dart';
 import '../application/secco_providers.dart';
 import '../domain/esercizio_secco.dart';
 import '../domain/serie_fatta.dart';
+import '../domain/varianti_secco.dart';
 
 /// Nella seduta a secco dell'allenatore, sotto gli esercizi: chi l'ha
 /// registrata dal telefono, con le serie fatte e quanto è stata dura; un
@@ -72,8 +73,13 @@ class RegistrazioniSeduta extends ConsumerWidget {
     final ordine = perAtleta.keys.toList()
       ..sort((a, b) => nome(a).toLowerCase().compareTo(nome(b).toLowerCase()));
 
+    // Ognuno con i suoi esercizi: al posto di uno di tutti la sua
+    // variante, senza quelli che non fa.
     String riassunto(String atletaId) {
-      final conto = contaSerie(righe, perAtleta[atletaId]!);
+      final conto = contaSerie(
+        eserciziDellAtleta(righe, atletaId),
+        perAtleta[atletaId]!,
+      );
       return [
         '${conto.fatte} serie su ${conto.totali}',
         if (rpe[atletaId] case final v?) 'RPE $v',
@@ -87,7 +93,9 @@ class RegistrazioniSeduta extends ConsumerWidget {
         TitoloSezione(
           'Registrata dagli atleti',
           conteggio: ordine.length,
-          spiegazione: 'Le serie segnate dal telefono, con il carico usato.',
+          spiegazione:
+              'Le serie segnate dal telefono o dal tablet della squadra, con '
+              'il carico usato.',
         ),
         AppListPanel(
           righe: [
@@ -98,6 +106,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _dettaglio(
                   context,
+                  righeAtleta: eserciziDellAtleta(righe, id),
                   nome: nome(id),
                   riassunto: [
                     riassunto(id).split(' · ').first,
@@ -116,6 +125,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
   /// Cosa ha fatto un atleta, esercizio per esercizio.
   void _dettaglio(
     BuildContext context, {
+    required List<EsercizioSeduta> righeAtleta,
     required String nome,
     required String riassunto,
     required List<SerieFatta> fatte,
@@ -147,7 +157,7 @@ class RegistrazioniSeduta extends ConsumerWidget {
                     .copyWith(color: colori.testoSecondario),
               ),
               const SizedBox(height: AppSpacing.s8),
-              for (final (i, r) in righe.indexed) ...[
+              for (final (i, r) in righeAtleta.indexed) ...[
                 if (i > 0) Divider(height: 1, color: colori.linea),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
@@ -188,6 +198,7 @@ class _RigaFatta extends StatelessWidget {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final fatto = descriviFatte(fatte, aTempo: riga.durataS != null);
+    final voti = descriviVoti(fatte);
     final contate = fatte.where((f) => f.serie <= riga.serie).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,6 +214,7 @@ class _RigaFatta extends StatelessWidget {
               : [
                   fatto,
                   if (contate < riga.serie) '$contate di ${riga.serie} serie',
+                  ?voti,
                 ].join(' · '),
           style: AppTypography.numerica(
             AppTypography.corpo,

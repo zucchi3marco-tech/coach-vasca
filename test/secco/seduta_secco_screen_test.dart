@@ -56,22 +56,11 @@ class _SeccoFinto implements SeccoRepository {
   Future<EsercizioSeduta?> ultimaVolta(String esercizioId) async => null;
 
   @override
-  Future<void> aggiungiAllaSeduta(EsercizioSeduta r) async {
-    righe.add(
-      EsercizioSeduta(
-        id: 'r${righe.length + 1}',
-        allenamentoId: r.allenamentoId,
-        clubId: r.clubId,
-        esercizioId: r.esercizioId,
-        ordine: r.ordine,
-        serie: r.serie,
-        ripetizioni: r.ripetizioni,
-        durataS: r.durataS,
-        carico: r.carico,
-        recuperoS: r.recuperoS,
-      ),
-    );
+  Future<String> aggiungiAllaSeduta(EsercizioSeduta r) async {
+    final id = r.id.isEmpty ? 'r${righe.length + 1}' : r.id;
+    righe.add(r.copyWith(id: id));
     _cambi.add([...righe]);
+    return id;
   }
 
   @override

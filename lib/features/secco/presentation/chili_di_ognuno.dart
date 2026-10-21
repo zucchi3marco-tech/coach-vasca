@@ -15,6 +15,7 @@ import '../../test/application/test_club_providers.dart';
 import '../../test/domain/massimale.dart';
 import '../../test/domain/test_club.dart' show UnitaTest, formattaValore;
 import '../domain/esercizio_secco.dart';
+import '../domain/varianti_secco.dart';
 
 /// Nella seduta a secco dell'allenatore, sotto gli esercizi: per ogni
 /// esercizio con il carico in percentuale ("70%") i chili di ogni atleta
@@ -55,8 +56,20 @@ class ChiliDiOgnuno extends ConsumerWidget {
           a,
     ];
 
-    String nomeDi(EsercizioSeduta r) =>
-        esercizi[r.esercizioId]?.nome ?? 'Esercizio tolto dall\'elenco';
+    String nomeDi(EsercizioSeduta r) => [
+      esercizi[r.esercizioId]?.nome ?? 'Esercizio tolto dall\'elenco',
+      if (r.variante) '(variante)',
+    ].join(' ');
+
+    // Chi fa l'esercizio: di una variante i suoi atleti, di uno di tutti
+    // chi non ne ha una variante e non ne è escluso.
+    List<Atleta> chiLoFa(EsercizioSeduta r) => [
+      for (final a in atleti)
+        if (r.variante
+            ? r.destinatari.soloAtleti.contains(a.id)
+            : identical(cosaFa(r, a.id, righe), r))
+          a,
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,6 +88,7 @@ class ChiliDiOgnuno extends ConsumerWidget {
                 builder: (context) {
                   final p = percentualeDelCarico(r.carico)!;
                   final suoi = massimali[r.esercizioId] ?? const {};
+                  final atleti = chiLoFa(r);
                   final con = atleti.where((a) => suoi.containsKey(a.id));
                   return AppListRow(
                     titolo: nomeDi(r),

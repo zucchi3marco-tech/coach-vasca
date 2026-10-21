@@ -18674,6 +18674,39 @@ class $EserciziSedutaTableTable extends EserciziSedutaTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _varianteDiMeta = const VerificationMeta(
+    'varianteDi',
+  );
+  @override
+  late final GeneratedColumn<String> varianteDi = GeneratedColumn<String>(
+    'variante_di',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _soloAtletiJsonMeta = const VerificationMeta(
+    'soloAtletiJson',
+  );
+  @override
+  late final GeneratedColumn<String> soloAtletiJson = GeneratedColumn<String>(
+    'solo_atleti_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tranneAtletiJsonMeta = const VerificationMeta(
+    'tranneAtletiJson',
+  );
+  @override
+  late final GeneratedColumn<String> tranneAtletiJson = GeneratedColumn<String>(
+    'tranne_atleti_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -18687,6 +18720,9 @@ class $EserciziSedutaTableTable extends EserciziSedutaTable
     carico,
     recuperoS,
     note,
+    varianteDi,
+    soloAtletiJson,
+    tranneAtletiJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -18782,6 +18818,30 @@ class $EserciziSedutaTableTable extends EserciziSedutaTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('variante_di')) {
+      context.handle(
+        _varianteDiMeta,
+        varianteDi.isAcceptableOrUnknown(data['variante_di']!, _varianteDiMeta),
+      );
+    }
+    if (data.containsKey('solo_atleti_json')) {
+      context.handle(
+        _soloAtletiJsonMeta,
+        soloAtletiJson.isAcceptableOrUnknown(
+          data['solo_atleti_json']!,
+          _soloAtletiJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tranne_atleti_json')) {
+      context.handle(
+        _tranneAtletiJsonMeta,
+        tranneAtletiJson.isAcceptableOrUnknown(
+          data['tranne_atleti_json']!,
+          _tranneAtletiJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -18838,6 +18898,18 @@ class $EserciziSedutaTableTable extends EserciziSedutaTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      varianteDi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}variante_di'],
+      ),
+      soloAtletiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}solo_atleti_json'],
+      ),
+      tranneAtletiJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tranne_atleti_json'],
+      ),
     );
   }
 
@@ -18860,6 +18932,13 @@ class EserciziSedutaTableData extends DataClass
   final String? carico;
   final int? recuperoS;
   final String? note;
+
+  /// La variante di un esercizio per alcuni atleti (vedi
+  /// `eserciziDellAtleta`): l'esercizio che sostituisce e per chi (id in
+  /// JSON); chi non fa l'esercizio e basta, sull'esercizio di tutti.
+  final String? varianteDi;
+  final String? soloAtletiJson;
+  final String? tranneAtletiJson;
   const EserciziSedutaTableData({
     required this.id,
     required this.allenamentoId,
@@ -18872,6 +18951,9 @@ class EserciziSedutaTableData extends DataClass
     this.carico,
     this.recuperoS,
     this.note,
+    this.varianteDi,
+    this.soloAtletiJson,
+    this.tranneAtletiJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -18897,6 +18979,15 @@ class EserciziSedutaTableData extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || varianteDi != null) {
+      map['variante_di'] = Variable<String>(varianteDi);
+    }
+    if (!nullToAbsent || soloAtletiJson != null) {
+      map['solo_atleti_json'] = Variable<String>(soloAtletiJson);
+    }
+    if (!nullToAbsent || tranneAtletiJson != null) {
+      map['tranne_atleti_json'] = Variable<String>(tranneAtletiJson);
+    }
     return map;
   }
 
@@ -18921,6 +19012,15 @@ class EserciziSedutaTableData extends DataClass
           ? const Value.absent()
           : Value(recuperoS),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      varianteDi: varianteDi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(varianteDi),
+      soloAtletiJson: soloAtletiJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(soloAtletiJson),
+      tranneAtletiJson: tranneAtletiJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tranneAtletiJson),
     );
   }
 
@@ -18941,6 +19041,9 @@ class EserciziSedutaTableData extends DataClass
       carico: serializer.fromJson<String?>(json['carico']),
       recuperoS: serializer.fromJson<int?>(json['recuperoS']),
       note: serializer.fromJson<String?>(json['note']),
+      varianteDi: serializer.fromJson<String?>(json['varianteDi']),
+      soloAtletiJson: serializer.fromJson<String?>(json['soloAtletiJson']),
+      tranneAtletiJson: serializer.fromJson<String?>(json['tranneAtletiJson']),
     );
   }
   @override
@@ -18958,6 +19061,9 @@ class EserciziSedutaTableData extends DataClass
       'carico': serializer.toJson<String?>(carico),
       'recuperoS': serializer.toJson<int?>(recuperoS),
       'note': serializer.toJson<String?>(note),
+      'varianteDi': serializer.toJson<String?>(varianteDi),
+      'soloAtletiJson': serializer.toJson<String?>(soloAtletiJson),
+      'tranneAtletiJson': serializer.toJson<String?>(tranneAtletiJson),
     };
   }
 
@@ -18973,6 +19079,9 @@ class EserciziSedutaTableData extends DataClass
     Value<String?> carico = const Value.absent(),
     Value<int?> recuperoS = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<String?> varianteDi = const Value.absent(),
+    Value<String?> soloAtletiJson = const Value.absent(),
+    Value<String?> tranneAtletiJson = const Value.absent(),
   }) => EserciziSedutaTableData(
     id: id ?? this.id,
     allenamentoId: allenamentoId ?? this.allenamentoId,
@@ -18985,6 +19094,13 @@ class EserciziSedutaTableData extends DataClass
     carico: carico.present ? carico.value : this.carico,
     recuperoS: recuperoS.present ? recuperoS.value : this.recuperoS,
     note: note.present ? note.value : this.note,
+    varianteDi: varianteDi.present ? varianteDi.value : this.varianteDi,
+    soloAtletiJson: soloAtletiJson.present
+        ? soloAtletiJson.value
+        : this.soloAtletiJson,
+    tranneAtletiJson: tranneAtletiJson.present
+        ? tranneAtletiJson.value
+        : this.tranneAtletiJson,
   );
   EserciziSedutaTableData copyWithCompanion(EserciziSedutaTableCompanion data) {
     return EserciziSedutaTableData(
@@ -19005,6 +19121,15 @@ class EserciziSedutaTableData extends DataClass
       carico: data.carico.present ? data.carico.value : this.carico,
       recuperoS: data.recuperoS.present ? data.recuperoS.value : this.recuperoS,
       note: data.note.present ? data.note.value : this.note,
+      varianteDi: data.varianteDi.present
+          ? data.varianteDi.value
+          : this.varianteDi,
+      soloAtletiJson: data.soloAtletiJson.present
+          ? data.soloAtletiJson.value
+          : this.soloAtletiJson,
+      tranneAtletiJson: data.tranneAtletiJson.present
+          ? data.tranneAtletiJson.value
+          : this.tranneAtletiJson,
     );
   }
 
@@ -19021,7 +19146,10 @@ class EserciziSedutaTableData extends DataClass
           ..write('durataS: $durataS, ')
           ..write('carico: $carico, ')
           ..write('recuperoS: $recuperoS, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('varianteDi: $varianteDi, ')
+          ..write('soloAtletiJson: $soloAtletiJson, ')
+          ..write('tranneAtletiJson: $tranneAtletiJson')
           ..write(')'))
         .toString();
   }
@@ -19039,6 +19167,9 @@ class EserciziSedutaTableData extends DataClass
     carico,
     recuperoS,
     note,
+    varianteDi,
+    soloAtletiJson,
+    tranneAtletiJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -19054,7 +19185,10 @@ class EserciziSedutaTableData extends DataClass
           other.durataS == this.durataS &&
           other.carico == this.carico &&
           other.recuperoS == this.recuperoS &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.varianteDi == this.varianteDi &&
+          other.soloAtletiJson == this.soloAtletiJson &&
+          other.tranneAtletiJson == this.tranneAtletiJson);
 }
 
 class EserciziSedutaTableCompanion
@@ -19070,6 +19204,9 @@ class EserciziSedutaTableCompanion
   final Value<String?> carico;
   final Value<int?> recuperoS;
   final Value<String?> note;
+  final Value<String?> varianteDi;
+  final Value<String?> soloAtletiJson;
+  final Value<String?> tranneAtletiJson;
   final Value<int> rowid;
   const EserciziSedutaTableCompanion({
     this.id = const Value.absent(),
@@ -19083,6 +19220,9 @@ class EserciziSedutaTableCompanion
     this.carico = const Value.absent(),
     this.recuperoS = const Value.absent(),
     this.note = const Value.absent(),
+    this.varianteDi = const Value.absent(),
+    this.soloAtletiJson = const Value.absent(),
+    this.tranneAtletiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EserciziSedutaTableCompanion.insert({
@@ -19097,6 +19237,9 @@ class EserciziSedutaTableCompanion
     this.carico = const Value.absent(),
     this.recuperoS = const Value.absent(),
     this.note = const Value.absent(),
+    this.varianteDi = const Value.absent(),
+    this.soloAtletiJson = const Value.absent(),
+    this.tranneAtletiJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        allenamentoId = Value(allenamentoId),
@@ -19115,6 +19258,9 @@ class EserciziSedutaTableCompanion
     Expression<String>? carico,
     Expression<int>? recuperoS,
     Expression<String>? note,
+    Expression<String>? varianteDi,
+    Expression<String>? soloAtletiJson,
+    Expression<String>? tranneAtletiJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -19129,6 +19275,9 @@ class EserciziSedutaTableCompanion
       if (carico != null) 'carico': carico,
       if (recuperoS != null) 'recupero_s': recuperoS,
       if (note != null) 'note': note,
+      if (varianteDi != null) 'variante_di': varianteDi,
+      if (soloAtletiJson != null) 'solo_atleti_json': soloAtletiJson,
+      if (tranneAtletiJson != null) 'tranne_atleti_json': tranneAtletiJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -19145,6 +19294,9 @@ class EserciziSedutaTableCompanion
     Value<String?>? carico,
     Value<int?>? recuperoS,
     Value<String?>? note,
+    Value<String?>? varianteDi,
+    Value<String?>? soloAtletiJson,
+    Value<String?>? tranneAtletiJson,
     Value<int>? rowid,
   }) {
     return EserciziSedutaTableCompanion(
@@ -19159,6 +19311,9 @@ class EserciziSedutaTableCompanion
       carico: carico ?? this.carico,
       recuperoS: recuperoS ?? this.recuperoS,
       note: note ?? this.note,
+      varianteDi: varianteDi ?? this.varianteDi,
+      soloAtletiJson: soloAtletiJson ?? this.soloAtletiJson,
+      tranneAtletiJson: tranneAtletiJson ?? this.tranneAtletiJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -19199,6 +19354,15 @@ class EserciziSedutaTableCompanion
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (varianteDi.present) {
+      map['variante_di'] = Variable<String>(varianteDi.value);
+    }
+    if (soloAtletiJson.present) {
+      map['solo_atleti_json'] = Variable<String>(soloAtletiJson.value);
+    }
+    if (tranneAtletiJson.present) {
+      map['tranne_atleti_json'] = Variable<String>(tranneAtletiJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -19219,6 +19383,9 @@ class EserciziSedutaTableCompanion
           ..write('carico: $carico, ')
           ..write('recuperoS: $recuperoS, ')
           ..write('note: $note, ')
+          ..write('varianteDi: $varianteDi, ')
+          ..write('soloAtletiJson: $soloAtletiJson, ')
+          ..write('tranneAtletiJson: $tranneAtletiJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -19829,6 +19996,15 @@ class $SerieSeccoFatteTableTable extends SerieSeccoFatteTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _votoMeta = const VerificationMeta('voto');
+  @override
+  late final GeneratedColumn<String> voto = GeneratedColumn<String>(
+    'voto',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -19843,6 +20019,7 @@ class $SerieSeccoFatteTableTable extends SerieSeccoFatteTable
     carico,
     caricoPrevisto,
     fattaIl,
+    voto,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -19953,6 +20130,12 @@ class $SerieSeccoFatteTableTable extends SerieSeccoFatteTable
     } else if (isInserting) {
       context.missing(_fattaIlMeta);
     }
+    if (data.containsKey('voto')) {
+      context.handle(
+        _votoMeta,
+        voto.isAcceptableOrUnknown(data['voto']!, _votoMeta),
+      );
+    }
     return context;
   }
 
@@ -20013,6 +20196,10 @@ class $SerieSeccoFatteTableTable extends SerieSeccoFatteTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}fatta_il'],
       )!,
+      voto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voto'],
+      ),
     );
   }
 
@@ -20040,6 +20227,10 @@ class SerieSeccoFatteTableData extends DataClass
   /// Il carico che aveva scritto l'allenatore quando è stata fatta.
   final String? caricoPrevisto;
   final DateTime fattaIl;
+
+  /// Com'è andata la serie: 'facile' | 'giusta' | 'dura'; null se non
+  /// l'ha detto.
+  final String? voto;
   const SerieSeccoFatteTableData({
     required this.id,
     required this.atletaId,
@@ -20053,6 +20244,7 @@ class SerieSeccoFatteTableData extends DataClass
     this.carico,
     this.caricoPrevisto,
     required this.fattaIl,
+    this.voto,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -20077,6 +20269,9 @@ class SerieSeccoFatteTableData extends DataClass
       map['carico_previsto'] = Variable<String>(caricoPrevisto);
     }
     map['fatta_il'] = Variable<DateTime>(fattaIl);
+    if (!nullToAbsent || voto != null) {
+      map['voto'] = Variable<String>(voto);
+    }
     return map;
   }
 
@@ -20102,6 +20297,7 @@ class SerieSeccoFatteTableData extends DataClass
           ? const Value.absent()
           : Value(caricoPrevisto),
       fattaIl: Value(fattaIl),
+      voto: voto == null && nullToAbsent ? const Value.absent() : Value(voto),
     );
   }
 
@@ -20123,6 +20319,7 @@ class SerieSeccoFatteTableData extends DataClass
       carico: serializer.fromJson<String?>(json['carico']),
       caricoPrevisto: serializer.fromJson<String?>(json['caricoPrevisto']),
       fattaIl: serializer.fromJson<DateTime>(json['fattaIl']),
+      voto: serializer.fromJson<String?>(json['voto']),
     );
   }
   @override
@@ -20141,6 +20338,7 @@ class SerieSeccoFatteTableData extends DataClass
       'carico': serializer.toJson<String?>(carico),
       'caricoPrevisto': serializer.toJson<String?>(caricoPrevisto),
       'fattaIl': serializer.toJson<DateTime>(fattaIl),
+      'voto': serializer.toJson<String?>(voto),
     };
   }
 
@@ -20157,6 +20355,7 @@ class SerieSeccoFatteTableData extends DataClass
     Value<String?> carico = const Value.absent(),
     Value<String?> caricoPrevisto = const Value.absent(),
     DateTime? fattaIl,
+    Value<String?> voto = const Value.absent(),
   }) => SerieSeccoFatteTableData(
     id: id ?? this.id,
     atletaId: atletaId ?? this.atletaId,
@@ -20172,6 +20371,7 @@ class SerieSeccoFatteTableData extends DataClass
         ? caricoPrevisto.value
         : this.caricoPrevisto,
     fattaIl: fattaIl ?? this.fattaIl,
+    voto: voto.present ? voto.value : this.voto,
   );
   SerieSeccoFatteTableData copyWithCompanion(
     SerieSeccoFatteTableCompanion data,
@@ -20197,6 +20397,7 @@ class SerieSeccoFatteTableData extends DataClass
           ? data.caricoPrevisto.value
           : this.caricoPrevisto,
       fattaIl: data.fattaIl.present ? data.fattaIl.value : this.fattaIl,
+      voto: data.voto.present ? data.voto.value : this.voto,
     );
   }
 
@@ -20214,7 +20415,8 @@ class SerieSeccoFatteTableData extends DataClass
           ..write('durataS: $durataS, ')
           ..write('carico: $carico, ')
           ..write('caricoPrevisto: $caricoPrevisto, ')
-          ..write('fattaIl: $fattaIl')
+          ..write('fattaIl: $fattaIl, ')
+          ..write('voto: $voto')
           ..write(')'))
         .toString();
   }
@@ -20233,6 +20435,7 @@ class SerieSeccoFatteTableData extends DataClass
     carico,
     caricoPrevisto,
     fattaIl,
+    voto,
   );
   @override
   bool operator ==(Object other) =>
@@ -20249,7 +20452,8 @@ class SerieSeccoFatteTableData extends DataClass
           other.durataS == this.durataS &&
           other.carico == this.carico &&
           other.caricoPrevisto == this.caricoPrevisto &&
-          other.fattaIl == this.fattaIl);
+          other.fattaIl == this.fattaIl &&
+          other.voto == this.voto);
 }
 
 class SerieSeccoFatteTableCompanion
@@ -20266,6 +20470,7 @@ class SerieSeccoFatteTableCompanion
   final Value<String?> carico;
   final Value<String?> caricoPrevisto;
   final Value<DateTime> fattaIl;
+  final Value<String?> voto;
   final Value<int> rowid;
   const SerieSeccoFatteTableCompanion({
     this.id = const Value.absent(),
@@ -20280,6 +20485,7 @@ class SerieSeccoFatteTableCompanion
     this.carico = const Value.absent(),
     this.caricoPrevisto = const Value.absent(),
     this.fattaIl = const Value.absent(),
+    this.voto = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SerieSeccoFatteTableCompanion.insert({
@@ -20295,6 +20501,7 @@ class SerieSeccoFatteTableCompanion
     this.carico = const Value.absent(),
     this.caricoPrevisto = const Value.absent(),
     required DateTime fattaIl,
+    this.voto = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        atletaId = Value(atletaId),
@@ -20317,6 +20524,7 @@ class SerieSeccoFatteTableCompanion
     Expression<String>? carico,
     Expression<String>? caricoPrevisto,
     Expression<DateTime>? fattaIl,
+    Expression<String>? voto,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -20332,6 +20540,7 @@ class SerieSeccoFatteTableCompanion
       if (carico != null) 'carico': carico,
       if (caricoPrevisto != null) 'carico_previsto': caricoPrevisto,
       if (fattaIl != null) 'fatta_il': fattaIl,
+      if (voto != null) 'voto': voto,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -20349,6 +20558,7 @@ class SerieSeccoFatteTableCompanion
     Value<String?>? carico,
     Value<String?>? caricoPrevisto,
     Value<DateTime>? fattaIl,
+    Value<String?>? voto,
     Value<int>? rowid,
   }) {
     return SerieSeccoFatteTableCompanion(
@@ -20364,6 +20574,7 @@ class SerieSeccoFatteTableCompanion
       carico: carico ?? this.carico,
       caricoPrevisto: caricoPrevisto ?? this.caricoPrevisto,
       fattaIl: fattaIl ?? this.fattaIl,
+      voto: voto ?? this.voto,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -20407,6 +20618,9 @@ class SerieSeccoFatteTableCompanion
     if (fattaIl.present) {
       map['fatta_il'] = Variable<DateTime>(fattaIl.value);
     }
+    if (voto.present) {
+      map['voto'] = Variable<String>(voto.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -20428,6 +20642,7 @@ class SerieSeccoFatteTableCompanion
           ..write('carico: $carico, ')
           ..write('caricoPrevisto: $caricoPrevisto, ')
           ..write('fattaIl: $fattaIl, ')
+          ..write('voto: $voto, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -30267,6 +30482,9 @@ typedef $$EserciziSedutaTableTableCreateCompanionBuilder =
       Value<String?> carico,
       Value<int?> recuperoS,
       Value<String?> note,
+      Value<String?> varianteDi,
+      Value<String?> soloAtletiJson,
+      Value<String?> tranneAtletiJson,
       Value<int> rowid,
     });
 typedef $$EserciziSedutaTableTableUpdateCompanionBuilder =
@@ -30282,6 +30500,9 @@ typedef $$EserciziSedutaTableTableUpdateCompanionBuilder =
       Value<String?> carico,
       Value<int?> recuperoS,
       Value<String?> note,
+      Value<String?> varianteDi,
+      Value<String?> soloAtletiJson,
+      Value<String?> tranneAtletiJson,
       Value<int> rowid,
     });
 
@@ -30346,6 +30567,21 @@ class $$EserciziSedutaTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get varianteDi => $composableBuilder(
+    column: $table.varianteDi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -30413,6 +30649,21 @@ class $$EserciziSedutaTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get varianteDi => $composableBuilder(
+    column: $table.varianteDi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EserciziSedutaTableTableAnnotationComposer
@@ -30462,6 +30713,21 @@ class $$EserciziSedutaTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get varianteDi => $composableBuilder(
+    column: $table.varianteDi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get soloAtletiJson => $composableBuilder(
+    column: $table.soloAtletiJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tranneAtletiJson => $composableBuilder(
+    column: $table.tranneAtletiJson,
+    builder: (column) => column,
+  );
 }
 
 class $$EserciziSedutaTableTableTableManager
@@ -30518,6 +30784,9 @@ class $$EserciziSedutaTableTableTableManager
                 Value<String?> carico = const Value.absent(),
                 Value<int?> recuperoS = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> varianteDi = const Value.absent(),
+                Value<String?> soloAtletiJson = const Value.absent(),
+                Value<String?> tranneAtletiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EserciziSedutaTableCompanion(
                 id: id,
@@ -30531,6 +30800,9 @@ class $$EserciziSedutaTableTableTableManager
                 carico: carico,
                 recuperoS: recuperoS,
                 note: note,
+                varianteDi: varianteDi,
+                soloAtletiJson: soloAtletiJson,
+                tranneAtletiJson: tranneAtletiJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -30546,6 +30818,9 @@ class $$EserciziSedutaTableTableTableManager
                 Value<String?> carico = const Value.absent(),
                 Value<int?> recuperoS = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> varianteDi = const Value.absent(),
+                Value<String?> soloAtletiJson = const Value.absent(),
+                Value<String?> tranneAtletiJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EserciziSedutaTableCompanion.insert(
                 id: id,
@@ -30559,6 +30834,9 @@ class $$EserciziSedutaTableTableTableManager
                 carico: carico,
                 recuperoS: recuperoS,
                 note: note,
+                varianteDi: varianteDi,
+                soloAtletiJson: soloAtletiJson,
+                tranneAtletiJson: tranneAtletiJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -30886,6 +31164,7 @@ typedef $$SerieSeccoFatteTableTableCreateCompanionBuilder =
       Value<String?> carico,
       Value<String?> caricoPrevisto,
       required DateTime fattaIl,
+      Value<String?> voto,
       Value<int> rowid,
     });
 typedef $$SerieSeccoFatteTableTableUpdateCompanionBuilder =
@@ -30902,6 +31181,7 @@ typedef $$SerieSeccoFatteTableTableUpdateCompanionBuilder =
       Value<String?> carico,
       Value<String?> caricoPrevisto,
       Value<DateTime> fattaIl,
+      Value<String?> voto,
       Value<int> rowid,
     });
 
@@ -30971,6 +31251,11 @@ class $$SerieSeccoFatteTableTableFilterComposer
 
   ColumnFilters<DateTime> get fattaIl => $composableBuilder(
     column: $table.fattaIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voto => $composableBuilder(
+    column: $table.voto,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -31043,6 +31328,11 @@ class $$SerieSeccoFatteTableTableOrderingComposer
     column: $table.fattaIl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get voto => $composableBuilder(
+    column: $table.voto,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SerieSeccoFatteTableTableAnnotationComposer
@@ -31097,6 +31387,9 @@ class $$SerieSeccoFatteTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get fattaIl =>
       $composableBuilder(column: $table.fattaIl, builder: (column) => column);
+
+  GeneratedColumn<String> get voto =>
+      $composableBuilder(column: $table.voto, builder: (column) => column);
 }
 
 class $$SerieSeccoFatteTableTableTableManager
@@ -31154,6 +31447,7 @@ class $$SerieSeccoFatteTableTableTableManager
                 Value<String?> carico = const Value.absent(),
                 Value<String?> caricoPrevisto = const Value.absent(),
                 Value<DateTime> fattaIl = const Value.absent(),
+                Value<String?> voto = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieSeccoFatteTableCompanion(
                 id: id,
@@ -31168,6 +31462,7 @@ class $$SerieSeccoFatteTableTableTableManager
                 carico: carico,
                 caricoPrevisto: caricoPrevisto,
                 fattaIl: fattaIl,
+                voto: voto,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -31184,6 +31479,7 @@ class $$SerieSeccoFatteTableTableTableManager
                 Value<String?> carico = const Value.absent(),
                 Value<String?> caricoPrevisto = const Value.absent(),
                 required DateTime fattaIl,
+                Value<String?> voto = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SerieSeccoFatteTableCompanion.insert(
                 id: id,
@@ -31198,6 +31494,7 @@ class $$SerieSeccoFatteTableTableTableManager
                 carico: carico,
                 caricoPrevisto: caricoPrevisto,
                 fattaIl: fattaIl,
+                voto: voto,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

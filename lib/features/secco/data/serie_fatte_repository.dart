@@ -51,6 +51,7 @@ class SerieFatteRepository {
     carico: r.carico,
     caricoPrevisto: r.caricoPrevisto,
     fattaIl: r.fattaIl,
+    voto: VotoSerie.daNome(r.voto),
   );
 
   SerieSeccoFatteTableCompanion _companion(SerieFatta f) =>
@@ -67,6 +68,7 @@ class SerieFatteRepository {
         carico: Value(f.carico),
         caricoPrevisto: Value(f.caricoPrevisto),
         fattaIl: f.fattaIl,
+        voto: Value(f.voto?.name),
       );
 
   /// Le serie fatte da un atleta, in tutte le sedute.
@@ -155,6 +157,7 @@ class SerieFatteRepository {
       carico: f.carico,
       caricoPrevisto: f.caricoPrevisto,
       fattaIl: f.fattaIl,
+      voto: f.voto,
     );
     final payload = daSalvare.toPayload();
     // Prima sul telefono: la schermata va avanti subito.

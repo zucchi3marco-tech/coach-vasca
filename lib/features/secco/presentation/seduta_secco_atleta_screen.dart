@@ -44,7 +44,10 @@ class SedutaSeccoAtletaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eserciziAsync = ref.watch(
-      eserciziSedutaAtletaProvider(allenamento.id),
+      eserciziSedutaAtletaProvider((
+        allenamentoId: allenamento.id,
+        atletaId: this.atleta?.id,
+      )),
     );
     final esercizi = eserciziAsync.value;
     final atleta = this.atleta;

@@ -7,9 +7,11 @@ import 'package:coach_vasca/features/allenamenti/data/copia_serie.dart';
 import 'package:coach_vasca/features/allenamenti/data/duplicazione_settimana_service.dart';
 import 'package:coach_vasca/features/allenamenti/data/serie_repository.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
+import 'package:coach_vasca/features/allenamenti/domain/destinatari.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
 import 'package:coach_vasca/features/secco/data/secco_repository.dart';
 import 'package:coach_vasca/features/secco/domain/esercizio_secco.dart';
+import 'package:coach_vasca/features/secco/domain/varianti_secco.dart';
 import 'package:coach_vasca/features/stagioni/data/duplicazione_stagione_service.dart';
 import 'package:coach_vasca/features/stagioni/data/stagioni_repository.dart';
 import 'package:coach_vasca/features/stagioni/domain/stagione.dart';
@@ -423,8 +425,13 @@ final Map<String, Object? Function(EsercizioSeduta)> _valoriEsercizio = {
   'carico': (r) => r.carico,
   'recupero_s': (r) => r.recuperoS,
   'note': (r) => r.note,
+  'variante_di': (r) => r.varianteDi,
+  'solo_atleti_json': (r) => r.destinatari.soloAtletiJson,
+  'tranne_atleti_json': (r) => r.destinatari.tranneAtletiJson,
 };
 
+/// Le varianti (proposta 12) si copiano con la seduta: chi le fa e chi
+/// non fa un esercizio restano uguali.
 const _esercizioCopiate = {
   'esercizio_id',
   'serie',
@@ -433,11 +440,20 @@ const _esercizioCopiate = {
   'carico',
   'recupero_s',
   'note',
+  'solo_atleti_json',
+  'tranne_atleti_json',
 };
 
 /// Rifatte: id nuovo, la seduta di arrivo, la posizione (da 1, nell'ordine
-/// di partenza) e `club_id`, che `copiaSeduta` riceve dal chiamante.
-const _esercizioRifatte = {'id', 'allenamento_id', 'ordine', 'club_id'};
+/// di partenza), `club_id`, che `copiaSeduta` riceve dal chiamante, e di
+/// che esercizio è la variante (la sua copia, nella seduta nuova).
+const _esercizioRifatte = {
+  'id',
+  'allenamento_id',
+  'ordine',
+  'club_id',
+  'variante_di',
+};
 
 // ---------------------------------------------------------------------------
 // Le stagioni
@@ -920,14 +936,33 @@ void main() {
             carico: '4 kg',
             recuperoS: 20,
             note: 'bacino in linea',
+            // Bianchi non lo fa.
+            destinatari: Destinatari(tranneAtleti: ['bianchi']),
           ),
         ];
-        for (final r in righe) {
-          await secco.aggiungiAllaSeduta(r);
-        }
+        final primo = await secco.aggiungiAllaSeduta(righe.first);
+        await secco.aggiungiAllaSeduta(righe.last);
+        // Rossi, con la spalla, fa la sua variante del primo.
+        await secco.aggiungiAllaSeduta(
+          const EsercizioSeduta(
+            id: '',
+            allenamentoId: 'seduta',
+            clubId: 'c1',
+            esercizioId: 'extrarotazione',
+            ordine: 1,
+            serie: 2,
+            ripetizioni: 10,
+            carico: 'elastico giallo',
+            recuperoS: 30,
+            note: 'senza dolore',
+          ).copyWith(
+            varianteDi: primo,
+            destinatari: const Destinatari.solo(['rossi']),
+          ),
+        );
         final originali = await secco.watchSeduta('seduta').first;
-        expect(originali, hasLength(2));
-        for (final nome in _esercizioCopiate) {
+        expect(originali, hasLength(3));
+        for (final nome in {..._esercizioCopiate, 'variante_di'}) {
           expect(
             originali.any((r) => _pieno(_valoriEsercizio[nome]!(r))),
             isTrue,
@@ -942,21 +977,40 @@ void main() {
         );
 
         final copie = await secco.watchSeduta('copia').first;
-        expect(copie, hasLength(2));
-        for (final (i, copia) in copie.indexed) {
+        expect(copie, hasLength(3));
+        void stessiCampi(
+          EsercizioSeduta copia,
+          EsercizioSeduta da,
+          String chi,
+        ) {
           for (final nome in _esercizioCopiate) {
             expect(
               _valoriEsercizio[nome]!(copia),
-              _valoriEsercizio[nome]!(originali[i]),
-              reason:
-                  'colonna «$nome» persa nella copia dell\'esercizio ${i + 1}',
+              _valoriEsercizio[nome]!(da),
+              reason: 'colonna «$nome» persa nella copia di $chi',
             );
           }
-          expect(copia.id, isNot(originali[i].id));
+          expect(copia.id, isNot(da.id));
           expect(copia.allenamentoId, 'copia');
           expect(copia.clubId, 'c1');
+        }
+
+        final principali = righePrincipali(originali);
+        final copiePrincipali = righePrincipali(copie);
+        expect(copiePrincipali, hasLength(2));
+        for (final (i, copia) in copiePrincipali.indexed) {
+          stessiCampi(copia, principali[i], 'esercizio ${i + 1}');
           expect(copia.ordine, i + 1);
         }
+        // La variante sta sulla copia del suo esercizio, non sull'originale.
+        final variante = copie.singleWhere((r) => r.variante);
+        stessiCampi(
+          variante,
+          originali.singleWhere((r) => r.variante),
+          'la variante',
+        );
+        expect(variante.varianteDi, copiePrincipali.first.id);
+        expect(variante.ordine, 1);
       });
     }
   });

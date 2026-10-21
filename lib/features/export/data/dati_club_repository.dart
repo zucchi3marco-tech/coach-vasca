@@ -104,7 +104,7 @@ class DatiClubRepository {
         'esercizi_seduta',
         'Leggo le sedute a secco',
       ))
-        _rigaSeduta(r),
+        EsercizioSeduta.fromMap(r),
     ];
     final serieSeccoFatte = [
       for (final r in await tabella(
@@ -281,20 +281,6 @@ EsercizioSecco _esercizio(Map<String, dynamic> m) => EsercizioSecco(
   archiviato: m['archiviato'] as bool? ?? false,
   videoYoutube: m['video_youtube'] as String?,
   videoDaS: (m['video_da_s'] as num?)?.toInt(),
-);
-
-EsercizioSeduta _rigaSeduta(Map<String, dynamic> m) => EsercizioSeduta(
-  id: m['id'] as String,
-  allenamentoId: m['allenamento_id'] as String,
-  clubId: m['club_id'] as String,
-  esercizioId: m['esercizio_id'] as String,
-  ordine: (m['ordine'] as num).toInt(),
-  serie: (m['serie'] as num?)?.toInt() ?? 3,
-  ripetizioni: (m['ripetizioni'] as num?)?.toInt(),
-  durataS: (m['durata_s'] as num?)?.toInt(),
-  carico: m['carico'] as String?,
-  recuperoS: (m['recupero_s'] as num?)?.toInt(),
-  note: m['note'] as String?,
 );
 
 RefertoPartita _referto(Map<String, dynamic> m) => RefertoPartita(

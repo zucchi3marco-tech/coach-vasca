@@ -1,3 +1,4 @@
+import '../../allenamenti/domain/destinatari.dart';
 import '../../test/domain/massimale.dart';
 
 /// Per che cosa è un esercizio a secco: la prevenzione della spalla prima
@@ -103,6 +104,12 @@ class EsercizioSecco {
 
 /// Un esercizio dentro una seduta a secco: quante serie, ripetizioni o
 /// tempo, con che carico ("8 kg", "elastico rosso"), quanto recupero.
+///
+/// Una variante (proposta 12) è un esercizio della seduta con
+/// [varianteDi] (l'esercizio di tutti che sostituisce) e per alcuni
+/// atleti ([destinatari], solo nomi); su un esercizio di tutti i
+/// [destinatari] dicono chi non lo fa e basta (solo esclusi). Chi fa che
+/// cosa: `eserciziDellAtleta`.
 class EsercizioSeduta {
   const EsercizioSeduta({
     required this.id,
@@ -116,7 +123,29 @@ class EsercizioSeduta {
     this.carico,
     this.recuperoS,
     this.note,
+    this.varianteDi,
+    this.destinatari = Destinatari.tutti,
   });
+
+  /// Dalla riga del database (`esercizi_seduta`).
+  factory EsercizioSeduta.fromMap(Map<String, dynamic> m) => EsercizioSeduta(
+    id: m['id'] as String,
+    allenamentoId: m['allenamento_id'] as String,
+    clubId: m['club_id'] as String,
+    esercizioId: m['esercizio_id'] as String,
+    ordine: (m['ordine'] as num).toInt(),
+    serie: (m['serie'] as num?)?.toInt() ?? 3,
+    ripetizioni: (m['ripetizioni'] as num?)?.toInt(),
+    durataS: (m['durata_s'] as num?)?.toInt(),
+    carico: m['carico'] as String?,
+    recuperoS: (m['recupero_s'] as num?)?.toInt(),
+    note: m['note'] as String?,
+    varianteDi: m['variante_di'] as String?,
+    destinatari: Destinatari.daCampi(
+      soloAtleti: m['solo_atleti'],
+      tranneAtleti: m['tranne_atleti'],
+    ),
+  );
 
   final String id;
   final String allenamentoId;
@@ -132,6 +161,16 @@ class EsercizioSeduta {
   /// Per l'allenatore: all'atleta non arrivano, come le note delle serie.
   final String? note;
 
+  /// L'esercizio di tutti di cui questo è la variante; null per un
+  /// esercizio di tutti.
+  final String? varianteDi;
+
+  /// Per chi è una variante (solo nomi), o chi non fa un esercizio di
+  /// tutti (solo esclusi). Mai un ruolo.
+  final Destinatari destinatari;
+
+  bool get variante => varianteDi != null;
+
   Map<String, dynamic> toPayload() => {
     'ordine': ordine,
     'serie': serie,
@@ -140,7 +179,39 @@ class EsercizioSeduta {
     'carico': _pieno(carico),
     'recupero_s': recuperoS,
     'note': _pieno(note),
+    'variante_di': varianteDi,
+    'solo_atleti': variante && destinatari.soloAtleti.isNotEmpty
+        ? destinatari.soloAtleti
+        : null,
+    'tranne_atleti': !variante && destinatari.tranneAtleti.isNotEmpty
+        ? destinatari.tranneAtleti
+        : null,
   };
+
+  /// La stessa riga con un'altra prescrizione (dal foglio dell'esercizio):
+  /// chi la fa e di cosa è la variante restano.
+  EsercizioSeduta conPrescrizione({
+    required int serie,
+    required int? ripetizioni,
+    required int? durataS,
+    required String? carico,
+    required int? recuperoS,
+    required String? note,
+  }) => EsercizioSeduta(
+    id: id,
+    allenamentoId: allenamentoId,
+    clubId: clubId,
+    esercizioId: esercizioId,
+    ordine: ordine,
+    serie: serie,
+    ripetizioni: ripetizioni,
+    durataS: durataS,
+    carico: carico,
+    recuperoS: recuperoS,
+    note: note,
+    varianteDi: varianteDi,
+    destinatari: destinatari,
+  );
 
   /// Come la vede l'atleta: senza le note dell'allenatore.
   EsercizioSeduta senzaNote() => EsercizioSeduta(
@@ -156,11 +227,19 @@ class EsercizioSeduta {
     recuperoS: recuperoS,
   );
 
-  EsercizioSeduta copyWith({int? ordine}) => EsercizioSeduta(
-    id: id,
-    allenamentoId: allenamentoId,
-    clubId: clubId,
-    esercizioId: esercizioId,
+  EsercizioSeduta copyWith({
+    String? id,
+    String? allenamentoId,
+    String? clubId,
+    String? esercizioId,
+    int? ordine,
+    String? varianteDi,
+    Destinatari? destinatari,
+  }) => EsercizioSeduta(
+    id: id ?? this.id,
+    allenamentoId: allenamentoId ?? this.allenamentoId,
+    clubId: clubId ?? this.clubId,
+    esercizioId: esercizioId ?? this.esercizioId,
     ordine: ordine ?? this.ordine,
     serie: serie,
     ripetizioni: ripetizioni,
@@ -168,6 +247,8 @@ class EsercizioSeduta {
     carico: carico,
     recuperoS: recuperoS,
     note: note,
+    varianteDi: varianteDi ?? this.varianteDi,
+    destinatari: destinatari ?? this.destinatari,
   );
 }
 
@@ -245,10 +326,12 @@ const secondiPerRipetizione = 3;
 /// Quanto dura una seduta fatta di questi esercizi, in minuti: serie ×
 /// (tempo o ripetizioni × [secondiPerRipetizione]) più i recuperi fra le
 /// serie e mezzo minuto per passare al successivo. Una stima per proporre
-/// la durata, non il carico (quello usa la durata della seduta).
+/// la durata, non il carico (quello usa la durata della seduta). Le
+/// varianti non la allungano: la seduta dura quanto quella di tutti.
 int minutiStimati(Iterable<EsercizioSeduta> esercizi) {
   var secondi = 0;
   for (final e in esercizi) {
+    if (e.variante) continue;
     final lavoro = e.durataS ?? (e.ripetizioni ?? 0) * secondiPerRipetizione;
     secondi += e.serie * lavoro;
     secondi += (e.serie - 1).clamp(0, 99) * (e.recuperoS ?? 0);

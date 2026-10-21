@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -575,6 +575,22 @@ class AppDatabase extends _$AppDatabase {
           if (!await _hasColumn(m, 'serie_table', nome)) {
             await m.addColumn(serieTable, colonna);
           }
+        }
+      }
+      // v46 -> v47: il secco per tutta la squadra (la variante di un
+      // esercizio, il voto di ogni serie).
+      if (from < 47) {
+        for (final (nome, colonna) in [
+          ('variante_di', eserciziSedutaTable.varianteDi),
+          ('solo_atleti_json', eserciziSedutaTable.soloAtletiJson),
+          ('tranne_atleti_json', eserciziSedutaTable.tranneAtletiJson),
+        ]) {
+          if (!await _hasColumn(m, 'esercizi_seduta_table', nome)) {
+            await m.addColumn(eserciziSedutaTable, colonna);
+          }
+        }
+        if (!await _hasColumn(m, 'serie_secco_fatte_table', 'voto')) {
+          await m.addColumn(serieSeccoFatteTable, serieSeccoFatteTable.voto);
         }
       }
     },

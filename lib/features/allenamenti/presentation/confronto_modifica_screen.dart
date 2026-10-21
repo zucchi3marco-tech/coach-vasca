@@ -16,6 +16,7 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/atleti_providers.dart';
+import '../../atleti/domain/abbina_atleta.dart';
 import '../../secco/application/secco_providers.dart';
 import '../application/allenamenti_providers.dart';
 import '../domain/allenamento.dart';
@@ -324,11 +325,26 @@ class _ConfrontoSecco extends ConsumerWidget {
               const [])
         e.id: e.nome,
     };
+    final atleti =
+        ref
+            .watch(
+              atletiListProvider((
+                clubId: allenamento.clubId,
+                includeInactive: true,
+              )),
+            )
+            .value ??
+        const [];
+    String? nomeAtleta(String id) {
+      final atleta = atleti.where((a) => a.id == id).firstOrNull;
+      return atleta == null ? null : nomeBreve(atleta, atleti);
+    }
+
     return _ConfrontoRighe(
       titolo: 'Esercizi',
       righe: confrontaRighe(
-        righeSecco(modifica.eserciziDiPrima(), nomi),
-        righeSecco(righeOra, nomi),
+        righeSecco(modifica.eserciziDiPrima(), nomi, nomeAtleta: nomeAtleta),
+        righeSecco(righeOra, nomi, nomeAtleta: nomeAtleta),
       ),
     );
   }

@@ -842,17 +842,41 @@ class _Fogli {
     final perAllenamento = _raggruppa(
       dati.eserciziSeduta,
       (r) => r.allenamentoId,
-      ordina: (a, b) => a.ordine.compareTo(b.ordine),
+      // Ogni variante subito dopo il suo esercizio (stesso numero).
+      ordina: (a, b) {
+        final perOrdine = a.ordine.compareTo(b.ordine);
+        if (perOrdine != 0) return perOrdine;
+        if (a.variante != b.variante) return a.variante ? 1 : -1;
+        return a.id.compareTo(b.id);
+      },
     );
+    final nomiEsercizi = {
+      for (final r in dati.eserciziSeduta) r.id: _esercizio(r.esercizioId),
+    };
+    String perChi(EsercizioSeduta r) {
+      final chi =
+          etichettaDestinatari(
+            r.destinatari,
+            (id) => _atleti[id]?.nomeCompleto,
+          ) ??
+          'Tutti';
+      return r.variante
+          ? '$chi, al posto di ${nomiEsercizi[r.varianteDi] ?? _eliminato}'
+          : chi;
+    }
+
     return _Foglio(
       nome: 'Secco',
-      contenuto: 'Gli esercizi previsti in ogni seduta a secco.',
+      contenuto:
+          'Gli esercizi previsti in ogni seduta a secco, con le varianti '
+          'per alcuni atleti.',
       titoli: const [
         'Data',
         'Squadra',
         'Seduta',
         'N°',
         'Esercizio',
+        'Per chi',
         'Categoria',
         'Serie',
         'Ripetizioni',
@@ -870,6 +894,7 @@ class _Fogli {
               _testo(_titolo(a)),
               IntCellValue(r.ordine),
               _testo(_esercizio(r.esercizioId)),
+              _testo(perChi(r)),
               _testo(_esercizi[r.esercizioId]?.categoria.etichetta),
               IntCellValue(r.serie),
               _intero(r.ripetizioni),
@@ -897,7 +922,9 @@ class _Fogli {
     );
     return _Foglio(
       nome: 'Secco fatto',
-      contenuto: 'Le serie a secco che gli atleti hanno registrato.',
+      contenuto:
+          'Le serie a secco che gli atleti hanno registrato, dal loro '
+          'telefono o dal tablet della squadra, con com\'è andata.',
       titoli: const [
         'Data',
         'Squadra',
@@ -910,6 +937,7 @@ class _Fogli {
         'Durata (s)',
         'Carico',
         'Carico previsto',
+        'Com\'è andata',
         'Fatta il',
       ],
       righe: [
@@ -927,6 +955,7 @@ class _Fogli {
               _intero(f.durataS),
               _testo(f.carico),
               _testo(f.caricoPrevisto),
+              _testo(f.voto?.etichetta),
               _giornoOra(f.fattaIl),
             ],
       ],
