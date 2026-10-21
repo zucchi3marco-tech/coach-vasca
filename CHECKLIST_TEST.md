@@ -41,6 +41,10 @@ eliminarli senza danni.
 - [ ] A bordo vasca, sotto la serie: **Fatta**, **In parte**, **Saltata**. «In parte» chiede quante ripetute (o minuti, o metri) avete fatto, a bottoni grandi; dopo la scelta si passa alla serie dopo. «Fatta» su una serie in parte la fa diventare fatta tutta.
 - [ ] Nel dettaglio di un allenamento di oggi o già fatto c'è il riquadro **Com'è andata**: «Fatti … di … m», le zone con quanto manca, e **Segna com'è andata** per segnarlo dall'ufficio. Per un allenamento di domani il riquadro non c'è.
 - [ ] **Presenze**: quattro bottoni per atleta (Presente, In ritardo, Assente, Giustificato); chi è in ritardo conta fra i presenti e il riepilogo dice «di cui N in ritardo». Sotto ogni nome le presenze della settimana e del mese; accanto al nome il **pallino del benessere** solo per chi quel giorno stava peggio del solito o aveva un dolore (anche riaprendo l'appello di un giorno passato).
+- [ ] Seduta a secco → **Tablet della squadra**: i nomi del gruppo, prima i presenti; tocchi un nome e registri serie per serie con il suo nome in alto; «Fatto» torna ai nomi, con la spunta. «Indietro» non esce; per uscire si tiene premuto **Esci** e si conferma. Chi ha registrato dal tablet risulta presente.
+- [ ] Durante il recupero di una serie a secco: **Facile**, **Giusta**, **Dura**; la volta dopo, accanto al carico, «L'ultima volta: …». L'allenatore vede i voti in «Registrata dagli atleti».
+- [ ] Seduta a secco → ⋮ di un esercizio → **Variante per un atleta**: un altro esercizio, lo stesso più leggero o «Non lo fa». Sotto l'esercizio compare «Rossi: …»; l'atleta vede solo il suo (anche sul tablet). Se qualcuno ha segnato male alla spalla, sopra gli esercizi c'è «Prepara la variante».
+- [ ] Un atleta → **Forma e carico**: sotto l'ACWR «Quanto è varia la settimana» con la monotonia e lo strain; toccando una settimana passata nel grafico, la sua monotonia. In «Benessere della squadra» la monotonia è in giallo sopra 2.
 
 ### Stagioni e calendario
 - [ ] «Nuova stagione»: **non** chiede il nome né il gruppo; c'è «Campionato», la **Categoria** (sola lettura) e le date.

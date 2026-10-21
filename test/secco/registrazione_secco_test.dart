@@ -984,10 +984,10 @@ void main() {
 
         await tester.tap(find.text('Fatta'));
         await tester.pump();
-        // L'avviso «Serie segnata» sparisce da solo dopo 4 secondi.
         await tester.pump(const Duration(milliseconds: 500));
-        await tester.pump(const Duration(seconds: 5));
-        await tester.pump(const Duration(milliseconds: 500));
+        // Si vota subito, con l'avviso «Serie segnata» ancora in basso: il
+        // voto sta sopra il conto alla rovescia e l'avviso non lo copre.
+        expect(find.textContaining('segnata'), findsOneWidget);
         expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
         await tester.tap(find.text('Facile'));
         await tester.pump(const Duration(milliseconds: 50));

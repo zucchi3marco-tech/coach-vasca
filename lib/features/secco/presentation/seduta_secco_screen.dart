@@ -20,9 +20,9 @@ import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/duplicazione_settimana_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/variante_spalla.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
 import '../../allenamenti/presentation/banner_modifica.dart';
-import '../../allenamenti/domain/variante_spalla.dart';
 import '../../allenamenti/presentation/duplica_allenamento_dialog.dart';
 import '../../allenamenti/presentation/per_chi_serie.dart';
 import '../../atleti/application/atleti_providers.dart';
@@ -45,6 +45,7 @@ import 'registrazioni_seduta.dart';
 import 'scegli_esercizi_screen.dart';
 import 'scelte_variante.dart';
 import 'secco_widgets.dart';
+import 'tablet_squadra_screen.dart';
 import 'variante_atleta_screen.dart';
 import 'varianti_nella_seduta.dart';
 
@@ -426,6 +427,14 @@ class SedutaSeccoScreen extends ConsumerWidget {
               principale: true,
               onTap: () => _apri(context, PresenzeScreen(allenamento: a)),
             ),
+            // Per chi non ha il telefono: registra dal tablet del club.
+            if (principali.isNotEmpty)
+              AzioneTestata(
+                icona: Icons.tablet_android_outlined,
+                etichetta: 'Tablet della squadra',
+                onTap: () =>
+                    _apri(context, TabletSquadraScreen(allenamento: a)),
+              ),
             if (programma != null)
               AzioneTestata(
                 icona: Icons.event_repeat,

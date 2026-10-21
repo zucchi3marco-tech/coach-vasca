@@ -44,6 +44,12 @@ Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al 
 - [ ] Nell'appello segna qualcuno **In ritardo**: nella sua dashboard le presenze non devono scendere.
 - [ ] Chiedi all'**assistente** «quanti erano in ritardo questa settimana?»: deve rispondere con un numero, senza nomi.
 
+## 0septies. Il secco per tutta la squadra (da pubblicare)
+
+- [ ] In palestra apri la seduta a secco su un tablet o un telefono del club → **Tablet della squadra**. Fai registrare due atleti senza telefono, poi esci tenendo premuto **Esci**. Nella seduta, in «Registrata dagli atleti», devono esserci tutti e due, con i voti delle serie, e nelle presenze devono risultare presenti.
+- [ ] Quando un atleta segna male alla spalla, apri la sua prossima seduta a secco → **Prepara la variante**. Chiedigli di aprire la seduta dal suo telefono: deve vedere il suo esercizio, non quello di tutti.
+- [ ] Dopo due settimane di sedute vere, guarda **Forma e carico** di un atleta → «Quanto è varia la settimana». Dimmi se la monotonia ti torna con quello che hai visto in vasca.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".

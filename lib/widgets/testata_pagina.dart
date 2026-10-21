@@ -224,17 +224,20 @@ class _PillolaAzione extends StatelessWidget {
               ? null
               : Border.all(color: AcquaPalette.bianco.withValues(alpha: 0.28)),
         ),
+        // Un'etichetta lunga con il testo grande va a capo, non esce.
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(azione.icona, size: 18, color: testo),
             const SizedBox(width: 8),
-            Text(
-              azione.etichetta,
-              style: AppTypography.etichetta.copyWith(
-                color: testo,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+            Flexible(
+              child: Text(
+                azione.etichetta,
+                style: AppTypography.etichetta.copyWith(
+                  color: testo,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],

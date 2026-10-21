@@ -1029,6 +1029,13 @@ class _Esercizio extends StatelessWidget {
                         ),
                     ],
                   ),
+                  // Il voto subito sotto le serie, sopra il conto alla
+                  // rovescia: in basso lo coprirebbe l'avviso «Serie
+                  // segnata» con «Annulla».
+                  if (votoSerie != null) ...[
+                    const SizedBox(height: AppSpacing.s16),
+                    votoSerie!,
+                  ],
                   const SizedBox(height: AppSpacing.s24),
                   // Il centro si sfoglia col dito: un esercizio avanti o
                   // indietro.
@@ -1044,10 +1051,6 @@ class _Esercizio extends StatelessWidget {
                       child: Center(child: centro),
                     ),
                   ),
-                  if (votoSerie != null) ...[
-                    const SizedBox(height: AppSpacing.s16),
-                    votoSerie!,
-                  ],
                   const SizedBox(height: AppSpacing.s24),
                   ...azioni,
                 ],

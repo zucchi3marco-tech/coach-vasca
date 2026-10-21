@@ -114,6 +114,8 @@ void main() {
     expect(find.text('Prevenzione spalla'), findsOneWidget);
     expect(find.text('Nessun esercizio'), findsOneWidget);
     expect(find.text("40'"), findsOneWidget);
+    // Senza esercizi il tablet della squadra non serve.
+    expect(find.text('Tablet della squadra'), findsNothing);
     await tester.tap(find.text('Aggiungi esercizi').last);
     await tester.pumpAndSettle();
 
@@ -136,9 +138,10 @@ void main() {
     expect(finto.righe.first.durataS, 40);
     expect(finto.righe.last.ripetizioni, 15);
     expect(find.text('2 esercizi aggiunti'), findsOneWidget);
-    // Di nuovo nella seduta, con gli esercizi.
+    // Di nuovo nella seduta, con gli esercizi e il tablet della squadra.
     expect(find.text("3 × 40'' · recupero 30''"), findsOneWidget);
     expect(find.text("3 × 15 · recupero 45''"), findsOneWidget);
+    expect(find.text('Tablet della squadra'), findsOneWidget);
 
     // Un tocco sull'esercizio: una serie in più e il carico.
     await tester.tap(find.text("3 × 15 · recupero 45''"));
