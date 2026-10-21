@@ -36,14 +36,22 @@ typedef _Voce = ({
 /// quelli del club e quelli pronti, per categoria. Chi apre la pagina li
 /// mette nella seduta, di solito con la prescrizione dell'ultima volta (o
 /// quella dell'esercizio pronto), da cambiare poi con un tocco.
+///
+/// Con [unoSolo] se ne sceglie uno: un tocco sull'esercizio lo consegna
+/// subito (per la variante di un atleta).
 class ScegliEserciziScreen extends ConsumerStatefulWidget {
   const ScegliEserciziScreen({
     required this.clubId,
     required this.aggiungi,
+    this.unoSolo = false,
     super.key,
   });
 
   final String clubId;
+
+  /// Un solo esercizio: niente numeri né pulsante in fondo, un tocco lo
+  /// sceglie.
+  final bool unoSolo;
 
   /// Riceve gli esercizi scelti in ordine (quelli pronti già aggiunti
   /// all'elenco del club) e li mette nella seduta.
@@ -71,43 +79,58 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
         builder: (_) => EsercizioSeccoFormScreen(clubId: widget.clubId),
       ),
     );
-    if (creato != null && mounted) {
+    if (creato == null || !mounted) return;
+    if (widget.unoSolo) {
+      await _consegna(() async => [creato]);
+    } else {
       setState(() => _scelte.add(creato.id));
     }
   }
 
-  Future<void> _aggiungi(Map<String, _Voce> voci) async {
+  /// Aggiunge alla seduta le voci con queste [chiavi] (quelle pronte
+  /// entrano prima nell'elenco del club).
+  Future<void> _aggiungi(Map<String, _Voce> voci, List<String> chiavi) =>
+      _consegna(() async {
+        final repository = ref.read(seccoRepositoryProvider);
+        final scelti = <EsercizioSecco>[];
+        for (final chiave in chiavi) {
+          final voce = voci[chiave];
+          if (voce == null) continue;
+          scelti.add(
+            voce.delClub ??
+                await repository.creaEsercizio(
+                  EsercizioSecco(
+                    id: '',
+                    clubId: widget.clubId,
+                    nome: voce.pronto!.nome,
+                    categoria: voce.pronto!.categoria,
+                    misura: voce.pronto!.misura,
+                    attrezzo: voce.pronto!.attrezzo,
+                    descrizione: voce.pronto!.descrizione,
+                    modello: voce.pronto!.chiave,
+                  ),
+                ),
+          );
+        }
+        return scelti;
+      });
+
+  Future<void> _consegna(
+    Future<List<EsercizioSecco>> Function() prepara,
+  ) async {
     setState(() {
       _aggiungo = true;
       _errore = null;
     });
-    final repository = ref.read(seccoRepositoryProvider);
     final messaggero = ScaffoldMessenger.of(context);
     try {
-      final scelti = <EsercizioSecco>[];
-      for (final chiave in _scelte) {
-        final voce = voci[chiave];
-        if (voce == null) continue;
-        scelti.add(
-          voce.delClub ??
-              await repository.creaEsercizio(
-                EsercizioSecco(
-                  id: '',
-                  clubId: widget.clubId,
-                  nome: voce.pronto!.nome,
-                  categoria: voce.pronto!.categoria,
-                  misura: voce.pronto!.misura,
-                  attrezzo: voce.pronto!.attrezzo,
-                  descrizione: voce.pronto!.descrizione,
-                  modello: voce.pronto!.chiave,
-                ),
-              ),
-        );
-      }
+      final scelti = await prepara();
       await widget.aggiungi(scelti);
       final aggiunti = scelti.length;
       if (!mounted) return;
       Navigator.of(context).pop();
+      // Chi ne sceglie uno solo dice da sé che cosa ne ha fatto.
+      if (widget.unoSolo) return;
       messaggero.showSnackBar(
         SnackBar(
           content: Text(
@@ -148,7 +171,9 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
 
     return AppScaffold(
       appBar: AppBar(
-        title: const Text('Aggiungi esercizi'),
+        title: Text(
+          widget.unoSolo ? 'Scegli un esercizio' : 'Aggiungi esercizi',
+        ),
         actions: [
           IconButton(
             tooltip: 'Nuovo esercizio',
@@ -178,7 +203,9 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
                   padding: const EdgeInsets.only(bottom: AppSpacing.s16),
                   children: [
                     Text(
-                      'Tocca gli esercizi nell\'ordine in cui farli.',
+                      widget.unoSolo
+                          ? 'Tocca l\'esercizio da fare.'
+                          : 'Tocca gli esercizi nell\'ordine in cui farli.',
                       style: AppTypography.corpo.copyWith(
                         color: colori.testoSecondario,
                       ),
@@ -215,7 +242,11 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
                               _RigaScelta(
                                 voce: v,
                                 posizione: _scelte.indexOf(v.chiave) + 1,
-                                onTap: () => _alterna(v.chiave),
+                                onTap: widget.unoSolo
+                                    ? (_aggiungo
+                                          ? null
+                                          : () => _aggiungi(voci, [v.chiave]))
+                                    : () => _alterna(v.chiave),
                                 onComeSiFa:
                                     v.descrizione == null ||
                                         v.descrizione!.trim().isEmpty
@@ -237,23 +268,24 @@ class _ScegliEserciziScreenState extends ConsumerState<ScegliEserciziScreen> {
                 ),
                 const SizedBox(height: AppSpacing.s12),
               ],
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.s8),
-                  child: PrimaryButton(
-                    label: _scelte.isEmpty
-                        ? 'Scegli gli esercizi'
-                        : _scelte.length == 1
-                        ? 'Aggiungi 1 esercizio'
-                        : 'Aggiungi ${_scelte.length} esercizi',
-                    isLoading: _aggiungo,
-                    onPressed: _scelte.isEmpty || _aggiungo
-                        ? null
-                        : () => _aggiungi(voci),
+              if (!widget.unoSolo)
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.s8),
+                    child: PrimaryButton(
+                      label: _scelte.isEmpty
+                          ? 'Scegli gli esercizi'
+                          : _scelte.length == 1
+                          ? 'Aggiungi 1 esercizio'
+                          : 'Aggiungi ${_scelte.length} esercizi',
+                      isLoading: _aggiungo,
+                      onPressed: _scelte.isEmpty || _aggiungo
+                          ? null
+                          : () => _aggiungi(voci, _scelte),
+                    ),
                   ),
                 ),
-              ),
             ],
           );
         },
@@ -314,7 +346,7 @@ class _RigaScelta extends StatelessWidget {
 
   /// Da 1 in su l'ordine nella seduta, 0 se non scelto.
   final int posizione;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onComeSiFa;
 
   @override
