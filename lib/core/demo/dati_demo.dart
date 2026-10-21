@@ -36,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 16;
+const _versioneDati = 17;
 
 /// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
 /// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
@@ -810,7 +810,13 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 durataMin: const Value(40),
               ),
             );
+        // Nelle tre settimane prima di oggi le varianti (proposta 12): il
+        // primo atleta, con la spalla, fa il rematore con l'elastico giallo
+        // al posto dell'YTW; il quinto non fa lo squat al muro. Oggi e
+        // dopo no: chi ha segnato male alla spalla fa vedere la proposta.
+        final conVarianti = d < 0 && d >= -21;
         final righe = <(String, ModelloEsercizio, String?)>[];
+        (String, ModelloEsercizio, String?)? variante;
         for (final (i, (chiave, carico)) in programma.indexed) {
           final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
           final rigaId = uuid.v4();
@@ -829,8 +835,37 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   durataS: Value(m.durataS),
                   carico: Value(carico),
                   recuperoS: Value(m.recuperoS),
+                  tranneAtletiJson: Value(
+                    conVarianti && chiave == 'squat_muro'
+                        ? jsonEncode([atleti[4]])
+                        : null,
+                  ),
                 ),
               );
+          if (conVarianti && chiave == 'ytw_prono') {
+            final r = modelliEsercizi.firstWhere(
+              (m) => m.chiave == 'rematore_elastico',
+            );
+            final varianteId = uuid.v4();
+            variante = (varianteId, r, 'elastico giallo');
+            await db
+                .into(db.eserciziSedutaTable)
+                .insert(
+                  EserciziSedutaTableCompanion.insert(
+                    id: varianteId,
+                    allenamentoId: sedutaId,
+                    clubId: clubId,
+                    esercizioId: esercizi[r.chiave]!,
+                    ordine: i + 1,
+                    serie: const Value(2),
+                    ripetizioni: const Value(12),
+                    carico: const Value('elastico giallo'),
+                    recuperoS: Value(r.recuperoS),
+                    varianteDi: Value(rigaId),
+                    soloAtletiJson: Value(jsonEncode([atleti[0]])),
+                  ),
+                );
+          }
         }
         if (data.isBefore(oggi)) {
           for (var a = 0; a < atleti.length; a++) {
@@ -848,13 +883,31 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 );
             // Le ultime tre settimane: metà dei presenti l'ha registrata
             // dal telefono, uno a metà; i più grandi con l'elastico verde.
+            // Ognuno i suoi esercizi (con la variante), e il voto di quasi
+            // ogni serie: l'ultima più dura.
             if (!presente || d < -21 || a.isOdd) continue;
-            for (final (k, (rigaId, m, carico)) in righe.indexed) {
+            for (final (k, riga) in righe.indexed) {
               if (a == 2 && k >= 3) break;
-              for (var s = 1; s <= m.serie; s++) {
+              if (conVarianti && a == 4 && riga.$2.chiave == 'squat_muro') {
+                continue;
+              }
+              final (
+                rigaId,
+                m,
+                carico,
+              ) = a == 0 && riga.$2.chiave == 'ytw_prono' && variante != null
+                  ? variante
+                  : riga;
+              final quante = rigaId == variante?.$1 ? 2 : m.serie;
+              for (var s = 1; s <= quante; s++) {
+                final voto = a == 6
+                    ? null
+                    : s == quante
+                    ? (a == 0 ? 'dura' : 'giusta')
+                    : (k == 0 && a == 2 ? 'facile' : 'giusta');
                 final usato = carico == null
                     ? null
-                    : a < 4
+                    : a < 4 && rigaId != variante?.$1
                     ? 'elastico verde'
                     : carico;
                 await db
@@ -869,7 +922,9 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                         esercizioId: esercizi[m.chiave]!,
                         serie: s,
                         ripetizioni: Value(
-                          m.ripetizioni == null
+                          rigaId == variante?.$1
+                              ? 12
+                              : m.ripetizioni == null
                               ? null
                               : m.ripetizioni! -
                                     (s == m.serie && a == 6 ? 2 : 0),
@@ -878,6 +933,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                         carico: Value(usato),
                         caricoPrevisto: Value(carico),
                         fattaIl: data.add(Duration(minutes: 3 * k + s)),
+                        voto: Value(voto),
                       ),
                     );
               }
