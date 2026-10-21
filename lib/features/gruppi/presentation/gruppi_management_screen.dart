@@ -17,6 +17,7 @@ import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/presentation/codici_gruppo_screen.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../pallanuoto/presentation/staff_distinta_dialog.dart';
 import '../application/gruppi_providers.dart';
 import '../data/gruppi_repository.dart';
 import '../domain/gruppo.dart';
@@ -106,6 +107,35 @@ class _GruppiManagementScreenState
       await ref
           .read(gruppiRepositoryProvider)
           .updateGruppo(id: gruppo.id, nome: nuovoNome, ordine: gruppo.ordine);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
+  /// Lo staff del modulo della distinta: si scrive una volta qui e vale
+  /// per ogni partita della squadra.
+  Future<void> _staff(Gruppo gruppo) async {
+    final repository = ref.read(gruppiRepositoryProvider);
+    try {
+      final attuale = await repository.staffDellaSquadra(gruppo.id);
+      if (!mounted) return;
+      final nuovo = await chiediStaffDistinta(
+        context,
+        iniziale: attuale,
+        titolo: 'Staff in distinta · ${gruppo.nome}',
+        spiegazione:
+            'Va nel modulo di ogni partita della squadra. Per una sola '
+            'partita lo cambi quando scarichi il modulo.',
+      );
+      if (nuovo == null || nuovo == attuale) return;
+      await repository.aggiornaStaffDellaSquadra(gruppo.id, nuovo);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Staff salvato.')));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -242,6 +272,13 @@ class _GruppiManagementScreenState
                                         value: () => _rinomina(g),
                                         child: const Text('Rinomina'),
                                       ),
+                                      if (g.sport != 'nuoto')
+                                        PopupMenuItem(
+                                          value: () => _staff(g),
+                                          child: const Text(
+                                            'Staff in distinta',
+                                          ),
+                                        ),
                                       PopupMenuItem(
                                         value: () => _elimina(g),
                                         child: Text(

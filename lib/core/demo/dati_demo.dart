@@ -36,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 17;
+const _versioneDati = 18;
 
 /// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
 /// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
@@ -258,6 +258,17 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               nome: nomiGruppi[i],
               ordine: Value(i + 1),
               sport: Value(sport),
+              // Lo staff del modulo della distinta, già scritto per la
+              // prima squadra di pallanuoto.
+              staffDistintaJson: Value(
+                sport == 'pallanuoto' && i == 0
+                    ? '{"tecnico":{"nome":"Ferri Marco","tessera":"100231"},'
+                          '"vice_tecnico":{"nome":"Galli Luca",'
+                          '"tessera":"100847"},'
+                          '"accompagnatore":{"nome":"Conti Paola",'
+                          '"tessera":""}}'
+                    : null,
+              ),
             ),
           );
     }
@@ -1327,7 +1338,10 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 ),
               ),
             );
-        for (var a = 0; a < 11; a++) {
+        // Le distinte delle giocate e della prossima: le altre sono da
+        // fare, per provare "Scegli i convocati" e "Come l'ultima
+        // partita". Portieri all'1 e al 13, capitano e vice.
+        for (var a = 0; a < 11 && giorni <= 7; a++) {
           await db
               .into(db.distintaGiocatoriTable)
               .insert(
@@ -1336,8 +1350,9 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   partitaId: partitaId,
                   atletaId: atleti[a],
                   clubId: clubId,
-                  numeroCalottina: a + 1,
+                  numeroCalottina: a == 10 ? 13 : a + 1,
                   capitano: Value(a == 4),
+                  viceCapitano: Value(a == 8),
                   portiere: Value(a == 0 || a == 10),
                 ),
               );

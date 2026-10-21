@@ -82,12 +82,13 @@ class GruppiRepository {
       );
       _syncEngine.processQueue();
     }
-    await (_db.update(_db.gruppiTable)..where((t) => t.id.equals(gruppoId)))
-        .write(
-          GruppiTableCompanion(
-            staffDistintaJson: Value(jsonEncode(staff.toJson())),
-          ),
-        );
+    await (_db.update(
+      _db.gruppiTable,
+    )..where((t) => t.id.equals(gruppoId))).write(
+      GruppiTableCompanion(
+        staffDistintaJson: Value(jsonEncode(staff.toJson())),
+      ),
+    );
   }
 
   Stream<List<Gruppo>> watchPerClub(String clubId) {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:printing/printing.dart';
 
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
@@ -18,17 +17,18 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
-import '../../gruppi/application/gruppi_providers.dart';
-import '../../gruppi/domain/gruppo.dart';
 import '../../referti/presentation/referto_partita_screen.dart';
 import '../application/pallanuoto_providers.dart';
 import '../data/distinta_repository.dart';
 import '../domain/distinta_giocatore.dart';
 import '../domain/partita.dart';
-import '../pdf/distinta_pdf.dart';
+import 'capitani_distinta.dart';
 import 'convocazione_screen.dart';
 import 'partita_form_screen.dart';
 import 'partita_live_screen.dart';
+import 'riordina_numeri_screen.dart';
+import 'scegli_convocati_screen.dart';
+import 'staff_distinta_dialog.dart';
 import 'statistiche_partita_screen.dart';
 import 'video_partita_screen.dart';
 
@@ -39,25 +39,22 @@ class DistintaScreen extends ConsumerWidget {
 
   final Partita partita;
 
+  /// Il modulo FIN della distinta, in Excel come il foglio del coach.
   Future<void> _esporta(
     BuildContext context,
     WidgetRef ref,
     List<DistintaGiocatore> convocati,
     Map<String, Atleta> atletiPerId,
-  ) async {
-    final righe = [
+  ) => esportaDistintaExcel(
+    context,
+    ref,
+    partita: partita,
+    convocati: [
       for (final g in convocati)
-        (giocatore: g, atleta: atletiPerId[g.atletaId]),
-    ]..removeWhere((r) => r.atleta == null);
-    await Printing.layoutPdf(
-      onLayout: (_) => generaDistintaPdf(
-        partita: partita,
-        convocati: [
-          for (final r in righe) (giocatore: r.giocatore, atleta: r.atleta!),
-        ],
-      ),
-    );
-  }
+        if (atletiPerId[g.atletaId] case final atleta?)
+          (giocatore: g, atleta: atleta),
+    ],
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,14 +68,37 @@ class DistintaScreen extends ConsumerWidget {
         Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => schermata));
 
-    void aggiungiConvocato(List<DistintaGiocatore> esistenti) =>
-        showDialog<void>(
-          context: context,
-          builder: (_) => _DialogSelezionaAtleta(
+    // Tutti i convocati in una pagina: si spuntano e si salva una volta.
+    Future<void> scegliConvocati() async {
+      final salvato = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => ScegliConvocatiScreen(partita: partita),
+        ),
+      );
+      if (salvato == true && context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Distinta salvata.')));
+      }
+    }
+
+    Future<void> riordina(
+      List<DistintaGiocatore> convocati,
+      Map<String, Atleta> atletiPerId,
+    ) async {
+      final salvato = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => RiordinaNumeriScreen(
             partita: partita,
-            convocatiEsistenti: esistenti,
+            convocati: convocati,
+            atletiPerId: atletiPerId,
           ),
-        );
+        ),
+      );
+      if (salvato == true && context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Numeri salvati.')));
+      }
+    }
 
     // La scheda della partita: le azioni del giorno della partita (dal
     // vivo, statistiche, referto) stanno in vista nella testata — prima
@@ -147,14 +167,20 @@ class DistintaScreen extends ConsumerWidget {
                 icona: Icons.groups_outlined,
                 titolo: 'Nessun convocato',
                 descrizione:
-                    'Aggiungi il primo convocato per costruire la '
-                    'distinta di questa partita.',
-                azionePrincipale: 'Aggiungi convocato',
-                onAzionePrincipale: () => aggiungiConvocato(convocati),
+                    'Spunta tutti i convocati in una volta: i numeri '
+                    'arrivano dall\'ultima partita della squadra.',
+                azionePrincipale: 'Scegli i convocati',
+                onAzionePrincipale: scegliConvocati,
               ),
             ];
           }
           return [
+            CapitaniDistinta(
+              partita: partita,
+              convocati: convocati,
+              atletiPerId: atletiPerId,
+            ),
+            const SizedBox(height: AppSpacing.s16),
             AppListPanel(
               righe: [
                 for (final g in convocati)
@@ -167,11 +193,25 @@ class DistintaScreen extends ConsumerWidget {
                       builder: (_) => _DialogModificaConvocato(
                         partita: partita,
                         convocato: g,
+                        convocati: convocati,
+                        atletiPerId: atletiPerId,
                       ),
                     ),
                   ),
               ],
             ),
+            if (convocati.length > 1)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.s8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => riordina(convocati, atletiPerId),
+                    icon: const Icon(Icons.swap_vert),
+                    label: const Text('Riordina i numeri'),
+                  ),
+                ),
+              ),
           ];
         },
         loading: () => const [LoadingSkeletonList(righe: 5)],
@@ -200,8 +240,8 @@ class DistintaScreen extends ConsumerWidget {
         title: const Text('Partita'),
         actions: [
           IconButton(
-            tooltip: 'Esporta distinta',
-            icon: const Icon(Icons.ios_share),
+            tooltip: 'Scarica il modulo della distinta',
+            icon: const Icon(Icons.download_outlined),
             onPressed: () {
               final convocati = distintaAsync.value;
               final atleti = atletiAsync.value;
@@ -234,15 +274,14 @@ class DistintaScreen extends ConsumerWidget {
           ...corpo,
         ],
       ),
+      // Anche a distinta piena: nella stessa pagina si tolgono.
       floatingActionButton: distintaAsync.maybeWhen(
-        data: (convocati) => convocati.length >= partita.numeroMaxConvocati
-            ? null
-            : FloatingActionButton(
-                heroTag: 'fab-distinta',
-                tooltip: 'Aggiungi convocato',
-                onPressed: () => aggiungiConvocato(convocati),
-                child: const Icon(Icons.add),
-              ),
+        data: (_) => FloatingActionButton(
+          heroTag: 'fab-distinta',
+          tooltip: 'Scegli i convocati',
+          onPressed: scegliConvocati,
+          child: const Icon(Icons.group_add_outlined),
+        ),
         orElse: () => null,
       ),
     );
@@ -268,9 +307,8 @@ class _RigaConvocato extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    // Capitano e vice si vedono con la C e la V accanto al nome.
     final ruoli = <String>[
-      if (giocatore.capitano) 'Capitano',
-      if (giocatore.viceCapitano) 'Vice capitano',
       if (giocatore.portiere) 'Portiere',
       if (giocatore.fuoriquota) 'Fuoriquota',
     ];
@@ -303,11 +341,25 @@ class _RigaConvocato extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      atleta?.nomeCompleto ?? 'Atleta rimosso',
-                      style: AppTypography.corpoForte.copyWith(
-                        color: colori.testo,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            atleta?.nomeCompleto ?? 'Atleta rimosso',
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                        ),
+                        if (giocatore.capitano) ...[
+                          const SizedBox(width: AppSpacing.s8),
+                          const SegnoFascia.capitano(),
+                        ],
+                        if (giocatore.viceCapitano) ...[
+                          const SizedBox(width: AppSpacing.s8),
+                          const SegnoFascia.vice(),
+                        ],
+                      ],
                     ),
                     if (tessera != null && tessera.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -346,145 +398,21 @@ class _RigaConvocato extends StatelessWidget {
   }
 }
 
-class _DialogSelezionaAtleta extends ConsumerWidget {
-  const _DialogSelezionaAtleta({
-    required this.partita,
-    required this.convocatiEsistenti,
-  });
-
-  final Partita partita;
-  final List<DistintaGiocatore> convocatiEsistenti;
-
-  /// Il piu' piccolo numero di calottina (da 1 in su) non ancora usato in
-  /// questa distinta: solo un suggerimento di partenza, l'allenatore puo'
-  /// sempre cambiarlo dopo dal dettaglio del convocato.
-  int get _prossimoNumeroLibero {
-    final usati = convocatiEsistenti.map((g) => g.numeroCalottina).toSet();
-    var numero = 1;
-    while (usati.contains(numero)) {
-      numero++;
-    }
-    return numero;
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final atletiAsync = ref.watch(
-      atletiListProvider((clubId: partita.clubId, includeInactive: false)),
-    );
-    final idGiaConvocati = convocatiEsistenti.map((g) => g.atletaId).toSet();
-    return AlertDialog(
-      title: const Text('Aggiungi convocato'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: atletiAsync.when(
-          data: (atleti) {
-            // Prima la squadra della partita, con chi si allena con lei in
-            // giorni fissi; poi gli altri del club.
-            bool dellaSquadra(Atleta a) =>
-                partita.gruppoId == null ||
-                a.gruppoId == partita.gruppoId ||
-                a.altroGruppoId == partita.gruppoId;
-            final disponibili =
-                atleti
-                    .where(
-                      (a) =>
-                          a.sport == 'pallanuoto' &&
-                          !idGiaConvocati.contains(a.id),
-                    )
-                    .toList()
-                  ..sort((a, b) {
-                    final squadra =
-                        (dellaSquadra(a) ? 0 : 1) - (dellaSquadra(b) ? 0 : 1);
-                    return squadra != 0
-                        ? squadra
-                        : a.cognome.compareTo(b.cognome);
-                  });
-            final nomiGruppi = {
-              for (final g
-                  in ref.watch(gruppiListProvider(partita.clubId)).value ??
-                      const <Gruppo>[])
-                g.id: g.nome,
-            };
-            // La squadra di chi non è della squadra della partita.
-            String? daAltraSquadra(Atleta a) =>
-                partita.gruppoId == null ||
-                    a.gruppoId == null ||
-                    a.gruppoId == partita.gruppoId
-                ? null
-                : nomiGruppi[a.gruppoId];
-            if (disponibili.isEmpty) {
-              return Text(
-                'Nessun atleta di pallanuoto disponibile da convocare.',
-                style: AppTypography.corpo.copyWith(
-                  color: context.colori.testo,
-                ),
-              );
-            }
-            return SizedBox(
-              height: 400,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: disponibili.length,
-                itemBuilder: (context, index) {
-                  final atleta = disponibili[index];
-                  return ListTile(
-                    title: Text(atleta.nomeCompleto),
-                    subtitle: switch (daAltraSquadra(atleta)) {
-                      final squadra? => Text(squadra),
-                      null => null,
-                    },
-                    onTap: () async {
-                      final numero = _prossimoNumeroLibero;
-                      Navigator.of(context).pop();
-                      try {
-                        await ref
-                            .read(distintaRepositoryProvider)
-                            .aggiungiConvocato(
-                              partitaId: partita.id,
-                              atletaId: atleta.id,
-                              numeroCalottina: numero,
-                              portiere: atleta.portiere,
-                            );
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Errore nell'aggiunta: ${messaggioErrore(e)}",
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  );
-                },
-              ),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Text(messaggioErrore(error)),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Chiudi'),
-        ),
-      ],
-    );
-  }
-}
-
+/// Numero, portiere e fuoriquota di un convocato. Capitano e vice si
+/// scelgono in cima alla distinta. Se il numero nuovo ce l'ha già un
+/// altro, i due numeri si scambiano.
 class _DialogModificaConvocato extends ConsumerStatefulWidget {
   const _DialogModificaConvocato({
     required this.partita,
     required this.convocato,
+    required this.convocati,
+    required this.atletiPerId,
   });
 
   final Partita partita;
   final DistintaGiocatore convocato;
+  final List<DistintaGiocatore> convocati;
+  final Map<String, Atleta> atletiPerId;
 
   @override
   ConsumerState<_DialogModificaConvocato> createState() =>
@@ -494,8 +422,6 @@ class _DialogModificaConvocato extends ConsumerStatefulWidget {
 class _DialogModificaConvocatoState
     extends ConsumerState<_DialogModificaConvocato> {
   late final TextEditingController _numeroController;
-  late bool _capitano;
-  late bool _viceCapitano;
   late bool _portiere;
   late bool _fuoriquota;
   bool _isSubmitting = false;
@@ -506,9 +432,7 @@ class _DialogModificaConvocatoState
     super.initState();
     _numeroController = TextEditingController(
       text: '${widget.convocato.numeroCalottina}',
-    );
-    _capitano = widget.convocato.capitano;
-    _viceCapitano = widget.convocato.viceCapitano;
+    )..addListener(() => setState(() {}));
     _portiere = widget.convocato.portiere;
     _fuoriquota = widget.convocato.fuoriquota;
   }
@@ -517,6 +441,20 @@ class _DialogModificaConvocatoState
   void dispose() {
     _numeroController.dispose();
     super.dispose();
+  }
+
+  /// Chi ha già il numero scritto (null se è libero o è il suo).
+  DistintaGiocatore? get _conQuelNumero {
+    final numero = int.tryParse(_numeroController.text.trim());
+    if (numero == null || numero == widget.convocato.numeroCalottina) {
+      return null;
+    }
+    for (final g in widget.convocati) {
+      if (g.id != widget.convocato.id && g.numeroCalottina == numero) {
+        return g;
+      }
+    }
+    return null;
   }
 
   Future<void> _salva() async {
@@ -529,17 +467,23 @@ class _DialogModificaConvocatoState
       _isSubmitting = true;
       _errore = null;
     });
+    final repository = ref.read(distintaRepositoryProvider);
+    final altro = _conQuelNumero;
     try {
-      await ref
-          .read(distintaRepositoryProvider)
-          .aggiornaConvocato(
-            id: widget.convocato.id,
-            numeroCalottina: numero,
-            capitano: _capitano,
-            viceCapitano: _viceCapitano,
-            portiere: _portiere,
-            fuoriquota: _fuoriquota,
-          );
+      if (altro != null) {
+        await repository.rinumera(widget.partita.id, {
+          widget.convocato.id: numero,
+          altro.id: widget.convocato.numeroCalottina,
+        });
+      }
+      await repository.aggiornaConvocato(
+        id: widget.convocato.id,
+        numeroCalottina: numero,
+        capitano: widget.convocato.capitano,
+        viceCapitano: widget.convocato.viceCapitano,
+        portiere: _portiere,
+        fuoriquota: _fuoriquota,
+      );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) setState(() => _errore = messaggioErrore(e));
@@ -568,8 +512,15 @@ class _DialogModificaConvocatoState
   @override
   Widget build(BuildContext context) {
     final colori = context.colori;
+    final altro = _conQuelNumero;
+    final nomeAltro = altro == null
+        ? null
+        : widget.atletiPerId[altro.atletaId]?.nomeCompleto ?? 'un altro';
     return AlertDialog(
-      title: const Text('Convocato'),
+      title: Text(
+        widget.atletiPerId[widget.convocato.atletaId]?.nomeCompleto ??
+            'Convocato',
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -580,25 +531,17 @@ class _DialogModificaConvocatoState
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'N. calottina'),
             ),
+            if (nomeAltro != null) ...[
+              const SizedBox(height: AppSpacing.s4),
+              Text(
+                'Il ${_numeroController.text.trim()} ce l\'ha $nomeAltro: '
+                'si scambiano i numeri.',
+                style: AppTypography.piccolo.copyWith(
+                  color: colori.testoSecondario,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.s8),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Capitano'),
-              value: _capitano,
-              onChanged: (v) => setState(() {
-                _capitano = v ?? false;
-                if (_capitano) _viceCapitano = false;
-              }),
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Vice capitano'),
-              value: _viceCapitano,
-              onChanged: (v) => setState(() {
-                _viceCapitano = v ?? false;
-                if (_viceCapitano) _capitano = false;
-              }),
-            ),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Portiere'),

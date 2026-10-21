@@ -45,8 +45,7 @@ class StaffDistinta {
 
   static const vuoto = StaffDistinta();
 
-  PersonaStaff di(RuoloStaff ruolo) =>
-      persone[ruolo] ?? const PersonaStaff();
+  PersonaStaff di(RuoloStaff ruolo) => persone[ruolo] ?? const PersonaStaff();
 
   /// Nessuna riga compilata.
   bool get senzaNessuno => persone.values.every((p) => p.vuota);

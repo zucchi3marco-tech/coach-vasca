@@ -17,9 +17,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 SupabaseClient _client(MockClient http) =>
     SupabaseClient('http://supabase.finto', 'chiave-finta', httpClient: http);
 
-SupabaseClient _senzaRete() => _client(
-  MockClient((_) async => throw http.ClientException('offline')),
-);
+SupabaseClient _senzaRete() =>
+    _client(MockClient((_) async => throw http.ClientException('offline')));
 
 void main() {
   late AppDatabase db;
@@ -124,11 +123,14 @@ void main() {
 
       expect(await numeri('oggi'), {'a': 5, 'b': 1});
       final ops = await coda();
-      expect([for (final o in ops) (o.$1, o.$2)], [
-        ('distinta_giocatori', 'delete'),
-        ('distinta_giocatori', 'insert'),
-        ('distinta_giocatori', 'insert'),
-      ]);
+      expect(
+        [for (final o in ops) (o.$1, o.$2)],
+        [
+          ('distinta_giocatori', 'delete'),
+          ('distinta_giocatori', 'insert'),
+          ('distinta_giocatori', 'insert'),
+        ],
+      );
       expect(ops[0].$3, 'r1');
       final primo = ops[1].$4! as Map<String, dynamic>;
       expect(primo['atleta_id'], 'a');
@@ -247,15 +249,18 @@ void main() {
 
       final ops = await coda();
       expect([for (final o in ops) o.$1], ['gruppi', 'partite', 'partite']);
-      expect([for (final o in ops) o.$4], [
-        {
-          'staff_distinta': {
-            'tecnico': {'nome': 'Rossi', 'tessera': '167499'},
+      expect(
+        [for (final o in ops) o.$4],
+        [
+          {
+            'staff_distinta': {
+              'tecnico': {'nome': 'Rossi', 'tessera': '167499'},
+            },
           },
-        },
-        {'staff_distinta': soloOggi.toJson()},
-        {'staff_distinta': null},
-      ]);
+          {'staff_distinta': soloOggi.toJson()},
+          {'staff_distinta': null},
+        ],
+      );
     });
   });
 
@@ -290,39 +295,42 @@ void main() {
     expect(await coda(), isEmpty);
   });
 
-  test('la coda rimanda una funzione del database quando torna la rete', () async {
-    final offline = _senzaRete();
-    addTearDown(offline.dispose);
-    await DistintaRepository(
-      offline,
-      db,
-      SyncEngine(db, offline),
-    ).scegliCapitani('oggi', capitanoId: 'r1');
-    expect(await coda(), hasLength(1));
+  test(
+    'la coda rimanda una funzione del database quando torna la rete',
+    () async {
+      final offline = _senzaRete();
+      addTearDown(offline.dispose);
+      await DistintaRepository(
+        offline,
+        db,
+        SyncEngine(db, offline),
+      ).scegliCapitani('oggi', capitanoId: 'r1');
+      expect(await coda(), hasLength(1));
 
-    final chiamate = <http.Request>[];
-    final online = _client(
-      MockClient((r) async {
-        chiamate.add(r);
-        return http.Response(
-          'null',
-          200,
-          headers: {'content-type': 'application/json'},
-          request: r,
-        );
-      }),
-    );
-    addTearDown(online.dispose);
-    final rifiutate = [];
-    await SyncEngine(db, online, suRifiuto: rifiutate.add).processQueue();
-    expect(rifiutate, isEmpty);
+      final chiamate = <http.Request>[];
+      final online = _client(
+        MockClient((r) async {
+          chiamate.add(r);
+          return http.Response(
+            'null',
+            200,
+            headers: {'content-type': 'application/json'},
+            request: r,
+          );
+        }),
+      );
+      addTearDown(online.dispose);
+      final rifiutate = [];
+      await SyncEngine(db, online, suRifiuto: rifiutate.add).processQueue();
+      expect(rifiutate, isEmpty);
 
-    expect(chiamate.single.url.path, '/rest/v1/rpc/scegli_capitani');
-    expect(jsonDecode(chiamate.single.body), {
-      'p_partita_id': 'oggi',
-      'p_capitano_id': 'r1',
-      'p_vice_id': null,
-    });
-    expect(await coda(), isEmpty);
-  });
+      expect(chiamate.single.url.path, '/rest/v1/rpc/scegli_capitani');
+      expect(jsonDecode(chiamate.single.body), {
+        'p_partita_id': 'oggi',
+        'p_capitano_id': 'r1',
+        'p_vice_id': null,
+      });
+      expect(await coda(), isEmpty);
+    },
+  );
 }

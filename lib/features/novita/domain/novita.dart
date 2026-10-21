@@ -44,6 +44,37 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'convocati-insieme',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Tutti i convocati in una volta',
+    testo:
+        'Nella distinta di una partita il pulsante in basso apre «Scegli i '
+        'convocati»: spunti i nomi, con «Tutta la squadra» o «Come l\'ultima '
+        'partita», e salvi una volta. Ognuno riprende il numero dell\'ultima '
+        'partita, i portieri l\'1 e il 13.',
+    importante: true,
+  ),
+  Novita(
+    id: 'numeri-e-capitani',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Numeri, capitano e vice',
+    testo:
+        'In cima alla distinta tocchi «Capitano» o «Vice capitano» e scegli '
+        'fra i convocati: chi lo era torna giocatore. «Riordina i numeri» li '
+        'cambia trascinando le righe; se dai a un atleta un numero già preso, '
+        'i due si scambiano.',
+  ),
+  Novita(
+    id: 'modulo-distinta',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Il modulo della distinta in Excel',
+    testo:
+        'Nella distinta, l\'icona per scaricare prepara il modulo FIN in '
+        'Excel: convocati con tessera, CAP e VICE, lo staff con le tessere e '
+        'lo spazio per le firme. Lo staff lo scrivi la prima volta che '
+        'scarichi il modulo e vale per tutte le partite della squadra.',
+  ),
+  Novita(
     id: 'tablet-squadra',
     data: DateTime(2026, 10, 21),
     titolo: 'Il tablet della squadra',

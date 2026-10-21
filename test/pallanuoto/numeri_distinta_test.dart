@@ -117,9 +117,10 @@ void main() {
         altri: [for (var i = 0; i < 12; i++) 'm$i'],
       );
       expect(numeri['p1'], 1);
-      expect([for (var i = 0; i < 12; i++) numeri['m$i']], [
-        for (var n = 2; n <= 13; n++) n,
-      ]);
+      expect(
+        [for (var i = 0; i < 12; i++) numeri['m$i']],
+        [for (var n = 2; n <= 13; n++) n],
+      );
     });
 
     test('il terzo portiere sta con gli altri, in fondo all\'ordine', () {
@@ -139,10 +140,10 @@ void main() {
         capitaniProposti(convocati: ['a', 'b', 'c'], ultimaPartita: ultima),
         (capitano: 'a', vice: 'b'),
       );
-      expect(
-        capitaniProposti(convocati: ['b', 'c'], ultimaPartita: ultima),
-        (capitano: null, vice: 'b'),
-      );
+      expect(capitaniProposti(convocati: ['b', 'c'], ultimaPartita: ultima), (
+        capitano: null,
+        vice: 'b',
+      ));
     });
 
     test('non cambia quelli che la distinta ha già', () {
@@ -159,10 +160,11 @@ void main() {
   });
 
   test('"Come l\'ultima partita" li dà in ordine di numero', () {
-    expect(
-      convocatiUltimaPartita({'a': _u(9), 'b': _u(1), 'c': _u(4)}),
-      ['b', 'c', 'a'],
-    );
+    expect(convocatiUltimaPartita({'a': _u(9), 'b': _u(1), 'c': _u(4)}), [
+      'b',
+      'c',
+      'a',
+    ]);
   });
 
   group('StaffDistinta', () {
