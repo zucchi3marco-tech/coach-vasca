@@ -44,6 +44,48 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'tablet-squadra',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Il tablet della squadra',
+    testo:
+        'In una seduta a secco, «Tablet della squadra» apre i nomi del '
+        'gruppo: chi non ha il telefono tocca il suo e registra serie per '
+        'serie, come dal suo telefono. Chi registra risulta presente. Dal '
+        'tablet non si va nel resto dell\'app: per uscire tieni premuto '
+        '«Esci».',
+  ),
+  Novita(
+    id: 'variante-secco',
+    data: DateTime(2026, 10, 21),
+    titolo: 'La variante di un esercizio a secco',
+    testo:
+        'Nel menu di un esercizio a secco, «Variante per un atleta»: chi ha '
+        'male alla spalla fa un altro esercizio, lo stesso più leggero, o '
+        'non lo fa. Gli altri vedono l\'esercizio di sempre, lui solo il '
+        'suo. Se qualcuno ha segnato un dolore alla spalla, la seduta te lo '
+        'propone.',
+  ),
+  Novita(
+    id: 'voto-serie',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Com\'è andata ogni serie a secco',
+    testo:
+        'Durante il recupero di una serie a secco ci sono tre bottoni: '
+        'facile, giusta, dura. La volta dopo, accanto al carico, vedi com\'era '
+        'andata; l\'allenatore lo vede in chi ha registrato la seduta.',
+    perChi: PerChi.tutti,
+  ),
+  Novita(
+    id: 'monotonia',
+    data: DateTime(2026, 10, 21),
+    titolo: 'Quanto è varia la settimana',
+    testo:
+        'In «Forma e carico» di un atleta, sotto l\'ACWR, la monotonia: '
+        'quanto si somigliano i giorni della settimana, con lo strain. Sopra '
+        '2 i giorni sono quasi tutti uguali e il rischio di sovraccarico '
+        'sale. In «Benessere della squadra» è in giallo per chi è sopra 2.',
+  ),
+  Novita(
     id: 'com-e-andata',
     data: DateTime(2026, 10, 20),
     titolo: 'Com\'è andata',
