@@ -394,7 +394,8 @@ void main() {
         final p = esito.scheda! as PropostaConvocazione;
         expect(
           [for (final n in p.nuovi) (n.atleta.id, n.numero)],
-          [('bianchi', 2), ('rossi', 3)],
+          // Rossi è portiere: l'1 è già preso, prende il 13.
+          [('bianchi', 2), ('rossi', 13)],
         );
         expect(p.giaConvocati, 1);
         expect(p.oltreIlMassimo, isFalse);

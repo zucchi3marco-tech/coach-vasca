@@ -164,7 +164,8 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilledButton, 'Convoca'));
     await tester.pumpAndSettle();
-    expect(distinta.aggiunti, [('rossi', 1), ('bianchi', 2)]);
+    // Come in distinta: l'1 resta al portiere, i giocatori dal 2.
+    expect(distinta.aggiunti, [('rossi', 2), ('bianchi', 3)]);
     expect(find.text('Convocati in distinta'), findsOneWidget);
   });
 }
