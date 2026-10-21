@@ -8,7 +8,9 @@ import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
+import '../../allenamenti/domain/volume_allenamento.dart' show lunediDi;
 import '../domain/carico_rpe.dart';
+import '../domain/monotonia.dart';
 
 /// "2.150": il carico in unità arbitrarie, intero, con il punto delle
 /// migliaia.
@@ -182,6 +184,12 @@ class _CaricoSettimaneState extends State<CaricoSettimane> {
     final secondario = AppTypography.piccolo.copyWith(
       color: colori.testoSecondario,
     );
+    // La monotonia di una settimana finita (quella in corso è nel
+    // riquadro sotto, sugli ultimi 7 giorni).
+    final monotonia =
+        scelta.lunedi.isBefore(lunediDi(widget.oggi ?? DateTime.now()))
+        ? monotoniaSettimana(widget.sedute, fine: domenica)
+        : null;
     final nome = switch (widget.settimane - 1 - _scelta) {
       0 => 'Questa settimana',
       1 => 'Settimana scorsa',
@@ -225,6 +233,18 @@ class _CaricoSettimaneState extends State<CaricoSettimane> {
             ].join(' · '),
             style: secondario,
           ),
+          if (monotonia != null)
+            Text(
+              [
+                'Monotonia ${formattaMonotonia(monotonia)}',
+                if (monotonia.strain case final strain?)
+                  'strain ${formattaCarico(strain)}',
+                if (monotonia.alta) 'giorni troppo simili',
+              ].join(' · '),
+              style: secondario.copyWith(
+                color: monotonia.alta ? colori.attenzione : null,
+              ),
+            ),
         ],
       ],
     );
@@ -433,6 +453,95 @@ class PannelloAcwr extends StatelessWidget {
         Text(
           'Ultimi 7 giorni ${formattaCarico(a.acuto)} · media delle ultime '
           '4 settimane ${formattaCarico(a.cronico)}',
+          style: secondario,
+        ),
+      ],
+    );
+  }
+}
+
+/// Quanto si somigliano i giorni degli ultimi 7 (la monotonia di Foster)
+/// e lo strain, con quello solito delle quattro settimane prima. Sopra 2
+/// in `attenzione`, mai in rosso, come l'ACWR.
+class PannelloMonotonia extends StatelessWidget {
+  const PannelloMonotonia({
+    required this.monotonia,
+    required this.strainSolito,
+    super.key,
+  });
+
+  /// Degli ultimi 7 giorni; null se non ci sono sedute.
+  final Monotonia? monotonia;
+
+  /// La media dello strain delle quattro settimane prima; null se non c'è.
+  final double? strainSolito;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final secondario = AppTypography.piccolo.copyWith(
+      color: colori.testoSecondario,
+    );
+    final m = monotonia;
+    if (m == null) {
+      return Text(
+        'Negli ultimi 7 giorni non ci sono sedute.',
+        style: secondario,
+      );
+    }
+    final colore = m.alta ? colori.attenzione : colori.ok;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: AppSpacing.s12,
+          children: [
+            if (m.monotonia != null)
+              Text(
+                formattaMonotonia(m),
+                style: AppTypography.numerica(
+                  AppTypography.numeroGrande.copyWith(color: colori.testo),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    m.alta ? Icons.drag_handle : Icons.check_circle_outline,
+                    size: 18,
+                    color: colore,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      m.tuttiUguali
+                          ? 'Tutti i giorni uguali'
+                          : m.alta
+                          ? 'Giorni troppo simili'
+                          : 'Settimana varia',
+                      style: AppTypography.corpoForte.copyWith(color: colore),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        Text(
+          [
+            if (m.strain case final strain?) 'Strain ${formattaCarico(strain)}',
+            if (strainSolito case final solito?)
+              'il solito ${formattaCarico(solito)}',
+          ].join(' · '),
+          style: AppTypography.numerica(AppTypography.corpo)
+              .copyWith(color: colori.testo),
+        ),
+        Text(
+          'Ultimi 7 giorni: carico ${formattaCarico(m.carico)}',
           style: secondario,
         ),
       ],

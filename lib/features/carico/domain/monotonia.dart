@@ -117,17 +117,8 @@ List<({DateTime lunedi, Monotonia? monotonia})> monotoniaPerSettimana(
 }
 
 /// "1,8" (una cifra dopo la virgola); "tutti i giorni uguali" senza numero.
+/// Lo strain si scrive come un carico (`formattaCarico`).
 String formattaMonotonia(Monotonia m) => switch (m.monotonia) {
   final v? => v.toStringAsFixed(1).replaceAll('.', ','),
   null => 'tutti i giorni uguali',
 };
-
-/// "2.340": lo strain arrotondato, con il punto delle migliaia.
-String formattaStrain(double strain) {
-  final cifre = strain.round().toString();
-  final gruppi = <String>[];
-  for (var i = cifre.length; i > 0; i -= 3) {
-    gruppi.insert(0, cifre.substring(math.max(0, i - 3), i));
-  }
-  return gruppi.join('.');
-}

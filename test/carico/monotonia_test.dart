@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:coach_vasca/features/carico/domain/carico_rpe.dart';
 import 'package:coach_vasca/features/carico/domain/monotonia.dart';
+import 'package:coach_vasca/features/carico/presentation/carico_settimane.dart';
+import 'package:coach_vasca/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CaricoSeduta _seduta(
@@ -119,9 +122,89 @@ void main() {
     expect(settimane[2].monotonia, isNull);
   });
 
-  test('lo strain con il punto delle migliaia', () {
-    expect(formattaStrain(812.4), '812');
-    expect(formattaStrain(2340.6), '2.341');
-    expect(formattaStrain(1234567), '1.234.567');
+  group('a schermo, a 360 px', () {
+    Future<void> apri(WidgetTester tester, Widget figlio, ThemeData tema) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: tema,
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.3)),
+              child: Scaffold(
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: figlio,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final (nome, tema) in [
+      ('chiaro', AppTheme.chiaro),
+      ('scuro', AppTheme.scuro),
+    ]) {
+      testWidgets('il riquadro: monotonia, strain e il solito ($nome)', (
+        tester,
+      ) async {
+        final simili = monotoniaSettimana([
+          for (var i = 1; i < 7; i++) _seduta(giorno(i), acqua: 300 + i * 5.0),
+        ], fine: domenica)!;
+        await apri(
+          tester,
+          PannelloMonotonia(monotonia: simili, strainSolito: 2100),
+          tema,
+        );
+        expect(find.text(formattaMonotonia(simili)), findsOneWidget);
+        expect(find.text('Giorni troppo simili'), findsOneWidget);
+        expect(
+          find.textContaining('Strain ${formattaCarico(simili.strain!)}'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('il solito 2.100'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('senza sedute negli ultimi 7 giorni', (tester) async {
+      await apri(
+        tester,
+        const PannelloMonotonia(monotonia: null, strainSolito: null),
+        AppTheme.chiaro,
+      );
+      expect(
+        find.text('Negli ultimi 7 giorni non ci sono sedute.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('una settimana passata dice la sua monotonia', (tester) async {
+      // Mercoledì 21: la settimana scelta all'inizio è questa; si tocca
+      // quella prima (dal 12).
+      await apri(
+        tester,
+        CaricoSettimane(
+          oggi: DateTime(2026, 10, 21),
+          settimane: 2,
+          sedute: [
+            _seduta(DateTime(2026, 10, 12), acqua: 300),
+            _seduta(DateTime(2026, 10, 14), acqua: 500),
+            _seduta(DateTime(2026, 10, 20), acqua: 400),
+          ],
+        ),
+        AppTheme.chiaro,
+      );
+      expect(find.textContaining('Monotonia'), findsNothing);
+      await tester.tap(find.text('12 ott'));
+      await tester.pump();
+      expect(find.textContaining('Monotonia 0,6 · strain'), findsOneWidget);
+    });
   });
 }

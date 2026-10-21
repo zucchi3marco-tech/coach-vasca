@@ -19,6 +19,7 @@ import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/carico_providers.dart';
 import '../domain/carico_rpe.dart';
+import '../domain/monotonia.dart';
 import 'carico_settimane.dart';
 import 'grafico_banister.dart';
 
@@ -210,6 +211,31 @@ class _SezioneCarico extends ConsumerWidget {
                 'per programmare, non una diagnosi.',
           ),
           PoolCard(child: PannelloAcwr(acwr: calcolaAcwr(sedute))),
+          const SizedBox(height: AppSpacing.s28),
+          const TitoloSezione(
+            'Quanto è varia la settimana',
+            spiegazione:
+                'La monotonia dice quanto si somigliano i giorni degli '
+                'ultimi 7: il carico medio di un giorno diviso per quanto '
+                'cambia da un giorno all\'altro (i giorni di riposo valgono '
+                'zero). Sopra 2 i giorni sono quasi tutti uguali e, anche '
+                'con un carico non alto, il rischio di sovraccarico sale. Lo '
+                'strain è il carico della settimana per la monotonia '
+                '(Foster). Le settimane passate sono nel grafico sopra: '
+                'tocca una colonna. È un riferimento per programmare, non '
+                'una diagnosi.',
+          ),
+          Builder(
+            builder: (context) {
+              final m = monotoniaDiOggi(sedute);
+              return PoolCard(
+                child: PannelloMonotonia(
+                  monotonia: m.adesso,
+                  strainSolito: m.strainSolito,
+                ),
+              );
+            },
+          ),
         ],
       ),
       loading: () => const LoadingSkeleton(height: 160),

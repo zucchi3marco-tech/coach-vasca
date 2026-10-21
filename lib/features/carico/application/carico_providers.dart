@@ -5,6 +5,7 @@ import '../data/carico_repository.dart';
 import '../data/rpe_repository.dart';
 import '../domain/banister.dart';
 import '../domain/carico_rpe.dart';
+import '../domain/monotonia.dart';
 import '../domain/rpe_seduta.dart';
 import '../domain/volumi_atleta.dart';
 
@@ -62,6 +63,20 @@ final acwrClubProvider = Provider.family<Map<String, Acwr>, String>((
   return {
     for (final MapEntry(key: atletaId, value: s) in sedute.entries)
       atletaId: ?calcolaAcwr(s),
+  };
+});
+
+/// La monotonia degli ultimi 7 giorni di ogni atleta del club che in quei
+/// giorni ha un carico.
+final monotoniaClubProvider = Provider.family<Map<String, Monotonia>, String>((
+  ref,
+  clubId,
+) {
+  final sedute = ref.watch(seduteCaricoClubProvider(clubId)).value ?? const {};
+  final oggi = DateTime.now();
+  return {
+    for (final MapEntry(key: atletaId, value: s) in sedute.entries)
+      atletaId: ?monotoniaSettimana(s, fine: oggi),
   };
 });
 

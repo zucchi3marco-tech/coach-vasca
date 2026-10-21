@@ -12,6 +12,7 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../carico/domain/carico_rpe.dart';
+import '../../carico/domain/monotonia.dart';
 import '../../carico/presentation/carico_settimane.dart';
 import '../../home/area_atleta_home_screen.dart';
 import '../../home/atleta/home_atleta_widgets.dart';
@@ -353,6 +354,7 @@ class _BenessereSquadraScreenState
     final oggi = ref.watch(schedeOggiClubProvider(clubId));
     final punteggi = ref.watch(punteggiOggiClubProvider(clubId));
     final acwr = ref.watch(acwrClubProvider(clubId));
+    final monotonia = ref.watch(monotoniaClubProvider(clubId));
     // Prima il livello piu' alto (rosso), poi il punteggio piu' basso; chi
     // non ha compilato in fondo.
     final ordinati = atleti.where(_corrisponde).toList()
@@ -418,6 +420,7 @@ class _BenessereSquadraScreenState
                       oggi: oggi[a.id],
                       punteggio: punteggi[a.id],
                       acwr: acwr[a.id],
+                      monotonia: monotonia[a.id],
                       schede: tutte.where((s) => s.atletaId == a.id).toList(),
                     ),
                   ),
@@ -439,6 +442,7 @@ class _RigaAtleta extends StatelessWidget {
     required this.punteggio,
     required this.schede,
     this.acwr,
+    this.monotonia,
   });
 
   final Atleta atleta;
@@ -448,6 +452,9 @@ class _RigaAtleta extends StatelessWidget {
 
   /// Il carico della settimana rispetto al suo solito; null senza sedute.
   final Acwr? acwr;
+
+  /// Quanto si somigliano i giorni degli ultimi 7; null senza sedute.
+  final Monotonia? monotonia;
 
   @override
   Widget build(BuildContext context) {
@@ -506,6 +513,16 @@ class _RigaAtleta extends StatelessWidget {
                         fascia == FasciaAcwr.alto || fascia == FasciaAcwr.salita
                         ? colori.attenzione
                         : colori.testoSecondario,
+                  ),
+                ),
+              if (monotonia case final m?)
+                Text(
+                  [
+                    'Monotonia ${formattaMonotonia(m)}',
+                    if (m.alta && !m.tuttiUguali) 'giorni troppo simili',
+                  ].join(' · '),
+                  style: AppTypography.etichetta.copyWith(
+                    color: m.alta ? colori.attenzione : colori.testoSecondario,
                   ),
                 ),
             ],
