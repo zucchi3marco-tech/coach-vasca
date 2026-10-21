@@ -7873,6 +7873,18 @@ class $PartiteTableTable extends PartiteTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _staffDistintaJsonMeta = const VerificationMeta(
+    'staffDistintaJson',
+  );
+  @override
+  late final GeneratedColumn<String> staffDistintaJson =
+      GeneratedColumn<String>(
+        'staff_distinta_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7899,6 +7911,7 @@ class $PartiteTableTable extends PartiteTable
     daPortare,
     noteConvocazione,
     convocazioneInviataIl,
+    staffDistintaJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8096,6 +8109,15 @@ class $PartiteTableTable extends PartiteTable
         ),
       );
     }
+    if (data.containsKey('staff_distinta_json')) {
+      context.handle(
+        _staffDistintaJsonMeta,
+        staffDistintaJson.isAcceptableOrUnknown(
+          data['staff_distinta_json']!,
+          _staffDistintaJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -8201,6 +8223,10 @@ class $PartiteTableTable extends PartiteTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}convocazione_inviata_il'],
       ),
+      staffDistintaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}staff_distinta_json'],
+      ),
     );
   }
 
@@ -8247,6 +8273,10 @@ class PartiteTableData extends DataClass
   final String? daPortare;
   final String? noteConvocazione;
   final DateTime? convocazioneInviataIl;
+
+  /// Lo staff del modulo per questa partita (JSON); null = come la
+  /// squadra.
+  final String? staffDistintaJson;
   const PartiteTableData({
     required this.id,
     required this.clubId,
@@ -8272,6 +8302,7 @@ class PartiteTableData extends DataClass
     this.daPortare,
     this.noteConvocazione,
     this.convocazioneInviataIl,
+    this.staffDistintaJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8326,6 +8357,9 @@ class PartiteTableData extends DataClass
         convocazioneInviataIl,
       );
     }
+    if (!nullToAbsent || staffDistintaJson != null) {
+      map['staff_distinta_json'] = Variable<String>(staffDistintaJson);
+    }
     return map;
   }
 
@@ -8375,6 +8409,9 @@ class PartiteTableData extends DataClass
       convocazioneInviataIl: convocazioneInviataIl == null && nullToAbsent
           ? const Value.absent()
           : Value(convocazioneInviataIl),
+      staffDistintaJson: staffDistintaJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(staffDistintaJson),
     );
   }
 
@@ -8412,6 +8449,9 @@ class PartiteTableData extends DataClass
       convocazioneInviataIl: serializer.fromJson<DateTime?>(
         json['convocazioneInviataIl'],
       ),
+      staffDistintaJson: serializer.fromJson<String?>(
+        json['staffDistintaJson'],
+      ),
     );
   }
   @override
@@ -8444,6 +8484,7 @@ class PartiteTableData extends DataClass
       'convocazioneInviataIl': serializer.toJson<DateTime?>(
         convocazioneInviataIl,
       ),
+      'staffDistintaJson': serializer.toJson<String?>(staffDistintaJson),
     };
   }
 
@@ -8472,6 +8513,7 @@ class PartiteTableData extends DataClass
     Value<String?> daPortare = const Value.absent(),
     Value<String?> noteConvocazione = const Value.absent(),
     Value<DateTime?> convocazioneInviataIl = const Value.absent(),
+    Value<String?> staffDistintaJson = const Value.absent(),
   }) => PartiteTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -8503,6 +8545,9 @@ class PartiteTableData extends DataClass
     convocazioneInviataIl: convocazioneInviataIl.present
         ? convocazioneInviataIl.value
         : this.convocazioneInviataIl,
+    staffDistintaJson: staffDistintaJson.present
+        ? staffDistintaJson.value
+        : this.staffDistintaJson,
   );
   PartiteTableData copyWithCompanion(PartiteTableCompanion data) {
     return PartiteTableData(
@@ -8562,6 +8607,9 @@ class PartiteTableData extends DataClass
       convocazioneInviataIl: data.convocazioneInviataIl.present
           ? data.convocazioneInviataIl.value
           : this.convocazioneInviataIl,
+      staffDistintaJson: data.staffDistintaJson.present
+          ? data.staffDistintaJson.value
+          : this.staffDistintaJson,
     );
   }
 
@@ -8591,7 +8639,8 @@ class PartiteTableData extends DataClass
           ..write('rientroOra: $rientroOra, ')
           ..write('daPortare: $daPortare, ')
           ..write('noteConvocazione: $noteConvocazione, ')
-          ..write('convocazioneInviataIl: $convocazioneInviataIl')
+          ..write('convocazioneInviataIl: $convocazioneInviataIl, ')
+          ..write('staffDistintaJson: $staffDistintaJson')
           ..write(')'))
         .toString();
   }
@@ -8622,6 +8671,7 @@ class PartiteTableData extends DataClass
     daPortare,
     noteConvocazione,
     convocazioneInviataIl,
+    staffDistintaJson,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -8650,7 +8700,8 @@ class PartiteTableData extends DataClass
           other.rientroOra == this.rientroOra &&
           other.daPortare == this.daPortare &&
           other.noteConvocazione == this.noteConvocazione &&
-          other.convocazioneInviataIl == this.convocazioneInviataIl);
+          other.convocazioneInviataIl == this.convocazioneInviataIl &&
+          other.staffDistintaJson == this.staffDistintaJson);
 }
 
 class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
@@ -8678,6 +8729,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
   final Value<String?> daPortare;
   final Value<String?> noteConvocazione;
   final Value<DateTime?> convocazioneInviataIl;
+  final Value<String?> staffDistintaJson;
   final Value<int> rowid;
   const PartiteTableCompanion({
     this.id = const Value.absent(),
@@ -8704,6 +8756,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.daPortare = const Value.absent(),
     this.noteConvocazione = const Value.absent(),
     this.convocazioneInviataIl = const Value.absent(),
+    this.staffDistintaJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PartiteTableCompanion.insert({
@@ -8731,6 +8784,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     this.daPortare = const Value.absent(),
     this.noteConvocazione = const Value.absent(),
     this.convocazioneInviataIl = const Value.absent(),
+    this.staffDistintaJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -8762,6 +8816,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Expression<String>? daPortare,
     Expression<String>? noteConvocazione,
     Expression<DateTime>? convocazioneInviataIl,
+    Expression<String>? staffDistintaJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8792,6 +8847,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       if (noteConvocazione != null) 'note_convocazione': noteConvocazione,
       if (convocazioneInviataIl != null)
         'convocazione_inviata_il': convocazioneInviataIl,
+      if (staffDistintaJson != null) 'staff_distinta_json': staffDistintaJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8821,6 +8877,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
     Value<String?>? daPortare,
     Value<String?>? noteConvocazione,
     Value<DateTime?>? convocazioneInviataIl,
+    Value<String?>? staffDistintaJson,
     Value<int>? rowid,
   }) {
     return PartiteTableCompanion(
@@ -8849,6 +8906,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
       noteConvocazione: noteConvocazione ?? this.noteConvocazione,
       convocazioneInviataIl:
           convocazioneInviataIl ?? this.convocazioneInviataIl,
+      staffDistintaJson: staffDistintaJson ?? this.staffDistintaJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8930,6 +8988,9 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
         convocazioneInviataIl.value,
       );
     }
+    if (staffDistintaJson.present) {
+      map['staff_distinta_json'] = Variable<String>(staffDistintaJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8963,6 +9024,7 @@ class PartiteTableCompanion extends UpdateCompanion<PartiteTableData> {
           ..write('daPortare: $daPortare, ')
           ..write('noteConvocazione: $noteConvocazione, ')
           ..write('convocazioneInviataIl: $convocazioneInviataIl, ')
+          ..write('staffDistintaJson: $staffDistintaJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11180,8 +11242,27 @@ class $GruppiTableTable extends GruppiTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _staffDistintaJsonMeta = const VerificationMeta(
+    'staffDistintaJson',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, clubId, nome, ordine, sport];
+  late final GeneratedColumn<String> staffDistintaJson =
+      GeneratedColumn<String>(
+        'staff_distinta_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    nome,
+    ordine,
+    sport,
+    staffDistintaJson,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -11227,6 +11308,15 @@ class $GruppiTableTable extends GruppiTable
         sport.isAcceptableOrUnknown(data['sport']!, _sportMeta),
       );
     }
+    if (data.containsKey('staff_distinta_json')) {
+      context.handle(
+        _staffDistintaJsonMeta,
+        staffDistintaJson.isAcceptableOrUnknown(
+          data['staff_distinta_json']!,
+          _staffDistintaJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -11256,6 +11346,10 @@ class $GruppiTableTable extends GruppiTable
         DriftSqlType.string,
         data['${effectivePrefix}sport'],
       ),
+      staffDistintaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}staff_distinta_json'],
+      ),
     );
   }
 
@@ -11271,12 +11365,16 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
   final String nome;
   final int ordine;
   final String? sport;
+
+  /// Lo staff del modulo della distinta (JSON, vedi `StaffDistinta`).
+  final String? staffDistintaJson;
   const GruppiTableData({
     required this.id,
     required this.clubId,
     required this.nome,
     required this.ordine,
     this.sport,
+    this.staffDistintaJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -11287,6 +11385,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
     map['ordine'] = Variable<int>(ordine);
     if (!nullToAbsent || sport != null) {
       map['sport'] = Variable<String>(sport);
+    }
+    if (!nullToAbsent || staffDistintaJson != null) {
+      map['staff_distinta_json'] = Variable<String>(staffDistintaJson);
     }
     return map;
   }
@@ -11300,6 +11401,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       sport: sport == null && nullToAbsent
           ? const Value.absent()
           : Value(sport),
+      staffDistintaJson: staffDistintaJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(staffDistintaJson),
     );
   }
 
@@ -11314,6 +11418,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       nome: serializer.fromJson<String>(json['nome']),
       ordine: serializer.fromJson<int>(json['ordine']),
       sport: serializer.fromJson<String?>(json['sport']),
+      staffDistintaJson: serializer.fromJson<String?>(
+        json['staffDistintaJson'],
+      ),
     );
   }
   @override
@@ -11325,6 +11432,7 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       'nome': serializer.toJson<String>(nome),
       'ordine': serializer.toJson<int>(ordine),
       'sport': serializer.toJson<String?>(sport),
+      'staffDistintaJson': serializer.toJson<String?>(staffDistintaJson),
     };
   }
 
@@ -11334,12 +11442,16 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
     String? nome,
     int? ordine,
     Value<String?> sport = const Value.absent(),
+    Value<String?> staffDistintaJson = const Value.absent(),
   }) => GruppiTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
     nome: nome ?? this.nome,
     ordine: ordine ?? this.ordine,
     sport: sport.present ? sport.value : this.sport,
+    staffDistintaJson: staffDistintaJson.present
+        ? staffDistintaJson.value
+        : this.staffDistintaJson,
   );
   GruppiTableData copyWithCompanion(GruppiTableCompanion data) {
     return GruppiTableData(
@@ -11348,6 +11460,9 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
       nome: data.nome.present ? data.nome.value : this.nome,
       ordine: data.ordine.present ? data.ordine.value : this.ordine,
       sport: data.sport.present ? data.sport.value : this.sport,
+      staffDistintaJson: data.staffDistintaJson.present
+          ? data.staffDistintaJson.value
+          : this.staffDistintaJson,
     );
   }
 
@@ -11358,13 +11473,15 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
           ..write('clubId: $clubId, ')
           ..write('nome: $nome, ')
           ..write('ordine: $ordine, ')
-          ..write('sport: $sport')
+          ..write('sport: $sport, ')
+          ..write('staffDistintaJson: $staffDistintaJson')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, clubId, nome, ordine, sport);
+  int get hashCode =>
+      Object.hash(id, clubId, nome, ordine, sport, staffDistintaJson);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -11373,7 +11490,8 @@ class GruppiTableData extends DataClass implements Insertable<GruppiTableData> {
           other.clubId == this.clubId &&
           other.nome == this.nome &&
           other.ordine == this.ordine &&
-          other.sport == this.sport);
+          other.sport == this.sport &&
+          other.staffDistintaJson == this.staffDistintaJson);
 }
 
 class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
@@ -11382,6 +11500,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
   final Value<String> nome;
   final Value<int> ordine;
   final Value<String?> sport;
+  final Value<String?> staffDistintaJson;
   final Value<int> rowid;
   const GruppiTableCompanion({
     this.id = const Value.absent(),
@@ -11389,6 +11508,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     this.nome = const Value.absent(),
     this.ordine = const Value.absent(),
     this.sport = const Value.absent(),
+    this.staffDistintaJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GruppiTableCompanion.insert({
@@ -11397,6 +11517,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     required String nome,
     this.ordine = const Value.absent(),
     this.sport = const Value.absent(),
+    this.staffDistintaJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -11407,6 +11528,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     Expression<String>? nome,
     Expression<int>? ordine,
     Expression<String>? sport,
+    Expression<String>? staffDistintaJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -11415,6 +11537,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
       if (nome != null) 'nome': nome,
       if (ordine != null) 'ordine': ordine,
       if (sport != null) 'sport': sport,
+      if (staffDistintaJson != null) 'staff_distinta_json': staffDistintaJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -11425,6 +11548,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     Value<String>? nome,
     Value<int>? ordine,
     Value<String?>? sport,
+    Value<String?>? staffDistintaJson,
     Value<int>? rowid,
   }) {
     return GruppiTableCompanion(
@@ -11433,6 +11557,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
       nome: nome ?? this.nome,
       ordine: ordine ?? this.ordine,
       sport: sport ?? this.sport,
+      staffDistintaJson: staffDistintaJson ?? this.staffDistintaJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -11455,6 +11580,9 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
     if (sport.present) {
       map['sport'] = Variable<String>(sport.value);
     }
+    if (staffDistintaJson.present) {
+      map['staff_distinta_json'] = Variable<String>(staffDistintaJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -11469,6 +11597,7 @@ class GruppiTableCompanion extends UpdateCompanion<GruppiTableData> {
           ..write('nome: $nome, ')
           ..write('ordine: $ordine, ')
           ..write('sport: $sport, ')
+          ..write('staffDistintaJson: $staffDistintaJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24928,6 +25057,7 @@ typedef $$PartiteTableTableCreateCompanionBuilder =
       Value<String?> daPortare,
       Value<String?> noteConvocazione,
       Value<DateTime?> convocazioneInviataIl,
+      Value<String?> staffDistintaJson,
       Value<int> rowid,
     });
 typedef $$PartiteTableTableUpdateCompanionBuilder =
@@ -24956,6 +25086,7 @@ typedef $$PartiteTableTableUpdateCompanionBuilder =
       Value<String?> daPortare,
       Value<String?> noteConvocazione,
       Value<DateTime?> convocazioneInviataIl,
+      Value<String?> staffDistintaJson,
       Value<int> rowid,
     });
 
@@ -25085,6 +25216,11 @@ class $$PartiteTableTableFilterComposer
 
   ColumnFilters<DateTime> get convocazioneInviataIl => $composableBuilder(
     column: $table.convocazioneInviataIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -25217,6 +25353,11 @@ class $$PartiteTableTableOrderingComposer
     column: $table.convocazioneInviataIl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PartiteTableTableAnnotationComposer
@@ -25331,6 +25472,11 @@ class $$PartiteTableTableAnnotationComposer
     column: $table.convocazioneInviataIl,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
+    builder: (column) => column,
+  );
 }
 
 class $$PartiteTableTableTableManager
@@ -25388,6 +25534,7 @@ class $$PartiteTableTableTableManager
                 Value<String?> daPortare = const Value.absent(),
                 Value<String?> noteConvocazione = const Value.absent(),
                 Value<DateTime?> convocazioneInviataIl = const Value.absent(),
+                Value<String?> staffDistintaJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion(
                 id: id,
@@ -25414,6 +25561,7 @@ class $$PartiteTableTableTableManager
                 daPortare: daPortare,
                 noteConvocazione: noteConvocazione,
                 convocazioneInviataIl: convocazioneInviataIl,
+                staffDistintaJson: staffDistintaJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25442,6 +25590,7 @@ class $$PartiteTableTableTableManager
                 Value<String?> daPortare = const Value.absent(),
                 Value<String?> noteConvocazione = const Value.absent(),
                 Value<DateTime?> convocazioneInviataIl = const Value.absent(),
+                Value<String?> staffDistintaJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PartiteTableCompanion.insert(
                 id: id,
@@ -25468,6 +25617,7 @@ class $$PartiteTableTableTableManager
                 daPortare: daPortare,
                 noteConvocazione: noteConvocazione,
                 convocazioneInviataIl: convocazioneInviataIl,
+                staffDistintaJson: staffDistintaJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -26602,6 +26752,7 @@ typedef $$GruppiTableTableCreateCompanionBuilder =
       required String nome,
       Value<int> ordine,
       Value<String?> sport,
+      Value<String?> staffDistintaJson,
       Value<int> rowid,
     });
 typedef $$GruppiTableTableUpdateCompanionBuilder =
@@ -26611,6 +26762,7 @@ typedef $$GruppiTableTableUpdateCompanionBuilder =
       Value<String> nome,
       Value<int> ordine,
       Value<String?> sport,
+      Value<String?> staffDistintaJson,
       Value<int> rowid,
     });
 
@@ -26645,6 +26797,11 @@ class $$GruppiTableTableFilterComposer
 
   ColumnFilters<String> get sport => $composableBuilder(
     column: $table.sport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -26682,6 +26839,11 @@ class $$GruppiTableTableOrderingComposer
     column: $table.sport,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GruppiTableTableAnnotationComposer
@@ -26707,6 +26869,11 @@ class $$GruppiTableTableAnnotationComposer
 
   GeneratedColumn<String> get sport =>
       $composableBuilder(column: $table.sport, builder: (column) => column);
+
+  GeneratedColumn<String> get staffDistintaJson => $composableBuilder(
+    column: $table.staffDistintaJson,
+    builder: (column) => column,
+  );
 }
 
 class $$GruppiTableTableTableManager
@@ -26745,6 +26912,7 @@ class $$GruppiTableTableTableManager
                 Value<String> nome = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
                 Value<String?> sport = const Value.absent(),
+                Value<String?> staffDistintaJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GruppiTableCompanion(
                 id: id,
@@ -26752,6 +26920,7 @@ class $$GruppiTableTableTableManager
                 nome: nome,
                 ordine: ordine,
                 sport: sport,
+                staffDistintaJson: staffDistintaJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -26761,6 +26930,7 @@ class $$GruppiTableTableTableManager
                 required String nome,
                 Value<int> ordine = const Value.absent(),
                 Value<String?> sport = const Value.absent(),
+                Value<String?> staffDistintaJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GruppiTableCompanion.insert(
                 id: id,
@@ -26768,6 +26938,7 @@ class $$GruppiTableTableTableManager
                 nome: nome,
                 ordine: ordine,
                 sport: sport,
+                staffDistintaJson: staffDistintaJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

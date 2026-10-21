@@ -9,9 +9,21 @@ import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
+import '../../../core/utils/date_format.dart';
 import '../domain/distinta_giocatore.dart';
+import '../domain/numeri_distinta.dart';
 
 const _uuid = Uuid();
+
+/// Chi entra in distinta dalla pagina "Scegli i convocati", con il numero
+/// già deciso (vedi `numeriProposti`).
+typedef NuovoConvocato = ({
+  String atletaId,
+  int numero,
+  bool portiere,
+  bool capitano,
+  bool viceCapitano,
+});
 
 class DistintaRepository {
   DistintaRepository(this._client, this._db, this._syncEngine);
@@ -180,6 +192,262 @@ class DistintaRepository {
       _syncEngine.processQueue();
     }
     return _rileggiLocale(id);
+  }
+
+  /// Salva la scelta della pagina "Scegli i convocati": prima toglie chi
+  /// non c'è più (così i suoi numeri si liberano), poi aggiunge tutti i
+  /// nuovi con una chiamata sola. Senza rete resta tutto in coda, nello
+  /// stesso ordine.
+  Future<void> salvaConvocati({
+    required String partitaId,
+    List<NuovoConvocato> aggiungi = const [],
+    List<String> togli = const [],
+  }) async {
+    if (togli.isNotEmpty) {
+      try {
+        await _client.from('distinta_giocatori').delete().inFilter('id', togli);
+      } catch (e) {
+        if (!isNetworkFailure(e)) rethrow;
+        for (final id in togli) {
+          await enqueueOperation(
+            _db,
+            tabella: 'distinta_giocatori',
+            operazione: 'delete',
+            rigaId: id,
+          );
+        }
+        _syncEngine.processQueue();
+      }
+      await (_db.delete(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.id.isIn(togli))).go();
+    }
+    if (aggiungi.isEmpty) return;
+    final payloads = [
+      for (final n in aggiungi)
+        {
+          'id': _uuid.v4(),
+          'partita_id': partitaId,
+          'atleta_id': n.atletaId,
+          'numero_calottina': n.numero,
+          if (n.portiere) 'portiere': true,
+          if (n.capitano) 'capitano': true,
+          if (n.viceCapitano) 'vice_capitano': true,
+        },
+    ];
+    try {
+      final rows = await _client
+          .from('distinta_giocatori')
+          .insert(payloads)
+          .select();
+      await _db.batch((batch) {
+        for (final row in rows) {
+          batch.insert(
+            _db.distintaGiocatoriTable,
+            _companionFromMap(row),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      // club_id lo mette il trigger dalla partita: offline usiamo quello
+      // della partita in cache.
+      final partita = await (_db.select(
+        _db.partiteTable,
+      )..where((t) => t.id.equals(partitaId))).getSingle();
+      await _db.batch((batch) {
+        for (final p in payloads) {
+          batch.insert(
+            _db.distintaGiocatoriTable,
+            _companionFromMap({...p, 'club_id': partita.clubId}),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+      for (final p in payloads) {
+        await enqueueOperation(
+          _db,
+          tabella: 'distinta_giocatori',
+          operazione: 'insert',
+          rigaId: p['id']! as String,
+          payload: p,
+        );
+      }
+      _syncEngine.processQueue();
+    }
+  }
+
+  /// Nuovi numeri a più convocati insieme (Riordina, o due numeri
+  /// scambiati): una funzione del database, perché il vincolo "un numero
+  /// per partita" non li lascia cambiare una riga alla volta.
+  /// [numeri]: id della riga della distinta → numero.
+  Future<void> rinumera(String partitaId, Map<String, int> numeri) async {
+    if (numeri.isEmpty) return;
+    final params = {
+      'p_partita_id': partitaId,
+      'p_numeri': [
+        for (final e in numeri.entries) {'id': e.key, 'numero': e.value},
+      ],
+    };
+    try {
+      await _client.rpc('rinumera_distinta', params: params);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'rinumera_distinta',
+        operazione: 'rpc',
+        rigaId: partitaId,
+        payload: params,
+      );
+      _syncEngine.processQueue();
+    }
+    await _db.batch((batch) {
+      for (final e in numeri.entries) {
+        batch.update(
+          _db.distintaGiocatoriTable,
+          DistintaGiocatoriTableCompanion(numeroCalottina: Value(e.value)),
+          where: (t) => t.id.equals(e.key),
+        );
+      }
+    });
+  }
+
+  /// Capitano e vice della partita in un colpo solo (null = nessuno): chi
+  /// lo era torna giocatore. Con gli id delle righe della distinta.
+  Future<void> scegliCapitani(
+    String partitaId, {
+    String? capitanoId,
+    String? viceId,
+  }) async {
+    if (capitanoId != null && capitanoId == viceId) {
+      throw StateError('Capitano e vice devono essere due atleti diversi.');
+    }
+    final params = {
+      'p_partita_id': partitaId,
+      'p_capitano_id': capitanoId,
+      'p_vice_id': viceId,
+    };
+    try {
+      await _client.rpc('scegli_capitani', params: params);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'scegli_capitani',
+        operazione: 'rpc',
+        rigaId: partitaId,
+        payload: params,
+      );
+      _syncEngine.processQueue();
+    }
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.partitaId.equals(partitaId))).write(
+        const DistintaGiocatoriTableCompanion(
+          capitano: Value(false),
+          viceCapitano: Value(false),
+        ),
+      );
+      if (capitanoId != null) {
+        await (_db.update(
+          _db.distintaGiocatoriTable,
+        )..where((t) => t.id.equals(capitanoId))).write(
+          const DistintaGiocatoriTableCompanion(capitano: Value(true)),
+        );
+      }
+      if (viceId != null) {
+        await (_db.update(
+          _db.distintaGiocatoriTable,
+        )..where((t) => t.id.equals(viceId))).write(
+          const DistintaGiocatoriTableCompanion(viceCapitano: Value(true)),
+        );
+      }
+    });
+  }
+
+  /// L'ultima partita della stessa squadra, fino al giorno di questa, con
+  /// dei convocati: da lì i numeri, "Come l'ultima partita", capitano e
+  /// vice. Null se non ce n'è.
+  Future<UltimaDistinta?> ultimaDellaSquadra(
+    ChiavePartitaDistinta chiave,
+  ) async {
+    try {
+      var query = _client
+          .from('partite')
+          .select(
+            'id, data, squadra_casa, squadra_trasferta, nostra_squadra, '
+            'distinta_giocatori(atleta_id, numero_calottina, capitano, '
+            'vice_capitano)',
+          )
+          .eq('club_id', chiave.clubId)
+          .neq('id', chiave.partitaId)
+          .lte('data', formatDateOnly(chiave.data));
+      query = chiave.gruppoId == null
+          ? query.isFilter('gruppo_id', null)
+          : query.eq('gruppo_id', chiave.gruppoId!);
+      final rows = await query.order('data', ascending: false).limit(10);
+      for (final r in rows) {
+        final righe = (r['distinta_giocatori'] as List?) ?? const [];
+        if (righe.isEmpty) continue;
+        final inCasa = r['nostra_squadra'] != 'trasferta';
+        return UltimaDistinta(
+          partitaId: r['id'] as String,
+          data: DateTime.parse(r['data'] as String),
+          avversario:
+              (inCasa ? r['squadra_trasferta'] : r['squadra_casa']) as String,
+          perAtleta: {
+            for (final g in righe.cast<Map<String, dynamic>>())
+              g['atleta_id'] as String: (
+                numero: g['numero_calottina'] as int,
+                capitano: g['capitano'] as bool? ?? false,
+                viceCapitano: g['vice_capitano'] as bool? ?? false,
+              ),
+          },
+        );
+      }
+      return null;
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+    }
+    final partite =
+        await (_db.select(_db.partiteTable)
+              ..where(
+                (t) =>
+                    t.clubId.equals(chiave.clubId) &
+                    t.id.equals(chiave.partitaId).not() &
+                    t.data.isSmallerOrEqualValue(chiave.data) &
+                    (chiave.gruppoId == null
+                        ? t.gruppoId.isNull()
+                        : t.gruppoId.equals(chiave.gruppoId!)),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.data)])
+              ..limit(10))
+            .get();
+    for (final p in partite) {
+      final righe = await (_db.select(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.partitaId.equals(p.id))).get();
+      if (righe.isEmpty) continue;
+      return UltimaDistinta(
+        partitaId: p.id,
+        data: p.data,
+        avversario: p.nostraSquadra == 'trasferta'
+            ? p.squadraCasa
+            : p.squadraTrasferta,
+        perAtleta: {
+          for (final g in righe)
+            g.atletaId: (
+              numero: g.numeroCalottina,
+              capitano: g.capitano,
+              viceCapitano: g.viceCapitano,
+            ),
+        },
+      );
+    }
+    return null;
   }
 
   Future<void> rimuoviConvocato(String id) async {

@@ -173,6 +173,9 @@ class GruppiTable extends Table {
   IntColumn get ordine => integer().withDefault(const Constant(1))();
   TextColumn get sport => text().nullable()();
 
+  /// Lo staff del modulo della distinta (JSON, vedi `StaffDistinta`).
+  TextColumn get staffDistintaJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -414,6 +417,10 @@ class PartiteTable extends Table {
   TextColumn get daPortare => text().nullable()();
   TextColumn get noteConvocazione => text().nullable()();
   DateTimeColumn get convocazioneInviataIl => dateTime().nullable()();
+
+  /// Lo staff del modulo per questa partita (JSON); null = come la
+  /// squadra.
+  TextColumn get staffDistintaJson => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

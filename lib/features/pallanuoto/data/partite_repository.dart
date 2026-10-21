@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,6 +13,7 @@ import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/utils/date_format.dart';
 import '../domain/partita.dart';
+import '../domain/staff_distinta.dart';
 
 const _uuid = Uuid();
 
@@ -81,6 +84,55 @@ class PartiteRepository {
         map['convocazione_inviata_at'] == null
             ? null
             : DateTime.parse(map['convocazione_inviata_at'] as String),
+      ),
+      // Solo se c'è: un payload senza lo staff non lo cancella.
+      staffDistintaJson: map.containsKey('staff_distinta')
+          ? Value(
+              map['staff_distinta'] == null
+                  ? null
+                  : jsonEncode(map['staff_distinta']),
+            )
+          : const Value.absent(),
+    );
+  }
+
+  /// Lo staff del modulo cambiato per questa partita; null se vale
+  /// quello della squadra.
+  Future<StaffDistinta?> staffDellaPartita(String partitaId) async {
+    final riga = await (_db.select(
+      _db.partiteTable,
+    )..where((t) => t.id.equals(partitaId))).getSingleOrNull();
+    final json = riga?.staffDistintaJson;
+    return json == null ? null : StaffDistinta.fromJson(jsonDecode(json));
+  }
+
+  /// Lo staff del modulo solo per questa partita (null = torna come la
+  /// squadra).
+  Future<void> aggiornaStaffDellaPartita(
+    String partitaId,
+    StaffDistinta? staff,
+  ) async {
+    final payload = {'staff_distinta': staff?.toJson()};
+    try {
+      await _client.from('partite').update(payload).eq('id', partitaId);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'partite',
+        operazione: 'update',
+        rigaId: partitaId,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    await (_db.update(
+      _db.partiteTable,
+    )..where((t) => t.id.equals(partitaId))).write(
+      PartiteTableCompanion(
+        staffDistintaJson: Value(
+          staff == null ? null : jsonEncode(staff.toJson()),
+        ),
       ),
     );
   }

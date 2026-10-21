@@ -78,6 +78,14 @@ class SyncEngine {
                   );
             case 'delete':
               await _client.from(op.tabella).delete().eq('id', op.rigaId);
+            case 'rpc':
+              // Una funzione del database che cambia più righe in un colpo
+              // solo (es. i numeri della distinta): qui "tabella" è il
+              // nome della funzione, il payload i suoi parametri.
+              await _client.rpc(
+                op.tabella,
+                params: jsonDecode(op.payloadJson!) as Map<String, dynamic>,
+              );
           }
           await (_db.delete(
             _db.pendingOperationsTable,

@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -591,6 +591,16 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'serie_secco_fatte_table', 'voto')) {
           await m.addColumn(serieSeccoFatteTable, serieSeccoFatteTable.voto);
+        }
+      }
+      // v47 -> v48: lo staff del modulo della distinta, nella squadra e
+      // nella partita.
+      if (from < 48) {
+        if (!await _hasColumn(m, 'gruppi_table', 'staff_distinta_json')) {
+          await m.addColumn(gruppiTable, gruppiTable.staffDistintaJson);
+        }
+        if (!await _hasColumn(m, 'partite_table', 'staff_distinta_json')) {
+          await m.addColumn(partiteTable, partiteTable.staffDistintaJson);
         }
       }
     },

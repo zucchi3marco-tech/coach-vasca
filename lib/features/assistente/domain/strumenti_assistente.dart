@@ -10,6 +10,7 @@ import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/carico_rpe.dart';
 import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
+import '../../pallanuoto/domain/numeri_distinta.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../presenze/domain/presenza.dart';
@@ -581,9 +582,8 @@ class StrumentiAssistente {
     }
     final distinta = await fonte.distinta(partita.id);
     final gia = {for (final g in distinta) g.atletaId};
-    final usati = {for (final g in distinta) g.numeroCalottina};
     final sconosciuti = <String>[];
-    final nuovi = <({Atleta atleta, int numero})>[];
+    final scelti = <Atleta>[];
     final visti = <String>{};
     for (final c in (args['atleti'] as List?) ?? const []) {
       final a = pseudonimi.atleta('$c');
@@ -592,13 +592,18 @@ class StrumentiAssistente {
         continue;
       }
       if (gia.contains(a.id) || !visti.add(a.id)) continue;
-      var numero = 1;
-      while (usati.contains(numero)) {
-        numero++;
-      }
-      usati.add(numero);
-      nuovi.add((atleta: a, numero: numero));
+      scelti.add(a);
     }
+    // La stessa regola della distinta: portieri all'1 e al 13, gli altri
+    // dal 2 in su.
+    final numeri = numeriProposti(
+      occupati: {for (final g in distinta) g.numeroCalottina},
+      nuovi: [for (final a in scelti) (atletaId: a.id, portiere: a.portiere)],
+      massimo: partita.numeroMaxConvocati,
+    );
+    final nuovi = [
+      for (final a in scelti) (atleta: a, numero: numeri[a.id]!),
+    ];
     final proposta = PropostaConvocazione(
       partita: partita,
       nuovi: nuovi,

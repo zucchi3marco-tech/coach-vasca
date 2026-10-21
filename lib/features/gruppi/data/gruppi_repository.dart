@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +11,7 @@ import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
+import '../../pallanuoto/domain/staff_distinta.dart';
 import '../domain/gruppo.dart';
 
 const _uuid = Uuid();
@@ -37,7 +40,54 @@ class GruppiRepository {
       nome: map['nome'] as String,
       ordine: Value(map['ordine'] as int? ?? 1),
       sport: Value(map['sport'] as String?),
+      // Solo se c'è: un payload senza lo staff non lo cancella.
+      staffDistintaJson: map.containsKey('staff_distinta')
+          ? Value(
+              map['staff_distinta'] == null
+                  ? null
+                  : jsonEncode(map['staff_distinta']),
+            )
+          : const Value.absent(),
     );
+  }
+
+  /// Lo staff del modulo della distinta di questa squadra.
+  Future<StaffDistinta> staffDellaSquadra(String gruppoId) async {
+    final riga = await (_db.select(
+      _db.gruppiTable,
+    )..where((t) => t.id.equals(gruppoId))).getSingleOrNull();
+    final json = riga?.staffDistintaJson;
+    return json == null
+        ? StaffDistinta.vuoto
+        : StaffDistinta.fromJson(jsonDecode(json));
+  }
+
+  /// Lo staff del modulo della squadra: vale per ogni sua partita che non
+  /// ha il suo.
+  Future<void> aggiornaStaffDellaSquadra(
+    String gruppoId,
+    StaffDistinta staff,
+  ) async {
+    final payload = {'staff_distinta': staff.toJson()};
+    try {
+      await _client.from('gruppi').update(payload).eq('id', gruppoId);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'gruppi',
+        operazione: 'update',
+        rigaId: gruppoId,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    await (_db.update(_db.gruppiTable)..where((t) => t.id.equals(gruppoId)))
+        .write(
+          GruppiTableCompanion(
+            staffDistintaJson: Value(jsonEncode(staff.toJson())),
+          ),
+        );
   }
 
   Stream<List<Gruppo>> watchPerClub(String clubId) {
