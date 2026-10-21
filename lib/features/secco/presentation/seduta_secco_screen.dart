@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/utils/giorni.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -53,9 +54,17 @@ import 'varianti_nella_seduta.dart';
 /// serie, ripetizioni o tempo, carico e recupero. Sotto un esercizio, in
 /// piccolo, chi ne fa un altro o non lo fa (la variante per un atleta).
 class SedutaSeccoScreen extends ConsumerWidget {
-  const SedutaSeccoScreen({required this.allenamento, super.key});
+  const SedutaSeccoScreen({
+    required this.allenamento,
+    this.adesso = DateTime.now,
+    super.key,
+  });
 
   final Allenamento allenamento;
+
+  /// L'orologio (nei test, uno finto): la proposta per la spalla è solo
+  /// per le sedute di oggi e in programma.
+  final DateTime Function() adesso;
 
   void _apri(BuildContext context, Widget schermata) =>
       Navigator.of(context)
@@ -289,11 +298,16 @@ class SedutaSeccoScreen extends ConsumerWidget {
             .value ??
         const <Atleta>[];
     final atleti = atletiDellAllenamento(tuttiAtleti, gruppoId: a.gruppoId);
-    final doloranti = conDoloreSpalla(
-      ref.watch(schedeBenessereClubProvider(a.clubId)).value ?? const [],
-      {for (final x in atleti) x.id},
-      oggi: a.data,
-    );
+    // Come in acqua: chi ha male alla spalla adesso, solo per le sedute di
+    // oggi e in programma (una passata non si cambia più).
+    final ora = adesso();
+    final doloranti = soloData(a.data).isBefore(soloData(ora))
+        ? const <String, DateTime>{}
+        : conDoloreSpalla(
+            ref.watch(schedeBenessereClubProvider(a.clubId)).value ?? const [],
+            {for (final x in atleti) x.id},
+            oggi: ora,
+          );
     String nomeDi(String atletaId) =>
         atleti
             .where((x) => x.id == atletaId)

@@ -299,14 +299,24 @@ class _Lavoro {
   });
 
   /// Lo stesso esercizio, con la prescrizione cambiata nel foglio (si parte
-  /// da quella di tutti, o dalla sua variante se è lo stesso esercizio).
+  /// da quella di tutti, o dalla sua variante se è lo stesso esercizio:
+  /// allora la si cambia e basta, senza perdere le serie già registrate).
   Future<void> piuLeggero() async {
     var salvata = false;
     final sua = _sua;
+    if (sua != null && sua.esercizioId == riga.esercizioId) {
+      await mostraFoglioEsercizio(
+        context,
+        esercizio: esercizi[sua.esercizioId],
+        riga: sua,
+        salva: _repo.aggiornaRiga,
+      );
+      return;
+    }
     await mostraFoglioEsercizio(
       context,
       esercizio: esercizi[riga.esercizioId],
-      riga: sua != null && sua.esercizioId == riga.esercizioId ? sua : riga,
+      riga: riga,
       salva: (m) async {
         await _metti(
           nuovaVariante(

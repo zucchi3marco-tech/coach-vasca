@@ -275,7 +275,10 @@ Future<void> _apriSeduta(
     _app(
       finto,
       schede: schede,
-      home: SedutaSeccoScreen(allenamento: _seduta),
+      home: SedutaSeccoScreen(
+        allenamento: _seduta,
+        adesso: () => DateTime(2026, 10, 14, 9),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -446,6 +449,25 @@ void main() {
       expect(find.text('Come tutti · 3 × 10, 60 kg'), findsOneWidget);
     });
 
+    testWidgets('non c\'è in una seduta già passata', (tester) async {
+      // Come in acqua: una seduta passata non si cambia più.
+      final finto = _SeccoFinto([_rigaSquat, _rigaPlank]);
+      _schermo(tester);
+      await tester.pumpWidget(
+        _app(
+          finto,
+          schede: [_doloreRossi],
+          home: SedutaSeccoScreen(
+            allenamento: _seduta,
+            adesso: () => DateTime(2026, 10, 15, 9),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(testo), findsNothing);
+    });
+
     testWidgets('sparisce quando ha una variante', (tester) async {
       final finto = _SeccoFinto([_rigaSquat, _varianteRossi, _rigaPlank]);
       await _apriSeduta(tester, finto, schede: [_doloreRossi]);
@@ -555,6 +577,39 @@ void main() {
         expect(find.text('Lo stesso, più leggero · 2 × 10, 60 kg'), findsOne);
       },
     );
+
+    testWidgets('«Lo stesso, più leggero» su una sua variante dello stesso '
+        'esercizio la cambia e basta', (tester) async {
+      // Toglierla e rifarla cancellerebbe le serie che ha già registrato.
+      final piuLeggera = _rigaSquat
+          .conPrescrizione(
+            serie: 2,
+            ripetizioni: 10,
+            durataS: null,
+            carico: '40 kg',
+            recuperoS: 60,
+            note: null,
+          )
+          .copyWith(
+            id: 'v-leggera',
+            varianteDi: 'r1',
+            destinatari: const Destinatari.solo(['rossi']),
+          );
+      final finto = _SeccoFinto([_rigaSquat, piuLeggera, _rigaPlank]);
+      await _apriVariante(tester, finto);
+
+      await _tocca(tester, find.text('Squat'));
+      await _tocca(tester, find.text('Lo stesso, più leggero'));
+      await _tocca(tester, find.byTooltip('Meno').first);
+      await _tocca(tester, find.text('Salva esercizio'));
+
+      expect(finto.chiamate, isNot(contains('comeTutti')));
+      expect(finto.chiamate, isNot(contains('aggiungiVariante')));
+      expect(finto.aggiornate.single.id, 'v-leggera');
+      expect(finto.aggiornate.single.serie, 1);
+      expect(finto.aggiornate.single.varianteDi, 'r1');
+      expect(finto.aggiornate.single.destinatari.soloAtleti, ['rossi']);
+    });
 
     testWidgets('«Un altro esercizio» sceglie dall\'elenco e propone la '
         'prescrizione', (tester) async {
@@ -690,7 +745,10 @@ void main() {
             tema: tema,
             scala: 1.3,
             schede: [_doloreRossi],
-            home: SedutaSeccoScreen(allenamento: _seduta),
+            home: SedutaSeccoScreen(
+              allenamento: _seduta,
+              adesso: () => DateTime(2026, 10, 14, 9),
+            ),
           ),
         );
         await tester.pumpAndSettle();
