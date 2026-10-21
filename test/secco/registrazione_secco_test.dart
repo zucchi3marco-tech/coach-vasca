@@ -28,6 +28,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
+import 'serie_finte.dart';
+
 SupabaseClient _senzaRete() => SupabaseClient(
   'http://supabase.finto',
   'chiave-finta',
@@ -67,6 +69,7 @@ SerieFatta _fatta({
   String? carico,
   String? previsto,
   DateTime? il,
+  VotoSerie? voto,
 }) => SerieFatta(
   id: '$atleta-$riga-$serie',
   atletaId: atleta,
@@ -80,6 +83,7 @@ SerieFatta _fatta({
   carico: carico,
   caricoPrevisto: previsto,
   fattaIl: il ?? DateTime(2026, 10, 14, 18),
+  voto: voto,
 );
 
 final _seduta = Allenamento(
@@ -682,6 +686,330 @@ void main() {
       find.text("Previsto: 2 × 12, elastico rosso · recupero 30''"),
       findsOneWidget,
     );
+  });
+
+  group('il voto della serie', () {
+    const face = EsercizioSedutaAtleta(
+      esercizio: EsercizioSecco(
+        id: 'face',
+        clubId: '',
+        nome: 'Face pull',
+        categoria: CategoriaEsercizio.scapole,
+      ),
+      riga: _riga,
+    );
+    const plank = EsercizioSedutaAtleta(
+      esercizio: EsercizioSecco(
+        id: 'plank',
+        clubId: '',
+        nome: 'Plank frontale',
+        categoria: CategoriaEsercizio.core,
+        misura: MisuraEsercizio.tempo,
+      ),
+      riga: _plank,
+    );
+    // Tre serie da 10, senza recupero.
+    const senzaRecupero = EsercizioSedutaAtleta(
+      esercizio: EsercizioSecco(
+        id: 'squat',
+        clubId: '',
+        nome: 'Squat a corpo libero',
+        categoria: CategoriaEsercizio.gambe,
+      ),
+      riga: EsercizioSeduta(
+        id: 'r3',
+        allenamentoId: 's1',
+        clubId: 'c1',
+        esercizioId: 'squat',
+        ordine: 1,
+        ripetizioni: 10,
+      ),
+    );
+    // Una sola serie, senza recupero: finita lei, finisce la seduta.
+    const unaSola = EsercizioSedutaAtleta(
+      esercizio: EsercizioSecco(
+        id: 'squat',
+        clubId: '',
+        nome: 'Squat a corpo libero',
+        categoria: CategoriaEsercizio.gambe,
+      ),
+      riga: EsercizioSeduta(
+        id: 'r4',
+        allenamentoId: 's1',
+        clubId: 'c1',
+        esercizioId: 'squat',
+        ordine: 1,
+        serie: 1,
+        ripetizioni: 10,
+      ),
+    );
+
+    Widget app(
+      SerieFinte serie,
+      List<EsercizioSedutaAtleta> esercizi, {
+      bool daTablet = false,
+      ThemeData? tema,
+      double testo = 1,
+    }) => ProviderScope(
+      overrides: [
+        serieFatteRepositoryProvider.overrideWithValue(serie),
+        serieFatteAtletaProvider.overrideWith(
+          (ref, id) => serie.watchPerAtleta(id),
+        ),
+        rpeAtletaProvider.overrideWith((ref, id) => Stream.value(const [])),
+        seduteCaricoProvider.overrideWith((ref, chiave) async => const []),
+      ],
+      child: MaterialApp(
+        theme: tema ?? AppTheme.chiaro,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(testo)),
+          child: child!,
+        ),
+        home: _Apri(
+          schermata: RegistraSeccoScreen(
+            allenamento: _seduta,
+            atleta: _atleta,
+            esercizi: esercizi,
+            adesso: () => DateTime(2026, 10, 14, 18),
+            suona: ({bool lungo = false}) {},
+            daTablet: daTablet,
+          ),
+        ),
+      ),
+    );
+
+    Future<void> apri(WidgetTester tester) async {
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apri'));
+      await tester.pumpAndSettle();
+    }
+
+    /// Chiude la schermata prima che i provider spariscano (la barra del
+    /// club si rimette a posto alla chiusura).
+    Future<void> chiudi(WidgetTester tester) async {
+      tester
+          .state<NavigatorState>(find.byType(Navigator).first)
+          .popUntil((r) => r.isFirst);
+      await tester.pumpAndSettle();
+    }
+
+    Color? colore(WidgetTester tester, VotoSerie v) => tester
+        .widget<Material>(
+          find
+              .descendant(
+                of: find.byKey(ValueKey('voto-${v.name}')),
+                matching: find.byType(Material),
+              )
+              .first,
+        )
+        .color;
+
+    testWidgets('«Dura» durante il recupero salva il voto; ancora «Dura» lo '
+        'toglie; «Facile» lo cambia', (tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final serie = SerieFinte();
+      await tester.pumpWidget(app(serie, [face]));
+      await apri(tester);
+
+      // Prima di segnare una serie non c'è niente da votare.
+      expect(find.text('Dura'), findsNothing);
+      await tester.tap(find.text('Fatta'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Recupero'), findsOneWidget);
+      expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+      expect(find.text('Facile'), findsOneWidget);
+      expect(find.text('Giusta'), findsOneWidget);
+      expect(find.text('Dura'), findsOneWidget);
+      expect(serie.salvate, hasLength(1));
+      expect(serie.salvate.single.voto, isNull);
+      final neutro = colore(tester, VotoSerie.facile);
+      expect(colore(tester, VotoSerie.dura), neutro);
+
+      await tester.tap(find.text('Dura'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(serie.salvate, hasLength(2));
+      expect(serie.salvate.last.voto, VotoSerie.dura);
+      expect(serie.salvate.last.serie, 1);
+      // Si vede subito: «Dura» evidenziato, gli altri no.
+      expect(colore(tester, VotoSerie.dura), isNot(neutro));
+      expect(colore(tester, VotoSerie.facile), neutro);
+
+      await tester.tap(find.text('Dura'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(serie.salvate, hasLength(3));
+      expect(serie.salvate.last.voto, isNull);
+      expect(colore(tester, VotoSerie.dura), neutro);
+
+      await tester.tap(find.text('Facile'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(serie.salvate.last.voto, VotoSerie.facile);
+      // Il voto è nella serie che vede anche l'allenatore.
+      expect(serie.serie.single.voto, VotoSerie.facile);
+      // E non ha bloccato niente: si salta il recupero e si va avanti.
+      await tester.tap(find.text('Salta il recupero'));
+      await tester.pump();
+      expect(find.text('Serie 2 di 2'), findsOneWidget);
+      expect(find.text('Dura'), findsNothing);
+      await chiudi(tester);
+    });
+
+    testWidgets('senza recupero il voto resta finché non segni la serie '
+        'dopo, che ha il suo', (tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final serie = SerieFinte();
+      await tester.pumpWidget(app(serie, [senzaRecupero]));
+      await apri(tester);
+
+      await tester.tap(find.text('Fatta'));
+      await tester.pump();
+      expect(find.text('Serie 2 di 3'), findsOneWidget);
+      expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+      await tester.tap(find.text('Giusta'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(serie.salvate.last.voto, VotoSerie.giusta);
+
+      await tester.tap(find.text('Fatta'));
+      await tester.pump();
+      expect(find.text('Com\'è andata la serie 2?'), findsOneWidget);
+      // La seconda serie non ha ancora il voto.
+      expect(
+        colore(tester, VotoSerie.giusta),
+        colore(tester, VotoSerie.facile),
+      );
+      expect(
+        [for (final s in serie.serie) (s.serie, s.voto)],
+        [(1, VotoSerie.giusta), (2, null)],
+      );
+      await chiudi(tester);
+    });
+
+    testWidgets('alla fine, sopra «Quanto è stata dura?», e resta dopo '
+        'averlo dato', (tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final serie = SerieFinte();
+      await tester.pumpWidget(app(serie, [unaSola]));
+      await apri(tester);
+
+      await tester.tap(find.text('Fatta'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Seduta finita'), findsOneWidget);
+      expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Com\'è andata la serie 1?')).dy,
+        lessThan(tester.getTopLeft(find.text('Quanto è stata dura?')).dy),
+      );
+
+      await tester.tap(find.text('Dura'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(serie.salvate.last.voto, VotoSerie.dura);
+      // Resta, con la scelta in vista: si può cambiare.
+      expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+      expect(
+        colore(tester, VotoSerie.dura),
+        isNot(colore(tester, VotoSerie.facile)),
+      );
+      await chiudi(tester);
+    });
+
+    testWidgets('«L\'ultima volta» dice com\'è andata, se ci sono voti', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final ieri = DateTime(2026, 10, 7, 18);
+      final serie = SerieFinte([
+        // L'altra volta il face pull: due serie facili.
+        _fatta(seduta: 's0', riga: 'r0', il: ieri, voto: VotoSerie.facile),
+        _fatta(
+          seduta: 's0',
+          riga: 'r0',
+          serie: 2,
+          il: ieri,
+          voto: VotoSerie.facile,
+        ),
+        // Il plank senza voti: niente da dire.
+        _fatta(
+          seduta: 's0',
+          riga: 'r9',
+          esercizio: 'plank',
+          ripetizioni: null,
+          durataS: 20,
+          il: ieri,
+        ),
+      ]);
+      await tester.pumpWidget(app(serie, [face, plank]));
+      await apri(tester);
+
+      expect(find.text('L\'ultima volta: tutte facili'), findsOneWidget);
+      // Il carico proposto non cambia da solo.
+      expect(find.text('Carico: elastico rosso'), findsOneWidget);
+
+      // Il plank: nessun voto l'altra volta, nessuna riga.
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Esercizio successivo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Plank frontale'), findsOneWidget);
+      expect(find.textContaining('L\'ultima volta'), findsNothing);
+      await chiudi(tester);
+    });
+
+    for (final (nome, tema) in [
+      ('chiaro', AppTheme.chiaro),
+      ('scuro', AppTheme.scuro),
+    ]) {
+      testWidgets('dal tablet: il nome in alto e il voto stanno a 360 con il '
+          'testo grande, tema $nome', (tester) async {
+        tester.view.physicalSize = const Size(360, 740);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final serie = SerieFinte();
+        await tester.pumpWidget(
+          app(serie, [face, plank], daTablet: true, tema: tema, testo: 1.3),
+        );
+        await apri(tester);
+        expect(find.text('Rossi Marco'), findsOneWidget);
+        expect(find.text('Esercizio 1 di 2'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.text('Fatta'));
+        await tester.pump();
+        // L'avviso «Serie segnata» sparisce da solo dopo 4 secondi.
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+        await tester.tap(find.text('Facile'));
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(serie.salvate.last.voto, VotoSerie.facile);
+        expect(tester.takeException(), isNull);
+        // Tolto: la serie resta senza voto, e alla fine si chiede.
+        await tester.tap(find.text('Facile'));
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(serie.salvate.last.voto, isNull);
+
+        // La fine: il nome torna «Seduta a secco», il voto è sopra l'RPE.
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Finisci la seduta'));
+        await tester.pumpAndSettle();
+        expect(find.text('Seduta finita'), findsOneWidget);
+        expect(find.text('Rossi Marco'), findsOneWidget);
+        expect(find.text('Com\'è andata la serie 1?'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await chiudi(tester);
+      });
+    }
   });
 }
 

@@ -42,7 +42,8 @@ enum _Fase { pronto, via, lavoro, recupero }
 /// esercizio alla volta con quanto farne e il carico già proposti,
 /// "Fatta" a ogni serie (o "Via" per quelli a tempo, che il telefono
 /// conta), poi il recupero con il conto alla rovescia e il bip. Alla fine
-/// "Quanto è stata dura?". Ogni serie si salva subito, anche senza rete.
+/// "Quanto è stata dura?". Ogni serie si salva subito, anche senza rete, e
+/// si può dire com'è andata («Facile», «Giusta», «Dura»).
 ///
 /// È una schermata da bordo vasca (DESIGN.md, sezione 14): bersagli da
 /// 64, al massimo tre azioni, schermo sempre acceso.
@@ -53,6 +54,7 @@ class RegistraSeccoScreen extends ConsumerStatefulWidget {
     required this.esercizi,
     this.adesso = DateTime.now,
     this.suona = suonaBip,
+    this.daTablet = false,
     super.key,
   });
 
@@ -67,6 +69,10 @@ class RegistraSeccoScreen extends ConsumerStatefulWidget {
 
   /// Chi fa il bip: [suonaBip], o un registratore nei test.
   final void Function({bool lungo}) suona;
+
+  /// Registra dal tablet della squadra: in alto c'è il nome dell'atleta,
+  /// perché lo schermo passa di mano in mano.
+  final bool daTablet;
 
   @override
   ConsumerState<RegistraSeccoScreen> createState() =>
@@ -93,6 +99,18 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
   /// Le serie segnate o tolte qui, finché il telefono non le restituisce.
   final _segnate = <SerieFatta>[];
   final _tolte = <(String, int)>{};
+
+  /// L'ultima serie segnata qui: è quella a cui si riferisce il voto
+  /// («Com'è andata la serie 2?»), con il voto di adesso.
+  SerieFatta? _ultimaSegnata;
+
+  /// Il salvataggio più recente di una serie o di un voto: il voto parte
+  /// dopo la serie, mai prima.
+  Future<void>? _ultimoSalvataggio;
+
+  /// Il voto è già comparso nella schermata finale: resta, così si può
+  /// cambiare.
+  bool _votoInFine = false;
 
   /// I massimali dell'atleta (id esercizio → id atleta → massimale), letti
   /// solo se qualche carico è in percentuale.
@@ -269,19 +287,21 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
     _segnate
       ..removeWhere((s) => s.rigaId == f.rigaId && s.serie == f.serie)
       ..add(f);
-    unawaited(
-      ref
-          .read(serieFatteRepositoryProvider)
-          .salva(f)
-          .then<void>((_) {})
-          .catchError((Object errore) {
-            _segnate.remove(f);
-            if (mounted) {
-              setState(() {});
-              _avviso('Serie non salvata. ${messaggioErrore(errore)}');
-            }
-          }),
-    );
+    _ultimaSegnata = f;
+    final salvataggio = ref
+        .read(serieFatteRepositoryProvider)
+        .salva(f)
+        .then<void>((_) {})
+        .catchError((Object errore) {
+          _segnate.remove(f);
+          if (_ultimaSegnata == f) _ultimaSegnata = null;
+          if (mounted) {
+            setState(() {});
+            _avviso('Serie non salvata. ${messaggioErrore(errore)}');
+          }
+        });
+    _ultimoSalvataggio = salvataggio;
+    unawaited(salvataggio);
 
     final dopo = [...qui, f];
     final daFare = [
@@ -329,9 +349,14 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
         f;
     _segnate.removeWhere((s) => s.rigaId == f.rigaId && s.serie == f.serie);
     _tolte.add((f.rigaId, f.serie));
+    if (_ultimaSegnata?.rigaId == f.rigaId &&
+        _ultimaSegnata?.serie == f.serie) {
+      _ultimaSegnata = null;
+    }
     setState(() {
       _ferma();
       _finita = false;
+      _votoInFine = false;
       _indice = indice;
     });
     ref.read(serieFatteRepositoryProvider).togli(daTogliere).catchError((
@@ -339,6 +364,41 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
     ) {
       if (mounted) _avviso('Serie non tolta. ${messaggioErrore(errore)}');
     });
+  }
+
+  /// «Facile», «Giusta» o «Dura» per l'ultima serie segnata; lo stesso
+  /// tocco due volte toglie il voto. Non blocca niente: parte dopo il
+  /// salvataggio della serie e, se non va, il voto torna com'era.
+  void _votaUltima(VotoSerie voto) {
+    final prima = _ultimaSegnata;
+    if (prima == null) return;
+    final cosi = prima.conVoto(prima.voto == voto ? null : voto);
+    bool stessa(SerieFatta s) =>
+        s.rigaId == prima.rigaId && s.serie == prima.serie;
+    void imposta(SerieFatta f) {
+      _segnate
+        ..removeWhere(stessa)
+        ..add(f);
+      _ultimaSegnata = f;
+    }
+
+    setState(() => imposta(cosi));
+    final repository = ref.read(serieFatteRepositoryProvider);
+    final salvataggio = (_ultimoSalvataggio ?? Future<void>.value())
+        .then<void>((_) async {
+          // La serie è stata tolta (o non salvata) nel frattempo.
+          if (!_segnate.any(stessa)) return;
+          await repository.salva(cosi);
+        })
+        .catchError((Object errore) {
+          if (_ultimaSegnata == cosi) imposta(prima);
+          if (mounted) {
+            setState(() {});
+            _avviso('Voto non salvato. ${messaggioErrore(errore)}');
+          }
+        });
+    _ultimoSalvataggio = salvataggio;
+    unawaited(salvataggio);
   }
 
   Future<void> _togliUltima(EsercizioSedutaAtleta e) async {
@@ -466,6 +526,13 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
             )
             .firstOrNull
             ?.rpe;
+        // Il voto dell'ultima serie, se non c'è ancora (o l'hai appena
+        // dato qui: resta, così lo cambi).
+        final ultima = _ultimaSegnata;
+        final votoFine = ultima != null && (ultima.voto == null || _votoInFine)
+            ? ultima
+            : null;
+        if (votoFine != null) _votoInFine = true;
         corpo = _Fine(
           fatte: conto.fatte,
           totali: conto.totali,
@@ -475,9 +542,11 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
           onTorna: conto.fatte < conto.totali
               ? () => setState(() {
                   _finita = false;
+                  _votoInFine = false;
                   _indice = esercizioDaCuiPartire(_righe, qui);
                 })
               : null,
+          votoSerie: votoFine == null ? null : _votoSerie(votoFine),
         );
       } else {
         final e = attuale = esercizi[indice];
@@ -508,6 +577,8 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
                     ? null
                     : 'Poi: ${esercizi[daFare.firstWhere((i) => i > indice, orElse: () => daFare.first)].esercizio.nome}'
               : null,
+          ultimaVolta: descriviVoti(ultimaVoltaDi(r, tutte)),
+          votoSerie: _votoDaMostrare(r),
           onMeno: () => setState(
             () => _quanto = _passo(r, (_quanto ?? _proposto(r)), -1),
           ),
@@ -545,13 +616,36 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
 
     final e = attuale;
     final indice = _indice;
+    final titoloBarra = _finita || indice == null
+        ? 'Seduta a secco'
+        : 'Esercizio ${indice + 1} di ${esercizi.length}';
     Widget pagina = Scaffold(
       appBar: AppBar(
-        title: Text(
-          _finita || indice == null
-              ? 'Seduta a secco'
-              : 'Esercizio ${indice + 1} di ${esercizi.length}',
-        ),
+        toolbarHeight: widget.daTablet ? 72 : null,
+        title: widget.daTablet
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.atleta.nomeCompleto,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Dentro il tema da bordo vasca: i colori sono i suoi.
+                  Builder(
+                    builder: (temaContext) => Text(
+                      titoloBarra,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.piccolo.copyWith(
+                        color: temaContext.colori.testoSecondario,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Text(titoloBarra),
         actions: [
           if (e != null)
             IconButton(
@@ -599,6 +693,37 @@ class _RegistraSeccoScreenState extends ConsumerState<RegistraSeccoScreen> {
     return pagina;
   }
 
+  /// La riga «Com'è andata la serie 2?» con i tre voti, per l'ultima
+  /// serie segnata; se è di un altro esercizio di quello in vista, ne dice
+  /// il nome.
+  Widget _votoSerie(SerieFatta ultima, {String? nomeEsercizio}) =>
+      _VotoSerieRiga(
+        serie: ultima.serie,
+        nomeEsercizio: nomeEsercizio,
+        voto: ultima.voto,
+        onVoto: _votaUltima,
+      );
+
+  /// Il voto sotto il recupero e, per un esercizio senza recupero, finché
+  /// non si segna la serie dopo. Null: niente da mostrare.
+  Widget? _votoDaMostrare(EsercizioSeduta inVista) {
+    final ultima = _ultimaSegnata;
+    if (ultima == null) return null;
+    final riga = widget.esercizi
+        .where((e) => e.riga.id == ultima.rigaId)
+        .firstOrNull;
+    final senzaRecupero = (riga?.riga.recuperoS ?? 0) <= 0;
+    final mostra =
+        _fase == _Fase.recupero || (_fase == _Fase.pronto && senzaRecupero);
+    if (!mostra) return null;
+    return _votoSerie(
+      ultima,
+      nomeEsercizio: riga != null && riga.riga.id != inVista.id
+          ? riga.esercizio.nome
+          : null,
+    );
+  }
+
   /// Un passo di − o +: una ripetizione, o 5'' per quelli a tempo.
   int _passo(EsercizioSeduta r, int valore, int verso) => r.durataS != null
       ? (valore + 5 * verso).clamp(5, 3600)
@@ -621,6 +746,8 @@ class _Esercizio extends StatelessWidget {
     required this.massimale,
     required this.restano,
     required this.poi,
+    required this.ultimaVolta,
+    required this.votoSerie,
     required this.onMeno,
     required this.onPiu,
     required this.onCarico,
@@ -651,6 +778,12 @@ class _Esercizio extends StatelessWidget {
   final double? massimale;
   final Duration restano;
   final String? poi;
+
+  /// Com'è andata l'ultima volta («tutte facili»), se si sa.
+  final String? ultimaVolta;
+
+  /// La riga del voto dell'ultima serie segnata, quando va mostrata.
+  final Widget? votoSerie;
   final VoidCallback onMeno;
   final VoidCallback onPiu;
   final VoidCallback onCarico;
@@ -827,6 +960,16 @@ class _Esercizio extends StatelessWidget {
           icona: Icons.edit_outlined,
           onTap: onCarico,
         ),
+        if (ultimaVolta != null) ...[
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            'L\'ultima volta: $ultimaVolta',
+            textAlign: TextAlign.center,
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.s12),
         _Bottone(
           etichetta: aTempo ? 'Via' : 'Fatta',
@@ -901,6 +1044,10 @@ class _Esercizio extends StatelessWidget {
                       child: Center(child: centro),
                     ),
                   ),
+                  if (votoSerie != null) ...[
+                    const SizedBox(height: AppSpacing.s16),
+                    votoSerie!,
+                  ],
                   const SizedBox(height: AppSpacing.s24),
                   ...azioni,
                 ],
@@ -1119,6 +1266,131 @@ class _Bottone extends StatelessWidget {
   }
 }
 
+/// «Com'è andata la serie 2?» con tre bottoni uguali: Facile, Giusta,
+/// Dura. Quello scelto è evidenziato; toccarlo di nuovo toglie il voto.
+/// Il voto è facoltativo: la serie è già segnata.
+class _VotoSerieRiga extends StatelessWidget {
+  const _VotoSerieRiga({
+    required this.serie,
+    required this.nomeEsercizio,
+    required this.voto,
+    required this.onVoto,
+  });
+
+  final int serie;
+
+  /// Solo se la serie è di un altro esercizio di quello in vista.
+  final String? nomeEsercizio;
+  final VotoSerie? voto;
+  final ValueChanged<VotoSerie> onVoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          nomeEsercizio == null
+              ? 'Com\'è andata la serie $serie?'
+              : 'Com\'è andata la serie $serie di $nomeEsercizio?',
+          textAlign: TextAlign.center,
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        // Alti uguali anche se una parola va a capo (testo grande).
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, v) in VotoSerie.values.indexed) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.s8),
+                Expanded(
+                  child: _BottoneVoto(
+                    key: ValueKey('voto-${v.name}'),
+                    voto: v,
+                    scelto: voto == v,
+                    onTap: () => onVoto(v),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BottoneVoto extends StatelessWidget {
+  const _BottoneVoto({
+    required this.voto,
+    required this.scelto,
+    required this.onTap,
+    super.key,
+  });
+
+  final VotoSerie voto;
+  final bool scelto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Semantics(
+      button: true,
+      selected: scelto,
+      label: voto.etichetta,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Material(
+        color: scelto ? colori.azioneTenue : colori.superficie,
+        borderRadius: BorderRadius.circular(AppRadius.controllo),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.controllo),
+          child: Container(
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.altezzaMinimaBersaglioVasca,
+            ),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.controllo),
+              border: Border.all(
+                color: scelto ? colori.azione : colori.lineaForte,
+                width: scelto ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (scelto) ...[
+                  Icon(Icons.check, size: 18, color: colori.azione),
+                  const SizedBox(width: AppSpacing.s4),
+                ],
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      voto.etichetta,
+                      maxLines: 1,
+                      style: AppTypography.corpoForte.copyWith(
+                        fontSize: 18,
+                        color: colori.testo,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// La seduta finita: quante serie, "Quanto è stata dura?" e "Fatto".
 class _Fine extends StatelessWidget {
   const _Fine({
@@ -1128,6 +1400,7 @@ class _Fine extends StatelessWidget {
     required this.onRpe,
     required this.onFatto,
     required this.onTorna,
+    required this.votoSerie,
   });
 
   final int fatte;
@@ -1136,6 +1409,9 @@ class _Fine extends StatelessWidget {
   final ValueChanged<int> onRpe;
   final VoidCallback onFatto;
   final VoidCallback? onTorna;
+
+  /// Il voto dell'ultima serie, se manca o l'hai appena dato.
+  final Widget? votoSerie;
 
   @override
   Widget build(BuildContext context) {
@@ -1163,6 +1439,10 @@ class _Fine extends StatelessWidget {
                 style: AppTypography.numerica(AppTypography.corpo)
                     .copyWith(color: colori.testoSecondario),
               ),
+              if (votoSerie != null) ...[
+                const SizedBox(height: AppSpacing.s24),
+                votoSerie!,
+              ],
               const SizedBox(height: AppSpacing.s32),
               Text(
                 'Quanto è stata dura?',
