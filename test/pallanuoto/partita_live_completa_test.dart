@@ -181,6 +181,29 @@ Finder _calottinaAvversaria(int numero) => find.byWidgetPredicate(
 );
 
 void main() {
+  testWidgets('telefono in orizzontale: tutte le calottine si toccano '
+      'senza scorrere', (tester) async {
+    final repository = _RepositoryFinto();
+    await _apri(tester, repository, 'essenziale');
+    // Un telefono in orizzontale (812 x 375), come a bordo vasca.
+    tester.view.physicalSize = const Size(812, 375);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(CampoTiro));
+    await tester.pumpAndSettle();
+    final altezza = tester.view.physicalSize.height;
+    for (var n = 1; n <= 15; n++) {
+      for (final calottina in [_calottina(n), _calottinaAvversaria(n)]) {
+        expect(calottina, findsOneWidget, reason: 'calottina $n');
+        final r = tester.getRect(calottina);
+        expect(r.top, greaterThanOrEqualTo(0), reason: 'calottina $n');
+        expect(r.bottom, lessThanOrEqualTo(altezza), reason: 'calottina $n');
+      }
+    }
+    expect(tester.takeException(), isNull);
+    await _chiudi(tester, repository);
+  });
+
   testWidgets('modalità completa: gol in controfuga, poi l\'assist', (
     tester,
   ) async {

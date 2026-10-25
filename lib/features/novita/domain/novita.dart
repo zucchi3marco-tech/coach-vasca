@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'falli-gravi-dal-vivo',
+    data: DateTime(2026, 10, 25),
+    titolo: 'Falli gravi e calottine dal vivo',
+    testo:
+        'Nella partita dal vivo espulsioni e rigori contano insieme come '
+        'falli gravi: accanto alla calottina il numero, al terzo diventa nera '
+        'e il giocatore non si sceglie più. Le calottine ai lati del campo '
+        'stanno tutte nello schermo, anche col telefono in orizzontale.',
+    importante: true,
+  ),
+  Novita(
     id: 'convocati-insieme',
     data: DateTime(2026, 10, 25),
     titolo: 'Tutti i convocati in una volta',
