@@ -4,6 +4,7 @@ import 'package:coach_vasca/core/supabase/supabase_providers.dart';
 import 'package:coach_vasca/core/sync/sync_engine.dart';
 import 'package:coach_vasca/features/atleti/application/current_atleta_provider.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
+import 'package:coach_vasca/features/novita/domain/novita.dart';
 import 'package:coach_vasca/features/club/application/current_club_provider.dart';
 import 'package:coach_vasca/features/club/domain/club.dart';
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
@@ -155,6 +156,7 @@ void main() {
     await tester.tap(find.text('Novità'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Scrivimi e le novità'), findsOneWidget);
+    // La più recente è in cima (le vecchie scendono a ogni pubblicazione).
+    expect(find.text(registroNovita.first.titolo), findsOneWidget);
   });
 }
