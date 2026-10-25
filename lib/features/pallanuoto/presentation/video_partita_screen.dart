@@ -284,15 +284,30 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     if (previsto != null) _controllore.vaiA(previsto);
   }
 
+  /// Apre un foglio o una finestra sopra il video. Sul web il video di
+  /// YouTube è una pagina a sé: finché resta aperto, i clic sopra il
+  /// video andrebbero a YouTube invece che alle righe del foglio.
+  Future<T> _sopraIlVideo<T>(Future<T> Function() apri) async {
+    _controllore.accettaTocchi(false);
+    try {
+      return await apri();
+    } finally {
+      // Disegnando il video resta senza tocchi.
+      if (mounted) _controllore.accettaTocchi(_bozza == null);
+    }
+  }
+
   Future<void> _scegliEvento(
     VideoPartita video,
     List<EventoPartita> eventi,
     String Function(String?) nome,
   ) async {
-    final evento = await showModalBottomSheet<EventoPartita>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => _FoglioEventi(eventi: eventi, nome: nome),
+    final evento = await _sopraIlVideo(
+      () => showModalBottomSheet<EventoPartita>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => _FoglioEventi(eventi: eventi, nome: nome),
+      ),
     );
     if (evento != null && mounted) _avviaAllineamento(evento, video);
   }
@@ -458,22 +473,24 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     required String testo,
     required String azione,
   }) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(titolo),
-        content: Text(testo),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Annulla'),
-          ),
-          DangerButton(
-            label: azione,
-            expanded: false,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
-        ],
+    final ok = await _sopraIlVideo(
+      () => showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(titolo),
+          content: Text(testo),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annulla'),
+            ),
+            DangerButton(
+              label: azione,
+              expanded: false,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        ),
       ),
     );
     return ok == true;
@@ -1078,41 +1095,43 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     List<DistintaGiocatore> convocati,
     String Function(String?) nome,
   ) async {
-    final scelto = await showModalBottomSheet<({String? atletaId})>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            children: [
-              Text(
-                'Le clip di chi?',
-                style: AppTypography.sezione.copyWith(
-                  color: context.colori.testo,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.s12),
-              AppListPanel(
-                righe: [
-                  AppListRow(
-                    titolo: 'Tutti i giocatori',
-                    onTap: () => Navigator.of(context).pop((atletaId: null)),
+    final scelto = await _sopraIlVideo(
+      () => showModalBottomSheet<({String? atletaId})>(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(AppSpacing.s16),
+              children: [
+                Text(
+                  'Le clip di chi?',
+                  style: AppTypography.sezione.copyWith(
+                    color: context.colori.testo,
                   ),
-                  for (final c in convocati)
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                AppListPanel(
+                  righe: [
                     AppListRow(
-                      titolo: nome(c.atletaId),
-                      sottotitolo: 'Calottina ${c.numeroCalottina}',
-                      onTap: () =>
-                          Navigator.of(context).pop((atletaId: c.atletaId)),
+                      titolo: 'Tutti i giocatori',
+                      onTap: () => Navigator.of(context).pop((atletaId: null)),
                     ),
-                ],
-              ),
-            ],
+                    for (final c in convocati)
+                      AppListRow(
+                        titolo: nome(c.atletaId),
+                        sottotitolo: 'Calottina ${c.numeroCalottina}',
+                        onTap: () =>
+                            Navigator.of(context).pop((atletaId: c.atletaId)),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

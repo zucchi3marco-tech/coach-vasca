@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../theme/palette_acqua.dart';
 import 'controllore_video.dart';
 
+/// Per i test: le richieste di accettare o no i tocchi, in ordine.
+@visibleForTesting
+final tocchiRichiesti = <bool>[];
+
 /// Fuori dal web (e nei test) non c'è un lettore YouTube: un riquadro
 /// nero al suo posto, con un motore finto che obbedisce ai comandi, così
 /// la schermata del video si prova lo stesso.
@@ -56,7 +60,7 @@ class _LettoreYoutubeState extends State<LettoreYoutube>
   void impostaVelocita(double velocita) {}
 
   @override
-  void accettaTocchi(bool accetta) {}
+  void accettaTocchi(bool accetta) => tocchiRichiesti.add(accetta);
 
   @override
   Widget build(BuildContext context) =>

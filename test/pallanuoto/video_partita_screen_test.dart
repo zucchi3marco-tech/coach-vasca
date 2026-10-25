@@ -251,10 +251,15 @@ void main() {
     await tester.pumpWidget(_app(finto, VideoPartitaScreen(partita: _partita)));
     await tester.pumpAndSettle();
 
+    tocchiRichiesti.clear();
     await tester.tap(find.text('Allinea il video'));
     await tester.pumpAndSettle();
+    // Sul web, con l'elenco aperto il video non deve prendersi i clic
+    // delle righe che gli stanno sopra.
+    expect(tocchiRichiesti, [false]);
     await tester.tap(find.text('Tiro — Rossi Marco — Gol (T1)'));
     await tester.pumpAndSettle();
+    expect(tocchiRichiesti, [false, true]);
 
     // Fuori dall'elenco che scorre: subito sotto il video, anche con la
     // barra del club in cima allo schermo vero.
