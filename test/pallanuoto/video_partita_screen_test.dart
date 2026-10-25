@@ -243,6 +243,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('PC 1500x920: «È qui» sta subito sotto il video', (tester) async {
+    tester.view.physicalSize = const Size(1500, 920);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final finto = _RepositoryFinto(_video());
+    await tester.pumpWidget(_app(finto, VideoPartitaScreen(partita: _partita)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Allinea il video'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tiro — Rossi Marco — Gol (T1)'));
+    await tester.pumpAndSettle();
+
+    // Fuori dall'elenco che scorre: subito sotto il video, anche con la
+    // barra del club in cima allo schermo vero.
+    final eQui = find.text('È qui');
+    expect(eQui, findsOneWidget);
+    final video = tester.getRect(find.byType(AspectRatio).first);
+    expect(tester.getRect(eQui).top - video.bottom, lessThan(80));
+    await tester.tap(eQui);
+    await tester.pumpAndSettle();
+    expect(finto.allineamenti, hasLength(1));
+  });
+
   testWidgets('sul fotogramma della clip si disegna una nota per il '
       'giocatore', (tester) async {
     _schermoGrande(tester);

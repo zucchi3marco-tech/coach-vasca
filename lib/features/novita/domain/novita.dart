@@ -46,11 +46,11 @@ final List<Novita> registroNovita = [
   Novita(
     id: 'video-in-orizzontale',
     data: DateTime(2026, 10, 25),
-    titolo: 'Video della partita in orizzontale',
+    titolo: '«È qui» sempre sotto il video',
     testo:
-        'Con il telefono in orizzontale il video della partita non copre più '
-        'i comandi sotto: «È qui» per allinearlo e le clip si raggiungono '
-        'scorrendo sotto il video.',
+        'Allineando il video della partita, «È qui» e «Annulla» stanno fissi '
+        'subito sotto il video, sul PC come sul telefono in orizzontale: non '
+        'serve più scorrere per trovarli.',
   ),
   Novita(
     id: 'portieri-parate',

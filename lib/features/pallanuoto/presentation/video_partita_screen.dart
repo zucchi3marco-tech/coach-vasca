@@ -632,6 +632,28 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
 
     final elenco = _elencoClip(video, eventi, nomi, nome, convocati);
 
+    // Allineando, «È qui» sta fisso sotto il video: dentro l'elenco che
+    // scorre, su un PC finiva sotto il bordo dello schermo.
+    final barraAllineamento = _daAllineare == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.s8),
+            child: _Affiancati([
+              PrimaryButton(
+                label: 'È qui',
+                icon: Icons.check,
+                isLoading: _salvando,
+                onPressed: _salvando ? null : () => _eQui(video),
+              ),
+              SecondaryButton(
+                label: 'Annulla',
+                onPressed: _salvando
+                    ? null
+                    : () => setState(() => _daAllineare = null),
+              ),
+            ]),
+          );
+
     // Il video non prende mai più di metà altezza abbondante: con il
     // telefono in orizzontale copriva i comandi sotto (anche «È qui»).
     Widget colonnaVideo(List<Widget> figli) => LayoutBuilder(
@@ -641,6 +663,7 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
             constraints: BoxConstraints(maxHeight: vincoli.maxHeight * 0.55),
             child: Center(child: lettore),
           ),
+          ?barraAllineamento,
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(bottom: AppSpacing.s32),
@@ -768,26 +791,11 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
           spiegazione(
             'Porta il video al momento in cui succede «${descriviEvento(evento, nome)}»'
             '${evento.esito == 'gol' ? ' (quando la palla entra)' : ''}, '
-            'fermalo e tocca «È qui». Gli altri eventi si mettono a posto '
-            'da soli.',
+            'fermalo e tocca «È qui», subito sotto il video. Gli altri '
+            'eventi si mettono a posto da soli.',
           ),
           const SizedBox(height: AppSpacing.s12),
           _PassiFini(controllore: _controllore),
-          const SizedBox(height: AppSpacing.s16),
-          _Affiancati([
-            PrimaryButton(
-              label: 'È qui',
-              icon: Icons.check,
-              isLoading: _salvando,
-              onPressed: _salvando ? null : () => _eQui(video),
-            ),
-            SecondaryButton(
-              label: 'Annulla',
-              onPressed: _salvando
-                  ? null
-                  : () => setState(() => _daAllineare = null),
-            ),
-          ]),
         ]),
       ];
     }
