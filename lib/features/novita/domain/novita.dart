@@ -45,7 +45,7 @@ class Novita {
 final List<Novita> registroNovita = [
   Novita(
     id: 'convocati-insieme',
-    data: DateTime(2026, 10, 21),
+    data: DateTime(2026, 10, 25),
     titolo: 'Tutti i convocati in una volta',
     testo:
         'Nella distinta di una partita il pulsante in basso apre «Scegli i '
@@ -56,7 +56,7 @@ final List<Novita> registroNovita = [
   ),
   Novita(
     id: 'numeri-e-capitani',
-    data: DateTime(2026, 10, 21),
+    data: DateTime(2026, 10, 25),
     titolo: 'Numeri, capitano e vice',
     testo:
         'In cima alla distinta tocchi «Capitano» o «Vice capitano» e scegli '
@@ -66,7 +66,7 @@ final List<Novita> registroNovita = [
   ),
   Novita(
     id: 'modulo-distinta',
-    data: DateTime(2026, 10, 21),
+    data: DateTime(2026, 10, 25),
     titolo: 'Il modulo della distinta in Excel',
     testo:
         'Nella distinta, l\'icona per scaricare prepara il modulo FIN in '
