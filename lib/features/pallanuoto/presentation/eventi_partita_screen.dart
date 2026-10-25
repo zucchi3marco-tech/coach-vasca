@@ -127,16 +127,34 @@ class EventiPartitaScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: AppSpacing.s12),
                                   Expanded(
-                                    child: Text(
-                                      descriviEvento(
-                                        e,
-                                        (id) =>
-                                            atletiPerId[id]?.nomeCompleto ??
-                                            'Atleta rimosso',
-                                      ),
-                                      style: AppTypography.corpoForte.copyWith(
-                                        color: colori.testo,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          descriviEvento(
+                                            e,
+                                            (id) =>
+                                                atletiPerId[id]?.nomeCompleto ??
+                                                'Atleta rimosso',
+                                          ),
+                                          style: AppTypography.corpoForte
+                                              .copyWith(color: colori.testo),
+                                        ),
+                                        // Chi era in porta su un tiro
+                                        // avversario.
+                                        if (e.tipo == 'tiro' &&
+                                            e.squadra == 'avversaria' &&
+                                            e.portiereId != null)
+                                          Text(
+                                            'In porta: '
+                                            '${atletiPerId[e.portiereId]?.cognome ?? 'Atleta rimosso'}',
+                                            style: AppTypography.piccolo
+                                                .copyWith(
+                                                  color: colori.testoSecondario,
+                                                ),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                   if (inCorso) ...[
@@ -451,6 +469,34 @@ class _AzioniEvento extends ConsumerWidget {
     }
   }
 
+  /// Chi era in porta su un tiro avversario: si sceglie fra i portieri
+  /// della partita, o "nessuno".
+  Future<void> _scegliPortiere(BuildContext context, WidgetRef ref) async {
+    final scelta = await showModalBottomSheet<({String? atletaId})>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FoglioGiocatori(
+        partita: partita,
+        titolo: 'Chi era in porta?',
+        nessuno: 'Non so',
+        attuale: evento.portiereId,
+        soloPortieri: true,
+      ),
+    );
+    if (scelta == null) return;
+    try {
+      await ref
+          .read(eventiPartitaRepositoryProvider)
+          .impostaPortiere(id: evento.id, atletaId: scelta.atletaId);
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+      }
+    }
+  }
+
   Future<void> _elimina(BuildContext context, WidgetRef ref) async {
     final conferma = await showDialog<bool>(
       context: context,
@@ -489,7 +535,8 @@ class _AzioniEvento extends ConsumerWidget {
                 partita.dettaglioTiro == 'dettagliato'
             ? esitiTiroDettagliato
             : esitiTiroSemplice,
-      'tiro' => esitiTiroSemplice,
+      // Per un tiro avversario serve distinguere parato e palo/fuori.
+      'tiro' => esitiTiroDettagliato,
       'superiorita' => esitiSuperiorita,
       _ => const <(String, String)>[],
     };
@@ -502,6 +549,15 @@ class _AzioniEvento extends ConsumerWidget {
         evento.esito == 'gol' &&
         evento.contestoTiro != 'rigore' &&
         (partita.eventiCompleti || evento.assistDi != null);
+    // Il portiere si sceglie fra quelli della partita (se ce ne sono).
+    final haPortieri =
+        (ref.watch(distintaListProvider(partita.id)).value ?? const []).any(
+          (g) => g.portiere,
+        );
+    final conPortiere =
+        evento.tipo == 'tiro' &&
+        evento.squadra == 'avversaria' &&
+        (haPortieri || evento.portiereId != null);
     final conGuadagnata =
         evento.tipo == 'espulsione' &&
         evento.squadra == 'avversaria' &&
@@ -564,6 +620,18 @@ class _AzioniEvento extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s8),
             ],
+            if (conPortiere) ...[
+              SizedBox(
+                height: AppSpacing.altezzaMinimaBersaglioVasca,
+                child: SecondaryButton(
+                  label: evento.portiereId == null
+                      ? 'Chi era in porta?'
+                      : 'Cambia il portiere',
+                  onPressed: () => _scegliPortiere(context, ref),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+            ],
             TextButton(
               onPressed: () => _elimina(context, ref),
               style: TextButton.styleFrom(
@@ -588,6 +656,7 @@ class _FoglioGiocatori extends ConsumerWidget {
     required this.nessuno,
     this.attuale,
     this.escluso,
+    this.soloPortieri = false,
   });
 
   final Partita partita;
@@ -597,6 +666,9 @@ class _FoglioGiocatori extends ConsumerWidget {
 
   /// Chi non si può scegliere (chi ha segnato, per l'assist).
   final String? escluso;
+
+  /// Solo i convocati che in questa partita sono portieri.
+  final bool soloPortieri;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -643,7 +715,9 @@ class _FoglioGiocatori extends ConsumerWidget {
             AppListPanel(
               righe: [
                 for (final g in convocati)
-                  if (atletiPerId[g.atletaId] != null && g.atletaId != escluso)
+                  if (atletiPerId[g.atletaId] != null &&
+                      g.atletaId != escluso &&
+                      (!soloPortieri || g.portiere))
                     AppListRow(
                       leading: CapBadge(
                         numero: g.numeroCalottina,

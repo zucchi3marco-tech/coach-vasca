@@ -201,6 +201,22 @@ class PartiteRepository {
     }
   }
 
+  /// Le partite con questi id (per le statistiche di un portiere, che
+  /// parte dagli id delle partite in cui ha giocato).
+  Future<List<Partita>> perIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      final rows = await _client.from('partite').select().inFilter('id', ids);
+      return [for (final r in rows) Partita.fromMap(r)];
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(
+        _db.partiteTable,
+      )..where((t) => t.id.isIn(ids))).get();
+      return righe.map(_fromRow).toList();
+    }
+  }
+
   Future<Partita> _rileggiLocale(String id) async {
     return _fromRow(
       await (_db.select(

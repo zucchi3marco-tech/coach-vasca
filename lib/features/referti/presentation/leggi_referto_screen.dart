@@ -21,6 +21,7 @@ import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../data/referti_repository.dart';
 import '../domain/referto_letto.dart';
+import 'chi_era_in_porta.dart';
 
 class LeggiRefertoScreen extends ConsumerStatefulWidget {
   const LeggiRefertoScreen({required this.partita, super.key});
@@ -233,6 +234,7 @@ class _RefertoModificabile extends ConsumerStatefulWidget {
 class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
   bool _isSaving = false;
   String? _saveError;
+  final _inPorta = GlobalKey<ChiEraInPortaState>();
   late final TextEditingController _squadraCasaCtrl;
   late final TextEditingController _squadraTrasfertaCtrl;
   late final TextEditingController _risultatoCasaCtrl;
@@ -390,6 +392,12 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
             ),
           ),
         const SizedBox(height: AppSpacing.s24),
+        ChiEraInPorta(
+          key: _inPorta,
+          partita: widget.partita,
+          tempi: _parzialiCtrl.length,
+        ),
+        const SizedBox(height: AppSpacing.s24),
         _TabellaSquadraModificabile(
           titolo: 'Squadra casa',
           giocatori: _giocatoriCasaCtrl,
@@ -498,6 +506,8 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
             giocatoriCasa: giocatoriCasa,
             giocatoriTrasferta: giocatoriTrasferta,
           );
+      // Chi era in porta in ogni tempo, nella distinta.
+      await _inPorta.currentState?.salva();
 
       ref.invalidate(refertoPerPartitaProvider(partitaId));
       if (mounted) {

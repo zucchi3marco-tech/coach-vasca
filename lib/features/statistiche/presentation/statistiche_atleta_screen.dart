@@ -115,6 +115,12 @@ class _DatiAtleta extends ConsumerWidget {
           final rigaEventi = _trovaEventi(e.perAtleta);
           return ListView(
             children: [
+              // Il portiere vede prima i suoi numeri; i gol che segna
+              // restano nelle sezioni qui sotto.
+              if (atleta.portiere) ...[
+                _SezioneInPorta(atleta: atleta, stagione: stagione),
+                const SizedBox(height: AppSpacing.s28),
+              ],
               const TitoloSezione(
                 'Da referti',
                 spiegazione: 'Non include i tiri sbagliati (non registrati nel referto).',
@@ -238,6 +244,73 @@ class _DatiAtleta extends ConsumerWidget {
         suggerimento: 'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
         dettaglioTecnico: messaggioErrore(err),
       ),
+    );
+  }
+}
+
+/// I numeri da portiere nella stagione scelta: partite in porta, parate
+/// e gol subiti.
+class _SezioneInPorta extends ConsumerWidget {
+  const _SezioneInPorta({required this.atleta, required this.stagione});
+
+  final Atleta atleta;
+  final Stagione stagione;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final numeriAsync = ref.watch(
+      numeriPortiereProvider((
+        atletaId: atleta.id,
+        dataInizio: stagione.dataInizio,
+        dataFine: stagione.dataFine,
+      )),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const TitoloSezione(
+          'In porta',
+          spiegazione:
+              'Le parate arrivano solo dalle partite seguite dal vivo con '
+              '"Eventi partita": il referto FIN non le riporta. I gol '
+              'subiti, dove la partita non è stata seguita dal vivo, si '
+              'calcolano dai parziali del referto nei tempi in cui era in '
+              'porta.',
+        ),
+        numeriAsync.when(
+          data: (n) {
+            if (n.partite == 0) {
+              return const RiquadroVuoto(
+                'Nessuna partita in porta in questa stagione.',
+              );
+            }
+            return GrigliaNumeri(
+              children: [
+                StatPanel(etichetta: 'Partite', valore: '${n.partite}'),
+                StatPanel(etichetta: 'Parate', valore: '${n.parate}'),
+                StatPanel(etichetta: 'Gol subiti', valore: '${n.golSubiti}'),
+                StatPanel(
+                  etichetta: '% parate',
+                  valore: n.percentualeParate == null
+                      ? '—'
+                      : '${n.percentualeParate}%',
+                ),
+                StatPanel(
+                  etichetta: 'Gol subiti/partita',
+                  valore: (n.golSubiti / n.partite).toStringAsFixed(2),
+                ),
+              ],
+            );
+          },
+          loading: () => const LoadingSkeleton(height: 96),
+          error: (err, _) => ErrorBanner(
+            messaggio: 'Non è stato possibile caricare i numeri da portiere.',
+            suggerimento:
+                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+            dettaglioTecnico: messaggioErrore(err),
+          ),
+        ),
+      ],
     );
   }
 }

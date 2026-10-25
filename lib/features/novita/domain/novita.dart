@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'portieri-parate',
+    data: DateTime(2026, 10, 25),
+    titolo: 'Parate e gol subiti dei portieri',
+    testo:
+        'Dal vivo, accanto al tempo, «In porta» dice chi gioca in porta: lo '
+        'tocchi per cambiarlo, anche a metà tempo, e a ogni cambio di tempo '
+        'l\'app lo chiede. Il tiro avversario si segna Gol, Parato o '
+        'Palo/fuori. Leggendo un referto scegli chi era in porta in ogni '
+        'tempo. Nella sua pagina il portiere vede parate, gol subiti e '
+        '% parate al posto dei gol.',
+    importante: true,
+  ),
+  Novita(
     id: 'falli-gravi-dal-vivo',
     data: DateTime(2026, 10, 25),
     titolo: 'Falli gravi e calottine dal vivo',

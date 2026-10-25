@@ -19,6 +19,7 @@ import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../domain/referto_letto.dart';
 import '../domain/referto_partita.dart';
+import 'chi_era_in_porta.dart';
 import 'leggi_referto_screen.dart';
 
 /// Mostra il referto gia' salvato per questa partita (risultato finale,
@@ -77,6 +78,7 @@ class RefertoPartitaScreen extends ConsumerWidget {
                 onAzionePrincipale: () => _leggiReferto(context),
               )
             : _RefertoSalvatoView(
+                partita: partita,
                 referto: referto,
                 onRileggi: () => _rileggiReferto(context),
               ),
@@ -99,8 +101,13 @@ class RefertoPartitaScreen extends ConsumerWidget {
 }
 
 class _RefertoSalvatoView extends StatelessWidget {
-  const _RefertoSalvatoView({required this.referto, required this.onRileggi});
+  const _RefertoSalvatoView({
+    required this.partita,
+    required this.referto,
+    required this.onRileggi,
+  });
 
+  final Partita partita;
   final RefertoPartita referto;
   final VoidCallback onRileggi;
 
@@ -126,6 +133,12 @@ class _RefertoSalvatoView extends StatelessWidget {
               onTap: onRileggi,
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.s24),
+        ChiEraInPorta(
+          partita: partita,
+          tempi: referto.parziali.length,
+          conPulsanteSalva: true,
         ),
         const SizedBox(height: AppSpacing.s24),
         _TabellaGiocatoriSalvata(

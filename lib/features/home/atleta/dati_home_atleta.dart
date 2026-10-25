@@ -8,9 +8,11 @@ import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/domain/numeri_portiere.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../presenze/application/presenze_providers.dart';
 import '../../presenze/domain/presenza.dart';
+import '../../statistiche/application/statistiche_providers.dart';
 
 /// La calottina dell'ultima convocazione dell'atleta: numero, portiere
 /// (calottina rossa) e colore della squadra in quella partita. null se
@@ -116,3 +118,18 @@ final golTiriAtletaProvider = Provider.autoDispose.family<TiriAtleta?, String>((
   final tiri = eventi.where((e) => e.tipo == 'tiro').toList();
   return (gol: tiri.where((e) => e.esito == 'gol').length, tiri: tiri.length);
 });
+
+/// Parate e gol subiti di un portiere, da sempre; null mentre si carica
+/// (o se non si riesce a leggerli).
+final numeriPortiereAtletaProvider = Provider.autoDispose
+    .family<NumeriPortiere?, String>((ref, atletaId) {
+      return ref
+          .watch(
+            numeriPortiereProvider((
+              atletaId: atletaId,
+              dataInizio: null,
+              dataFine: null,
+            )),
+          )
+          .value;
+    });

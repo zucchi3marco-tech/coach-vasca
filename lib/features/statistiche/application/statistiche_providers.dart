@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../pallanuoto/data/distinta_repository.dart';
 import '../../pallanuoto/data/eventi_partita_repository.dart';
 import '../../pallanuoto/data/partite_repository.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
+import '../../pallanuoto/domain/numeri_portiere.dart';
 import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../referti/data/referti_repository.dart';
 import '../domain/statistiche_stagionali.dart';
@@ -147,4 +149,53 @@ final tiriStagionePerMappaProvider = FutureProvider.autoDispose
         for (final e in eventi)
           if (e.tipo == 'tiro' && e.posX != null && e.posY != null) e,
       ];
+    });
+
+/// Un portiere e, se serve, il periodo (una stagione): senza periodo
+/// vale "da sempre".
+typedef ChiaveNumeriPortiere = ({
+  String atletaId,
+  DateTime? dataInizio,
+  DateTime? dataFine,
+});
+
+/// Parate e gol subiti di un portiere: parte dalle partite in cui è
+/// stato in porta (tempi della distinta) o ha affrontato tiri dal vivo,
+/// e usa [numeriPortiere] su eventi e referti di quelle partite.
+final numeriPortiereProvider = FutureProvider.autoDispose
+    .family<NumeriPortiere, ChiaveNumeriPortiere>((ref, chiave) async {
+      final tempi = await ref
+          .watch(distintaRepositoryProvider)
+          .tempiInPortaDellAtleta(chiave.atletaId);
+      final suoiTiri = await ref
+          .watch(eventiPartitaRepositoryProvider)
+          .perPortiere(chiave.atletaId);
+      final ids = {...tempi.keys, for (final e in suoiTiri) e.partitaId};
+      if (ids.isEmpty) return NumeriPortiere.vuoto;
+
+      final dal = chiave.dataInizio;
+      final al = chiave.dataFine;
+      final partite = [
+        for (final p
+            in await ref.watch(partiteRepositoryProvider).perIds(ids.toList()))
+          if ((dal == null || !p.data.isBefore(dal)) &&
+              (al == null || !p.data.isAfter(al)))
+            p,
+      ];
+      if (partite.isEmpty) return NumeriPortiere.vuoto;
+
+      final idPartite = [for (final p in partite) p.id];
+      final eventi = await ref
+          .watch(eventiPartitaRepositoryProvider)
+          .perPartite(idPartite);
+      final referti = await ref
+          .watch(refertiRepositoryProvider)
+          .perPartite(idPartite);
+      return numeriPortiere(
+        atletaId: chiave.atletaId,
+        partite: partite,
+        tempiInPorta: tempi,
+        eventi: eventi,
+        referti: {for (final r in referti) r.partitaId: r},
+      );
     });

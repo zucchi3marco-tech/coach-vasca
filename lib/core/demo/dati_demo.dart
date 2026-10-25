@@ -36,7 +36,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 18;
+const _versioneDati = 19;
 
 /// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
 /// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
@@ -1354,6 +1354,17 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   capitano: Value(a == 4),
                   viceCapitano: Value(a == 8),
                   portiere: Value(a == 0 || a == 10),
+                  // Nelle giocate: l'1 in porta nei primi due tempi, il
+                  // 13 negli ultimi due.
+                  tempiInPortaJson: Value(
+                    giorni >= 0
+                        ? null
+                        : a == 0
+                        ? '[1,2]'
+                        : a == 10
+                        ? '[3,4]'
+                        : null,
+                  ),
                 ),
               );
         }
@@ -1389,6 +1400,12 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                     ),
                     guadagnataDa: Value(
                       e % 6 == 5 ? atleti[1 + (e + 3) % 10] : null,
+                    ),
+                    // Sui tiri avversari, il portiere in acqua.
+                    portiereId: Value(
+                      e % 3 == 2 && e % 6 != 5
+                          ? atleti[e ~/ 6 < 2 ? 0 : 10]
+                          : null,
                     ),
                     creatoIl: aggiungiGiorni(
                       giorno,

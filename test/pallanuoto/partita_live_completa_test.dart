@@ -1,6 +1,7 @@
 import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
+import 'package:coach_vasca/features/pallanuoto/data/distinta_repository.dart';
 import 'package:coach_vasca/features/pallanuoto/data/eventi_partita_repository.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/distinta_giocatore.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
@@ -88,6 +89,31 @@ class _RepositoryFinto implements EventiPartitaRepository {
   }
 
   @override
+  Future<EventoPartita> registraTiroAvversario({
+    required String partitaId,
+    required String esito,
+    int? periodo,
+    String contestoTiro = 'azione',
+    String? portiereId,
+  }) async {
+    chiamate.add('avversario $esito $contestoTiro $portiereId');
+    return _evento('tiro', esito: esito);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Registra i tempi in porta scritti, come "riga:tempi".
+class _DistintaRepositoryFinto implements DistintaRepository {
+  final scritture = <String>[];
+
+  @override
+  Future<void> impostaTempiInPorta(String id, List<int> tempi) async {
+    scritture.add('$id:$tempi');
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -102,7 +128,12 @@ Atleta _atleta(String id, String cognome) => Atleta(
   attivo: true,
 );
 
-DistintaGiocatore _convocato(String atletaId, int numero) => DistintaGiocatore(
+DistintaGiocatore _convocato(
+  String atletaId,
+  int numero, {
+  bool portiere = false,
+  List<int> tempiInPorta = const [],
+}) => DistintaGiocatore(
   id: 'd$numero',
   partitaId: 'p1',
   atletaId: atletaId,
@@ -110,31 +141,52 @@ DistintaGiocatore _convocato(String atletaId, int numero) => DistintaGiocatore(
   numeroCalottina: numero,
   capitano: false,
   viceCapitano: false,
-  portiere: false,
+  portiere: portiere,
   fuoriquota: false,
+  tempiInPorta: tempiInPorta,
 );
 
-Partita _partita(String eventiLive) => Partita(
+/// Due portieri (1 Rossi e 13 Verdi) più un giocatore di movimento.
+List<DistintaGiocatore> _conDuePortieri() => [
+  _convocato('a', 1, portiere: true),
+  _convocato('b', 2),
+  _convocato('c', 13, portiere: true),
+];
+
+Partita _partita(String eventiLive, {bool tracciaTempo = false}) => Partita(
   id: 'p1',
   clubId: 'c1',
   data: DateTime(2026, 10, 12),
   squadraCasa: 'Noi',
   squadraTrasferta: 'Loro',
   numeroMaxConvocati: 15,
-  tracciaTempo: false,
+  tracciaTempo: tracciaTempo,
   eventiLive: eventiLive,
 );
 
-Widget _app(_RepositoryFinto repository, Widget figlio) => ProviderScope(
+Widget _app(
+  _RepositoryFinto repository,
+  Widget figlio, {
+  List<DistintaGiocatore>? distinta,
+  List<EventoPartita> eventi = const [],
+  _DistintaRepositoryFinto? distintaRepository,
+}) => ProviderScope(
   overrides: [
     eventiPartitaRepositoryProvider.overrideWithValue(repository),
-    eventiPartitaListProvider.overrideWith((ref, id) => Stream.value(const [])),
+    distintaRepositoryProvider.overrideWithValue(
+      distintaRepository ?? _DistintaRepositoryFinto(),
+    ),
+    eventiPartitaListProvider.overrideWith((ref, id) => Stream.value(eventi)),
     distintaListProvider.overrideWith(
-      (ref, id) => Stream.value([_convocato('a', 2), _convocato('b', 3)]),
+      (ref, id) =>
+          Stream.value(distinta ?? [_convocato('a', 2), _convocato('b', 3)]),
     ),
     atletiListProvider.overrideWith(
-      (ref, filtro) =>
-          Stream.value([_atleta('a', 'Rossi'), _atleta('b', 'Bianchi')]),
+      (ref, filtro) => Stream.value([
+        _atleta('a', 'Rossi'),
+        _atleta('b', 'Bianchi'),
+        _atleta('c', 'Verdi'),
+      ]),
     ),
   ],
   child: MaterialApp(theme: AppTheme.chiaro, home: figlio),
@@ -143,14 +195,27 @@ Widget _app(_RepositoryFinto repository, Widget figlio) => ProviderScope(
 Future<void> _apri(
   WidgetTester tester,
   _RepositoryFinto repository,
-  String eventiLive,
-) async {
-  SharedPreferences.setMockInitialValues({});
+  String eventiLive, {
+  bool tracciaTempo = false,
+  List<DistintaGiocatore>? distinta,
+  List<EventoPartita> eventi = const [],
+  _DistintaRepositoryFinto? distintaRepository,
+  Map<String, Object> prefs = const {},
+}) async {
+  SharedPreferences.setMockInitialValues(prefs);
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    _app(repository, PartitaLiveScreen(partita: _partita(eventiLive))),
+    _app(
+      repository,
+      PartitaLiveScreen(
+        partita: _partita(eventiLive, tracciaTempo: tracciaTempo),
+      ),
+      distinta: distinta,
+      eventi: eventi,
+      distintaRepository: distintaRepository,
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -255,6 +320,230 @@ void main() {
     await tester.tap(find.text('Senza giocatore'));
     await tester.pumpAndSettle();
     expect(repository.chiamate.last, 'persa null');
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('tiro avversario: si distingue il parato e si salva il portiere '
+      'in porta', (tester) async {
+    final repository = _RepositoryFinto();
+    await _apri(tester, repository, 'essenziale', distinta: _conDuePortieri());
+    // Il primo portiere (numero più basso) è in porta.
+    expect(find.text('In porta'), findsOneWidget);
+    expect(find.text('Rossi'), findsOneWidget);
+
+    await tester.tap(find.text('Tiro avversario'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gol'), findsOneWidget);
+    expect(find.text('Parato'), findsOneWidget);
+    expect(find.text('Palo/fuori'), findsOneWidget);
+    expect(find.text('Non gol'), findsNothing);
+    await tester.tap(find.text('Parato'));
+    await tester.pumpAndSettle();
+    expect(repository.chiamate, ['avversario parato azione a']);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('tiro avversario in modalità completa: parato e controfuga', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(tester, repository, 'completa');
+    // Nessun portiere nella distinta: niente chip, portiere nullo.
+    expect(find.text('In porta'), findsNothing);
+
+    await tester.tap(find.text('Tiro avversario'));
+    await tester.pumpAndSettle();
+    expect(find.text('Parato'), findsOneWidget);
+    expect(find.text('Gol in controfuga'), findsOneWidget);
+    await tester.tap(find.text('Parato'));
+    await tester.pumpAndSettle();
+    expect(repository.chiamate, ['avversario parato azione null']);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('il chip cambia il portiere dei tiri avversari successivi', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(tester, repository, 'essenziale', distinta: _conDuePortieri());
+    await tester.tap(find.text('In porta'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta?'), findsOneWidget);
+    await tester.tap(find.text('Verdi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta?'), findsNothing);
+    expect(find.text('Verdi'), findsOneWidget);
+
+    await tester.tap(find.text('Tiro avversario'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gol'));
+    await tester.pumpAndSettle();
+    expect(repository.chiamate, ['avversario gol azione c']);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('portiere_in_acqua_p1'), 'c');
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('il portiere salvato sul telefono ha la precedenza', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      distinta: _conDuePortieri(),
+      prefs: {'portiere_in_acqua_p1': 'c'},
+    );
+    expect(find.text('Verdi'), findsOneWidget);
+    expect(find.text('Rossi'), findsNothing);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('senza salvataggio si riparte dall\'ultimo tiro avversario', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      distinta: _conDuePortieri(),
+      eventi: [
+        EventoPartita(
+          id: 'e1',
+          partitaId: 'p1',
+          clubId: 'c1',
+          tipo: 'tiro',
+          squadra: 'avversaria',
+          esito: 'parato',
+          portiereId: 'c',
+          creatoIl: DateTime(2026, 10, 12),
+        ),
+      ],
+    );
+    expect(find.text('Verdi'), findsOneWidget);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('con due portieri il cambio di tempo chiede chi è in porta', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    final distintaRepository = _DistintaRepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      tracciaTempo: true,
+      distinta: _conDuePortieri(),
+      distintaRepository: distintaRepository,
+    );
+    // Aperta senza tempo scelto: parte dal primo, con Rossi in porta.
+    expect(distintaRepository.scritture, ['d1:[1]']);
+
+    await tester.tap(find.text('T2'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta nel 2° tempo?'), findsOneWidget);
+    await tester.tap(find.text('Verdi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta nel 2° tempo?'), findsNothing);
+    expect(distintaRepository.scritture, ['d1:[1]', 'd13:[2]']);
+
+    // Chiudere la domanda senza scegliere lascia Verdi in porta.
+    await tester.tap(find.text('T3'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta nel 3° tempo?'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi è in porta nel 3° tempo?'), findsNothing);
+    expect(distintaRepository.scritture.last, 'd13:[2, 3]');
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('con un solo portiere il cambio di tempo non chiede nulla e '
+      'il tempo si scrive una volta', (tester) async {
+    final repository = _RepositoryFinto();
+    final distintaRepository = _DistintaRepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      tracciaTempo: true,
+      distinta: [_convocato('a', 1, portiere: true), _convocato('b', 2)],
+      distintaRepository: distintaRepository,
+    );
+    expect(distintaRepository.scritture, ['d1:[1]']);
+
+    await tester.tap(find.text('T2'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Chi è in porta'), findsNothing);
+    expect(distintaRepository.scritture, ['d1:[1]', 'd1:[1, 2]']);
+
+    // Tornare a un tempo già scritto non riscrive niente.
+    await tester.tap(find.text('T1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('T2'));
+    await tester.pumpAndSettle();
+    expect(distintaRepository.scritture, hasLength(2));
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('il tempo di default è il più alto fra gli eventi', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    final distintaRepository = _DistintaRepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      tracciaTempo: true,
+      distinta: [_convocato('a', 1, portiere: true)],
+      distintaRepository: distintaRepository,
+      eventi: [
+        for (final periodo in [2, 3, null])
+          EventoPartita(
+            id: 'e$periodo',
+            partitaId: 'p1',
+            clubId: 'c1',
+            tipo: 'tiro',
+            squadra: 'nostra',
+            esito: 'gol',
+            periodo: periodo,
+            creatoIl: DateTime(2026, 10, 12),
+          ),
+      ],
+    );
+    expect(distintaRepository.scritture, ['d1:[3]']);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('telefono in orizzontale con portieri e tempi: tutto entra', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto();
+    await _apri(
+      tester,
+      repository,
+      'essenziale',
+      tracciaTempo: true,
+      distinta: _conDuePortieri(),
+      distintaRepository: _DistintaRepositoryFinto(),
+    );
+    tester.view.physicalSize = const Size(812, 375);
+    await tester.pumpAndSettle();
+    expect(find.text('In porta'), findsOneWidget);
+    await tester.tap(find.byType(CampoTiro));
+    await tester.pumpAndSettle();
+    final altezza = tester.view.physicalSize.height;
+    for (var n = 1; n <= 15; n++) {
+      // .last: le calottine 1 e 13 sono anche nel chip del portiere.
+      final r = tester.getRect(_calottina(n).last);
+      expect(r.top, greaterThanOrEqualTo(0), reason: 'calottina $n');
+      expect(r.bottom, lessThanOrEqualTo(altezza), reason: 'calottina $n');
+    }
+    expect(tester.takeException(), isNull);
     await _chiudi(tester, repository);
   });
 

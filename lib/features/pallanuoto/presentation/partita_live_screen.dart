@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
@@ -8,6 +9,7 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../theme/tema_provider.dart';
 import '../../../widgets/bottone_tema_bordo_vasca.dart';
+import '../../../widgets/cap_badge.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
@@ -16,6 +18,7 @@ import '../../../widgets/secondary_button.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/pallanuoto_providers.dart';
+import '../data/distinta_repository.dart';
 import '../data/eventi_partita_repository.dart';
 import '../domain/evento_partita.dart';
 import '../domain/partita.dart';
@@ -67,6 +70,23 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   bool _rigorePendente = false;
   bool _pallaRecuperata = false;
   int? _periodo;
+  bool _periodoPronto = false;
+
+  /// Il nostro portiere in acqua (id dell'atleta): ogni tiro avversario
+  /// si salva con lui. Null se la partita non ha portieri.
+  String? _portiereId;
+
+  /// Il portiere salvato sul telefono per questa partita, e se l'ho già
+  /// letto.
+  String? _portiereSalvato;
+  bool _prefsLette = false;
+
+  /// I portieri della partita (ultimo calcolo di [build]), per numero.
+  List<ConvocatoConAtleta> _portieri = const [];
+
+  /// Tempi in porta già scritti da questa schermata: evita di riscrivere
+  /// lo stesso tempo prima che la distinta si aggiorni.
+  final Map<String, Set<int>> _tempiAggiunti = {};
 
   /// Il gol o l'espulsione appena salvati a cui si aggiunge l'assist o chi
   /// l'ha guadagnata: sono già salvati, il passo dopo si può saltare.
@@ -81,6 +101,165 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    _leggiPortiereSalvato();
+  }
+
+  String get _chiavePortiere => 'portiere_in_acqua_${widget.partita.id}';
+
+  Future<void> _leggiPortiereSalvato() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _portiereSalvato = prefs.getString(_chiavePortiere);
+    } catch (_) {
+      // Senza memoria locale si riparte dal calcolo automatico.
+    }
+    if (mounted) setState(() => _prefsLette = true);
+  }
+
+  Future<void> _salvaPortiereSalvato(String atletaId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_chiavePortiere, atletaId);
+    } catch (_) {
+      // Non è grave: alla prossima apertura si ricalcola.
+    }
+  }
+
+  /// Periodo e portiere iniziali, la prima volta che i dati ci sono (e se
+  /// il portiere scelto non è più fra quelli della partita).
+  void _preparaPeriodoEPortiere(
+    List<EventoPartita> eventi,
+    List<ConvocatoConAtleta> portieri,
+  ) {
+    var cambiato = false;
+    if (!_periodoPronto) {
+      _periodoPronto = true;
+      if (_periodo == null && widget.partita.tracciaTempo) {
+        // Senza un tempo scelto gli eventi restavano senza periodo: si
+        // riparte dall'ultimo tempo giocato, o dal primo.
+        _periodo = eventi
+            .map((e) => e.periodo)
+            .whereType<int>()
+            .fold<int>(1, (a, b) => b > a ? b : a);
+        cambiato = true;
+      }
+    }
+    final valido =
+        _portiereId != null &&
+        portieri.any((c) => c.giocatore.atletaId == _portiereId);
+    if (!valido) {
+      if (portieri.isEmpty) {
+        _portiereId = null;
+      } else {
+        _portiereId = _portiereIniziale(eventi, portieri);
+        cambiato = true;
+      }
+    }
+    if (cambiato) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _registraTempoInPorta();
+      });
+    }
+  }
+
+  String _portiereIniziale(
+    List<EventoPartita> eventi,
+    List<ConvocatoConAtleta> portieri,
+  ) {
+    bool eDelleNostre(String? id) =>
+        id != null && portieri.any((c) => c.giocatore.atletaId == id);
+    // (a) quello salvato sul telefono.
+    if (eDelleNostre(_portiereSalvato)) return _portiereSalvato!;
+    // (b) quello dell'ultimo tiro avversario.
+    final conPortiere = eventi
+        .where((e) => e.tipo == 'tiro' && eDelleNostre(e.portiereId))
+        .toList();
+    if (conPortiere.isNotEmpty) {
+      conPortiere.sort((a, b) => a.creatoIl.compareTo(b.creatoIl));
+      return conPortiere.last.portiereId!;
+    }
+    // (c) quello che ha già giocato in questo tempo, (d) il primo.
+    final periodo = _periodo;
+    if (periodo != null) {
+      for (final c in portieri) {
+        if (c.giocatore.tempiInPorta.contains(periodo)) {
+          return c.giocatore.atletaId;
+        }
+      }
+    }
+    return portieri.first.giocatore.atletaId;
+  }
+
+  /// Scrive il tempo corrente fra i tempi in porta del portiere in acqua,
+  /// solo se manca.
+  Future<void> _registraTempoInPorta() async {
+    final periodo = _periodo;
+    final atletaId = _portiereId;
+    if (periodo == null || atletaId == null) return;
+    final riga = _portieri
+        .where((c) => c.giocatore.atletaId == atletaId)
+        .firstOrNull
+        ?.giocatore;
+    if (riga == null) return;
+    final aggiunti = _tempiAggiunti.putIfAbsent(riga.id, () => {});
+    if (riga.tempiInPorta.contains(periodo) || aggiunti.contains(periodo)) {
+      return;
+    }
+    final nuovi = [...riga.tempiInPorta, ...aggiunti, periodo];
+    aggiunti.add(periodo);
+    try {
+      await ref
+          .read(distintaRepositoryProvider)
+          .impostaTempiInPorta(riga.id, nuovi);
+    } catch (e) {
+      aggiunti.remove(periodo);
+      _mostraErrore(e);
+    }
+  }
+
+  void _impostaPortiere(String atletaId) {
+    if (atletaId == _portiereId) return;
+    setState(() => _portiereId = atletaId);
+    _salvaPortiereSalvato(atletaId);
+  }
+
+  /// Chiede chi è in porta; torna l'atleta scelto, null se si chiude.
+  Future<String?> _chiediPortiere(String titolo) {
+    final tema = Theme.of(context);
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Theme(
+        data: tema,
+        child: _FoglioPortiere(
+          titolo: titolo,
+          portieri: _portieri,
+          attuale: _portiereId,
+          colore: widget.partita.inCasa ? CapColore.bianca : CapColore.blu,
+          onScelto: (atletaId) => Navigator.of(sheetContext).pop(atletaId),
+        ),
+      ),
+    );
+  }
+
+  /// Cambio di portiere anche a metà tempo, dal chip.
+  Future<void> _cambiaPortiere() async {
+    final scelto = await _chiediPortiere('Chi è in porta?');
+    if (!mounted || scelto == null) return;
+    _impostaPortiere(scelto);
+    await _registraTempoInPorta();
+  }
+
+  /// Cambio di tempo: con due o più portieri si chiede chi è in porta.
+  Future<void> _cambiaPeriodo(int tempo) async {
+    if (tempo == _periodo) return;
+    setState(() => _periodo = tempo);
+    if (_portieri.length >= 2) {
+      final scelto = await _chiediPortiere('Chi è in porta nel $tempo° tempo?');
+      if (!mounted) return;
+      if (scelto != null) _impostaPortiere(scelto);
+    }
+    await _registraTempoInPorta();
   }
 
   /// Preso qui e non in [dispose]: lì la schermata è già staccata e
@@ -287,6 +466,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
             esito: esito,
             periodo: _periodo,
             contestoTiro: contesto,
+            portiereId: _portiereId,
           );
       if (mounted) _mostraAnnulla(context, evento);
     } catch (e) {
@@ -316,11 +496,13 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   Future<void> _scegliEsitoTiroAvversario(List<EventoPartita> eventi) async {
     final contesto =
         contestoAutomatico(eventi, 'avversaria', DateTime.now()) ?? 'azione';
+    // Sempre parato e palo/fuori distinti: servono per le parate del
+    // nostro portiere.
     final esito = await _scegliEsito(
       'Tiro avversario',
       _completa && contesto == 'azione'
-          ? conControfuga(esitiTiroSemplice)
-          : esitiTiroSemplice,
+          ? conControfuga(esitiTiroDettagliato)
+          : esitiTiroDettagliato,
     );
     if (esito == null) return;
     if (esito == golInControfuga) {
@@ -471,7 +653,8 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
       )),
     );
 
-    if (eventiAsync.isLoading ||
+    if (!_prefsLette ||
+        eventiAsync.isLoading ||
         convocatiAsync.isLoading ||
         atletiAsync.isLoading) {
       return const Scaffold(
@@ -505,6 +688,20 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         if (atletiPerId[g.atletaId] != null)
           (giocatore: g, atleta: atletiPerId[g.atletaId]!),
     ];
+    final portieri =
+        [
+          for (final c in convocati)
+            if (c.giocatore.portiere) c,
+        ]..sort(
+          (a, b) => a.giocatore.numeroCalottina.compareTo(
+            b.giocatore.numeroCalottina,
+          ),
+        );
+    _portieri = portieri;
+    _preparaPeriodoEPortiere(eventi, portieri);
+    final portiereInAcqua = portieri
+        .where((c) => c.giocatore.atletaId == _portiereId)
+        .firstOrNull;
     final disqualificati = calcolaSqualificati(eventi);
     final conteggiFalli = contaFalliGravi(eventi);
 
@@ -580,11 +777,22 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                                 child: _ChipTempo(
                                   tempo: t,
                                   selezionato: _periodo == t,
-                                  onTap: () => setState(() => _periodo = t),
+                                  onTap: () => _cambiaPeriodo(t),
                                 ),
                               ),
                           ],
                         );
+                        final chipPortiere = portiereInAcqua == null
+                            ? null
+                            : _ChipPortiere(
+                                numero:
+                                    portiereInAcqua.giocatore.numeroCalottina,
+                                cognome: portiereInAcqua.atleta.cognome,
+                                colore: widget.partita.inCasa
+                                    ? CapColore.bianca
+                                    : CapColore.blu,
+                                onTap: _cambiaPortiere,
+                              );
                         final riga = Row(
                           children: [
                             IconButton(
@@ -606,6 +814,8 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                                 golTrasferta: golTrasferta,
                               ),
                             ),
+                            if (chipPortiere != null && !tempiSotto)
+                              Flexible(child: chipPortiere),
                             if (widget.partita.tracciaTempo && !tempiSotto)
                               chipTempi,
                             IconButton(
@@ -621,7 +831,12 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                           children: [
                             riga,
                             const SizedBox(height: AppSpacing.s4),
-                            chipTempi,
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: AppSpacing.s8,
+                              children: [?chipPortiere, chipTempi],
+                            ),
                           ],
                         );
                       },
@@ -884,6 +1099,161 @@ class _ChipTempo extends StatelessWidget {
   }
 }
 
+/// Chi è in porta adesso: un tocco apre la scelta (cambio anche a metà
+/// tempo). Alto 48, come i pulsanti della riga in alto.
+class _ChipPortiere extends StatelessWidget {
+  const _ChipPortiere({
+    required this.numero,
+    required this.cognome,
+    required this.colore,
+    required this.onTap,
+  });
+
+  final int numero;
+  final String cognome;
+  final CapColore colore;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+      child: Material(
+        color: colori.superficie,
+        shape: StadiumBorder(side: BorderSide(color: colori.linea)),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          child: SizedBox(
+            height: 48,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.s4,
+                right: AppSpacing.s12,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.scale(
+                    scale: 0.85,
+                    child: CapBadge(numero: numero, colore: colore),
+                  ),
+                  const SizedBox(width: AppSpacing.s4),
+                  Flexible(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'In porta',
+                          maxLines: 1,
+                          style: AppTypography.piccolo.copyWith(
+                            color: colori.testoSecondario,
+                            height: 1.1,
+                          ),
+                        ),
+                        Text(
+                          cognome,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.corpoForte.copyWith(
+                            color: colori.testo,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// I portieri della partita, da scegliere per chi è in porta. Un tocco
+/// sulla riga sceglie; quello attuale ha la spunta.
+class _FoglioPortiere extends StatelessWidget {
+  const _FoglioPortiere({
+    required this.titolo,
+    required this.portieri,
+    required this.attuale,
+    required this.colore,
+    required this.onScelto,
+  });
+
+  final String titolo;
+  final List<ConvocatoConAtleta> portieri;
+  final String? attuale;
+  final CapColore colore;
+  final ValueChanged<String> onScelto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          children: [
+            Text(
+              titolo,
+              style: AppTypography.sezione.copyWith(color: colori.testo),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            for (final c in portieri)
+              Material(
+                color: c.giocatore.atletaId == attuale
+                    ? colori.azione.withValues(alpha: 0.12)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppRadius.pannello),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.pannello),
+                  onTap: () => onScelto(c.giocatore.atletaId),
+                  child: SizedBox(
+                    height: AppSpacing.altezzaMinimaBersaglioVasca,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s12,
+                      ),
+                      child: Row(
+                        children: [
+                          CapBadge(
+                            numero: c.giocatore.numeroCalottina,
+                            colore: colore,
+                          ),
+                          const SizedBox(width: AppSpacing.s12),
+                          Expanded(
+                            child: Text(
+                              c.atleta.cognome,
+                              style: AppTypography.corpoForte.copyWith(
+                                color: colori.testo,
+                              ),
+                            ),
+                          ),
+                          if (c.giocatore.atletaId == attuale)
+                            Icon(Icons.check, color: colori.azione),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Squadre e punteggio: la nostra in grassetto, cosi' a colpo d'occhio si
 /// sa quale numero e' il nostro.
 class _Tabellone extends StatelessWidget {
@@ -913,35 +1283,47 @@ class _Tabellone extends StatelessWidget {
                 height: 1.15,
               ),
         );
-    return Row(
-      children: [
-        Expanded(
-          child: nome(
-            partita.squadraCasa,
-            nostra: noiInCasa,
-            verso: TextAlign.end,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.s12),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            '$golCasa - $golTrasferta',
-            maxLines: 1,
-            style: AppTypography.numerica(
-              AppTypography.display.copyWith(color: colori.testo),
+    // Il punteggio si rimpicciolisce se la riga è stretta (telefono in
+    // orizzontale con chip del portiere e dei tempi), lasciando posto ai
+    // nomi.
+    return LayoutBuilder(
+      builder: (context, vincoli) => Row(
+        children: [
+          Expanded(
+            child: nome(
+              partita.squadraCasa,
+              nostra: noiInCasa,
+              verso: TextAlign.end,
             ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.s12),
-        Expanded(
-          child: nome(
-            partita.squadraTrasferta,
-            nostra: !noiInCasa,
-            verso: TextAlign.start,
+          const SizedBox(width: AppSpacing.s12),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: vincoli.maxWidth * 0.5 < 64
+                  ? 64
+                  : vincoli.maxWidth * 0.5,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '$golCasa - $golTrasferta',
+                maxLines: 1,
+                style: AppTypography.numerica(
+                  AppTypography.display.copyWith(color: colori.testo),
+                ),
+              ),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: nome(
+              partita.squadraTrasferta,
+              nostra: !noiInCasa,
+              verso: TextAlign.start,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

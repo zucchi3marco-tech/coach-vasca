@@ -115,7 +115,15 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pallanuoto = atleta.sport == 'pallanuoto';
     final dominio = context.dominio;
-    final golTiri = ref.watch(golTiriAtletaProvider(atleta.id));
+    // Il portiere non segna: al posto di gol e tiri, parate e gol subiti
+    // (i gol che segna, se capita, stanno solo nelle statistiche).
+    final portiere = pallanuoto && atleta.portiere;
+    final golTiri = portiere
+        ? null
+        : ref.watch(golTiriAtletaProvider(atleta.id));
+    final numeriPortiere = portiere
+        ? ref.watch(numeriPortiereAtletaProvider(atleta.id))
+        : null;
     final allenamenti = ref.watch(riepilogoAllenamentiAtletaProvider(atleta));
     final partita = pallanuoto
         ? ref.watch(prossimaPartitaAtletaProvider(atleta))
@@ -142,7 +150,43 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ? null
         : (gol / tiri * 100).round();
 
-    final statistiche = pallanuoto
+    void apriStatistiche() =>
+        _apri(context, StatisticheAtletaScreen(atleta: atleta));
+
+    final statistiche = portiere
+        ? [
+            (
+              etichetta: 'Parate',
+              valore: numeriPortiere == null ? '—' : '${numeriPortiere.parate}',
+              onTap: apriStatistiche,
+            ),
+            (
+              etichetta: 'Gol subiti',
+              valore: numeriPortiere == null
+                  ? '—'
+                  : '${numeriPortiere.golSubiti}',
+              onTap: apriStatistiche,
+            ),
+            (
+              etichetta: '% parate',
+              valore: numeriPortiere?.percentualeParate == null
+                  ? '—'
+                  : '${numeriPortiere!.percentualeParate}%',
+              onTap: apriStatistiche,
+            ),
+            (
+              etichetta: 'Presenze',
+              valore: presenze == null ? '—' : '$presenze%',
+              onTap: () => _apri(
+                context,
+                MiePresenzeScreen(
+                  atleta: atleta,
+                  vistaAllenatore: vistaAllenatore,
+                ),
+              ),
+            ),
+          ]
+        : pallanuoto
         ? [
             (
               etichetta: 'Gol',
@@ -236,7 +280,9 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
             ? SoggettoRiquadro.statistiche
             : SoggettoRiquadro.andamento,
         titolo: titolo('Le mie statistiche', 'Statistiche'),
-        descrizione: pallanuoto
+        descrizione: portiere
+            ? 'Parate e gol subiti'
+            : pallanuoto
             ? 'Tiri, gol e dove segni di più'
             : 'Tempi di gara e progressi',
         accento: dominio.evidenzaCiano,
