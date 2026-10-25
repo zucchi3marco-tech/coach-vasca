@@ -16,19 +16,82 @@ import '../../../widgets/riquadri.dart';
 import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../../widgets/loading_skeleton.dart';
+import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/data/distinta_repository.dart';
+import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../application/referti_providers.dart';
 import '../data/referti_repository.dart';
 import '../domain/referto_letto.dart';
+import '../domain/referto_partita.dart';
 import 'chi_era_in_porta.dart';
 
+/// Un referto da scrivere a mano: le squadre della partita, quattro tempi
+/// a zero, i nostri convocati già messi (con numero e collegamento
+/// all'atleta) e 13 righe numerate per gli avversari.
+RefertoLetto refertoVuoto(
+  Partita partita,
+  List<DistintaGiocatore> distinta,
+  Map<String, Atleta> atletiPerId,
+) {
+  final convocati = [...distinta]
+    ..sort((a, b) => a.numeroCalottina.compareTo(b.numeroCalottina));
+  final nostri = [
+    for (final c in convocati)
+      GiocatoreReferto(
+        numeroCalottina: c.numeroCalottina,
+        nome: atletiPerId[c.atletaId]?.nomeCompleto ?? '',
+        reti: 0,
+        espulsioni: 0,
+        atletaId: c.atletaId,
+      ),
+  ];
+  final avversari = [
+    for (var n = 1; n <= 13; n++)
+      GiocatoreReferto(numeroCalottina: n, nome: '', reti: 0, espulsioni: 0),
+  ];
+  return RefertoLetto(
+    squadraCasa: partita.squadraCasa,
+    squadraTrasferta: partita.squadraTrasferta,
+    risultatoCasa: 0,
+    risultatoTrasferta: 0,
+    parziali: [
+      for (var t = 0; t < 4; t++) const ParzialeReferto(casa: 0, trasferta: 0),
+    ],
+    giocatoriCasa: partita.inCasa ? nostri : avversari,
+    giocatoriTrasferta: partita.inCasa ? avversari : nostri,
+  );
+}
+
+/// Il referto salvato, da correggere a mano.
+RefertoLetto refertoDaCorreggere(RefertoPartita r) => RefertoLetto(
+  squadraCasa: r.squadraCasa,
+  squadraTrasferta: r.squadraTrasferta,
+  risultatoCasa: r.risultatoCasa,
+  risultatoTrasferta: r.risultatoTrasferta,
+  parziali: r.parziali,
+  giocatoriCasa: r.giocatoriCasa,
+  giocatoriTrasferta: r.giocatoriTrasferta,
+);
+
 class LeggiRefertoScreen extends ConsumerStatefulWidget {
-  const LeggiRefertoScreen({required this.partita, super.key});
+  const LeggiRefertoScreen({
+    required this.partita,
+    this.aMano = false,
+    this.daCorreggere,
+    super.key,
+  });
 
   /// La partita a cui appartiene il referto: si arriva qui dalla partita
   /// stessa, quindi il referto è già assegnato a quella giusta.
   final Partita partita;
+
+  /// Senza foto: si scrive tutto a mano, partendo dai convocati.
+  final bool aMano;
+
+  /// Il referto già salvato, da correggere a mano.
+  final RefertoPartita? daCorreggere;
 
   @override
   ConsumerState<LeggiRefertoScreen> createState() => _LeggiRefertoScreenState();
@@ -40,6 +103,31 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
   bool _isLoading = false;
   String? _errore;
   RefertoLetto? _risultato;
+
+  /// Scritto a mano (o da correggere): niente foto.
+  late bool _aMano = widget.aMano || widget.daCorreggere != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final salvato = widget.daCorreggere;
+    if (salvato != null) _risultato = refertoDaCorreggere(salvato);
+  }
+
+  /// Il referto vuoto si prepara quando distinta e atleti ci sono.
+  RefertoLetto? _vuotoPronto() {
+    final distinta = ref.watch(distintaListProvider(widget.partita.id));
+    final atleti = ref.watch(
+      atletiListProvider((
+        clubId: widget.partita.clubId,
+        includeInactive: true,
+      )),
+    );
+    if (distinta.isLoading || atleti.isLoading) return null;
+    return refertoVuoto(widget.partita, distinta.value ?? const [], {
+      for (final a in atleti.value ?? const <Atleta>[]) a.id: a,
+    });
+  }
 
   Future<void> _scegliFoto(ImageSource source) async {
     final file = await ImagePicker().pickImage(
@@ -113,8 +201,44 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
     }
   }
 
+  Widget _scrittoAMano() {
+    _risultato ??= _vuotoPronto();
+    final risultato = _risultato;
+    final correzione = widget.daCorreggere != null;
+    return AppScaffold(
+      scrollabile: true,
+      appBar: AppBar(
+        title: Text(correzione ? 'Correggi referto' : 'Scrivi referto'),
+      ),
+      body: risultato == null
+          ? const LoadingSkeletonList(righe: 6)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TitoloSezione(
+                  correzione ? 'Il referto salvato' : 'Il referto a mano',
+                  spiegazione: correzione
+                      ? 'Correggi quello che serve e salva: il referto '
+                            'di questa partita viene sostituito.'
+                      : 'Scrivi i gol di ogni tempo (il risultato si somma '
+                            'da solo), poi reti ed espulsioni dei giocatori. '
+                            'I nostri convocati sono già in elenco; per gli '
+                            'avversari basta il numero, il nome se lo sai. '
+                            'Le righe lasciate vuote non si salvano.',
+                ),
+                _RefertoModificabile(
+                  key: ObjectKey(risultato),
+                  referto: risultato,
+                  partita: widget.partita,
+                ),
+              ],
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_aMano) return _scrittoAMano();
     final colori = context.colori;
     return AppScaffold(
       scrollabile: true,
@@ -183,6 +307,16 @@ class _LeggiRefertoScreenState extends ConsumerState<LeggiRefertoScreen> {
                 : _analizza,
           ),
           if (_isLoading) const AttesaAiHint(),
+          if (_risultato == null && !_isLoading) ...[
+            const SizedBox(height: AppSpacing.s8),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => setState(() => _aMano = true),
+                icon: const Icon(Icons.edit_note),
+                label: const Text('Senza foto: scrivilo a mano'),
+              ),
+            ),
+          ],
           if (_errore != null) ...[
             const SizedBox(height: AppSpacing.s16),
             ErrorBanner(messaggio: _errore!),
@@ -264,6 +398,32 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
     _giocatoriTrasfertaCtrl = [
       for (final g in r.giocatoriTrasferta) _GiocatoreCtrl(g),
     ];
+    for (final (casa, trasferta) in _parzialiCtrl) {
+      casa.addListener(_sommaParziali);
+      trasferta.addListener(_sommaParziali);
+    }
+  }
+
+  /// Il risultato è la somma dei tempi: cambiando un tempo si aggiorna.
+  void _sommaParziali() {
+    int? somma(Iterable<TextEditingController> campi) {
+      var totale = 0;
+      for (final c in campi) {
+        final v = int.tryParse(c.text.trim());
+        if (v == null) return null;
+        totale += v;
+      }
+      return totale;
+    }
+
+    final casa = somma(_parzialiCtrl.map((p) => p.$1));
+    final trasferta = somma(_parzialiCtrl.map((p) => p.$2));
+    if (casa != null && _risultatoCasaCtrl.text != '$casa') {
+      _risultatoCasaCtrl.text = '$casa';
+    }
+    if (trasferta != null && _risultatoTrasfertaCtrl.text != '$trasferta') {
+      _risultatoTrasfertaCtrl.text = '$trasferta';
+    }
   }
 
   @override
@@ -481,15 +641,23 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
         ),
       );
 
+      // Una riga senza nome, senza atleta e senza reti né espulsioni (le
+      // righe degli avversari nel referto a mano) non si salva.
+      bool vuota(_GiocatoreCtrl g) =>
+          g.nome.text.trim().isEmpty &&
+          g.atletaId == null &&
+          _parseInt(g.reti, 'reti') == 0 &&
+          _parseInt(g.espulsioni, 'espulsioni') == 0;
       List<GiocatoreReferto> leggiGiocatori(List<_GiocatoreCtrl> ctrls) => [
         for (final g in ctrls)
-          GiocatoreReferto(
-            numeroCalottina: _parseInt(g.numero, 'numero calottina'),
-            nome: g.nome.text.trim(),
-            reti: _parseInt(g.reti, 'reti'),
-            espulsioni: _parseInt(g.espulsioni, 'espulsioni'),
-            atletaId: g.atletaId,
-          ),
+          if (!vuota(g))
+            GiocatoreReferto(
+              numeroCalottina: _parseInt(g.numero, 'numero calottina'),
+              nome: g.nome.text.trim(),
+              reti: _parseInt(g.reti, 'reti'),
+              espulsioni: _parseInt(g.espulsioni, 'espulsioni'),
+              atletaId: g.atletaId,
+            ),
       ];
       final giocatoriCasa = leggiGiocatori(_giocatoriCasaCtrl);
       final giocatoriTrasferta = leggiGiocatori(_giocatoriTrasfertaCtrl);

@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'referto-a-mano',
+    data: DateTime(2026, 10, 25),
+    titolo: 'Il referto anche a mano',
+    testo:
+        'Nel referto di una partita, «Scrivi a mano» apre il modulo senza '
+        'foto: i convocati sono già in elenco, scrivi i gol di ogni tempo '
+        '(il risultato si somma da solo), reti ed espulsioni. Un referto già '
+        'salvato si corregge con «Correggi a mano».',
+    importante: true,
+  ),
+  Novita(
     id: 'video-in-orizzontale',
     data: DateTime(2026, 10, 25),
     titolo: '«È qui» sempre sotto il video',

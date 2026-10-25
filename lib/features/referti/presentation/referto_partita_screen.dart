@@ -35,6 +35,17 @@ class RefertoPartitaScreen extends ConsumerWidget {
     MaterialPageRoute(builder: (_) => LeggiRefertoScreen(partita: partita)),
   );
 
+  void _scriviAMano(BuildContext context, {RefertoPartita? salvato}) =>
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LeggiRefertoScreen(
+            partita: partita,
+            aMano: true,
+            daCorreggere: salvato,
+          ),
+        ),
+      );
+
   Future<void> _rileggiReferto(BuildContext context) async {
     final conferma = await showDialog<bool>(
       context: context,
@@ -73,14 +84,18 @@ class RefertoPartitaScreen extends ConsumerWidget {
                 titolo: 'Nessun referto salvato',
                 descrizione:
                     'Scatta o carica la foto del referto: i dati letti '
-                    'vengono assegnati a questa partita.',
+                    'vengono assegnati a questa partita. Senza foto lo '
+                    'scrivi a mano.',
                 azionePrincipale: 'Leggi referto',
                 onAzionePrincipale: () => _leggiReferto(context),
+                azioneSecondaria: 'Scrivi a mano',
+                onAzioneSecondaria: () => _scriviAMano(context),
               )
             : _RefertoSalvatoView(
                 partita: partita,
                 referto: referto,
                 onRileggi: () => _rileggiReferto(context),
+                onCorreggi: () => _scriviAMano(context, salvato: referto),
               ),
         loading: () => const Padding(
           padding: EdgeInsets.all(AppSpacing.s16),
@@ -105,11 +120,13 @@ class _RefertoSalvatoView extends StatelessWidget {
     required this.partita,
     required this.referto,
     required this.onRileggi,
+    required this.onCorreggi,
   });
 
   final Partita partita;
   final RefertoPartita referto;
   final VoidCallback onRileggi;
+  final VoidCallback onCorreggi;
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +144,11 @@ class _RefertoSalvatoView extends StatelessWidget {
               : 'Parziali '
                     '${[for (final p in referto.parziali) '${p.casa}-${p.trasferta}'].join(', ')}',
           azioni: [
+            AzioneTestata(
+              icona: Icons.edit_outlined,
+              etichetta: 'Correggi a mano',
+              onTap: onCorreggi,
+            ),
             AzioneTestata(
               icona: Icons.document_scanner_outlined,
               etichetta: 'Rileggi da una foto',
