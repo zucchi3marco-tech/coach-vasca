@@ -506,7 +506,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
           (giocatore: g, atleta: atletiPerId[g.atletaId]!),
     ];
     final disqualificati = calcolaSqualificati(eventi);
-    final conteggiRigore = contaEspulsioniRigore(eventi);
+    final conteggiFalli = contaFalliGravi(eventi);
 
     final golCasa = eventi
         .where(
@@ -640,7 +640,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             soloNostra: soloNostra,
                             atletaEscluso: atletaEscluso,
                             disqualificati: disqualificati,
-                            conteggiRigore: conteggiRigore,
+                            conteggiFalli: conteggiFalli,
                             onSelezionato: (id) => _onSelezionatoGiocatore(
                               eventi,
                               atletiPerId,
@@ -714,7 +714,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                             soloNostra: soloNostra,
                             atletaEscluso: atletaEscluso,
                             disqualificati: disqualificati,
-                            conteggiRigore: conteggiRigore,
+                            conteggiFalli: conteggiFalli,
                             onSelezionato: (id) => _onSelezionatoGiocatore(
                               eventi,
                               atletiPerId,
@@ -732,7 +732,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
                       child: StrisciaSanzionatiPartita(
                         partita: widget.partita,
                         convocati: convocati,
-                        conteggiRigore: conteggiRigore,
+                        conteggiFalli: conteggiFalli,
                       ),
                     ),
                   Padding(

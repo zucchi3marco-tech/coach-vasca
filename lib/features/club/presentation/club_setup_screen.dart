@@ -131,7 +131,9 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                     testo:
                         'Crea un club solo se sei l\'allenatore responsabile. '
                         'Se sei un atleta non crearlo: entra nel club della '
-                        'tua squadra con il codice dell\'allenatore.',
+                        'tua squadra con il codice dell\'allenatore. Se il '
+                        'codice l\'hai già usato, esci ed entra con l\'email '
+                        'che hai scritto quel giorno.',
                     onSonoAtleta: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const RiscattaInvitoScreen(),

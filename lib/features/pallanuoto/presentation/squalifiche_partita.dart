@@ -1,12 +1,14 @@
 import '../domain/evento_partita.dart';
 import 'selettore_giocatore_partita.dart';
 
-/// Quante espulsioni "a fallo da rigore" ha accumulato ciascun giocatore
-/// (nostro o avversario) in questa partita.
-Map<GiocatorePartitaId, int> contaEspulsioniRigore(List<EventoPartita> eventi) {
+/// Quanti falli gravi ha accumulato ciascun giocatore (nostro o
+/// avversario) in questa partita: le espulsioni e i falli da rigore
+/// insieme, come nel regolamento (richiesta del coach 2026-10-25: prima
+/// contavano solo i rigori).
+Map<GiocatorePartitaId, int> contaFalliGravi(List<EventoPartita> eventi) {
   final conteggi = <GiocatorePartitaId, int>{};
   for (final e in eventi) {
-    if (e.tipo != 'espulsione' || !e.espulsioneDaRigore) continue;
+    if (e.tipo != 'espulsione') continue;
     final GiocatorePartitaId? id = e.atletaId != null
         ? NostroGiocatoreId(e.atletaId!)
         : e.numeroCalottinaAvversario != null
@@ -18,13 +20,13 @@ Map<GiocatorePartitaId, int> contaEspulsioniRigore(List<EventoPartita> eventi) {
   return conteggi;
 }
 
-/// Un giocatore (nostro o avversario) che accumula 3 espulsioni "a fallo
-/// da rigore" nella stessa partita resta escluso per il resto della gara,
+/// Un giocatore (nostro o avversario) che accumula 3 falli gravi nella
+/// stessa partita resta escluso per il resto della gara,
 /// per qualunque evento (non solo l'espulsione): calcolato al volo dagli
 /// eventi già caricati, nessun campo dedicato né sincronizzato.
 Set<GiocatorePartitaId> calcolaSqualificati(List<EventoPartita> eventi) {
   return {
-    for (final entry in contaEspulsioniRigore(eventi).entries)
+    for (final entry in contaFalliGravi(eventi).entries)
       if (entry.value >= 3) entry.key,
   };
 }

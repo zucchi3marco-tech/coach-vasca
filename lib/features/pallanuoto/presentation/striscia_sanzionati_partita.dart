@@ -8,27 +8,27 @@ import '../domain/partita.dart';
 import 'selettore_giocatore_partita.dart';
 
 /// Striscia informativa (non toccabile) con i soli giocatori — nostri o
-/// avversari — che hanno già accumulato almeno un'espulsione da rigore in
-/// questa partita: quando la fascia calottine è nascosta (fuori
+/// avversari — che hanno già almeno un fallo grave (espulsione o rigore)
+/// in questa partita: quando la fascia calottine è nascosta (fuori
 /// dall'interazione di tiro/sanzione, per lasciare più spazio al campo),
-/// è l'unico modo per tenere d'occhio chi rischia la squalifica (3
-/// espulsioni da rigore) senza dover aprire la selezione giocatore.
+/// è l'unico modo per tenere d'occhio chi rischia di uscire (3 falli
+/// gravi) senza dover aprire la selezione giocatore.
 /// Vuota (e quindi invisibile) finché nessuno ha ancora una sanzione.
 class StrisciaSanzionatiPartita extends StatelessWidget {
   const StrisciaSanzionatiPartita({
     required this.partita,
     required this.convocati,
-    required this.conteggiRigore,
+    required this.conteggiFalli,
     super.key,
   });
 
   final Partita partita;
   final List<ConvocatoConAtleta> convocati;
-  final Map<GiocatorePartitaId, int> conteggiRigore;
+  final Map<GiocatorePartitaId, int> conteggiFalli;
 
   @override
   Widget build(BuildContext context) {
-    if (conteggiRigore.isEmpty) return const SizedBox.shrink();
+    if (conteggiFalli.isEmpty) return const SizedBox.shrink();
 
     final convocatoPerAtletaId = {for (final c in convocati) c.atleta.id: c};
 
@@ -37,7 +37,7 @@ class StrisciaSanzionatiPartita extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          for (final entry in conteggiRigore.entries)
+          for (final entry in conteggiFalli.entries)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.s8),
               child: _ChipSanzionato(
@@ -111,7 +111,9 @@ class _ChipSanzionato extends StatelessWidget {
                   style: AppTypography.piccolo.copyWith(color: colori.testo),
                 ),
               Text(
-                squalificato ? 'Squalificato' : 'Rigore ×$conteggio',
+                squalificato
+                    ? 'Fuori: 3 falli gravi'
+                    : 'Falli gravi ×$conteggio',
                 style: AppTypography.etichetta.copyWith(
                   color: colori.rosso,
                   fontWeight: FontWeight.w700,

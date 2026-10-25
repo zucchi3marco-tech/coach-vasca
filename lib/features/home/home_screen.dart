@@ -11,6 +11,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/colori_app.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_skeleton.dart';
+import '../../widgets/secondary_button.dart';
 import '../allenamenti/presentation/allenamenti_list_screen.dart';
 import '../atleti/application/current_atleta_provider.dart';
 import '../atleti/presentation/atleti_list_screen.dart';
@@ -277,7 +278,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         padding: EdgeInsets.all(AppSpacing.s16),
         child: LoadingSkeletonList(righe: 4),
       ),
-      error: (_, _) => _corpoClub(clubAsync),
+      // Prima qui si passava al club, e un atleta si vedeva proporre
+      // "Crea il tuo club".
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ErrorBanner(
+              messaggio: 'Non riesco a leggere il tuo account.',
+              suggerimento:
+                  'Tocca «Riprova». Se l\'errore continua, chiudi e riapri '
+                  'l\'app.',
+              dettaglioTecnico: messaggioErrore(error),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            SecondaryButton(
+              label: 'Riprova',
+              icon: Icons.refresh,
+              onPressed: () => ref.invalidate(currentAtletaProvider),
+            ),
+          ],
+        ),
+      ),
     );
 
     final Widget corpo;

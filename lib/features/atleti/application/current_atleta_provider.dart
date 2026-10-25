@@ -20,12 +20,18 @@ final currentAtletaProvider = FutureProvider.autoDispose<Atleta?>((ref) async {
   // atleta" letto prima del login (l'atleta finiva nell'area allenatore).
   ref.watch(authStateChangesProvider);
   final repository = ref.watch(atletiRepositoryProvider);
+  // Senza rete il repository usa la copia del telefono. Un errore vero
+  // (il server rifiuta, una scheda che non si legge) resta un errore: la
+  // home mostra "riprova" invece di proporre a un atleta di creare un
+  // club (segnalazione del coach 2026-10-25).
   try {
     return await repository.fetchAtletaCollegato();
   } catch (e) {
-    // offline al primo avvio: nessuna cache locale ancora disponibile.
-    // ignore: avoid_print
-    if (modalitaDemo) print('[demo] atleta collegato non trovato: $e');
-    return null;
+    if (modalitaDemo) {
+      // ignore: avoid_print
+      print('[demo] atleta collegato non trovato: $e');
+      return null;
+    }
+    rethrow;
   }
 });

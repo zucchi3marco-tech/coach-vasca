@@ -22,7 +22,7 @@ class FasciaCalottinePartita extends StatelessWidget {
     required this.convocati,
     required this.attiva,
     required this.disqualificati,
-    required this.conteggiRigore,
+    required this.conteggiFalli,
     required this.onSelezionato,
     this.soloNostra = false,
     this.atletaEscluso,
@@ -36,7 +36,7 @@ class FasciaCalottinePartita extends StatelessWidget {
   final List<ConvocatoConAtleta> convocati;
   final bool attiva;
   final Set<GiocatorePartitaId> disqualificati;
-  final Map<GiocatorePartitaId, int> conteggiRigore;
+  final Map<GiocatorePartitaId, int> conteggiFalli;
   final ValueChanged<GiocatorePartitaId> onSelezionato;
 
   /// Quando true, solo questa fascia risponde al tocco se è quella nostra
@@ -49,12 +49,13 @@ class FasciaCalottinePartita extends StatelessWidget {
 
   bool get _eNostra => (partita.nostraSquadra == 'casa') == casa;
 
-  _BadgeCalottina _badge(int n, bool toccabile) {
+  _BadgeCalottina _badge(int n, bool toccabile, double lato) {
     final atletaPerNumero = {
       for (final c in convocati) c.giocatore.numeroCalottina: c.atleta,
     };
     return _BadgeCalottina(
       numero: n,
+      lato: lato,
       colore: casa ? CapColore.bianca : CapColore.blu,
       attivo:
           toccabile &&
@@ -67,8 +68,8 @@ class FasciaCalottinePartita extends StatelessWidget {
             ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
             : AvversarioGiocatoreId(n),
       ),
-      conteggioRigore:
-          conteggiRigore[_eNostra
+      conteggioFalli:
+          conteggiFalli[_eNostra
               ? NostroGiocatoreId(atletaPerNumero[n]?.id ?? '')
               : AvversarioGiocatoreId(n)] ??
           0,
@@ -86,57 +87,98 @@ class FasciaCalottinePartita extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final toccabile = attiva && (!soloNostra || _eNostra);
-    final colonnaA = <int>[];
-    final colonnaB = <int>[];
-    for (var n = 1; n <= partita.numeroMaxConvocati; n++) {
-      (n.isOdd ? colonnaA : colonnaB).add(n);
-    }
+    final numeri = [for (var n = 1; n <= partita.numeroMaxConvocati; n++) n];
 
-    Widget colonna(List<int> numeri) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final n in numeri) ...[
-          _badge(n, toccabile),
-          if (n != numeri.last) const SizedBox(height: AppSpacing.s8),
-        ],
-      ],
-    );
-
-    return SingleChildScrollView(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          colonna(colonnaA),
-          const SizedBox(width: AppSpacing.s4),
-          Padding(
-            // Sfalsata di mezza riga rispetto alla prima colonna.
-            padding: const EdgeInsets.only(
-              top: (AppSpacing.altezzaMinimaBersaglioVasca + AppSpacing.s8) / 2,
-            ),
-            child: colonna(colonnaB),
-          ),
-        ],
-      ),
+    // Tutte le calottine devono stare nello schermo senza scorrere
+    // (segnalazione del coach 2026-10-25, prima partita U16): con poca
+    // altezza si passa a 3 o 4 colonne e le calottine si rimpiccioliscono,
+    // mai sotto il bersaglio minimo da dito.
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        final (:colonne, :lato) = misuraFascia(
+          numeri.length,
+          vincoli.maxHeight,
+        );
+        final righe = [
+          for (var i = 0; i < numeri.length; i += colonne)
+            numeri.sublist(i, (i + colonne).clamp(0, numeri.length)),
+        ];
+        final griglia = Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (r, riga) in righe.indexed) ...[
+              if (r > 0) const SizedBox(height: _spazio),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final (c, n) in riga.indexed) ...[
+                    if (c > 0) const SizedBox(width: AppSpacing.s4),
+                    _badge(n, toccabile, lato),
+                  ],
+                  // L'ultima riga incompleta resta allineata a sinistra.
+                  for (var c = riga.length; c < colonne; c++) ...[
+                    const SizedBox(width: AppSpacing.s4),
+                    SizedBox(width: lato),
+                  ],
+                ],
+              ),
+            ],
+          ],
+        );
+        // Solo se lo schermo è davvero troppo basso anche per la misura
+        // più piccola: meglio scorrere che tagliare dei numeri.
+        return Center(child: SingleChildScrollView(child: griglia));
+      },
     );
   }
+}
+
+const _spazio = AppSpacing.s8;
+
+/// Quante colonne e quanto grande ogni calottina perché [quante] calottine
+/// stiano in [altezza]: la misura piena da bordo vasca se ci stanno, poi
+/// più colonne, poi più piccole fino al bersaglio minimo (48).
+({int colonne, double lato}) misuraFascia(int quante, double altezza) {
+  const massimo = AppSpacing.altezzaMinimaBersaglioVasca;
+  const minimo = AppSpacing.altezzaMinimaBersaglio;
+  if (!altezza.isFinite) return (colonne: 2, lato: massimo);
+  double lato(int colonne) {
+    final righe = (quante / colonne).ceil();
+    return ((altezza - (righe - 1) * _spazio) / righe).clamp(0, massimo);
+  }
+
+  // Le colonne in più rubano larghezza al campo: se ne aggiunge una solo
+  // quando le calottine si possono fare più grandi.
+  var migliore = (colonne: 2, lato: lato(2));
+  for (final colonne in [3, 4]) {
+    if (migliore.lato >= massimo) break;
+    final l = lato(colonne);
+    if (l > migliore.lato) migliore = (colonne: colonne, lato: l);
+  }
+  return migliore.lato >= minimo
+      ? migliore
+      : (colonne: migliore.colonne, lato: minimo);
 }
 
 class _BadgeCalottina extends StatelessWidget {
   const _BadgeCalottina({
     required this.numero,
+    required this.lato,
     required this.colore,
     required this.attivo,
     required this.squalificato,
-    required this.conteggioRigore,
+    required this.conteggioFalli,
     required this.onTap,
   });
 
   final int numero;
+
+  /// Il lato del bersaglio (vedi misuraFascia).
+  final double lato;
   final CapColore colore;
   final bool attivo;
   final bool squalificato;
-  final int conteggioRigore;
+  final int conteggioFalli;
   final VoidCallback onTap;
 
   @override
@@ -145,10 +187,10 @@ class _BadgeCalottina extends StatelessWidget {
     if (squalificato) {
       // Nero puro, non il token "testo": deve restare la casella piu'
       // scura sullo schermo anche quando il resto passa al tema scuro.
-      return const SizedBox(
-        width: AppSpacing.altezzaMinimaBersaglioVasca,
-        height: AppSpacing.altezzaMinimaBersaglioVasca,
-        child: DecoratedBox(
+      return SizedBox(
+        width: lato,
+        height: lato,
+        child: const DecoratedBox(
           decoration: BoxDecoration(
             color: Colors.black,
             shape: BoxShape.circle,
@@ -162,8 +204,8 @@ class _BadgeCalottina extends StatelessWidget {
     );
 
     return SizedBox(
-      width: AppSpacing.altezzaMinimaBersaglioVasca,
-      height: AppSpacing.altezzaMinimaBersaglioVasca,
+      width: lato,
+      height: lato,
       child: Opacity(
         opacity: attivo ? 1 : 0.5,
         child: Stack(
@@ -186,12 +228,12 @@ class _BadgeCalottina extends StatelessWidget {
                 ),
               ),
             ),
-            if (conteggioRigore == 1 || conteggioRigore == 2)
+            if (conteggioFalli == 1 || conteggioFalli == 2)
               Positioned(
                 top: -2,
                 right: -2,
                 child: Text(
-                  '$conteggioRigore',
+                  '$conteggioFalli',
                   style: AppTypography.etichetta.copyWith(
                     color: colori.rosso,
                     fontWeight: FontWeight.w700,
