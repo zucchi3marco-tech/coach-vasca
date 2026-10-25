@@ -50,6 +50,12 @@ Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al 
 - [ ] Quando un atleta segna male alla spalla, apri la sua prossima seduta a secco → **Prepara la variante**. Chiedigli di aprire la seduta dal suo telefono: deve vedere il suo esercizio, non quello di tutti.
 - [ ] Dopo due settimane di sedute vere, guarda **Forma e carico** di un atleta → «Quanto è varia la settimana». Dimmi se la monotonia ti torna con quello che hai visto in vasca.
 
+## 0octies. Le convocazioni veloci (quando le pubblichiamo)
+
+- [ ] Prima di pubblicare: lancia la migrazione dal terminale (ti do il comando).
+- [ ] Alla prossima partita vera: nella distinta il pulsante in basso → **Scegli i convocati** → **Come l'ultima partita** → togli o aggiungi chi serve → **Salva**. Controlla i numeri e capitano e vice in cima.
+- [ ] Icona per scaricare in alto → scrivi lo staff con le tessere (resta per la squadra) → **Scarica il file Excel**. Apri il file e confrontalo con il tuo «Formazioni.xlsx»: dimmi se manca qualcosa.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".
