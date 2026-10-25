@@ -437,6 +437,10 @@ class DistintaGiocatoriTable extends Table {
   BoolColumn get portiere => boolean().withDefault(const Constant(false))();
   BoolColumn get fuoriquota => boolean().withDefault(const Constant(false))();
 
+  /// I tempi in cui il convocato è stato in porta, come lista JSON di
+  /// interi ("[1,2]"); null = nessuno.
+  TextColumn get tempiInPortaJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -474,6 +478,9 @@ class EventiPartitaTable extends Table {
   /// Chi dei nostri ha guadagnato l'espulsione o il rigore di un
   /// avversario.
   TextColumn get guadagnataDa => text().nullable()();
+
+  /// Solo su un tiro avversario: il nostro portiere in acqua.
+  TextColumn get portiereId => text().nullable()();
   DateTimeColumn get creatoIl => dateTime()();
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class DistintaGiocatore {
   const DistintaGiocatore({
     required this.id,
@@ -9,6 +11,7 @@ class DistintaGiocatore {
     required this.viceCapitano,
     required this.portiere,
     required this.fuoriquota,
+    this.tempiInPorta = const [],
   });
 
   final String id;
@@ -21,6 +24,11 @@ class DistintaGiocatore {
   final bool portiere;
   final bool fuoriquota;
 
+  /// I tempi (1-4, oltre per i supplementari) in cui è stato in porta,
+  /// in ordine. Dal vivo si aggiornano da soli; con il solo referto li
+  /// indica l'allenatore.
+  final List<int> tempiInPorta;
+
   factory DistintaGiocatore.fromMap(Map<String, dynamic> map) {
     return DistintaGiocatore(
       id: map['id'] as String,
@@ -32,6 +40,17 @@ class DistintaGiocatore {
       viceCapitano: map['vice_capitano'] as bool,
       portiere: map['portiere'] as bool,
       fuoriquota: map['fuoriquota'] as bool,
+      tempiInPorta: tempiDaLista(map['tempi_in_porta']),
     );
   }
+}
+
+/// Da quello che arriva dal server (lista di numeri) o dalla cache
+/// locale (testo JSON) a una lista ordinata senza doppioni.
+List<int> tempiDaLista(Object? valore) {
+  final Object? lista = valore is String && valore.isNotEmpty
+      ? jsonDecode(valore)
+      : valore;
+  if (lista is! List) return const [];
+  return {for (final v in lista) (v as num).toInt()}.toList()..sort();
 }

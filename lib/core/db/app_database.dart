@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 49;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -601,6 +601,23 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'partite_table', 'staff_distinta_json')) {
           await m.addColumn(partiteTable, partiteTable.staffDistintaJson);
+        }
+      }
+      // v48 -> v49: portieri, chi era in porta su ogni tiro avversario e
+      // in quali tempi.
+      if (from < 49) {
+        if (!await _hasColumn(m, 'eventi_partita_table', 'portiere_id')) {
+          await m.addColumn(eventiPartitaTable, eventiPartitaTable.portiereId);
+        }
+        if (!await _hasColumn(
+          m,
+          'distinta_giocatori_table',
+          'tempi_in_porta_json',
+        )) {
+          await m.addColumn(
+            distintaGiocatoriTable,
+            distintaGiocatoriTable.tempiInPortaJson,
+          );
         }
       }
     },

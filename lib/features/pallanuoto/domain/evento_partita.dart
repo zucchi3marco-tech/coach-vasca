@@ -15,6 +15,7 @@ class EventoPartita {
     this.espulsioneDaRigore = false,
     this.assistDi,
     this.guadagnataDa,
+    this.portiereId,
     required this.creatoIl,
   });
 
@@ -56,6 +57,10 @@ class EventoPartita {
   /// guadagnata (con [espulsioneDaRigore], il rigore guadagnato).
   final String? guadagnataDa;
 
+  /// Solo su un tiro avversario: il nostro portiere in acqua in quel
+  /// momento (null nelle partite seguite prima di questa funzione).
+  final String? portiereId;
+
   final DateTime creatoIl;
 
   factory EventoPartita.fromMap(Map<String, dynamic> map) {
@@ -75,6 +80,7 @@ class EventoPartita {
       espulsioneDaRigore: map['espulsione_da_rigore'] as bool? ?? false,
       assistDi: map['assist_di'] as String?,
       guadagnataDa: map['guadagnata_da'] as String?,
+      portiereId: map['portiere_id'] as String?,
       creatoIl: DateTime.parse(map['created_at'] as String),
     );
   }

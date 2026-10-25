@@ -38,6 +38,7 @@ class EventiPartitaRepository {
       espulsioneDaRigore: row.espulsioneDaRigore,
       assistDi: row.assistDi,
       guadagnataDa: row.guadagnataDa,
+      portiereId: row.portiereId,
       creatoIl: row.creatoIl,
     );
   }
@@ -61,6 +62,7 @@ class EventiPartitaRepository {
       espulsioneDaRigore: Value(map['espulsione_da_rigore'] as bool? ?? false),
       assistDi: Value(map['assist_di'] as String?),
       guadagnataDa: Value(map['guadagnata_da'] as String?),
+      portiereId: Value(map['portiere_id'] as String?),
       creatoIl: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
@@ -111,6 +113,7 @@ class EventiPartitaRepository {
       espulsioneDaRigore: map['espulsione_da_rigore'] as bool? ?? false,
       assistDi: map['assist_di'] as String?,
       guadagnataDa: map['guadagnata_da'] as String?,
+      portiereId: map['portiere_id'] as String?,
       creatoIl: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -186,6 +189,7 @@ class EventiPartitaRepository {
     double? posY,
     int? numeroCalottinaAvversario,
     bool espulsioneDaRigore = false,
+    String? portiereId,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -205,6 +209,7 @@ class EventiPartitaRepository {
       'pos_y': ?posY,
       'numero_calottina_avversario': ?numeroCalottinaAvversario,
       'espulsione_da_rigore': espulsioneDaRigore,
+      'portiere_id': ?portiereId,
     };
     try {
       final row = await _client
@@ -265,11 +270,13 @@ class EventiPartitaRepository {
 
   /// Tiro subito da un giocatore avversario: non sappiamo chi ha tirato
   /// (il pulsante rapido non chiede il numero di calottina), solo l'esito.
+  /// [portiereId]: il nostro portiere in acqua.
   Future<EventoPartita> registraTiroAvversario({
     required String partitaId,
     required String esito,
     int? periodo,
     String contestoTiro = 'azione',
+    String? portiereId,
   }) {
     return _creaEvento(
       partitaId: partitaId,
@@ -278,7 +285,39 @@ class EventiPartitaRepository {
       esito: esito,
       periodo: periodo,
       contestoTiro: contestoTiro,
+      portiereId: portiereId,
     );
+  }
+
+  /// Corregge il portiere di un tiro avversario già registrato; null lo
+  /// toglie.
+  Future<EventoPartita> impostaPortiere({
+    required String id,
+    required String? atletaId,
+  }) => _aggiornaEvento(id, {
+    'portiere_id': atletaId,
+  }, EventiPartitaTableCompanion(portiereId: Value(atletaId)));
+
+  /// I tiri avversari affrontati da un portiere, da sempre: parate e gol
+  /// subiti dal vivo.
+  Future<List<EventoPartita>> perPortiere(String atletaId) async {
+    try {
+      final rows = await leggiAPagine(
+        (da, a) => _client
+            .from('eventi_partita')
+            .select()
+            .eq('portiere_id', atletaId)
+            .order('id')
+            .range(da, a),
+      );
+      return rows.map(_fromMap).toList();
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(
+        _db.eventiPartitaTable,
+      )..where((t) => t.portiereId.equals(atletaId))).get();
+      return righe.map(_fromRow).toList();
+    }
   }
 
   /// Un'espulsione e' o di un nostro convocato ([atletaId]) o di un

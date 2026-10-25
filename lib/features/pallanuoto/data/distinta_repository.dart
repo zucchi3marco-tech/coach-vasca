@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +16,11 @@ import '../domain/distinta_giocatore.dart';
 import '../domain/numeri_distinta.dart';
 
 const _uuid = Uuid();
+
+String? _tempiJson(Object? valore) {
+  final tempi = tempiDaLista(valore);
+  return tempi.isEmpty ? null : jsonEncode(tempi);
+}
 
 /// Chi entra in distinta dalla pagina "Scegli i convocati", con il numero
 /// già deciso (vedi `numeriProposti`).
@@ -43,6 +50,7 @@ class DistintaRepository {
       viceCapitano: row.viceCapitano,
       portiere: row.portiere,
       fuoriquota: row.fuoriquota,
+      tempiInPorta: tempiDaLista(row.tempiInPortaJson),
     );
   }
 
@@ -57,6 +65,7 @@ class DistintaRepository {
       viceCapitano: Value(map['vice_capitano'] as bool? ?? false),
       portiere: Value(map['portiere'] as bool? ?? false),
       fuoriquota: Value(map['fuoriquota'] as bool? ?? false),
+      tempiInPortaJson: Value(_tempiJson(map['tempi_in_porta'])),
     );
   }
 
@@ -448,6 +457,60 @@ class DistintaRepository {
       );
     }
     return null;
+  }
+
+  /// I tempi in cui il convocato [id] è stato in porta (sostituisce i
+  /// precedenti; lista vuota = nessuno).
+  Future<void> impostaTempiInPorta(String id, List<int> tempi) async {
+    final ordinati = tempiDaLista(tempi);
+    final payload = {'tempi_in_porta': ordinati};
+    final locale = DistintaGiocatoriTableCompanion(
+      tempiInPortaJson: Value(ordinati.isEmpty ? null : jsonEncode(ordinati)),
+    );
+    try {
+      await _client.from('distinta_giocatori').update(payload).eq('id', id);
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      await enqueueOperation(
+        _db,
+        tabella: 'distinta_giocatori',
+        operazione: 'update',
+        rigaId: id,
+        payload: payload,
+      );
+      _syncEngine.processQueue();
+    }
+    await (_db.update(
+      _db.distintaGiocatoriTable,
+    )..where((t) => t.id.equals(id))).write(locale);
+  }
+
+  /// Le partite in cui l'atleta è stato in porta, con i suoi tempi: per
+  /// le statistiche da portiere. Senza rete, dalla cache locale.
+  Future<Map<String, List<int>>> tempiInPortaDellAtleta(String atletaId) async {
+    try {
+      final rows = await _client
+          .from('distinta_giocatori')
+          .select('partita_id, tempi_in_porta')
+          .eq('atleta_id', atletaId)
+          .neq('tempi_in_porta', '{}');
+      return {
+        for (final r in rows)
+          r['partita_id'] as String: tempiDaLista(r['tempi_in_porta']),
+      };
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe =
+          await (_db.select(_db.distintaGiocatoriTable)
+                ..where((t) => t.atletaId.equals(atletaId))
+                ..where((t) => t.tempiInPortaJson.isNotNull()))
+              .get();
+      return {
+        for (final r in righe)
+          if (tempiDaLista(r.tempiInPortaJson).isNotEmpty)
+            r.partitaId: tempiDaLista(r.tempiInPortaJson),
+      };
+    }
   }
 
   Future<void> rimuoviConvocato(String id) async {
