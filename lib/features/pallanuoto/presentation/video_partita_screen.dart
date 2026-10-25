@@ -550,7 +550,8 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
                       azionePrincipale: 'Ho capito',
                     ))
             : _conVideo(video),
-        loading: () => const Padding(
+        // Scorre: in orizzontale le righe non stanno in altezza.
+        loading: () => const SingleChildScrollView(
           padding: EdgeInsets.all(AppSpacing.s16),
           child: LoadingSkeletonList(righe: 4),
         ),
@@ -631,16 +632,23 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
 
     final elenco = _elencoClip(video, eventi, nomi, nome, convocati);
 
-    Widget colonnaVideo(List<Widget> figli) => Column(
-      children: [
-        lettore,
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: AppSpacing.s32),
-            children: figli,
+    // Il video non prende mai più di metà altezza abbondante: con il
+    // telefono in orizzontale copriva i comandi sotto (anche «È qui»).
+    Widget colonnaVideo(List<Widget> figli) => LayoutBuilder(
+      builder: (context, vincoli) => Column(
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: vincoli.maxHeight * 0.55),
+            child: Center(child: lettore),
           ),
-        ),
-      ],
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: AppSpacing.s32),
+              children: figli,
+            ),
+          ),
+        ],
+      ),
     );
 
     if (largo) {

@@ -44,6 +44,15 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'video-in-orizzontale',
+    data: DateTime(2026, 10, 25),
+    titolo: 'Video della partita in orizzontale',
+    testo:
+        'Con il telefono in orizzontale il video della partita non copre più '
+        'i comandi sotto: «È qui» per allinearlo e le clip si raggiungono '
+        'scorrendo sotto il video.',
+  ),
+  Novita(
     id: 'portieri-parate',
     data: DateTime(2026, 10, 25),
     titolo: 'Parate e gol subiti dei portieri',

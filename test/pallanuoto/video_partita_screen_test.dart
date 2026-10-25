@@ -216,6 +216,33 @@ void main() {
     expect(find.text('La clip è spostata? Allinea qui'), findsOneWidget);
   });
 
+  testWidgets('telefono in orizzontale: il video non copre «È qui»', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(844, 390);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final finto = _RepositoryFinto(_video());
+    await tester.pumpWidget(_app(finto, VideoPartitaScreen(partita: _partita)));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Allinea il video'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Allinea il video'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tiro — Rossi Marco — Gol (T1)'));
+    await tester.pumpAndSettle();
+
+    final eQui = find.text('È qui');
+    await tester.ensureVisible(eQui);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(eQui).bottom, lessThanOrEqualTo(390));
+    await tester.tap(eQui);
+    await tester.pumpAndSettle();
+    expect(finto.allineamenti, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('sul fotogramma della clip si disegna una nota per il '
       'giocatore', (tester) async {
     _schermoGrande(tester);
