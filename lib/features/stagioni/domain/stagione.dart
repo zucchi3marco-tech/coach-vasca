@@ -40,6 +40,8 @@ class FaseStagione {
     required this.dataFine,
     this.obiettivoMetri,
     this.obiettivoCarico,
+    this.scopo,
+    this.righeSettimane = const {},
   });
 
   factory FaseStagione.fromMap(Map<String, dynamic> m) => FaseStagione(
@@ -48,6 +50,12 @@ class FaseStagione {
     dataFine: DateTime.parse(m['data_fine'] as String),
     obiettivoMetri: (m['obiettivo_metri'] as num?)?.round(),
     obiettivoCarico: (m['obiettivo_carico'] as num?)?.round(),
+    scopo: _testoPieno(m['scopo']),
+    righeSettimane: {
+      if (m['righe_settimane'] case final Map<dynamic, dynamic> righe)
+        for (final MapEntry(:key, :value) in righe.entries)
+          _lunedi(DateTime.parse(key as String)): ?_testoPieno(value),
+    },
   );
 
   final String nome;
@@ -60,12 +68,45 @@ class FaseStagione {
   /// Carico a settimana (RPE × minuti) di un atleta.
   final int? obiettivoCarico;
 
+  /// «A cosa serve»: una o due righe per gli atleti, che le leggono nella
+  /// home per tutte le settimane della fase.
+  final String? scopo;
+
+  /// Una riga diversa per una settimana precisa (chiave: il lunedì), al
+  /// posto di [scopo].
+  final Map<DateTime, String> righeSettimane;
+
+  /// Le settimane della fase, dal lunedì della prima al lunedì
+  /// dell'ultima.
+  List<DateTime> get settimane {
+    final ultima = _lunedi(dataFine);
+    return [
+      for (
+        var l = _lunedi(dataInizio);
+        !l.isAfter(ultima);
+        l = aggiungiGiorni(l, 7)
+      )
+        l,
+    ];
+  }
+
+  /// Cosa leggono gli atleti nella settimana del [lunedi]: la riga di
+  /// quella settimana o, se non c'è, «A cosa serve».
+  String? testoDellaSettimana(DateTime lunedi) =>
+      righeSettimane[_lunedi(lunedi)] ?? scopo;
+
   Map<String, dynamic> toMap() => {
     'nome': nome,
     'data_inizio': formatDateOnly(dataInizio),
     'data_fine': formatDateOnly(dataFine),
     'obiettivo_metri': ?obiettivoMetri,
     'obiettivo_carico': ?obiettivoCarico,
+    'scopo': ?_testoPieno(scopo),
+    if (righeSettimane.isNotEmpty)
+      'righe_settimane': {
+        for (final MapEntry(:key, :value) in righeSettimane.entries)
+          formatDateOnly(key): value,
+      },
   };
 
   /// La stessa fase spostata di [giorni] giorni di calendario (per
@@ -76,6 +117,52 @@ class FaseStagione {
     dataFine: aggiungiGiorni(dataFine, giorni),
     obiettivoMetri: obiettivoMetri,
     obiettivoCarico: obiettivoCarico,
+    scopo: scopo,
+    righeSettimane: {
+      for (final MapEntry(:key, :value) in righeSettimane.entries)
+        _lunedi(aggiungiGiorni(key, giorni)): value,
+    },
+  );
+}
+
+/// Il lunedì (a mezzanotte) della settimana di [d].
+DateTime _lunedi(DateTime d) => soloData(aggiungiGiorni(d, -(d.weekday - 1)));
+
+/// Il testo senza spazi in più; null se vuoto.
+String? _testoPieno(Object? v) {
+  final t = (v as String?)?.trim();
+  return t == null || t.isEmpty ? null : t;
+}
+
+/// Quanto può essere lungo «A cosa serve» (e la riga di una settimana).
+const lunghezzaMassimaScopo = 200;
+
+/// La settimana in corso vista dall'atleta: la fase, a che settimana
+/// siamo e cosa c'è da leggere.
+typedef SettimanaDiFase = ({
+  FaseStagione fase,
+  int numero,
+  int totale,
+  String? testo,
+});
+
+/// La settimana di [oggi] per un atleta del gruppo [gruppoId] (vedi
+/// [faseDellaSettimana]); null se nessuna fase la tocca.
+SettimanaDiFase? settimanaDellAtleta(
+  List<Stagione> stagioni,
+  String? gruppoId,
+  DateTime oggi,
+) {
+  final lunedi = _lunedi(oggi);
+  final fase = faseDellaSettimana(stagioni, gruppoId, lunedi);
+  if (fase == null) return null;
+  final settimane = fase.settimane;
+  final indice = settimane.indexOf(lunedi);
+  return (
+    fase: fase,
+    numero: indice < 0 ? 1 : indice + 1,
+    totale: settimane.length,
+    testo: fase.testoDellaSettimana(lunedi),
   );
 }
 

@@ -407,7 +407,9 @@ Tutto ciò che è ancora aperto, in un unico posto (raccolto il 2026-09-21): pri
     - Drift v50 (colonne `aperto_atleti`, `dall_atleta`). Nel modulo del test l'interruttore «Lo segnano anche gli atleti»; in classifica e nello storico «segnato dall'atleta».
     - In «I miei tempi», sul telefono dell'atleta, i test aperti compaiono anche senza risultati («Da segnare»). Un tocco apre il foglio del test: «Segna un risultato», «Come si fa», i suoi risultati; i suoi si toccano per correggerli o toglierli (`SegnaRisultatoScreen`, tempi scritti come «8,62» o «1:05,20», massimali con chili e ripetizioni).
     - Se per quel giorno c'è già il risultato scritto dall'allenatore, l'app lo dice prima di mandarlo (`RisultatoDellAllenatore`).
-  - [ ] **Piano e obiettivi dell'atleta** (proposta 14): fase e obiettivo della settimana nella home, scheda obiettivi con le domande dell'allenatore e le due righe di ritorno.
+  - [ ] **Piano e obiettivi dell'atleta** (proposta 14): fase e obiettivo della settimana nella home, scheda obiettivi con le domande dell'allenatore e le due righe di ritorno. Scelte del coach: **un testo per fase** (e una riga diversa per una settimana se serve), nella home **niente numeri**, **quante schede vuole** in una stagione, le risposte le leggono **allenatori e assistenti**.
+    - [x] **Passo A, la settimana nella home** (**pubblicato il 2026-10-26**): nella fase «A cosa serve» (`FaseStagione.scopo`) e «Una riga diversa per una settimana» (`righeSettimane`, chiave il lunedì), dentro il JSON `fasi` della stagione (niente migrazione). `CardSettimana` in cima alla home dell'atleta: fase, settimana N di M e il testo (`settimanaDellAtleta`); non compare senza una fase in corso.
+    - [ ] **Passo B, la scheda obiettivi**: domande scelte dall'allenatore (pronte o sue, niente salute), risposte dell'atleta, due righe di ritorno, notifiche.
   - [ ] **La voce sulle clip** (proposta 15): commento a voce sulla clip, risposta scritta del giocatore.
 - [ ] Pubblicazione store (Play/App Store) se necessario (FASE 8)
 

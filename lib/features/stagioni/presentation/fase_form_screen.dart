@@ -49,6 +49,8 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
   late final TextEditingController _nome;
   late final TextEditingController _km;
   late final TextEditingController _carico;
+  late final TextEditingController _scopo;
+  late Map<DateTime, String> _righe;
   late DateTime _inizio;
   late DateTime _fine;
   bool _salvataggio = false;
@@ -86,6 +88,8 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
       text: f?.obiettivoMetri == null ? '' : kmDaMetri(f!.obiettivoMetri!),
     );
     _carico = TextEditingController(text: f?.obiettivoCarico?.toString() ?? '');
+    _scopo = TextEditingController(text: f?.scopo ?? '');
+    _righe = {...?f?.righeSettimane};
   }
 
   @override
@@ -93,6 +97,7 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
     _nome.dispose();
     _km.dispose();
     _carico.dispose();
+    _scopo.dispose();
     super.dispose();
   }
 
@@ -144,14 +149,47 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
       dataFine: soloData(_fine),
       obiettivoMetri: metriDaKm(_km.text),
       obiettivoCarico: int.tryParse(_carico.text.trim()),
+      scopo: _scopo.text.trim().isEmpty ? null : _scopo.text.trim(),
+    );
+    // Restano solo le righe delle settimane ancora dentro la fase.
+    final settimane = fase.settimane.toSet();
+    final completa = FaseStagione(
+      nome: fase.nome,
+      dataInizio: fase.dataInizio,
+      dataFine: fase.dataFine,
+      obiettivoMetri: fase.obiettivoMetri,
+      obiettivoCarico: fase.obiettivoCarico,
+      scopo: fase.scopo,
+      righeSettimane: {
+        for (final MapEntry(:key, :value) in _righe.entries)
+          if (settimane.contains(key)) key: value,
+      },
     );
     final fasi = [...widget.stagione.fasi];
     if (widget.indice == null) {
-      fasi.add(fase);
+      fasi.add(completa);
     } else {
-      fasi[widget.indice!] = fase;
+      fasi[widget.indice!] = completa;
     }
     await _scrivi(fasi);
+  }
+
+  /// La riga di una settimana precisa: si scrive, si cambia o si toglie.
+  Future<void> _rigaSettimana(DateTime lunedi, int numero) async {
+    final scelta = await showDialog<String>(
+      context: context,
+      builder: (context) =>
+          _DialogoRiga(lunedi: lunedi, numero: numero, riga: _righe[lunedi]),
+    );
+    if (scelta == null || !mounted) return;
+    setState(() {
+      final riga = scelta.trim();
+      if (riga.isEmpty) {
+        _righe.remove(lunedi);
+      } else {
+        _righe[lunedi] = riga;
+      }
+    });
   }
 
   Future<void> _elimina() async {
@@ -256,6 +294,16 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
                 ),
               ],
             ),
+            _PerGliAtleti(
+              scopo: _scopo,
+              settimane: FaseStagione(
+                nome: '',
+                dataInizio: _inizio,
+                dataFine: _fine,
+              ).settimane,
+              righe: _righe,
+              onRiga: _rigaSettimana,
+            ),
             FormGroup(
               titolo: 'Obiettivi di ogni settimana',
               isUltimo: true,
@@ -303,6 +351,155 @@ class _FaseFormScreenState extends ConsumerState<FaseFormScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// La finestra della riga di una settimana. Torna il testo scritto ('' =
+/// togli la riga), null se si annulla.
+class _DialogoRiga extends StatefulWidget {
+  const _DialogoRiga({
+    required this.lunedi,
+    required this.numero,
+    required this.riga,
+  });
+
+  final DateTime lunedi;
+  final int numero;
+  final String? riga;
+
+  @override
+  State<_DialogoRiga> createState() => _DialogoRigaState();
+}
+
+class _DialogoRigaState extends State<_DialogoRiga> {
+  late final _testo = TextEditingController(text: widget.riga ?? '');
+
+  @override
+  void dispose() {
+    _testo.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lunedi = widget.lunedi;
+    return AlertDialog(
+      title: Text('Settimana ${widget.numero}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${dataCompatta(lunedi)} – '
+            '${dataCompatta(aggiungiGiorni(lunedi, 6))}. Al posto di «A '
+            'cosa serve», solo per questa settimana.',
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          TextField(
+            controller: _testo,
+            autofocus: true,
+            maxLines: 3,
+            maxLength: lunghezzaMassimaScopo,
+            decoration: const InputDecoration(
+              hintText: 'Es. Settimana del derby: si scarica',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        if (widget.riga != null)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(''),
+            child: const Text('Togli'),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_testo.text),
+          child: const Text('Ok'),
+        ),
+      ],
+    );
+  }
+}
+
+/// «Per gli atleti»: a cosa serve la fase, come lo leggono nella home, e
+/// una riga diversa per una settimana precisa se serve.
+class _PerGliAtleti extends StatelessWidget {
+  const _PerGliAtleti({
+    required this.scopo,
+    required this.settimane,
+    required this.righe,
+    required this.onRiga,
+  });
+
+  final TextEditingController scopo;
+  final List<DateTime> settimane;
+  final Map<DateTime, String> righe;
+  final void Function(DateTime lunedi, int numero) onRiga;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final scritte = settimane.where(righe.containsKey).length;
+    return FormGroup(
+      titolo: 'Per gli atleti',
+      spiegazione: 'Lo leggono nella loro home, senza i numeri qui sotto.',
+      campi: [
+        AppTextField(
+          etichetta: 'A cosa serve (facoltativo)',
+          controller: scopo,
+          maxLines: 3,
+          aiuto:
+              'Una o due righe per tutte le settimane della fase, per '
+              'esempio «Costruiamo il fondo: tanti metri, poca velocità».',
+          validator: (v) => (v ?? '').trim().length > lunghezzaMassimaScopo
+              ? 'Al massimo $lunghezzaMassimaScopo caratteri'
+              : null,
+        ),
+        Material(
+          type: MaterialType.transparency,
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            shape: const Border(),
+            collapsedShape: const Border(),
+            title: const Text('Una riga diversa per una settimana'),
+            subtitle: Text(
+              scritte == 0
+                  ? 'Nessuna: vale «A cosa serve»'
+                  : scritte == 1
+                  ? '1 settimana'
+                  : '$scritte settimane',
+              style: TextStyle(color: colori.testoSecondario),
+            ),
+            children: [
+              for (final (i, lunedi) in settimane.indexed)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(
+                    'Settimana ${i + 1} · ${dataCompatta(lunedi)} – '
+                    '${dataCompatta(aggiungiGiorni(lunedi, 6))}',
+                  ),
+                  subtitle: Text(
+                    righe[lunedi] ?? 'Come la fase',
+                    style: TextStyle(
+                      color: righe.containsKey(lunedi)
+                          ? colori.testo
+                          : colori.testoSecondario,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.edit_outlined, size: 20),
+                  onTap: () => onRiga(lunedi, i + 1),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'settimana-nella-home-atleta',
+    data: DateTime(2026, 10, 26),
+    titolo: 'A cosa serve la settimana, nella home degli atleti',
+    testo:
+        'Nel modulo di una fase scrivi «A cosa serve», una o due righe. Se '
+        'vuoi, scrivi una riga diversa per una settimana precisa. Gli '
+        'atleti la leggono in cima alla loro home con la fase e la '
+        'settimana («Preparazione · settimana 3 di 6»), senza km e carico.',
+    importante: true,
+  ),
+  Novita(
     id: 'test-segnati-atleti',
     data: DateTime(2026, 10, 26),
     titolo: 'I test li segnano anche gli atleti',

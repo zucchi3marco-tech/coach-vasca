@@ -63,7 +63,8 @@ class SezioneFasi extends ConsumerWidget {
               'ritorno...) e scrivi quanto volume e quanto carico vuoi '
               'ogni settimana. Il grafico "Volume per settimana" degli '
               'allenamenti e quello del carico di ogni atleta mostrano '
-              'l\'obiettivo accanto a quanto si è fatto.',
+              'l\'obiettivo accanto a quanto si è fatto. «A cosa serve» '
+              'lo leggono gli atleti nella loro home.',
         ),
         if (aggiornata.fasi.isEmpty)
           Text(
@@ -88,7 +89,8 @@ class SezioneFasi extends ConsumerWidget {
                       : null,
                   sottotitolo:
                       '${dataCompatta(f.dataInizio)} – '
-                      '${dataCompatta(f.dataFine)} · ${_obiettivi(f)}',
+                      '${dataCompatta(f.dataFine)} · ${_obiettivi(f)}'
+                      '${f.scopo == null ? '' : '\n«${f.scopo}»'}',
                   trailing: Icon(
                     Icons.chevron_right,
                     color: colori.testoSecondario,

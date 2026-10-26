@@ -25,6 +25,7 @@ import '../referti/application/referti_providers.dart';
 import '../statistiche/application/statistiche_providers.dart';
 import '../secco/presentation/card_secco_da_fare.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
+import 'atleta/card_settimana.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
 import '../allenamenti/domain/allenamento.dart';
 import '../benessere/presentation/card_benessere.dart';
@@ -384,6 +385,14 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // La fase e a cosa serve la settimana (si nasconde
+                    // da sola se nessuna fase è in corso).
+                    blocco(
+                      CardSettimana(
+                        atleta: atleta,
+                        vistaAllenatore: vistaAllenatore,
+                      ),
+                    ),
                     blocco(const TitoloSezione('In programma')),
                     blocco(
                       CardBenessere(

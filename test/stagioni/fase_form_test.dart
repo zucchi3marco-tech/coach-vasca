@@ -34,7 +34,11 @@ Finder _campo(String etichetta) => find.descendant(
   matching: find.byType(TextFormField),
 );
 
-Future<_StagioniFinte> _apri(WidgetTester tester, Stagione stagione) async {
+Future<_StagioniFinte> _apri(
+  WidgetTester tester,
+  Stagione stagione, {
+  int? indice,
+}) async {
   final repository = _StagioniFinte();
   await tester.pumpWidget(
     ProviderScope(
@@ -47,7 +51,7 @@ Future<_StagioniFinte> _apri(WidgetTester tester, Stagione stagione) async {
         ),
         home: Navigator(
           onGenerateRoute: (_) => MaterialPageRoute<void>(
-            builder: (_) => FaseFormScreen(stagione: stagione),
+            builder: (_) => FaseFormScreen(stagione: stagione, indice: indice),
           ),
         ),
       ),
@@ -116,5 +120,58 @@ void main() {
       find.textContaining('Si sovrappone alla fase «Andata»'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('«A cosa serve» e la riga di una settimana per gli atleti', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    // Quattro settimane, dal lunedì 5 ottobre alla domenica 1 novembre;
+    // una riga vecchia cade fuori dalla fase e al salvataggio sparisce.
+    final preparazione = FaseStagione(
+      nome: 'Preparazione',
+      dataInizio: DateTime(2026, 10, 5),
+      dataFine: DateTime(2026, 11, 1),
+      righeSettimane: {DateTime(2026, 12, 7): 'Vecchia'},
+    );
+    final repository = await _apri(
+      tester,
+      _stagione([preparazione]),
+      indice: 0,
+    );
+
+    await tester.enterText(
+      _campo('A cosa serve (facoltativo)'),
+      '  Costruiamo il fondo: tanti metri, poca velocità ',
+    );
+    await tester.tap(find.text('Una riga diversa per una settimana'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Settimana 4 ·'), findsOneWidget);
+    expect(find.textContaining('Settimana 5 ·'), findsNothing);
+
+    await tester.tap(find.textContaining('Settimana 2 ·'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Settimana del derby: si scarica',
+    );
+    await tester.tap(find.text('Ok'));
+    await tester.pumpAndSettle();
+    expect(find.text('Settimana del derby: si scarica'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Salva fase'));
+    await tester.tap(find.text('Salva fase'));
+    await tester.pumpAndSettle();
+
+    final salvata = repository.salvate!.single;
+    expect(salvata.scopo, 'Costruiamo il fondo: tanti metri, poca velocità');
+    expect(salvata.righeSettimane, {
+      DateTime(2026, 10, 12): 'Settimana del derby: si scarica',
+    });
   });
 }
