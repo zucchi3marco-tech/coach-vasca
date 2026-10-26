@@ -202,12 +202,12 @@ void main() {
       expect(tutte.fuoriDalVideo, 1);
       final diGol = tutte.clip.firstWhere((c) => c.id == gol.id);
       expect(diGol.secondo, 300);
-      expect(diGol.inizio, 290);
-      expect(diGol.fine, 304);
+      expect(diGol.inizio, 285);
+      expect(diGol.fine, 309);
       final diPersa = tutte.clip.firstWhere((c) => c.id == persa.id);
       expect(diPersa.secondo, 600);
-      expect(diPersa.inizio, 592);
-      expect(diPersa.fine, 603);
+      expect(diPersa.inizio, 587);
+      expect(diPersa.fine, 608);
       expect(
         tutte.clip.map((c) => c.secondo),
         orderedEquals([...tutte.clip.map((c) => c.secondo)]..sort()),
@@ -242,8 +242,8 @@ void main() {
         note: const [],
         filtro: FiltroClip.superiorita,
       ).clip.single;
-      expect(c.inizio, 480 - 4);
-      expect(c.fine, 480 + 24);
+      expect(c.inizio, 480 - 4 - 5);
+      expect(c.fine, 480 + 24 + 5);
     });
 
     test('le clip di un giocatore: tiri, assist, espulsioni guadagnate', () {

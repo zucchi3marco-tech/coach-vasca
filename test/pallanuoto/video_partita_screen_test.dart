@@ -286,8 +286,8 @@ void main() {
     await tester.tap(find.text('Disegna'));
     await tester.pumpAndSettle();
 
-    // La clip parte 10 secondi prima del gol.
-    expect(find.text('Nota a 0:30'), findsOneWidget);
+    // La clip parte 15 secondi prima del gol.
+    expect(find.text('Nota a 0:25'), findsOneWidget);
     final tavola = find.byType(TavolaDisegnoVideo);
     await tester.dragFrom(tester.getCenter(tavola), const Offset(120, -40));
     await tester.pumpAndSettle();
@@ -296,7 +296,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final nota = finto.note.single;
-    expect(nota.secondo, 30);
+    expect(nota.secondo, 25);
     expect(nota.eventoId, 'gol');
     // Commentando la clip di Rossi la nota è per lui.
     expect(nota.atletaId, 'rossi');
@@ -348,7 +348,7 @@ void main() {
       testo: 'Nota $id',
       creataIl: DateTime(2026, 10, 11),
     );
-    // Gol a 40", palla persa a 160" (clip 152-163); una nota dentro la
+    // Gol a 40", palla persa a 160" (clip 147-168); una nota dentro la
     // clip della palla persa e una subito dopo.
     final finto = _RepositoryFinto(
       _video([Allineamento(secondo: 40, momento: _gol.creatoIl, periodo: 1)]),
@@ -357,7 +357,7 @@ void main() {
       _app(
         finto,
         VideoPartitaScreen(partita: _partita),
-        note: [nota('n1', 162), nota('n2', 165)],
+        note: [nota('n1', 162), nota('n2', 170)],
       ),
     );
     await tester.pumpAndSettle();
@@ -374,15 +374,15 @@ void main() {
 
     await tester.tap(find.text('Guarda di fila'));
     await tester.pump();
-    expect(video.secondo, 30);
+    expect(video.secondo, 25);
     expect(find.text('In onda · 1 di 4'), findsOneWidget);
 
-    await scorri(30.25, 44);
+    await scorri(25.25, 49);
     expect(find.text('In onda · 2 di 4'), findsOneWidget);
-    expect(video.secondo, 152);
+    expect(video.secondo, 147);
 
     // Dentro la clip della palla persa la prima nota ferma il video.
-    await scorri(152.25, 162);
+    await scorri(147.25, 162);
     expect(video.inRiproduzione, isFalse);
     expect(find.text('Nota n1'), findsOneWidget);
     await tester.tap(find.text('Continua'));
@@ -391,10 +391,10 @@ void main() {
     // Finita la palla persa la nota già vista non si ripete, e la clip
     // della seconda comincia prima del punto in cui siamo: niente salto
     // indietro.
-    await scorri(162.25, 163);
-    expect(video.secondo, 163);
+    await scorri(162.25, 168);
+    expect(video.secondo, 168);
     expect(find.text('In onda'), findsOneWidget);
-    await scorri(163.25, 165);
+    await scorri(168.25, 170);
     expect(find.text('Nota n2'), findsOneWidget);
     expect(find.text('Continua'), findsOneWidget);
 

@@ -45,8 +45,21 @@ class ClipVideo {
 /// sceglie anche campo, calottina ed esito), quindi la clip parte qualche
 /// secondo prima: l'azione che porta al tiro, il fallo prima
 /// dell'espulsione. Una superiorità dura 20 secondi: la clip la contiene
-/// tutta, dall'espulsione (o dall'inizio segnato) alla fine.
+/// tutta, dall'espulsione (o dall'inizio segnato) alla fine. A ognuna si
+/// aggiungono [margineClip] secondi prima e dopo, per l'azione completa.
 ({double prima, double dopo}) _finestra(
+  EventoPartita e,
+  FiltroClip filtro, {
+  required bool superioritaAInizio,
+}) {
+  final base = _finestraBase(e, filtro, superioritaAInizio: superioritaAInizio);
+  return (prima: base.prima + margineClip, dopo: base.dopo + margineClip);
+}
+
+/// I secondi in più, prima e dopo, di ogni clip di un evento.
+const double margineClip = 5;
+
+({double prima, double dopo}) _finestraBase(
   EventoPartita e,
   FiltroClip filtro, {
   required bool superioritaAInizio,

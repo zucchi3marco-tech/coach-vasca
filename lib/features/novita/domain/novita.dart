@@ -44,6 +44,15 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'clip-piu-lunghe',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Clip del video più lunghe',
+    testo:
+        'Ogni clip della partita parte 5 secondi prima e finisce 5 secondi '
+        'dopo: si vede l\'azione completa. Vale anche per i video già '
+        'allineati, senza rifare niente.',
+  ),
+  Novita(
     id: 'dashboard-gol-dal-referto',
     data: DateTime(2026, 10, 26),
     titolo: 'Gol in pagina anche dal referto',
