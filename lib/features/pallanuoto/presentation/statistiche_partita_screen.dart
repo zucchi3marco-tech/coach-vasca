@@ -186,7 +186,9 @@ class _Contenuto extends StatelessWidget {
               etichetta: 'Rigori segnati',
               valore: rapporto(n.golRigore, n.rigoriTirati),
               confronto: n.rigoriAvuti > n.rigoriTirati
-                  ? '${n.rigoriAvuti} avuti'
+                  // I rigori fischiati a nostro favore, se non sono stati
+                  // tirati tutti.
+                  ? 'su ${n.rigoriAvuti} a favore'
                   : null,
             ),
             if (completa)

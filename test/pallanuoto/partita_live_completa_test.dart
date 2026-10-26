@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
@@ -18,6 +20,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Registra le chiamate invece di salvare.
 class _RepositoryFinto implements EventiPartitaRepository {
   final chiamate = <String>[];
+
+  /// Con la rete lenta: l'espulsione si salva quando si completa.
+  Completer<void>? rete;
 
   EventoPartita _evento(String tipo, {String? atletaId, String? esito}) =>
       EventoPartita(
@@ -65,6 +70,7 @@ class _RepositoryFinto implements EventiPartitaRepository {
     bool espulsioneDaRigore = false,
   }) async {
     chiamate.add('espulsione ${atletaId ?? 'n.$numeroCalottinaAvversario'}');
+    await rete?.future;
     return _evento('espulsione', atletaId: atletaId);
   }
 
@@ -266,6 +272,31 @@ void main() {
       }
     }
     expect(tester.takeException(), isNull);
+    await _chiudi(tester, repository);
+  });
+
+  testWidgets('con la rete lenta un secondo tocco non salva due volte', (
+    tester,
+  ) async {
+    final repository = _RepositoryFinto()..rete = Completer<void>();
+    await _apri(tester, repository, 'essenziale');
+
+    await tester.tap(find.text('Espulsione'));
+    await tester.pumpAndSettle();
+    await tester.tap(_calottinaAvversaria(3));
+    await tester.pump();
+    // Il server non ha ancora risposto: si vede che sta salvando, e il
+    // secondo tocco non conta.
+    expect(find.text('Salvo…'), findsOneWidget);
+    await tester.tap(_calottinaAvversaria(3), warnIfMissed: false);
+    await tester.pump();
+    expect(repository.chiamate, ['espulsione n.3']);
+
+    repository.rete!.complete();
+    await tester.pumpAndSettle();
+    expect(repository.chiamate, ['espulsione n.3']);
+    expect(find.text('Salvo…'), findsNothing);
+    await _senzaAvviso(tester);
     await _chiudi(tester, repository);
   });
 

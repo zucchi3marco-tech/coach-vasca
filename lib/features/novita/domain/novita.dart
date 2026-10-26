@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'dal-vivo-niente-doppi',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Dal vivo, niente eventi doppi',
+    testo:
+        'Con la rete lenta, mentre un evento si salva al centro del campo '
+        'compare «Salvo…» e un secondo tocco sul giocatore non lo registra '
+        'di nuovo. Nelle statistiche, sotto i rigori segnati, «su 2 a '
+        'favore» dice quanti rigori ci hanno fischiato quando non li '
+        'abbiamo tirati tutti.',
+  ),
+  Novita(
     id: 'spiegazioni-test',
     data: DateTime(2026, 10, 26),
     titolo: 'Come si fa ogni test',

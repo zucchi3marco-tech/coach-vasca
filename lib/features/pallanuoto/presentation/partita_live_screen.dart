@@ -69,6 +69,12 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   double? _posY;
   bool _rigorePendente = false;
   bool _pallaRecuperata = false;
+
+  /// Un evento sta partendo: finché il server non risponde i tocchi sui
+  /// giocatori non contano. Con la rete lenta un secondo tocco salvava
+  /// lo stesso evento due volte (segnalazione del coach 2026-10-26: due
+  /// rigori avuti invece di uno).
+  bool _salvataggioInCorso = false;
   int? _periodo;
   bool _periodoPronto = false;
 
@@ -359,7 +365,22 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
         .showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
   }
 
-  Future<void> _salvaTiro(
+  /// Esegue [salva] una volta sola: mentre è in corso, gli altri tocchi
+  /// non fanno niente.
+  Future<void> _unaVolta(Future<void> Function() salva) async {
+    if (_salvataggioInCorso) return;
+    setState(() => _salvataggioInCorso = true);
+    try {
+      await salva();
+    } finally {
+      if (mounted) setState(() => _salvataggioInCorso = false);
+    }
+  }
+
+  Future<void> _salvaTiro(String atletaId, String esito, String contesto) =>
+      _unaVolta(() => _registraTiro(atletaId, esito, contesto));
+
+  Future<void> _registraTiro(
     String atletaId,
     String esito,
     String contesto,
@@ -391,7 +412,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
     }
   }
 
-  Future<void> _salvaSanzione(GiocatorePartitaId id) async {
+  Future<void> _salvaSanzione(GiocatorePartitaId id) =>
+      _unaVolta(() => _registraSanzione(id));
+
+  Future<void> _registraSanzione(GiocatorePartitaId id) async {
     try {
       final evento = await ref
           .read(eventiPartitaRepositoryProvider)
@@ -420,7 +444,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
 
   /// [atletaId] null: palla persa o recuperata dalla squadra, senza un
   /// giocatore.
-  Future<void> _salvaPalla(String? atletaId) async {
+  Future<void> _salvaPalla(String? atletaId) =>
+      _unaVolta(() => _registraPalla(atletaId));
+
+  Future<void> _registraPalla(String? atletaId) async {
     try {
       final evento = await ref
           .read(eventiPartitaRepositoryProvider)
@@ -457,7 +484,10 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
     }
   }
 
-  Future<void> _salvaTiroAvversario(String esito, String contesto) async {
+  Future<void> _salvaTiroAvversario(String esito, String contesto) =>
+      _unaVolta(() => _registraTiroAvversario(esito, contesto));
+
+  Future<void> _registraTiroAvversario(String esito, String contesto) async {
     try {
       final evento = await ref
           .read(eventiPartitaRepositoryProvider)
@@ -579,6 +609,7 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
     Map<String, Atleta> atletiPerId,
     GiocatorePartitaId id,
   ) {
+    if (_salvataggioInCorso) return;
     final atletaId = id is NostroGiocatoreId ? id.atletaId : null;
     switch (_interazione) {
       case _Interazione.sceltaGiocatoreTiro:
@@ -604,40 +635,42 @@ class _PartitaLiveScreenState extends ConsumerState<PartitaLiveScreen> {
   /// Cosa si sta scegliendo, scritto al centro del campo, e la scelta
   /// "nessun giocatore" quando c'è.
   ({String domanda, String? nessuno, VoidCallback? onNessuno}) _richiesta() =>
-      switch (_interazione) {
-        _Interazione.sceltaGiocatoreTiro => (
-          domanda: 'Chi ha tirato?',
-          nessuno: null,
-          onNessuno: null,
-        ),
-        _Interazione.sceltaGiocatoreSanzione => (
-          domanda: _rigorePendente
-              ? 'Chi ha commesso il fallo da rigore?'
-              : 'Chi è stato espulso?',
-          nessuno: null,
-          onNessuno: null,
-        ),
-        _Interazione.sceltaGiocatorePalla => (
-          domanda: _pallaRecuperata
-              ? 'Chi ha recuperato palla?'
-              : 'Chi ha perso palla?',
-          nessuno: 'Senza giocatore',
-          onNessuno: () => _salvaPalla(null),
-        ),
-        _Interazione.sceltaAssist => (
-          domanda: 'Chi ha fatto l\'assist?',
-          nessuno: 'Nessun assist',
-          onNessuno: () => _completaEvento(null),
-        ),
-        _Interazione.sceltaGuadagnata => (
-          domanda: _eventoDaCompletare?.espulsioneDaRigore ?? false
-              ? 'Chi ha guadagnato il rigore?'
-              : 'Chi ha guadagnato l\'espulsione?',
-          nessuno: 'Non so',
-          onNessuno: () => _completaEvento(null),
-        ),
-        _Interazione.riposo => (domanda: '', nessuno: null, onNessuno: null),
-      };
+      _salvataggioInCorso && _interazione != _Interazione.riposo
+      ? (domanda: 'Salvo…', nessuno: null, onNessuno: null)
+      : switch (_interazione) {
+          _Interazione.sceltaGiocatoreTiro => (
+            domanda: 'Chi ha tirato?',
+            nessuno: null,
+            onNessuno: null,
+          ),
+          _Interazione.sceltaGiocatoreSanzione => (
+            domanda: _rigorePendente
+                ? 'Chi ha commesso il fallo da rigore?'
+                : 'Chi è stato espulso?',
+            nessuno: null,
+            onNessuno: null,
+          ),
+          _Interazione.sceltaGiocatorePalla => (
+            domanda: _pallaRecuperata
+                ? 'Chi ha recuperato palla?'
+                : 'Chi ha perso palla?',
+            nessuno: 'Senza giocatore',
+            onNessuno: () => _salvaPalla(null),
+          ),
+          _Interazione.sceltaAssist => (
+            domanda: 'Chi ha fatto l\'assist?',
+            nessuno: 'Nessun assist',
+            onNessuno: () => _completaEvento(null),
+          ),
+          _Interazione.sceltaGuadagnata => (
+            domanda: _eventoDaCompletare?.espulsioneDaRigore ?? false
+                ? 'Chi ha guadagnato il rigore?'
+                : 'Chi ha guadagnato l\'espulsione?',
+            nessuno: 'Non so',
+            onNessuno: () => _completaEvento(null),
+          ),
+          _Interazione.riposo => (domanda: '', nessuno: null, onNessuno: null),
+        };
 
   @override
   Widget build(BuildContext context) =>
