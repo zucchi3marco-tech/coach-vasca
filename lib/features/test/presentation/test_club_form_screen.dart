@@ -78,6 +78,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
   late bool _massimale =
       widget.test?.massimale ?? widget.modelloMassimale != null;
   late String? _esercizioId = widget.test?.esercizioId;
+  late bool _apertoAtleti = widget.test?.apertoAtleti ?? false;
 
   /// Un test pronto ancora da aggiungere.
   bool get _daPronto =>
@@ -168,6 +169,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
               descrizione: _descrizione.text.trim(),
               modello: _chiaveModello,
               archiviato: originale?.archiviato ?? false,
+              apertoAtleti: _apertoAtleti,
             )
           : TestClub(
               id: originale?.id ?? '',
@@ -180,6 +182,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
               punteggio: _numeroProve > 1 ? _punteggio : PunteggioTest.migliore,
               modello: _chiaveModello,
               archiviato: originale?.archiviato ?? false,
+              apertoAtleti: _apertoAtleti,
             );
       final repository = ref.read(testClubRepositoryProvider);
       if (originale == null) {
@@ -406,6 +409,21 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
                   originale: spiegazioneOriginale(
                     _chiaveModello,
                     massimale: _massimale,
+                  ),
+                ),
+                // Un Material suo: il riquadro del gruppo ha uno sfondo.
+                Material(
+                  type: MaterialType.transparency,
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Lo segnano anche gli atleti'),
+                    subtitle: const Text(
+                      'Ognuno scrive il suo risultato da «I miei tempi»: '
+                      'entra in classifica con «segnato dall\'atleta» e lo '
+                      'puoi togliere.',
+                    ),
+                    value: _apertoAtleti,
+                    onChanged: (v) => setState(() => _apertoAtleti = v),
                   ),
                 ),
               ],

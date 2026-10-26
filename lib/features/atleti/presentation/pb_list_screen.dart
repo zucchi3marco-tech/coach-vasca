@@ -14,6 +14,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/danger_button.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/primary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
@@ -27,6 +28,7 @@ import '../../test/domain/massimale.dart';
 import '../../test/domain/spiegazioni_test.dart';
 import '../../test/domain/test_club.dart';
 import '../../test/domain/test_ingresso.dart';
+import '../../test/presentation/segna_risultato_screen.dart';
 import '../../test/presentation/spiegazione_test.dart';
 import '../../test/presentation/test_form_screen.dart';
 import '../application/current_atleta_provider.dart';
@@ -265,10 +267,13 @@ class _TestDiSquadra extends ConsumerWidget {
     final test = ref.watch(testClubProvider(atleta.clubId)).value ?? const [];
     final risultati =
         ref.watch(risultatiTestClubProvider(atleta.clubId)).value ?? const [];
+    // Sul telefono dell'atleta: i test aperti agli atleti li segna lui.
+    final eLui = ref.watch(currentAtletaProvider).value?.id == atleta.id;
+    bool aperto(TestClub t) => eLui && t.apertoAtleti && !t.archiviato;
     final righe = [
       for (final t in test)
         if (storicoAtleta(t, risultati, atleta.id) case final suoi
-            when suoi.isNotEmpty)
+            when suoi.isNotEmpty || aperto(t))
           (test: t, suoi: suoi),
     ];
     if (righe.isEmpty) return const SizedBox.shrink();
@@ -283,6 +288,23 @@ class _TestDiSquadra extends ConsumerWidget {
               for (final (:test, :suoi) in righe)
                 Builder(
                   builder: (context) {
+                    void apri() => _apriTest(
+                      context,
+                      test: test,
+                      suoi: suoi,
+                      puoSegnare: aperto(test),
+                    );
+                    if (suoi.isEmpty) {
+                      return AppListRow(
+                        onTap: apri,
+                        titolo: test.nome,
+                        sottotitolo: 'Da segnare: scrivi il tuo risultato',
+                        trailing: Icon(
+                          Icons.edit_outlined,
+                          color: colori.azione,
+                        ),
+                      );
+                    }
                     final punteggi = [
                       for (final r in suoi) test.punteggioDi(r.valori),
                     ];
@@ -297,13 +319,9 @@ class _TestDiSquadra extends ConsumerWidget {
                           )
                         : null;
                     return AppListRow(
-                      // Un tocco: come si fa il test.
-                      onTap: () => mostraComeSiFaTest(
-                        context,
-                        titolo: test.nome,
-                        sotto: test.comeSiLegge,
-                        testo: spiegazioneDi(test),
-                      ),
+                      // Un tocco: i suoi risultati, come si fa e, se il
+                      // test è aperto, "Segna un risultato".
+                      onTap: apri,
                       titolo: test.nome,
                       sottotitolo: [
                         traQuanto(suoi.last.data),
@@ -324,6 +342,127 @@ class _TestDiSquadra extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Il foglio di un test: i suoi risultati (i suoi, scritti da lui, si
+  /// toccano per correggerli), "Segna un risultato" se il test è aperto e
+  /// "Come si fa".
+  void _apriTest(
+    BuildContext context, {
+    required TestClub test,
+    required List<RisultatoTest> suoi,
+    required bool puoSegnare,
+  }) {
+    void segna([RisultatoTest? esistente]) => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SegnaRisultatoScreen(
+          test: test,
+          atleta: atleta,
+          esistente: esistente,
+        ),
+      ),
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final colori = sheetContext.colori;
+        void chiudiE(VoidCallback poi) {
+          Navigator.of(sheetContext).pop();
+          poi();
+        }
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.s16,
+              0,
+              AppSpacing.s16,
+              AppSpacing.s24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  test.nome,
+                  style: AppTypography.sezione.copyWith(color: colori.testo),
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  test.comeSiLegge,
+                  style: AppTypography.piccolo.copyWith(
+                    color: colori.testoSecondario,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s16),
+                if (puoSegnare) ...[
+                  PrimaryButton(
+                    label: 'Segna un risultato',
+                    icon: Icons.edit_outlined,
+                    onPressed: () => chiudiE(segna),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                ],
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.info_outline),
+                    label: const Text('Come si fa'),
+                    onPressed: () => chiudiE(
+                      () => mostraComeSiFaTest(
+                        context,
+                        titolo: test.nome,
+                        sotto: test.comeSiLegge,
+                        testo: spiegazioneDi(test),
+                      ),
+                    ),
+                  ),
+                ),
+                if (suoi.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.s8),
+                  AppListPanel(
+                    righe: [
+                      for (final r in suoi.reversed)
+                        AppListRow(
+                          titolo: dataEstesa(r.data),
+                          sottotitolo: [
+                            if (r.dallAtleta) 'segnato da te',
+                            if (test.massimale)
+                              ?descriviSollevato(r.caricoKg, r.ripetizioni),
+                            if (test.prove > 1)
+                              r.valori
+                                  .map(
+                                    (v) => formattaValore(
+                                      test.unita,
+                                      v,
+                                      sigla: false,
+                                    ),
+                                  )
+                                  .join(' · '),
+                          ].join(' — '),
+                          trailing: Text(
+                            formattaValore(
+                              test.unita,
+                              test.punteggioDi(r.valori),
+                            ),
+                            style: AppTypography.numerica(
+                              AppTypography.numeroMedio,
+                            ).copyWith(color: colori.testo),
+                          ),
+                          onTap: puoSegnare && r.dallAtleta
+                              ? () => chiudiE(() => segna(r))
+                              : null,
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

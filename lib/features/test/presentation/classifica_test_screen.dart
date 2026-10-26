@@ -417,6 +417,7 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
                     AppListRow(
                       titolo: dataEstesa(r.data),
                       sottotitolo: [
+                        if (r.dallAtleta) 'segnato dall\'atleta',
                         if (test.massimale)
                           ?descriviSollevato(r.caricoKg, r.ripetizioni),
                         if (test.prove > 1)
@@ -546,6 +547,7 @@ class _RigaClassifica extends StatelessWidget {
       // Quando, e com'è andata rispetto alla volta prima.
       sottotitolo: [
         traQuanto(p.risultato.data),
+        if (p.risultato.dallAtleta) 'segnato dall\'atleta',
         if (differenza != null && differenza != 0)
           '${formattaValore(test.unita, differenza.abs())} '
               '${migliorato ? 'meglio' : 'peggio'}',

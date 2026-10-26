@@ -39,6 +39,7 @@ class TestClubRepository {
     modello: r.modello,
     archiviato: r.archiviato,
     esercizioId: r.esercizioId,
+    apertoAtleti: r.apertoAtleti,
   );
 
   TestClubTableCompanion _testDaMap(Map<String, dynamic> m) =>
@@ -54,6 +55,7 @@ class TestClubRepository {
         modello: Value(m['modello'] as String?),
         archiviato: Value(m['archiviato'] as bool? ?? false),
         esercizioId: Value(m['esercizio_id'] as String?),
+        apertoAtleti: Value(m['aperto_atleti'] as bool? ?? false),
       );
 
   RisultatoTest _risultatoDaRiga(TestRisultatiTableData r) => RisultatoTest(
@@ -66,6 +68,7 @@ class TestClubRepository {
     note: r.note,
     caricoKg: r.caricoKg,
     ripetizioni: r.ripetizioni,
+    dallAtleta: r.dallAtleta,
   );
 
   TestRisultatiTableCompanion _risultatoDaMap(Map<String, dynamic> m) =>
@@ -79,6 +82,7 @@ class TestClubRepository {
         note: Value(m['note'] as String?),
         caricoKg: Value((m['carico_kg'] as num?)?.toDouble()),
         ripetizioni: Value((m['ripetizioni'] as num?)?.toInt()),
+        dallAtleta: Value(m['dall_atleta'] as bool? ?? false),
       );
 
   // -------------------------------------------------------------------------
@@ -238,6 +242,10 @@ class TestClubRepository {
   /// giorno lo sostituisce (chiave test, atleta, giorno). Per un
   /// massimale [valori] è il massimale stimato, con i chili sollevati
   /// ([caricoKg]) e le [ripetizioni].
+  ///
+  /// [comeAtleta]: lo scrive l'atleta dal suo telefono (vedi
+  /// [RisultatoTest.dallAtleta]): un risultato dello stesso giorno scritto
+  /// dall'allenatore non si sovrascrive, e il server lo rifiuterebbe.
   Future<void> salvaRisultato({
     required String testId,
     required String atletaId,
@@ -247,6 +255,7 @@ class TestClubRepository {
     String? note,
     double? caricoKg,
     int? ripetizioni,
+    bool comeAtleta = false,
   }) async {
     final giorno = DateTime(data.year, data.month, data.day);
     final esistente =
@@ -257,6 +266,9 @@ class TestClubRepository {
                   t.data.equals(giorno),
             ))
             .getSingleOrNull();
+    if (comeAtleta && esistente != null && !esistente.dallAtleta) {
+      throw const RisultatoDellAllenatore();
+    }
     final payload = {
       'id': esistente?.id ?? _uuid.v4(),
       'test_id': testId,
@@ -281,7 +293,9 @@ class TestClubRepository {
       if (!isNetworkFailure(e)) rethrow;
       await _db
           .into(_db.testRisultatiTable)
-          .insertOnConflictUpdate(_risultatoDaMap(payload));
+          .insertOnConflictUpdate(
+            _risultatoDaMap({...payload, 'dall_atleta': comeAtleta}),
+          );
       await enqueueOperation(
         _db,
         tabella: 'test_risultati',
@@ -310,6 +324,17 @@ class TestClubRepository {
       _db.testRisultatiTable,
     )..where((t) => t.id.equals(id))).go();
   }
+}
+
+/// Per quel giorno c'è già il risultato scritto dall'allenatore: l'atleta
+/// non lo può cambiare.
+class RisultatoDellAllenatore implements Exception {
+  const RisultatoDellAllenatore();
+
+  @override
+  String toString() =>
+      'Per questo giorno c\'è già il risultato scritto dall\'allenatore: '
+      'chiedi a lui di cambiarlo.';
 }
 
 final testClubRepositoryProvider = Provider<TestClubRepository>(

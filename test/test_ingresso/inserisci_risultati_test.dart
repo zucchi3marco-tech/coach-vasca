@@ -24,6 +24,7 @@ class _RepositoryFinto implements TestClubRepository {
     String? note,
     double? caricoKg,
     int? ripetizioni,
+    bool comeAtleta = false,
   }) async => salvati.add((
     atletaId: atletaId,
     valori: valori,

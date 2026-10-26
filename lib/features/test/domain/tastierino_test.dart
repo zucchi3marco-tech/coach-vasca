@@ -105,3 +105,40 @@ double? valoreDelCampo(TestClub test, int indice, String testo) {
   if (test.massimale && indice == 0 && v > 500) return null;
   return v;
 }
+
+/// Il valore scritto in un campo di testo (l'atleta dal suo telefono):
+/// un tempo come "8,62", "8.62", "45" (secondi) o "1:05,20"; le altre
+/// misure con la virgola dove ha senso, intere per punti e ripetizioni.
+/// null se non c'è o non va bene.
+double? valoreScritto(UnitaTest unita, String testo) {
+  final t = testo.trim().replaceAll(' ', '');
+  if (t.isEmpty) return null;
+  if (unita == UnitaTest.secondi) {
+    final parti = t.split(':');
+    if (parti.length > 2) return null;
+    final secondi = double.tryParse(parti.last.replaceAll(',', '.'));
+    if (secondi == null || secondi < 0) return null;
+    if (parti.length == 1) return secondi > 0 ? secondi : null;
+    final minuti = int.tryParse(parti.first);
+    if (minuti == null || minuti < 0 || secondi >= 60) return null;
+    final v = minuti * 60 + secondi;
+    return v > 0 ? v : null;
+  }
+  if (unita.intera) {
+    final v = int.tryParse(t);
+    return v == null || v <= 0 ? null : v.toDouble();
+  }
+  final v = double.tryParse(t.replaceAll(',', '.'));
+  return v == null || v <= 0 ? null : v;
+}
+
+/// Come [valoreDelCampo], per un campo di testo ([valoreScritto]).
+double? valoreDelCampoScritto(TestClub test, int indice, String testo) {
+  final v = valoreScritto(unitaDelCampo(test, indice), testo);
+  if (v == null) return null;
+  if (test.massimale && indice == 1 && v > ripetizioniMassimeStima) {
+    return null;
+  }
+  if (test.massimale && indice == 0 && v > 500) return null;
+  return v;
+}

@@ -16046,6 +16046,21 @@ class $TestClubTableTable extends TestClubTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _apertoAtletiMeta = const VerificationMeta(
+    'apertoAtleti',
+  );
+  @override
+  late final GeneratedColumn<bool> apertoAtleti = GeneratedColumn<bool>(
+    'aperto_atleti',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("aperto_atleti" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -16059,6 +16074,7 @@ class $TestClubTableTable extends TestClubTable
     modello,
     archiviato,
     esercizioId,
+    apertoAtleti,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -16151,6 +16167,15 @@ class $TestClubTableTable extends TestClubTable
         ),
       );
     }
+    if (data.containsKey('aperto_atleti')) {
+      context.handle(
+        _apertoAtletiMeta,
+        apertoAtleti.isAcceptableOrUnknown(
+          data['aperto_atleti']!,
+          _apertoAtletiMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -16204,6 +16229,10 @@ class $TestClubTableTable extends TestClubTable
         DriftSqlType.string,
         data['${effectivePrefix}esercizio_id'],
       ),
+      apertoAtleti: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}aperto_atleti'],
+      )!,
     );
   }
 
@@ -16228,6 +16257,9 @@ class TestClubTableData extends DataClass
 
   /// L'esercizio a secco di cui è il massimale; null per gli altri test.
   final String? esercizioId;
+
+  /// «Lo segnano anche gli atleti»: ognuno scrive il suo risultato.
+  final bool apertoAtleti;
   const TestClubTableData({
     required this.id,
     required this.clubId,
@@ -16240,6 +16272,7 @@ class TestClubTableData extends DataClass
     this.modello,
     required this.archiviato,
     this.esercizioId,
+    required this.apertoAtleti,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -16261,6 +16294,7 @@ class TestClubTableData extends DataClass
     if (!nullToAbsent || esercizioId != null) {
       map['esercizio_id'] = Variable<String>(esercizioId);
     }
+    map['aperto_atleti'] = Variable<bool>(apertoAtleti);
     return map;
   }
 
@@ -16283,6 +16317,7 @@ class TestClubTableData extends DataClass
       esercizioId: esercizioId == null && nullToAbsent
           ? const Value.absent()
           : Value(esercizioId),
+      apertoAtleti: Value(apertoAtleti),
     );
   }
 
@@ -16303,6 +16338,7 @@ class TestClubTableData extends DataClass
       modello: serializer.fromJson<String?>(json['modello']),
       archiviato: serializer.fromJson<bool>(json['archiviato']),
       esercizioId: serializer.fromJson<String?>(json['esercizioId']),
+      apertoAtleti: serializer.fromJson<bool>(json['apertoAtleti']),
     );
   }
   @override
@@ -16320,6 +16356,7 @@ class TestClubTableData extends DataClass
       'modello': serializer.toJson<String?>(modello),
       'archiviato': serializer.toJson<bool>(archiviato),
       'esercizioId': serializer.toJson<String?>(esercizioId),
+      'apertoAtleti': serializer.toJson<bool>(apertoAtleti),
     };
   }
 
@@ -16335,6 +16372,7 @@ class TestClubTableData extends DataClass
     Value<String?> modello = const Value.absent(),
     bool? archiviato,
     Value<String?> esercizioId = const Value.absent(),
+    bool? apertoAtleti,
   }) => TestClubTableData(
     id: id ?? this.id,
     clubId: clubId ?? this.clubId,
@@ -16347,6 +16385,7 @@ class TestClubTableData extends DataClass
     modello: modello.present ? modello.value : this.modello,
     archiviato: archiviato ?? this.archiviato,
     esercizioId: esercizioId.present ? esercizioId.value : this.esercizioId,
+    apertoAtleti: apertoAtleti ?? this.apertoAtleti,
   );
   TestClubTableData copyWithCompanion(TestClubTableCompanion data) {
     return TestClubTableData(
@@ -16367,6 +16406,9 @@ class TestClubTableData extends DataClass
       esercizioId: data.esercizioId.present
           ? data.esercizioId.value
           : this.esercizioId,
+      apertoAtleti: data.apertoAtleti.present
+          ? data.apertoAtleti.value
+          : this.apertoAtleti,
     );
   }
 
@@ -16383,7 +16425,8 @@ class TestClubTableData extends DataClass
           ..write('punteggio: $punteggio, ')
           ..write('modello: $modello, ')
           ..write('archiviato: $archiviato, ')
-          ..write('esercizioId: $esercizioId')
+          ..write('esercizioId: $esercizioId, ')
+          ..write('apertoAtleti: $apertoAtleti')
           ..write(')'))
         .toString();
   }
@@ -16401,6 +16444,7 @@ class TestClubTableData extends DataClass
     modello,
     archiviato,
     esercizioId,
+    apertoAtleti,
   );
   @override
   bool operator ==(Object other) =>
@@ -16416,7 +16460,8 @@ class TestClubTableData extends DataClass
           other.punteggio == this.punteggio &&
           other.modello == this.modello &&
           other.archiviato == this.archiviato &&
-          other.esercizioId == this.esercizioId);
+          other.esercizioId == this.esercizioId &&
+          other.apertoAtleti == this.apertoAtleti);
 }
 
 class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
@@ -16431,6 +16476,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
   final Value<String?> modello;
   final Value<bool> archiviato;
   final Value<String?> esercizioId;
+  final Value<bool> apertoAtleti;
   final Value<int> rowid;
   const TestClubTableCompanion({
     this.id = const Value.absent(),
@@ -16444,6 +16490,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
     this.modello = const Value.absent(),
     this.archiviato = const Value.absent(),
     this.esercizioId = const Value.absent(),
+    this.apertoAtleti = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TestClubTableCompanion.insert({
@@ -16458,6 +16505,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
     this.modello = const Value.absent(),
     this.archiviato = const Value.absent(),
     this.esercizioId = const Value.absent(),
+    this.apertoAtleti = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        clubId = Value(clubId),
@@ -16476,6 +16524,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
     Expression<String>? modello,
     Expression<bool>? archiviato,
     Expression<String>? esercizioId,
+    Expression<bool>? apertoAtleti,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -16490,6 +16539,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
       if (modello != null) 'modello': modello,
       if (archiviato != null) 'archiviato': archiviato,
       if (esercizioId != null) 'esercizio_id': esercizioId,
+      if (apertoAtleti != null) 'aperto_atleti': apertoAtleti,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -16506,6 +16556,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
     Value<String?>? modello,
     Value<bool>? archiviato,
     Value<String?>? esercizioId,
+    Value<bool>? apertoAtleti,
     Value<int>? rowid,
   }) {
     return TestClubTableCompanion(
@@ -16520,6 +16571,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
       modello: modello ?? this.modello,
       archiviato: archiviato ?? this.archiviato,
       esercizioId: esercizioId ?? this.esercizioId,
+      apertoAtleti: apertoAtleti ?? this.apertoAtleti,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -16560,6 +16612,9 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
     if (esercizioId.present) {
       map['esercizio_id'] = Variable<String>(esercizioId.value);
     }
+    if (apertoAtleti.present) {
+      map['aperto_atleti'] = Variable<bool>(apertoAtleti.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -16580,6 +16635,7 @@ class TestClubTableCompanion extends UpdateCompanion<TestClubTableData> {
           ..write('modello: $modello, ')
           ..write('archiviato: $archiviato, ')
           ..write('esercizioId: $esercizioId, ')
+          ..write('apertoAtleti: $apertoAtleti, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16681,6 +16737,21 @@ class $TestRisultatiTableTable extends TestRisultatiTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dallAtletaMeta = const VerificationMeta(
+    'dallAtleta',
+  );
+  @override
+  late final GeneratedColumn<bool> dallAtleta = GeneratedColumn<bool>(
+    'dall_atleta',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dall_atleta" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -16692,6 +16763,7 @@ class $TestRisultatiTableTable extends TestRisultatiTable
     note,
     caricoKg,
     ripetizioni,
+    dallAtleta,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -16771,6 +16843,12 @@ class $TestRisultatiTableTable extends TestRisultatiTable
         ),
       );
     }
+    if (data.containsKey('dall_atleta')) {
+      context.handle(
+        _dallAtletaMeta,
+        dallAtleta.isAcceptableOrUnknown(data['dall_atleta']!, _dallAtletaMeta),
+      );
+    }
     return context;
   }
 
@@ -16816,6 +16894,10 @@ class $TestRisultatiTableTable extends TestRisultatiTable
         DriftSqlType.int,
         data['${effectivePrefix}ripetizioni'],
       ),
+      dallAtleta: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dall_atleta'],
+      )!,
     );
   }
 
@@ -16836,6 +16918,9 @@ class TestRisultatiTableData extends DataClass
   final String? note;
   final double? caricoKg;
   final int? ripetizioni;
+
+  /// L'ha scritto l'atleta (lo decide il database), non l'allenatore.
+  final bool dallAtleta;
   const TestRisultatiTableData({
     required this.id,
     required this.testId,
@@ -16846,6 +16931,7 @@ class TestRisultatiTableData extends DataClass
     this.note,
     this.caricoKg,
     this.ripetizioni,
+    required this.dallAtleta,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -16865,6 +16951,7 @@ class TestRisultatiTableData extends DataClass
     if (!nullToAbsent || ripetizioni != null) {
       map['ripetizioni'] = Variable<int>(ripetizioni);
     }
+    map['dall_atleta'] = Variable<bool>(dallAtleta);
     return map;
   }
 
@@ -16883,6 +16970,7 @@ class TestRisultatiTableData extends DataClass
       ripetizioni: ripetizioni == null && nullToAbsent
           ? const Value.absent()
           : Value(ripetizioni),
+      dallAtleta: Value(dallAtleta),
     );
   }
 
@@ -16901,6 +16989,7 @@ class TestRisultatiTableData extends DataClass
       note: serializer.fromJson<String?>(json['note']),
       caricoKg: serializer.fromJson<double?>(json['caricoKg']),
       ripetizioni: serializer.fromJson<int?>(json['ripetizioni']),
+      dallAtleta: serializer.fromJson<bool>(json['dallAtleta']),
     );
   }
   @override
@@ -16916,6 +17005,7 @@ class TestRisultatiTableData extends DataClass
       'note': serializer.toJson<String?>(note),
       'caricoKg': serializer.toJson<double?>(caricoKg),
       'ripetizioni': serializer.toJson<int?>(ripetizioni),
+      'dallAtleta': serializer.toJson<bool>(dallAtleta),
     };
   }
 
@@ -16929,6 +17019,7 @@ class TestRisultatiTableData extends DataClass
     Value<String?> note = const Value.absent(),
     Value<double?> caricoKg = const Value.absent(),
     Value<int?> ripetizioni = const Value.absent(),
+    bool? dallAtleta,
   }) => TestRisultatiTableData(
     id: id ?? this.id,
     testId: testId ?? this.testId,
@@ -16939,6 +17030,7 @@ class TestRisultatiTableData extends DataClass
     note: note.present ? note.value : this.note,
     caricoKg: caricoKg.present ? caricoKg.value : this.caricoKg,
     ripetizioni: ripetizioni.present ? ripetizioni.value : this.ripetizioni,
+    dallAtleta: dallAtleta ?? this.dallAtleta,
   );
   TestRisultatiTableData copyWithCompanion(TestRisultatiTableCompanion data) {
     return TestRisultatiTableData(
@@ -16955,6 +17047,9 @@ class TestRisultatiTableData extends DataClass
       ripetizioni: data.ripetizioni.present
           ? data.ripetizioni.value
           : this.ripetizioni,
+      dallAtleta: data.dallAtleta.present
+          ? data.dallAtleta.value
+          : this.dallAtleta,
     );
   }
 
@@ -16969,7 +17064,8 @@ class TestRisultatiTableData extends DataClass
           ..write('valoriJson: $valoriJson, ')
           ..write('note: $note, ')
           ..write('caricoKg: $caricoKg, ')
-          ..write('ripetizioni: $ripetizioni')
+          ..write('ripetizioni: $ripetizioni, ')
+          ..write('dallAtleta: $dallAtleta')
           ..write(')'))
         .toString();
   }
@@ -16985,6 +17081,7 @@ class TestRisultatiTableData extends DataClass
     note,
     caricoKg,
     ripetizioni,
+    dallAtleta,
   );
   @override
   bool operator ==(Object other) =>
@@ -16998,7 +17095,8 @@ class TestRisultatiTableData extends DataClass
           other.valoriJson == this.valoriJson &&
           other.note == this.note &&
           other.caricoKg == this.caricoKg &&
-          other.ripetizioni == this.ripetizioni);
+          other.ripetizioni == this.ripetizioni &&
+          other.dallAtleta == this.dallAtleta);
 }
 
 class TestRisultatiTableCompanion
@@ -17012,6 +17110,7 @@ class TestRisultatiTableCompanion
   final Value<String?> note;
   final Value<double?> caricoKg;
   final Value<int?> ripetizioni;
+  final Value<bool> dallAtleta;
   final Value<int> rowid;
   const TestRisultatiTableCompanion({
     this.id = const Value.absent(),
@@ -17023,6 +17122,7 @@ class TestRisultatiTableCompanion
     this.note = const Value.absent(),
     this.caricoKg = const Value.absent(),
     this.ripetizioni = const Value.absent(),
+    this.dallAtleta = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TestRisultatiTableCompanion.insert({
@@ -17035,6 +17135,7 @@ class TestRisultatiTableCompanion
     this.note = const Value.absent(),
     this.caricoKg = const Value.absent(),
     this.ripetizioni = const Value.absent(),
+    this.dallAtleta = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        testId = Value(testId),
@@ -17052,6 +17153,7 @@ class TestRisultatiTableCompanion
     Expression<String>? note,
     Expression<double>? caricoKg,
     Expression<int>? ripetizioni,
+    Expression<bool>? dallAtleta,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -17064,6 +17166,7 @@ class TestRisultatiTableCompanion
       if (note != null) 'note': note,
       if (caricoKg != null) 'carico_kg': caricoKg,
       if (ripetizioni != null) 'ripetizioni': ripetizioni,
+      if (dallAtleta != null) 'dall_atleta': dallAtleta,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -17078,6 +17181,7 @@ class TestRisultatiTableCompanion
     Value<String?>? note,
     Value<double?>? caricoKg,
     Value<int?>? ripetizioni,
+    Value<bool>? dallAtleta,
     Value<int>? rowid,
   }) {
     return TestRisultatiTableCompanion(
@@ -17090,6 +17194,7 @@ class TestRisultatiTableCompanion
       note: note ?? this.note,
       caricoKg: caricoKg ?? this.caricoKg,
       ripetizioni: ripetizioni ?? this.ripetizioni,
+      dallAtleta: dallAtleta ?? this.dallAtleta,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -17124,6 +17229,9 @@ class TestRisultatiTableCompanion
     if (ripetizioni.present) {
       map['ripetizioni'] = Variable<int>(ripetizioni.value);
     }
+    if (dallAtleta.present) {
+      map['dall_atleta'] = Variable<bool>(dallAtleta.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -17142,6 +17250,7 @@ class TestRisultatiTableCompanion
           ..write('note: $note, ')
           ..write('caricoKg: $caricoKg, ')
           ..write('ripetizioni: $ripetizioni, ')
+          ..write('dallAtleta: $dallAtleta, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -29288,6 +29397,7 @@ typedef $$TestClubTableTableCreateCompanionBuilder =
       Value<String?> modello,
       Value<bool> archiviato,
       Value<String?> esercizioId,
+      Value<bool> apertoAtleti,
       Value<int> rowid,
     });
 typedef $$TestClubTableTableUpdateCompanionBuilder =
@@ -29303,6 +29413,7 @@ typedef $$TestClubTableTableUpdateCompanionBuilder =
       Value<String?> modello,
       Value<bool> archiviato,
       Value<String?> esercizioId,
+      Value<bool> apertoAtleti,
       Value<int> rowid,
     });
 
@@ -29367,6 +29478,11 @@ class $$TestClubTableTableFilterComposer
 
   ColumnFilters<String> get esercizioId => $composableBuilder(
     column: $table.esercizioId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get apertoAtleti => $composableBuilder(
+    column: $table.apertoAtleti,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -29434,6 +29550,11 @@ class $$TestClubTableTableOrderingComposer
     column: $table.esercizioId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get apertoAtleti => $composableBuilder(
+    column: $table.apertoAtleti,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TestClubTableTableAnnotationComposer
@@ -29481,6 +29602,11 @@ class $$TestClubTableTableAnnotationComposer
 
   GeneratedColumn<String> get esercizioId => $composableBuilder(
     column: $table.esercizioId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get apertoAtleti => $composableBuilder(
+    column: $table.apertoAtleti,
     builder: (column) => column,
   );
 }
@@ -29531,6 +29657,7 @@ class $$TestClubTableTableTableManager
                 Value<String?> modello = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
                 Value<String?> esercizioId = const Value.absent(),
+                Value<bool> apertoAtleti = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TestClubTableCompanion(
                 id: id,
@@ -29544,6 +29671,7 @@ class $$TestClubTableTableTableManager
                 modello: modello,
                 archiviato: archiviato,
                 esercizioId: esercizioId,
+                apertoAtleti: apertoAtleti,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29559,6 +29687,7 @@ class $$TestClubTableTableTableManager
                 Value<String?> modello = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
                 Value<String?> esercizioId = const Value.absent(),
+                Value<bool> apertoAtleti = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TestClubTableCompanion.insert(
                 id: id,
@@ -29572,6 +29701,7 @@ class $$TestClubTableTableTableManager
                 modello: modello,
                 archiviato: archiviato,
                 esercizioId: esercizioId,
+                apertoAtleti: apertoAtleti,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -29619,6 +29749,7 @@ typedef $$TestRisultatiTableTableCreateCompanionBuilder =
       Value<String?> note,
       Value<double?> caricoKg,
       Value<int?> ripetizioni,
+      Value<bool> dallAtleta,
       Value<int> rowid,
     });
 typedef $$TestRisultatiTableTableUpdateCompanionBuilder =
@@ -29632,6 +29763,7 @@ typedef $$TestRisultatiTableTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<double?> caricoKg,
       Value<int?> ripetizioni,
+      Value<bool> dallAtleta,
       Value<int> rowid,
     });
 
@@ -29686,6 +29818,11 @@ class $$TestRisultatiTableTableFilterComposer
 
   ColumnFilters<int> get ripetizioni => $composableBuilder(
     column: $table.ripetizioni,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dallAtleta => $composableBuilder(
+    column: $table.dallAtleta,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -29743,6 +29880,11 @@ class $$TestRisultatiTableTableOrderingComposer
     column: $table.ripetizioni,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get dallAtleta => $composableBuilder(
+    column: $table.dallAtleta,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TestRisultatiTableTableAnnotationComposer
@@ -29782,6 +29924,11 @@ class $$TestRisultatiTableTableAnnotationComposer
 
   GeneratedColumn<int> get ripetizioni => $composableBuilder(
     column: $table.ripetizioni,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get dallAtleta => $composableBuilder(
+    column: $table.dallAtleta,
     builder: (column) => column,
   );
 }
@@ -29835,6 +29982,7 @@ class $$TestRisultatiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<double?> caricoKg = const Value.absent(),
                 Value<int?> ripetizioni = const Value.absent(),
+                Value<bool> dallAtleta = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TestRisultatiTableCompanion(
                 id: id,
@@ -29846,6 +29994,7 @@ class $$TestRisultatiTableTableTableManager
                 note: note,
                 caricoKg: caricoKg,
                 ripetizioni: ripetizioni,
+                dallAtleta: dallAtleta,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29859,6 +30008,7 @@ class $$TestRisultatiTableTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<double?> caricoKg = const Value.absent(),
                 Value<int?> ripetizioni = const Value.absent(),
+                Value<bool> dallAtleta = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TestRisultatiTableCompanion.insert(
                 id: id,
@@ -29870,6 +30020,7 @@ class $$TestRisultatiTableTableTableManager
                 note: note,
                 caricoKg: caricoKg,
                 ripetizioni: ripetizioni,
+                dallAtleta: dallAtleta,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

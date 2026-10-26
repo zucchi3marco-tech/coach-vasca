@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'test-segnati-atleti',
+    data: DateTime(2026, 10, 26),
+    titolo: 'I test li segnano anche gli atleti',
+    testo:
+        'Nel modulo di un test accendi «Lo segnano anche gli atleti»: '
+        'ognuno scrive il suo risultato da «I miei tempi», che entra subito '
+        'in classifica con «segnato dall\'atleta». Lo puoi togliere dallo '
+        'storico dell\'atleta. L\'atleta corregge o toglie solo i suoi, mai '
+        'quelli scritti da te.',
+    importante: true,
+  ),
+  Novita(
     id: 'dal-vivo-niente-doppi',
     data: DateTime(2026, 10, 26),
     titolo: 'Dal vivo, niente eventi doppi',

@@ -622,6 +622,9 @@ class TestClubTable extends Table {
   /// L'esercizio a secco di cui è il massimale; null per gli altri test.
   TextColumn get esercizioId => text().nullable()();
 
+  /// «Lo segnano anche gli atleti»: ognuno scrive il suo risultato.
+  BoolColumn get apertoAtleti => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -639,6 +642,9 @@ class TestRisultatiTable extends Table {
   TextColumn get note => text().nullable()();
   RealColumn get caricoKg => real().nullable()();
   IntColumn get ripetizioni => integer().nullable()();
+
+  /// L'ha scritto l'atleta (lo decide il database), non l'allenatore.
+  BoolColumn get dallAtleta => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

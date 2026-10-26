@@ -401,6 +401,14 @@ Tutto ciò che è ancora aperto, in un unico posto (raccolto il 2026-09-21): pri
     - I test pronti aprono il foglio «Come si fa» con «Aggiungi al club» e «Cambialo prima di aggiungerlo» (modulo già compilato).
     - «Come si fa» compare nell'elenco, nella pagina del test e nella pagina dei tempi dell'atleta (un tocco su un test di squadra).
     - BVS e T30: la spiegazione del club sta nella nuova tabella `spiegazioni_test` (migrazione `20261026000100_spiegazioni_test.sql`, applicata); la cambia solo l'allenatore, e serve la rete per salvarla.
+- [ ] **Atleti dentro** (proposte 13, 14, 15 del «Piano di WaterTactics», periodo 2, problema 18; avviato 2026-10-26, un passo alla volta, su main).
+  - [x] **Test segnati dagli atleti** (proposta 13, **pubblicato il 2026-10-26**). Scelte del coach: il risultato entra **subito in classifica con l'etichetta**, solo nei test che **apre lui**, l'atleta corregge o toglie **solo i suoi**.
+    - Database (migrazione `20261026000200_test_segnati_atleti.sql`, **applicata** dopo una prova in una transazione annullata con un atleta vero): `test_club.aperto_atleti`, `test_risultati.dall_atleta`, deciso dal trigger `segna_autore_risultato_test` (chi non è allenatore del club → true). Regole per l'atleta: scrive solo per sé nei test aperti (`test_aperto_atleti`), corregge e toglie solo i risultati con `dall_atleta`.
+    - Drift v50 (colonne `aperto_atleti`, `dall_atleta`). Nel modulo del test l'interruttore «Lo segnano anche gli atleti»; in classifica e nello storico «segnato dall'atleta».
+    - In «I miei tempi», sul telefono dell'atleta, i test aperti compaiono anche senza risultati («Da segnare»). Un tocco apre il foglio del test: «Segna un risultato», «Come si fa», i suoi risultati; i suoi si toccano per correggerli o toglierli (`SegnaRisultatoScreen`, tempi scritti come «8,62» o «1:05,20», massimali con chili e ripetizioni).
+    - Se per quel giorno c'è già il risultato scritto dall'allenatore, l'app lo dice prima di mandarlo (`RisultatoDellAllenatore`).
+  - [ ] **Piano e obiettivi dell'atleta** (proposta 14): fase e obiettivo della settimana nella home, scheda obiettivi con le domande dell'allenatore e le due righe di ritorno.
+  - [ ] **La voce sulle clip** (proposta 15): commento a voce sulla clip, risposta scritta del giocatore.
 - [ ] Pubblicazione store (Play/App Store) se necessario (FASE 8)
 
 ## Riprogettazione AI: da Gemini a OpenAI + libreria di blocchi approvati (avviata 2026-10-03)

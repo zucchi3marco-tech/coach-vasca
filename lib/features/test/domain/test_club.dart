@@ -64,6 +64,7 @@ class TestClub {
     this.modello,
     this.archiviato = false,
     this.esercizioId,
+    this.apertoAtleti = false,
   });
 
   /// Il massimale dell'esercizio a secco [esercizioId].
@@ -75,6 +76,7 @@ class TestClub {
     this.descrizione,
     this.modello,
     this.archiviato = false,
+    this.apertoAtleti = false,
   }) : unita = UnitaTest.chili,
        piuBassoMeglio = false,
        prove = 1,
@@ -92,6 +94,7 @@ class TestClub {
     modello: m['modello'] as String?,
     archiviato: m['archiviato'] as bool? ?? false,
     esercizioId: m['esercizio_id'] as String?,
+    apertoAtleti: m['aperto_atleti'] as bool? ?? false,
   );
 
   final String id;
@@ -113,6 +116,10 @@ class TestClub {
 
   /// L'esercizio a secco di cui è il massimale, null per gli altri test.
   final String? esercizioId;
+
+  /// «Lo segnano anche gli atleti»: ognuno scrive il suo risultato, che
+  /// entra in classifica con l'etichetta «segnato dall'atleta».
+  final bool apertoAtleti;
 
   /// È il massimale di un esercizio: si scrive chili × ripetizioni.
   bool get massimale => esercizioId != null;
@@ -154,22 +161,28 @@ class TestClub {
     'modello': modello,
     'archiviato': archiviato,
     'esercizio_id': esercizioId,
+    'aperto_atleti': apertoAtleti,
   };
 
-  TestClub copyWith({String? nome, String? descrizione, bool? archiviato}) =>
-      TestClub(
-        id: id,
-        clubId: clubId,
-        nome: nome ?? this.nome,
-        descrizione: descrizione ?? this.descrizione,
-        unita: unita,
-        piuBassoMeglio: piuBassoMeglio,
-        prove: prove,
-        punteggio: punteggio,
-        modello: modello,
-        archiviato: archiviato ?? this.archiviato,
-        esercizioId: esercizioId,
-      );
+  TestClub copyWith({
+    String? nome,
+    String? descrizione,
+    bool? archiviato,
+    bool? apertoAtleti,
+  }) => TestClub(
+    id: id,
+    clubId: clubId,
+    nome: nome ?? this.nome,
+    descrizione: descrizione ?? this.descrizione,
+    unita: unita,
+    piuBassoMeglio: piuBassoMeglio,
+    prove: prove,
+    punteggio: punteggio,
+    modello: modello,
+    archiviato: archiviato ?? this.archiviato,
+    esercizioId: esercizioId,
+    apertoAtleti: apertoAtleti ?? this.apertoAtleti,
+  );
 }
 
 /// Un risultato: un atleta, un giorno, il valore di ogni prova. Per un
@@ -186,6 +199,7 @@ class RisultatoTest {
     this.note,
     this.caricoKg,
     this.ripetizioni,
+    this.dallAtleta = false,
   });
 
   factory RisultatoTest.fromMap(Map<String, dynamic> m) => RisultatoTest(
@@ -198,6 +212,7 @@ class RisultatoTest {
     note: m['note'] as String?,
     caricoKg: (m['carico_kg'] as num?)?.toDouble(),
     ripetizioni: (m['ripetizioni'] as num?)?.toInt(),
+    dallAtleta: m['dall_atleta'] as bool? ?? false,
   );
 
   final String id;
@@ -209,6 +224,9 @@ class RisultatoTest {
   final String? note;
   final double? caricoKg;
   final int? ripetizioni;
+
+  /// L'ha scritto l'atleta, non l'allenatore (lo decide il database).
+  final bool dallAtleta;
 }
 
 /// I valori di un risultato: lista dal database, testo JSON dalla copia

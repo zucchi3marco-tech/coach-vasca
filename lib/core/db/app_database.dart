@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 49;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -618,6 +618,15 @@ class AppDatabase extends _$AppDatabase {
             distintaGiocatoriTable,
             distintaGiocatoriTable.tempiInPortaJson,
           );
+        }
+      }
+      // v49 -> v50: test segnati anche dagli atleti.
+      if (from < 50) {
+        if (!await _hasColumn(m, 'test_club_table', 'aperto_atleti')) {
+          await m.addColumn(testClubTable, testClubTable.apertoAtleti);
+        }
+        if (!await _hasColumn(m, 'test_risultati_table', 'dall_atleta')) {
+          await m.addColumn(testRisultatiTable, testRisultatiTable.dallAtleta);
         }
       }
     },
