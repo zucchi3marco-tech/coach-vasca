@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../features/secco/domain/esercizio_secco.dart';
 import '../../features/secco/domain/programma_secco.dart';
 import '../../features/test/domain/massimale.dart';
+import '../../features/test/domain/spiegazioni_test.dart';
 import '../db/app_database.dart';
 import '../utils/giorni.dart';
 
@@ -986,7 +987,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                 id: id,
                 clubId: clubId,
                 nome: m.nome,
-                descrizione: const Value(comeSiFaMassimale),
+                descrizione: Value(spiegazioneOriginale(m.chiave)),
                 unita: 'chili',
                 migliore: 'maggiore',
                 modello: Value(m.chiave),

@@ -21,11 +21,15 @@ import '../../tabelle_passi/application/tabelle_passi_providers.dart';
 import '../../tabelle_passi/presentation/tabelle_passi_screen.dart';
 import '../../test/application/test_providers.dart';
 import '../../test/application/test_club_providers.dart';
+import '../../test/data/spiegazioni_test_repository.dart';
 import '../../test/data/test_repository.dart';
 import '../../test/domain/massimale.dart';
+import '../../test/domain/spiegazioni_test.dart';
 import '../../test/domain/test_club.dart';
 import '../../test/domain/test_ingresso.dart';
+import '../../test/presentation/spiegazione_test.dart';
 import '../../test/presentation/test_form_screen.dart';
+import '../application/current_atleta_provider.dart';
 import '../application/personal_best_providers.dart';
 import '../domain/atleta.dart';
 import '../domain/pb_slots.dart';
@@ -197,6 +201,7 @@ class PbListScreen extends ConsumerWidget {
                     'tabelle dei passi per zona, usate dalle ripartenze '
                     'e dalla generazione degli allenamenti.',
               ),
+              _ComeSiFannoTestNuoto(atleta: atleta),
               testAsync.when(
                 data: (test) => AppListPanel(
                   righe: test.isEmpty
@@ -292,6 +297,13 @@ class _TestDiSquadra extends ConsumerWidget {
                           )
                         : null;
                     return AppListRow(
+                      // Un tocco: come si fa il test.
+                      onTap: () => mostraComeSiFaTest(
+                        context,
+                        titolo: test.nome,
+                        sotto: test.comeSiLegge,
+                        testo: spiegazioneDi(test),
+                      ),
                       titolo: test.nome,
                       sottotitolo: [
                         traQuanto(suoi.last.data),
@@ -310,6 +322,70 @@ class _TestDiSquadra extends ConsumerWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Come si fa il BVS" e "Come si fa il T30": la spiegazione del club
+/// (o l'originale). L'allenatore la può cambiare, l'atleta la legge.
+class _ComeSiFannoTestNuoto extends ConsumerWidget {
+  const _ComeSiFannoTestNuoto({required this.atleta});
+
+  final Atleta atleta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scritte =
+        ref.watch(spiegazioniTestNuotoProvider(atleta.clubId)).value ??
+        const <String, String>{};
+    // Sul telefono dell'atleta c'è il suo profilo: legge soltanto.
+    final allenatore = ref.watch(currentAtletaProvider).value?.id != atleta.id;
+
+    void apri(String tipo) {
+      final testo = spiegazioneTestNuoto(tipo, scritte[tipo]);
+      final originale = spiegazioneTestNuoto(tipo, null);
+      mostraComeSiFaTest(
+        context,
+        titolo: 'Test $tipo',
+        sotto: tipo == 'T30'
+            ? 'Metri nuotati in 30 minuti'
+            : 'Distanza e tempo totale',
+        testo: testo,
+        onModifica: !allenatore
+            ? null
+            : () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ModificaSpiegazioneScreen(
+                    titolo: 'Come si fa il $tipo',
+                    attuale: testo,
+                    originale: originale,
+                    salva: (t) async {
+                      await ref
+                          .read(spiegazioniTestRepositoryProvider)
+                          .salva(clubId: atleta.clubId, tipo: tipo, testo: t);
+                      ref.invalidate(
+                        spiegazioniTestNuotoProvider(atleta.clubId),
+                      );
+                    },
+                  ),
+                ),
+              ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+      child: Wrap(
+        spacing: AppSpacing.s8,
+        children: [
+          for (final tipo in const ['BVS', 'T30'])
+            TextButton.icon(
+              icon: const Icon(Icons.info_outline),
+              label: Text('Come si fa il $tipo'),
+              onPressed: () => apri(tipo),
+            ),
         ],
       ),
     );

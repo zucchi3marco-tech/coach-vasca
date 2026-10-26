@@ -24,9 +24,11 @@ import '../../secco/domain/esercizio_secco.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
 import '../domain/massimale.dart';
+import '../domain/spiegazioni_test.dart';
 import '../domain/test_club.dart';
 import 'classifica_test_screen.dart';
 import 'inserisci_risultati_screen.dart';
+import 'spiegazione_test.dart';
 import 'test_club_form_screen.dart';
 import 'test_club_widgets.dart';
 
@@ -109,7 +111,7 @@ class TestClubScreen extends ConsumerWidget {
               clubId: clubId,
               nome: m.nome,
               esercizioId: esercizio.id,
-              descrizione: comeSiFaMassimale,
+              descrizione: spiegazioneOriginale(m.chiave, massimale: true),
               modello: m.chiave,
             ),
           );
@@ -211,9 +213,53 @@ class TestClubScreen extends ConsumerWidget {
                   : '${traQuanto(ultima)} · '
                         '${atletiConRisultato == 1 ? '1 atleta' : '$atletiConRisultato atleti'}',
               attenuata: t.archiviato,
+              trailing: IconButton(
+                tooltip: 'Come si fa',
+                icon: const Icon(Icons.info_outline),
+                onPressed: () => mostraComeSiFaTest(
+                  context,
+                  titolo: t.nome,
+                  sotto: descrizioneMisura(t),
+                  testo: spiegazioneDi(t),
+                  onModifica: () => _apri(
+                    context,
+                    TestClubFormScreen(clubId: clubId, test: t),
+                  ),
+                ),
+              ),
               onTap: () => _apri(context, ClassificaTestScreen(test: t)),
             );
           }
+
+          // Un test pronto: prima si legge come si fa, poi si aggiunge
+          // com'è o si cambia nel modulo.
+          void apriPronto(ModelloTest m) => mostraComeSiFaTest(
+            context,
+            titolo: m.nome,
+            sotto: [
+              m.unita.etichetta,
+              if (m.prove == 1) '1 prova' else '${m.prove} prove',
+            ].join(' · '),
+            testo: m.descrizione,
+            onAggiungi: () => _aggiungiModello(context, ref, m),
+            etichettaModifica: 'Cambialo prima di aggiungerlo',
+            onModifica: () =>
+                _apri(context, TestClubFormScreen(clubId: clubId, modello: m)),
+          );
+          void apriMassimalePronto(ModelloMassimale m) => mostraComeSiFaTest(
+            context,
+            titolo: m.nome,
+            sotto: modelliEsercizi
+                .firstWhere((e) => e.chiave == m.esercizio)
+                .nome,
+            testo: spiegazioneOriginale(m.chiave, massimale: true),
+            onAggiungi: () => _aggiungiMassimale(context, ref, m),
+            etichettaModifica: 'Cambialo prima di aggiungerlo',
+            onModifica: () => _apri(
+              context,
+              TestClubFormScreen(clubId: clubId, modelloMassimale: m),
+            ),
+          );
 
           return ListView(
             padding: const EdgeInsets.only(bottom: AppSpacing.s32),
@@ -271,8 +317,9 @@ class TestClubScreen extends ConsumerWidget {
                       ? 'Test di pallanuoto pronti'
                       : 'Altri test pronti',
                   spiegazione:
-                      'Tocca un test per aggiungerlo al club: '
-                      'nome, misura e prove si possono cambiare.',
+                      'Tocca un test per leggere come si fa e aggiungerlo '
+                      'al club: nome, misura, prove e spiegazione si '
+                      'possono cambiare.',
                 ),
                 GrigliaSchede(
                   figli: [
@@ -289,7 +336,7 @@ class TestClubScreen extends ConsumerWidget {
                           if (m.prove == 1) '1 prova' else '${m.prove} prove',
                         ].join(' · '),
                         mostraFreccia: false,
-                        onTap: () => _aggiungiModello(context, ref, m),
+                        onTap: () => apriPronto(m),
                       ),
                   ],
                 ),
@@ -318,7 +365,7 @@ class TestClubScreen extends ConsumerWidget {
                             .firstWhere((e) => e.chiave == m.esercizio)
                             .nome,
                         mostraFreccia: false,
-                        onTap: () => _aggiungiMassimale(context, ref, m),
+                        onTap: () => apriMassimalePronto(m),
                       ),
                   ],
                 ),

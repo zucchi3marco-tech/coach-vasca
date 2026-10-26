@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'spiegazioni-test',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Come si fa ogni test',
+    testo:
+        'Ogni test ha la sua scheda «Come si fa»: a cosa serve, cosa serve, '
+        'come si fa, come si misura, errori da evitare. La trovi nella '
+        'pagina Test (il tasto ⓘ su ogni test), nella classifica del test e, '
+        'per gli atleti, nella pagina dei tempi. La cambi dalla matita del '
+        'test; un test pronto si legge prima di aggiungerlo e si può '
+        'cambiare subito. Anche BVS e T30 hanno la loro spiegazione.',
+    importante: true,
+  ),
+  Novita(
     id: 'clip-del-portiere',
     data: DateTime(2026, 10, 26),
     titolo: 'Le clip del portiere',

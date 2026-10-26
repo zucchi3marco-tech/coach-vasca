@@ -31,9 +31,11 @@ import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
 import '../domain/massimale.dart';
+import '../domain/spiegazioni_test.dart';
 import '../domain/test_club.dart';
 import 'confronto_test_screen.dart';
 import 'inserisci_risultati_screen.dart';
+import 'spiegazione_test.dart';
 import 'test_club_form_screen.dart';
 import 'test_club_widgets.dart';
 
@@ -214,13 +216,32 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
                       ),
                   ],
                 ),
-                if (test.descrizione case final d?
-                    when d.trim().isNotEmpty) ...[
+                // La spiegazione: il primo blocco ("A cosa serve") e il
+                // foglio con tutto.
+                if (spiegazioneDi(test) case final s?) ...[
                   const SizedBox(height: AppSpacing.s12),
                   Text(
-                    d,
+                    blocchiSpiegazione(s).first.righe.join(' '),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.piccolo.copyWith(
                       color: colori.testoSecondario,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.info_outline),
+                      label: const Text('Come si fa'),
+                      onPressed: () => mostraComeSiFaTest(
+                        context,
+                        titolo: test.nome,
+                        sotto: descrizioneMisura(test),
+                        testo: s,
+                        onModifica: () => _apri(
+                          TestClubFormScreen(clubId: clubId, test: test),
+                        ),
+                      ),
                     ),
                   ),
                 ],

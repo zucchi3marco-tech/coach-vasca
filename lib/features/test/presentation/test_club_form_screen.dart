@@ -13,11 +13,14 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../secco/application/secco_providers.dart';
+import '../../secco/data/secco_repository.dart';
 import '../../secco/domain/esercizio_secco.dart';
 import '../application/test_club_providers.dart';
 import '../data/test_club_repository.dart';
 import '../domain/massimale.dart';
+import '../domain/spiegazioni_test.dart';
 import '../domain/test_club.dart';
+import 'spiegazione_test.dart';
 import 'test_club_widgets.dart';
 
 /// Nuovo test del club, o la modifica di uno che c'è. Dopo i primi
@@ -25,11 +28,22 @@ import 'test_club_widgets.dart';
 /// cambiano più (le classifiche vecchie non tornerebbero): restano nome,
 /// descrizione e archivio. Un test può essere il **massimale** di un
 /// esercizio a secco a ripetizioni: in chili, da chili × ripetizioni.
+///
+/// Con [modello] o [modelloMassimale] è un test pronto già compilato (con
+/// la sua spiegazione): l'allenatore lo cambia e lo aggiunge al club.
 class TestClubFormScreen extends ConsumerStatefulWidget {
-  const TestClubFormScreen({required this.clubId, this.test, super.key});
+  const TestClubFormScreen({
+    required this.clubId,
+    this.test,
+    this.modello,
+    this.modelloMassimale,
+    super.key,
+  });
 
   final String clubId;
   final TestClub? test;
+  final ModelloTest? modello;
+  final ModelloMassimale? modelloMassimale;
 
   @override
   ConsumerState<TestClubFormScreen> createState() => _TestClubFormScreenState();
@@ -37,17 +51,51 @@ class TestClubFormScreen extends ConsumerStatefulWidget {
 
 class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _nome = TextEditingController(text: widget.test?.nome ?? '');
-  late final _descrizione = TextEditingController(
-    text: widget.test?.descrizione ?? '',
+  late final _nome = TextEditingController(
+    text:
+        widget.test?.nome ??
+        widget.modello?.nome ??
+        widget.modelloMassimale?.nome ??
+        '',
   );
-  late final _prove = TextEditingController(text: '${widget.test?.prove ?? 1}');
-  late UnitaTest _unita = widget.test?.unita ?? UnitaTest.secondi;
-  late bool _piuBassoMeglio = widget.test?.piuBassoMeglio ?? true;
+  late final _descrizione = TextEditingController(
+    text: switch (widget.test) {
+      final t? => spiegazioneDi(t) ?? '',
+      null => spiegazioneOriginale(_chiaveModello, massimale: _massimale) ?? '',
+    },
+  );
+  late final _prove = TextEditingController(
+    text: '${widget.test?.prove ?? widget.modello?.prove ?? 1}',
+  );
+  late UnitaTest _unita =
+      widget.test?.unita ?? widget.modello?.unita ?? UnitaTest.secondi;
+  late bool _piuBassoMeglio =
+      widget.test?.piuBassoMeglio ?? widget.modello?.piuBassoMeglio ?? true;
   late PunteggioTest _punteggio =
-      widget.test?.punteggio ?? PunteggioTest.migliore;
-  late bool _massimale = widget.test?.massimale ?? false;
+      widget.test?.punteggio ??
+      widget.modello?.punteggio ??
+      PunteggioTest.migliore;
+  late bool _massimale =
+      widget.test?.massimale ?? widget.modelloMassimale != null;
   late String? _esercizioId = widget.test?.esercizioId;
+
+  /// Un test pronto ancora da aggiungere.
+  bool get _daPronto =>
+      widget.test == null &&
+      (widget.modello != null || widget.modelloMassimale != null);
+
+  /// La chiave del test pronto da cui viene, se c'è.
+  String? get _chiaveModello =>
+      widget.test?.modello ??
+      widget.modello?.chiave ??
+      widget.modelloMassimale?.chiave;
+
+  /// L'esercizio pronto di un massimale pronto.
+  ModelloEsercizio? get _esercizioPronto => switch (widget.modelloMassimale) {
+    final m? =>
+      modelliEsercizi.where((e) => e.chiave == m.esercizio).firstOrNull,
+    null => null,
+  };
 
   /// Il nome proposto dall'ultimo esercizio scelto: se l'allenatore non
   /// l'ha cambiato, cambia con l'esercizio.
@@ -89,7 +137,9 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
   int get _numeroProve => int.tryParse(_prove.text.trim()) ?? 1;
 
   Future<void> _salva() async {
-    final esercizioMancante = _massimale && _esercizioId == null;
+    final pronto = _esercizioPronto;
+    final esercizioMancante =
+        _massimale && _esercizioId == null && pronto == null;
     if (!_formKey.currentState!.validate() || esercizioMancante) {
       if (esercizioMancante) setState(() => _senzaEsercizio = true);
       return;
@@ -99,29 +149,38 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
       _errore = null;
     });
     final originale = widget.test;
-    final test = _massimale
-        ? TestClub.massimale(
-            id: originale?.id ?? '',
-            clubId: widget.clubId,
-            nome: _nome.text.trim(),
-            esercizioId: _esercizioId!,
-            descrizione: _descrizione.text.trim(),
-            modello: originale?.modello,
-            archiviato: originale?.archiviato ?? false,
-          )
-        : TestClub(
-            id: originale?.id ?? '',
-            clubId: widget.clubId,
-            nome: _nome.text.trim(),
-            descrizione: _descrizione.text.trim(),
-            unita: _unita,
-            piuBassoMeglio: _piuBassoMeglio,
-            prove: _numeroProve,
-            punteggio: _numeroProve > 1 ? _punteggio : PunteggioTest.migliore,
-            modello: originale?.modello,
-            archiviato: originale?.archiviato ?? false,
-          );
     try {
+      // Un massimale pronto porta con sé il suo esercizio, aggiunto
+      // all'elenco degli esercizi a secco se manca.
+      if (_massimale && pronto != null) {
+        _esercizioId =
+            (await ref
+                    .read(seccoRepositoryProvider)
+                    .esercizioPronto(widget.clubId, pronto))
+                .id;
+      }
+      final test = _massimale
+          ? TestClub.massimale(
+              id: originale?.id ?? '',
+              clubId: widget.clubId,
+              nome: _nome.text.trim(),
+              esercizioId: _esercizioId!,
+              descrizione: _descrizione.text.trim(),
+              modello: _chiaveModello,
+              archiviato: originale?.archiviato ?? false,
+            )
+          : TestClub(
+              id: originale?.id ?? '',
+              clubId: widget.clubId,
+              nome: _nome.text.trim(),
+              descrizione: _descrizione.text.trim(),
+              unita: _unita,
+              piuBassoMeglio: _piuBassoMeglio,
+              prove: _numeroProve,
+              punteggio: _numeroProve > 1 ? _punteggio : PunteggioTest.migliore,
+              modello: _chiaveModello,
+              archiviato: originale?.archiviato ?? false,
+            );
       final repository = ref.read(testClubRepositoryProvider);
       if (originale == null) {
         await repository.creaTest(test);
@@ -223,7 +282,13 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
         .firstOrNull;
 
     final Widget campoEsercizio;
-    if (bloccato || (test != null && test.massimale && scegliibili.isEmpty)) {
+    if (_esercizioPronto case final e?) {
+      campoEsercizio = Text(
+        'Di: ${e.nome}',
+        style: AppTypography.corpoForte.copyWith(color: colori.testo),
+      );
+    } else if (bloccato ||
+        (test != null && test.massimale && scegliibili.isEmpty)) {
       campoEsercizio = Text(
         'Di: ${esercizioScelto?.nome ?? 'esercizio tolto dall\'elenco'}',
         style: AppTypography.corpoForte.copyWith(color: colori.testo),
@@ -267,7 +332,13 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
     return AppScaffold(
       scrollabile: true,
       appBar: AppBar(
-        title: Text(test == null ? 'Nuovo test' : 'Modifica test'),
+        title: Text(
+          test != null
+              ? 'Modifica test'
+              : _daPronto
+              ? 'Aggiungi test'
+              : 'Nuovo test',
+        ),
         actions: [
           if (test != null)
             PopupMenuButton<VoidCallback>(
@@ -295,7 +366,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
             FormGroup(
               titolo: 'Il test',
               campi: [
-                if (test == null)
+                if (test == null && !_daPronto)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -330,13 +401,12 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obbligatorio' : null,
                 ),
-                AppTextField(
-                  etichetta: 'Come si fa (facoltativo)',
+                CampoSpiegazione(
                   controller: _descrizione,
-                  maxLines: 3,
-                  aiuto: _massimale
-                      ? 'Riscaldamento, quante ripetizioni, chi assiste'
-                      : 'Distanza, partenza, peso, recupero fra le prove',
+                  originale: spiegazioneOriginale(
+                    _chiaveModello,
+                    massimale: _massimale,
+                  ),
                 ),
               ],
             ),
@@ -455,7 +525,7 @@ class _TestClubFormScreenState extends ConsumerState<TestClubFormScreen> {
               const SizedBox(height: AppSpacing.s16),
             ],
             PrimaryButton(
-              label: 'Salva test',
+              label: _daPronto ? 'Aggiungi al club' : 'Salva test',
               isLoading: _salvataggio,
               onPressed: _salvataggio ? null : _salva,
             ),

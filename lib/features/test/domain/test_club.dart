@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import '../../atleti/domain/atleta.dart';
+import 'spiegazioni_test.dart';
 
 /// Cosa misura un test del club e in che unità si scrive ogni prova.
 enum UnitaTest {
@@ -470,13 +471,13 @@ typedef ModelloTest = ({
 /// I test di pallanuoto pronti: gli sprint (con e senza palla e ripetuti,
 /// con l'indice di affaticamento), la navetta intermittente, la
 /// verticale, il salto, la velocità e la precisione del tiro. Le misure
-/// sono quelle più usate; il protocollo lo dice la descrizione, che
-/// l'allenatore può cambiare.
+/// sono quelle più usate; come si fa lo dice la spiegazione
+/// (`spiegazioni_test.dart`), che l'allenatore può cambiare.
 const modelliTest = <ModelloTest>[
   (
     chiave: 'sprint_10',
     nome: 'Sprint 10 m',
-    descrizione: 'Partenza da fermi in acqua, al fischio. Due prove.',
+    descrizione: spiegazioneSprint10,
     unita: UnitaTest.secondi,
     piuBassoMeglio: true,
     prove: 2,
@@ -485,7 +486,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'sprint_15',
     nome: 'Sprint 15 m senza palla',
-    descrizione: 'Partenza da fermi in acqua, al fischio. Due prove.',
+    descrizione: spiegazioneSprint15,
     unita: UnitaTest.secondi,
     piuBassoMeglio: true,
     prove: 2,
@@ -494,7 +495,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'sprint_15_palla',
     nome: 'Sprint 15 m con palla',
-    descrizione: 'Nuotata con la palla davanti, partenza da fermi. Due prove.',
+    descrizione: spiegazioneSprint15Palla,
     unita: UnitaTest.secondi,
     piuBassoMeglio: true,
     prove: 2,
@@ -503,9 +504,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'sprint_ripetuti_6x15',
     nome: 'Sprint ripetuti 6 × 15 m',
-    descrizione:
-        "Una partenza ogni 20''. In classifica la media; l'indice di "
-        "affaticamento dice quanto cala dalla prova migliore.",
+    descrizione: spiegazioneSprintRipetuti,
     unita: UnitaTest.secondi,
     piuBassoMeglio: true,
     prove: 6,
@@ -514,9 +513,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'wist',
     nome: 'Navetta intermittente (WIST)',
-    descrizione:
-        'Water-polo Intermittent Shuttle Test: metri percorsi fino '
-        "all'esaurimento.",
+    descrizione: spiegazioneWist,
     unita: UnitaTest.metri,
     piuBassoMeglio: false,
     prove: 1,
@@ -525,9 +522,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'verticale_peso',
     nome: 'Verticale con peso',
-    descrizione:
-        'Secondi in verticale con il peso sopra la testa, braccia tese '
-        '(scrivi qui il peso).',
+    descrizione: spiegazioneVerticalePeso,
     unita: UnitaTest.secondi,
     piuBassoMeglio: false,
     prove: 1,
@@ -536,7 +531,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'salto',
     nome: "Salto fuori dall'acqua",
-    descrizione: 'Altezza raggiunta con la mano, da fermi. Tre prove.',
+    descrizione: spiegazioneSalto,
     unita: UnitaTest.centimetri,
     piuBassoMeglio: false,
     prove: 3,
@@ -545,7 +540,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'velocita_tiro',
     nome: 'Velocità di tiro',
-    descrizione: 'Con il radar, da 5 m. Tre tiri.',
+    descrizione: spiegazioneVelocitaTiro,
     unita: UnitaTest.kmh,
     piuBassoMeglio: false,
     prove: 3,
@@ -554,9 +549,7 @@ const modelliTest = <ModelloTest>[
   (
     chiave: 'precisione_tiro',
     nome: 'Precisione di tiro',
-    descrizione:
-        'Dieci tiri da 5 m sui bersagli negli angoli: un punto a '
-        'bersaglio.',
+    descrizione: spiegazionePrecisioneTiro,
     unita: UnitaTest.punti,
     piuBassoMeglio: false,
     prove: 1,

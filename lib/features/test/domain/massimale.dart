@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'spiegazioni_test.dart';
 import 'test_club.dart';
 
 /// I massimali (fase 4 del "Mako della pallanuoto", proposta 10): il
@@ -122,11 +123,9 @@ String? descriviSollevato(double? caricoKg, int? ripetizioni) {
   return '${formattaValore(UnitaTest.chili, caricoKg)} × $ripetizioni';
 }
 
-/// Come si fa un massimale, uguale per tutti quelli pronti.
-const comeSiFaMassimale =
-    'Dopo il riscaldamento, il carico più pesante con cui l\'atleta fa da 3 '
-    'a 6 ripetizioni pulite: si scrivono chili e ripetizioni e l\'app stima '
-    'il massimale. Sempre con qualcuno che assiste.';
+/// Come si fa un massimale inventato dall'allenatore; quelli pronti hanno
+/// anche la tecnica dell'esercizio (vedi `spiegazioneOriginale`).
+String get comeSiFaMassimale => spiegazioneMassimale();
 
 /// Un massimale pronto: il test e l'esercizio pronto (la chiave di
 /// `modelliEsercizi`) a cui si lega.
