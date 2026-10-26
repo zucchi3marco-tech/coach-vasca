@@ -21,6 +21,8 @@ import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
+import '../referti/application/referti_providers.dart';
+import '../statistiche/application/statistiche_providers.dart';
 import '../secco/presentation/card_secco_da_fare.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
@@ -120,7 +122,9 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
     final portiere = pallanuoto && atleta.portiere;
     final golTiri = portiere
         ? null
-        : ref.watch(golTiriAtletaProvider(atleta.id));
+        : ref.watch(
+            golTiriAtletaProvider((atletaId: atleta.id, clubId: atleta.clubId)),
+          );
     final numeriPortiere = portiere
         ? ref.watch(numeriPortiereAtletaProvider(atleta.id))
         : null;
@@ -146,9 +150,8 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
     final presenze = allenamenti?.percentualePresenze;
     final gol = golTiri?.gol;
     final tiri = golTiri?.tiri;
-    final precisione = (gol == null || tiri == null || tiri == 0)
-        ? null
-        : (gol / tiri * 100).round();
+    // Gol anche dai referti, precisione solo dal vivo.
+    final precisione = precisioneDalVivo(golTiri);
 
     void apriStatistiche() =>
         _apri(context, StatisticheAtletaScreen(atleta: atleta));
@@ -345,7 +348,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
     var i = 0;
     Widget blocco(Widget figlio) => EntrataACascata(indice: i++, child: figlio);
 
-    return SafeArea(
+    final pagina = SafeArea(
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -436,7 +439,49 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ),
       ),
     );
+    return pallanuoto
+        ? _AggiornaAlRitorno(atleta: atleta, child: pagina)
+        : pagina;
   }
+}
+
+/// La dashboard resta aperta a lungo (anche con l'app in sottofondo):
+/// quando si torna nell'app rilegge gol, tiri e numeri del portiere, così
+/// compaiono i referti salvati nel frattempo, anche da un altro telefono.
+class _AggiornaAlRitorno extends ConsumerStatefulWidget {
+  const _AggiornaAlRitorno({required this.atleta, required this.child});
+
+  final Atleta atleta;
+  final Widget child;
+
+  @override
+  ConsumerState<_AggiornaAlRitorno> createState() => _AggiornaAlRitornoState();
+}
+
+class _AggiornaAlRitornoState extends ConsumerState<_AggiornaAlRitorno> {
+  late final AppLifecycleListener _ascolto;
+
+  @override
+  void initState() {
+    super.initState();
+    _ascolto = AppLifecycleListener(onResume: _rileggi);
+  }
+
+  void _rileggi() {
+    if (!mounted) return;
+    ref.invalidate(tiriAtletaProvider(widget.atleta.id));
+    ref.invalidate(refertiDelClubProvider(widget.atleta.clubId));
+    ref.invalidate(numeriPortiereProvider);
+  }
+
+  @override
+  void dispose() {
+    _ascolto.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Incornicia [AreaAtletaHomeScreen] con una AppBar propria (titolo e

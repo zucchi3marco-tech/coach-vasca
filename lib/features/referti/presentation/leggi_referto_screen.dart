@@ -678,6 +678,8 @@ class _RefertoModificabileState extends ConsumerState<_RefertoModificabile> {
       await _inPorta.currentState?.salva();
 
       ref.invalidate(refertoPerPartitaProvider(partitaId));
+      // Gol e gol subiti nelle dashboard degli atleti.
+      ref.invalidate(refertiDelClubProvider);
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Referto salvato.')));

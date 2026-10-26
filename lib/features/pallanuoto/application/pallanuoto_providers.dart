@@ -76,10 +76,9 @@ final eventiPartitaListProvider =
     });
 
 /// Tutti i tiri di un atleta, per la mappa di calore personale nella
-/// pagina Carico.
-final tiriAtletaProvider = FutureProvider.family<List<EventoPartita>, String>((
-  ref,
-  atletaId,
-) {
-  return ref.watch(eventiPartitaRepositoryProvider).perAtleta(atletaId);
-});
+/// pagina Carico, e per gol e tiri in dashboard. autoDispose: riaprendo
+/// la pagina si rileggono i tiri delle partite seguite nel frattempo.
+final tiriAtletaProvider = FutureProvider.autoDispose
+    .family<List<EventoPartita>, String>((ref, atletaId) {
+      return ref.watch(eventiPartitaRepositoryProvider).perAtleta(atletaId);
+    });

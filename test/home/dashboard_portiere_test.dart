@@ -6,10 +6,14 @@ import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
 import 'package:coach_vasca/features/gruppi/domain/gruppo.dart';
 import 'package:coach_vasca/features/home/area_atleta_home_screen.dart';
+import 'package:coach_vasca/features/home/atleta/dati_home_atleta.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/numeri_portiere.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
+import 'package:coach_vasca/features/referti/application/referti_providers.dart';
+import 'package:coach_vasca/features/referti/domain/referto_letto.dart';
+import 'package:coach_vasca/features/referti/domain/referto_partita.dart';
 import 'package:coach_vasca/features/statistiche/application/statistiche_providers.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:drift/native.dart';
@@ -30,9 +34,9 @@ Atleta _atleta({String? ruolo, String sport = 'pallanuoto'}) => Atleta(
   attivo: true,
 );
 
-EventoPartita _tiro(String esito) => EventoPartita(
-  id: 't$esito',
-  partitaId: 'p1',
+EventoPartita _tiro(String esito, {String partita = 'p1'}) => EventoPartita(
+  id: 't$esito$partita',
+  partitaId: partita,
   clubId: 'c1',
   tipo: 'tiro',
   squadra: 'nostra',
@@ -52,6 +56,7 @@ void main() {
     Atleta atleta, {
     NumeriPortiere? portiere,
     List<EventoPartita> tiri = const [],
+    List<RefertoPartita> referti = const [],
   }) async {
     tester.view.physicalSize = const Size(900, 3000);
     tester.view.devicePixelRatio = 1;
@@ -64,6 +69,7 @@ void main() {
             (ref, chiave) async => portiere ?? NumeriPortiere.vuoto,
           ),
           tiriAtletaProvider.overrideWith((ref, id) async => tiri),
+          refertiDelClubProvider.overrideWith((ref, clubId) async => referti),
           partiteListProvider.overrideWith(
             (ref, clubId) => Stream.value(<Partita>[]),
           ),
@@ -146,4 +152,59 @@ void main() {
     expect(find.text('Gol subiti'), findsNothing);
     expect(find.text('Tiri, gol e dove segni di più'), findsOneWidget);
   });
+
+  testWidgets('i gol del referto contano anche senza dati dal vivo; la '
+      'precisione resta solo dal vivo', (tester) async {
+    await apri(
+      tester,
+      _atleta(ruolo: 'centroboa'),
+      // p1 seguita dal vivo: 1 gol su 4 tiri. Il referto di p1 dice 2 (vale
+      // il referto); p2 solo referto, 3 gol.
+      tiri: [_tiro('gol'), _tiro('parato'), _tiro('fuori'), _tiro('palo')],
+      referti: [_referto('p1', 2), _referto('p2', 3)],
+    );
+
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('25%'), findsOneWidget);
+  });
+
+  test('golETiriAtleta: referto se c\'è, altrimenti dal vivo', () {
+    final t = golETiriAtleta(
+      atletaId: 'a1',
+      tiri: [
+        _tiro('gol'),
+        _tiro('gol', partita: 'p3'),
+        _tiro('parato', partita: 'p3'),
+      ],
+      referti: [_referto('p1', 2), _referto('p2', 3), _referto('p4', 1, 'a2')],
+    );
+    expect(t, (gol: 6, tiri: 3, golDalVivo: 2));
+    expect(precisioneDalVivo(t), 67);
+    expect(precisioneDalVivo((gol: 4, tiri: 0, golDalVivo: 0)), isNull);
+  });
 }
+
+RefertoPartita _referto(String partita, int reti, [String atleta = 'a1']) =>
+    RefertoPartita(
+      id: 'r$partita',
+      partitaId: partita,
+      clubId: 'c1',
+      squadraCasa: 'Canottieri Milano',
+      squadraTrasferta: 'PN Monza',
+      risultatoCasa: 11,
+      risultatoTrasferta: 3,
+      parziali: const [],
+      giocatoriCasa: [
+        GiocatoreReferto(
+          numeroCalottina: 7,
+          nome: 'Rossi Luca',
+          reti: reti,
+          espulsioni: 0,
+          atletaId: atleta,
+        ),
+      ],
+      giocatoriTrasferta: const [
+        GiocatoreReferto(numeroCalottina: 7, nome: '', reti: 4, espulsioni: 0),
+      ],
+    );

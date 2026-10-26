@@ -44,6 +44,16 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'dashboard-gol-dal-referto',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Gol in pagina anche dal referto',
+    testo:
+        'Nella pagina dell\'atleta i gol contano anche le partite non '
+        'seguite dal vivo, dal referto (letto o scritto a mano). La '
+        'precisione resta calcolata solo sui tiri dal vivo. Tornando '
+        'nell\'app gol e gol subiti si aggiornano da soli.',
+  ),
+  Novita(
     id: 'referto-a-mano',
     data: DateTime(2026, 10, 25),
     titolo: 'Il referto anche a mano',

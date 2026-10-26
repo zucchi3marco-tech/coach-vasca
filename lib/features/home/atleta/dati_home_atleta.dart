@@ -8,10 +8,13 @@ import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
+import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/numeri_portiere.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../presenze/application/presenze_providers.dart';
 import '../../presenze/domain/presenza.dart';
+import '../../referti/application/referti_providers.dart';
+import '../../referti/domain/referto_partita.dart';
 import '../../statistiche/application/statistiche_providers.dart';
 
 /// La calottina dell'ultima convocazione dell'atleta: numero, portiere
@@ -106,18 +109,62 @@ final riepilogoAllenamentiAtletaProvider = Provider.autoDispose
       );
     });
 
-/// Gol e tiri dell'atleta nelle partite tracciate dal vivo.
-typedef TiriAtleta = ({int gol, int tiri});
+/// Gol e tiri dell'atleta. [gol]: tutte le partite, dal referto quando
+/// c'è (anche scritto a mano), altrimenti dal vivo. [tiri] e [golDalVivo]:
+/// solo dal vivo (il referto non ha i tiri sbagliati), per la precisione.
+typedef TiriAtleta = ({int gol, int tiri, int golDalVivo});
 
-final golTiriAtletaProvider = Provider.autoDispose.family<TiriAtleta?, String>((
-  ref,
-  atletaId,
-) {
-  final eventi = ref.watch(tiriAtletaProvider(atletaId)).value;
-  if (eventi == null) return null;
-  final tiri = eventi.where((e) => e.tipo == 'tiro').toList();
-  return (gol: tiri.where((e) => e.esito == 'gol').length, tiri: tiri.length);
-});
+/// Precisione al tiro in %, solo dal vivo; null senza tiri dal vivo.
+int? precisioneDalVivo(TiriAtleta? t) =>
+    (t == null || t.tiri == 0) ? null : (t.golDalVivo / t.tiri * 100).round();
+
+/// Vedi [TiriAtleta]. [tiri]: i tiri dell'atleta registrati dal vivo;
+/// [referti]: quelli salvati (contano le righe collegate all'atleta).
+TiriAtleta golETiriAtleta({
+  required String atletaId,
+  required List<EventoPartita> tiri,
+  required List<RefertoPartita> referti,
+}) {
+  final retiDaReferto = <String, int>{};
+  for (final r in referti) {
+    for (final g in [...r.giocatoriCasa, ...r.giocatoriTrasferta]) {
+      if (g.atletaId != atletaId) continue;
+      retiDaReferto[r.partitaId] = (retiDaReferto[r.partitaId] ?? 0) + g.reti;
+    }
+  }
+  final suoi = tiri.where((e) => e.tipo == 'tiro').toList();
+  final golVivoPerPartita = <String, int>{};
+  for (final e in suoi) {
+    if (e.esito != 'gol') continue;
+    golVivoPerPartita[e.partitaId] = (golVivoPerPartita[e.partitaId] ?? 0) + 1;
+  }
+  var gol = 0;
+  for (final r in retiDaReferto.values) {
+    gol += r;
+  }
+  var golDalVivo = 0;
+  for (final MapEntry(key: partitaId, value: n) in golVivoPerPartita.entries) {
+    golDalVivo += n;
+    if (!retiDaReferto.containsKey(partitaId)) gol += n;
+  }
+  return (gol: gol, tiri: suoi.length, golDalVivo: golDalVivo);
+}
+
+/// [golETiriAtleta] dell'atleta; null mentre si caricano i tiri. Se i
+/// referti non si riescono a leggere restano i numeri dal vivo.
+final golTiriAtletaProvider = Provider.autoDispose
+    .family<TiriAtleta?, ({String atletaId, String clubId})>((ref, chiave) {
+      final eventi = ref.watch(tiriAtletaProvider(chiave.atletaId)).value;
+      final referti = ref.watch(refertiDelClubProvider(chiave.clubId));
+      if (eventi == null || referti.isLoading && !referti.hasValue) {
+        return null;
+      }
+      return golETiriAtleta(
+        atletaId: chiave.atletaId,
+        tiri: eventi,
+        referti: referti.hasError ? const [] : referti.value ?? const [],
+      );
+    });
 
 /// Parate e gol subiti di un portiere, da sempre; null mentre si carica
 /// (o se non si riesce a leggerli).
