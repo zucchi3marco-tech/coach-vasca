@@ -105,12 +105,14 @@ bool _nelFiltro(EventoPartita e, FiltroClip filtro) {
   };
 }
 
-/// L'evento riguarda [atletaId]: l'ha fatto, ha fatto l'assist o ha
-/// guadagnato l'espulsione.
+/// L'evento riguarda [atletaId]: l'ha fatto, ha fatto l'assist, ha
+/// guadagnato l'espulsione o era in porta sul tiro avversario (parata,
+/// gol subito o tiro fuori).
 bool coinvolge(EventoPartita e, String atletaId) =>
     e.atletaId == atletaId ||
     (e.assistDi == atletaId && e.esito == 'gol') ||
-    e.guadagnataDa == atletaId;
+    e.guadagnataDa == atletaId ||
+    e.portiereId == atletaId;
 
 /// Le clip del video per [filtro] (e, con [atletaId], solo quelle di quel
 /// giocatore e le note per lui), in ordine di video. [fuoriDalVideo]

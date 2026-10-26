@@ -44,6 +44,15 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'clip-del-portiere',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Le clip del portiere',
+    testo:
+        'Nel video della partita, fra «Le tue azioni» il portiere trova '
+        'anche i tiri avversari dei tempi in cui era in porta: parate, gol '
+        'subiti e tiri fuori.',
+  ),
+  Novita(
     id: 'clip-piu-lunghe',
     data: DateTime(2026, 10, 26),
     titolo: 'Clip del video più lunghe',

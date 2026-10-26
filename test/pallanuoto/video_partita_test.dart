@@ -20,6 +20,7 @@ EventoPartita _e(
   bool rigore = false,
   String? assist,
   String? guadagnata,
+  String? portiere,
 }) => EventoPartita(
   id: 'e${_n++}',
   partitaId: 'p1',
@@ -33,6 +34,7 @@ EventoPartita _e(
   espulsioneDaRigore: rigore,
   assistDi: assist,
   guadagnataDa: guadagnata,
+  portiereId: portiere,
   creatoIl: _alle(minuti),
 );
 
@@ -173,7 +175,13 @@ void main() {
     final video = _video([Allineamento(secondo: 300, momento: _alle(10))]);
     final gol = _e(10, 'tiro', atleta: 'rossi', esito: 'gol', assist: 'verdi');
     final parato = _e(11, 'tiro', atleta: 'bianchi', esito: 'parato');
-    final subito = _e(12, 'tiro', squadra: 'avversaria', esito: 'gol');
+    final subito = _e(
+      12,
+      'tiro',
+      squadra: 'avversaria',
+      esito: 'gol',
+      portiere: 'neri',
+    );
     final espulsione = _e(
       13,
       'espulsione',
@@ -246,7 +254,8 @@ void main() {
       expect(c.fine, 480 + 24 + 5);
     });
 
-    test('le clip di un giocatore: tiri, assist, espulsioni guadagnate', () {
+    test('le clip di un giocatore: tiri, assist, espulsioni guadagnate, '
+        'tiri avversari con lui in porta', () {
       List<String> di(String atleta) => [
         for (final c in clipVideo(
           video: video,
@@ -262,6 +271,7 @@ void main() {
       expect(di('rossi'), [gol.id, persa.id, 'n700.0']);
       expect(di('verdi'), [gol.id, 'n700.0']);
       expect(di('bianchi'), [parato.id, espulsione.id, 'n700.0']);
+      expect(di('neri'), [subito.id, 'n700.0']);
     });
 
     test('senza allineamento restano solo le note', () {
