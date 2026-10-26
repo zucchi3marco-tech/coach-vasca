@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_messages.dart';
+import '../../../core/voce/voce.dart';
 import '../../../core/video/lettore_youtube.dart';
 import '../../../core/video/link_youtube.dart';
 import '../../../theme/app_layout.dart';
@@ -70,6 +73,8 @@ class _Bozza {
     this.atletaId,
     required this.segni,
     required String testo,
+    this.audioPath,
+    this.audioSecondi,
   }) : testo = TextEditingController(text: testo);
 
   final String? id;
@@ -80,6 +85,26 @@ class _Bozza {
   final TextEditingController testo;
   FormaSegno forma = FormaSegno.freccia;
   ColoreLavagna colore = ColoreLavagna.giallo;
+
+  /// Il commento a voce già salvato sulla nota.
+  final String? audioPath;
+  final double? audioSecondi;
+
+  /// Uno appena registrato (al posto di quello salvato), o quello salvato
+  /// tolto.
+  VoceRegistrata? voceNuova;
+  var voceTolta = false;
+
+  bool get conVoce => voceNuova != null || (audioPath != null && !voceTolta);
+
+  double? get secondiVoce =>
+      voceNuova?.secondi ?? (voceTolta ? null : audioSecondi);
+}
+
+/// "0:42", "2:05".
+String durataVoce(double secondi) {
+  final s = secondi.round();
+  return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
 }
 
 class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
@@ -105,9 +130,25 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
   double? _durata;
   List<NotaVideo> _note = const [];
 
+  // Il commento a voce: si registra mentre la clip scorre e si riascolta
+  // con il video (si ferma e riparte con lui).
+  late final RegistratoreVoce _registratore;
+  LettoreVoce? _lettore;
+  DateTime? _registrazioneDal;
+  Timer? _orologioVoce;
+
+  /// Il secondo del video da cui parte il commento che si sta ascoltando
+  /// (null = nessuno).
+  double? _ascoltoDa;
+  var _ascoltoDal = DateTime.fromMillisecondsSinceEpoch(0);
+  var _riprendoVoce = false;
+
+  bool get _registrando => _registrazioneDal != null;
+
   @override
   void initState() {
     super.initState();
+    _registratore = ref.read(creaRegistratoreVoceProvider)();
     _controllore.addListener(_suVideo);
   }
 
@@ -123,6 +164,9 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
       ..removeListener(_suVideo)
       ..dispose();
     _bozza?.testo.dispose();
+    _orologioVoce?.cancel();
+    _registratore.annulla();
+    _lettore?.chiudi();
     super.dispose();
   }
 
@@ -148,6 +192,10 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     final s = _controllore.secondo;
     final prima = _ultimoSecondo;
     _ultimoSecondo = s;
+    if (_ascoltoDa != null) {
+      _seguiIlVideo(s);
+      return;
+    }
     if (!_controllore.inRiproduzione || _bozza != null) return;
     final clip = _clip;
     // Ripartito con play invece di "Continua": la nota se ne va, e una
@@ -188,6 +236,170 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     if (clip != null && clip.evento != null && s >= clip.fine) _prossima();
   }
 
+  // -------------------------------------------------------------------
+  // Commento a voce
+
+  /// Mentre si ascolta: il video in pausa ferma la voce, il video che
+  /// riparte la fa riprendere dal punto giusto. Appena partiti il lettore
+  /// dice ancora per un attimo «fermo»: si aspetta un momento.
+  void _seguiIlVideo(double s) {
+    final lettore = _lettore;
+    final da = _ascoltoDa;
+    if (lettore == null || da == null) return;
+    if (DateTime.now().difference(_ascoltoDal) <
+        const Duration(milliseconds: 1500)) {
+      return;
+    }
+    if (!_controllore.inRiproduzione) {
+      if (lettore.inRiproduzione) lettore.pausa();
+      return;
+    }
+    if (!lettore.inRiproduzione && !_riprendoVoce) {
+      final punto = s - da;
+      if (punto < 0) return;
+      _riprendoVoce = true;
+      lettore
+          .suona(secondo: punto)
+          .catchError((Object _) {})
+          .whenComplete(() => _riprendoVoce = false);
+    }
+  }
+
+  /// Fa partire insieme il video da [daSecondo] e il commento: quello
+  /// salvato in [path] o quello appena registrato.
+  Future<void> _ascolta({
+    required double daSecondo,
+    String? path,
+    VoceRegistrata? registrata,
+  }) async {
+    final lettore = _lettore ??= ref.read(creaLettoreVoceProvider)();
+    try {
+      if (registrata != null) {
+        await lettore.apriRegistrata(registrata);
+      } else if (path != null) {
+        await lettore.apri(await _repository.indirizzoVoce(path));
+      } else {
+        return;
+      }
+      lettore.allaFine = _fineAscolto;
+      _controllore
+        ..impostaVelocita(1)
+        ..vaiA(daSecondo)
+        ..riproduci();
+      _ascoltoDal = DateTime.now();
+      if (mounted) setState(() => _ascoltoDa = daSecondo);
+      await lettore.suona();
+    } catch (e) {
+      _fermaAscolto();
+      _avviso(
+        e is ErroreVoce
+            ? e.messaggio
+            : 'Il commento non si ascolta: ${messaggioErrore(e)}',
+      );
+    }
+  }
+
+  void _fineAscolto() {
+    if (!mounted || _ascoltoDa == null) return;
+    _controllore.pausa();
+    setState(() => _ascoltoDa = null);
+  }
+
+  void _fermaAscolto() {
+    _lettore?.pausa();
+    if (_ascoltoDa == null) return;
+    _controllore.pausa();
+    if (mounted) setState(() => _ascoltoDa = null);
+  }
+
+  /// La clip riparte dal punto della nota e si registra mentre scorre,
+  /// fino a [durataMassimaVoce].
+  Future<void> _registraVoce() async {
+    final bozza = _bozza;
+    if (bozza == null || _registrando) return;
+    _fermaAscolto();
+    try {
+      await _registratore.avvia();
+    } on ErroreVoce catch (e) {
+      _avviso(e.messaggio);
+      return;
+    }
+    if (!mounted || _bozza != bozza) {
+      _registratore.annulla();
+      return;
+    }
+    _controllore
+      ..impostaVelocita(1)
+      ..vaiA(bozza.secondo)
+      ..riproduci();
+    setState(() => _registrazioneDal = DateTime.now());
+    _orologioVoce?.cancel();
+    _orologioVoce = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      final dal = _registrazioneDal;
+      if (dal == null || !mounted) return;
+      if (DateTime.now().difference(dal) >= durataMassimaVoce) {
+        _fermaVoce();
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  Future<void> _fermaVoce() async {
+    if (!_registrando) return;
+    _orologioVoce?.cancel();
+    _orologioVoce = null;
+    final voce = await _registratore.ferma();
+    _controllore.pausa();
+    final bozza = _bozza;
+    if (!mounted) return;
+    setState(() {
+      _registrazioneDal = null;
+      if (bozza != null && voce != null) {
+        bozza
+          ..voceNuova = voce
+          ..voceTolta = false;
+      }
+    });
+    if (bozza != null) _controllore.vaiA(bozza.secondo);
+    if (voce == null) _avviso('Non ho registrato niente: riprova.');
+  }
+
+  void _togliVoce() {
+    final bozza = _bozza;
+    if (bozza == null) return;
+    _fermaAscolto();
+    setState(() {
+      bozza
+        ..voceNuova = null
+        ..voceTolta = true;
+    });
+  }
+
+  /// Il giocatore scrive (o corregge) la sua risposta a una nota.
+  Future<void> _rispondi(NotaVideo nota, RispostaNota? attuale) async {
+    final atletaId = widget.atletaId;
+    if (atletaId == null) return;
+    final testo = await _sopraIlVideo(
+      () => showDialog<String>(
+        context: context,
+        builder: (_) => _DialogoRisposta(testo: attuale?.testo),
+      ),
+    );
+    if (testo == null || testo.trim().isEmpty || !mounted) return;
+    try {
+      await _repository.rispondiNota(
+        nota: nota,
+        atletaId: atletaId,
+        testo: testo,
+      );
+      ref.invalidate(risposteNoteProvider(widget.partita.id));
+      _avviso('Risposta mandata all\'allenatore.');
+    } catch (e) {
+      _avviso('Risposta non mandata: ${messaggioErrore(e)}');
+    }
+  }
+
   /// [daQui]: la clip comincia prima del punto in cui è il video (due
   /// eventi vicini guardati di fila): si continua senza tornare indietro.
   void _riproduci(
@@ -196,6 +408,7 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     int indice = 0,
     bool daQui = false,
   }) {
+    _fermaAscolto();
     if (coda == null || indice == 0) _noteViste.clear();
     setState(() {
       _clip = clip;
@@ -256,6 +469,7 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
 
   /// Dopo una nota: la clip di una nota finisce lì, le altre continuano.
   void _continua() {
+    _fermaAscolto();
     final eraNota = _clip?.nota != null;
     setState(() => _notaInVista = null);
     if (eraNota) {
@@ -391,6 +605,7 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
   // Note
 
   void _avviaDisegno({NotaVideo? nota}) {
+    _fermaAscolto();
     _controllore.pausa();
     final evento = _clip?.evento;
     _bozza?.testo.dispose();
@@ -406,6 +621,8 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
             : (evento?.squadra == 'nostra' ? evento?.atletaId : null),
         segni: [...?nota?.disegno],
         testo: nota?.testo ?? '',
+        audioPath: nota?.audioPath,
+        audioSecondi: nota?.audioSecondi,
       );
       _notaInVista = null;
       _daAllineare = null;
@@ -416,6 +633,13 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
 
   void _chiudiDisegno() {
     final bozza = _bozza;
+    _fermaAscolto();
+    if (_registrando) {
+      _orologioVoce?.cancel();
+      _registratore.annulla();
+      _controllore.pausa();
+      _registrazioneDal = null;
+    }
     setState(() => _bozza = null);
     bozza?.testo.dispose();
     _controllore.accettaTocchi(true);
@@ -425,14 +649,32 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
     final bozza = _bozza;
     if (bozza == null) return;
     final testo = bozza.testo.text.trim();
-    if (bozza.segni.isEmpty && testo.isEmpty) {
-      _avviso('Disegna qualcosa sul fotogramma o scrivi la nota.');
+    if (bozza.segni.isEmpty && testo.isEmpty && !bozza.conVoce) {
+      _avviso(
+        'Disegna qualcosa sul fotogramma, scrivi la nota o registra un '
+        'commento a voce.',
+      );
       return;
     }
+    _fermaAscolto();
     setState(() => _salvando = true);
     try {
+      final idNota = bozza.id ?? _repository.nuovoIdNota();
+      var audioPath = bozza.voceTolta ? null : bozza.audioPath;
+      var audioSecondi = bozza.voceTolta ? null : bozza.audioSecondi;
+      if (bozza.voceNuova case final voce?) {
+        audioPath = await _repository.caricaVoce(
+          clubId: video.clubId,
+          notaId: idNota,
+          voce: voce,
+        );
+        audioSecondi = voce.secondi.clamp(0.1, 180).toDouble();
+      }
       await _repository.salvaNota(
         id: bozza.id,
+        idNuova: bozza.id == null ? idNota : null,
+        audioPath: audioPath,
+        audioSecondi: audioSecondi,
         video: video,
         secondo: bozza.secondo,
         eventoId: bozza.eventoId,
@@ -440,6 +682,10 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
         testo: testo,
         disegno: bozza.segni,
       );
+      // Il commento di prima, sostituito o tolto.
+      if (bozza.audioPath case final vecchio? when vecchio != audioPath) {
+        unawaited(_repository.eliminaFileVoce(vecchio));
+      }
       if (!mounted) return;
       final perChi = bozza.atletaId == null
           ? 'la vede tutta la squadra convocata.'
@@ -460,8 +706,12 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
       azione: 'Elimina',
     );
     if (!ok) return;
+    _fermaAscolto();
     try {
       await _repository.eliminaNota(nota.id);
+      if (nota.audioPath case final path?) {
+        unawaited(_repository.eliminaFileVoce(path));
+      }
       if (mounted) setState(() => _notaInVista = null);
     } catch (e) {
       if (mounted) _avviso('Non riuscito: ${messaggioErrore(e)}');
@@ -612,7 +862,11 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
                 controllore: _controllore,
               ),
             ),
-            if (_bozza case final bozza?)
+            // Mentre la clip scorre con la voce i segni del fotogramma
+            // fermo non c'entrano.
+            if (_registrando || _ascoltoDa != null)
+              const SizedBox.shrink()
+            else if (_bozza case final bozza?)
               Positioned.fill(
                 child: TavolaDisegnoVideo(
                   segni: bozza.segni,
@@ -759,6 +1013,7 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
             maxLines: 3,
           ),
           const SizedBox(height: AppSpacing.s16),
+          ..._commentoAVoce(bozza),
           Text(
             'Per chi',
             style: AppTypography.etichetta.copyWith(
@@ -789,7 +1044,9 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
             PrimaryButton(
               label: 'Salva nota',
               isLoading: _salvando,
-              onPressed: _salvando ? null : () => _salvaNota(video, nomi),
+              onPressed: _salvando || _registrando
+                  ? null
+                  : () => _salvaNota(video, nomi),
             ),
             SecondaryButton(
               label: 'Annulla',
@@ -832,6 +1089,24 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
               style: AppTypography.corpo.copyWith(color: colori.testo),
             ),
           ],
+          if (nota.conVoce) ...[
+            const SizedBox(height: AppSpacing.s12),
+            _ascoltoDa != null
+                ? SecondaryButton(
+                    label: 'Ferma il commento',
+                    icon: Icons.stop,
+                    onPressed: _fermaAscolto,
+                  )
+                : PrimaryButton(
+                    label:
+                        'Ascolta il commento'
+                        '${nota.audioSecondi == null ? '' : ' · ${durataVoce(nota.audioSecondi!)}'}',
+                    icon: Icons.volume_up_outlined,
+                    onPressed: () =>
+                        _ascolta(daSecondo: nota.secondo, path: nota.audioPath),
+                  ),
+          ],
+          ..._risposteNota(nota, nome),
           const SizedBox(height: AppSpacing.s16),
           _Affiancati([
             PrimaryButton(
@@ -934,6 +1209,178 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
       ];
     }
     return const [];
+  }
+
+  /// Nella bozza della nota: registra, riascolta, rifai o togli il
+  /// commento a voce. Dove il browser non sa registrare non compare.
+  List<Widget> _commentoAVoce(_Bozza bozza) {
+    final colori = context.colori;
+    if (!_registratore.disponibile && !bozza.conVoce) return const [];
+    final etichetta = Text(
+      'Commento a voce',
+      style: AppTypography.etichetta.copyWith(color: colori.testoSecondario),
+    );
+    if (_registrando) {
+      final passati = DateTime.now()
+          .difference(_registrazioneDal!)
+          .inMilliseconds;
+      return [
+        etichetta,
+        const SizedBox(height: AppSpacing.s8),
+        Row(
+          children: [
+            Icon(Icons.fiber_manual_record, color: colori.rosso, size: 16),
+            const SizedBox(width: AppSpacing.s8),
+            Expanded(
+              child: Text(
+                'Registro mentre la clip scorre · '
+                '${durataVoce(passati / 1000)} di '
+                '${durataVoce(durataMassimaVoce.inSeconds.toDouble())}',
+                style: AppTypography.corpo.copyWith(color: colori.testo),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        PrimaryButton(label: 'Ferma', icon: Icons.stop, onPressed: _fermaVoce),
+        const SizedBox(height: AppSpacing.s16),
+      ];
+    }
+    if (bozza.conVoce) {
+      final secondi = bozza.secondiVoce;
+      return [
+        etichetta,
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          [
+            'Registrato',
+            if (secondi != null) durataVoce(secondi),
+            if (bozza.voceNuova != null) 'si salva con la nota',
+          ].join(' · '),
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        Wrap(
+          spacing: AppSpacing.s8,
+          runSpacing: AppSpacing.s8,
+          children: [
+            if (_ascoltoDa != null)
+              TextButton.icon(
+                onPressed: _fermaAscolto,
+                icon: const Icon(Icons.stop),
+                label: const Text('Ferma'),
+              )
+            else
+              TextButton.icon(
+                onPressed: () => _ascolta(
+                  daSecondo: bozza.secondo,
+                  registrata: bozza.voceNuova,
+                  path: bozza.voceNuova == null ? bozza.audioPath : null,
+                ),
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Riascolta'),
+              ),
+            if (_registratore.disponibile)
+              TextButton.icon(
+                onPressed: _registraVoce,
+                icon: const Icon(Icons.mic_none),
+                label: const Text('Rifai'),
+              ),
+            TextButton.icon(
+              onPressed: _togliVoce,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Togli'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s16),
+      ];
+    }
+    return [
+      etichetta,
+      const SizedBox(height: AppSpacing.s4),
+      Text(
+        'La clip riparte da qui e registri mentre scorre, fino a '
+        '${durataMassimaVoce.inMinutes} minuti. Chi vede la nota lo '
+        'riascolta con il video.',
+        style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+      ),
+      const SizedBox(height: AppSpacing.s8),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: SecondaryButton(
+          label: 'Registra il commento',
+          icon: Icons.mic_none,
+          expanded: false,
+          onPressed: _registraVoce,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.s16),
+    ];
+  }
+
+  /// Sotto la nota: per l'allenatore le risposte dei giocatori, per il
+  /// giocatore la sua (da scrivere o correggere).
+  List<Widget> _risposteNota(NotaVideo nota, String Function(String?) nome) {
+    final colori = context.colori;
+    final tutte = [
+      for (final r
+          in ref.watch(risposteNoteProvider(widget.partita.id)).value ??
+              const <RispostaNota>[])
+        if (r.notaId == nota.id) r,
+    ];
+    if (widget.modifica) {
+      if (tutte.isEmpty) return const [];
+      return [
+        const SizedBox(height: AppSpacing.s16),
+        Text(
+          tutte.length == 1 ? 'La risposta' : 'Le risposte',
+          style: AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          ),
+        ),
+        for (final r in tutte) ...[
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            nome(r.atletaId),
+            style: AppTypography.corpoForte.copyWith(color: colori.testo),
+          ),
+          Text(
+            r.testo,
+            style: AppTypography.corpo.copyWith(color: colori.testo),
+          ),
+        ],
+      ];
+    }
+    final mio = widget.atletaId;
+    if (mio == null) return const [];
+    final mia = tutte.where((r) => r.atletaId == mio).firstOrNull;
+    return [
+      const SizedBox(height: AppSpacing.s16),
+      if (mia != null) ...[
+        Text(
+          'La tua risposta',
+          style: AppTypography.etichetta.copyWith(
+            color: colori.testoSecondario,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          mia.testo,
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+        ),
+      ],
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () => _rispondi(nota, mia),
+          icon: const Icon(Icons.reply),
+          label: Text(
+            mia == null ? 'Rispondi all\'allenatore' : 'Correggi la risposta',
+          ),
+        ),
+      ),
+    ];
   }
 
   List<Widget> _elencoClip(
@@ -1080,7 +1527,11 @@ class _VideoPartitaScreenState extends ConsumerState<VideoPartitaScreen> {
           : nota!.perTutti
           ? 'Nota per la squadra'
           : 'Nota per ${nome(nota.atletaId)}',
-      sottotitolo: [minutaggio(c.secondo), ?nota?.testo].join(' · '),
+      sottotitolo: [
+        minutaggio(c.secondo),
+        ?nota?.testo,
+        if (nota?.conVoce ?? false) 'commento a voce',
+      ].join(' · '),
       trailing: inOnda
           ? Text(
               'In onda',
@@ -1529,4 +1980,71 @@ class _CollegaVideoState extends ConsumerState<_CollegaVideo> {
       ),
     );
   }
+}
+
+/// La finestra della risposta del giocatore a una nota. Torna il testo
+/// scritto, null se si annulla.
+class _DialogoRisposta extends StatefulWidget {
+  const _DialogoRisposta({this.testo});
+
+  final String? testo;
+
+  @override
+  State<_DialogoRisposta> createState() => _DialogoRispostaState();
+}
+
+class _DialogoRispostaState extends State<_DialogoRisposta> {
+  late final _testo = TextEditingController(text: widget.testo ?? '');
+
+  @override
+  void initState() {
+    super.initState();
+    _testo.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _testo.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(
+      widget.testo == null
+          ? 'Rispondi all\'allenatore'
+          : 'Correggi la risposta',
+    ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('La leggono solo i tuoi allenatori.'),
+        const SizedBox(height: AppSpacing.s12),
+        TextField(
+          controller: _testo,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 6,
+          maxLength: lunghezzaMassimaRispostaNota,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Es. Ho capito: dovevo passarla al centro',
+          ),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Annulla'),
+      ),
+      TextButton(
+        onPressed: _testo.text.trim().isEmpty
+            ? null
+            : () => Navigator.of(context).pop(_testo.text),
+        child: const Text('Manda'),
+      ),
+    ],
+  );
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:coach_vasca/core/video/lettore_youtube.dart';
+import 'package:coach_vasca/core/voce/voce.dart';
 import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
@@ -103,9 +105,18 @@ class _RepositoryFinto implements VideoPartiteRepository {
     return video;
   }
 
+  /// Dove sta la voce di ogni nota salvata (per id) e quanto dura.
+  final voci = <String?, ({String? path, double? secondi})>{};
+  final caricate = <String>[];
+  final tolti = <String>[];
+  final risposte = <RispostaNota>[];
+
   @override
   Future<void> salvaNota({
     String? id,
+    String? idNuova,
+    String? audioPath,
+    double? audioSecondi,
     required VideoPartita video,
     required double secondo,
     String? eventoId,
@@ -120,18 +131,131 @@ class _RepositoryFinto implements VideoPartiteRepository {
       testo: testo,
       disegno: [...disegno],
     ));
+    voci[id ?? idNuova] = (path: audioPath, secondi: audioSecondi);
+  }
+
+  @override
+  String nuovoIdNota() => 'nuova';
+
+  @override
+  Future<String> caricaVoce({
+    required String clubId,
+    required String notaId,
+    required VoceRegistrata voce,
+  }) async {
+    final path = '$clubId/$notaId.${voce.estensione}';
+    caricate.add(path);
+    return path;
+  }
+
+  @override
+  Future<String> indirizzoVoce(String path) async => 'url:$path';
+
+  @override
+  Future<void> eliminaFileVoce(String path) async => tolti.add(path);
+
+  @override
+  Future<List<RispostaNota>> risposteNote(String partitaId) async => [
+    ...risposte,
+  ];
+
+  @override
+  Future<void> rispondiNota({
+    required NotaVideo nota,
+    required String atletaId,
+    required String testo,
+  }) async {
+    risposte
+      ..removeWhere((r) => r.notaId == nota.id && r.atletaId == atletaId)
+      ..add(
+        RispostaNota(
+          id: 'r${risposte.length}',
+          notaId: nota.id,
+          atletaId: atletaId,
+          testo: testo.trim(),
+          aggiornataIl: DateTime(2026, 10, 26),
+        ),
+      );
   }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Il microfono finto: registra sempre 42 secondi.
+class _RegistratoreFinto implements RegistratoreVoce {
+  var _attivo = false;
+
+  @override
+  bool get disponibile => true;
+
+  @override
+  bool get inRegistrazione => _attivo;
+
+  @override
+  Future<void> avvia() async => _attivo = true;
+
+  @override
+  Future<VoceRegistrata?> ferma() async {
+    _attivo = false;
+    return VoceRegistrata(
+      byte: Uint8List.fromList(const [1, 2, 3]),
+      tipo: 'audio/webm',
+      secondi: 42,
+    );
+  }
+
+  @override
+  void annulla() => _attivo = false;
+}
+
+/// L'altoparlante finto: annota cosa apre e quando suona.
+class _LettoreFinto implements LettoreVoce {
+  final aperti = <String>[];
+  var suonato = 0;
+  var _suona = false;
+
+  @override
+  void Function()? allaFine;
+
+  @override
+  Future<void> apri(String indirizzo) async => aperti.add(indirizzo);
+
+  @override
+  Future<void> apriRegistrata(VoceRegistrata voce) async =>
+      aperti.add('registrata');
+
+  @override
+  Future<void> suona({double secondo = 0}) async {
+    suonato++;
+    _suona = true;
+  }
+
+  @override
+  void pausa() => _suona = false;
+
+  @override
+  double get secondo => 0;
+
+  @override
+  bool get inRiproduzione => _suona;
+
+  @override
+  void chiudi() => _suona = false;
+}
+
 Widget _app(
   _RepositoryFinto finto,
   Widget figlio, {
   List<NotaVideo> note = const [],
+  RegistratoreVoce? registratore,
+  LettoreVoce? lettore,
 }) => ProviderScope(
   overrides: [
+    if (registratore != null)
+      creaRegistratoreVoceProvider.overrideWithValue(() => registratore),
+    if (lettore != null)
+      creaLettoreVoceProvider.overrideWithValue(() => lettore),
     videoPartiteRepositoryProvider.overrideWithValue(finto),
     videoPartitaProvider.overrideWith((ref, id) => finto.flusso()),
     noteVideoProvider.overrideWith((ref, id) => Stream.value(note)),
@@ -306,6 +430,207 @@ void main() {
       find.text('Nota salvata: la vede solo Rossi Marco.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('il commento a voce si registra mentre la clip scorre e si '
+      'salva con la nota', (tester) async {
+    _schermoGrande(tester);
+    final finto = _RepositoryFinto(
+      _video([Allineamento(secondo: 40, momento: _gol.creatoIl, periodo: 1)]),
+    );
+    final lettore = _LettoreFinto();
+    await tester.pumpWidget(
+      _app(
+        finto,
+        VideoPartitaScreen(partita: _partita),
+        registratore: _RegistratoreFinto(),
+        lettore: lettore,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final video = tester
+        .widget<LettoreYoutube>(find.byType(LettoreYoutube))
+        .controllore;
+
+    await tester.tap(find.text('Tiro — Rossi Marco — Gol (T1)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Disegna'));
+    await tester.pumpAndSettle();
+
+    // Si registra: la clip riparte dal punto della nota.
+    await tester.ensureVisible(find.text('Registra il commento'));
+    await tester.tap(find.text('Registra il commento'));
+    await tester.pump();
+    expect(find.textContaining('Registro mentre la clip scorre'), findsOne);
+    expect(video.secondo, 25);
+    expect(video.inRiproduzione, isTrue);
+    // Mentre registra la nota non si salva.
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.ancestor(
+              of: find.text('Salva nota'),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+
+    await tester.tap(find.text('Ferma'));
+    await tester.pumpAndSettle();
+    expect(video.inRiproduzione, isFalse);
+    expect(find.text('Registrato · 0:42 · si salva con la nota'), findsOne);
+
+    // Si riascolta prima di salvare.
+    await tester.tap(find.text('Riascolta'));
+    await tester.pump();
+    expect(lettore.aperti, ['registrata']);
+    expect(video.inRiproduzione, isTrue);
+    lettore.allaFine!();
+    await tester.pump();
+    expect(video.inRiproduzione, isFalse);
+
+    // Solo la voce basta per una nota.
+    await tester.tap(find.text('Salva nota'));
+    await tester.pumpAndSettle();
+    expect(finto.caricate, ['c1/nuova.webm']);
+    expect(finto.voci['nuova'], (path: 'c1/nuova.webm', secondi: 42.0));
+  });
+
+  testWidgets('dove il browser non registra il tasto non c\'è', (tester) async {
+    _schermoGrande(tester);
+    final finto = _RepositoryFinto(_video());
+    await tester.pumpWidget(_app(finto, VideoPartitaScreen(partita: _partita)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Disegna'));
+    await tester.pumpAndSettle();
+    expect(find.text('Registra il commento'), findsNothing);
+    await tester.tap(find.text('Salva nota'));
+    await tester.pump();
+    expect(
+      find.text(
+        'Disegna qualcosa sul fotogramma, scrivi la nota o registra un '
+        'commento a voce.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  NotaVideo notaConVoce() => NotaVideo(
+    id: 'nv',
+    videoId: 'v1',
+    partitaId: 'p1',
+    clubId: 'c1',
+    secondo: 162,
+    atletaId: 'rossi',
+    creataIl: DateTime(2026, 10, 11),
+    audioPath: 'c1/nv.webm',
+    audioSecondi: 42,
+  );
+
+  /// Porta il video sulla nota a 162": la si tocca nell'elenco e il
+  /// lettore va avanti fino a lei.
+  Future<ControlloreVideo> apriLaNota(WidgetTester tester) async {
+    final video = tester
+        .widget<LettoreYoutube>(find.byType(LettoreYoutube))
+        .controllore;
+    await tester.tap(find.text('Nota per Rossi Marco').last);
+    await tester.pump();
+    for (var t = video.secondo + 0.25; t <= 162 + 1e-9; t += 0.25) {
+      video.aggiorna(secondo: t, inRiproduzione: true);
+      await tester.pump();
+    }
+    return video;
+  }
+
+  testWidgets('il giocatore ascolta il commento con il video e risponde', (
+    tester,
+  ) async {
+    _schermoGrande(tester);
+    final finto = _RepositoryFinto(
+      _video([Allineamento(secondo: 40, momento: _gol.creatoIl, periodo: 1)]),
+    );
+    final lettore = _LettoreFinto();
+    await tester.pumpWidget(
+      _app(
+        finto,
+        VideoPartitaScreen(
+          partita: _partita,
+          modifica: false,
+          atletaId: 'rossi',
+        ),
+        note: [notaConVoce()],
+        lettore: lettore,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('commento a voce'), findsWidgets);
+
+    final video = await apriLaNota(tester);
+    expect(video.inRiproduzione, isFalse);
+    await tester.tap(find.text('Ascolta il commento · 0:42'));
+    await tester.pump();
+    expect(lettore.aperti, ['url:c1/nv.webm']);
+    expect(lettore.suonato, 1);
+    expect(video.secondo, 162);
+    expect(video.inRiproduzione, isTrue);
+    expect(find.text('Ferma il commento'), findsOneWidget);
+
+    // Finito il commento il video si ferma.
+    lettore.allaFine!();
+    await tester.pump();
+    expect(video.inRiproduzione, isFalse);
+    expect(find.text('Ascolta il commento · 0:42'), findsOneWidget);
+
+    await tester.tap(find.text('Rispondi all\'allenatore'));
+    await tester.pumpAndSettle();
+    expect(find.text('La leggono solo i tuoi allenatori.'), findsOneWidget);
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Ho capito, dovevo passarla',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Manda'));
+    await tester.pumpAndSettle();
+    expect(finto.risposte.single.testo, 'Ho capito, dovevo passarla');
+    expect(finto.risposte.single.atletaId, 'rossi');
+    expect(find.text('La tua risposta'), findsOneWidget);
+    expect(find.text('Correggi la risposta'), findsOneWidget);
+  });
+
+  testWidgets('l\'allenatore legge la risposta sotto la nota', (tester) async {
+    _schermoGrande(tester);
+    final finto = _RepositoryFinto(
+      _video([Allineamento(secondo: 40, momento: _gol.creatoIl, periodo: 1)]),
+    );
+    finto.risposte.add(
+      RispostaNota(
+        id: 'r1',
+        notaId: 'nv',
+        atletaId: 'rossi',
+        testo: 'Ho capito, dovevo passarla',
+        aggiornataIl: DateTime(2026, 10, 26),
+      ),
+    );
+    await tester.pumpWidget(
+      _app(
+        finto,
+        VideoPartitaScreen(partita: _partita),
+        note: [notaConVoce()],
+        lettore: _LettoreFinto(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await apriLaNota(tester);
+    // Le risposte arrivano dal server appena la nota si apre.
+    await tester.pump();
+    expect(find.text('La risposta'), findsOneWidget);
+    expect(find.text('Ho capito, dovevo passarla'), findsOneWidget);
+    expect(find.text('Rispondi all\'allenatore'), findsNothing);
   });
 
   testWidgets('l\'atleta convocato vede in cima le sue azioni, senza '

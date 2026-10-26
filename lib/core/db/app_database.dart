@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -627,6 +627,15 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasColumn(m, 'test_risultati_table', 'dall_atleta')) {
           await m.addColumn(testRisultatiTable, testRisultatiTable.dallAtleta);
+        }
+      }
+      // v50 -> v51: il commento a voce sulle note del video.
+      if (from < 51) {
+        if (!await _hasColumn(m, 'note_video_table', 'audio_path')) {
+          await m.addColumn(noteVideoTable, noteVideoTable.audioPath);
+        }
+        if (!await _hasColumn(m, 'note_video_table', 'audio_secondi')) {
+          await m.addColumn(noteVideoTable, noteVideoTable.audioSecondi);
         }
       }
     },

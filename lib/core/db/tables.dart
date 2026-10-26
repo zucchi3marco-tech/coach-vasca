@@ -677,6 +677,10 @@ class NoteVideoTable extends Table {
   TextColumn get disegnoJson => text().withDefault(const Constant('[]'))();
   DateTimeColumn get creatoIl => dateTime()();
 
+  /// Il commento a voce (spazio `note_vocali`) e quanto dura.
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioSecondi => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

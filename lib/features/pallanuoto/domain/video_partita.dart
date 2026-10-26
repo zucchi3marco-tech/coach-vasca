@@ -113,6 +113,8 @@ class NotaVideo {
     this.testo,
     this.disegno = const [],
     required this.creataIl,
+    this.audioPath,
+    this.audioSecondi,
   });
 
   final String id;
@@ -126,7 +128,14 @@ class NotaVideo {
   final List<SegnoVideo> disegno;
   final DateTime creataIl;
 
+  /// Il commento a voce dell'allenatore (spazio privato `note_vocali`),
+  /// registrato mentre la clip scorre da [secondo], e quanto dura.
+  final String? audioPath;
+  final double? audioSecondi;
+
   bool get perTutti => atletaId == null;
+
+  bool get conVoce => audioPath != null;
 }
 
 enum FormaSegno { freccia, cerchio }
@@ -193,3 +202,33 @@ List<SegnoVideo> segniDa(Object? valore) {
       if (m is Map<String, dynamic>) ?SegnoVideo.fromJson(m),
   ];
 }
+
+/// La risposta scritta di un giocatore a una nota del video (tabella
+/// `risposte_note_video`): una per nota, che può correggere; la leggono
+/// lui e lo staff del club.
+class RispostaNota {
+  const RispostaNota({
+    required this.id,
+    required this.notaId,
+    required this.atletaId,
+    required this.testo,
+    required this.aggiornataIl,
+  });
+
+  factory RispostaNota.fromMap(Map<String, dynamic> m) => RispostaNota(
+    id: m['id'] as String,
+    notaId: m['nota_id'] as String,
+    atletaId: m['atleta_id'] as String,
+    testo: m['testo'] as String,
+    aggiornataIl: DateTime.parse(m['updated_at'] as String).toLocal(),
+  );
+
+  final String id;
+  final String notaId;
+  final String atletaId;
+  final String testo;
+  final DateTime aggiornataIl;
+}
+
+/// Quanto può essere lunga la risposta a una nota.
+const lunghezzaMassimaRispostaNota = 1000;

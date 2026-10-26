@@ -17734,6 +17734,28 @@ class $NoteVideoTableTable extends NoteVideoTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioSecondiMeta = const VerificationMeta(
+    'audioSecondi',
+  );
+  @override
+  late final GeneratedColumn<double> audioSecondi = GeneratedColumn<double>(
+    'audio_secondi',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -17746,6 +17768,8 @@ class $NoteVideoTableTable extends NoteVideoTable
     testo,
     disegnoJson,
     creatoIl,
+    audioPath,
+    audioSecondi,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17831,6 +17855,21 @@ class $NoteVideoTableTable extends NoteVideoTable
     } else if (isInserting) {
       context.missing(_creatoIlMeta);
     }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('audio_secondi')) {
+      context.handle(
+        _audioSecondiMeta,
+        audioSecondi.isAcceptableOrUnknown(
+          data['audio_secondi']!,
+          _audioSecondiMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17880,6 +17919,14 @@ class $NoteVideoTableTable extends NoteVideoTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}creato_il'],
       )!,
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      audioSecondi: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_secondi'],
+      ),
     );
   }
 
@@ -17901,6 +17948,10 @@ class NoteVideoTableData extends DataClass
   final String? testo;
   final String disegnoJson;
   final DateTime creatoIl;
+
+  /// Il commento a voce (spazio `note_vocali`) e quanto dura.
+  final String? audioPath;
+  final double? audioSecondi;
   const NoteVideoTableData({
     required this.id,
     required this.videoId,
@@ -17912,6 +17963,8 @@ class NoteVideoTableData extends DataClass
     this.testo,
     required this.disegnoJson,
     required this.creatoIl,
+    this.audioPath,
+    this.audioSecondi,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17932,6 +17985,12 @@ class NoteVideoTableData extends DataClass
     }
     map['disegno_json'] = Variable<String>(disegnoJson);
     map['creato_il'] = Variable<DateTime>(creatoIl);
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioSecondi != null) {
+      map['audio_secondi'] = Variable<double>(audioSecondi);
+    }
     return map;
   }
 
@@ -17953,6 +18012,12 @@ class NoteVideoTableData extends DataClass
           : Value(testo),
       disegnoJson: Value(disegnoJson),
       creatoIl: Value(creatoIl),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      audioSecondi: audioSecondi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioSecondi),
     );
   }
 
@@ -17972,6 +18037,8 @@ class NoteVideoTableData extends DataClass
       testo: serializer.fromJson<String?>(json['testo']),
       disegnoJson: serializer.fromJson<String>(json['disegnoJson']),
       creatoIl: serializer.fromJson<DateTime>(json['creatoIl']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioSecondi: serializer.fromJson<double?>(json['audioSecondi']),
     );
   }
   @override
@@ -17988,6 +18055,8 @@ class NoteVideoTableData extends DataClass
       'testo': serializer.toJson<String?>(testo),
       'disegnoJson': serializer.toJson<String>(disegnoJson),
       'creatoIl': serializer.toJson<DateTime>(creatoIl),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'audioSecondi': serializer.toJson<double?>(audioSecondi),
     };
   }
 
@@ -18002,6 +18071,8 @@ class NoteVideoTableData extends DataClass
     Value<String?> testo = const Value.absent(),
     String? disegnoJson,
     DateTime? creatoIl,
+    Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioSecondi = const Value.absent(),
   }) => NoteVideoTableData(
     id: id ?? this.id,
     videoId: videoId ?? this.videoId,
@@ -18013,6 +18084,8 @@ class NoteVideoTableData extends DataClass
     testo: testo.present ? testo.value : this.testo,
     disegnoJson: disegnoJson ?? this.disegnoJson,
     creatoIl: creatoIl ?? this.creatoIl,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioSecondi: audioSecondi.present ? audioSecondi.value : this.audioSecondi,
   );
   NoteVideoTableData copyWithCompanion(NoteVideoTableCompanion data) {
     return NoteVideoTableData(
@@ -18028,6 +18101,10 @@ class NoteVideoTableData extends DataClass
           ? data.disegnoJson.value
           : this.disegnoJson,
       creatoIl: data.creatoIl.present ? data.creatoIl.value : this.creatoIl,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioSecondi: data.audioSecondi.present
+          ? data.audioSecondi.value
+          : this.audioSecondi,
     );
   }
 
@@ -18043,7 +18120,9 @@ class NoteVideoTableData extends DataClass
           ..write('atletaId: $atletaId, ')
           ..write('testo: $testo, ')
           ..write('disegnoJson: $disegnoJson, ')
-          ..write('creatoIl: $creatoIl')
+          ..write('creatoIl: $creatoIl, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioSecondi: $audioSecondi')
           ..write(')'))
         .toString();
   }
@@ -18060,6 +18139,8 @@ class NoteVideoTableData extends DataClass
     testo,
     disegnoJson,
     creatoIl,
+    audioPath,
+    audioSecondi,
   );
   @override
   bool operator ==(Object other) =>
@@ -18074,7 +18155,9 @@ class NoteVideoTableData extends DataClass
           other.atletaId == this.atletaId &&
           other.testo == this.testo &&
           other.disegnoJson == this.disegnoJson &&
-          other.creatoIl == this.creatoIl);
+          other.creatoIl == this.creatoIl &&
+          other.audioPath == this.audioPath &&
+          other.audioSecondi == this.audioSecondi);
 }
 
 class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
@@ -18088,6 +18171,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
   final Value<String?> testo;
   final Value<String> disegnoJson;
   final Value<DateTime> creatoIl;
+  final Value<String?> audioPath;
+  final Value<double?> audioSecondi;
   final Value<int> rowid;
   const NoteVideoTableCompanion({
     this.id = const Value.absent(),
@@ -18100,6 +18185,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
     this.testo = const Value.absent(),
     this.disegnoJson = const Value.absent(),
     this.creatoIl = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioSecondi = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NoteVideoTableCompanion.insert({
@@ -18113,6 +18200,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
     this.testo = const Value.absent(),
     this.disegnoJson = const Value.absent(),
     required DateTime creatoIl,
+    this.audioPath = const Value.absent(),
+    this.audioSecondi = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        videoId = Value(videoId),
@@ -18131,6 +18220,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
     Expression<String>? testo,
     Expression<String>? disegnoJson,
     Expression<DateTime>? creatoIl,
+    Expression<String>? audioPath,
+    Expression<double>? audioSecondi,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18144,6 +18235,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
       if (testo != null) 'testo': testo,
       if (disegnoJson != null) 'disegno_json': disegnoJson,
       if (creatoIl != null) 'creato_il': creatoIl,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (audioSecondi != null) 'audio_secondi': audioSecondi,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18159,6 +18252,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
     Value<String?>? testo,
     Value<String>? disegnoJson,
     Value<DateTime>? creatoIl,
+    Value<String?>? audioPath,
+    Value<double?>? audioSecondi,
     Value<int>? rowid,
   }) {
     return NoteVideoTableCompanion(
@@ -18172,6 +18267,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
       testo: testo ?? this.testo,
       disegnoJson: disegnoJson ?? this.disegnoJson,
       creatoIl: creatoIl ?? this.creatoIl,
+      audioPath: audioPath ?? this.audioPath,
+      audioSecondi: audioSecondi ?? this.audioSecondi,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18209,6 +18306,12 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
     if (creatoIl.present) {
       map['creato_il'] = Variable<DateTime>(creatoIl.value);
     }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (audioSecondi.present) {
+      map['audio_secondi'] = Variable<double>(audioSecondi.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18228,6 +18331,8 @@ class NoteVideoTableCompanion extends UpdateCompanion<NoteVideoTableData> {
           ..write('testo: $testo, ')
           ..write('disegnoJson: $disegnoJson, ')
           ..write('creatoIl: $creatoIl, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioSecondi: $audioSecondi, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -30301,6 +30406,8 @@ typedef $$NoteVideoTableTableCreateCompanionBuilder =
       Value<String?> testo,
       Value<String> disegnoJson,
       required DateTime creatoIl,
+      Value<String?> audioPath,
+      Value<double?> audioSecondi,
       Value<int> rowid,
     });
 typedef $$NoteVideoTableTableUpdateCompanionBuilder =
@@ -30315,6 +30422,8 @@ typedef $$NoteVideoTableTableUpdateCompanionBuilder =
       Value<String?> testo,
       Value<String> disegnoJson,
       Value<DateTime> creatoIl,
+      Value<String?> audioPath,
+      Value<double?> audioSecondi,
       Value<int> rowid,
     });
 
@@ -30374,6 +30483,16 @@ class $$NoteVideoTableTableFilterComposer
 
   ColumnFilters<DateTime> get creatoIl => $composableBuilder(
     column: $table.creatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get audioSecondi => $composableBuilder(
+    column: $table.audioSecondi,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -30436,6 +30555,16 @@ class $$NoteVideoTableTableOrderingComposer
     column: $table.creatoIl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get audioSecondi => $composableBuilder(
+    column: $table.audioSecondi,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NoteVideoTableTableAnnotationComposer
@@ -30478,6 +30607,14 @@ class $$NoteVideoTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get creatoIl =>
       $composableBuilder(column: $table.creatoIl, builder: (column) => column);
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioSecondi => $composableBuilder(
+    column: $table.audioSecondi,
+    builder: (column) => column,
+  );
 }
 
 class $$NoteVideoTableTableTableManager
@@ -30527,6 +30664,8 @@ class $$NoteVideoTableTableTableManager
                 Value<String?> testo = const Value.absent(),
                 Value<String> disegnoJson = const Value.absent(),
                 Value<DateTime> creatoIl = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioSecondi = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NoteVideoTableCompanion(
                 id: id,
@@ -30539,6 +30678,8 @@ class $$NoteVideoTableTableTableManager
                 testo: testo,
                 disegnoJson: disegnoJson,
                 creatoIl: creatoIl,
+                audioPath: audioPath,
+                audioSecondi: audioSecondi,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -30553,6 +30694,8 @@ class $$NoteVideoTableTableTableManager
                 Value<String?> testo = const Value.absent(),
                 Value<String> disegnoJson = const Value.absent(),
                 required DateTime creatoIl,
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioSecondi = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NoteVideoTableCompanion.insert(
                 id: id,
@@ -30565,6 +30708,8 @@ class $$NoteVideoTableTableTableManager
                 testo: testo,
                 disegnoJson: disegnoJson,
                 creatoIl: creatoIl,
+                audioPath: audioPath,
+                audioSecondi: audioSecondi,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -25,3 +25,16 @@ final noteVideoProvider = StreamProvider.family<List<NotaVideo>, String>((
 ) {
   return ref.watch(videoPartiteRepositoryProvider).watchNote(videoId);
 });
+
+/// Le risposte dei giocatori alle note della partita (solo con la rete;
+/// senza, nessuna).
+final risposteNoteProvider = FutureProvider.autoDispose
+    .family<List<RispostaNota>, String>((ref, partitaId) async {
+      try {
+        return await ref
+            .watch(videoPartiteRepositoryProvider)
+            .risposteNote(partitaId);
+      } catch (_) {
+        return const [];
+      }
+    });

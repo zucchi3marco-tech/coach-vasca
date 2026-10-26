@@ -11,9 +11,13 @@ import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
 import '../../../core/sync/sync_engine.dart';
+import '../../../core/voce/voce.dart';
 import '../domain/video_partita.dart';
 
 const _uuid = Uuid();
+
+/// Lo spazio privato dei commenti a voce.
+const _spazioVoce = 'note_vocali';
 
 /// Il video di una partita e le note sui suoi fotogrammi. Come il resto
 /// dell'app ogni scrittura prova prima il server e senza rete finisce
@@ -59,6 +63,8 @@ class VideoPartiteRepository {
     testo: r.testo,
     disegno: segniDa(r.disegnoJson),
     creataIl: r.creatoIl,
+    audioPath: r.audioPath,
+    audioSecondi: r.audioSecondi,
   );
 
   NoteVideoTableCompanion _notaDaMap(Map<String, dynamic> m) =>
@@ -77,6 +83,8 @@ class VideoPartiteRepository {
         creatoIl: m['created_at'] != null
             ? DateTime.parse(m['created_at'] as String)
             : DateTime.now(),
+        audioPath: Value(m['audio_path'] as String?),
+        audioSecondi: Value((m['audio_secondi'] as num?)?.toDouble()),
       );
 
   Stream<VideoPartita?> watchVideo(String partitaId) {
@@ -223,9 +231,95 @@ class VideoPartiteRepository {
     });
   }
 
-  /// Crea una nota ([id] null) o la modifica.
+  /// Un id per una nota nuova, prima di salvarla: serve per il nome del
+  /// file del commento a voce.
+  String nuovoIdNota() => _uuid.v4();
+
+  /// Carica il commento a voce della nota [notaId] e restituisce dove sta
+  /// (`<club>/<nota>-<quando>.<estensione>`: un nome nuovo a ogni
+  /// registrazione, così nessuno sente quella vecchia dalla cache). Solo
+  /// con la rete.
+  Future<String> caricaVoce({
+    required String clubId,
+    required String notaId,
+    required VoceRegistrata voce,
+  }) async {
+    final path =
+        '$clubId/$notaId-${DateTime.now().millisecondsSinceEpoch}'
+        '.${voce.estensione}';
+    try {
+      await _client.storage
+          .from(_spazioVoce)
+          .uploadBinary(
+            path,
+            voce.byte,
+            fileOptions: FileOptions(contentType: voce.tipo, upsert: true),
+          );
+    } catch (e) {
+      if (isNetworkFailure(e)) {
+        throw Exception(
+          'Serve la rete per salvare il commento a voce: riprova quando '
+          'torna.',
+        );
+      }
+      rethrow;
+    }
+    return path;
+  }
+
+  /// L'indirizzo per ascoltare il commento (vale un'ora).
+  Future<String> indirizzoVoce(String path) =>
+      _client.storage.from(_spazioVoce).createSignedUrl(path, 3600);
+
+  /// Toglie il file di un commento non più usato. Se non riesce resta
+  /// lì: nessuno lo vede più, perché nessuna nota lo indica.
+  Future<void> eliminaFileVoce(String path) async {
+    try {
+      await _client.storage.from(_spazioVoce).remove([path]);
+    } catch (_) {}
+  }
+
+  /// Le risposte dei giocatori alle note della partita (l'atleta riceve
+  /// solo le sue). Solo con la rete.
+  Future<List<RispostaNota>> risposteNote(String partitaId) async {
+    final righe = await _client
+        .from('risposte_note_video')
+        .select()
+        .eq('partita_id', partitaId);
+    return [for (final r in righe) RispostaNota.fromMap(r)];
+  }
+
+  /// Il giocatore scrive (o corregge) la sua risposta a una nota.
+  Future<void> rispondiNota({
+    required NotaVideo nota,
+    required String atletaId,
+    required String testo,
+  }) async {
+    try {
+      await _client.from('risposte_note_video').upsert({
+        'nota_id': nota.id,
+        'atleta_id': atletaId,
+        'club_id': nota.clubId,
+        'partita_id': nota.partitaId,
+        'testo': testo.trim(),
+      }, onConflict: 'nota_id,atleta_id');
+    } catch (e) {
+      if (isNetworkFailure(e)) {
+        throw Exception(
+          'Serve la rete per mandare la risposta: riprova quando torna.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  /// Crea una nota ([id] null, con [idNuova] se il commento a voce è già
+  /// caricato) o la modifica.
   Future<void> salvaNota({
     String? id,
+    String? idNuova,
+    String? audioPath,
+    double? audioSecondi,
     required VideoPartita video,
     required double secondo,
     String? eventoId,
@@ -234,7 +328,7 @@ class VideoPartiteRepository {
     required List<SegnoVideo> disegno,
   }) async {
     final nuova = id == null;
-    final idNota = id ?? _uuid.v4();
+    final idNota = id ?? idNuova ?? _uuid.v4();
     final testoPulito = testo?.trim();
     final payload = {
       'id': idNota,
@@ -248,6 +342,10 @@ class VideoPartiteRepository {
       'atleta_id': atletaId,
       'testo': testoPulito == null || testoPulito.isEmpty ? null : testoPulito,
       'disegno': [for (final s in disegno) s.toJson()],
+      'audio_path': audioPath,
+      'audio_secondi': audioSecondi == null
+          ? null
+          : double.parse(audioSecondi.toStringAsFixed(2)),
     };
     try {
       final riga = nuova

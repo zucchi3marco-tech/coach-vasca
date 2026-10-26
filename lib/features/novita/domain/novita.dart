@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'voce-sulle-clip',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Il commento a voce sulle clip',
+    testo:
+        'Nel video della partita, su una nota, «Registra il commento»: la '
+        'clip riparte e registri mentre scorre, fino a 3 minuti. Il '
+        'giocatore tocca «Ascolta il commento» e sente la tua voce con il '
+        'video; sotto la nota ti può rispondere per iscritto, e ti arriva '
+        'un avviso.',
+    importante: true,
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'schede-obiettivi',
     data: DateTime(2026, 10, 26),
     titolo: 'Le schede obiettivi',

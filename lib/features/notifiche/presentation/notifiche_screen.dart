@@ -32,6 +32,7 @@ class NotificheScreen extends ConsumerWidget {
     'scheda_obiettivi' => Icons.flag_outlined,
     'obiettivi_risposta' => Icons.flag_outlined,
     'obiettivi_ritorno' => Icons.chat_bubble_outline,
+    'nota_video_risposta' => Icons.reply,
     _ => Icons.person_add_alt_outlined,
   };
 
