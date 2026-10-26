@@ -30,6 +30,7 @@ import '../data/stagioni_repository.dart';
 import '../domain/evento_calendario.dart';
 import '../domain/stagione.dart';
 import 'calendario_stagione_view.dart';
+import '../../obiettivi/presentation/sezione_schede_obiettivi.dart';
 import 'elimina_dialogs.dart';
 import 'sezione_fasi.dart';
 import 'stagione_form_screen.dart';
@@ -354,6 +355,8 @@ class StagioneDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.s24),
           SezioneFasi(stagione: stagione),
+          const SizedBox(height: AppSpacing.s24),
+          SezioneSchedeObiettivi(stagione: stagione),
           const SizedBox(height: AppSpacing.s24),
           const TitoloSezione(
             'Calendario',

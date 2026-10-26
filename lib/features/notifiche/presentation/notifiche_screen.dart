@@ -29,6 +29,9 @@ class NotificheScreen extends ConsumerWidget {
     'video_partita' => Icons.ondemand_video_outlined,
     'segnalazione' => Icons.mark_email_unread_outlined,
     'segnalazione_risposta' => Icons.mark_email_read_outlined,
+    'scheda_obiettivi' => Icons.flag_outlined,
+    'obiettivi_risposta' => Icons.flag_outlined,
+    'obiettivi_ritorno' => Icons.chat_bubble_outline,
     _ => Icons.person_add_alt_outlined,
   };
 
@@ -38,6 +41,9 @@ class NotificheScreen extends ConsumerWidget {
     'visita_medica' => context.colori.rosso,
     'benessere' => context.dominio.evidenzaViola,
     'video_partita' => context.dominio.evidenzaAmbra,
+    'scheda_obiettivi' ||
+    'obiettivi_risposta' ||
+    'obiettivi_ritorno' => context.dominio.evidenzaViola,
     _ => context.colori.azione,
   };
 

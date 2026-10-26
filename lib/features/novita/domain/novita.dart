@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'schede-obiettivi',
+    data: DateTime(2026, 10, 26),
+    titolo: 'Le schede obiettivi',
+    testo:
+        'Nella pagina della stagione, «Schede obiettivi» → «Nuova scheda»: '
+        'scegli le domande (pronte o tue, niente sulla salute) e mandale '
+        'agli atleti. Ognuno risponde dalla sua home; tu leggi le risposte '
+        'atleta per atleta e scrivi due righe di ritorno. Arrivano gli '
+        'avvisi a te e a loro.',
+    importante: true,
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'settimana-nella-home-atleta',
     data: DateTime(2026, 10, 26),
     titolo: 'A cosa serve la settimana, nella home degli atleti',

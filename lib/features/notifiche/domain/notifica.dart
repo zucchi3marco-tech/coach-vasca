@@ -5,8 +5,11 @@
 /// `benessere` (per il coach: scheda da sentire o molto sotto il solito),
 /// `video_partita` (per l'atleta convocato: il video della partita o una
 /// nota per lui), `allenamento_modificato` (per il capo della squadra),
-/// `segnalazione` (per chi legge le segnalazioni di «Scrivimi») e
-/// `segnalazione_risposta` (per chi l'ha scritta).
+/// `segnalazione` (per chi legge le segnalazioni di «Scrivimi»),
+/// `segnalazione_risposta` (per chi l'ha scritta), `scheda_obiettivi`
+/// (per l'atleta: una scheda da compilare), `obiettivi_risposta` (per
+/// allenatori e assistenti: un atleta ha risposto) e `obiettivi_ritorno`
+/// (per l'atleta: le due righe dell'allenatore).
 class Notifica {
   const Notifica({
     required this.id,

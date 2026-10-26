@@ -24,6 +24,7 @@ import '../presenze/presentation/mie_presenze_screen.dart';
 import '../referti/application/referti_providers.dart';
 import '../statistiche/application/statistiche_providers.dart';
 import '../secco/presentation/card_secco_da_fare.dart';
+import '../obiettivi/presentation/obiettivi_atleta_screen.dart';
 import '../stagioni/presentation/stagione_atleta_screen.dart';
 import 'atleta/card_settimana.dart';
 import '../statistiche/presentation/statistiche_atleta_screen.dart';
@@ -332,6 +333,21 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ),
       ),
       VoceRiquadro(
+        soggetto: SoggettoRiquadro.andamento,
+        titolo: titolo('I miei obiettivi', 'Obiettivi'),
+        descrizione: vistaAllenatore
+            ? 'Le sue schede obiettivi e le tue due righe'
+            : 'Le schede dell\'allenatore e le sue due righe',
+        accento: dominio.evidenzaViola,
+        onTap: () => _apri(
+          context,
+          ObiettiviAtletaScreen(
+            atleta: atleta,
+            vistaAllenatore: vistaAllenatore,
+          ),
+        ),
+      ),
+      VoceRiquadro(
         soggetto: SoggettoRiquadro.stagione,
         titolo: titolo('La mia stagione', 'Stagione'),
         descrizione: 'Calendario e obiettivi della squadra',
@@ -407,6 +423,9 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                     // Le sedute a secco da registrare, serie per serie.
                     if (!vistaAllenatore)
                       blocco(CardSeccoDaFare(atleta: atleta)),
+                    // Le schede obiettivi a cui rispondere.
+                    if (!vistaAllenatore)
+                      blocco(CardSchedeObiettivi(atleta: atleta)),
                     const SizedBox(height: 12),
                     if (largo && prossimi.length == 2)
                       blocco(
