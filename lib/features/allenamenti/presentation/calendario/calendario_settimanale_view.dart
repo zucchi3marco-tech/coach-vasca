@@ -9,6 +9,8 @@ import '../../../../theme/app_typography.dart';
 import '../../../../theme/colori_app.dart';
 import '../../../../widgets/app_list_panel.dart';
 import '../../../../widgets/app_list_row.dart';
+import '../../../../widgets/riquadri.dart';
+import '../../../impegni/domain/impegno.dart';
 import '../../application/allenamenti_providers.dart';
 import '../../data/duplicazione_settimana_service.dart';
 import '../../domain/allenamento.dart';
@@ -22,8 +24,13 @@ class CalendarioSettimanaleView extends ConsumerStatefulWidget {
     required this.allenamenti,
     required this.onGiornoSelezionato,
     this.settimanaIniziale,
+    this.impegni = const [],
     super.key,
   });
+
+  /// Collegiali, riposi… già filtrati per la squadra scelta: il loro nome
+  /// accanto al giorno.
+  final List<Impegno> impegni;
 
   /// Un giorno della settimana da mostrare all'inizio (dal grafico dei
   /// volumi settimanali); null = questa settimana.
@@ -279,6 +286,18 @@ class _CalendarioSettimanaleViewState
                         ),
                       ),
                       titolo: _nomiGiorni[index],
+                      extraTitolo: switch ([
+                        for (final i in widget.impegni)
+                          if (i.contiene(data)) i.titolo,
+                      ]) {
+                        [] => null,
+                        final nomi => Flexible(
+                          child: Pastiglia(
+                            nomi.join(' · '),
+                            colore: colori.testoSecondario,
+                          ),
+                        ),
+                      },
                       sottotitolo: sessioni.isEmpty
                           ? 'Nessun allenamento'
                           : '${sessioni.map((a) => a.titoloMostrato).join(', ')} · $volumeGiorno',

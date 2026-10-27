@@ -364,6 +364,7 @@ class _Fogli {
     _refertiFoglio(),
     _gareFoglio(),
     _iscrizioniGareFoglio(),
+    _impegniFoglio(),
     _tempiGaraFoglio(),
     _personalBestFoglio(),
     _testDelPassoFoglio(),
@@ -1249,6 +1250,30 @@ class _Fogli {
             _testo(_importanza(g.importanza)),
             IntCellValue(iscritti[g.id] ?? 0),
             _testo(g.note),
+          ],
+      ],
+    );
+  }
+
+  _Foglio _impegniFoglio() {
+    final impegni = [
+      for (final i in dati.impegni)
+        if (i.elencoGiorni.any(periodo.comprende)) i,
+    ]..sort((a, b) => a.dal.compareTo(b.dal));
+    return _Foglio(
+      nome: 'Impegni',
+      contenuto: 'Collegiali, trasferte, riposi, tornei e gli altri impegni.',
+      titoli: const ['Dal', 'Al', 'Tipo', 'Nome', 'Squadra', 'Luogo', 'Note'],
+      righe: [
+        for (final i in impegni)
+          [
+            _giorno(i.dal),
+            _giorno(i.al),
+            _testo(i.tipo.etichetta),
+            _testo(i.nome),
+            _testo(_squadra(i.gruppoId, senza: _tuttoIlClub)),
+            _testo(i.luogo),
+            _testo(i.note),
           ],
       ],
     );

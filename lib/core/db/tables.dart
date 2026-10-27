@@ -546,6 +546,25 @@ class GareTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Impegni fuori calendario (proposta 18): collegiale, trasferta, riposo,
+/// torneo, altro; dal giorno al giorno. Vedi `Impegno`.
+class ImpegniTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get clubId => text()();
+
+  /// null = di tutto il club.
+  TextColumn get gruppoId => text().nullable()();
+  TextColumn get tipo => text()();
+  DateTimeColumn get dal => dateTime()();
+  DateTimeColumn get al => dateTime()();
+  TextColumn get nome => text().nullable()();
+  TextColumn get luogo => text().nullable()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class GaraIscrittiTable extends Table {
   TextColumn get id => text()();
   TextColumn get garaId => text()();

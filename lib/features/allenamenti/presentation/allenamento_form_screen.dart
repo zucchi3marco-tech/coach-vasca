@@ -12,6 +12,7 @@ import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../impegni/presentation/avviso_riposo.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
 import 'avviso_seduta_aperta.dart';
@@ -176,6 +177,11 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
                   readOnly: true,
                   onTap: _pickData,
                   suffixIcon: const Icon(Icons.calendar_today_outlined),
+                ),
+                AvvisoRiposo(
+                  clubId: widget.clubId,
+                  data: _data,
+                  gruppoId: _gruppoId,
                 ),
                 AppTextField(
                   etichetta: 'Titolo (facoltativo)',

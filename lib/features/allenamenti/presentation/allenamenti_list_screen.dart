@@ -24,6 +24,8 @@ import '../../club/application/current_club_provider.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../impegni/application/impegni_providers.dart';
+import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../ripartenze/presentation/ripartenze_screen.dart';
@@ -88,6 +90,18 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
               a.gruppoId == null,
         )
         .toList();
+
+    // Collegiali, riposi…: della squadra scelta e di tutto il club.
+    final impegni = [
+      for (final i
+          in ref.watch(impegniListProvider(widget.clubId)).value ??
+              const <Impegno>[])
+        if (visibileNelGruppo(
+          gruppoDelRecord: i.gruppoId,
+          gruppoSelezionato: widget.filtroGruppoId,
+        ))
+          i,
+    ];
 
     final oggi = soloData(DateTime.now());
     final inProgramma =
@@ -164,6 +178,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                     settimanaIniziale: _settimanaDaAprire,
                     clubId: widget.clubId,
                     allenamenti: allenamenti!,
+                    impegni: impegni,
                     onGiornoSelezionato: _apriGiorno,
                   ),
                 ],
@@ -172,6 +187,7 @@ class _AllenamentiListScreenState extends ConsumerState<AllenamentiListScreen> {
                     padding: const EdgeInsets.all(AppSpacing.s8),
                     child: CalendarioMensileView(
                       allenamenti: allenamenti!,
+                      impegni: impegni,
                       onGiornoSelezionato: _apriGiorno,
                     ),
                   ),

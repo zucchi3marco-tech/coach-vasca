@@ -33,6 +33,7 @@ import '../../atleti/domain/atleta.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
+import '../../impegni/presentation/avviso_riposo.dart';
 import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
 import '../../libreria_blocchi/presentation/libreria_blocchi_screen.dart';
 import '../application/corsie_service.dart';
@@ -700,6 +701,11 @@ class _GeneraAllenamentoFormScreenState
                   ),
                 ],
               ),
+              AvvisoRiposo(
+                clubId: widget.clubId,
+                data: _data,
+                gruppoId: ref.watch(selezioneGruppoProvider)?.gruppoId,
+              ),
               const SizedBox(height: AppSpacing.s16),
               EditorTestoAllenamento(
                 key: _editorKey,
@@ -736,6 +742,11 @@ class _GeneraAllenamentoFormScreenState
                     style: AppTypography.corpo.copyWith(
                       color: colori.testoSecondario,
                     ),
+                  ),
+                  AvvisoRiposo(
+                    clubId: widget.clubId,
+                    data: _data,
+                    gruppoId: ref.watch(selezioneGruppoProvider)?.gruppoId,
                   ),
                 ],
               ),

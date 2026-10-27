@@ -229,6 +229,19 @@ Map<String, List<Map<String, dynamic>>> _tabelle() => {
       'gruppo_id': null,
     },
   ],
+  'impegni': [
+    {
+      'id': 'impegno-1',
+      'club_id': _club,
+      'gruppo_id': null,
+      'tipo': 'collegiale',
+      'dal': '2026-12-27',
+      'al': '2026-12-29',
+      'nome': 'Collegiale a Lignano',
+      'luogo': null,
+      'note': null,
+    },
+  ],
   'gara_iscritti': [
     {
       'id': 'iscritto-1',

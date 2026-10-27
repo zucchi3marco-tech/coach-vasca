@@ -21390,6 +21390,543 @@ class SeduteSeccoAtletaTableCompanion
   }
 }
 
+class $ImpegniTableTable extends ImpegniTable
+    with TableInfo<$ImpegniTableTable, ImpegniTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImpegniTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'club_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _gruppoIdMeta = const VerificationMeta(
+    'gruppoId',
+  );
+  @override
+  late final GeneratedColumn<String> gruppoId = GeneratedColumn<String>(
+    'gruppo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dalMeta = const VerificationMeta('dal');
+  @override
+  late final GeneratedColumn<DateTime> dal = GeneratedColumn<DateTime>(
+    'dal',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _alMeta = const VerificationMeta('al');
+  @override
+  late final GeneratedColumn<DateTime> al = GeneratedColumn<DateTime>(
+    'al',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _luogoMeta = const VerificationMeta('luogo');
+  @override
+  late final GeneratedColumn<String> luogo = GeneratedColumn<String>(
+    'luogo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clubId,
+    gruppoId,
+    tipo,
+    dal,
+    al,
+    nome,
+    luogo,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'impegni_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImpegniTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('club_id')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['club_id']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('gruppo_id')) {
+      context.handle(
+        _gruppoIdMeta,
+        gruppoId.isAcceptableOrUnknown(data['gruppo_id']!, _gruppoIdMeta),
+      );
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('dal')) {
+      context.handle(
+        _dalMeta,
+        dal.isAcceptableOrUnknown(data['dal']!, _dalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dalMeta);
+    }
+    if (data.containsKey('al')) {
+      context.handle(_alMeta, al.isAcceptableOrUnknown(data['al']!, _alMeta));
+    } else if (isInserting) {
+      context.missing(_alMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    }
+    if (data.containsKey('luogo')) {
+      context.handle(
+        _luogoMeta,
+        luogo.isAcceptableOrUnknown(data['luogo']!, _luogoMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ImpegniTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImpegniTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}club_id'],
+      )!,
+      gruppoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo_id'],
+      ),
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      dal: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}dal'],
+      )!,
+      al: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}al'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      ),
+      luogo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}luogo'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $ImpegniTableTable createAlias(String alias) {
+    return $ImpegniTableTable(attachedDatabase, alias);
+  }
+}
+
+class ImpegniTableData extends DataClass
+    implements Insertable<ImpegniTableData> {
+  final String id;
+  final String clubId;
+
+  /// null = di tutto il club.
+  final String? gruppoId;
+  final String tipo;
+  final DateTime dal;
+  final DateTime al;
+  final String? nome;
+  final String? luogo;
+  final String? note;
+  const ImpegniTableData({
+    required this.id,
+    required this.clubId,
+    this.gruppoId,
+    required this.tipo,
+    required this.dal,
+    required this.al,
+    this.nome,
+    this.luogo,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['club_id'] = Variable<String>(clubId);
+    if (!nullToAbsent || gruppoId != null) {
+      map['gruppo_id'] = Variable<String>(gruppoId);
+    }
+    map['tipo'] = Variable<String>(tipo);
+    map['dal'] = Variable<DateTime>(dal);
+    map['al'] = Variable<DateTime>(al);
+    if (!nullToAbsent || nome != null) {
+      map['nome'] = Variable<String>(nome);
+    }
+    if (!nullToAbsent || luogo != null) {
+      map['luogo'] = Variable<String>(luogo);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  ImpegniTableCompanion toCompanion(bool nullToAbsent) {
+    return ImpegniTableCompanion(
+      id: Value(id),
+      clubId: Value(clubId),
+      gruppoId: gruppoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppoId),
+      tipo: Value(tipo),
+      dal: Value(dal),
+      al: Value(al),
+      nome: nome == null && nullToAbsent ? const Value.absent() : Value(nome),
+      luogo: luogo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(luogo),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory ImpegniTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImpegniTableData(
+      id: serializer.fromJson<String>(json['id']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      gruppoId: serializer.fromJson<String?>(json['gruppoId']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      dal: serializer.fromJson<DateTime>(json['dal']),
+      al: serializer.fromJson<DateTime>(json['al']),
+      nome: serializer.fromJson<String?>(json['nome']),
+      luogo: serializer.fromJson<String?>(json['luogo']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'clubId': serializer.toJson<String>(clubId),
+      'gruppoId': serializer.toJson<String?>(gruppoId),
+      'tipo': serializer.toJson<String>(tipo),
+      'dal': serializer.toJson<DateTime>(dal),
+      'al': serializer.toJson<DateTime>(al),
+      'nome': serializer.toJson<String?>(nome),
+      'luogo': serializer.toJson<String?>(luogo),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  ImpegniTableData copyWith({
+    String? id,
+    String? clubId,
+    Value<String?> gruppoId = const Value.absent(),
+    String? tipo,
+    DateTime? dal,
+    DateTime? al,
+    Value<String?> nome = const Value.absent(),
+    Value<String?> luogo = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => ImpegniTableData(
+    id: id ?? this.id,
+    clubId: clubId ?? this.clubId,
+    gruppoId: gruppoId.present ? gruppoId.value : this.gruppoId,
+    tipo: tipo ?? this.tipo,
+    dal: dal ?? this.dal,
+    al: al ?? this.al,
+    nome: nome.present ? nome.value : this.nome,
+    luogo: luogo.present ? luogo.value : this.luogo,
+    note: note.present ? note.value : this.note,
+  );
+  ImpegniTableData copyWithCompanion(ImpegniTableCompanion data) {
+    return ImpegniTableData(
+      id: data.id.present ? data.id.value : this.id,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      gruppoId: data.gruppoId.present ? data.gruppoId.value : this.gruppoId,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      dal: data.dal.present ? data.dal.value : this.dal,
+      al: data.al.present ? data.al.value : this.al,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      luogo: data.luogo.present ? data.luogo.value : this.luogo,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImpegniTableData(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
+          ..write('tipo: $tipo, ')
+          ..write('dal: $dal, ')
+          ..write('al: $al, ')
+          ..write('nome: $nome, ')
+          ..write('luogo: $luogo, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, clubId, gruppoId, tipo, dal, al, nome, luogo, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImpegniTableData &&
+          other.id == this.id &&
+          other.clubId == this.clubId &&
+          other.gruppoId == this.gruppoId &&
+          other.tipo == this.tipo &&
+          other.dal == this.dal &&
+          other.al == this.al &&
+          other.nome == this.nome &&
+          other.luogo == this.luogo &&
+          other.note == this.note);
+}
+
+class ImpegniTableCompanion extends UpdateCompanion<ImpegniTableData> {
+  final Value<String> id;
+  final Value<String> clubId;
+  final Value<String?> gruppoId;
+  final Value<String> tipo;
+  final Value<DateTime> dal;
+  final Value<DateTime> al;
+  final Value<String?> nome;
+  final Value<String?> luogo;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const ImpegniTableCompanion({
+    this.id = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.gruppoId = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.dal = const Value.absent(),
+    this.al = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.luogo = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImpegniTableCompanion.insert({
+    required String id,
+    required String clubId,
+    this.gruppoId = const Value.absent(),
+    required String tipo,
+    required DateTime dal,
+    required DateTime al,
+    this.nome = const Value.absent(),
+    this.luogo = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       clubId = Value(clubId),
+       tipo = Value(tipo),
+       dal = Value(dal),
+       al = Value(al);
+  static Insertable<ImpegniTableData> custom({
+    Expression<String>? id,
+    Expression<String>? clubId,
+    Expression<String>? gruppoId,
+    Expression<String>? tipo,
+    Expression<DateTime>? dal,
+    Expression<DateTime>? al,
+    Expression<String>? nome,
+    Expression<String>? luogo,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clubId != null) 'club_id': clubId,
+      if (gruppoId != null) 'gruppo_id': gruppoId,
+      if (tipo != null) 'tipo': tipo,
+      if (dal != null) 'dal': dal,
+      if (al != null) 'al': al,
+      if (nome != null) 'nome': nome,
+      if (luogo != null) 'luogo': luogo,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImpegniTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? clubId,
+    Value<String?>? gruppoId,
+    Value<String>? tipo,
+    Value<DateTime>? dal,
+    Value<DateTime>? al,
+    Value<String?>? nome,
+    Value<String?>? luogo,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return ImpegniTableCompanion(
+      id: id ?? this.id,
+      clubId: clubId ?? this.clubId,
+      gruppoId: gruppoId ?? this.gruppoId,
+      tipo: tipo ?? this.tipo,
+      dal: dal ?? this.dal,
+      al: al ?? this.al,
+      nome: nome ?? this.nome,
+      luogo: luogo ?? this.luogo,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (clubId.present) {
+      map['club_id'] = Variable<String>(clubId.value);
+    }
+    if (gruppoId.present) {
+      map['gruppo_id'] = Variable<String>(gruppoId.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (dal.present) {
+      map['dal'] = Variable<DateTime>(dal.value);
+    }
+    if (al.present) {
+      map['al'] = Variable<DateTime>(al.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (luogo.present) {
+      map['luogo'] = Variable<String>(luogo.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImpegniTableCompanion(')
+          ..write('id: $id, ')
+          ..write('clubId: $clubId, ')
+          ..write('gruppoId: $gruppoId, ')
+          ..write('tipo: $tipo, ')
+          ..write('dal: $dal, ')
+          ..write('al: $al, ')
+          ..write('nome: $nome, ')
+          ..write('luogo: $luogo, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -21446,6 +21983,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SerieSeccoFatteTableTable(this);
   late final $SeduteSeccoAtletaTableTable seduteSeccoAtletaTable =
       $SeduteSeccoAtletaTableTable(this);
+  late final $ImpegniTableTable impegniTable = $ImpegniTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -21483,6 +22021,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     programmiSeccoTable,
     serieSeccoFatteTable,
     seduteSeccoAtletaTable,
+    impegniTable,
   ];
 }
 
@@ -32356,6 +32895,291 @@ typedef $$SeduteSeccoAtletaTableTableProcessedTableManager =
       SeduteSeccoAtletaTableData,
       PrefetchHooks Function()
     >;
+typedef $$ImpegniTableTableCreateCompanionBuilder =
+    ImpegniTableCompanion Function({
+      required String id,
+      required String clubId,
+      Value<String?> gruppoId,
+      required String tipo,
+      required DateTime dal,
+      required DateTime al,
+      Value<String?> nome,
+      Value<String?> luogo,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$ImpegniTableTableUpdateCompanionBuilder =
+    ImpegniTableCompanion Function({
+      Value<String> id,
+      Value<String> clubId,
+      Value<String?> gruppoId,
+      Value<String> tipo,
+      Value<DateTime> dal,
+      Value<DateTime> al,
+      Value<String?> nome,
+      Value<String?> luogo,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$ImpegniTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ImpegniTableTable> {
+  $$ImpegniTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dal => $composableBuilder(
+    column: $table.dal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get al => $composableBuilder(
+    column: $table.al,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get luogo => $composableBuilder(
+    column: $table.luogo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ImpegniTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImpegniTableTable> {
+  $$ImpegniTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gruppoId => $composableBuilder(
+    column: $table.gruppoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dal => $composableBuilder(
+    column: $table.dal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get al => $composableBuilder(
+    column: $table.al,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get luogo => $composableBuilder(
+    column: $table.luogo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ImpegniTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImpegniTableTable> {
+  $$ImpegniTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppoId =>
+      $composableBuilder(column: $table.gruppoId, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dal =>
+      $composableBuilder(column: $table.dal, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get al =>
+      $composableBuilder(column: $table.al, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get luogo =>
+      $composableBuilder(column: $table.luogo, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$ImpegniTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ImpegniTableTable,
+          ImpegniTableData,
+          $$ImpegniTableTableFilterComposer,
+          $$ImpegniTableTableOrderingComposer,
+          $$ImpegniTableTableAnnotationComposer,
+          $$ImpegniTableTableCreateCompanionBuilder,
+          $$ImpegniTableTableUpdateCompanionBuilder,
+          (
+            ImpegniTableData,
+            BaseReferences<_$AppDatabase, $ImpegniTableTable, ImpegniTableData>,
+          ),
+          ImpegniTableData,
+          PrefetchHooks Function()
+        > {
+  $$ImpegniTableTableTableManager(_$AppDatabase db, $ImpegniTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImpegniTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImpegniTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImpegniTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<String?> gruppoId = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<DateTime> dal = const Value.absent(),
+                Value<DateTime> al = const Value.absent(),
+                Value<String?> nome = const Value.absent(),
+                Value<String?> luogo = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImpegniTableCompanion(
+                id: id,
+                clubId: clubId,
+                gruppoId: gruppoId,
+                tipo: tipo,
+                dal: dal,
+                al: al,
+                nome: nome,
+                luogo: luogo,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String clubId,
+                Value<String?> gruppoId = const Value.absent(),
+                required String tipo,
+                required DateTime dal,
+                required DateTime al,
+                Value<String?> nome = const Value.absent(),
+                Value<String?> luogo = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImpegniTableCompanion.insert(
+                id: id,
+                clubId: clubId,
+                gruppoId: gruppoId,
+                tipo: tipo,
+                dal: dal,
+                al: al,
+                nome: nome,
+                luogo: luogo,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ImpegniTableTable, ImpegniTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ImpegniTableTable,
+                    ImpegniTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ImpegniTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ImpegniTableTable,
+      ImpegniTableData,
+      $$ImpegniTableTableFilterComposer,
+      $$ImpegniTableTableOrderingComposer,
+      $$ImpegniTableTableAnnotationComposer,
+      $$ImpegniTableTableCreateCompanionBuilder,
+      $$ImpegniTableTableUpdateCompanionBuilder,
+      (
+        ImpegniTableData,
+        BaseReferences<_$AppDatabase, $ImpegniTableTable, ImpegniTableData>,
+      ),
+      ImpegniTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32436,4 +33260,6 @@ class $AppDatabaseManager {
         _db,
         _db.seduteSeccoAtletaTable,
       );
+  $$ImpegniTableTableTableManager get impegniTable =>
+      $$ImpegniTableTableTableManager(_db, _db.impegniTable);
 }

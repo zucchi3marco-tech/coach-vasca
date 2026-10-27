@@ -107,8 +107,13 @@ class _CalendarioStagioneViewState extends State<CalendarioStagioneView> {
               giorno: giorno,
               oggi: data == oggi,
               attivo: dentro,
-              eventiGruppo: eventiDelGiorno.where((e) => !e.diClub).length,
-              eventiClub: eventiDelGiorno.where((e) => e.diClub).length,
+              eventiGruppo: eventiDelGiorno
+                  .where((e) => !e.impegno && !e.diClub)
+                  .length,
+              eventiClub: eventiDelGiorno
+                  .where((e) => !e.impegno && e.diClub)
+                  .length,
+              impegni: eventiDelGiorno.where((e) => e.impegno).length,
               onTap: () => widget.onGiornoSelezionato(data, eventiDelGiorno),
             );
           },
@@ -186,6 +191,7 @@ class _CellaGiorno extends StatelessWidget {
     required this.eventiGruppo,
     required this.eventiClub,
     required this.onTap,
+    this.impegni = 0,
   });
 
   final int giorno;
@@ -193,6 +199,10 @@ class _CellaGiorno extends StatelessWidget {
   final bool attivo;
   final int eventiGruppo;
   final int eventiClub;
+
+  /// Collegiali, riposi e gli altri impegni del giorno: una lineetta in
+  /// basso, perché spesso durano più giorni.
+  final int impegni;
   final VoidCallback onTap;
 
   @override
@@ -213,7 +223,7 @@ class _CellaGiorno extends StatelessWidget {
         : sfondo != null
         ? colori.azioneInk
         : colori.testo;
-    final totale = eventiGruppo + eventiClub;
+    final totale = eventiGruppo + eventiClub + impegni;
 
     return Semantics(
       button: attivo,
@@ -240,6 +250,21 @@ class _CellaGiorno extends StatelessWidget {
                   fontWeight: sfondo != null ? FontWeight.w700 : null,
                 ),
               ),
+              if (attivo && impegni > 0)
+                Positioned(
+                  left: 6,
+                  right: 6,
+                  bottom: 4,
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: sfondo != null
+                          ? colori.azioneInk
+                          : colori.testoSecondario,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
               if (attivo && haGruppo && haClub)
                 Positioned(
                   top: 4,
@@ -293,6 +318,26 @@ class _Legenda extends StatelessWidget {
       children: [
         voce(colori.azione, 'Evento del gruppo'),
         voce(context.dominio.evidenzaAmbra, 'Evento di tutto il club'),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 14,
+              height: 3,
+              decoration: BoxDecoration(
+                color: colori.testoSecondario,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s8),
+            Text(
+              'Collegiale, trasferta, riposo…',
+              style: AppTypography.piccolo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -14,6 +14,9 @@ import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/section_header.dart';
 import '../../ai_genera/presentation/genera_allenamento_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
+import '../../impegni/application/impegni_providers.dart';
+import '../../impegni/domain/impegno.dart';
+import '../../impegni/presentation/impegno_screen.dart';
 import '../application/allenamenti_providers.dart';
 import '../../secco/presentation/secco_widgets.dart';
 import 'allenamento_detail_screen.dart';
@@ -57,6 +60,60 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
           final delGiorno = tutti
               .where((a) => isStessoGiorno(a.data, data))
               .toList();
+          // Collegiali, riposi… di quel giorno, per aprirli da qui.
+          final impegni = [
+            for (final i
+                in ref.watch(impegniListProvider(clubId)).value ??
+                    const <Impegno>[])
+              if (i.contiene(data)) i,
+          ];
+          final sezioneImpegni = [
+            if (impegni.isNotEmpty) ...[
+              TitoloSezione('Impegni', conteggio: impegni.length),
+              GrigliaSchede(
+                colonneMassime: 1,
+                figli: [
+                  for (final i in impegni)
+                    SchedaElenco(
+                      leading: const IconaRiquadro(
+                        Icons.event_note_outlined,
+                        dimensione: 48,
+                      ),
+                      titolo: i.titolo,
+                      sottotitolo: [
+                        if (i.titolo != i.tipo.etichetta) i.tipo.etichetta,
+                        i.gruppoId == null
+                            ? 'Tutto il club'
+                            : nomiGruppi[i.gruppoId] ?? 'Una squadra',
+                        if (i.giorni > 1) periodoImpegno(i, dataCompatta),
+                      ].join(' · '),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => ImpegnoScreen(impegno: i),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ];
+          if (delGiorno.isEmpty && impegni.isNotEmpty) {
+            return ListView(
+              children: [
+                ...sezioneImpegni,
+                const SizedBox(height: AppSpacing.s24),
+                EmptyState(
+                  icona: Icons.calendar_month_outlined,
+                  titolo: 'Nessun allenamento in questo giorno',
+                  descrizione:
+                      'Scrivi, detta o genera il primo allenamento di questa '
+                      'data: verrà salvato in questo giorno.',
+                  azionePrincipale: 'Nuovo allenamento',
+                  onAzionePrincipale: apriNuovo,
+                ),
+              ],
+            );
+          }
           if (delGiorno.isEmpty) {
             return EmptyState(
               icona: Icons.calendar_month_outlined,
@@ -72,6 +129,7 @@ class GiornoAllenamentiScreen extends ConsumerWidget {
               ref.watch(volumiAllenamentiProvider(clubId)).value ?? const {};
           return ListView(
             children: [
+              ...sezioneImpegni,
               TitoloSezione(traQuanto(data), conteggio: delGiorno.length),
               GrigliaSchede(
                 colonneMassime: 1,

@@ -39,6 +39,7 @@ part 'app_database.g.dart';
     ProgrammiSeccoTable,
     SerieSeccoFatteTable,
     SeduteSeccoAtletaTable,
+    ImpegniTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -48,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.perTest(super.e);
 
   @override
-  int get schemaVersion => 51;
+  int get schemaVersion => 52;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -637,6 +638,10 @@ class AppDatabase extends _$AppDatabase {
         if (!await _hasColumn(m, 'note_video_table', 'audio_secondi')) {
           await m.addColumn(noteVideoTable, noteVideoTable.audioSecondi);
         }
+      }
+      // v51 -> v52: gli impegni fuori calendario (collegiale, riposo…).
+      if (from < 52) {
+        await m.createTable(impegniTable);
       }
     },
   );

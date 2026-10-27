@@ -37,7 +37,7 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 19;
+const _versioneDati = 20;
 
 /// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
 /// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
@@ -270,6 +270,29 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                           '"tessera":""}}'
                     : null,
               ),
+            ),
+          );
+    }
+
+    // Impegni: un collegiale della prima squadra fra due settimane e le
+    // vacanze di tutto il club.
+    for (final (tipo, nome, dal, giorni, gruppo, luogo) in [
+      ('collegiale', 'Collegiale a Lignano', 14, 3, gruppi[0], 'Lignano'),
+      ('riposo', 'Vacanze', 30, 5, null, null),
+    ]) {
+      final inizio = giorno.add(Duration(days: dal));
+      await db
+          .into(db.impegniTable)
+          .insert(
+            ImpegniTableCompanion.insert(
+              id: uuid.v4(),
+              clubId: clubId,
+              gruppoId: Value(gruppo),
+              tipo: tipo,
+              dal: inizio,
+              al: inizio.add(Duration(days: giorni - 1)),
+              nome: Value(nome),
+              luogo: Value(luogo),
             ),
           );
     }

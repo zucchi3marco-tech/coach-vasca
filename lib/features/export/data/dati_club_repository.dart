@@ -15,6 +15,7 @@ import '../../carico/domain/rpe_seduta.dart';
 import '../../club/data/membri_club_repository.dart';
 import '../../gare/domain/gara.dart';
 import '../../gare/domain/gara_iscritto.dart';
+import '../../impegni/domain/impegno.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
@@ -135,6 +136,10 @@ class DatiClubRepository {
     final gare = [
       for (final r in await tabella('gare', 'Leggo le gare')) Gara.fromMap(r),
     ];
+    final impegni = [
+      for (final r in await tabella('impegni', 'Leggo gli impegni'))
+        Impegno.fromMap(r),
+    ];
     final iscrittiGare = [
       for (final r in await tabella(
         'gara_iscritti',
@@ -201,6 +206,7 @@ class DatiClubRepository {
       eventiPartita: eventiPartita,
       referti: referti,
       gare: gare,
+      impegni: impegni,
       iscrittiGare: iscrittiGare,
       tempiGara: tempiGara,
       personalBest: personalBest,

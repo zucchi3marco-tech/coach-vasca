@@ -19,6 +19,9 @@ import '../../../widgets/testata_pagina.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
+import '../../impegni/application/impegni_providers.dart';
+import '../../impegni/domain/impegno.dart';
+import '../../impegni/presentation/impegno_screen.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../application/stagioni_providers.dart';
@@ -74,7 +77,26 @@ class StagioneAtletaScreen extends ConsumerWidget {
               AppListPanel(
                 righe: [
                   for (final e in eventi)
-                    AppListRow(titolo: e.titolo, sottotitolo: e.sottotitolo),
+                    if (e.origine case final Impegno impegno)
+                      // Un impegno si apre: luogo e note per l'atleta.
+                      AppListRow(
+                        titolo: e.titolo,
+                        sottotitolo: e.sottotitolo ?? impegno.tipo.etichetta,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => ImpegnoScreen(
+                                impegno: impegno,
+                                modificabile: vistaAllenatore,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    else
+                      AppListRow(titolo: e.titolo, sottotitolo: e.sottotitolo),
                 ],
               ),
             ],
@@ -95,6 +117,9 @@ class StagioneAtletaScreen extends ConsumerWidget {
     final gare = pallanuoto
         ? const <Gara>[]
         : ref.watch(gareListProvider(atleta.clubId)).value ?? const <Gara>[];
+    final impegni =
+        ref.watch(impegniListProvider(atleta.clubId)).value ??
+        const <Impegno>[];
 
     String periodo(DateTime d) =>
         '${d.day} ${mesiBrevi[d.month - 1]} ${d.year}';
@@ -161,8 +186,9 @@ class StagioneAtletaScreen extends ConsumerWidget {
               const TitoloSezione(
                 'Calendario',
                 spiegazione:
-                    'I giorni colorati hanno una partita o una gara: '
-                    'toccali per vedere cosa c\'è in programma.',
+                    'I giorni colorati hanno una partita o una gara, quelli '
+                    'con la lineetta un collegiale, una trasferta, un riposo '
+                    'o un torneo: toccali per vedere cosa c\'è in programma.',
               ),
               PoolCard(
                 padding: const EdgeInsets.all(AppSpacing.s8),
@@ -172,7 +198,13 @@ class StagioneAtletaScreen extends ConsumerWidget {
                     child: CalendarioStagioneView(
                       primoGiorno: corrente.dataInizio,
                       ultimoGiorno: corrente.dataFine,
-                      eventi: eventi,
+                      eventi: [
+                        ...eventi,
+                        ...eventiVisibiliInStagione(
+                          corrente,
+                          eventiDaImpegni(impegni),
+                        ),
+                      ],
                       onGiornoSelezionato: (giorno, eventiDelGiorno) =>
                           _mostraGiorno(context, giorno, eventiDelGiorno),
                     ),

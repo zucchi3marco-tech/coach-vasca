@@ -17,6 +17,10 @@ import '../../../widgets/testata_pagina.dart';
 import '../../atleti/domain/categoria_fin.dart';
 import '../../atleti/presentation/record_club_screen.dart';
 import '../../gruppi/presentation/cambio_categoria_screen.dart';
+import '../../impegni/application/impegni_providers.dart';
+import '../../impegni/domain/impegno.dart';
+import '../../impegni/presentation/impegno_form_screen.dart';
+import '../../impegni/presentation/impegno_screen.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
@@ -97,19 +101,33 @@ class StagioneDetailScreen extends ConsumerWidget {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => GaraDetailScreen(gara: origine)),
       );
+    } else if (origine is Impegno) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ImpegnoScreen(impegno: origine)),
+      );
     }
   }
 
+  void _creaImpegno(BuildContext context, DateTime giorno) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ImpegnoFormScreen(
+          clubId: stagione.clubId,
+          giornoIniziale: giorno,
+          gruppoIniziale: stagione.gruppoId,
+        ),
+      ),
+    );
+  }
+
+  /// Un tocco su un giorno: quello che c'è (se c'è) e i due pulsanti per
+  /// aggiungere una partita (o una gara) o un impegno.
   void _giornoSelezionato(
     BuildContext context,
     WidgetRef ref,
     DateTime giorno,
     List<EventoCalendario> eventi,
   ) {
-    if (eventi.isEmpty) {
-      _creaEvento(context, ref, giorno);
-      return;
-    }
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -132,24 +150,29 @@ class StagioneDetailScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s12),
-              AppListPanel(
-                righe: [
-                  for (final e in eventi)
-                    AppListRow(
-                      titolo: e.titolo,
-                      sottotitolo: [
-                        if (e.diClub) 'Evento di tutto il club',
-                        ?e.sottotitolo,
-                      ].join(' · '),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _apriEvento(context, e);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.s12),
+              if (eventi.isNotEmpty) ...[
+                AppListPanel(
+                  righe: [
+                    for (final e in eventi)
+                      AppListRow(
+                        titolo: e.titolo,
+                        sottotitolo: [
+                          if (e.diClub)
+                            e.impegno
+                                ? 'Tutto il club'
+                                : 'Evento di tutto il club',
+                          ?e.sottotitolo,
+                        ].join(' · '),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          _apriEvento(context, e);
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s12),
+              ],
               SecondaryButton(
                 label: ref.read(currentClubProvider).value?.sport == 'nuoto'
                     ? 'Aggiungi gara'
@@ -158,6 +181,15 @@ class StagioneDetailScreen extends ConsumerWidget {
                 onPressed: () {
                   Navigator.of(sheetContext).pop();
                   _creaEvento(context, ref, giorno);
+                },
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              SecondaryButton(
+                label: 'Aggiungi impegno',
+                icon: Icons.event_note_outlined,
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  _creaImpegno(context, giorno);
                 },
               ),
             ],
@@ -259,6 +291,16 @@ class StagioneDetailScreen extends ConsumerWidget {
           (min, d) => min == null || d.isBefore(min) ? d : min,
         );
     final nomeEventi = sport == 'nuoto' ? 'Gare' : 'Partite';
+    // Nel calendario anche i giorni degli impegni (non nei numeri in alto).
+    final conImpegni = [
+      ...eventi,
+      ...eventiVisibiliInStagione(
+        stagione,
+        eventiDaImpegni(
+          ref.watch(impegniListProvider(stagione.clubId)).value ?? const [],
+        ),
+      ),
+    ];
 
     String periodo(DateTime d) =>
         '${d.day} ${mesiBrevi[d.month - 1]} ${d.year}';
@@ -356,6 +398,11 @@ class StagioneDetailScreen extends ConsumerWidget {
                 principale: true,
                 onTap: () => _creaEvento(context, ref, DateTime.now()),
               ),
+              AzioneTestata(
+                icona: Icons.event_note_outlined,
+                etichetta: 'Nuovo impegno',
+                onTap: () => _creaImpegno(context, DateTime.now()),
+              ),
               if (mostraPallanuoto)
                 AzioneTestata(
                   icona: Icons.query_stats,
@@ -389,9 +436,9 @@ class StagioneDetailScreen extends ConsumerWidget {
           const TitoloSezione(
             'Calendario',
             spiegazione:
-                'Tocca un giorno vuoto per aggiungere una partita o una '
-                'gara in quella data; tocca un giorno colorato per aprire '
-                'quello che c\'è in programma.',
+                'Tocca un giorno per aggiungere una partita, una gara o un '
+                'impegno (collegiale, trasferta, riposo, torneo) in quella '
+                'data, o per aprire quello che c\'è in programma.',
           ),
           PoolCard(
             padding: const EdgeInsets.all(AppSpacing.s8),
@@ -403,7 +450,7 @@ class StagioneDetailScreen extends ConsumerWidget {
                 child: CalendarioStagioneView(
                   primoGiorno: stagione.dataInizio,
                   ultimoGiorno: stagione.dataFine,
-                  eventi: eventi,
+                  eventi: conImpegni,
                   onGiornoSelezionato: (giorno, eventiDelGiorno) =>
                       _giornoSelezionato(context, ref, giorno, eventiDelGiorno),
                 ),

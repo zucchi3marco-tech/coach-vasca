@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'impegni-nel-calendario',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Collegiali, trasferte, riposi e tornei nel calendario',
+    testo:
+        'Nella stagione, tocca un giorno e «Aggiungi impegno» (o «Nuovo '
+        'impegno» in alto): collegiale, trasferta, riposo, torneo o altro, '
+        'dal giorno al giorno, per una squadra o per tutto il club, con luogo '
+        'e note. Li vedi nel calendario della stagione e in quello degli '
+        'allenamenti; li vedono anche gli atleti. Su un giorno di riposo, '
+        'creando un allenamento, l\'app te lo ricorda.',
+    importante: true,
+  ),
+  Novita(
     id: 'chi-cambia-categoria',
     data: DateTime(2026, 10, 27),
     titolo: 'Chi cambia categoria a inizio stagione',

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_typography.dart';
 import '../../../../theme/colori_app.dart';
+import '../../../impegni/domain/impegno.dart';
 import '../../domain/allenamento.dart';
 import 'allenamenti_per_giorno.dart';
 
@@ -10,10 +11,15 @@ class CalendarioMensileView extends StatefulWidget {
   const CalendarioMensileView({
     required this.allenamenti,
     required this.onGiornoSelezionato,
+    this.impegni = const [],
     super.key,
   });
 
   final List<Allenamento> allenamenti;
+
+  /// Collegiali, riposi… già filtrati per la squadra: una lineetta sotto
+  /// il giorno.
+  final List<Impegno> impegni;
   final ValueChanged<DateTime> onGiornoSelezionato;
 
   @override
@@ -65,6 +71,9 @@ class _CalendarioMensileViewState extends State<CalendarioMensileView> {
           ),
           haAllenamenti: perGiorno.containsKey(
             DateTime(_mese.year, _mese.month, giorno),
+          ),
+          impegno: widget.impegni.any(
+            (i) => i.contiene(DateTime(_mese.year, _mese.month, giorno)),
           ),
           onTap: () => widget.onGiornoSelezionato(
             DateTime(_mese.year, _mese.month, giorno),
@@ -148,11 +157,13 @@ class _CellaGiorno extends StatelessWidget {
     required this.evidenziato,
     required this.haAllenamenti,
     required this.onTap,
+    this.impegno = false,
   });
 
   final int giorno;
   final bool evidenziato;
   final bool haAllenamenti;
+  final bool impegno;
   final VoidCallback onTap;
 
   @override
@@ -186,6 +197,15 @@ class _CellaGiorno extends StatelessWidget {
                       ),
                     )
                   : null,
+            ),
+            const SizedBox(height: 2),
+            Container(
+              height: 3,
+              width: 18,
+              decoration: BoxDecoration(
+                color: impegno ? colori.testoSecondario : null,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ],
         ),

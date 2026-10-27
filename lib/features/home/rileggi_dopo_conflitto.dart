@@ -11,6 +11,7 @@ import '../carico/application/carico_providers.dart';
 import '../gare/application/gara_iscritti_providers.dart';
 import '../gare/application/gare_providers.dart';
 import '../gruppi/application/gruppi_providers.dart';
+import '../impegni/application/impegni_providers.dart';
 import '../libreria_blocchi/application/libreria_blocchi_providers.dart';
 import '../pallanuoto/application/pallanuoto_providers.dart';
 import '../pallanuoto/application/schemi_tattici_providers.dart';
@@ -39,6 +40,7 @@ final Map<String, List<ProviderOrFamily>> _paginePerTabella = {
   'rpe_sedute': [rpeAtletaProvider, rpeClubProvider],
   'gara_iscritti': [garaIscrittiProvider],
   'gare': [gareListProvider],
+  'impegni': [impegniListProvider],
   'gruppi': [gruppiListProvider],
   'training_blocks': [trainingBlocksListProvider],
   'training_block_parti': [trainingBlocksListProvider],

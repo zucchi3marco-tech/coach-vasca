@@ -133,6 +133,7 @@ const _nomiTabelle = {
   'gare': 'Gara',
   'generazioni_ai': 'Allenamento generato',
   'gruppi': 'Squadra',
+  'impegni': 'Impegno',
   'note_video': 'Nota sul video',
   'partite': 'Partita',
   'personal_best': 'Tempo migliore',

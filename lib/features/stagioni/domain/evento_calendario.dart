@@ -1,9 +1,11 @@
 import '../../../core/utils/gruppo_visibilita.dart';
+import '../../../core/utils/date_italiane.dart';
 import '../../gare/domain/gara.dart';
+import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/domain/partita.dart';
 import 'stagione.dart';
 
-enum TipoEventoCalendario { partita, gara }
+enum TipoEventoCalendario { partita, gara, impegno }
 
 /// Un evento da mostrare nel calendario di una stagione: una partita
 /// (pallanuoto) o una gara (nuoto). [gruppoId] nullo = evento di club,
@@ -52,6 +54,25 @@ class EventoCalendario {
     );
   }
 
+  /// Un giorno di un impegno (collegiale, riposo…): ogni giorno ha il suo
+  /// evento, perché il calendario segna i giorni. [origine] è l'`Impegno`.
+  factory EventoCalendario.daImpegno(Impegno i, DateTime giorno) {
+    final dettagli = [
+      if (i.nome?.trim().isNotEmpty ?? false) i.tipo.etichetta,
+      if (i.giorni > 1) periodoImpegno(i, dataCompatta),
+      if (i.luogo != null && i.luogo!.isNotEmpty) i.luogo!,
+    ];
+    return EventoCalendario(
+      id: '${i.id}@${soloGiorno(giorno).toIso8601String()}',
+      tipo: TipoEventoCalendario.impegno,
+      data: soloGiorno(giorno),
+      gruppoId: i.gruppoId,
+      titolo: i.titolo,
+      sottotitolo: dettagli.isEmpty ? null : dettagli.join(' · '),
+      origine: i,
+    );
+  }
+
   final String id;
   final TipoEventoCalendario tipo;
   final DateTime data;
@@ -61,7 +82,15 @@ class EventoCalendario {
   final Object origine;
 
   bool get diClub => gruppoId == null;
+
+  bool get impegno => tipo == TipoEventoCalendario.impegno;
 }
+
+/// Un evento per ogni giorno di ogni impegno.
+List<EventoCalendario> eventiDaImpegni(Iterable<Impegno> impegni) => [
+  for (final i in impegni)
+    for (final giorno in i.elencoGiorni) EventoCalendario.daImpegno(i, giorno),
+];
 
 /// La data senza ora: chiave per raggruppare gli eventi per giorno.
 DateTime soloGiorno(DateTime d) => DateTime(d.year, d.month, d.day);
