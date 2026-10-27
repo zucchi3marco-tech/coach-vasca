@@ -11,6 +11,7 @@ import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../allenamenti/presentation/scheda_bordo_vasca_screen.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/categoria_fin.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
@@ -164,7 +165,12 @@ class TestataAtleta extends ConsumerWidget {
           )
         : null;
     final saluto = Text(
-      vistaAllenatore ? 'Classe ${atleta.dataNascita.year}' : _saluto(),
+      vistaAllenatore
+          ? [
+              'Classe ${atleta.dataNascita.year}',
+              ?categoriaAtleta(atleta, DateTime.now()),
+            ].join(' · ')
+          : _saluto(),
       style: AppTypography.piccolo.copyWith(
         color: AcquaPalette.schiuma.withValues(alpha: 0.75),
       ),

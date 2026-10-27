@@ -21,6 +21,7 @@ import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
+import '../domain/categoria_fin.dart';
 import '../domain/squadre_atleta.dart';
 
 class AtletaFormScreen extends ConsumerStatefulWidget {
@@ -128,6 +129,16 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   /// Anno di nascita "tipico" da cui far partire il calendario: se il
   /// gruppo già scelto si chiama "U14"/"U16"/ecc. (convenzione pallanuoto),
   /// lo deduce da lì; altrimenti un default generico (dodici anni fa).
+  /// «Categoria 2026-27: U16» sotto la data di nascita, nella pallanuoto.
+  String? _aiutoCategoria() {
+    final nascita = _dataNascita;
+    if (_sport != 'pallanuoto' || nascita == null) return null;
+    final anno = annoStagioneSportiva(DateTime.now());
+    final categoria = categoriaPallanuoto(nascita.year, anno);
+    if (categoria == null) return null;
+    return 'Categoria ${etichettaStagioneSportiva(anno)}: $categoria';
+  }
+
   int _annoNascitaSuggerito() {
     final now = DateTime.now();
     if (_gruppoId != null) {
@@ -139,7 +150,8 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           caseSensitive: false,
         ).firstMatch(g.nome.trim());
         final eta = match != null ? int.tryParse(match.group(1)!) : null;
-        if (eta != null) return now.year - eta;
+        // Il primo anno della categoria (U16 nel 2026-27: 2011).
+        if (eta != null) return annoStagioneSportiva(now) - eta;
         break;
       }
     }
@@ -408,6 +420,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
                 AppTextField(
                   etichetta: 'Data di nascita',
                   controller: _dataNascitaController,
+                  aiuto: _aiutoCategoria(),
                   readOnly: true,
                   onTap: _pickDataNascita,
                   suffixIcon: const Icon(Icons.calendar_today_outlined),

@@ -30,6 +30,7 @@ import '../../presenze/domain/presenza.dart';
 import '../application/atleti_providers.dart';
 import '../data/atleti_repository.dart';
 import '../domain/atleta.dart';
+import '../domain/categoria_fin.dart';
 import '../domain/squadre_atleta.dart';
 import 'atleta_form_screen.dart';
 import 'atleti_da_excel_screen.dart';
@@ -464,97 +465,135 @@ class _AtletiList extends StatelessWidget {
       );
     }
 
+    final oggi = DateTime.now();
     return GrigliaSchede(
       figli: [
         for (final atleta in filtrati)
-          SchedaElenco(
-            leading: _AvatarAtleta(atleta: atleta),
-            titolo: atleta.nomeCompleto,
-            // Sport e squadra non si ripetono su ogni scheda: lo sport e'
-            // quello del club e la squadra e' gia' scelta in alto. La
-            // squadra compare solo guardando "Tutti gli atleti".
-            sottotitolo: [
-              _etichettaPresenze(_percentuale(atleta)),
-              if (filtroGruppoId == null) ?nomeGruppo[atleta.gruppoId],
-            ].join(' · '),
-            attenuata: !atleta.attivo,
-            sotto:
-                !atleta.attivo ||
-                    _ruoloInPastiglia(atleta) != null ||
-                    atleta.conAltraSquadra ||
-                    atleta.visitaMedicaScaduta ||
-                    atleta.visitaMedicaInScadenza
-                ? Wrap(
-                    spacing: AppSpacing.s4,
-                    runSpacing: AppSpacing.s4,
-                    children: [
-                      if (!atleta.attivo)
-                        Pastiglia('Inattivo', colore: colori.testoSecondario),
-                      if (_altraSquadra(atleta, nomeGruppo) case final altra?)
-                        Pastiglia(altra, colore: colori.testoSecondario),
-                      // Le serie "Portieri", "Centroboa"... sono per loro:
-                      // si vede chi è.
-                      if (_ruoloInPastiglia(atleta) case final ruolo?)
-                        Pastiglia(ruolo, colore: colori.testoSecondario),
-                      if (atleta.visitaMedicaScaduta)
-                        Pastiglia('Visita scaduta', colore: colori.rosso)
-                      else if (atleta.visitaMedicaInScadenza)
-                        Pastiglia(
-                          'Visita in scadenza',
-                          colore: colori.attenzione,
-                        ),
-                    ],
-                  )
-                : null,
-            mostraFreccia: false,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IndicatoreBenessere(clubId: atleta.clubId, atletaId: atleta.id),
-                PopupMenuButton<VoidCallback>(
-                  icon: Icon(Icons.more_vert, color: colori.testoSecondario),
-                  tooltip: 'Altre azioni',
-                  onSelected: (azione) => azione(),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: () => onTapModifica(atleta),
-                      child: const _VoceMenu(
-                        icona: Icons.edit_outlined,
-                        etichetta: 'Modifica anagrafica',
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: () => showDialog<void>(
-                        context: context,
-                        builder: (_) =>
-                            GestisciAccountAtletaDialog(atleta: atleta),
-                      ),
-                      child: _VoceMenu(
-                        icona: atleta.haAccountCollegato
-                            ? Icons.verified_user_outlined
-                            : Icons.person_add_alt_outlined,
-                        etichetta: 'Account atleta',
-                      ),
-                    ),
-                    if (puoGestire) ...[
-                      const PopupMenuDivider(),
-                      PopupMenuItem(
-                        value: () => onTapElimina(atleta),
-                        child: const _VoceMenu(
-                          icona: Icons.delete_outline,
-                          etichetta: 'Elimina atleta',
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+          if ((
+                categoria: categoriaAtleta(atleta, oggi),
+                squadra: nomeGruppo[atleta.gruppoId],
+              )
+              case (:final categoria, :final squadra))
+            SchedaElenco(
+              leading: _AvatarAtleta(atleta: atleta),
+              titolo: atleta.nomeCompleto,
+              // Sport e squadra non si ripetono su ogni scheda: lo sport e'
+              // quello del club e la squadra e' gia' scelta in alto. La
+              // squadra compare solo guardando "Tutti gli atleti", e non
+              // quando dice già la categoria («U16» per un U16).
+              sottotitolo: [
+                _etichettaPresenze(_percentuale(atleta)),
+                if (filtroGruppoId == null &&
+                    squadra != null &&
+                    (categoria == null ||
+                        categoriaDaNomeSquadra(squadra) != categoria))
+                  squadra,
+                if (categoria != null)
+                  'classe ${atleta.dataNascita.year} ($categoria)',
+              ].join(' · '),
+              attenuata: !atleta.attivo,
+              sotto: _pastiglie(
+                atleta,
+                fuori: categoria == null || squadra == null
+                    ? null
+                    : fuoriCategoria(categoria, squadra),
+                nomeGruppo: nomeGruppo,
+                colori: colori,
+              ),
+              mostraFreccia: false,
+              trailing: _azioni(context, atleta, colori),
+              onTap: () => onTap(atleta),
             ),
-            onTap: () => onTap(atleta),
-          ),
       ],
     );
   }
+
+  /// Le pastiglie sotto il nome; null se non ce n'è nessuna.
+  Widget? _pastiglie(
+    Atleta atleta, {
+    required FuoriCategoria? fuori,
+    required Map<String, String> nomeGruppo,
+    required ColoriApp colori,
+  }) {
+    if (atleta.attivo &&
+        fuori == null &&
+        _ruoloInPastiglia(atleta) == null &&
+        !atleta.conAltraSquadra &&
+        !atleta.visitaMedicaScaduta &&
+        !atleta.visitaMedicaInScadenza) {
+      return null;
+    }
+    return Wrap(
+      spacing: AppSpacing.s4,
+      runSpacing: AppSpacing.s4,
+      children: [
+        if (!atleta.attivo)
+          Pastiglia('Inattivo', colore: colori.testoSecondario),
+        // Chi gioca in una squadra di un'altra categoria; i
+        // fuori quota contano per i limiti FIN.
+        if (fuori != null)
+          Pastiglia(
+            fuori.etichetta,
+            colore: fuori == FuoriCategoria.fuoriQuota
+                ? colori.attenzione
+                : colori.testoSecondario,
+          ),
+        if (_altraSquadra(atleta, nomeGruppo) case final altra?)
+          Pastiglia(altra, colore: colori.testoSecondario),
+        // Le serie "Portieri", "Centroboa"... sono per loro:
+        // si vede chi è.
+        if (_ruoloInPastiglia(atleta) case final ruolo?)
+          Pastiglia(ruolo, colore: colori.testoSecondario),
+        if (atleta.visitaMedicaScaduta)
+          Pastiglia('Visita scaduta', colore: colori.rosso)
+        else if (atleta.visitaMedicaInScadenza)
+          Pastiglia('Visita in scadenza', colore: colori.attenzione),
+      ],
+    );
+  }
+
+  Widget _azioni(BuildContext context, Atleta atleta, ColoriApp colori) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IndicatoreBenessere(clubId: atleta.clubId, atletaId: atleta.id),
+      PopupMenuButton<VoidCallback>(
+        icon: Icon(Icons.more_vert, color: colori.testoSecondario),
+        tooltip: 'Altre azioni',
+        onSelected: (azione) => azione(),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: () => onTapModifica(atleta),
+            child: const _VoceMenu(
+              icona: Icons.edit_outlined,
+              etichetta: 'Modifica anagrafica',
+            ),
+          ),
+          PopupMenuItem(
+            value: () => showDialog<void>(
+              context: context,
+              builder: (_) => GestisciAccountAtletaDialog(atleta: atleta),
+            ),
+            child: _VoceMenu(
+              icona: atleta.haAccountCollegato
+                  ? Icons.verified_user_outlined
+                  : Icons.person_add_alt_outlined,
+              etichetta: 'Account atleta',
+            ),
+          ),
+          if (puoGestire) ...[
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              value: () => onTapElimina(atleta),
+              child: const _VoceMenu(
+                icona: Icons.delete_outline,
+                etichetta: 'Elimina atleta',
+              ),
+            ),
+          ],
+        ],
+      ),
+    ],
+  );
 }
 
 class _VoceMenu extends StatelessWidget {

@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'categoria-dall-anno',
+    data: DateTime(2026, 10, 27),
+    titolo: 'La categoria FIN accanto al nome',
+    testo:
+        'Nella pallanuoto l\'elenco degli atleti mostra la classe e la '
+        'categoria FIN della stagione, per esempio «classe 2012 (U16)», '
+        'calcolate dall\'anno di nascita: cambiano da sole a settembre. Chi '
+        'gioca in una squadra di un\'altra categoria ha il segno «Sotto età» '
+        'o «Fuori quota». Le squadre restano quelle che decidi tu.',
+  ),
+  Novita(
     id: 'proponi-le-fasi',
     data: DateTime(2026, 10, 27),
     titolo: 'Le fasi della stagione a ritroso dall\'obiettivo',
