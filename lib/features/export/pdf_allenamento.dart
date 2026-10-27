@@ -5,7 +5,7 @@ import '../allenamenti/domain/serie.dart';
 import '../allenamenti/domain/testo_allenamento.dart';
 import '../allenamenti/domain/volume_allenamento.dart';
 import '../allenamenti/presentation/serie_labels.dart';
-import 'csv_export.dart' show testoPerChi;
+import 'csv_export.dart' show piramideSuUnaRiga, testoPerChi;
 
 /// Il modello del PDF di un allenamento, senza tipi di `pdf`: le serie
 /// diventano sezioni (un blocco l'una) con righe già scritte come si
@@ -230,16 +230,7 @@ List<ElementoPdf> _elementiGruppo(
     // Una piramide (50-100-200-100-50, o 2×(50-100)): le distanze
     // cambiano, il resto no, e fra un pezzo e l'altro non c'è un recupero
     // a parte. Una riga sola.
-    final piramide = strutturaPiramide(g);
-    final distinte = g.map((s) => s.distanzaM).toSet().length > 1;
-    final senzaRecuperiDentro = !g
-        .take(g.length - 1)
-        .any((s) => s.recuperoDopoS != null);
-    if (piramide != null && distinte && senzaRecuperiDentro) {
-      final sequenza = g
-          .take(piramide.distanze)
-          .map((s) => s.distanzaM)
-          .join('-');
+    if (piramideSuUnaRiga(g) case (:final giri, :final sequenza)) {
       final recuperi = {
         for (final s in g)
           if (s.recuperoS != null) testoDurataBreve(s.recuperoS!),
@@ -247,7 +238,7 @@ List<ElementoPdf> _elementiGruppo(
       final base = riga(g.first, livello);
       return [
         RigaPdf(
-          volume: piramide.giri > 1 ? '${piramide.giri}×($sequenza)' : sequenza,
+          volume: giri > 1 ? '$giri×($sequenza)' : sequenza,
           lavoro: base.lavoro,
           zona: base.zona,
           partenza: [

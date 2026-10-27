@@ -44,6 +44,15 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'csv-piramidi-una-riga',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Il CSV con le piramidi su una riga',
+    testo:
+        'In «Esporta CSV» una piramide (50-100-200-100-50) è una riga sola, '
+        'come nel dettaglio e nel PDF. La colonna nuova «Metri» dice i metri '
+        'di ogni riga, così in Excel la somma dà i metri dell\'allenamento.',
+  ),
+  Novita(
     id: 'campionati-fin-sito-cambiato',
     data: DateTime(2026, 10, 27),
     titolo: 'Campionati FIN: se il sito cambia, l\'app lo dice',
