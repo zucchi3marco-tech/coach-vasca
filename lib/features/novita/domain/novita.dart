@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'report-atleta',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Il report PDF dell\'atleta',
+    testo:
+        'Nella scheda di un atleta, l\'icona del PDF in alto: scegli la '
+        'stagione, una fase o le date, scrivi una nota e «Crea il PDF». '
+        'Dentro presenze, partite con gol ed espulsioni, test e obiettivi; '
+        'benessere e RPE solo se metti la spunta, e solo le medie.',
+    importante: true,
+  ),
+  Novita(
     id: 'logo-del-club',
     data: DateTime(2026, 10, 27),
     titolo: 'Il logo del club nei PDF',

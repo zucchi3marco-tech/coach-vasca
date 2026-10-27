@@ -485,6 +485,24 @@ class DistintaRepository {
     )..where((t) => t.id.equals(id))).write(locale);
   }
 
+  /// Le partite in cui l'atleta era nella distinta: per il suo report.
+  /// Senza rete, dalla cache locale.
+  Future<Set<String>> partiteDellAtleta(String atletaId) async {
+    try {
+      final rows = await _client
+          .from('distinta_giocatori')
+          .select('partita_id')
+          .eq('atleta_id', atletaId);
+      return {for (final r in rows) r['partita_id'] as String};
+    } catch (e) {
+      if (!isNetworkFailure(e)) rethrow;
+      final righe = await (_db.select(
+        _db.distintaGiocatoriTable,
+      )..where((t) => t.atletaId.equals(atletaId))).get();
+      return {for (final r in righe) r.partitaId};
+    }
+  }
+
   /// Le partite in cui l'atleta è stato in porta, con i suoi tempi: per
   /// le statistiche da portiere. Senza rete, dalla cache locale.
   Future<Map<String, List<int>>> tempiInPortaDellAtleta(String atletaId) async {

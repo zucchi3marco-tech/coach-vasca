@@ -22,6 +22,7 @@ import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
 import '../referti/application/referti_providers.dart';
+import '../report/presentation/report_atleta_screen.dart';
 import '../statistiche/application/statistiche_providers.dart';
 import '../secco/presentation/card_secco_da_fare.dart';
 import '../obiettivi/presentation/obiettivi_atleta_screen.dart';
@@ -530,6 +531,15 @@ class AtletaDashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Scheda atleta'),
         actions: [
+          IconButton(
+            tooltip: 'Report PDF',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ReportAtletaScreen(atleta: atleta),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Modifica anagrafica',
             icon: const Icon(Icons.edit_outlined),
