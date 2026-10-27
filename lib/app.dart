@@ -11,6 +11,7 @@ import 'core/sync/connectivity_sync_trigger.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/home/barra_club.dart';
 import 'features/home/home_screen.dart';
+import 'features/home/rileggi_dopo_conflitto.dart';
 import 'theme/app_theme.dart';
 import 'theme/tema_provider.dart';
 
@@ -20,6 +21,9 @@ class CoachVascaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(connectivitySyncTriggerProvider);
+    // Una modifica fatta senza rete ha trovato la riga cambiata da un
+    // collega: le pagine di quella tabella si rileggono dal server.
+    rileggiDopoConflitto(ref);
     // All'uscita si chiudono tutte le schermate aperte sopra la home:
     // senza, "Esci" da una schermata interna (es. il calendario della
     // stagione) lasciava quella schermata visibile e usabile sopra il

@@ -256,7 +256,7 @@ class _RiquadroReteState extends ConsumerState<_RiquadroRete> {
             if (rifiutate.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.s28),
               const ErrorBanner(
-                messaggio: 'Non accettate dal server',
+                messaggio: 'Modifiche non partite',
                 suggerimento:
                     'Queste modifiche non sono partite e non partiranno: '
                     'rifalle dall\'app.',

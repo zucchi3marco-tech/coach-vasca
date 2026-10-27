@@ -323,8 +323,11 @@ void main() {
       await SyncEngine(db, online, suRifiuto: rifiutate.add).processQueue();
       expect(rifiutate, isEmpty);
 
-      expect(chiamate.single.url.path, '/rest/v1/rpc/scegli_capitani');
-      expect(jsonDecode(chiamate.single.body), {
+      // Prima la coda chiede l'ora al server (per i conflitti).
+      expect(chiamate.first.url.path, '/rest/v1/rpc/ora_del_server');
+      final funzione = chiamate.skip(1).single;
+      expect(funzione.url.path, '/rest/v1/rpc/scegli_capitani');
+      expect(jsonDecode(funzione.body), {
         'p_partita_id': 'oggi',
         'p_capitano_id': 'r1',
         'p_vice_id': null,

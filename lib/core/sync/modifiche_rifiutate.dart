@@ -42,6 +42,24 @@ class ModificaRifiutata {
     );
   }
 
+  /// Una modifica fatta senza rete che, quando la rete è tornata, ha
+  /// trovato la riga già cambiata da qualcun altro ([tolta]: già tolta):
+  /// non si manda, resta la versione del collega (scelta del coach).
+  factory ModificaRifiutata.conflitto({
+    required String tabella,
+    required String operazione,
+    bool tolta = false,
+    DateTime? quando,
+  }) => ModificaRifiutata(
+    tabella: tabella,
+    operazione: operazione,
+    quando: quando ?? DateTime.now(),
+    codice: tolta ? codiceTolta : codiceConflitto,
+  );
+
+  static const codiceConflitto = 'conflitto';
+  static const codiceTolta = 'tolta';
+
   factory ModificaRifiutata.daMappa(Map<String, dynamic> m) =>
       ModificaRifiutata(
         tabella: m['tabella'] as String,
@@ -82,6 +100,12 @@ class ModificaRifiutata {
 
   /// Perché il server l'ha rifiutata, a parole.
   String get perche => switch (codice) {
+    codiceConflitto =>
+      'Mentre eri senza rete un collega (o un altro telefono) l\'ha '
+          'cambiata: è rimasta la sua versione. Guardala e, se serve, '
+          'rifai la tua modifica.',
+    codiceTolta =>
+      'Mentre eri senza rete un collega (o un altro telefono) l\'ha tolta.',
     '42501' => 'Permesso negato: questo account non può farlo.',
     '23505' => 'C\'era già: un\'altra modifica è arrivata prima.',
     '23503' => 'Era collegata a qualcosa che non c\'è più.',

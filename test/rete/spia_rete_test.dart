@@ -65,6 +65,9 @@ class _FintoSyncEngine implements SyncEngine {
   void Function(ModificaRifiutata modifica)? get suRifiuto => null;
 
   @override
+  void Function(String tabella)? get suConflitto => null;
+
+  @override
   Future<void> processQueue() async => _chiamate.add('coda');
 }
 
@@ -316,7 +319,7 @@ void main() {
       expect(find.text('3 modifiche aspettano di partire'), findsOneWidget);
       expect(find.text('Riprova ora'), findsOneWidget);
       // Niente modifiche rifiutate: niente quella sezione.
-      expect(find.text('Non accettate dal server'), findsNothing);
+      expect(find.text('Modifiche non partite'), findsNothing);
     });
 
     testWidgets('si aggiorna da solo mentre è aperto', (tester) async {
@@ -431,7 +434,7 @@ void main() {
       await _monta(tester, rifiutate: [_presenze, ordini]);
       await _apriRiquadro(tester, Icons.sync_problem_outlined);
 
-      expect(find.text('Non accettate dal server'), findsOneWidget);
+      expect(find.text('Modifiche non partite'), findsOneWidget);
       expect(
         find.text(
           'Queste modifiche non sono partite e non partiranno: rifalle '
@@ -461,7 +464,7 @@ void main() {
       await tester.tap(find.text('Ho capito'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Non accettate dal server'), findsNothing);
+      expect(find.text('Modifiche non partite'), findsNothing);
       expect(find.text('Presenze · modifica'), findsNothing);
       expect(find.byIcon(Icons.sync_problem_outlined), findsNothing);
       final contenitore = ProviderScope.containerOf(

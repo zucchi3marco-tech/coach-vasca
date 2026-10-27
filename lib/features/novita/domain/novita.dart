@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'senza-rete-niente-sovrascritture',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Senza rete non si sovrascrive più un collega',
+    testo:
+        'Le modifiche fatte senza rete partono quando la rete torna. Se '
+        'intanto un collega ha cambiato o tolto la stessa cosa (una serie, '
+        'una presenza, una partita…), la tua non la sovrascrive: resta la '
+        'sua versione, la pagina si aggiorna e la spia in alto ti dice cosa '
+        'non è partito, così la rifai se serve.',
+    importante: true,
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'seduta-aperta-da-un-collega',
     data: DateTime(2026, 10, 27),
     titolo: 'Due allenatori sulla stessa seduta',
