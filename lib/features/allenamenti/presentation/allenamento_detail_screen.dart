@@ -41,6 +41,7 @@ import '../domain/testo_allenamento.dart';
 import '../domain/variante_spalla.dart';
 import '../domain/volume_allenamento.dart';
 import 'allenamento_form_screen.dart';
+import 'avviso_seduta_aperta.dart';
 import 'banner_modifica.dart';
 import 'card_com_e_andata.dart';
 import 'com_e_andata_screen.dart';
@@ -831,149 +832,164 @@ class _AllenamentoDetailScreenState
         tooltip: 'Aggiungi serie',
         child: const Icon(Icons.add),
       ),
-      body: serieAsync.when(
-        data: (serie) {
-          if (serie.isEmpty) {
-            return ListView(
-              children: [
-                testata,
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.s8),
-                  child: EmptyState(
-                    icona: Icons.pool_outlined,
-                    titolo: 'Nessuna serie',
-                    descrizione:
-                        'Scrivilo tutto come su un foglio, una serie per '
-                        'riga, oppure aggiungi una serie alla volta con +.',
-                    azionePrincipale: "Scrivi l'allenamento",
-                    onAzionePrincipale: _apriScriviAllenamento,
-                    azioneSecondaria: 'Aggiungi una serie',
-                    onAzioneSecondaria: _apriPannello,
-                  ),
-                ),
-              ],
-            );
-          }
-          // Testata e riepilogo stanno DENTRO l'elenco (header): scorrono
-          // via e le serie occupano lo schermo. Una piramide (più righe
-          // con lo stesso piramideId) è un solo elemento dell'elenco, non
-          // una per distanza — si trascina, duplica ed elimina insieme.
-          // Un momento in parallelo è un elemento solo, con le colonne.
-          final gruppi = raggruppaPerMomento(serie);
-          return ReorderableListView.builder(
-            buildDefaultDragHandles: false,
-            padding: const EdgeInsets.only(bottom: 88),
-            header: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                testata,
-                TitoloSezione('Serie', conteggio: gruppi.length),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 4,
-                    bottom: AppSpacing.s12,
-                  ),
-                  // La forma e le zone della seduta del gruppo: il lavoro
-                  // dei portieri e le varianti si leggono nell'elenco.
-                  child: RiepilogoVolumi(
-                    serie: serieDelGruppo(serie),
-                    mostraTotale: false,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.s16),
-                  child: GraficoIntensita(
-                    serie: serieDelGruppo(serie),
-                    riferimento: riferimento,
-                  ),
-                ),
-                // Solo per una seduta di oggi o già passata.
-                CardComEAndata(
-                  allenamento: allenamento,
-                  serie: serie,
-                  onSegna: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ComEAndataScreen(allenamento: allenamento),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            itemCount: gruppi.length,
-            onReorderItem: (da, a) => _riordinaGruppi(gruppi, da, a),
-            itemBuilder: (context, index) {
-              final gruppo = gruppi[index];
-              final maniglia = ReorderableDragStartListener(
-                index: index,
-                child: Icon(
-                  Icons.drag_indicator,
-                  color: colori.testoSecondario,
-                ),
-              );
-              final riga = eMomento(gruppo)
-                  ? RigaMomento(
-                      gruppo: gruppo,
-                      primo: index == 0,
-                      ultimo: index == gruppi.length - 1,
-                      maniglia: maniglia,
-                      riferimento: riferimento,
-                      nome: (d) => perChi(d) ?? 'Tutti',
-                      onApri: (s) => _apriSerieCompleta(serie: s),
-                      onAzione: (azione) =>
-                          _azioneGruppo(gruppi, index, azione),
-                    )
-                  : gruppo.length == 1
-                  ? RigaSerie(
-                      serie: gruppo.single,
-                      primo: index == 0,
-                      ultimo: index == gruppi.length - 1,
-                      maniglia: maniglia,
-                      perChi: perChi(gruppo.single.destinatari),
-                      onApri: () => _apriSerieCompleta(serie: gruppo.single),
-                      onAzione: (azione) =>
-                          _azioneGruppo(gruppi, index, azione),
-                    )
-                  : RigaGruppoPiramide(
-                      gruppo: gruppo,
-                      primo: index == 0,
-                      ultimo: index == gruppi.length - 1,
-                      maniglia: maniglia,
-                      perChi: perChi,
-                      onAzione: (azione) =>
-                          _azioneGruppo(gruppi, index, azione),
-                    );
-              return Padding(
-                key: ValueKey(gruppo.first.id),
-                padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    riga,
-                    if (gruppo.last.recuperoDopoS case final secondi?)
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Un collega ha aperta la stessa seduta, o l'ha cambiata intanto.
+          AvvisoSedutaAperta(
+            allenamentoId: widget.allenamento.id,
+            clubId: widget.allenamento.clubId,
+          ),
+          Expanded(
+            child: serieAsync.when(
+              data: (serie) {
+                if (serie.isEmpty) {
+                  return ListView(
+                    children: [
+                      testata,
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.s8),
-                        child: RecuperoFraSerie(secondi),
+                        child: EmptyState(
+                          icona: Icons.pool_outlined,
+                          titolo: 'Nessuna serie',
+                          descrizione:
+                              'Scrivilo tutto come su un foglio, una serie per '
+                              'riga, oppure aggiungi una serie alla volta con +.',
+                          azionePrincipale: "Scrivi l'allenamento",
+                          onAzionePrincipale: _apriScriviAllenamento,
+                          azioneSecondaria: 'Aggiungi una serie',
+                          onAzioneSecondaria: _apriPannello,
+                        ),
                       ),
-                  ],
+                    ],
+                  );
+                }
+                // Testata e riepilogo stanno DENTRO l'elenco (header): scorrono
+                // via e le serie occupano lo schermo. Una piramide (più righe
+                // con lo stesso piramideId) è un solo elemento dell'elenco, non
+                // una per distanza — si trascina, duplica ed elimina insieme.
+                // Un momento in parallelo è un elemento solo, con le colonne.
+                final gruppi = raggruppaPerMomento(serie);
+                return ReorderableListView.builder(
+                  buildDefaultDragHandles: false,
+                  padding: const EdgeInsets.only(bottom: 88),
+                  header: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      testata,
+                      TitoloSezione('Serie', conteggio: gruppi.length),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 4,
+                          bottom: AppSpacing.s12,
+                        ),
+                        // La forma e le zone della seduta del gruppo: il lavoro
+                        // dei portieri e le varianti si leggono nell'elenco.
+                        child: RiepilogoVolumi(
+                          serie: serieDelGruppo(serie),
+                          mostraTotale: false,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s16),
+                        child: GraficoIntensita(
+                          serie: serieDelGruppo(serie),
+                          riferimento: riferimento,
+                        ),
+                      ),
+                      // Solo per una seduta di oggi o già passata.
+                      CardComEAndata(
+                        allenamento: allenamento,
+                        serie: serie,
+                        onSegna: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ComEAndataScreen(allenamento: allenamento),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  itemCount: gruppi.length,
+                  onReorderItem: (da, a) => _riordinaGruppi(gruppi, da, a),
+                  itemBuilder: (context, index) {
+                    final gruppo = gruppi[index];
+                    final maniglia = ReorderableDragStartListener(
+                      index: index,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: colori.testoSecondario,
+                      ),
+                    );
+                    final riga = eMomento(gruppo)
+                        ? RigaMomento(
+                            gruppo: gruppo,
+                            primo: index == 0,
+                            ultimo: index == gruppi.length - 1,
+                            maniglia: maniglia,
+                            riferimento: riferimento,
+                            nome: (d) => perChi(d) ?? 'Tutti',
+                            onApri: (s) => _apriSerieCompleta(serie: s),
+                            onAzione: (azione) =>
+                                _azioneGruppo(gruppi, index, azione),
+                          )
+                        : gruppo.length == 1
+                        ? RigaSerie(
+                            serie: gruppo.single,
+                            primo: index == 0,
+                            ultimo: index == gruppi.length - 1,
+                            maniglia: maniglia,
+                            perChi: perChi(gruppo.single.destinatari),
+                            onApri: () =>
+                                _apriSerieCompleta(serie: gruppo.single),
+                            onAzione: (azione) =>
+                                _azioneGruppo(gruppi, index, azione),
+                          )
+                        : RigaGruppoPiramide(
+                            gruppo: gruppo,
+                            primo: index == 0,
+                            ultimo: index == gruppi.length - 1,
+                            maniglia: maniglia,
+                            perChi: perChi,
+                            onAzione: (azione) =>
+                                _azioneGruppo(gruppi, index, azione),
+                          );
+                    return Padding(
+                      key: ValueKey(gruppo.first.id),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          riga,
+                          if (gruppo.last.recuperoDopoS case final secondi?)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.s8,
+                              ),
+                              child: RecuperoFraSerie(secondi),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.all(AppSpacing.s16),
+                child: LoadingSkeletonList(righe: 5),
+              ),
+              error: (error, _) => Padding(
+                padding: const EdgeInsets.all(AppSpacing.s16),
+                child: ErrorBanner(
+                  messaggio: 'Non è stato possibile caricare le serie.',
+                  suggerimento:
+                      'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
+                  dettaglioTecnico: messaggioErrore(error),
                 ),
-              );
-            },
-          );
-        },
-        loading: () => const Padding(
-          padding: EdgeInsets.all(AppSpacing.s16),
-          child: LoadingSkeletonList(righe: 5),
-        ),
-        error: (error, _) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.s16),
-          child: ErrorBanner(
-            messaggio: 'Non è stato possibile caricare le serie.',
-            suggerimento:
-                'Riprova. Se l\'errore continua, chiudi e riapri l\'app.',
-            dettaglioTecnico: messaggioErrore(error),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

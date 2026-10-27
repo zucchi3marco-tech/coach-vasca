@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +14,7 @@ import '../../../widgets/primary_button.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../data/allenamenti_repository.dart';
 import '../domain/allenamento.dart';
+import 'avviso_seduta_aperta.dart';
 
 class AllenamentoFormScreen extends ConsumerStatefulWidget {
   const AllenamentoFormScreen({
@@ -88,6 +91,17 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (widget.allenamento case final originale?) {
+      // Un collega l'ha cambiata intanto? «Vedi la sua versione» chiude.
+      final esito = await controllaPrimaDiSalvare(
+        context,
+        ref,
+        allenamentoId: originale.id,
+        clubId: originale.clubId,
+      );
+      if (esito == false && mounted) Navigator.of(context).pop(false);
+      if (esito != true || !mounted) return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -115,6 +129,9 @@ class _AllenamentoFormScreenState extends ConsumerState<AllenamentoFormScreen> {
           gruppoId: _gruppoId,
           note: _noteController.text.trim(),
         );
+      }
+      if (widget.allenamento case final originale?) {
+        unawaited(sedutaSalvata(ref, originale.id));
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {

@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'seduta-aperta-da-un-collega',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Due allenatori sulla stessa seduta',
+    testo:
+        'Se un collega ha aperta la seduta che stai guardando, in cima '
+        'compare «Edoardo la sta modificando». Se intanto l\'ha cambiata, '
+        '«Aggiorna» ti fa vedere la sua versione. Se salvi dopo di lui, '
+        'l\'app te lo dice e scegli: «Vedi la sua versione» o «Salva la '
+        'mia». Prima vinceva chi salvava per ultimo, senza dirlo.',
+    importante: true,
+  ),
+  Novita(
     id: 'voce-sulle-clip',
     data: DateTime(2026, 10, 26),
     titolo: 'Il commento a voce sulle clip',

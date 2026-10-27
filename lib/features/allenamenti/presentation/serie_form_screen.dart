@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +20,7 @@ import '../../atleti/domain/abbina_atleta.dart';
 import '../../atleti/domain/atleta.dart';
 import '../data/serie_repository.dart';
 import '../domain/serie.dart';
+import 'avviso_seduta_aperta.dart';
 import 'per_chi_serie.dart';
 import 'serie_labels.dart';
 
@@ -141,6 +144,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
       setState(() => _errorMessage = 'Scegli almeno un atleta in "Per chi".');
       return;
     }
+    // Cambiando una serie: un collega ha cambiato la seduta intanto?
+    // (Aggiungerne una non toglie niente a nessuno.)
+    if (_isEditing && !await _puoSalvare()) return;
 
     setState(() {
       _isSubmitting = true;
@@ -203,6 +209,7 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
           destinatari: _destinatari,
         );
       }
+      unawaited(sedutaSalvata(ref, widget.allenamentoId));
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
@@ -211,6 +218,19 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  /// Vedi [controllaPrimaDiSalvare]: «Vedi la sua versione» chiude il
+  /// modulo senza salvare.
+  Future<bool> _puoSalvare() async {
+    final esito = await controllaPrimaDiSalvare(
+      context,
+      ref,
+      allenamentoId: widget.allenamentoId,
+      clubId: widget.serie!.clubId,
+    );
+    if (esito == false && mounted) Navigator.of(context).pop(false);
+    return esito == true;
   }
 
   Destinatari get _destinatari => switch (_perChi) {
@@ -303,7 +323,9 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
       ),
     );
     if (conferma == true) {
+      if (!await _puoSalvare()) return;
       await ref.read(serieRepositoryProvider).deleteSerie(widget.serie!.id);
+      unawaited(sedutaSalvata(ref, widget.allenamentoId));
       if (mounted) Navigator.of(context).pop(true);
     }
   }

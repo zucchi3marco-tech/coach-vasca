@@ -22,6 +22,7 @@ import '../../allenamenti/data/duplicazione_settimana_service.dart';
 import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/variante_spalla.dart';
 import '../../allenamenti/presentation/allenamento_form_screen.dart';
+import '../../allenamenti/presentation/avviso_seduta_aperta.dart';
 import '../../allenamenti/presentation/banner_modifica.dart';
 import '../../allenamenti/presentation/duplica_allenamento_dialog.dart';
 import '../../allenamenti/presentation/per_chi_serie.dart';
@@ -513,6 +514,11 @@ class SedutaSeccoScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 88),
         children: [
           testata,
+          // Un collega ha aperta la stessa seduta, o l'ha cambiata intanto.
+          AvvisoSedutaAperta(
+            allenamentoId: allenamento.id,
+            clubId: allenamento.clubId,
+          ),
           ...righeAsync.when(
             data: (_) => principali.isEmpty
                 ? [

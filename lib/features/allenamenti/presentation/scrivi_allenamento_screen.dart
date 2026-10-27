@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -14,6 +16,7 @@ import '../domain/allenamento.dart';
 import '../domain/piano_salvataggio_testo.dart';
 import '../domain/serie.dart';
 import '../domain/testo_allenamento.dart';
+import 'avviso_seduta_aperta.dart';
 import 'editor_testo_allenamento.dart';
 
 /// Scrivere l'allenamento come su un foglio, una serie per riga (idea
@@ -119,6 +122,21 @@ class _ScriviAllenamentoScreenState
       return;
     }
     if (!mounted) return;
+    // Un collega l'ha cambiata intanto? (Senza rete si salva e basta.)
+    final esito = await controllaPrimaDiSalvare(
+      context,
+      ref,
+      allenamentoId: widget.allenamento.id,
+      clubId: widget.allenamento.clubId,
+    );
+    if (esito != true) {
+      if (esito == false && mounted) {
+        setState(() => _salvato = true);
+        Navigator.of(context).pop(false);
+      }
+      return;
+    }
+    if (!mounted) return;
 
     final piano = pianoSalvataggio(
       vecchie: widget.serie,
@@ -181,6 +199,7 @@ class _ScriviAllenamentoScreenState
         await repository.deleteSerie(s.id);
       }
       if (!mounted) return;
+      unawaited(sedutaSalvata(ref, widget.allenamento.id));
       setState(() => _salvato = true);
       Navigator.of(context).pop(true);
     } catch (e) {
