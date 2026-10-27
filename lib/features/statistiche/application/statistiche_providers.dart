@@ -1,19 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/gruppo_visibilita.dart';
+
 import '../../pallanuoto/data/distinta_repository.dart';
 import '../../pallanuoto/data/eventi_partita_repository.dart';
 import '../../pallanuoto/data/partite_repository.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/numeri_portiere.dart';
+import '../../pallanuoto/domain/partita.dart';
 import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../referti/data/referti_repository.dart';
 import '../domain/statistiche_stagionali.dart';
 
+/// Le partite di un periodo (una stagione) del club. Con [gruppoId] solo
+/// quelle di quella squadra e quelle di tutto il club, come nell'elenco
+/// delle partite: le stagioni U14 e U16 hanno le stesse date, e senza la
+/// squadra le partite dell'una finivano nelle statistiche dell'altra.
+/// Null: tutte le partite del club (le statistiche di un atleta, che può
+/// giocare con più squadre).
 typedef ChiaveStagioneStatistiche = ({
   String clubId,
   DateTime dataInizio,
   DateTime dataFine,
+  String? gruppoId,
 });
+
+Future<List<Partita>> _partiteDelPeriodo(
+  Ref ref,
+  ChiaveStagioneStatistiche chiave,
+) async {
+  final partite = await ref
+      .watch(partiteRepositoryProvider)
+      .perClubEPeriodo(
+        clubId: chiave.clubId,
+        dataInizio: chiave.dataInizio,
+        dataFine: chiave.dataFine,
+      );
+  return [
+    for (final p in partite)
+      if (visibileNelGruppo(
+        gruppoDelRecord: p.gruppoId,
+        gruppoSelezionato: chiave.gruppoId,
+      ))
+        p,
+  ];
+}
 
 /// Statistiche di squadra "da referti", per tutte le partite del club con
 /// data nel periodo indicato (tipicamente una Stagione).
@@ -28,13 +59,7 @@ final riepilogoRefertiProvider = FutureProvider.autoDispose
       ref,
       chiave,
     ) async {
-      final partite = await ref
-          .watch(partiteRepositoryProvider)
-          .perClubEPeriodo(
-            clubId: chiave.clubId,
-            dataInizio: chiave.dataInizio,
-            dataFine: chiave.dataFine,
-          );
+      final partite = await _partiteDelPeriodo(ref, chiave);
       if (partite.isEmpty) return RiepilogoSquadraReferti.vuoto;
 
       final partitaPerId = {for (final p in partite) p.id: p};
@@ -109,13 +134,7 @@ final riepilogoEventiProvider = FutureProvider.autoDispose
       ref,
       chiave,
     ) async {
-      final partite = await ref
-          .watch(partiteRepositoryProvider)
-          .perClubEPeriodo(
-            clubId: chiave.clubId,
-            dataInizio: chiave.dataInizio,
-            dataFine: chiave.dataFine,
-          );
+      final partite = await _partiteDelPeriodo(ref, chiave);
       if (partite.isEmpty) return RiepilogoSquadraEventi.vuoto;
 
       final eventi = await ref
@@ -133,13 +152,7 @@ final tiriStagionePerMappaProvider = FutureProvider.autoDispose
       ref,
       chiave,
     ) async {
-      final partite = await ref
-          .watch(partiteRepositoryProvider)
-          .perClubEPeriodo(
-            clubId: chiave.clubId,
-            dataInizio: chiave.dataInizio,
-            dataFine: chiave.dataFine,
-          );
+      final partite = await _partiteDelPeriodo(ref, chiave);
       if (partite.isEmpty) return [];
 
       final eventi = await ref

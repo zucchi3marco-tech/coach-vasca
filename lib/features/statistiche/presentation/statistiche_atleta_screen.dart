@@ -104,6 +104,8 @@ class _DatiAtleta extends ConsumerWidget {
       clubId: atleta.clubId,
       dataInizio: stagione.dataInizio,
       dataFine: stagione.dataFine,
+      // Un atleta può giocare con più squadre: tutte le sue partite.
+      gruppoId: null,
     );
     final refertiAsync = ref.watch(riepilogoRefertiProvider(chiave));
     final eventiAsync = ref.watch(riepilogoEventiProvider(chiave));

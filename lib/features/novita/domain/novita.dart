@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'statistiche-stagione-per-squadra',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Statistiche della stagione: solo le partite della squadra',
+    testo:
+        'In «Statistiche stagione» ogni stagione conta solo le partite della '
+        'sua squadra (e quelle segnate per tutto il club). Prima, con U14 e '
+        'U16 nelle stesse date, la partita degli U14 finiva anche fra quelle '
+        'degli U16. Le statistiche di un atleta contano ancora tutte le sue '
+        'partite, con qualunque squadra.',
+    importante: true,
+  ),
+  Novita(
     id: 'csv-piramidi-una-riga',
     data: DateTime(2026, 10, 27),
     titolo: 'Il CSV con le piramidi su una riga',

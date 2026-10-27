@@ -136,6 +136,7 @@ class _SezioneReferti extends ConsumerWidget {
       clubId: clubId,
       dataInizio: stagione.dataInizio,
       dataFine: stagione.dataFine,
+      gruppoId: stagione.gruppoId,
     );
     final riepilogoAsync = ref.watch(riepilogoRefertiProvider(chiave));
     final atletiAsync = ref.watch(
@@ -231,6 +232,7 @@ class _SezioneEventi extends ConsumerWidget {
       clubId: clubId,
       dataInizio: stagione.dataInizio,
       dataFine: stagione.dataFine,
+      gruppoId: stagione.gruppoId,
     );
     final riepilogoAsync = ref.watch(riepilogoEventiProvider(chiave));
     final tiriMappaAsync = ref.watch(tiriStagionePerMappaProvider(chiave));
@@ -438,6 +440,7 @@ class _SezioneConfronto extends ConsumerWidget {
       clubId: clubId,
       dataInizio: stagione.dataInizio,
       dataFine: stagione.dataFine,
+      gruppoId: stagione.gruppoId,
     );
     final refertiAsync = ref.watch(riepilogoRefertiProvider(chiave));
     final eventiAsync = ref.watch(riepilogoEventiProvider(chiave));
