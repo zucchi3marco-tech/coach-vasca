@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'campionati-fin-sito-cambiato',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Campionati FIN: se il sito cambia, l\'app lo dice',
+    testo:
+        'Classifica e calendario si leggono dal sito della FIN Lombardia, '
+        'anche per la stagione 2026-2027. Se un giorno il sito cambia e '
+        'l\'app non riesce più a leggerlo tutto, nella pagina lo dice invece '
+        'di scrivere «la FIN non ha ancora pubblicato», e parte da sola una '
+        'segnalazione per sistemarlo.',
+    perChi: PerChi.allenatori,
+  ),
+  Novita(
     id: 'senza-rete-niente-sovrascritture',
     data: DateTime(2026, 10, 27),
     titolo: 'Senza rete non si sovrascrive più un collega',

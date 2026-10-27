@@ -56,6 +56,23 @@ Nell'app l'AI ora ha già un tetto: 30 richieste a settimana a persona e 300 al 
 - [ ] Alla prossima partita vera: nella distinta il pulsante in basso → **Scegli i convocati** → **Come l'ultima partita** → togli o aggiungi chi serve → **Salva**. Controlla i numeri e capitano e vice in cima.
 - [ ] Icona per scaricare in alto → scrivi lo staff con le tessere (resta per la squadra) → **Scarica il file Excel**. Apri il file e confrontalo con il tuo «Formazioni.xlsx»: dimmi se manca qualcosa.
 
+## 0nonies. I dati della FIN (2026-10-27)
+
+L'app legge classifiche e calendari dalle pagine di finlombardia.net. Il sito non ha condizioni d'uso scritte (solo privacy e «© FIN»), quindi conviene chiedere il permesso, e magari un accesso ai dati più stabile delle pagine, prima di aprire l'app ad altri club.
+
+- [ ] Trova l'indirizzo email del Comitato Regionale Lombardo in fondo a [federnuoto.lombardia.it](https://www.federnuoto.lombardia.it), alla voce dei contatti o della segreteria.
+- [ ] Manda questa mail (cambia quello che vuoi):
+
+  > Oggetto: Uso dei calendari e delle classifiche di pallanuoto in un'app per allenatori
+  >
+  > Buongiorno,
+  > sono Marco Zucchi, allenatore di pallanuoto. Sto preparando WaterTactics, un'app per gli allenatori che mostra a staff, atleti e famiglie della squadra la classifica e il calendario del proprio girone, presi dalle pagine «Campionati Pallanuoto» di finlombardia.net, citando sempre la fonte e con un collegamento alla pagina originale. L'app legge una pagina solo quando qualcuno la apre e ne tiene una copia per dieci minuti, quindi non pesa sul sito.
+  > Vorrei sapere se questo uso vi va bene e se esiste, o si può avere, un accesso ai dati dei campionati (per esempio un file o un indirizzo per le applicazioni) più stabile delle pagine web.
+  > Grazie, buona giornata.
+  > Marco Zucchi
+
+- [ ] Quando rispondono, dimmi cosa hanno scritto.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".

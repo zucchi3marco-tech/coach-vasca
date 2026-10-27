@@ -1,3 +1,4 @@
+import 'package:coach_vasca/features/campionati/application/sito_fin_cambiato.dart';
 import 'package:coach_vasca/features/campionati/data/campionati_repository.dart';
 import 'package:coach_vasca/features/campionati/data/pagine_fin_demo.dart';
 import 'package:coach_vasca/features/campionati/domain/campionato_fin.dart';
@@ -8,16 +9,22 @@ import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'pagine_fin_vere.dart';
 
 final _oggi = DateTime(2026, 10, 20, 18);
 
 /// Il sito FIN finto: le pagine della demo, e i collegamenti in memoria.
 class _CampionatiFinti implements CampionatiRepository {
-  _CampionatiFinti([List<GironeCollegato>? collegati])
+  _CampionatiFinti([List<GironeCollegato>? collegati, this.paginaGirone])
     : _collegati = [...?collegati];
 
   final List<GironeCollegato> _collegati;
   final richiesteGirone = <int>[];
+
+  /// Una pagina del girone al posto di quella della demo.
+  final String? paginaGirone;
 
   @override
   Future<ElencoFin> elenco({String? stagione}) async =>
@@ -28,7 +35,7 @@ class _CampionatiFinti implements CampionatiRepository {
     richiesteGirone.add(cmpId);
     return LetturaGirone(
       girone: leggiGironeFin(
-        paginaGironeDemoFin(cmpId, oggi: _oggi),
+        paginaGirone ?? paginaGironeDemoFin(cmpId, oggi: _oggi),
         cmpId: cmpId,
       ),
       lettoIl: DateTime(2026, 10, 20, 17, 5),
@@ -71,6 +78,7 @@ Future<void> _apri(
   WidgetTester tester,
   _CampionatiFinti campionati, {
   required bool allenatore,
+  List<String>? segnalazioni,
 }) async {
   tester.view.physicalSize = const Size(420, 2400);
   tester.view.devicePixelRatio = 1;
@@ -79,6 +87,16 @@ Future<void> _apri(
     ProviderScope(
       overrides: [
         campionatiRepositoryProvider.overrideWithValue(campionati),
+        if (segnalazioni != null)
+          segnalatoreSitoFinProvider.overrideWithValue(
+            SegnalatoreSitoFin(({
+              required clubId,
+              required testo,
+              required contesto,
+            }) async {
+              segnalazioni.add('$clubId · ${contesto.pagina}');
+            }),
+          ),
         gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
       ],
       child: MaterialApp(
@@ -178,5 +196,81 @@ void main() {
     expect(find.text('Under 14 (M) · Fase 1 · Girone 2'), findsOneWidget);
     expect(find.text('Togli questo girone'), findsOneWidget);
     expect(campionati.richiesteGirone, contains(230));
+  });
+
+  testWidgets('il sito FIN cambiato: lo dice e parte una segnalazione', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    // La classifica perde la colonna della differenza reti.
+    final cambiata = paginaGironeVera.replaceAll(
+      RegExp(
+        r'<td class="text-center font-monospace fw-bold text-(success|danger)">'
+        r'\s*[+-]?\d+\s*</td>',
+      ),
+      '',
+    );
+    final campionati = _CampionatiFinti([
+      const GironeCollegato(
+        id: 'g1',
+        clubId: 'c1',
+        gruppoId: 'u14',
+        cmpId: 259,
+        stagione: '2026-2027',
+        campionato: 'Ragazzi (M/F)',
+        fase: 'Qualificazioni',
+        girone: 'Girone 6',
+        squadra: 'CANOTTIERI MILANO',
+      ),
+    ], cambiata);
+    final segnalazioni = <String>[];
+    await _apri(
+      tester,
+      campionati,
+      allenatore: true,
+      segnalazioni: segnalazioni,
+    );
+
+    expect(find.text(testoSitoFinCambiato), findsOneWidget);
+    expect(
+      find.text('La classifica non si riesce a leggere dal sito della FIN.'),
+      findsOneWidget,
+    );
+    // Le partite si leggono ancora.
+    expect(find.textContaining('vs '), findsNWidgets(2));
+    expect(segnalazioni, [
+      'c1 · Campionati FIN, girone Ragazzi (M/F) · Qualificazioni · '
+          'Girone 6, CMPid 259',
+    ]);
+  });
+
+  testWidgets('il sito FIN com\'è oggi: nessun avviso, nessuna segnalazione', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final campionati = _CampionatiFinti([
+      const GironeCollegato(
+        id: 'g1',
+        clubId: 'c1',
+        gruppoId: 'u14',
+        cmpId: 259,
+        stagione: '2026-2027',
+        campionato: 'Ragazzi (M/F)',
+        fase: 'Qualificazioni',
+        girone: 'Girone 6',
+        squadra: 'CANOTTIERI MILANO',
+      ),
+    ], paginaGironeVera);
+    final segnalazioni = <String>[];
+    await _apri(
+      tester,
+      campionati,
+      allenatore: true,
+      segnalazioni: segnalazioni,
+    );
+
+    expect(find.text(testoSitoFinCambiato), findsNothing);
+    expect(find.text('AN BRESCIA TEAM 2'), findsWidgets);
+    expect(segnalazioni, isEmpty);
   });
 }

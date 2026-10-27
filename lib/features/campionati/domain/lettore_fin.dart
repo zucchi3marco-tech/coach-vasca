@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html;
 
@@ -13,6 +15,9 @@ import 'campionato_fin.dart';
 /// sé sopra i suoi gironi, squadre e piscina nella stessa cella, la
 /// posizione davanti al nome in classifica, «da disputare» al posto del
 /// risultato. Si leggono tutte e due le forme, la nuova e quella di prima.
+///
+/// Se la pagina mostra più di quello che si è letto (`nonTuttoLetto`), il
+/// sito è cambiato di nuovo: l'app lo dice e lo segnala da sola.
 
 /// "Cadetti   (M) " → "Cadetti (M)".
 String _pulito(String s) =>
@@ -26,6 +31,8 @@ String _conSpazio(String s) => _pulito(s).replaceAllMapped(
 );
 
 final _soloStagione = RegExp(r'^\d{4}-\d{4}$');
+
+final _unaData = RegExp(r'\d{1,2}/\d{1,2}/\d{4}');
 
 String? _stagioneDa(Document doc) {
   // Il sito nuovo la scrive accanto al titolo ("Stagione: 2025-2026");
@@ -95,7 +102,27 @@ ElencoFin leggiElencoFin(String pagina) {
       ),
     );
   }
-  return ElencoFin(stagione: stagione, stagioni: stagioni, voci: voci);
+  // Quanti gironi dice di avere la pagina: i collegamenti ai gironi e
+  // «Campionati trovati: 18». Se se ne leggono meno, o manca la stagione,
+  // il sito è cambiato.
+  final collegamenti = {
+    for (final m in RegExp(r'CMPid=(\d+)').allMatches(pagina)) m.group(1),
+  }.length;
+  final trovati =
+      int.tryParse(
+        RegExp(r'Campionati trovati:\s*(\d+)')
+                .firstMatch(doc.body?.text ?? '')
+                ?.group(1) ??
+            '',
+      ) ??
+      0;
+  return ElencoFin(
+    stagione: stagione,
+    stagioni: stagioni,
+    voci: voci,
+    nonTuttoLetto:
+        stagione.isEmpty || voci.length < math.max(collegamenti, trovati),
+  );
 }
 
 int _intero(String s) => int.tryParse(_pulito(s).replaceAll('+', '')) ?? 0;
@@ -183,12 +210,17 @@ GironeFin leggiGironeFin(String pagina, {required int cmpId}) {
 
   final classifica = <RigaClassificaFin>[];
   final giornate = <GiornataFin>[];
+  // Le righe che la pagina mostra, per accorgersi se il lettore ne salta:
+  // quelle della classifica e quelle del calendario con una data.
+  var righeClassifica = 0;
+  var righeConData = 0;
   for (final tabella in doc.querySelectorAll('table')) {
     final intestazioni = [
       for (final th in tabella.querySelectorAll('thead th')) _pulito(th.text),
     ];
     if (intestazioni.contains('Punti')) {
       for (final riga in tabella.querySelectorAll('tbody tr')) {
+        if (_pulito(riga.text).isNotEmpty) righeClassifica++;
         final c = [for (final td in riga.querySelectorAll('td')) td.text];
         if (c.length < 9) continue;
         // Il sito nuovo scrive la posizione davanti al nome: "1. NC Monza".
@@ -232,6 +264,7 @@ GironeFin leggiGironeFin(String pagina, {required int cmpId}) {
         nomeGiornata = _pulito(celle.first.text);
         continue;
       }
+      if (_unaData.hasMatch(riga.text)) righeConData++;
       final incontro = _incontro(celle);
       if (incontro == null) continue;
       incontri.add(incontro);
@@ -240,11 +273,24 @@ GironeFin leggiGironeFin(String pagina, {required int cmpId}) {
     chiudi();
   }
 
+  final stagione = _stagioneDa(doc);
+  final incontri = giornate.fold(0, (n, g) => n + g.incontri.length);
+  // Niente classifica e niente partite ma la pagina ha delle date, o non
+  // dice nemmeno la stagione: il sito ha cambiato forma, non è un girone
+  // ancora da pubblicare.
+  final vuotaMaPiena =
+      classifica.isEmpty &&
+      giornate.isEmpty &&
+      (stagione == null || _unaData.hasMatch(doc.body?.text ?? ''));
   return GironeFin(
     cmpId: cmpId,
-    stagione: _stagioneDa(doc),
+    stagione: stagione,
     titolo: titolo,
     classifica: classifica,
     giornate: giornate,
+    nonTuttoLetto:
+        classifica.length < righeClassifica ||
+        incontri < righeConData ||
+        vuotaMaPiena,
   );
 }

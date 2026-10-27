@@ -13,6 +13,7 @@ import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/campionati_providers.dart';
+import '../application/sito_fin_cambiato.dart';
 import '../data/campionati_repository.dart';
 import '../domain/campionato_fin.dart';
 
@@ -56,6 +57,7 @@ class _CollegaGironeScreenState extends ConsumerState<CollegaGironeScreen> {
   @override
   Widget build(BuildContext context) {
     final elencoAsync = ref.watch(elencoFinProvider(_stagione));
+    segnalaSeElencoNonLetto(ref, stagione: _stagione, clubId: widget.clubId);
     final gruppi = [
       for (final g in ref.watch(gruppiListProvider(widget.clubId)).value ?? [])
         if (g.sport == null || g.sport == 'pallanuoto') g,
@@ -73,7 +75,14 @@ class _CollegaGironeScreenState extends ConsumerState<CollegaGironeScreen> {
           onChanged: (s) => setState(() => _stagione = s),
         ),
         const SizedBox(height: AppSpacing.s24),
-        if (value.voci.isEmpty)
+        if (value.nonTuttoLetto) ...[
+          const RiquadroVuoto(
+            testoSitoFinCambiato,
+            icona: Icons.report_problem_outlined,
+          ),
+          const SizedBox(height: AppSpacing.s24),
+        ],
+        if (value.voci.isEmpty && !value.nonTuttoLetto)
           RiquadroVuoto(
             'La FIN non ha ancora pubblicato i campionati '
             '${value.stagione}: compariranno qui appena escono.',
@@ -189,16 +198,31 @@ class _ScegliSquadraScreenState extends ConsumerState<_ScegliSquadraScreen> {
   @override
   Widget build(BuildContext context) {
     final letturaAsync = ref.watch(gironeFinProvider(widget.voce.cmpId));
+    segnalaSeGironeNonLetto(
+      ref,
+      cmpId: widget.voce.cmpId,
+      clubId: widget.clubId,
+      nome: [
+        widget.voce.campionato,
+        widget.voce.faseEGirone,
+      ].where((s) => s.isNotEmpty).join(' · '),
+    );
     final List<Widget> corpo = switch (letturaAsync) {
       AsyncValue(:final value?) =>
         value.girone.squadre.isEmpty
             ? [
                 EmptyState(
-                  icona: Icons.groups_outlined,
-                  titolo: 'Ancora nessuna squadra',
-                  descrizione:
-                      'La FIN non ha ancora pubblicato le squadre di questo '
-                      'girone. Riprova più avanti.',
+                  icona: value.girone.nonTuttoLetto
+                      ? Icons.report_problem_outlined
+                      : Icons.groups_outlined,
+                  titolo: value.girone.nonTuttoLetto
+                      ? 'Il sito della FIN è cambiato'
+                      : 'Ancora nessuna squadra',
+                  descrizione: value.girone.nonTuttoLetto
+                      ? "L'app non riesce più a leggere le squadre di questo "
+                            'girone. Riprova più avanti.'
+                      : 'La FIN non ha ancora pubblicato le squadre di questo '
+                            'girone. Riprova più avanti.',
                   azionePrincipale: 'Torna all\'elenco',
                   onAzionePrincipale: () => Navigator.of(context).pop(),
                 ),

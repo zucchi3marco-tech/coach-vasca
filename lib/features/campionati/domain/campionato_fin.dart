@@ -34,6 +34,7 @@ class ElencoFin {
     required this.stagione,
     required this.stagioni,
     required this.voci,
+    this.nonTuttoLetto = false,
   });
 
   /// La stagione mostrata, es. "2026-2027".
@@ -42,6 +43,10 @@ class ElencoFin {
   /// Tutte le stagioni che il sito offre, dalla più vecchia.
   final List<String> stagioni;
   final List<VoceElencoFin> voci;
+
+  /// La pagina mostra più gironi di quelli letti, o non si trova la
+  /// stagione: il sito è cambiato e il lettore non lo capisce più.
+  final bool nonTuttoLetto;
 
   /// I gironi raggruppati per campionato, nell'ordine del sito.
   Map<String, List<VoceElencoFin>> get perCampionato {
@@ -137,6 +142,7 @@ class GironeFin {
     required this.titolo,
     required this.classifica,
     required this.giornate,
+    this.nonTuttoLetto = false,
   });
 
   final int cmpId;
@@ -148,6 +154,11 @@ class GironeFin {
   final String titolo;
   final List<RigaClassificaFin> classifica;
   final List<GiornataFin> giornate;
+
+  /// La pagina ha righe di classifica o partite che il lettore non ha
+  /// riconosciuto: il sito è cambiato. Quello che si è letto resta giusto,
+  /// ma può mancare qualcosa.
+  final bool nonTuttoLetto;
 
   /// Le squadre del girone: quelle in classifica o, se la classifica
   /// non c'è ancora, quelle del calendario.

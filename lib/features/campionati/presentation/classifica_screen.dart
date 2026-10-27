@@ -20,6 +20,7 @@ import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../application/campionati_providers.dart';
+import '../application/sito_fin_cambiato.dart';
 import '../data/campionati_repository.dart';
 import '../domain/campionato_fin.dart';
 import 'collega_girone_screen.dart';
@@ -145,6 +146,17 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
     final letturaAsync = scelto == null
         ? null
         : ref.watch(gironeFinProvider(scelto.cmpId));
+    if (scelto != null) {
+      segnalaSeGironeNonLetto(
+        ref,
+        cmpId: scelto.cmpId,
+        clubId: widget.clubId,
+        nome: [
+          scelto.campionato,
+          scelto.faseEGirone,
+        ].where((s) => s.isNotEmpty).join(' · '),
+      );
+    }
     final lettura = letturaAsync?.value;
     final nostra = scelto == null
         ? null
@@ -285,7 +297,16 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
     final incontri = girone.incontriDi(collegato.squadra);
     final prossimo = girone.prossimoDi(collegato.squadra);
 
+    final nonLetto = girone.nonTuttoLetto;
     return [
+      if (nonLetto)
+        const Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.s16),
+          child: RiquadroVuoto(
+            testoSitoFinCambiato,
+            icona: Icons.report_problem_outlined,
+          ),
+        ),
       if (lettura.daCopia)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s16),
@@ -300,8 +321,11 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
         onAzione: () => _apriSulSito(girone.cmpId),
       ),
       if (girone.classifica.isEmpty)
-        const RiquadroVuoto(
-          'La FIN non ha ancora pubblicato la classifica di questo girone.',
+        RiquadroVuoto(
+          nonLetto
+              ? 'La classifica non si riesce a leggere dal sito della FIN.'
+              : 'La FIN non ha ancora pubblicato la classifica di questo '
+                    'girone.',
         )
       else
         _TabellaClassifica(righe: girone.classifica, nostra: collegato.squadra),
@@ -336,8 +360,10 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
       if (_tuttoIlCalendario)
         ..._calendarioCompleto(girone, collegato.squadra)
       else if (incontri.isEmpty)
-        const RiquadroVuoto(
-          'La FIN non ha ancora pubblicato il calendario della squadra.',
+        RiquadroVuoto(
+          nonLetto
+              ? 'Il calendario non si riesce a leggere dal sito della FIN.'
+              : 'La FIN non ha ancora pubblicato il calendario della squadra.',
         )
       else
         SezioneSchede(
@@ -365,8 +391,12 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
 
   List<Widget> _calendarioCompleto(GironeFin girone, String squadra) {
     if (girone.giornate.isEmpty) {
-      return const [
-        RiquadroVuoto('La FIN non ha ancora pubblicato il calendario.'),
+      return [
+        RiquadroVuoto(
+          girone.nonTuttoLetto
+              ? 'Il calendario non si riesce a leggere dal sito della FIN.'
+              : 'La FIN non ha ancora pubblicato il calendario.',
+        ),
       ];
     }
     return [
