@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'proponi-le-fasi',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Le fasi della stagione a ritroso dall\'obiettivo',
+    testo:
+        'Nella stagione, sotto «Fasi e obiettivi», «Proponi le fasi»: scegli '
+        'fino a tre obiettivi (una partita, una gara o un giorno a mano) e '
+        'l\'app propone Preparazione, Andata e Ritorno dalle partite della '
+        'squadra, lo Scarico e il giorno dell\'obiettivo. Con − e + allunghi '
+        'o accorci ogni fase di una settimana, poi «Usa queste fasi». Le '
+        'fasi con lo stesso nome di prima tengono «A cosa serve».',
+    importante: true,
+  ),
+  Novita(
     id: 'statistiche-stagione-per-squadra',
     data: DateTime(2026, 10, 27),
     titolo: 'Statistiche della stagione: solo le partite della squadra',

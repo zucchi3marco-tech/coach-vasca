@@ -15,6 +15,7 @@ import '../../carico/presentation/carico_settimane.dart' show formattaCarico;
 import '../application/stagioni_providers.dart';
 import '../domain/stagione.dart';
 import 'fase_form_screen.dart';
+import 'proponi_fasi_screen.dart';
 
 /// "Fasi e obiettivi" nel dettaglio della stagione: le fasi in ordine,
 /// con le date e gli obiettivi di ogni settimana; un tocco apre la fase.
@@ -100,14 +101,27 @@ class SezioneFasi extends ConsumerWidget {
             ],
           ),
         const SizedBox(height: AppSpacing.s12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SecondaryButton(
-            label: 'Aggiungi fase',
-            icon: Icons.add,
-            expanded: false,
-            onPressed: apri,
-          ),
+        Wrap(
+          spacing: AppSpacing.s8,
+          runSpacing: AppSpacing.s8,
+          children: [
+            SecondaryButton(
+              label: 'Aggiungi fase',
+              icon: Icons.add,
+              expanded: false,
+              onPressed: apri,
+            ),
+            SecondaryButton(
+              label: 'Proponi le fasi',
+              icon: Icons.auto_awesome_outlined,
+              expanded: false,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ProponiFasiScreen(stagione: aggiornata),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
