@@ -21,6 +21,7 @@ import '../../pallanuoto/presentation/staff_distinta_dialog.dart';
 import '../application/gruppi_providers.dart';
 import '../data/gruppi_repository.dart';
 import '../domain/gruppo.dart';
+import 'cambio_categoria_screen.dart';
 
 /// Aggiungi/rinomina/elimina un gruppo — raggiungibile dalla schermata di
 /// scelta gruppo, per non dover passare dall'onboarding iniziale ogni
@@ -202,6 +203,8 @@ class _GruppiManagementScreenState
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // A settembre e ottobre, se qualcuno sale di categoria.
+          RiquadroCambioCategoria(clubId: widget.clubId),
           FormGroup(
             titolo: 'Nuovo gruppo',
             campi: [

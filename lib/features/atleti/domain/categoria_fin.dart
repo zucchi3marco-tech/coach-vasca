@@ -1,3 +1,4 @@
+import '../../gruppi/domain/gruppo.dart';
 import 'atleta.dart';
 
 /// Le categorie FIN della pallanuoto, calcolate dall'anno di nascita
@@ -89,3 +90,79 @@ FuoriCategoria? fuoriCategoria(String categoria, String nomeSquadra) {
   if (atleta < 0 || atleta == squadra) return null;
   return atleta < squadra ? FuoriCategoria.sottoEta : FuoriCategoria.fuoriQuota;
 }
+
+/// Chi sale di categoria nella stagione e la squadra proposta (passo B).
+class CambioCategoria {
+  const CambioCategoria({
+    required this.atleta,
+    required this.da,
+    required this.a,
+    this.squadraProposta,
+  });
+
+  final Atleta atleta;
+
+  /// La categoria della stagione prima («U14»).
+  final String da;
+
+  /// Quella nuova («U16»).
+  final String a;
+
+  /// La squadra con il nome della nuova categoria; null se il club non
+  /// ne ha una.
+  final Gruppo? squadraProposta;
+}
+
+/// Gli atleti di pallanuoto attivi che nella stagione [annoStagione]
+/// cambiano categoria rispetto a quella prima. Solo chi è ancora nella
+/// squadra della categoria di prima, o senza squadra: chi gioca sotto età
+/// o fuori quota l'ha messo lì l'allenatore, e chi è già stato spostato
+/// non compare più. In ordine di categoria nuova, poi di cognome.
+List<CambioCategoria> cambiDiCategoria({
+  required List<Atleta> atleti,
+  required List<Gruppo> squadre,
+  required int annoStagione,
+}) {
+  final perId = {for (final s in squadre) s.id: s};
+  final ordinate = [...squadre]..sort((x, y) => x.ordine.compareTo(y.ordine));
+  Gruppo? squadraDi(String categoria) => ordinate
+      .where(
+        (s) =>
+            s.sport != 'nuoto' && categoriaDaNomeSquadra(s.nome) == categoria,
+      )
+      .firstOrNull;
+
+  final cambi = <CambioCategoria>[];
+  for (final atleta in atleti) {
+    if (!atleta.attivo || atleta.sport != 'pallanuoto') continue;
+    final anno = atleta.dataNascita.year;
+    final da = categoriaPallanuoto(anno, annoStagione - 1);
+    final a = categoriaPallanuoto(anno, annoStagione);
+    if (da == null || a == null || da == a) continue;
+    final attuale = perId[atleta.gruppoId];
+    if (attuale != null && categoriaDaNomeSquadra(attuale.nome) != da) {
+      continue;
+    }
+    cambi.add(
+      CambioCategoria(
+        atleta: atleta,
+        da: da,
+        a: a,
+        squadraProposta: squadraDi(a),
+      ),
+    );
+  }
+  cambi.sort((x, y) {
+    final perCategoria = _ordine(x.a).compareTo(_ordine(y.a));
+    if (perCategoria != 0) return perCategoria;
+    final perCognome = x.atleta.cognome.compareTo(y.atleta.cognome);
+    return perCognome != 0
+        ? perCognome
+        : x.atleta.nome.compareTo(y.atleta.nome);
+  });
+  return cambi;
+}
+
+/// Il riquadro del cambio di categoria si vede a settembre e ottobre.
+bool inizioStagioneSportiva(DateTime oggi) =>
+    oggi.month == 9 || oggi.month == 10;

@@ -14,7 +14,9 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../atleti/domain/categoria_fin.dart';
 import '../../atleti/presentation/record_club_screen.dart';
+import '../../gruppi/presentation/cambio_categoria_screen.dart';
 import '../../club/application/current_club_provider.dart';
 import '../../gare/application/gare_providers.dart';
 import '../../gare/domain/gara.dart';
@@ -188,11 +190,37 @@ class StagioneDetailScreen extends ConsumerWidget {
           .read(duplicazioneStagioneServiceProvider)
           .duplica(stagione, nuovaDataInizio);
       if (!context.mounted) return;
-      Navigator.of(context).pushReplacement(
+      final navigator = Navigator.of(context);
+      navigator.pushReplacement(
         MaterialPageRoute(
           builder: (_) => StagioneDetailScreen(stagione: nuovaStagione),
         ),
       );
+      // Su un altro anno sportivo, nella pallanuoto: chi cambia categoria.
+      final anno = annoStagioneSportiva(nuovaDataInizio);
+      final sport = ref.read(currentClubProvider).value?.sport;
+      if (sport != 'nuoto' &&
+          anno != annoStagioneSportiva(stagione.dataInizio)) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Stagione duplicata sul ${etichettaStagioneSportiva(anno)}.',
+            ),
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: 'Chi cambia categoria',
+              onPressed: () => navigator.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CambioCategoriaScreen(
+                    clubId: stagione.clubId,
+                    annoStagione: anno,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(

@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'chi-cambia-categoria',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Chi cambia categoria a inizio stagione',
+    testo:
+        'A settembre e ottobre, nella scelta della squadra e in «Gestisci '
+        'gruppi», il riquadro «Chi cambia categoria» elenca chi sale di '
+        'categoria, per esempio i 2013 che passano negli U16, con la squadra '
+        'della categoria nuova. Togli la spunta a chi resta, poi «Sposta». '
+        'Lo trovi anche subito dopo «Duplica stagione» sull\'anno dopo. Chi '
+        'hai messo sotto età o fuori quota non compare: resta dov\'è.',
+  ),
+  Novita(
     id: 'categoria-dall-anno',
     data: DateTime(2026, 10, 27),
     titolo: 'La categoria FIN accanto al nome',

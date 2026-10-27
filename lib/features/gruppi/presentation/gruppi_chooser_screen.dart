@@ -14,6 +14,7 @@ import '../../home/atleta/home_atleta_widgets.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../application/gruppi_providers.dart';
 import '../application/selezione_gruppo_provider.dart';
+import 'cambio_categoria_screen.dart';
 import 'gruppi_management_screen.dart';
 
 /// Mostrata a ogni apertura dell'app (dopo il primo login, quando i gruppi
@@ -152,6 +153,9 @@ class GruppiChooserScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 20),
+              // A settembre e ottobre, se qualcuno sale di categoria.
+              if (ref.watch(puoGestireAtletiESquadreProvider(clubId)))
+                RiquadroCambioCategoria(clubId: clubId),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final w = constraints.maxWidth;
