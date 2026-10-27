@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/utils/date_italiane.dart';
+import '../../export/marchio_pdf.dart';
 import '../../export/tema_pdf.dart';
 
 /// Un biglietto del foglio dei codici: l'atleta, la squadra (se ce l'ha),
@@ -64,11 +65,13 @@ Future<Uint8List> generaBigliettiCodici({
   required String nomeClub,
   required List<BigliettoCodice> biglietti,
   String? indirizzoApp,
+  Uint8List? logo,
 }) async {
   final doc = await documentoBigliettiCodici(
     nomeClub: nomeClub,
     biglietti: biglietti,
     indirizzoApp: indirizzoApp,
+    logo: logo,
   );
   return doc.save();
 }
@@ -79,9 +82,11 @@ Future<pw.Document> documentoBigliettiCodici({
   required String nomeClub,
   required List<BigliettoCodice> biglietti,
   String? indirizzoApp,
+  Uint8List? logo,
 }) async {
   final tema = await temaPdf();
   final doc = pw.Document(theme: tema, title: 'Codici di accesso');
+  final immagine = immagineLogoPdf(logo);
   final ordinati = ordinaBiglietti(biglietti);
   final indirizzo = indirizzoApp?.trim();
   final app = (indirizzo == null || indirizzo.isEmpty) ? null : indirizzo;
@@ -121,6 +126,7 @@ Future<pw.Document> documentoBigliettiCodici({
                               : null,
                           nomeClub: nomeClub,
                           indirizzo: app,
+                          logo: immagine,
                         ),
                     ],
                   ),
@@ -181,6 +187,7 @@ pw.Widget _cella(
   BigliettoCodice? b, {
   required String nomeClub,
   required String? indirizzo,
+  required pw.ImageProvider? logo,
 }) {
   return pw.SizedBox(
     width: _larghezzaCella,
@@ -192,7 +199,12 @@ pw.Widget _cella(
               horizontal: _lato,
               vertical: 10,
             ),
-            child: _biglietto(b, nomeClub: nomeClub, indirizzo: indirizzo),
+            child: _biglietto(
+              b,
+              nomeClub: nomeClub,
+              indirizzo: indirizzo,
+              logo: logo,
+            ),
           ),
   );
 }
@@ -201,6 +213,7 @@ pw.Widget _biglietto(
   BigliettoCodice b, {
   required String nomeClub,
   required String? indirizzo,
+  required pw.ImageProvider? logo,
 }) {
   final squadra = b.squadra;
   final intestazione = (squadra == null || squadra.trim().isEmpty)
@@ -217,10 +230,26 @@ pw.Widget _biglietto(
       pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(
-            intestazione,
-            maxLines: 1,
-            style: const pw.TextStyle(fontSize: 8, color: _grigio),
+          pw.Row(
+            children: [
+              if (logo != null) ...[
+                pw.ConstrainedBox(
+                  constraints: const pw.BoxConstraints(
+                    maxHeight: 16,
+                    maxWidth: 48,
+                  ),
+                  child: pw.Image(logo, fit: pw.BoxFit.contain),
+                ),
+                pw.SizedBox(width: 5),
+              ],
+              pw.Expanded(
+                child: pw.Text(
+                  intestazione,
+                  maxLines: 1,
+                  style: const pw.TextStyle(fontSize: 8, color: _grigio),
+                ),
+              ),
+            ],
           ),
           pw.SizedBox(height: 3),
           pw.FittedBox(

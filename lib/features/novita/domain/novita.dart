@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'logo-del-club',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Il logo del club nei PDF',
+    testo:
+        'In «Il mio club», «Carica il logo» (PNG o JPG, fino a 1 MB): da lì '
+        'è in alto nel PDF della seduta, dello schema tattico e nei '
+        'biglietti dei codici, accanto al nome del club. Lo mette, cambia o '
+        'toglie solo il responsabile del club.',
+    importante: true,
+  ),
+  Novita(
     id: 'note-avversario',
     data: DateTime(2026, 10, 27),
     titolo: 'Le note sull\'avversario',

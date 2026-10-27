@@ -3,6 +3,7 @@ import 'package:printing/printing.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/scarica_file.dart';
+import '../../export/marchio_pdf.dart';
 import '../pdf/schema_tattico_pdf.dart';
 import 'water_polo_tactics_board.dart';
 
@@ -52,7 +53,11 @@ Future<void> mostraEsportaSchema(
   required CampoLavagna campo,
   required List<PassoLavagna> passi,
   int passoCorrente = 0,
+  String? clubId,
 }) async {
+  final leggiMarchio = clubId == null
+      ? null
+      : lettoreMarchioPdf(context, clubId);
   final scelta = await showModalBottomSheet<_Formato>(
     context: context,
     showDragHandle: true,
@@ -92,6 +97,7 @@ Future<void> mostraEsportaSchema(
           campo: campo.nome,
           immaginiPassi: immagini,
           legenda: legendaFrecce(passi),
+          marchio: leggiMarchio == null ? null : await leggiMarchio(),
         );
         await Printing.sharePdf(bytes: pdf, filename: '$nome.pdf');
       case _Formato.immagine:

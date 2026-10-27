@@ -51,6 +51,7 @@ class _AzioniFinte extends AzioniFoglio {
     required String nomeClub,
     required List<BigliettoCodice> biglietti,
     String? indirizzoApp,
+    Uint8List? logo,
   }) async {
     pdfCreati++;
     ultimiBiglietti = biglietti;

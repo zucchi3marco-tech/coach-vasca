@@ -7,6 +7,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/colori_app.dart';
 import 'csv_export.dart';
 import 'csv_preview_screen.dart';
+import 'marchio_pdf.dart';
 import 'pdf_export.dart';
 
 /// Mostra la scelta PDF/CSV e porta a termine l'esportazione. [caricaDati]
@@ -19,8 +20,12 @@ Future<void> mostraMenuExport(
   required Future<List<AllenamentoConSerie>> Function() caricaDati,
   Map<String, String> nomiGruppi = const {},
   Map<String, String> nomiAtleti = const {},
+  String? clubId,
 }) async {
   final colori = context.colori;
+  final leggiMarchio = clubId == null
+      ? null
+      : lettoreMarchioPdf(context, clubId);
   final scelta = await showModalBottomSheet<String>(
     context: context,
     builder: (context) => SafeArea(
@@ -51,7 +56,14 @@ Future<void> mostraMenuExport(
   );
   if (scelta == null || !context.mounted) return;
 
-  final dati = await _conCaricamento(context, caricaDati);
+  MarchioPdf? marchio;
+  final dati = await _conCaricamento(context, () async {
+    final dati = await caricaDati();
+    if (scelta == 'pdf' && leggiMarchio != null) {
+      marchio = await leggiMarchio();
+    }
+    return dati;
+  });
   if (dati == null || !context.mounted) return;
   if (dati.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -62,8 +74,12 @@ Future<void> mostraMenuExport(
 
   if (scelta == 'pdf') {
     await Printing.layoutPdf(
-      onLayout: (_) =>
-          generaPdf(dati, nomiGruppi: nomiGruppi, nomiAtleti: nomiAtleti),
+      onLayout: (_) => generaPdf(
+        dati,
+        nomiGruppi: nomiGruppi,
+        nomiAtleti: nomiAtleti,
+        marchio: marchio,
+      ),
     );
   } else {
     final csv = generaCsv(dati, nomiGruppi: nomiGruppi, nomiAtleti: nomiAtleti);

@@ -25,6 +25,7 @@ import '../data/membri_club_repository.dart';
 import '../domain/club.dart';
 import '../domain/ruolo_club.dart';
 import 'invita_staff.dart';
+import 'logo_club.dart';
 
 enum _AzioneMembro { faiAllenatore, faiAssistente, togli, cambiaNome }
 
@@ -241,6 +242,7 @@ class _MioClubScreenState extends ConsumerState<MioClubScreen> {
               ],
             ),
             data: (membri) => _Contenuto(
+              clubId: widget.clubId,
               membri: membri,
               // Finché non arrivano (o se non si leggono) la sezione dei
               // capi non c'è: il resto della pagina non aspetta.
@@ -277,6 +279,7 @@ String _scaricatoDa(MembroClub io) {
 
 class _Contenuto extends StatelessWidget {
   const _Contenuto({
+    required this.clubId,
     required this.membri,
     required this.squadre,
     required this.onScegliCapo,
@@ -289,6 +292,7 @@ class _Contenuto extends StatelessWidget {
     required this.onConfigurazioneGuidata,
   });
 
+  final String clubId;
   final List<MembroClub> membri;
   final List<SquadraConCapo> squadre;
   final Future<void> Function(SquadraConCapo squadra) onScegliCapo;
@@ -452,6 +456,8 @@ class _Contenuto extends StatelessWidget {
             onPressed: occupato ? null : onInvita,
           ),
         ],
+        const SizedBox(height: AppSpacing.s32),
+        SezioneLogoClub(clubId: clubId, modificabile: sonoResponsabile),
         // Dopo "Invita un allenatore", che chiude il blocco di chi lavora
         // nel club: la configurazione guidata e i dati sono un altro
         // discorso, e solo del responsabile.

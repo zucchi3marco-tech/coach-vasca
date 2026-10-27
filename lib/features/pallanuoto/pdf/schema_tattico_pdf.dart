@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../export/marchio_pdf.dart';
+
 /// PDF di uno schema tattico, da stampare o mandare alla squadra: titolo,
 /// categoria, poi i passi come immagini, due per riga, e sotto la legenda
 /// delle frecce usate. Le immagini le disegna la lavagna
@@ -13,6 +15,7 @@ Future<Uint8List> generaSchemaPdf({
   required String campo,
   required List<Uint8List> immaginiPassi,
   List<String> legenda = const [],
+  MarchioPdf? marchio,
 }) async {
   final doc = pw.Document(title: titolo, creator: 'WaterTactics');
   const margine = 28.0;
@@ -25,6 +28,7 @@ Future<Uint8List> generaSchemaPdf({
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(margine),
       build: (context) => [
+        if (marchio != null) testataClubPdf(marchio),
         pw.Header(level: 0, text: titolo),
         pw.Text(
           [

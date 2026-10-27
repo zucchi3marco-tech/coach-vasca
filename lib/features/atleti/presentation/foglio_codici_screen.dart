@@ -17,6 +17,7 @@ import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../club/application/current_club_provider.dart';
+import '../../club/data/logo_club_repository.dart';
 import '../../club/domain/club.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -35,10 +36,12 @@ class AzioniFoglio {
     required String nomeClub,
     required List<BigliettoCodice> biglietti,
     String? indirizzoApp,
+    Uint8List? logo,
   }) => generaBigliettiCodici(
     nomeClub: nomeClub,
     biglietti: biglietti,
     indirizzoApp: indirizzoApp,
+    logo: logo,
   );
 
   Future<void> stampa(Uint8List bytes, String nome) =>
@@ -157,12 +160,20 @@ class _FoglioCodiciScreenState extends ConsumerState<FoglioCodiciScreen> {
         }
         return;
       }
+      // Un logo che non si legge non ferma il foglio: si stampa senza.
+      Uint8List? logo;
+      try {
+        logo = await ref
+            .read(logoClubRepositoryProvider)
+            .logo(club.id, attesa: const Duration(seconds: 4));
+      } catch (_) {}
       final bytes = await ref
           .read(azioniFoglioProvider)
           .creaPdf(
             nomeClub: club.nome,
             biglietti: biglietti,
             indirizzoApp: kIsWeb ? Uri.base.origin : null,
+            logo: logo,
           );
       final etichetta = _etichettaScelta(club, gruppi);
       if (mounted) {

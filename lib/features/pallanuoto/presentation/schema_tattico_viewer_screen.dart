@@ -32,6 +32,7 @@ class SchemaTatticoViewerScreen extends StatelessWidget {
               context,
               titolo: schema.titolo,
               categoria: schema.categoria,
+              clubId: schema.clubId,
               campo: CampoLavagna.values.byName(schema.campo),
               passi: [for (final p in schema.passi) passoLavagnaDaSchema(p)],
             ),

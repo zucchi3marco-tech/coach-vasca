@@ -21,6 +21,12 @@ abstract final class AcquaPalette {
   static const nero = Color(0xFF000000);
 }
 
+/// Il foglio dei PDF: l'anteprima del logo del club lo mostra su bianco,
+/// come uscirà stampato, anche con il tema scuro.
+abstract final class CartaPalette {
+  static const foglio = Color(0xFFFFFFFF);
+}
+
 /// Colori della vasca della lavagna tattica: acqua chiara di piscina vista
 /// dall'alto, come un campo disegnato, e i segni di regolamento ai bordi
 /// (rosso fino ai 2 m, giallo fino ai 5 m, verde fino a metà campo).

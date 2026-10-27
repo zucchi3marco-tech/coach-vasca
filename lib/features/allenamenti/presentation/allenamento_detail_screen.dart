@@ -777,6 +777,7 @@ class _AllenamentoDetailScreenState
             onPressed: () => mostraMenuExport(
               context,
               titoloDocumento: titolo,
+              clubId: allenamento.clubId,
               nomiGruppi: nomiGruppi,
               nomiAtleti: {for (final a in atleti) a.id: nomeBreve(a, atleti)},
               caricaDati: () async => [

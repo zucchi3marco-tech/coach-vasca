@@ -306,6 +306,7 @@ class _SchemaTatticoFormScreenState
                     campo: _campo,
                     passi: [for (final p in _passi) _passoAWidget(p)],
                     passoCorrente: _passoAttuale,
+                    clubId: widget.clubId,
                   ),
           ),
         ],

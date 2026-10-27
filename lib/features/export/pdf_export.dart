@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../core/utils/date_italiane.dart';
 import '../allenamenti/domain/allenamento.dart';
 import 'csv_export.dart' show AllenamentoConSerie;
+import 'marchio_pdf.dart';
 import 'pdf_allenamento.dart';
 import 'tema_pdf.dart';
 
@@ -42,6 +43,7 @@ Future<Uint8List> generaPdf(
   List<AllenamentoConSerie> allenamenti, {
   Map<String, String> nomiGruppi = const {},
   Map<String, String> nomiAtleti = const {},
+  MarchioPdf? marchio,
 }) async {
   final tema = await temaPdf();
   final doc = pw.Document(theme: tema, title: 'Allenamento');
@@ -55,6 +57,7 @@ Future<Uint8List> generaPdf(
         margin: const pw.EdgeInsets.all(_margine),
         theme: tema,
         build: (context) => [
+          if (marchio != null) testataClubPdf(marchio),
           ..._intestazione(
             allenamento,
             totali: totaliPdf(serie),
