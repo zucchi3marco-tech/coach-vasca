@@ -28,6 +28,7 @@ import 'partita_form_screen.dart';
 import 'partita_live_screen.dart';
 import 'riordina_numeri_screen.dart';
 import 'scegli_convocati_screen.dart';
+import 'scheda_avversario_screen.dart';
 import 'staff_distinta_dialog.dart';
 import 'statistiche_partita_screen.dart';
 import 'video_partita_screen.dart';
@@ -146,6 +147,19 @@ class DistintaScreen extends ConsumerWidget {
           icona: Icons.description_outlined,
           etichetta: 'Referto',
           onTap: () => apri(RefertoPartitaScreen(partita: partita)),
+        ),
+        AzioneTestata(
+          icona: Icons.shield_outlined,
+          etichetta: 'Avversario',
+          onTap: () => apri(
+            SchedaAvversarioScreen(
+              clubId: partita.clubId,
+              gruppoId: partita.gruppoId,
+              nome: partita.avversario,
+              partitaId: partita.id,
+              vistaStaff: true,
+            ),
+          ),
         ),
         // Il video c'è solo dopo: dal giorno della partita.
         if (!partita.data.isAfter(DateTime.now()))

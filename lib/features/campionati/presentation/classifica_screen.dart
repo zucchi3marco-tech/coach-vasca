@@ -19,6 +19,7 @@ import '../../../widgets/riquadri.dart';
 import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
+import '../../pallanuoto/presentation/scheda_avversario_screen.dart';
 import '../application/campionati_providers.dart';
 import '../application/sito_fin_cambiato.dart';
 import '../data/campionati_repository.dart';
@@ -122,6 +123,21 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
         // L'errore lo mostra la pagina.
       }
     }
+  }
+
+  /// La scheda di una squadra del girone: le nostre partite contro di
+  /// lei, i suoi marcatori, la sua classifica.
+  void _apriAvversario(String nomeFin, GironeCollegato collegato) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SchedaAvversarioScreen(
+          clubId: widget.clubId,
+          gruppoId: collegato.gruppoId ?? widget.gruppoId,
+          nome: nomeFin,
+          vistaStaff: widget.puoModificare,
+        ),
+      ),
+    );
   }
 
   void _apriSulSito(int cmpId) {
@@ -328,7 +344,11 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
                     'girone.',
         )
       else
-        _TabellaClassifica(righe: girone.classifica, nostra: collegato.squadra),
+        _TabellaClassifica(
+          righe: girone.classifica,
+          nostra: collegato.squadra,
+          onSquadra: (nome) => _apriAvversario(nome, collegato),
+        ),
       Padding(
         padding: const EdgeInsets.only(top: AppSpacing.s8, left: 4),
         child: Text(
@@ -376,6 +396,7 @@ class _ClassificaScreenState extends ConsumerState<ClassificaScreen> {
                 squadra: collegato.squadra,
                 giornata: _giornataDi(girone, i),
                 prossimo: identical(i, prossimo),
+                onAvversario: (nome) => _apriAvversario(nome, collegato),
               ),
           ],
         ),
@@ -459,10 +480,17 @@ class _SceltaGirone extends StatelessWidget {
 /// su uno schermo largo anche vinte, pari, perse e gol. La squadra del
 /// club in evidenza.
 class _TabellaClassifica extends StatelessWidget {
-  const _TabellaClassifica({required this.righe, required this.nostra});
+  const _TabellaClassifica({
+    required this.righe,
+    required this.nostra,
+    required this.onSquadra,
+  });
 
   final List<RigaClassificaFin> righe;
   final String nostra;
+
+  /// Un tocco su un'altra squadra apre la sua scheda.
+  final ValueChanged<String> onSquadra;
 
   @override
   Widget build(BuildContext context) {
@@ -545,23 +573,40 @@ class _TabellaClassifica extends StatelessWidget {
               fondo: colori.superficieAlt,
             ),
             for (final r in righe)
-              Semantics(
-                label:
-                    '${r.posizione}°, ${r.squadra}, ${r.punti} punti, '
-                    '${r.giocate} giocate, differenza reti ${r.differenza}',
-                excludeSemantics: true,
-                child: riga(
-                  posizione: '${r.posizione}',
-                  squadra: r.squadra,
-                  valori: valori(r),
-                  stile: stessaSquadra(r.squadra, nostra)
-                      ? AppTypography.corpoForte.copyWith(color: colori.testo)
-                      : AppTypography.corpo.copyWith(color: colori.testo),
-                  fondo: stessaSquadra(r.squadra, nostra)
-                      ? colori.azioneTenue
-                      : null,
+              if (stessaSquadra(r.squadra, nostra))
+                Semantics(
+                  label:
+                      '${r.posizione}°, ${r.squadra}, ${r.punti} punti, '
+                      '${r.giocate} giocate, differenza reti ${r.differenza}',
+                  excludeSemantics: true,
+                  child: riga(
+                    posizione: '${r.posizione}',
+                    squadra: r.squadra,
+                    valori: valori(r),
+                    stile: AppTypography.corpoForte.copyWith(
+                      color: colori.testo,
+                    ),
+                    fondo: colori.azioneTenue,
+                  ),
+                )
+              else
+                Semantics(
+                  label:
+                      '${r.posizione}°, ${r.squadra}, ${r.punti} punti, '
+                      '${r.giocate} giocate, differenza reti ${r.differenza}. '
+                      'Apri la scheda dell\'avversario',
+                  button: true,
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: () => onSquadra(r.squadra),
+                    child: riga(
+                      posizione: '${r.posizione}',
+                      squadra: r.squadra,
+                      valori: valori(r),
+                      stile: AppTypography.corpo.copyWith(color: colori.testo),
+                    ),
+                  ),
                 ),
-              ),
           ],
         );
       },
@@ -590,12 +635,14 @@ class _SchedaIncontro extends StatelessWidget {
     required this.squadra,
     required this.giornata,
     required this.prossimo,
+    required this.onAvversario,
   });
 
   final IncontroFin incontro;
   final String squadra;
   final String giornata;
   final bool prossimo;
+  final ValueChanged<String> onAvversario;
 
   @override
   Widget build(BuildContext context) {
@@ -628,7 +675,7 @@ class _SchedaIncontro extends StatelessWidget {
       titolo: 'vs $avversario',
       sottotitolo: [quando, ?i.piscina].join(' · '),
       attenuata: esito != null,
-      mostraFreccia: false,
+      onTap: () => onAvversario(avversario),
       trailing: esito != null
           ? Pastiglia(
               inCasa

@@ -26,6 +26,7 @@ import '../application/pallanuoto_providers.dart';
 import '../data/partite_repository.dart';
 import '../domain/elenco_partite.dart';
 import '../domain/partita.dart';
+import 'avversari_screen.dart';
 import 'chip_risultato.dart';
 import 'distinta_screen.dart';
 import 'partita_form_screen.dart';
@@ -223,6 +224,18 @@ class PartiteListScreen extends ConsumerWidget {
                           gruppoId: filtroGruppoId,
                           nomeSquadra: nomeSquadra,
                           puoModificare: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                  AzioneTestata(
+                    icona: Icons.shield_outlined,
+                    etichetta: 'Avversari',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AvversariScreen(
+                          clubId: clubId,
+                          gruppoId: filtroGruppoId,
                         ),
                       ),
                     ),

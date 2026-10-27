@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'scheda-avversario',
+    data: DateTime(2026, 10, 27),
+    titolo: 'La scheda dell\'avversario',
+    testo:
+        'Nella partita, «Avversario» in alto: le partite della squadra '
+        'contro di loro con il risultato, i loro marcatori dai referti, i '
+        'numeri dal vivo e la loro classifica nel girone FIN, con gli ultimi '
+        'risultati. Si apre anche da «Avversari» nelle Partite e toccando una '
+        'squadra nella classifica. Gli atleti la aprono toccando la partita.',
+    importante: true,
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'impegni-nel-calendario',
     data: DateTime(2026, 10, 27),
     titolo: 'Collegiali, trasferte, riposi e tornei nel calendario',

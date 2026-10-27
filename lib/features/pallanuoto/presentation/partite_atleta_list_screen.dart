@@ -20,6 +20,7 @@ import '../application/pallanuoto_providers.dart';
 import '../application/video_partita_providers.dart';
 import '../domain/partita.dart';
 import 'chip_risultato.dart';
+import 'scheda_avversario_screen.dart';
 import 'statistiche_partita_screen.dart';
 import 'video_partita_screen.dart';
 
@@ -80,6 +81,14 @@ class PartiteAtletaListScreen extends ConsumerWidget {
                 );
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.shield_outlined),
+              title: const Text('Scheda dell\'avversario'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _apriAvversario(context, partita);
+              },
+            ),
             // Il video lo vede chi era convocato (il server non lo dà agli
             // altri), quando l'allenatore l'ha collegato.
             if (!vistaAllenatore)
@@ -113,6 +122,20 @@ class PartiteAtletaListScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// La scheda dell'avversario, come la vede lo staff ma senza modifiche:
+  /// per una partita da giocare è il tocco sulla partita.
+  void _apriAvversario(BuildContext context, Partita partita) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SchedaAvversarioScreen(
+            clubId: clubId,
+            gruppoId: partita.gruppoId,
+            nome: partita.avversario,
+            partitaId: partita.id,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,8 +176,9 @@ class PartiteAtletaListScreen extends ConsumerWidget {
           ].join(', '),
         ].join(' · '),
         trailing: giocata ? ChipRisultato(partita: p) : null,
-        mostraFreccia: giocata,
-        onTap: giocata ? () => _apriAzioni(context, p) : null,
+        onTap: giocata
+            ? () => _apriAzioni(context, p)
+            : () => _apriAvversario(context, p),
       );
     }
 
