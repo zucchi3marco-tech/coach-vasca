@@ -21,9 +21,12 @@ import '../../campionati/application/campionati_providers.dart';
 import '../../campionati/domain/campionato_fin.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../application/scheda_avversario_providers.dart';
+import '../data/note_avversari_repository.dart';
+import '../domain/nota_avversario.dart';
 import '../domain/partita.dart';
 import '../domain/scheda_avversario.dart';
 import 'distinta_screen.dart';
+import 'note_avversario_screen.dart';
 import 'statistiche_partita_screen.dart';
 import 'voci_partita.dart';
 
@@ -79,6 +82,13 @@ class SchedaAvversarioScreen extends ConsumerWidget {
       nomeSquadraProvider((clubId: clubId, gruppoId: gruppoId)),
     );
     final scheda = schedaAsync.value;
+    final chiaveNote = (clubId: clubId, gruppoId: gruppoId);
+    final noteAsync = ref.watch(noteAvversariProvider(chiaveNote));
+    final nomeScheda = scheda?.nome ?? nome;
+    final nota = switch (noteAsync.value) {
+      final note? => notaPer(note, [nomeScheda, nome]),
+      null => null,
+    };
 
     final List<Widget> corpo;
     if (schedaAsync.hasError && scheda == null) {
@@ -102,6 +112,7 @@ class SchedaAvversarioScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(schedaAvversarioProvider(chiave));
           ref.invalidate(gironiCollegatiProvider(clubId));
+          ref.invalidate(noteAvversariProvider(chiaveNote));
           try {
             await ref.read(schedaAvversarioProvider(chiave).future);
           } catch (_) {
@@ -138,17 +149,265 @@ class SchedaAvversarioScreen extends ConsumerWidget {
                     ],
             ),
             const SizedBox(height: AppSpacing.s24),
+            ..._note(context, ref, noteAsync, nota, nomeScheda, scheda),
             ...corpo,
             const SizedBox(height: AppSpacing.s24),
             _CampionatiFin(
               clubId: clubId,
               gruppoId: gruppoId,
-              nomi: {nome, ?scheda?.nome}.toList(),
+              nomi: {?nota?.nomeFin, nome, nomeScheda}.toList(),
+              onScegli: vistaStaff
+                  ? (girone, nostra) => _scegliFin(
+                      context,
+                      ref,
+                      girone: girone,
+                      nostra: nostra,
+                      nota: nota,
+                      nomeScheda: nomeScheda,
+                    )
+                  : null,
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// La loro calottina: l'altra rispetto alla nostra dell'ultima volta.
+  CapColore _calottinaLoro(SchedaAvversario? scheda) {
+    final nostra = scheda?.giocate.firstOrNull?.partita.coloreCalottina;
+    return nostra == 'blu' ? CapColore.bianca : CapColore.blu;
+  }
+
+  Future<void> _scriviNote(
+    BuildContext context,
+    WidgetRef ref, {
+    required NotaAvversario? nota,
+    required String nomeScheda,
+    required SchedaAvversario? scheda,
+  }) async {
+    final salvata = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => NoteAvversarioScreen(
+          nota:
+              nota ??
+              NotaAvversario.nuova(
+                clubId: clubId,
+                gruppoId: gruppoId,
+                nome: nomeScheda,
+              ),
+          dalReferto: scheda?.giocatori ?? const [],
+        ),
+      ),
+    );
+    if (salvata == true) {
+      ref.invalidate(
+        noteAvversariProvider((clubId: clubId, gruppoId: gruppoId)),
+      );
+    }
+  }
+
+  /// Lo staff sceglie l'avversario fra le squadre del girone, quando
+  /// l'app non lo trova (o ne ha trovata un'altra): l'app se lo ricorda.
+  Future<void> _scegliFin(
+    BuildContext context,
+    WidgetRef ref, {
+    required GironeFin girone,
+    required String nostra,
+    required NotaAvversario? nota,
+    required String nomeScheda,
+  }) async {
+    final squadre = [
+      for (final s in girone.squadre)
+        if (!stessaSquadra(s, nostra)) s,
+    ];
+    final scelta = await showModalBottomSheet<String>(
+      context: context,
+      builder: (foglio) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s16,
+                AppSpacing.s16,
+                AppSpacing.s16,
+                AppSpacing.s8,
+              ),
+              child: Text(
+                'Chi è «$nomeScheda» nel girone?',
+                style: AppTypography.sezione,
+              ),
+            ),
+            for (final s in squadre)
+              ListTile(
+                title: Text(s),
+                selected:
+                    nota?.nomeFin != null && stessaSquadra(s, nota!.nomeFin!),
+                onTap: () => Navigator.of(foglio).pop(s),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (scelta == null || !context.mounted) return;
+    final messaggero = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(noteAvversariRepositoryProvider)
+          .salva(
+            (nota ??
+                    NotaAvversario.nuova(
+                      clubId: clubId,
+                      gruppoId: gruppoId,
+                      nome: nomeScheda,
+                    ))
+                .copiaCon(nomeFin: scelta),
+          );
+      ref.invalidate(
+        noteAvversariProvider((clubId: clubId, gruppoId: gruppoId)),
+      );
+    } catch (e) {
+      messaggero.showSnackBar(SnackBar(content: Text(messaggioErrore(e))));
+    }
+  }
+
+  /// Le note dello staff, in cima: le vede tutta la squadra. Senza note
+  /// lo staff trova «Scrivi le note», gli atleti niente.
+  List<Widget> _note(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<NotaAvversario>> noteAsync,
+    NotaAvversario? nota,
+    String nomeScheda,
+    SchedaAvversario? scheda,
+  ) {
+    final colori = context.colori;
+    void scrivi() => _scriviNote(
+      context,
+      ref,
+      nota: nota,
+      nomeScheda: nomeScheda,
+      scheda: scheda,
+    );
+    if (!noteAsync.hasValue) {
+      if (noteAsync.hasError && vistaStaff) {
+        return const [
+          RiquadroVuoto(
+            'Le note non si riescono a leggere: riprova tra poco.',
+            icona: Icons.cloud_off_outlined,
+          ),
+          SizedBox(height: AppSpacing.s24),
+        ];
+      }
+      return const [];
+    }
+    if (nota == null || nota.senzaNote) {
+      if (!vistaStaff) return const [];
+      return [
+        const TitoloSezione(
+          'Le nostre note',
+          spiegazione:
+              'Come giocano e i giocatori da tenere d\'occhio. Le vede tutta '
+              'la squadra, anche chi non è convocato.',
+        ),
+        const RiquadroVuoto(
+          'Nessuna nota su di loro: scrivi come giocano e chi marcare.',
+          icona: Icons.edit_note_outlined,
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: scrivi,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Scrivi le note'),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s16),
+      ];
+    }
+    final giocatori = [
+      for (final g in nota.giocatori)
+        if (!g.vuoto) g,
+    ];
+    final calottina = _calottinaLoro(scheda);
+    return [
+      TitoloSezione(
+        'Le nostre note',
+        azione: vistaStaff ? 'Modifica' : null,
+        onAzione: vistaStaff ? scrivi : null,
+      ),
+      if (nota.nota.trim().isNotEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          decoration: BoxDecoration(
+            color: colori.superficie,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colori.linea),
+          ),
+          child: Text(
+            nota.nota.trim(),
+            style: AppTypography.corpo.copyWith(color: colori.testo),
+          ),
+        ),
+      if (giocatori.isNotEmpty) ...[
+        if (nota.nota.trim().isNotEmpty) const SizedBox(height: AppSpacing.s12),
+        AppListPanel(
+          righe: [
+            for (final g in giocatori)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.s12,
+                  vertical: AppSpacing.s8,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (g.numero != null) ...[
+                      CapBadge(numero: g.numero!, colore: calottina),
+                      const SizedBox(width: AppSpacing.s12),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            g.nome.trim().isEmpty
+                                ? 'Numero ${g.numero}'
+                                : g.nome.trim(),
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                          if (g.nota.trim().isNotEmpty)
+                            Text(
+                              g.nota.trim(),
+                              style: AppTypography.corpo.copyWith(
+                                color: colori.testoSecondario,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+      if (nota.aggiornataIl != null)
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s8, left: 4),
+          child: Text(
+            'Aggiornate il ${giornoMese(nota.aggiornataIl!)}',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+        ),
+      const SizedBox(height: AppSpacing.s24),
+    ];
   }
 
   List<Widget> _corpo(BuildContext context, SchedaAvversario scheda) {
@@ -231,9 +490,7 @@ class SchedaAvversarioScreen extends ConsumerWidget {
 
   List<Widget> _giocatori(BuildContext context, SchedaAvversario scheda) {
     final colori = context.colori;
-    // La loro calottina è l'altra rispetto alla nostra dell'ultima volta.
-    final nostra = scheda.giocate.first.partita.coloreCalottina;
-    final loro = nostra == 'blu' ? CapColore.bianca : CapColore.blu;
+    final loro = _calottinaLoro(scheda);
     return [
       const TitoloSezione(
         'I loro giocatori',
@@ -384,13 +641,19 @@ class _CampionatiFin extends ConsumerWidget {
     required this.clubId,
     required this.gruppoId,
     required this.nomi,
+    required this.onScegli,
   });
 
   final String clubId;
   final String? gruppoId;
 
-  /// I nomi con cui cercarlo, nell'ordine.
+  /// I nomi con cui cercarlo, nell'ordine: il nome FIN scelto a mano per
+  /// primo, la scheda per ultimo.
   final List<String> nomi;
+
+  /// Lo staff sceglie l'avversario fra le squadre del girone (null per
+  /// gli atleti).
+  final void Function(GironeFin girone, String nostra)? onScegli;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -400,17 +663,23 @@ class _CampionatiFin extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final g in gironi) _GironeAvversario(collegato: g, nomi: nomi),
+        for (final g in gironi)
+          _GironeAvversario(collegato: g, nomi: nomi, onScegli: onScegli),
       ],
     );
   }
 }
 
 class _GironeAvversario extends ConsumerWidget {
-  const _GironeAvversario({required this.collegato, required this.nomi});
+  const _GironeAvversario({
+    required this.collegato,
+    required this.nomi,
+    required this.onScegli,
+  });
 
   final GironeCollegato collegato;
   final List<String> nomi;
+  final void Function(GironeFin girone, String nostra)? onScegli;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -422,6 +691,8 @@ class _GironeAvversario extends ConsumerWidget {
     ].where((s) => s.isNotEmpty).join(' · ');
 
     final List<Widget> contenuto;
+    String? azione;
+    VoidCallback? onAzione;
     if (lettura.value case final l?) {
       AvversarioNelGirone? trovato;
       for (final n in nomi) {
@@ -432,12 +703,26 @@ class _GironeAvversario extends ConsumerWidget {
         );
         if (trovato != null) break;
       }
+      final scegli = onScegli;
+      if (scegli != null) {
+        azione = trovato == null ? null : 'Cambia';
+        onAzione = () => scegli(l.girone, collegato.squadra);
+      }
       contenuto = trovato == null
           ? [
               RiquadroVuoto(
-                'Non trovo «${nomi.first}» fra le squadre di questo girone.',
+                'Non trovo «${nomi.last}» fra le squadre di questo girone.',
                 icona: Icons.search_off_outlined,
               ),
+              if (onAzione != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: onAzione,
+                    icon: const Icon(Icons.touch_app_outlined),
+                    label: const Text('Scegli la squadra'),
+                  ),
+                ),
             ]
           : _avversario(context, trovato, daCopia: l.daCopia);
     } else if (lettura.hasError) {
@@ -461,7 +746,10 @@ class _GironeAvversario extends ConsumerWidget {
             spiegazione:
                 'Dal sito della FIN Lombardia: la loro classifica, gli '
                 'ultimi risultati contro tutte le squadre del girone e la '
-                'prossima partita.',
+                'prossima partita. Se l\'app ha preso la squadra sbagliata, '
+                '«Cambia».',
+            azione: azione,
+            onAzione: azione == null ? null : onAzione,
           ),
           ...contenuto,
           Padding(

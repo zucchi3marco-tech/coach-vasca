@@ -365,6 +365,7 @@ class _Fogli {
     _gareFoglio(),
     _iscrizioniGareFoglio(),
     _impegniFoglio(),
+    _avversariFoglio(),
     _tempiGaraFoglio(),
     _personalBestFoglio(),
     _testDelPassoFoglio(),
@@ -1274,6 +1275,45 @@ class _Fogli {
             _testo(_squadra(i.gruppoId, senza: _tuttoIlClub)),
             _testo(i.luogo),
             _testo(i.note),
+          ],
+      ],
+    );
+  }
+
+  /// Le note non hanno una data: ci sono tutte, qualunque periodo.
+  _Foglio _avversariFoglio() {
+    final note = [...dati.noteAvversari]
+      ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+    return _Foglio(
+      nome: 'Avversari',
+      contenuto: 'Le note dello staff sugli avversari, per squadra.',
+      titoli: const [
+        'Avversario',
+        'Squadra',
+        'Nome sul sito FIN',
+        'Come giocano',
+        'Giocatori',
+      ],
+      righe: [
+        for (final n in note)
+          [
+            _testo(n.nome),
+            _testo(_squadra(n.gruppoId, senza: _tuttoIlClub)),
+            _testo(n.nomeFin),
+            _testo(n.nota),
+            _testo(
+              [
+                for (final g in n.giocatori)
+                  if (!g.vuoto)
+                    [
+                      [
+                        ?g.numero?.toString(),
+                        g.nome.trim(),
+                      ].where((s) => s.isNotEmpty).join(' '),
+                      if (g.nota.trim().isNotEmpty) g.nota.trim(),
+                    ].join(': '),
+              ].join('; '),
+            ),
           ],
       ],
     );

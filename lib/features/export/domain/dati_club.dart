@@ -10,6 +10,7 @@ import '../../gare/domain/gara.dart';
 import '../../gare/domain/gara_iscritto.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../impegni/domain/impegno.dart';
+import '../../pallanuoto/domain/nota_avversario.dart';
 import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/partita.dart';
@@ -45,6 +46,7 @@ class DatiClub {
     this.referti = const [],
     this.gare = const [],
     this.impegni = const [],
+    this.noteAvversari = const [],
     this.iscrittiGare = const [],
     this.tempiGara = const [],
     this.personalBest = const [],
@@ -86,6 +88,9 @@ class DatiClub {
 
   /// Collegiali, trasferte, riposi, tornei (proposta 18).
   final List<Impegno> impegni;
+
+  /// Le note dello staff sugli avversari (scheda dell'avversario).
+  final List<NotaAvversario> noteAvversari;
   final List<GaraIscritto> iscrittiGare;
   final List<TempoGara> tempiGara;
   final List<PersonalBest> personalBest;

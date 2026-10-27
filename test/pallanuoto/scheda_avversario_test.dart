@@ -5,6 +5,9 @@ import 'package:coach_vasca/features/campionati/presentation/classifica_screen.d
 import 'package:coach_vasca/features/gruppi/application/gruppi_providers.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
 import 'package:coach_vasca/features/pallanuoto/data/eventi_partita_repository.dart';
+import 'package:coach_vasca/features/pallanuoto/data/note_avversari_repository.dart';
+import 'package:coach_vasca/features/pallanuoto/domain/nota_avversario.dart';
+import 'package:coach_vasca/widgets/app_text_field.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/scheda_avversario.dart';
@@ -314,7 +317,12 @@ void main() {
     );
     final prossima = _partita('p2', oggi.add(const Duration(days: 12)));
 
-    Future<void> apri(WidgetTester tester, Widget home) async {
+    Future<void> apri(
+      WidgetTester tester,
+      Widget home, {
+      _Note? note,
+      List<Partita>? partite,
+    }) async {
       tester.view.physicalSize = const Size(420, 3000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -322,8 +330,9 @@ void main() {
         ProviderScope(
           overrides: [
             partiteListProvider.overrideWith(
-              (ref, clubId) => Stream.value([giocata, prossima]),
+              (ref, clubId) => Stream.value(partite ?? [giocata, prossima]),
             ),
+            noteAvversariRepositoryProvider.overrideWithValue(note ?? _Note()),
             refertiRepositoryProvider.overrideWithValue(
               _Referti([
                 _referto(
@@ -423,5 +432,215 @@ void main() {
       );
       expect(find.text('2° di 3'), findsOneWidget);
     });
+
+    testWidgets(
+      "l'allenatore scrive le note, anche da un giocatore del referto",
+      (tester) async {
+        final note = _Note();
+        await apri(
+          tester,
+          const SchedaAvversarioScreen(
+            clubId: 'c1',
+            gruppoId: 'u14',
+            nome: 'PN Monza',
+            vistaStaff: true,
+          ),
+          note: note,
+        );
+        expect(find.text('Le nostre note'), findsOneWidget);
+        await tester.tap(find.text('Scrivi le note'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Note su PN Monza'), findsOneWidget);
+        await tester.enterText(
+          _campo('Come giocano'),
+          'Pressano alto, cercano sempre il centroboa.',
+        );
+        // Rossi Luca dal referto, con il suo numero.
+        await tester.tap(find.text('7 Rossi Luca'));
+        await tester.pumpAndSettle();
+        expect(find.text('7 Rossi Luca'), findsNothing);
+        await tester.enterText(_campo('Cosa fa'), 'Tira solo di destro.');
+        // Un secondo giocatore scritto a mano, senza numero.
+        await tester.tap(find.text('Aggiungi un giocatore'));
+        await tester.pumpAndSettle();
+        await tester.enterText(_campo('Nome').last, 'Il mancino');
+        await tester.tap(find.text('Salva'));
+        await tester.pumpAndSettle();
+
+        final salvata = note.note.single;
+        expect(salvata.chiave, 'pallanuoto monza');
+        expect(salvata.gruppoId, 'u14');
+        expect(salvata.nota, 'Pressano alto, cercano sempre il centroboa.');
+        expect(
+          [for (final g in salvata.giocatori) (g.numero, g.nome, g.nota)],
+          [(7, 'Rossi Luca', 'Tira solo di destro.'), (null, 'Il mancino', '')],
+        );
+        // Di nuovo nella scheda, con le note in cima.
+        expect(
+          find.text('Pressano alto, cercano sempre il centroboa.'),
+          findsOneWidget,
+        );
+        expect(find.text('Tira solo di destro.'), findsOneWidget);
+        expect(find.text('Il mancino'), findsOneWidget);
+        expect(find.text('Modifica'), findsOneWidget);
+      },
+    );
+
+    testWidgets("l'atleta legge le note e non le cambia", (tester) async {
+      final note = _Note([
+        NotaAvversario.fromMap({
+          'id': 'n1',
+          'club_id': 'c1',
+          'gruppo_id': 'u14',
+          'chiave': 'pallanuoto monza',
+          'nome': 'PN Monza',
+          'nota': 'Ripartono subito in controfuga.',
+          'giocatori': [
+            {'numero': 9, 'nome': 'Bianchi', 'nota': 'Il centroboa'},
+          ],
+          'updated_at': '2026-10-27T10:00:00Z',
+        }),
+      ]);
+      await apri(
+        tester,
+        const SchedaAvversarioScreen(
+          clubId: 'c1',
+          gruppoId: 'u14',
+          nome: 'PN Monza',
+        ),
+        note: note,
+      );
+      expect(find.text('Ripartono subito in controfuga.'), findsOneWidget);
+      expect(find.text('Bianchi'), findsOneWidget);
+      expect(find.text('Il centroboa'), findsOneWidget);
+      expect(find.text('Aggiornate il 27 ottobre'), findsOneWidget);
+      expect(find.text('Modifica'), findsNothing);
+      expect(find.text('Cambia'), findsNothing);
+    });
+
+    testWidgets('senza note l\'atleta non vede la sezione', (tester) async {
+      await apri(
+        tester,
+        const SchedaAvversarioScreen(
+          clubId: 'c1',
+          gruppoId: 'u14',
+          nome: 'PN Monza',
+        ),
+      );
+      expect(find.text('Le nostre note'), findsNothing);
+      expect(find.text('Scrivi le note'), findsNothing);
+    });
+
+    testWidgets("il nome FIN scelto a mano quando l'app non lo trova", (
+      tester,
+    ) async {
+      final note = _Note();
+      final brianza = _partita(
+        'p9',
+        DateTime.now().add(const Duration(days: 5)),
+        avversario: 'Pn Brianza',
+      );
+      await apri(
+        tester,
+        const SchedaAvversarioScreen(
+          clubId: 'c1',
+          gruppoId: 'u14',
+          nome: 'Pn Brianza',
+          vistaStaff: true,
+        ),
+        note: note,
+        partite: [brianza],
+      );
+      expect(
+        find.text('Non trovo «Pn Brianza» fra le squadre di questo girone.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Scegli la squadra'));
+      await tester.pumpAndSettle();
+      // La nostra squadra non c'è fra quelle da scegliere.
+      expect(find.text('Chi è «Pn Brianza» nel girone?'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'CANOTTIERI MILANO'), findsNothing);
+      await tester.tap(find.widgetWithText(ListTile, 'PALLANUOTO MONZA'));
+      await tester.pumpAndSettle();
+
+      expect(note.note.single.nomeFin, 'PALLANUOTO MONZA');
+      expect(note.note.single.senzaNote, isTrue);
+      expect(find.text('3° di 3'), findsOneWidget);
+      expect(find.text('Cambia'), findsOneWidget);
+    });
   });
+
+  group('le note', () {
+    NotaAvversario nota(String nome, {String? fin}) => NotaAvversario(
+      id: nome,
+      clubId: 'c1',
+      gruppoId: 'u14',
+      chiave: chiaveSquadra(nome),
+      nome: nome,
+      nomeFin: fin,
+      nota: 'x',
+    );
+
+    test('si ritrovano con il nome nostro o con quello del sito', () {
+      final note = [
+        nota('PN Monza'),
+        nota('Pn Brianza', fin: 'PALLANUOTO MONZA 2'),
+      ];
+      expect(notaPer(note, ['PALLANUOTO MONZA'])!.id, 'PN Monza');
+      expect(notaPer(note, ['P.N. Monza'])!.id, 'PN Monza');
+      expect(notaPer(note, ['PALLANUOTO MONZA 2'])!.id, 'Pn Brianza');
+      expect(notaPer(note, ['SG Arese']), isNull);
+    });
+
+    test('le righe vuote dei giocatori non si salvano', () {
+      final n = nota('PN Monza').copiaCon(
+        giocatori: const [
+          GiocatoreDaNotare(nome: ' '),
+          GiocatoreDaNotare(numero: 4, nome: 'Verdi '),
+        ],
+      );
+      expect(n.toMap()['giocatori'], [
+        {'numero': 4, 'nome': 'Verdi', 'nota': ''},
+      ]);
+      expect(nota('X').copiaCon(nota: ' ').senzaNote, isTrue);
+    });
+  });
+}
+
+Finder _campo(String etichetta) => find.descendant(
+  of: find.widgetWithText(AppTextField, etichetta),
+  matching: find.byType(TextFormField),
+);
+
+/// Le note in memoria, come le salverebbe il database.
+class _Note implements NoteAvversariRepository {
+  _Note([List<NotaAvversario>? iniziali]) : note = [...?iniziali];
+
+  final List<NotaAvversario> note;
+
+  @override
+  Future<List<NotaAvversario>> perSquadra(
+    String clubId,
+    String? gruppoId,
+  ) async => [
+    for (final n in note)
+      if (n.clubId == clubId && n.gruppoId == gruppoId) n,
+  ];
+
+  @override
+  Future<NotaAvversario?> salva(NotaAvversario nota) async {
+    final salvata = NotaAvversario.fromMap({
+      ...nota.toMap(),
+      'id': nota.id ?? 'n${note.length + 1}',
+      'updated_at': '2026-10-27T10:00:00Z',
+    });
+    note
+      ..removeWhere((n) => n.id == salvata.id || n.chiave == salvata.chiave)
+      ..add(salvata);
+    return salvata;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

@@ -242,6 +242,21 @@ Map<String, List<Map<String, dynamic>>> _tabelle() => {
       'note': null,
     },
   ],
+  'note_avversari': [
+    {
+      'id': 'nota-1',
+      'club_id': _club,
+      'gruppo_id': null,
+      'chiave': 'pallanuoto monza',
+      'nome': 'PN Monza',
+      'nome_fin': null,
+      'nota': 'Pressano alto.',
+      'giocatori': [
+        {'numero': 7, 'nome': 'Rossi', 'nota': 'Tira di destro'},
+      ],
+      'updated_at': '2026-10-27T10:00:00Z',
+    },
+  ],
   'gara_iscritti': [
     {
       'id': 'iscritto-1',

@@ -44,6 +44,19 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'note-avversario',
+    data: DateTime(2026, 10, 27),
+    titolo: 'Le note sull\'avversario',
+    testo:
+        'Nella scheda dell\'avversario, «Scrivi le note»: come giocano e i '
+        'giocatori da tenere d\'occhio, con numero e cosa fanno (quelli dei '
+        'referti si aggiungono con un tocco). Le legge tutta la squadra, '
+        'anche chi non è convocato. Se l\'app non trova l\'avversario nel '
+        'girone FIN, «Scegli la squadra» e se lo ricorda.',
+    importante: true,
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'scheda-avversario',
     data: DateTime(2026, 10, 27),
     titolo: 'La scheda dell\'avversario',
