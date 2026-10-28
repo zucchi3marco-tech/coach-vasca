@@ -39,7 +39,7 @@ DateTime meseIniziale(
 
 /// Calendario mensile di una stagione: sfogliabile dal mese del primo
 /// giorno a quello dell'ultimo, con un riquadro pieno e ben visibile sui
-/// giorni con almeno un evento (partita o gara). Colore: azione = evento
+/// giorni con almeno un evento (partita o impegno). Colore: azione = evento
 /// di un gruppo, ambra = evento di tutto il club (senza gruppo); un
 /// giorno con entrambi è azione con un punto ambra. I giorni fuori
 /// stagione sono spenti e non si toccano.

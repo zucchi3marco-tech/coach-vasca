@@ -299,7 +299,7 @@ String? campionatoPerData(
   return null;
 }
 
-/// La stagione di cui mostrare partite/gare in elenco: quella in corso del
+/// La stagione di cui mostrare le partite in elenco: quella in corso del
 /// gruppo (o di club); se oggi nessuna è in corso, la più recente fra
 /// quelle visibili al gruppo. Torna null se non esiste nessuna stagione
 /// visibile. [gruppoId] null = "Tutti gli atleti": tutte le stagioni sono

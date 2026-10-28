@@ -75,13 +75,13 @@ const _versioneDati = 21;
 /// la prima squadra: Rossi e Bianchi, l'atleta della demo.
 const _conLaPrima = {1, 3};
 
-/// Tempi a stile libero (25-200 m) per gli atleti di pallanuoto: le
-/// distanze che il preparatore misura in vasca.
+/// Tempi a stile libero (25-200 m) per gli atleti attivi: le distanze che
+/// il preparatore misura in vasca.
 Future<void> _inserisciPersonalBestPallanuoto(AppDatabase db) async {
   if ((await db.select(db.personalBestTable).get()).isNotEmpty) return;
   final atleti = await (db.select(
     db.atletiTable,
-  )..where((t) => t.sport.equals('pallanuoto') & t.attivo.equals(true))).get();
+  )..where((t) => t.attivo.equals(true))).get();
   const uuid = Uuid();
   const basi = {25: 13.4, 50: 28.9, 100: 63.5, 200: 141.0};
   await db.batch((b) {

@@ -5,8 +5,8 @@ import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
 import '../../../widgets/premibile.dart';
 
-/// Una casella del "tabellone dei tempi" (personal best, record del
-/// club): la distanza piccola sopra, il tempo grande, una riga sotto.
+/// Una casella del "tabellone dei tempi" (personal best): la distanza
+/// piccola sopra, il tempo grande, una riga sotto.
 /// Senza tempo il valore e' un trattino tenue: si vede subito cosa manca.
 class SchedaTempo extends StatelessWidget {
   const SchedaTempo({

@@ -39,9 +39,9 @@ import '../domain/personal_best.dart';
 import 'pb_form_screen.dart';
 import 'scheda_tempo.dart';
 
-/// Tabella di tutti i personal best possibili per lo sport dell'atleta
-/// (FASE 10, punto 3): ogni combinazione stile+distanza è sempre
-/// visibile, registrata o no, così si vede a colpo d'occhio cosa manca.
+/// Tabella di tutti i personal best possibili (FASE 10, punto 3): ogni
+/// distanza a stile libero è sempre visibile, registrata o no, così si
+/// vede a colpo d'occhio cosa manca.
 class PbListScreen extends ConsumerWidget {
   const PbListScreen({required this.atleta, super.key});
 

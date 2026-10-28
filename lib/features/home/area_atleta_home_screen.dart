@@ -266,7 +266,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
       VoceRiquadro(
         soggetto: SoggettoRiquadro.tempi,
         titolo: titolo('I miei tempi', 'Tempi'),
-        descrizione: 'Personal best a nuoto',
+        descrizione: 'Personal best a stile libero, 25-200 m',
         valore: pb == null || pb.isEmpty ? null : '${pb.length}',
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, PbListScreen(atleta: atleta)),

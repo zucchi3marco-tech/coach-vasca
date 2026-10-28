@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/sport_app.dart';
 import '../../../core/utils/date_format.dart';
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
@@ -92,7 +93,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     final contesto = <String, Object?>{
       'oggi': formatDateOnly(_oggi),
       'giorno': nomeGiorno(_oggi),
-      'sport': 'pallanuoto',
+      'sport': sportApp,
       'squadra': squadra ?? 'tutto il club',
     };
     return _motore = MotoreAssistente(

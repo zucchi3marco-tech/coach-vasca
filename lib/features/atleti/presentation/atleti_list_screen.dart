@@ -476,9 +476,8 @@ class _AtletiList extends StatelessWidget {
             SchedaElenco(
               leading: _AvatarAtleta(atleta: atleta),
               titolo: atleta.nomeCompleto,
-              // Sport e squadra non si ripetono su ogni scheda: lo sport e'
-              // quello del club e la squadra e' gia' scelta in alto. La
-              // squadra compare solo guardando "Tutti gli atleti", e non
+              // La squadra non si ripete su ogni scheda: e' gia' scelta in
+              // alto. Compare solo guardando "Tutti gli atleti", e non
               // quando dice già la categoria («U16» per un U16).
               sottotitolo: [
                 _etichettaPresenze(_percentuale(atleta)),

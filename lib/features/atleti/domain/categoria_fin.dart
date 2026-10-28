@@ -8,8 +8,8 @@ import 'atleta.dart';
 /// La stagione va dal 1° settembre al 31 agosto e conta l'anno in cui
 /// finisce: nel 2026-27 «Under 16» sono i nati dal 2011 (2027 − 16), con
 /// le categorie a due anni (U14 2013-14, U16 2011-12, U18 2009-10…).
-/// Le categorie a un anno dei campionati regionali (U13, U15…) e il nuoto
-/// (che va anche per sesso) non si calcolano: scelta del coach.
+/// Le categorie a un anno dei campionati regionali (U13, U15…) non si
+/// calcolano: scelta del coach.
 
 /// I limiti d'età delle categorie a due anni, dalla più giovane.
 const limitiCategoriePallanuoto = [10, 12, 14, 16, 18, 20];

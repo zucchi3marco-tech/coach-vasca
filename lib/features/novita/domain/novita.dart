@@ -44,6 +44,16 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'solo-pallanuoto-ritocchi',
+    data: DateTime(2026, 10, 28),
+    titolo: 'Gli ultimi testi sul nuoto',
+    testo:
+        'Nella prima stagione e tra i riquadri dell\'atleta non si parla '
+        'più di gare né di nuoto: «I miei tempi» sono i personal best a '
+        'stile libero, dai 25 ai 200 metri.',
+    perChi: PerChi.tutti,
+  ),
+  Novita(
     id: 'via-le-gare-del-nuoto',
     data: DateTime(2026, 10, 28),
     titolo: 'Via le gare del nuoto',

@@ -16,7 +16,7 @@ import '../domain/impegno.dart';
 const _uuid = Uuid();
 
 /// Gli impegni fuori calendario: scrive prima su Supabase e solo se manca
-/// la rete accoda l'operazione (come gare e partite).
+/// la rete accoda l'operazione (come le partite).
 class ImpegniRepository {
   ImpegniRepository(this._client, this._db, this._syncEngine);
 

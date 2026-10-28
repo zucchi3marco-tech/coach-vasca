@@ -88,8 +88,8 @@ class _CaricoSettimaneState extends State<CaricoSettimane> {
       ...settimane.map((s) => (obiettivo(s.lunedi) ?? 0).toDouble()),
     ].fold(0.0, math.max);
     final conObiettivo = settimane.any((s) => obiettivo(s.lunedi) != null);
-    // In legenda solo i tipi che ci sono nelle settimane mostrate: nel
-    // nuoto, per esempio, la partita non c'è mai.
+    // In legenda solo i tipi che ci sono nelle settimane mostrate: senza
+    // partite, per esempio, la partita non c'è.
     final presenti = tipi
         .where((t) => settimane.any((s) => t.valore(s.carico) > 0))
         .toList();

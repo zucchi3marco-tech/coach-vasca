@@ -21,8 +21,7 @@ import '../domain/codice_gruppo.dart';
 
 /// Codici riutilizzabili per far registrare da soli tutti gli atleti di
 /// UN gruppo (FASE 9, ristretta al singolo gruppo dalla FASE 13 punto 2:
-/// generarne uno richiede di essere sulla pagina di quel gruppo, cosicche'
-/// lo sport da assegnare all'atleta sia sempre certo).
+/// generarne uno richiede di essere sulla pagina di quel gruppo).
 class CodiciGruppoScreen extends ConsumerStatefulWidget {
   const CodiciGruppoScreen({required this.gruppo, super.key});
 

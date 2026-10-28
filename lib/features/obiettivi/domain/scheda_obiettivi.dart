@@ -92,7 +92,7 @@ class RispostaObiettivi {
 }
 
 /// Le domande pronte: nessuna sulla salute (gli atleti sono spesso
-/// minorenni), valgono per la pallanuoto e per il nuoto.
+/// minorenni).
 const domandeObiettiviPronte = [
   'Cosa vuoi migliorare quest\'anno?',
   'Qual è il tuo obiettivo per questa stagione?',

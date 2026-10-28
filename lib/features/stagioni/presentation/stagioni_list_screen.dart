@@ -145,7 +145,7 @@ class StagioniListScreen extends ConsumerWidget {
                       titolo: 'Nessuna stagione',
                       descrizione:
                           'Crea la prima stagione del gruppo: avrà il suo '
-                          'calendario, dove aggiungi partite o gare, e le '
+                          'calendario, dove aggiungi le partite, e le '
                           'statistiche di fine stagione.',
                       azionePrincipale: 'Nuova stagione',
                       onAzionePrincipale: apriNuova,
