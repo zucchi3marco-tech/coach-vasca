@@ -44,6 +44,14 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'convocati-manca-campo',
+    data: DateTime(2026, 10, 28),
+    titolo: 'Scegli i convocati: niente più «Manca un campo obbligatorio»',
+    testo:
+        'Salvando insieme un portiere, il capitano o il vice e gli altri '
+        'convocati, il salvataggio veniva rifiutato. Ora vanno tutti.',
+  ),
+  Novita(
     id: 'report-squadra',
     data: DateTime(2026, 10, 27),
     titolo: 'Il report PDF della squadra',

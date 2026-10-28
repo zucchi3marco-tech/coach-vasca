@@ -32,6 +32,27 @@ typedef NuovoConvocato = ({
   bool viceCapitano,
 });
 
+/// Le righe da inserire tutte insieme per i nuovi convocati. Ogni riga ha
+/// sempre le stesse colonne: in un insert di più righe, una colonna che
+/// manca solo in alcune arriva come NULL (non con il valore di default) e
+/// il database rifiuta tutto ("Manca un campo obbligatorio").
+List<Map<String, dynamic>> righeNuoviConvocati(
+  String partitaId,
+  List<NuovoConvocato> aggiungi,
+  String Function() nuovoId,
+) => [
+  for (final n in aggiungi)
+    {
+      'id': nuovoId(),
+      'partita_id': partitaId,
+      'atleta_id': n.atletaId,
+      'numero_calottina': n.numero,
+      'portiere': n.portiere,
+      'capitano': n.capitano,
+      'vice_capitano': n.viceCapitano,
+    },
+];
+
 class DistintaRepository {
   DistintaRepository(this._client, this._db, this._syncEngine);
 
@@ -232,18 +253,7 @@ class DistintaRepository {
       )..where((t) => t.id.isIn(togli))).go();
     }
     if (aggiungi.isEmpty) return;
-    final payloads = [
-      for (final n in aggiungi)
-        {
-          'id': _uuid.v4(),
-          'partita_id': partitaId,
-          'atleta_id': n.atletaId,
-          'numero_calottina': n.numero,
-          if (n.portiere) 'portiere': true,
-          if (n.capitano) 'capitano': true,
-          if (n.viceCapitano) 'vice_capitano': true,
-        },
-    ];
+    final payloads = righeNuoviConvocati(partitaId, aggiungi, _uuid.v4);
     try {
       final rows = await _client
           .from('distinta_giocatori')

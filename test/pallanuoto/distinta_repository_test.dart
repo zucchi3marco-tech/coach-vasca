@@ -294,6 +294,71 @@ void main() {
     expect(await coda(), isEmpty);
   });
 
+  test('con la rete i convocati vanno in una chiamata sola e ogni riga ha '
+      'portiere, capitano e vice: in un insert di più righe una colonna '
+      'che manca solo in alcune arriverebbe NULL e il database rifiuterebbe '
+      'tutto', () async {
+    final chiamate = <http.Request>[];
+    final client = _client(
+      MockClient((r) async {
+        chiamate.add(r);
+        final righe = (jsonDecode(r.body) as List).cast<Map<String, dynamic>>();
+        return http.Response(
+          jsonEncode([
+            for (final riga in righe) {...riga, 'club_id': 'c1'},
+          ]),
+          201,
+          headers: {'content-type': 'application/json'},
+          request: r,
+        );
+      }),
+    );
+    addTearDown(client.dispose);
+    final repository = DistintaRepository(client, db, SyncEngine(db, client));
+
+    await repository.salvaConvocati(
+      partitaId: 'oggi',
+      aggiungi: [
+        (
+          atletaId: 'a',
+          numero: 1,
+          portiere: true,
+          capitano: false,
+          viceCapitano: false,
+        ),
+        (
+          atletaId: 'b',
+          numero: 5,
+          portiere: false,
+          capitano: true,
+          viceCapitano: false,
+        ),
+        (
+          atletaId: 'c',
+          numero: 7,
+          portiere: false,
+          capitano: false,
+          viceCapitano: false,
+        ),
+      ],
+    );
+
+    final insert = chiamate.single;
+    expect(insert.url.path, '/rest/v1/distinta_giocatori');
+    final righe = (jsonDecode(insert.body) as List)
+        .cast<Map<String, dynamic>>();
+    expect(righe, hasLength(3));
+    final colonne = righe.first.keys.toSet();
+    for (final riga in righe) {
+      expect(riga.keys.toSet(), colonne);
+      expect(riga.values, isNot(contains(null)));
+    }
+    expect(colonne, containsAll(['portiere', 'capitano', 'vice_capitano']));
+    expect(righe[2]['portiere'], isFalse);
+    expect(await numeri('oggi'), {'a': 1, 'b': 5, 'c': 7});
+    expect(await coda(), isEmpty);
+  });
+
   test(
     'la coda rimanda una funzione del database quando torna la rete',
     () async {
