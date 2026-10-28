@@ -73,6 +73,14 @@ L'app legge classifiche e calendari dalle pagine di finlombardia.net. Il sito no
 
 - [ ] Quando rispondono, dimmi cosa hanno scritto.
 
+## 0decies. WaterTactics solo pallanuoto e l'app di nuoto (2026-10-28)
+
+WaterTactics ora è solo pallanuoto. La copia per il nuoto è in `D:\Dev\coach-nuoto`: gira solo in modalità demo e non tocca i dati di WaterTactics.
+
+- [ ] Chiudi e riapri l'app: nelle **Novità** devono comparire «WaterTactics è solo pallanuoto» e le altre tre di oggi. Apri **Stagioni**, una partita, un atleta e i **Test**: niente più gare, niente scelta dello sport.
+- [ ] Nel club **Canottieri Milano Under 18** ci sono ancora 2 atleti e una squadra segnati «nuoto» nel database, e c'è il club vuoto «AA BB»: l'app li tratta da pallanuoto. Se quel club o quegli atleti non servono, archiviali o cancellali dall'app.
+- [ ] Quando vorrai partire con l'app di nuoto, servono un suo progetto Supabase, un suo repository GitHub e un suo progetto Vercel: dimmelo e ti preparo i passi.
+
 ## 1. Email con il codice (dopo l'unione del ramo "fase 2" con main)
 
 Serve solo quando il lavoro della proposta 11 sarà pubblicato. Prima, non toccare "Confirm email".
