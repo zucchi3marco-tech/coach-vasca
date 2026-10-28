@@ -1,16 +1,15 @@
 import '../../../core/utils/gruppo_visibilita.dart';
 import '../../../core/utils/date_italiane.dart';
-import '../../gare/domain/gara.dart';
 import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/domain/partita.dart';
 import 'stagione.dart';
 
-enum TipoEventoCalendario { partita, gara, impegno }
+enum TipoEventoCalendario { partita, impegno }
 
-/// Un evento da mostrare nel calendario di una stagione: una partita
-/// (pallanuoto) o una gara (nuoto). [gruppoId] nullo = evento di club,
-/// visibile a tutti i gruppi. [origine] è l'oggetto di dominio da cui
-/// nasce (`Partita`, `Gara`), per aprirlo al tocco.
+/// Un evento da mostrare nel calendario di una stagione: una partita o un
+/// giorno di un impegno. [gruppoId] nullo = evento di club, visibile a
+/// tutti i gruppi. [origine] è l'oggetto di dominio da cui nasce
+/// (`Partita`, `Impegno`), per aprirlo al tocco.
 class EventoCalendario {
   const EventoCalendario({
     required this.id,
@@ -35,22 +34,6 @@ class EventoCalendario {
       titolo: '${p.squadraCasa} - ${p.squadraTrasferta}',
       sottotitolo: dettagli.isEmpty ? null : dettagli.join(' · '),
       origine: p,
-    );
-  }
-
-  factory EventoCalendario.daGara(Gara g) {
-    final dettagli = [
-      if (g.ora != null && g.ora!.isNotEmpty) g.ora!,
-      if (g.luogo != null && g.luogo!.isNotEmpty) g.luogo!,
-    ];
-    return EventoCalendario(
-      id: g.id,
-      tipo: TipoEventoCalendario.gara,
-      data: g.data,
-      gruppoId: g.gruppoId,
-      titolo: g.nome,
-      sottotitolo: dettagli.isEmpty ? null : dettagli.join(' · '),
-      origine: g,
     );
   }
 

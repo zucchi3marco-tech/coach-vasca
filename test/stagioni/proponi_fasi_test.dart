@@ -1,5 +1,4 @@
 import 'package:coach_vasca/features/club/application/current_club_provider.dart';
-import 'package:coach_vasca/features/gare/application/gare_providers.dart';
 import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
 import 'package:coach_vasca/features/stagioni/data/stagioni_repository.dart';
@@ -71,7 +70,6 @@ Future<_StagioniFinte> _apri(WidgetTester tester, Stagione stagione) async {
         stagioniRepositoryProvider.overrideWithValue(repository),
         currentClubProvider.overrideWith((ref) async => null),
         partiteListProvider.overrideWith((ref, _) => Stream.value(_partite)),
-        gareListProvider.overrideWith((ref, _) => Stream.value(const [])),
       ],
       child: MaterialApp(
         theme: AppTheme.chiaro,

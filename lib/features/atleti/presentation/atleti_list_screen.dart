@@ -292,8 +292,7 @@ class _AtletiListScreenState extends ConsumerState<AtletiListScreen> {
         content: const SingleChildScrollView(
           child: Text(
             'L\'atleta viene cancellato per sempre, insieme a presenze, '
-            'personal best, tempi di gara, iscrizioni alle gare, test e '
-            'convocazioni. Nelle partite già giocate restano gli eventi, '
+            'personal best, test e convocazioni. Nelle partite già giocate restano gli eventi, '
             'ma senza il suo nome. Se ha un account collegato, lo perde.\n\n'
             'Per toglierlo solo dall\'elenco senza perdere lo storico usa '
             '«Modifica anagrafica» e poi «Archivia».',

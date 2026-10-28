@@ -1,22 +1,10 @@
 /// Una combinazione stile+distanza valida per un personal best (FASE 10,
-/// punto 3) — la lista dei PB mostra sempre
-/// tutte le combinazioni possibili, registrate o no, cosi' il coach vede
-/// a colpo d'occhio cosa manca.
+/// punto 3) — la lista dei PB mostra sempre tutte le combinazioni
+/// possibili, registrate o no, cosi' il coach vede a colpo d'occhio cosa
+/// manca.
 typedef SlotPersonalBest = ({String stile, int distanzaM});
 
-const stiliNuoto = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
-
-/// Distanze di gara ufficiali per stile (nuoto).
-const distanzePerStileNuoto = {
-  'libero': [50, 100, 200, 400, 800, 1500],
-  'dorso': [50, 100, 200],
-  'rana': [50, 100, 200],
-  'delfino': [50, 100, 200],
-  'misti': [100, 200, 400],
-};
-
-/// Distanze dei test di condizionamento per la pallanuoto, sempre a
-/// stile libero (non si nuotano gare con altri stili).
+/// Distanze dei test di condizionamento, sempre a stile libero.
 const distanzePallanuoto = [25, 50, 100, 200];
 
 String capitalizzaParola(String s) =>

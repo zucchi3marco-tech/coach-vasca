@@ -5,11 +5,8 @@ import '../../core/sync/sync_engine.dart';
 import '../allenamenti/application/allenamenti_providers.dart';
 import '../atleti/application/atleti_providers.dart';
 import '../atleti/application/personal_best_providers.dart';
-import '../atleti/application/tempi_gara_providers.dart';
 import '../benessere/application/benessere_providers.dart';
 import '../carico/application/carico_providers.dart';
-import '../gare/application/gara_iscritti_providers.dart';
-import '../gare/application/gare_providers.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../impegni/application/impegni_providers.dart';
 import '../libreria_blocchi/application/libreria_blocchi_providers.dart';
@@ -32,14 +29,11 @@ final Map<String, List<ProviderOrFamily>> _paginePerTabella = {
   'serie': [serieListProvider, volumiAllenamentiProvider],
   'atleti': [atletiListProvider],
   'personal_best': [personalBestListProvider, personalBestClubProvider],
-  'tempi_gara': [tempiGaraListProvider, tempiGaraPerGaraProvider],
   'schede_benessere': [
     schedeBenessereAtletaProvider,
     schedeBenessereClubProvider,
   ],
   'rpe_sedute': [rpeAtletaProvider, rpeClubProvider],
-  'gara_iscritti': [garaIscrittiProvider],
-  'gare': [gareListProvider],
   'impegni': [impegniListProvider],
   'gruppi': [gruppiListProvider],
   'training_blocks': [trainingBlocksListProvider],

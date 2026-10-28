@@ -220,15 +220,6 @@ Map<String, List<Map<String, dynamic>>> _tabelle() => {
       'giocatori_trasferta': [],
     },
   ],
-  'gare': [
-    {
-      'id': 'gara-1',
-      'club_id': _club,
-      'data': '2026-11-08',
-      'nome': 'Trofeo Città',
-      'gruppo_id': null,
-    },
-  ],
   'impegni': [
     {
       'id': 'impegno-1',
@@ -255,28 +246,6 @@ Map<String, List<Map<String, dynamic>>> _tabelle() => {
         {'numero': 7, 'nome': 'Rossi', 'nota': 'Tira di destro'},
       ],
       'updated_at': '2026-10-27T10:00:00Z',
-    },
-  ],
-  'gara_iscritti': [
-    {
-      'id': 'iscritto-1',
-      'gara_id': 'gara-1',
-      'atleta_id': 'atleta-1',
-      'club_id': _club,
-    },
-  ],
-  'tempi_gara': [
-    {
-      'id': 'tempo-1',
-      'atleta_id': 'atleta-1',
-      'club_id': _club,
-      'stile': 'libero',
-      'distanza_m': 100,
-      'vasca_m': 25,
-      'tempo_s': 65.2,
-      'data': '2026-10-05',
-      'note': null,
-      'gara_id': 'gara-1',
     },
   ],
   'personal_best': [
@@ -455,10 +424,6 @@ void main() {
     expect(dati.referti.single.risultatoCasa, 2);
     expect(dati.referti.single.parziali.single.casa, 1);
     expect(dati.referti.single.giocatoriCasa.single.atletaId, 'atleta-1');
-    expect(dati.gare.single.nome, 'Trofeo Città');
-    expect(dati.iscrittiGare.single.atletaId, 'atleta-1');
-    expect(dati.tempiGara.single.tempoS, 65.2);
-    expect(dati.tempiGara.single.garaId, 'gara-1');
     expect(dati.personalBest.single.data, isNull);
     expect(dati.personalBest.single.tempoS, 80.55);
     expect(dati.testIngresso.single.passoMedio100S, 90);

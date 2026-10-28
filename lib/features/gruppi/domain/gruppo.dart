@@ -12,8 +12,7 @@ class Gruppo {
   final String nome;
   final int ordine;
 
-  /// 'nuoto' | 'pallanuoto' | null (club "nuoto e pallanuoto", o gruppo
-  /// creato prima di questo campo): quando e' valorizzato, la
-  /// registrazione via codice di gruppo non chiede piu' lo sport.
+  /// Com'è nel database ('pallanuoto', 'nuoto' nelle righe vecchie, o
+  /// null): l'app non decide niente da qui, vedi `sportApp`.
   final String? sport;
 }

@@ -125,8 +125,8 @@ class StagioniListScreen extends ConsumerWidget {
                 occhiello: nomeSquadra,
                 titolo: 'Stagioni',
                 sottotitolo:
-                    'Il calendario di partite e gare, le statistiche e i '
-                    'record di ogni stagione.',
+                    'Il calendario delle partite e le statistiche di ogni '
+                    'stagione.',
                 azioni: [
                   AzioneTestata(
                     icona: Icons.add,

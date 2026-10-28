@@ -329,7 +329,7 @@ class StagioneDetailScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Campionato, obiettivo e i collegamenti (statistiche, record)
+          // Campionato, obiettivo e il collegamento alle statistiche
           // stanno in testata: prima erano in fondo, sotto un calendario
           // lungo quanto la stagione.
           TestataPagina(

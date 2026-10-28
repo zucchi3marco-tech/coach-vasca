@@ -11,8 +11,8 @@ class Club {
   final String nome;
   final String? citta;
 
-  /// 'nuoto' | 'pallanuoto' (un solo sport per club). null per i club
-  /// creati prima che venisse chiesto (FASE 11).
+  /// Com'è nel database ('pallanuoto', 'nuoto' nelle righe vecchie, o
+  /// null): l'app non decide niente da qui, vedi `sportApp`.
   final String? sport;
 
   /// Categorie allenate (es. "U14", "Assoluti"): libere nel contenuto, ma

@@ -7,7 +7,7 @@ const settimaneScaricoMassime = 4;
 /// Quanti obiettivi può avere una stagione.
 const obiettiviMassimi = 3;
 
-/// Un obiettivo della stagione: una partita o una gara del calendario
+/// Un obiettivo della stagione: una partita del calendario
 /// ([eventoId]), o un giorno scritto a mano. [nome] diventa il nome della
 /// sua fase.
 class ObiettivoStagione {

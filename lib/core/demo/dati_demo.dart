@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,14 +9,14 @@ import '../../features/secco/domain/programma_secco.dart';
 import '../../features/test/domain/massimale.dart';
 import '../../features/test/domain/spiegazioni_test.dart';
 import '../db/app_database.dart';
+import '../sport_app.dart';
 import '../utils/giorni.dart';
 
-/// Dati finti per la modalita' demo: un club gia' pronto con gruppi,
-/// atleti, allenamenti, presenze, stagione, gare (nuoto) o partite
-/// (pallanuoto). Nomi volutamente lunghi, per far emergere i problemi di
-/// impaginazione sugli schermi stretti.
+/// Dati finti per la modalita' demo: un club di pallanuoto gia' pronto con
+/// gruppi, atleti, allenamenti, presenze, stagione e partite. Nomi
+/// volutamente lunghi, per far emergere i problemi di impaginazione sugli
+/// schermi stretti.
 ///
-/// Lo sport si sceglie con `DEMO_SPORT=nuoto|pallanuoto` nel `.env`.
 /// Si inserisce solo se la cache locale non ha ancora nessun club: un
 /// club creato a mano in demo non viene toccato.
 Future<void> inserisciDatiDemo(AppDatabase db) async {
@@ -37,7 +36,8 @@ Future<void> inserisciDatiDemo(AppDatabase db) async {
 }
 
 const _chiaveVersione = 'demo_dati_versione';
-const _versioneDati = 20;
+// 21: solo pallanuoto (2026-10-28), con i test T30 e le tabelle dei passi.
+const _versioneDati = 21;
 
 /// Com'è andata la serie [s] (nell'ordine in cui la demo le scrive) di una
 /// seduta di [fa] sedute fa (0: l'ultima già svolta; meno di 0: non ancora
@@ -46,7 +46,6 @@ const _versioneDati = 20;
 /// sedute più indietro non sono segnate. Chi è fatto in parte ha sempre
 /// l'esito 'fatta'.
 ({String? esito, int? metriFatti, int? secondiFatti}) _comEAndataDemo(
-  String sport,
   int fa,
   int s,
 ) {
@@ -55,36 +54,21 @@ const _versioneDati = 20;
   }
   const fatta = (esito: 'fatta', metriFatti: null, secondiFatti: null);
   const saltata = (esito: 'saltata', metriFatti: null, secondiFatti: null);
-  const nuoto = 'nuoto';
   if (fa == 0) {
-    return sport == nuoto
-        ? switch (s) {
-            // 5 ripetute su 8 da 100 m, 10 minuti su 15 di tecnica.
-            2 => (esito: 'fatta', metriFatti: 500, secondiFatti: null),
-            3 => saltata,
-            4 => (esito: 'fatta', metriFatti: null, secondiFatti: 600),
-            _ => fatta,
-          }
-        : switch (s) {
-            // 6 ripetute su 10 da 25 m, 12 minuti su 20 di tattica.
-            1 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
-            2 => (esito: 'fatta', metriFatti: null, secondiFatti: 720),
-            3 => saltata,
-            _ => fatta,
-          };
+    return switch (s) {
+      // 6 ripetute su 10 da 25 m, 12 minuti su 20 di tattica.
+      1 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
+      2 => (esito: 'fatta', metriFatti: null, secondiFatti: 720),
+      3 => saltata,
+      _ => fatta,
+    };
   }
   // Una distanza sola fatta in parte: 150 m su 200.
-  return sport == nuoto
-      ? switch (s) {
-          1 => saltata,
-          5 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
-          _ => fatta,
-        }
-      : switch (s) {
-          3 => saltata,
-          4 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
-          _ => fatta,
-        };
+  return switch (s) {
+    3 => saltata,
+    4 => (esito: 'fatta', metriFatti: 150, secondiFatti: null),
+    _ => fatta,
+  };
 }
 
 /// Gli atleti (per posizione) che il martedì e il giovedì si allenano con
@@ -214,9 +198,6 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
   final esistenti = await db.select(db.clubTable).get();
   if (esistenti.isNotEmpty) return;
 
-  final sport = dotenv.env['DEMO_SPORT'] == 'pallanuoto'
-      ? 'pallanuoto'
-      : 'nuoto';
   const uuid = Uuid();
   final oggi = DateTime.now();
   final giorno = DateTime(oggi.year, oggi.month, oggi.day);
@@ -228,24 +209,20 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
         .insert(
           ClubTableCompanion.insert(
             id: clubId,
-            nome: sport == 'nuoto'
-                ? "Società Nuotatori Valle dell'Adige"
-                : 'Pallanuoto Riviera Adriatica Sportiva',
+            nome: 'Pallanuoto Riviera Adriatica Sportiva',
             citta: const Value('San Giovanni in Persiceto'),
-            sport: Value(sport),
+            sport: const Value(sportApp),
             categorieJson: Value(
-              jsonEncode(
-                sport == 'nuoto'
-                    ? ['Es.B', 'Es.A', 'Ragazzi', 'Juniores', 'Assoluti']
-                    : ['U12', 'U14', 'U16', 'U18', 'Serie B'],
-              ),
+              jsonEncode(['U12', 'U14', 'U16', 'U18', 'Serie B']),
             ),
           ),
         );
 
-    final nomiGruppi = sport == 'nuoto'
-        ? ['Esordienti A', 'Agonisti Assoluti e Master', 'Propaganda']
-        : ['Under 14', 'Prima squadra Serie B', 'Under 16 femminile'];
+    const nomiGruppi = [
+      'Under 14',
+      'Prima squadra Serie B',
+      'Under 16 femminile',
+    ];
     final gruppi = <String>[];
     for (var i = 0; i < nomiGruppi.length; i++) {
       final id = uuid.v4();
@@ -258,11 +235,11 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               clubId: clubId,
               nome: nomiGruppi[i],
               ordine: Value(i + 1),
-              sport: Value(sport),
+              sport: const Value(sportApp),
               // Lo staff del modulo della distinta, già scritto per la
-              // prima squadra di pallanuoto.
+              // prima squadra.
               staffDistintaJson: Value(
-                sport == 'pallanuoto' && i == 0
+                i == 0
                     ? '{"tecnico":{"nome":"Ferri Marco","tessera":"100231"},'
                           '"vice_tecnico":{"nome":"Galli Luca",'
                           '"tessera":"100847"},'
@@ -326,7 +303,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               cognome: cognome,
               dataNascita: DateTime(anno, 1 + i % 12, 3 + i),
               sesso: Value(sesso),
-              sport: sport,
+              sport: sportApp,
               // Tutti nella prima squadra del club: e' lei ad avere
               // partite, allenamenti e convocazioni.
               gruppoId: Value(gruppi[0]),
@@ -336,26 +313,16 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               telefonoGenitore: const Value('+39 333 123 4567'),
               // Come in distinta: i due portieri della squadra; due
               // centroboa e un marcatore per il lavoro specializzato.
-              ruolo: Value(
-                sport != 'pallanuoto'
-                    ? null
-                    : switch (i) {
-                        0 || 10 => 'portiere',
-                        3 || 7 => 'centroboa',
-                        5 => 'marcatore',
-                        _ => null,
-                      },
-              ),
+              ruolo: Value(switch (i) {
+                0 || 10 => 'portiere',
+                3 || 7 => 'centroboa',
+                5 => 'marcatore',
+                _ => null,
+              }),
               // Rossi e Bianchi (l'atleta della demo) il martedì e il
               // giovedì si allenano con la prima squadra.
-              altroGruppoId: Value(
-                sport == 'pallanuoto' && _conLaPrima.contains(i)
-                    ? gruppi[1]
-                    : null,
-              ),
-              giorniAltroGruppo: Value(
-                sport == 'pallanuoto' && _conLaPrima.contains(i) ? '2,4' : null,
-              ),
+              altroGruppoId: Value(_conLaPrima.contains(i) ? gruppi[1] : null),
+              giorniAltroGruppo: Value(_conLaPrima.contains(i) ? '2,4' : null),
               consensoPrivacyFirmato: Value(i % 4 != 0),
               consensoPrivacyData: Value(
                 i % 4 != 0 ? DateTime(2026, 9, 1) : null,
@@ -389,29 +356,17 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               'Qualificare almeno sei atleti ai Campionati Regionali di categoria',
             ),
             gruppoId: Value(gruppi[0]),
-            campionato: Value(
-              sport == 'nuoto'
-                  ? 'Campionato Regionale Esordienti'
-                  : 'Campionato Under 14 Emilia-Romagna',
-            ),
+            campionato: const Value('Campionato Under 14 Emilia-Romagna'),
           ),
         );
 
     // Allenamenti: questa settimana e la scorsa, con serie e presenze.
-    const stili = ['libero', 'dorso', 'rana', 'delfino', 'misti'];
-    final titoli = sport == 'nuoto'
-        ? [
-            'Aerobico lungo con lavoro di gambe',
-            'Soglia anaerobica',
-            'Tecnica dorso e virate',
-            'Velocità e partenze dal blocco',
-          ]
-        : [
-            'Superiorità numerica e controfuga',
-            'Nuoto con palla e passaggi',
-            'Tattica difensiva a zona',
-            'Partitella a tema',
-          ];
+    const titoli = [
+      'Superiorità numerica e controfuga',
+      'Nuoto con palla e passaggi',
+      'Tattica difensiva a zona',
+      'Partitella a tema',
+    ];
     // Tutta la stagione (1/9 - 30/6): lunedi, martedi, giovedi e venerdi
     // alle 18:30, con la pausa di Natale. Le presenze solo per quelle gia'
     // passate.
@@ -450,158 +405,77 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
               ),
             ),
           );
-      final serie = sport == 'nuoto'
-          ? [
-              (
-                'riscaldamento',
-                1,
-                400,
-                null,
-                'libero',
-                'nuoto',
-                'A1',
-                null,
-                20,
-                null,
-                null,
-              ),
-              (
-                'riscaldamento',
-                4,
-                50,
-                null,
-                'misti',
-                'gambe',
-                'A2',
-                null,
-                15,
-                null,
-                'tavola',
-              ),
-              (
-                'principale',
-                8,
-                100,
-                null,
-                stili[indice % 5],
-                'nuoto',
-                'B2',
-                78.0,
-                null,
-                105.0,
-                null,
-              ),
-              (
-                'principale',
-                6,
-                50,
-                null,
-                'delfino',
-                'braccia',
-                'C1',
-                34.0,
-                30,
-                null,
-                'pull, palette',
-              ),
-              (
-                'principale',
-                3,
-                null,
-                300,
-                'libero',
-                'tecnica',
-                'A2',
-                null,
-                60,
-                null,
-                null,
-              ),
-              (
-                'defaticamento',
-                1,
-                200,
-                null,
-                'dorso',
-                'nuoto',
-                'A1',
-                null,
-                null,
-                null,
-                null,
-              ),
-            ]
-          : [
-              (
-                'riscaldamento',
-                1,
-                600,
-                null,
-                'libero',
-                'nuoto',
-                'A1',
-                null,
-                30,
-                null,
-                null,
-              ),
-              (
-                'principale',
-                10,
-                25,
-                null,
-                'libero',
-                'nuoto',
-                'C1',
-                null,
-                20,
-                40.0,
-                null,
-              ),
-              (
-                'principale',
-                4,
-                null,
-                300,
-                'libero',
-                'pallanuoto tecnico-tattico',
-                null,
-                null,
-                60,
-                null,
-                'palloni, calottine',
-              ),
-              (
-                'altro',
-                2,
-                null,
-                600,
-                'libero',
-                'a secco',
-                null,
-                null,
-                120,
-                null,
-                'elastici',
-              ),
-              (
-                'defaticamento',
-                1,
-                200,
-                null,
-                'dorso',
-                'nuoto',
-                'A1',
-                null,
-                null,
-                null,
-                null,
-              ),
-            ];
-      // Pallanuoto: lo sprint e la tattica del gruppo sono un momento in
-      // parallelo, mentre i portieri parano e i centroboa lottano in
-      // posizione (lavori in parallelo, 2026-10-15).
-      final momento = sport == 'pallanuoto' ? uuid.v4() : null;
+      final serie = [
+        (
+          'riscaldamento',
+          1,
+          600,
+          null,
+          'libero',
+          'nuoto',
+          'A1',
+          null,
+          30,
+          null,
+          null,
+        ),
+        (
+          'principale',
+          10,
+          25,
+          null,
+          'libero',
+          'nuoto',
+          'C1',
+          null,
+          20,
+          40.0,
+          null,
+        ),
+        (
+          'principale',
+          4,
+          null,
+          300,
+          'libero',
+          'pallanuoto tecnico-tattico',
+          null,
+          null,
+          60,
+          null,
+          'palloni, calottine',
+        ),
+        (
+          'altro',
+          2,
+          null,
+          600,
+          'libero',
+          'a secco',
+          null,
+          null,
+          120,
+          null,
+          'elastici',
+        ),
+        (
+          'defaticamento',
+          1,
+          200,
+          null,
+          'dorso',
+          'nuoto',
+          'A1',
+          null,
+          null,
+          null,
+          null,
+        ),
+      ];
+      // Lo sprint e la tattica del gruppo sono un momento in parallelo,
+      // mentre i portieri parano e i centroboa lottano in posizione
+      // (lavori in parallelo, 2026-10-15).
+      final momento = uuid.v4();
       final righe = <SerieTableCompanion>[];
       for (var s = 0; s < serie.length; s++) {
         final (
@@ -617,7 +491,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
           rip2,
           attr,
         ) = serie[s];
-        final andata = _comEAndataDemo(sport, fa, s);
+        final andata = _comEAndataDemo(fa, s);
         righe.add(
           SerieTableCompanion.insert(
             id: uuid.v4(),
@@ -646,7 +520,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
             secondiFatti: Value(andata.secondiFatti),
           ),
         );
-        if (momento != null && s == 2) {
+        if (s == 2) {
           for (final (ruolo, ripetute, durata, esecuzione, nota) in [
             ('portiere', 3, 360, 'tiri', 'Parate sui tiri dalla distanza'),
             (
@@ -693,9 +567,7 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
         for (var a = 0; a < atleti.length; a++) {
           // Il martedì e il giovedì Rossi e Bianchi sono con la prima
           // squadra: qui non sono attesi.
-          if (sport == 'pallanuoto' &&
-              _conLaPrima.contains(a) &&
-              const {2, 4}.contains(data.weekday)) {
+          if (_conLaPrima.contains(a) && const {2, 4}.contains(data.weekday)) {
             continue;
           }
           final stato = (a + d) % 5 == 0
@@ -720,389 +592,186 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
       }
     }
 
-    if (sport == 'pallanuoto') {
-      // La prima squadra si allena il martedì e il giovedì alle 20, fino
-      // a Natale: Rossi e Bianchi vengono dall'Under 14 (altra squadra in
-      // giorni fissi, 2026-10-15). Le presenze solo le loro.
-      const titoliPrima = [
-        'Superiorità e tiri da fuori',
-        'Contropiede e difesa a zona',
-      ];
-      var n = 0;
-      for (
-        var g = DateTime(2026, 9, 1);
-        g.isBefore(DateTime(2026, 12, 23));
-        g = aggiungiGiorni(g, 1)
-      ) {
-        if (!const {2, 4}.contains(g.weekday)) continue;
-        final data = DateTime(g.year, g.month, g.day, 20);
-        final allenamentoId = uuid.v4();
+    // La prima squadra si allena il martedì e il giovedì alle 20, fino
+    // a Natale: Rossi e Bianchi vengono dall'Under 14 (altra squadra in
+    // giorni fissi, 2026-10-15). Le presenze solo le loro.
+    const titoliPrima = [
+      'Superiorità e tiri da fuori',
+      'Contropiede e difesa a zona',
+    ];
+    var n = 0;
+    for (
+      var g = DateTime(2026, 9, 1);
+      g.isBefore(DateTime(2026, 12, 23));
+      g = aggiungiGiorni(g, 1)
+    ) {
+      if (!const {2, 4}.contains(g.weekday)) continue;
+      final data = DateTime(g.year, g.month, g.day, 20);
+      final allenamentoId = uuid.v4();
+      await db
+          .into(db.allenamentiTable)
+          .insert(
+            AllenamentiTableCompanion.insert(
+              id: allenamentoId,
+              clubId: clubId,
+              data: data,
+              titolo: Value(titoliPrima[n++ % titoliPrima.length]),
+              gruppoId: Value(gruppi[1]),
+            ),
+          );
+      for (final (i, (blocco, rip, dist, dur, esec, zona)) in [
+        ('riscaldamento', 1, 800, null, 'nuoto', 'A1'),
+        ('principale', 4, null, 360, 'gioco da schierati', null),
+        ('principale', 3, null, 300, 'tiri', null),
+        ('defaticamento', 1, 300, null, 'nuoto', 'A1'),
+      ].indexed) {
         await db
-            .into(db.allenamentiTable)
+            .into(db.serieTable)
             .insert(
-              AllenamentiTableCompanion.insert(
-                id: allenamentoId,
+              SerieTableCompanion.insert(
+                id: uuid.v4(),
+                allenamentoId: allenamentoId,
                 clubId: clubId,
-                data: data,
-                titolo: Value(titoliPrima[n++ % titoliPrima.length]),
-                gruppoId: Value(gruppi[1]),
+                ordine: i + 1,
+                blocco: blocco,
+                ripetute: rip,
+                distanzaM: Value(dist),
+                durataS: Value(dur),
+                stile: 'libero',
+                esecuzione: esec,
+                zona: Value(zona),
+                recuperoS: const Value(30),
               ),
             );
-        for (final (i, (blocco, rip, dist, dur, esec, zona)) in [
-          ('riscaldamento', 1, 800, null, 'nuoto', 'A1'),
-          ('principale', 4, null, 360, 'gioco da schierati', null),
-          ('principale', 3, null, 300, 'tiri', null),
-          ('defaticamento', 1, 300, null, 'nuoto', 'A1'),
-        ].indexed) {
+      }
+      if (data.isBefore(oggi)) {
+        for (final a in _conLaPrima) {
           await db
-              .into(db.serieTable)
+              .into(db.presenzeTable)
               .insert(
-                SerieTableCompanion.insert(
+                PresenzeTableCompanion.insert(
                   id: uuid.v4(),
                   allenamentoId: allenamentoId,
+                  atletaId: atleti[a],
                   clubId: clubId,
-                  ordine: i + 1,
-                  blocco: blocco,
-                  ripetute: rip,
-                  distanzaM: Value(dist),
-                  durataS: Value(dur),
-                  stile: 'libero',
-                  esecuzione: esec,
-                  zona: Value(zona),
-                  recuperoS: const Value(30),
+                  stato: (n + a) % 6 == 0 ? 'assente' : 'presente',
                 ),
               );
-        }
-        if (data.isBefore(oggi)) {
-          for (final a in _conLaPrima) {
-            await db
-                .into(db.presenzeTable)
-                .insert(
-                  PresenzeTableCompanion.insert(
-                    id: uuid.v4(),
-                    allenamentoId: allenamentoId,
-                    atletaId: atleti[a],
-                    clubId: clubId,
-                    stato: (n + a) % 6 == 0 ? 'assente' : 'presente',
-                  ),
-                );
-          }
         }
       }
     }
 
-    if (sport == 'pallanuoto') {
-      // L'elenco degli esercizi a secco (quelli pronti) e, il mercoledì,
-      // una seduta a secco di prevenzione per la squadra.
-      final esercizi = <String, String>{};
-      for (final m in modelliEsercizi) {
-        final id = uuid.v4();
-        esercizi[m.chiave] = id;
-        await db
-            .into(db.eserciziSeccoTable)
-            .insert(
-              EserciziSeccoTableCompanion.insert(
-                id: id,
-                clubId: clubId,
-                nome: m.nome,
-                categoria: m.categoria.name,
-                misura: Value(m.misura.name),
-                attrezzo: Value(m.attrezzo),
-                descrizione: Value(m.descrizione),
-                modello: Value(m.chiave),
-              ),
-            );
-      }
-      const programma = [
-        ('extrarotazione_elastico', 'elastico rosso'),
-        ('ytw_prono', null),
-        ('plank_frontale', null),
-        ('squat_muro', null),
-        ('sleeper_stretch', null),
-      ];
-      for (
-        var g = DateTime(2026, 9, 2);
-        !g.isAfter(DateTime(2027, 6, 30));
-        g = aggiungiGiorni(g, 7)
-      ) {
-        if (!g.isBefore(DateTime(2026, 12, 23)) &&
-            g.isBefore(DateTime(2027, 1, 7))) {
-          continue;
-        }
-        final data = DateTime(g.year, g.month, g.day, 17, 30);
-        final d = giorniTra(giorno, data);
-        final sedutaId = uuid.v4();
-        await db
-            .into(db.allenamentiTable)
-            .insert(
-              AllenamentiTableCompanion.insert(
-                id: sedutaId,
-                clubId: clubId,
-                data: data,
-                titolo: const Value('Prevenzione spalla e core'),
-                gruppoId: Value(gruppi[0]),
-                tipo: const Value('secco'),
-                durataMin: const Value(40),
-              ),
-            );
-        // Nelle tre settimane prima di oggi le varianti (proposta 12): il
-        // primo atleta, con la spalla, fa il rematore con l'elastico giallo
-        // al posto dell'YTW; il quinto non fa lo squat al muro. Oggi e
-        // dopo no: chi ha segnato male alla spalla fa vedere la proposta.
-        final conVarianti = d < 0 && d >= -21;
-        final righe = <(String, ModelloEsercizio, String?)>[];
-        (String, ModelloEsercizio, String?)? variante;
-        for (final (i, (chiave, carico)) in programma.indexed) {
-          final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
-          final rigaId = uuid.v4();
-          righe.add((rigaId, m, carico));
-          await db
-              .into(db.eserciziSedutaTable)
-              .insert(
-                EserciziSedutaTableCompanion.insert(
-                  id: rigaId,
-                  allenamentoId: sedutaId,
-                  clubId: clubId,
-                  esercizioId: esercizi[chiave]!,
-                  ordine: i + 1,
-                  serie: Value(m.serie),
-                  ripetizioni: Value(m.ripetizioni),
-                  durataS: Value(m.durataS),
-                  carico: Value(carico),
-                  recuperoS: Value(m.recuperoS),
-                  tranneAtletiJson: Value(
-                    conVarianti && chiave == 'squat_muro'
-                        ? jsonEncode([atleti[4]])
-                        : null,
-                  ),
-                ),
-              );
-          if (conVarianti && chiave == 'ytw_prono') {
-            final r = modelliEsercizi.firstWhere(
-              (m) => m.chiave == 'rematore_elastico',
-            );
-            final varianteId = uuid.v4();
-            variante = (varianteId, r, 'elastico giallo');
-            await db
-                .into(db.eserciziSedutaTable)
-                .insert(
-                  EserciziSedutaTableCompanion.insert(
-                    id: varianteId,
-                    allenamentoId: sedutaId,
-                    clubId: clubId,
-                    esercizioId: esercizi[r.chiave]!,
-                    ordine: i + 1,
-                    serie: const Value(2),
-                    ripetizioni: const Value(12),
-                    carico: const Value('elastico giallo'),
-                    recuperoS: Value(r.recuperoS),
-                    varianteDi: Value(rigaId),
-                    soloAtletiJson: Value(jsonEncode([atleti[0]])),
-                  ),
-                );
-          }
-        }
-        if (data.isBefore(oggi)) {
-          for (var a = 0; a < atleti.length; a++) {
-            final presente = (a + d) % 6 != 0;
-            await db
-                .into(db.presenzeTable)
-                .insert(
-                  PresenzeTableCompanion.insert(
-                    id: uuid.v4(),
-                    allenamentoId: sedutaId,
-                    atletaId: atleti[a],
-                    clubId: clubId,
-                    stato: presente ? 'presente' : 'assente',
-                  ),
-                );
-            // Le ultime tre settimane: metà dei presenti l'ha registrata
-            // dal telefono, uno a metà; i più grandi con l'elastico verde.
-            // Ognuno i suoi esercizi (con la variante), e il voto di quasi
-            // ogni serie: l'ultima più dura.
-            if (!presente || d < -21 || a.isOdd) continue;
-            for (final (k, riga) in righe.indexed) {
-              if (a == 2 && k >= 3) break;
-              if (conVarianti && a == 4 && riga.$2.chiave == 'squat_muro') {
-                continue;
-              }
-              final (
-                rigaId,
-                m,
-                carico,
-              ) = a == 0 && riga.$2.chiave == 'ytw_prono' && variante != null
-                  ? variante
-                  : riga;
-              final quante = rigaId == variante?.$1 ? 2 : m.serie;
-              for (var s = 1; s <= quante; s++) {
-                final voto = a == 6
-                    ? null
-                    : s == quante
-                    ? (a == 0 ? 'dura' : 'giusta')
-                    : (k == 0 && a == 2 ? 'facile' : 'giusta');
-                final usato = carico == null
-                    ? null
-                    : a < 4 && rigaId != variante?.$1
-                    ? 'elastico verde'
-                    : carico;
-                await db
-                    .into(db.serieSeccoFatteTable)
-                    .insert(
-                      SerieSeccoFatteTableCompanion.insert(
-                        id: uuid.v4(),
-                        atletaId: atleti[a],
-                        clubId: clubId,
-                        allenamentoId: sedutaId,
-                        rigaId: rigaId,
-                        esercizioId: esercizi[m.chiave]!,
-                        serie: s,
-                        ripetizioni: Value(
-                          rigaId == variante?.$1
-                              ? 12
-                              : m.ripetizioni == null
-                              ? null
-                              : m.ripetizioni! -
-                                    (s == m.serie && a == 6 ? 2 : 0),
-                        ),
-                        durataS: Value(m.durataS),
-                        carico: Value(usato),
-                        caricoPrevisto: Value(carico),
-                        fattaIl: data.add(Duration(minutes: 3 * k + s)),
-                        voto: Value(voto),
-                      ),
-                    );
-              }
-            }
-          }
-        }
-      }
-      // Un programma pronto già nel club, da mettere nel calendario.
-      final spalla = modelliProgrammi.first;
+    // L'elenco degli esercizi a secco (quelli pronti) e, il mercoledì,
+    // una seduta a secco di prevenzione per la squadra.
+    final esercizi = <String, String>{};
+    for (final m in modelliEsercizi) {
+      final id = uuid.v4();
+      esercizi[m.chiave] = id;
       await db
-          .into(db.programmiSeccoTable)
+          .into(db.eserciziSeccoTable)
           .insert(
-            ProgrammiSeccoTableCompanion.insert(
-              id: uuid.v4(),
+            EserciziSeccoTableCompanion.insert(
+              id: id,
               clubId: clubId,
-              nome: spalla.nome,
-              descrizione: Value(spalla.descrizione),
-              durataMin: Value(spalla.durataMin),
-              settimaneJson: Value(
-                jsonEncode([
-                  for (final s in spalla.settimaneCon(esercizi)) s.toMap(),
-                ]),
-              ),
-              modello: Value(spalla.chiave),
+              nome: m.nome,
+              categoria: m.categoria.name,
+              misura: Value(m.misura.name),
+              attrezzo: Value(m.attrezzo),
+              descrizione: Value(m.descrizione),
+              modello: Value(m.chiave),
             ),
           );
-
-      // I massimali di squat e panca dei più grandi (nati entro il 2010),
-      // misurati due volte, e il lunedì una seduta di forza con i carichi
-      // in percentuale.
-      final testMassimale = <String, String>{};
-      for (final m in modelliMassimali.take(2)) {
-        final id = uuid.v4();
-        testMassimale[m.esercizio] = id;
+    }
+    const programma = [
+      ('extrarotazione_elastico', 'elastico rosso'),
+      ('ytw_prono', null),
+      ('plank_frontale', null),
+      ('squat_muro', null),
+      ('sleeper_stretch', null),
+    ];
+    for (
+      var g = DateTime(2026, 9, 2);
+      !g.isAfter(DateTime(2027, 6, 30));
+      g = aggiungiGiorni(g, 7)
+    ) {
+      if (!g.isBefore(DateTime(2026, 12, 23)) &&
+          g.isBefore(DateTime(2027, 1, 7))) {
+        continue;
+      }
+      final data = DateTime(g.year, g.month, g.day, 17, 30);
+      final d = giorniTra(giorno, data);
+      final sedutaId = uuid.v4();
+      await db
+          .into(db.allenamentiTable)
+          .insert(
+            AllenamentiTableCompanion.insert(
+              id: sedutaId,
+              clubId: clubId,
+              data: data,
+              titolo: const Value('Prevenzione spalla e core'),
+              gruppoId: Value(gruppi[0]),
+              tipo: const Value('secco'),
+              durataMin: const Value(40),
+            ),
+          );
+      // Nelle tre settimane prima di oggi le varianti (proposta 12): il
+      // primo atleta, con la spalla, fa il rematore con l'elastico giallo
+      // al posto dell'YTW; il quinto non fa lo squat al muro. Oggi e
+      // dopo no: chi ha segnato male alla spalla fa vedere la proposta.
+      final conVarianti = d < 0 && d >= -21;
+      final righe = <(String, ModelloEsercizio, String?)>[];
+      (String, ModelloEsercizio, String?)? variante;
+      for (final (i, (chiave, carico)) in programma.indexed) {
+        final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
+        final rigaId = uuid.v4();
+        righe.add((rigaId, m, carico));
         await db
-            .into(db.testClubTable)
+            .into(db.eserciziSedutaTable)
             .insert(
-              TestClubTableCompanion.insert(
-                id: id,
+              EserciziSedutaTableCompanion.insert(
+                id: rigaId,
+                allenamentoId: sedutaId,
                 clubId: clubId,
-                nome: m.nome,
-                descrizione: Value(spiegazioneOriginale(m.chiave)),
-                unita: 'chili',
-                migliore: 'maggiore',
-                modello: Value(m.chiave),
-                esercizioId: Value(esercizi[m.esercizio]),
+                esercizioId: esercizi[chiave]!,
+                ordine: i + 1,
+                serie: Value(m.serie),
+                ripetizioni: Value(m.ripetizioni),
+                durataS: Value(m.durataS),
+                carico: Value(carico),
+                recuperoS: Value(m.recuperoS),
+                tranneAtletiJson: Value(
+                  conVarianti && chiave == 'squat_muro'
+                      ? jsonEncode([atleti[4]])
+                      : null,
+                ),
               ),
             );
-      }
-      final grandi = [
-        for (final (i, (_, _, _, anno)) in anagrafiche.indexed)
-          if (anno <= 2010) i,
-      ];
-      // L'ultimo massimale di ognuno, per i chili delle sedute.
-      final massimaleOra = <(String, int), double>{};
-      for (final (k, a) in grandi.indexed) {
-        for (final (esercizio, base) in const [
-          ('squat_bilanciere', 50.0),
-          ('panca_piana', 35.0),
-        ]) {
-          for (final (quando, inPiu) in const [(-42, 0.0), (-14, 5.0)]) {
-            final kg = base + 2.5 * k + inPiu;
-            const ripetizioni = 5;
-            final massimale = stimaMassimale(kg, ripetizioni);
-            massimaleOra[(esercizio, a)] = massimale;
-            await db
-                .into(db.testRisultatiTable)
-                .insert(
-                  TestRisultatiTableCompanion.insert(
-                    id: uuid.v4(),
-                    testId: testMassimale[esercizio]!,
-                    atletaId: atleti[a],
-                    clubId: clubId,
-                    data: aggiungiGiorni(giorno, quando),
-                    valoriJson: jsonEncode([massimale]),
-                    caricoKg: Value(kg),
-                    ripetizioni: const Value(ripetizioni),
-                  ),
-                );
-          }
-        }
-      }
-      const forza = [
-        ('squat_bilanciere', '70%'),
-        ('panca_piana', '70%'),
-        ('rematore_manubrio', '12 kg'),
-      ];
-      for (
-        var g = DateTime(2026, 9, 7);
-        !g.isAfter(DateTime(2027, 6, 28));
-        g = aggiungiGiorni(g, 7)
-      ) {
-        if (!g.isBefore(DateTime(2026, 12, 23)) &&
-            g.isBefore(DateTime(2027, 1, 7))) {
-          continue;
-        }
-        final data = DateTime(g.year, g.month, g.day, 17, 30);
-        final d = giorniTra(giorno, data);
-        final sedutaId = uuid.v4();
-        await db
-            .into(db.allenamentiTable)
-            .insert(
-              AllenamentiTableCompanion.insert(
-                id: sedutaId,
-                clubId: clubId,
-                data: data,
-                titolo: const Value('Forza'),
-                gruppoId: Value(gruppi[0]),
-                tipo: const Value('secco'),
-                durataMin: const Value(45),
-              ),
-            );
-        final righe = <(String, ModelloEsercizio, String)>[];
-        for (final (i, (chiave, carico)) in forza.indexed) {
-          final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
-          final rigaId = uuid.v4();
-          righe.add((rigaId, m, carico));
+        if (conVarianti && chiave == 'ytw_prono') {
+          final r = modelliEsercizi.firstWhere(
+            (m) => m.chiave == 'rematore_elastico',
+          );
+          final varianteId = uuid.v4();
+          variante = (varianteId, r, 'elastico giallo');
           await db
               .into(db.eserciziSedutaTable)
               .insert(
                 EserciziSedutaTableCompanion.insert(
-                  id: rigaId,
+                  id: varianteId,
                   allenamentoId: sedutaId,
                   clubId: clubId,
-                  esercizioId: esercizi[chiave]!,
+                  esercizioId: esercizi[r.chiave]!,
                   ordine: i + 1,
-                  serie: Value(m.serie),
-                  ripetizioni: Value(m.ripetizioni),
-                  carico: Value(carico),
-                  recuperoS: Value(m.recuperoS),
+                  serie: const Value(2),
+                  ripetizioni: const Value(12),
+                  carico: const Value('elastico giallo'),
+                  recuperoS: Value(r.recuperoS),
+                  varianteDi: Value(rigaId),
+                  soloAtletiJson: Value(jsonEncode([atleti[0]])),
                 ),
               );
         }
-        if (!data.isBefore(oggi)) continue;
+      }
+      if (data.isBefore(oggi)) {
         for (var a = 0; a < atleti.length; a++) {
           final presente = (a + d) % 6 != 0;
           await db
@@ -1116,15 +785,35 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                   stato: presente ? 'presente' : 'assente',
                 ),
               );
-          // Le ultime due settimane i più grandi l'hanno registrata dal
-          // telefono, con i chili dal loro massimale.
-          if (!presente || d < -14 || !grandi.contains(a)) continue;
-          for (final (k, (rigaId, m, carico)) in righe.indexed) {
-            final massimale = massimaleOra[(m.chiave, a)];
-            final usato = massimale == null
-                ? carico
-                : chiliProposti(carico, massimale) ?? carico;
-            for (var s = 1; s <= m.serie; s++) {
+          // Le ultime tre settimane: metà dei presenti l'ha registrata
+          // dal telefono, uno a metà; i più grandi con l'elastico verde.
+          // Ognuno i suoi esercizi (con la variante), e il voto di quasi
+          // ogni serie: l'ultima più dura.
+          if (!presente || d < -21 || a.isOdd) continue;
+          for (final (k, riga) in righe.indexed) {
+            if (a == 2 && k >= 3) break;
+            if (conVarianti && a == 4 && riga.$2.chiave == 'squat_muro') {
+              continue;
+            }
+            final (
+              rigaId,
+              m,
+              carico,
+            ) = a == 0 && riga.$2.chiave == 'ytw_prono' && variante != null
+                ? variante
+                : riga;
+            final quante = rigaId == variante?.$1 ? 2 : m.serie;
+            for (var s = 1; s <= quante; s++) {
+              final voto = a == 6
+                  ? null
+                  : s == quante
+                  ? (a == 0 ? 'dura' : 'giusta')
+                  : (k == 0 && a == 2 ? 'facile' : 'giusta');
+              final usato = carico == null
+                  ? null
+                  : a < 4 && rigaId != variante?.$1
+                  ? 'elastico verde'
+                  : carico;
               await db
                   .into(db.serieSeccoFatteTable)
                   .insert(
@@ -1136,10 +825,18 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
                       rigaId: rigaId,
                       esercizioId: esercizi[m.chiave]!,
                       serie: s,
-                      ripetizioni: Value(m.ripetizioni),
+                      ripetizioni: Value(
+                        rigaId == variante?.$1
+                            ? 12
+                            : m.ripetizioni == null
+                            ? null
+                            : m.ripetizioni! - (s == m.serie && a == 6 ? 2 : 0),
+                      ),
+                      durataS: Value(m.durataS),
                       carico: Value(usato),
                       caricoPrevisto: Value(carico),
-                      fattaIl: data.add(Duration(minutes: 4 * k + 2 * s)),
+                      fattaIl: data.add(Duration(minutes: 3 * k + s)),
+                      voto: Value(voto),
                     ),
                   );
             }
@@ -1147,316 +844,389 @@ Future<void> _inserisciClubDemo(AppDatabase db) async {
         }
       }
     }
+    // Un programma pronto già nel club, da mettere nel calendario.
+    final spalla = modelliProgrammi.first;
+    await db
+        .into(db.programmiSeccoTable)
+        .insert(
+          ProgrammiSeccoTableCompanion.insert(
+            id: uuid.v4(),
+            clubId: clubId,
+            nome: spalla.nome,
+            descrizione: Value(spalla.descrizione),
+            durataMin: Value(spalla.durataMin),
+            settimaneJson: Value(
+              jsonEncode([
+                for (final s in spalla.settimaneCon(esercizi)) s.toMap(),
+              ]),
+            ),
+            modello: Value(spalla.chiave),
+          ),
+        );
 
-    if (sport == 'nuoto') {
-      // Personal best e tempi gara.
-      for (var a = 0; a < 6; a++) {
-        for (final (stile, dist, base) in [
-          ('libero', 50, 29.4),
-          ('libero', 100, 64.1),
-          ('dorso', 100, 72.8),
-          ('rana', 200, 171.3),
-          ('misti', 200, 158.6),
-        ]) {
+    // I massimali di squat e panca dei più grandi (nati entro il 2010),
+    // misurati due volte, e il lunedì una seduta di forza con i carichi
+    // in percentuale.
+    final testMassimale = <String, String>{};
+    for (final m in modelliMassimali.take(2)) {
+      final id = uuid.v4();
+      testMassimale[m.esercizio] = id;
+      await db
+          .into(db.testClubTable)
+          .insert(
+            TestClubTableCompanion.insert(
+              id: id,
+              clubId: clubId,
+              nome: m.nome,
+              descrizione: Value(spiegazioneOriginale(m.chiave)),
+              unita: 'chili',
+              migliore: 'maggiore',
+              modello: Value(m.chiave),
+              esercizioId: Value(esercizi[m.esercizio]),
+            ),
+          );
+    }
+    final grandi = [
+      for (final (i, (_, _, _, anno)) in anagrafiche.indexed)
+        if (anno <= 2010) i,
+    ];
+    // L'ultimo massimale di ognuno, per i chili delle sedute.
+    final massimaleOra = <(String, int), double>{};
+    for (final (k, a) in grandi.indexed) {
+      for (final (esercizio, base) in const [
+        ('squat_bilanciere', 50.0),
+        ('panca_piana', 35.0),
+      ]) {
+        for (final (quando, inPiu) in const [(-42, 0.0), (-14, 5.0)]) {
+          final kg = base + 2.5 * k + inPiu;
+          const ripetizioni = 5;
+          final massimale = stimaMassimale(kg, ripetizioni);
+          massimaleOra[(esercizio, a)] = massimale;
           await db
-              .into(db.personalBestTable)
+              .into(db.testRisultatiTable)
               .insert(
-                PersonalBestTableCompanion.insert(
+                TestRisultatiTableCompanion.insert(
                   id: uuid.v4(),
+                  testId: testMassimale[esercizio]!,
                   atletaId: atleti[a],
                   clubId: clubId,
-                  stile: stile,
-                  distanzaM: dist,
-                  tempoS: base + a * 0.87,
-                  data: Value(DateTime(2026, 6, 10 + a)),
-                ),
-              );
-          await db
-              .into(db.tempiGaraTable)
-              .insert(
-                TempiGaraTableCompanion.insert(
-                  id: uuid.v4(),
-                  atletaId: atleti[a],
-                  clubId: clubId,
-                  stile: stile,
-                  distanzaM: dist,
-                  vascaM: 25,
-                  tempoS: base + a * 0.87 + 0.6,
-                  data: DateTime(2026, 5, 20 + a),
-                  note: Value(
-                    a == 0 ? 'Trofeo Città di Bologna – batteria 3' : null,
-                  ),
+                  data: aggiungiGiorni(giorno, quando),
+                  valoriJson: jsonEncode([massimale]),
+                  caricoKg: Value(kg),
+                  ripetizioni: const Value(ripetizioni),
                 ),
               );
         }
       }
-
-      // Test di ingresso con tabella dei passi.
-      for (var a = 0; a < 3; a++) {
-        final testId = uuid.v4();
+    }
+    const forza = [
+      ('squat_bilanciere', '70%'),
+      ('panca_piana', '70%'),
+      ('rematore_manubrio', '12 kg'),
+    ];
+    for (
+      var g = DateTime(2026, 9, 7);
+      !g.isAfter(DateTime(2027, 6, 28));
+      g = aggiungiGiorni(g, 7)
+    ) {
+      if (!g.isBefore(DateTime(2026, 12, 23)) &&
+          g.isBefore(DateTime(2027, 1, 7))) {
+        continue;
+      }
+      final data = DateTime(g.year, g.month, g.day, 17, 30);
+      final d = giorniTra(giorno, data);
+      final sedutaId = uuid.v4();
+      await db
+          .into(db.allenamentiTable)
+          .insert(
+            AllenamentiTableCompanion.insert(
+              id: sedutaId,
+              clubId: clubId,
+              data: data,
+              titolo: const Value('Forza'),
+              gruppoId: Value(gruppi[0]),
+              tipo: const Value('secco'),
+              durataMin: const Value(45),
+            ),
+          );
+      final righe = <(String, ModelloEsercizio, String)>[];
+      for (final (i, (chiave, carico)) in forza.indexed) {
+        final m = modelliEsercizi.firstWhere((m) => m.chiave == chiave);
+        final rigaId = uuid.v4();
+        righe.add((rigaId, m, carico));
         await db
-            .into(db.testIngressoTable)
+            .into(db.eserciziSedutaTable)
             .insert(
-              TestIngressoTableCompanion.insert(
-                id: testId,
+              EserciziSedutaTableCompanion.insert(
+                id: rigaId,
+                allenamentoId: sedutaId,
+                clubId: clubId,
+                esercizioId: esercizi[chiave]!,
+                ordine: i + 1,
+                serie: Value(m.serie),
+                ripetizioni: Value(m.ripetizioni),
+                carico: Value(carico),
+                recuperoS: Value(m.recuperoS),
+              ),
+            );
+      }
+      if (!data.isBefore(oggi)) continue;
+      for (var a = 0; a < atleti.length; a++) {
+        final presente = (a + d) % 6 != 0;
+        await db
+            .into(db.presenzeTable)
+            .insert(
+              PresenzeTableCompanion.insert(
+                id: uuid.v4(),
+                allenamentoId: sedutaId,
                 atletaId: atleti[a],
                 clubId: clubId,
-                tipo: 'T30',
-                dataTest: DateTime(2026, 9, 15),
-                distanzaTotaleM: 2050 - a * 75,
-                tempoTotaleS: 1800,
-                passoMedio100S: 1800 / ((2050 - a * 75) / 100),
+                stato: presente ? 'presente' : 'assente',
               ),
             );
-        const percentuali = {
-          'A1': 1.15,
-          'A2': 1.08,
-          'B1': 1.03,
-          'B2': 1.0,
-          'C1': 0.96,
-          'C2': 0.93,
-          'C3': 0.9,
-          'D': 0.86,
-        };
-        final passoBase = 1800 / ((2050 - a * 75) / 100);
-        for (final zona in percentuali.keys) {
-          await db
-              .into(db.tabellePassiTable)
-              .insert(
-                TabellePassiTableCompanion.insert(
-                  id: uuid.v4(),
-                  testId: testId,
-                  atletaId: atleti[a],
-                  clubId: clubId,
-                  zona: zona,
-                  passo100S: passoBase * percentuali[zona]!,
-                  percentualeRiferimento: Value(percentuali[zona]! * 100),
-                ),
-              );
+        // Le ultime due settimane i più grandi l'hanno registrata dal
+        // telefono, con i chili dal loro massimale.
+        if (!presente || d < -14 || !grandi.contains(a)) continue;
+        for (final (k, (rigaId, m, carico)) in righe.indexed) {
+          final massimale = massimaleOra[(m.chiave, a)];
+          final usato = massimale == null
+              ? carico
+              : chiliProposti(carico, massimale) ?? carico;
+          for (var s = 1; s <= m.serie; s++) {
+            await db
+                .into(db.serieSeccoFatteTable)
+                .insert(
+                  SerieSeccoFatteTableCompanion.insert(
+                    id: uuid.v4(),
+                    atletaId: atleti[a],
+                    clubId: clubId,
+                    allenamentoId: sedutaId,
+                    rigaId: rigaId,
+                    esercizioId: esercizi[m.chiave]!,
+                    serie: s,
+                    ripetizioni: Value(m.ripetizioni),
+                    carico: Value(usato),
+                    caricoPrevisto: Value(carico),
+                    fattaIl: data.add(Duration(minutes: 4 * k + 2 * s)),
+                  ),
+                );
+          }
         }
       }
+    }
 
-      // Gare: una passata e due in arrivo.
-      for (final (giorni, nome, luogo, importanza) in [
-        (
-          -20,
-          'Trofeo Città di Bologna – Memorial Giuseppe Garibaldi',
-          'Piscina Comunale Stadio, Bologna',
-          'media',
-        ),
-        (
-          12,
-          'Campionato Regionale Esordienti A – Prima giornata',
-          'Centro Federale Polivalente di Riccione',
-          'alta',
-        ),
-        (
-          40,
-          'Meeting Internazionale di Natale',
-          'Piscine dei Bagni di Lucca',
-          'bassa',
-        ),
-      ]) {
-        final garaId = uuid.v4();
+    // Test di ingresso con tabella dei passi.
+    for (var a = 0; a < 3; a++) {
+      final testId = uuid.v4();
+      await db
+          .into(db.testIngressoTable)
+          .insert(
+            TestIngressoTableCompanion.insert(
+              id: testId,
+              atletaId: atleti[a],
+              clubId: clubId,
+              tipo: 'T30',
+              dataTest: DateTime(2026, 9, 15),
+              distanzaTotaleM: 2050 - a * 75,
+              tempoTotaleS: 1800,
+              passoMedio100S: 1800 / ((2050 - a * 75) / 100),
+            ),
+          );
+      const percentuali = {
+        'A1': 1.15,
+        'A2': 1.08,
+        'B1': 1.03,
+        'B2': 1.0,
+        'C1': 0.96,
+        'C2': 0.93,
+        'C3': 0.9,
+        'D': 0.86,
+      };
+      final passoBase = 1800 / ((2050 - a * 75) / 100);
+      for (final zona in percentuali.keys) {
         await db
-            .into(db.gareTable)
+            .into(db.tabellePassiTable)
             .insert(
-              GareTableCompanion.insert(
-                id: garaId,
+              TabellePassiTableCompanion.insert(
+                id: uuid.v4(),
+                testId: testId,
+                atletaId: atleti[a],
                 clubId: clubId,
-                gruppoId: Value(gruppi[0]),
-                data: giorno.add(Duration(days: giorni)),
-                ora: const Value('09:30'),
-                luogo: Value(luogo),
-                nome: nome,
-                note: const Value(
-                  'Ritrovo 45 minuti prima, cuffia e accappatoio del club.',
-                ),
-                importanza: Value(importanza),
+                zona: zona,
+                passo100S: passoBase * percentuali[zona]!,
+                percentualeRiferimento: Value(percentuali[zona]! * 100),
               ),
             );
-        for (var a = 0; a < 6; a++) {
-          await db
-              .into(db.garaIscrittiTable)
-              .insert(
-                GaraIscrittiTableCompanion.insert(
-                  id: uuid.v4(),
-                  garaId: garaId,
-                  atletaId: atleti[a],
-                  clubId: clubId,
-                ),
-              );
-        }
       }
-    } else {
-      // Il campionato: un sabato si', da ottobre a maggio (pausa di Natale
-      // esclusa), andata e ritorno contro gli stessi avversari. Distinta per
-      // tutte, eventi per quelle gia' giocate.
-      const noi = 'Pallanuoto Riviera Adriatica Sportiva';
-      const avversari = [
-        'Circolo Nautico Posillipo Napoli',
-        'Società Canottieri Lazio Roma',
-        'Rari Nantes Florentia',
-        'Pallanuoto Trieste',
-        'Sportiva Nervi Genova',
-        'Rari Nantes Bologna',
-        'Circolo Canottieri Ortigia Siracusa',
-        'Pallanuoto Brescia',
-      ];
-      final sabati = [
-        for (
-          var g = DateTime(2026, 10, 3);
-          !g.isAfter(DateTime(2027, 5, 29));
-          g = aggiungiGiorni(g, 7)
-        )
-          if (g.isBefore(DateTime(2026, 12, 23)) ||
-              !g.isBefore(DateTime(2027, 1, 7)))
-            g,
-      ];
-      final calendario = [
-        for (final (n, sabato) in sabati.indexed)
-          (
-            giorni: giorniTra(giorno, sabato),
-            casa: n.isEven ? noi : avversari[n % avversari.length],
-            trasferta: n.isEven ? avversari[n % avversari.length] : noi,
-            // Gli scontri diretti di fine andata e di fine campionato.
-            alta: n == 7 || n >= sabati.length - 2,
-          ),
-      ];
-      for (final (:giorni, :casa, :trasferta, :alta) in calendario) {
-        final partitaId = uuid.v4();
+    }
+
+    // Il campionato: un sabato si', da ottobre a maggio (pausa di Natale
+    // esclusa), andata e ritorno contro gli stessi avversari. Distinta per
+    // tutte, eventi per quelle gia' giocate.
+    const noi = 'Pallanuoto Riviera Adriatica Sportiva';
+    const avversari = [
+      'Circolo Nautico Posillipo Napoli',
+      'Società Canottieri Lazio Roma',
+      'Rari Nantes Florentia',
+      'Pallanuoto Trieste',
+      'Sportiva Nervi Genova',
+      'Rari Nantes Bologna',
+      'Circolo Canottieri Ortigia Siracusa',
+      'Pallanuoto Brescia',
+    ];
+    final sabati = [
+      for (
+        var g = DateTime(2026, 10, 3);
+        !g.isAfter(DateTime(2027, 5, 29));
+        g = aggiungiGiorni(g, 7)
+      )
+        if (g.isBefore(DateTime(2026, 12, 23)) ||
+            !g.isBefore(DateTime(2027, 1, 7)))
+          g,
+    ];
+    final calendario = [
+      for (final (n, sabato) in sabati.indexed)
+        (
+          giorni: giorniTra(giorno, sabato),
+          casa: n.isEven ? noi : avversari[n % avversari.length],
+          trasferta: n.isEven ? avversari[n % avversari.length] : noi,
+          // Gli scontri diretti di fine andata e di fine campionato.
+          alta: n == 7 || n >= sabati.length - 2,
+        ),
+    ];
+    for (final (:giorni, :casa, :trasferta, :alta) in calendario) {
+      final partitaId = uuid.v4();
+      await db
+          .into(db.partiteTable)
+          .insert(
+            PartiteTableCompanion.insert(
+              id: partitaId,
+              clubId: clubId,
+              gruppoId: Value(gruppi[0]),
+              data: aggiungiGiorni(giorno, giorni),
+              ora: const Value('15:00'),
+              luogo: Value(
+                casa == noi
+                    ? 'Piscina Comunale "Ettore Bulgarelli", vasca coperta'
+                    : 'Piscina della squadra ospitante',
+              ),
+              campionato: const Value('Campionato Under 14 Emilia-Romagna'),
+              coloreCalottina: const Value('bianca'),
+              squadraCasa: casa,
+              squadraTrasferta: trasferta,
+              nostraSquadra: Value(
+                casa.startsWith('Pallanuoto Riviera') ? 'casa' : 'trasferta',
+              ),
+              importanza: Value(alta ? 'alta' : 'media'),
+              // Le partite si seguono con gli eventi completi.
+              eventiLive: const Value('completa'),
+              // Le giocate erano state convocate: la prossima
+              // convocazione ripropone il loro "da portare".
+              ritrovoOra: Value(giorni < 0 ? '14:00' : null),
+              daPortare: Value(
+                giorni < 0
+                    ? 'Accappatoio, ciabatte, cuffia di riserva, documento'
+                    : null,
+              ),
+              convocazioneInviataIl: Value(
+                giorni < 0 ? aggiungiGiorni(giorno, giorni - 2) : null,
+              ),
+            ),
+          );
+      // Le distinte delle giocate e della prossima: le altre sono da
+      // fare, per provare "Scegli i convocati" e "Come l'ultima
+      // partita". Portieri all'1 e al 13, capitano e vice.
+      for (var a = 0; a < 11 && giorni <= 7; a++) {
         await db
-            .into(db.partiteTable)
+            .into(db.distintaGiocatoriTable)
             .insert(
-              PartiteTableCompanion.insert(
-                id: partitaId,
+              DistintaGiocatoriTableCompanion.insert(
+                id: uuid.v4(),
+                partitaId: partitaId,
+                atletaId: atleti[a],
                 clubId: clubId,
-                gruppoId: Value(gruppi[0]),
-                data: aggiungiGiorni(giorno, giorni),
-                ora: const Value('15:00'),
-                luogo: Value(
-                  casa == noi
-                      ? 'Piscina Comunale "Ettore Bulgarelli", vasca coperta'
-                      : 'Piscina della squadra ospitante',
-                ),
-                campionato: const Value('Campionato Under 14 Emilia-Romagna'),
-                coloreCalottina: const Value('bianca'),
-                squadraCasa: casa,
-                squadraTrasferta: trasferta,
-                nostraSquadra: Value(
-                  casa.startsWith('Pallanuoto Riviera') ? 'casa' : 'trasferta',
-                ),
-                importanza: Value(alta ? 'alta' : 'media'),
-                // Le partite si seguono con gli eventi completi.
-                eventiLive: const Value('completa'),
-                // Le giocate erano state convocate: la prossima
-                // convocazione ripropone il loro "da portare".
-                ritrovoOra: Value(giorni < 0 ? '14:00' : null),
-                daPortare: Value(
-                  giorni < 0
-                      ? 'Accappatoio, ciabatte, cuffia di riserva, documento'
+                numeroCalottina: a == 10 ? 13 : a + 1,
+                capitano: Value(a == 4),
+                viceCapitano: Value(a == 8),
+                portiere: Value(a == 0 || a == 10),
+                // Nelle giocate: l'1 in porta nei primi due tempi, il
+                // 13 negli ultimi due.
+                tempiInPortaJson: Value(
+                  giorni >= 0
+                      ? null
+                      : a == 0
+                      ? '[1,2]'
+                      : a == 10
+                      ? '[3,4]'
                       : null,
                 ),
-                convocazioneInviataIl: Value(
-                  giorni < 0 ? aggiungiGiorni(giorno, giorni - 2) : null,
-                ),
               ),
             );
-        // Le distinte delle giocate e della prossima: le altre sono da
-        // fare, per provare "Scegli i convocati" e "Come l'ultima
-        // partita". Portieri all'1 e al 13, capitano e vice.
-        for (var a = 0; a < 11 && giorni <= 7; a++) {
+      }
+      if (giorni < 0) {
+        const esiti = ['gol', 'non_gol', 'parato', 'palo_fuori'];
+        for (var e = 0; e < 24; e++) {
           await db
-              .into(db.distintaGiocatoriTable)
+              .into(db.eventiPartitaTable)
               .insert(
-                DistintaGiocatoriTableCompanion.insert(
+                EventiPartitaTableCompanion.insert(
                   id: uuid.v4(),
                   partitaId: partitaId,
-                  atletaId: atleti[a],
                   clubId: clubId,
-                  numeroCalottina: a == 10 ? 13 : a + 1,
-                  capitano: Value(a == 4),
-                  viceCapitano: Value(a == 8),
-                  portiere: Value(a == 0 || a == 10),
-                  // Nelle giocate: l'1 in porta nei primi due tempi, il
-                  // 13 negli ultimi due.
-                  tempiInPortaJson: Value(
-                    giorni >= 0
-                        ? null
-                        : a == 0
-                        ? '[1,2]'
-                        : a == 10
-                        ? '[3,4]'
+                  tipo: e % 6 == 5 ? 'espulsione' : 'tiro',
+                  squadra: Value(e % 3 == 2 ? 'avversaria' : 'nostra'),
+                  atletaId: Value(e % 3 == 2 ? null : atleti[1 + e % 10]),
+                  // Un evento ogni 2 minuti, 6 per tempo: come dal vivo,
+                  // e il video della partita li ritrova in ordine.
+                  periodo: Value(1 + e ~/ 6),
+                  esito: Value(e % 6 == 5 ? null : esiti[e % 4]),
+                  contestoTiro: Value(e % 5 == 0 ? 'superiorita' : 'azione'),
+                  posX: Value(0.2 + (e % 7) / 10),
+                  posY: Value(0.15 + (e % 5) / 8),
+                  numeroCalottinaAvversario: Value(
+                    e % 3 == 2 ? 2 + e % 9 : null,
+                  ),
+                  // Ogni gol nostro con un assist, ogni espulsione
+                  // avversaria guadagnata da qualcuno (mai chi tira).
+                  assistDi: Value(
+                    e % 3 != 2 && e % 6 != 5 && e % 4 == 0
+                        ? atleti[1 + (e + 3) % 10]
                         : null,
                   ),
+                  guadagnataDa: Value(
+                    e % 6 == 5 ? atleti[1 + (e + 3) % 10] : null,
+                  ),
+                  // Sui tiri avversari, il portiere in acqua.
+                  portiereId: Value(
+                    e % 3 == 2 && e % 6 != 5
+                        ? atleti[e ~/ 6 < 2 ? 0 : 10]
+                        : null,
+                  ),
+                  creatoIl: aggiungiGiorni(
+                    giorno,
+                    giorni,
+                  ).add(Duration(hours: 15, minutes: e * 2)),
                 ),
               );
         }
-        if (giorni < 0) {
-          const esiti = ['gol', 'non_gol', 'parato', 'palo_fuori'];
-          for (var e = 0; e < 24; e++) {
-            await db
-                .into(db.eventiPartitaTable)
-                .insert(
-                  EventiPartitaTableCompanion.insert(
-                    id: uuid.v4(),
-                    partitaId: partitaId,
-                    clubId: clubId,
-                    tipo: e % 6 == 5 ? 'espulsione' : 'tiro',
-                    squadra: Value(e % 3 == 2 ? 'avversaria' : 'nostra'),
-                    atletaId: Value(e % 3 == 2 ? null : atleti[1 + e % 10]),
-                    // Un evento ogni 2 minuti, 6 per tempo: come dal vivo,
-                    // e il video della partita li ritrova in ordine.
-                    periodo: Value(1 + e ~/ 6),
-                    esito: Value(e % 6 == 5 ? null : esiti[e % 4]),
-                    contestoTiro: Value(e % 5 == 0 ? 'superiorita' : 'azione'),
-                    posX: Value(0.2 + (e % 7) / 10),
-                    posY: Value(0.15 + (e % 5) / 8),
-                    numeroCalottinaAvversario: Value(
-                      e % 3 == 2 ? 2 + e % 9 : null,
-                    ),
-                    // Ogni gol nostro con un assist, ogni espulsione
-                    // avversaria guadagnata da qualcuno (mai chi tira).
-                    assistDi: Value(
-                      e % 3 != 2 && e % 6 != 5 && e % 4 == 0
-                          ? atleti[1 + (e + 3) % 10]
-                          : null,
-                    ),
-                    guadagnataDa: Value(
-                      e % 6 == 5 ? atleti[1 + (e + 3) % 10] : null,
-                    ),
-                    // Sui tiri avversari, il portiere in acqua.
-                    portiereId: Value(
-                      e % 3 == 2 && e % 6 != 5
-                          ? atleti[e ~/ 6 < 2 ? 0 : 10]
-                          : null,
-                    ),
-                    creatoIl: aggiungiGiorni(
-                      giorno,
-                      giorni,
-                    ).add(Duration(hours: 15, minutes: e * 2)),
-                  ),
-                );
-          }
-          // Palle perse e recuperate (modalità completa).
-          for (var e = 0; e < 8; e++) {
-            await db
-                .into(db.eventiPartitaTable)
-                .insert(
-                  EventiPartitaTableCompanion.insert(
-                    id: uuid.v4(),
-                    partitaId: partitaId,
-                    clubId: clubId,
-                    tipo: e.isEven ? 'palla_persa' : 'palla_recuperata',
-                    atletaId: Value(e == 6 ? null : atleti[1 + (e * 3) % 10]),
-                    periodo: Value(1 + (1 + e * 6) ~/ 12),
-                    creatoIl: aggiungiGiorni(
-                      giorno,
-                      giorni,
-                    ).add(Duration(hours: 15, minutes: 1 + e * 6)),
-                  ),
-                );
-          }
+        // Palle perse e recuperate (modalità completa).
+        for (var e = 0; e < 8; e++) {
+          await db
+              .into(db.eventiPartitaTable)
+              .insert(
+                EventiPartitaTableCompanion.insert(
+                  id: uuid.v4(),
+                  partitaId: partitaId,
+                  clubId: clubId,
+                  tipo: e.isEven ? 'palla_persa' : 'palla_recuperata',
+                  atletaId: Value(e == 6 ? null : atleti[1 + (e * 3) % 10]),
+                  periodo: Value(1 + (1 + e * 6) ~/ 12),
+                  creatoIl: aggiungiGiorni(
+                    giorno,
+                    giorni,
+                  ).add(Duration(hours: 15, minutes: 1 + e * 6)),
+                ),
+              );
         }
       }
     }

@@ -2,12 +2,9 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/serie.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/personal_best.dart';
-import '../../atleti/domain/tempo_gara.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/rpe_seduta.dart';
 import '../../club/domain/ruolo_club.dart';
-import '../../gare/domain/gara.dart';
-import '../../gare/domain/gara_iscritto.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/domain/nota_avversario.dart';
@@ -44,11 +41,8 @@ class DatiClub {
     this.distinte = const [],
     this.eventiPartita = const [],
     this.referti = const [],
-    this.gare = const [],
     this.impegni = const [],
     this.noteAvversari = const [],
-    this.iscrittiGare = const [],
-    this.tempiGara = const [],
     this.personalBest = const [],
     this.testIngresso = const [],
     this.tabellePassi = const [],
@@ -58,7 +52,7 @@ class DatiClub {
     this.schedeBenessere,
   });
 
-  /// Le squadre (nel database `gruppi`), con lo sport.
+  /// Le squadre (nel database `gruppi`).
   final List<Gruppo> squadre;
 
   /// Le stesse squadre con il loro capo allenatore.
@@ -84,15 +78,12 @@ class DatiClub {
   final List<DistintaGiocatore> distinte;
   final List<EventoPartita> eventiPartita;
   final List<RefertoPartita> referti;
-  final List<Gara> gare;
 
   /// Collegiali, trasferte, riposi, tornei (proposta 18).
   final List<Impegno> impegni;
 
   /// Le note dello staff sugli avversari (scheda dell'avversario).
   final List<NotaAvversario> noteAvversari;
-  final List<GaraIscritto> iscrittiGare;
-  final List<TempoGara> tempiGara;
   final List<PersonalBest> personalBest;
   final List<TestIngresso> testIngresso;
   final List<TabellaPasso> tabellePassi;

@@ -24,7 +24,7 @@ import '../../club/application/current_club_provider.dart';
 import '../data/calendario_telefono_repository.dart';
 import '../domain/indirizzi_calendario.dart';
 
-/// La pagina che collega le partite e le gare al calendario del telefono:
+/// La pagina che collega le partite al calendario del telefono:
 /// mostra l'indirizzo personale (il codice lo dà il server), i pulsanti per
 /// aggiungerlo a iPhone o a Google Calendar e, per i rari casi in cui
 /// l'indirizzo è finito in mani sbagliate, "Cambia indirizzo".
@@ -138,8 +138,8 @@ class _CalendarioTelefonoScreenState
             occhiello: 'Calendario del telefono',
             titolo: 'Partite nel calendario',
             sottotitolo:
-                'Le partite e le gare delle tue squadre nel calendario del '
-                'telefono, con l\'ora e il luogo. Gli allenamenti no.',
+                'Le partite delle tue squadre nel calendario del telefono, '
+                'con l\'ora e il luogo. Gli allenamenti no.',
           ),
           const SizedBox(height: AppSpacing.s28),
           codiceAsync.when(
@@ -326,8 +326,8 @@ class _Contenuto extends StatelessWidget {
               ),
             const _Nota(
               Icons.lock_outline,
-              'L\'indirizzo è personale: chi lo ha vede le partite e le '
-              'gare delle tue squadre. Non mandarlo ad altri.',
+              'L\'indirizzo è personale: chi lo ha vede le partite delle '
+              'tue squadre. Non mandarlo ad altri.',
             ),
           ],
         ),

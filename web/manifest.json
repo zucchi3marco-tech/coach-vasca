@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#EEF2F5",
     "theme_color": "#0D5C87",
-    "description": "Gestione allenamenti, atleti e partite per nuoto e pallanuoto.",
+    "description": "Gestione allenamenti, atleti e partite per la pallanuoto.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

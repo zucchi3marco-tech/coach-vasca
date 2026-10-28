@@ -8,15 +8,12 @@ import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/atleti/domain/personal_best.dart';
-import 'package:coach_vasca/features/atleti/domain/tempo_gara.dart';
 import 'package:coach_vasca/features/benessere/domain/scheda_benessere.dart';
 import 'package:coach_vasca/features/carico/domain/rpe_seduta.dart';
 import 'package:coach_vasca/features/club/domain/ruolo_club.dart';
 import 'package:coach_vasca/features/export/application/excel_dati_club.dart';
 import 'package:coach_vasca/features/export/domain/dati_club.dart';
 import 'package:coach_vasca/features/export/domain/periodo_dati.dart';
-import 'package:coach_vasca/features/gare/domain/gara.dart';
-import 'package:coach_vasca/features/gare/domain/gara_iscritto.dart';
 import 'package:coach_vasca/features/gruppi/domain/gruppo.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/distinta_giocatore.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
@@ -89,7 +86,7 @@ EventoPartita _tiro(
 );
 
 /// Un piccolo club: due squadre, tre atleti (uno non più attivo), due
-/// stagioni sportive di allenamenti, una partita, una gara dell'anno prima.
+/// stagioni sportive di allenamenti, una partita.
 DatiClub _dati({bool conSchede = true}) {
   const serieAcqua = [
     Serie(
@@ -402,47 +399,6 @@ DatiClub _dati({bool conSchede = true}) {
         ],
       ),
     ],
-    gare: [
-      Gara(
-        id: 'gara-vecchia',
-        clubId: _club,
-        data: DateTime(2025, 3, 1),
-        nome: 'Trofeo Città',
-        luogo: 'Bergamo',
-      ),
-    ],
-    iscrittiGare: const [
-      GaraIscritto(
-        id: 'iscritto-1',
-        garaId: 'gara-vecchia',
-        atletaId: 'atleta-bianchi',
-        clubId: _club,
-      ),
-    ],
-    tempiGara: [
-      TempoGara(
-        id: 'tempo-1',
-        atletaId: 'atleta-bianchi',
-        clubId: _club,
-        stile: 'libero',
-        distanzaM: 100,
-        vascaM: 25,
-        tempoS: 65.2,
-        data: DateTime(2026, 10, 5),
-        note: 'bella gara',
-      ),
-      TempoGara(
-        id: 'tempo-2',
-        atletaId: 'atleta-bianchi',
-        clubId: _club,
-        stile: 'libero',
-        distanzaM: 50,
-        vascaM: 25,
-        tempoS: 30.1,
-        data: DateTime(2025, 5, 5),
-        garaId: 'gara-vecchia',
-      ),
-    ],
     personalBest: [
       const PersonalBest(
         id: 'pb-1',
@@ -698,7 +654,6 @@ void main() {
         'Convocati',
         'Statistiche partite',
         'Referti',
-        'Tempi gara',
         'Personal best',
         'Test del passo',
         'Passi per zona',
@@ -712,29 +667,15 @@ void main() {
       }
     });
 
-    test('con "Tutto" ci sono anche le gare dell\'anno prima', () {
+    test('niente fogli del nuoto: gare, iscrizioni e tempi gara', () {
       final excel = Excel.decodeBytes(
         _file(_dati(), periodo: const PeriodoDati.tutto()),
       );
       expect(
         excel.tables.keys,
-        containsAllInOrder([
-          'Statistiche partite',
-          'Referti',
-          'Gare',
-          'Iscrizioni gare',
-          'Tempi gara',
-          'Personal best',
-        ]),
+        isNot(anyOf(contains('Gare'), contains('Tempi gara'))),
       );
-      final gare = _perTitolo(excel, 'Gare');
-      expect(gare, hasLength(1));
-      expect(_testo(gare.single['Gara']), 'Trofeo Città');
-      expect(_testo(gare.single['Squadra']), 'Tutto il club');
-      expect(gare.single['Iscritti'], const IntCellValue(1));
-      final iscrizioni = _perTitolo(excel, 'Iscrizioni gare');
-      expect(_testo(iscrizioni.single['Cognome']), 'Bianchi');
-      expect(_testo(iscrizioni.single['Gara']), 'Trofeo Città');
+      expect(excel.tables.keys, isNot(contains('Iscrizioni gare')));
     });
 
     test('con dati vuoti restano i soli quattro fogli sempre presenti', () {
@@ -801,11 +742,7 @@ void main() {
       expect(tabella['Allenamenti'], const IntCellValue(2));
       expect(tabella['Serie'], const IntCellValue(2));
       expect(tabella['Presenze'], const IntCellValue(2));
-      expect(tabella['Gare'], TextCellValue('nessuno, foglio non incluso'));
-      expect(
-        tabella['Iscrizioni gare'],
-        TextCellValue('nessuno, foglio non incluso'),
-      );
+      expect(tabella.containsKey('Gare'), isFalse);
       expect(tabella.keys, containsAll(['Squadre', 'Allenatori', 'Benessere']));
       expect(tabella['Benessere'], const IntCellValue(1));
     });
@@ -924,9 +861,6 @@ void main() {
       expect(serie.first['Ripetute'], const IntCellValue(4));
       expect(serie.first['Distanza (m)'], const IntCellValue(100));
       expect(serie.first['Recupero (s)'], const IntCellValue(20));
-      final tempi = _perTitolo(excel, 'Tempi gara');
-      expect(tempi.single['Secondi'], const DoubleCellValue(65.2));
-      expect(tempi.single['Distanza (m)'], const IntCellValue(100));
       final test = _perTitolo(excel, 'Test del club').single;
       expect(test['Prova 1'], const DoubleCellValue(8.9));
       expect(test['Valore in classifica'], const DoubleCellValue(8.62));
@@ -1005,9 +939,8 @@ void main() {
       },
     );
 
-    test('il periodo vale anche per tempi, primati, test e sforzo', () {
+    test('il periodo vale anche per primati, test e sforzo', () {
       final stagione = Excel.decodeBytes(_file(_dati()));
-      expect(_perTitolo(stagione, 'Tempi gara'), hasLength(1));
       // Il primato senza data c'è solo in "Tutto"; quello dell'anno prima no.
       final primati = _perTitolo(stagione, 'Personal best');
       expect(primati, hasLength(1));
@@ -1021,7 +954,6 @@ void main() {
       final tutto = Excel.decodeBytes(
         _file(_dati(), periodo: const PeriodoDati.tutto()),
       );
-      expect(_perTitolo(tutto, 'Tempi gara'), hasLength(2));
       expect(_perTitolo(tutto, 'Personal best'), hasLength(3));
       expect(_perTitolo(tutto, 'Test del passo'), hasLength(2));
       expect(_perTitolo(tutto, 'Passi per zona'), hasLength(3));
@@ -1272,21 +1204,10 @@ void main() {
       expect(referti[1]['Atleta del club'], isNull);
     });
 
-    test('nuoto: i tempi sono testo leggibile e secondi', () {
+    test('i tempi sono testo leggibile e secondi', () {
       final excel = Excel.decodeBytes(
         _file(_dati(), periodo: const PeriodoDati.tutto()),
       );
-      final tempi = _perTitolo(excel, 'Tempi gara');
-      // Dal più vecchio.
-      expect(_testo(tempi[0]['Gara']), 'Trofeo Città');
-      expect(_testo(tempi[0]['Tempo']), '30,10');
-      expect(tempi[0]['Secondi'], const DoubleCellValue(30.1));
-      expect(_testo(tempi[1]['Tempo']), '1:05,20');
-      expect(tempi[1]['Secondi'], const DoubleCellValue(65.2));
-      expect(_testo(tempi[1]['Cognome']), 'Bianchi');
-      expect(_testo(tempi[1]['Stile']), 'Libero');
-      expect(tempi[1]['Vasca (m)'], const IntCellValue(25));
-
       final primati = _perTitolo(excel, 'Personal best');
       expect(primati, hasLength(3));
       // Senza data: la colonna è vuota.

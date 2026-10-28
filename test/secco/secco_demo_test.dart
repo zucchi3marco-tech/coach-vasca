@@ -33,7 +33,7 @@ EsercizioSeduta _daRiga(EserciziSedutaTableData r) => EsercizioSeduta(
 
 void main() {
   test('la demo ha varianti e voti, validi per il database', () async {
-    dotenv.loadFromString(envString: 'DEMO_SPORT=pallanuoto');
+    dotenv.loadFromString(envString: 'MODALITA_DEMO=true');
     SharedPreferences.setMockInitialValues({});
     final db = AppDatabase.perTest(NativeDatabase.memory());
     addTearDown(db.close);

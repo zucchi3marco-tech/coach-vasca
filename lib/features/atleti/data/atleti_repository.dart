@@ -407,9 +407,8 @@ class AtletiRepository {
   }
 
   /// Eliminazione definitiva. Sul server la cancellazione a cascata porta
-  /// via test (anche quelli del club), presenze, distinta, personal best,
-  /// tempi gara, iscrizioni alle gare e note del video per l'atleta,
-  /// mentre gli eventi di partita restano con
+  /// via test (anche quelli del club), presenze, distinta, personal best e
+  /// note del video per l'atleta, mentre gli eventi di partita restano con
   /// l'atleta azzerato (`on delete set null`): la cache locale segue la
   /// stessa regola, senza aspettare il prossimo aggiornamento dal server.
   Future<void> deleteAtleta(String id) async {
@@ -430,9 +429,6 @@ class AtletiRepository {
         _db.personalBestTable,
       )..where((t) => t.atletaId.equals(id))).go();
       await (_db.delete(
-        _db.tempiGaraTable,
-      )..where((t) => t.atletaId.equals(id))).go();
-      await (_db.delete(
         _db.testIngressoTable,
       )..where((t) => t.atletaId.equals(id))).go();
       await (_db.delete(
@@ -443,9 +439,6 @@ class AtletiRepository {
       )..where((t) => t.atletaId.equals(id))).go();
       await (_db.delete(
         _db.distintaGiocatoriTable,
-      )..where((t) => t.atletaId.equals(id))).go();
-      await (_db.delete(
-        _db.garaIscrittiTable,
       )..where((t) => t.atletaId.equals(id))).go();
       await (_db.delete(
         _db.testRisultatiTable,

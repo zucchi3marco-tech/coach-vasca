@@ -28,7 +28,9 @@ class Atleta {
   final String cognome;
   final DateTime dataNascita;
   final String? sesso; // 'M' | 'F'
-  final String sport; // 'nuoto' | 'pallanuoto'
+  /// Com'è nel database ('pallanuoto', o 'nuoto' nelle righe vecchie):
+  /// l'app non decide niente da qui, vedi `sportApp`.
+  final String sport;
   final String? gruppoId;
   final String? emailGenitore;
   final String? telefonoGenitore;

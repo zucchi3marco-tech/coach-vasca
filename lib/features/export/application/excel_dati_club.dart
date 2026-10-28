@@ -11,13 +11,11 @@ import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/domain/volume_allenamento.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/domain/atleta.dart';
-import '../../atleti/domain/pb_slots.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/carico_rpe.dart';
 import '../../carico/domain/rpe_seduta.dart';
 import '../../club/domain/ruolo_club.dart';
-import '../../gare/domain/gara.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/partita.dart';
@@ -326,7 +324,6 @@ class _Fogli {
        _membri = {for (final m in dati.membri) m.userId: m},
        _allenamenti = {for (final a in dati.allenamenti) a.id: a},
        _partite = {for (final p in dati.partite) p.id: p},
-       _gare = {for (final g in dati.gare) g.id: g},
        _esercizi = {for (final e in dati.eserciziSecco) e.id: e},
        _test = {for (final t in dati.testClub) t.id: t};
 
@@ -343,7 +340,6 @@ class _Fogli {
   final Map<String, MembroClub> _membri;
   final Map<String, Allenamento> _allenamenti;
   final Map<String, Partita> _partite;
-  final Map<String, Gara> _gare;
   final Map<String, EsercizioSecco> _esercizi;
   final Map<String, TestClub> _test;
 
@@ -362,11 +358,8 @@ class _Fogli {
     _convocatiFoglio(),
     _statistichePartiteFoglio(),
     _refertiFoglio(),
-    _gareFoglio(),
-    _iscrizioniGareFoglio(),
     _impegniFoglio(),
     _avversariFoglio(),
-    _tempiGaraFoglio(),
     _personalBestFoglio(),
     _testDelPassoFoglio(),
     _passiPerZonaFoglio(),
@@ -440,12 +433,6 @@ class _Fogli {
     if (perData != 0) return perData;
     return (a.ora ?? '').compareTo(b.ora ?? '');
   }
-
-  /// Le gare del periodo, dalla più vecchia.
-  late final List<Gara> _garePeriodo = [
-    for (final g in dati.gare)
-      if (periodo.comprende(g.data)) g,
-  ]..sort((a, b) => a.data.compareTo(b.data));
 
   /// Le serie di ogni allenamento, nell'ordine.
   late final Map<String, List<Serie>> _seriePer = _raggruppa(
@@ -1217,42 +1204,6 @@ class _Fogli {
   String _atletaNomeCompleto(String id) =>
       _atleti[id]?.nomeCompleto ?? _eliminato;
 
-  // --- Nuoto ---------------------------------------------------------------
-
-  _Foglio _gareFoglio() {
-    final iscritti = <String, int>{};
-    for (final i in dati.iscrittiGare) {
-      iscritti[i.garaId] = (iscritti[i.garaId] ?? 0) + 1;
-    }
-    return _Foglio(
-      nome: 'Gare',
-      contenuto: 'Le gare di nuoto, con luogo, importanza e iscritti.',
-      titoli: const [
-        'Data',
-        'Ora',
-        'Gara',
-        'Squadra',
-        'Luogo',
-        'Importanza',
-        'Iscritti',
-        'Note',
-      ],
-      righe: [
-        for (final g in _garePeriodo)
-          [
-            _giorno(g.data),
-            _testo(g.ora),
-            _testo(g.nome),
-            _testo(_squadra(g.gruppoId, senza: _tuttoIlClub)),
-            _testo(g.luogo),
-            _testo(_importanza(g.importanza)),
-            IntCellValue(iscritti[g.id] ?? 0),
-            _testo(g.note),
-          ],
-      ],
-    );
-  }
-
   _Foglio _impegniFoglio() {
     final impegni = [
       for (final i in dati.impegni)
@@ -1316,83 +1267,6 @@ class _Fogli {
     );
   }
 
-  _Foglio _iscrizioniGareFoglio() {
-    final perGara = _raggruppa(
-      dati.iscrittiGare,
-      (i) => i.garaId,
-      ordina: (a, b) => _chiave(a.atletaId).compareTo(_chiave(b.atletaId)),
-    );
-    return _Foglio(
-      nome: 'Iscrizioni gare',
-      contenuto: 'Chi è iscritto a ogni gara.',
-      titoli: const ['Data', 'Gara', 'Cognome', 'Nome'],
-      righe: [
-        for (final g in _garePeriodo)
-          for (final i in _di(perGara, g.id))
-            [
-              _giorno(g.data),
-              _testo(g.nome),
-              _testo(_cognome(i.atletaId)),
-              _testo(_nome(i.atletaId)),
-            ],
-      ],
-    );
-  }
-
-  _Foglio _tempiGaraFoglio() {
-    final tempi =
-        [
-          for (final t in dati.tempiGara)
-            if (periodo.comprende(t.data)) t,
-        ]..sort((a, b) {
-          final perData = a.data.compareTo(b.data);
-          if (perData != 0) return perData;
-          final perAtleta = _chiave(a.atletaId).compareTo(_chiave(b.atletaId));
-          if (perAtleta != 0) return perAtleta;
-          final perStile = stiliNuoto
-              .indexOf(a.stile)
-              .compareTo(stiliNuoto.indexOf(b.stile));
-          return perStile != 0 ? perStile : a.distanzaM.compareTo(b.distanzaM);
-        });
-    return _Foglio(
-      nome: 'Tempi gara',
-      contenuto:
-          'Tutti i tempi nuotati, con stile, distanza e vasca; il tempo '
-          'anche in secondi.',
-      titoli: const [
-        'Data',
-        'Cognome',
-        'Nome',
-        'Stile',
-        'Distanza (m)',
-        'Vasca (m)',
-        'Tempo',
-        'Secondi',
-        'Gara',
-        'Note',
-      ],
-      righe: [
-        for (final t in tempi)
-          [
-            _giorno(t.data),
-            _testo(_cognome(t.atletaId)),
-            _testo(_nome(t.atletaId)),
-            _testo(labelStile(t.stile)),
-            IntCellValue(t.distanzaM),
-            IntCellValue(t.vascaM),
-            _testo(_tempo(t.tempoS)),
-            DoubleCellValue(t.tempoS),
-            _testo(t.garaId == null ? null : _nomeGara(t.garaId!)),
-            _testo(t.note),
-          ],
-      ],
-    );
-  }
-
-  String _nomeGara(String id) {
-    return _gare[id]?.nome ?? _eliminato;
-  }
-
   _Foglio _personalBestFoglio() {
     // Senza data un primato conta solo in "Tutto".
     final primati =
@@ -1402,9 +1276,7 @@ class _Fogli {
         ]..sort((a, b) {
           final perAtleta = _chiave(a.atletaId).compareTo(_chiave(b.atletaId));
           if (perAtleta != 0) return perAtleta;
-          final perStile = stiliNuoto
-              .indexOf(a.stile)
-              .compareTo(stiliNuoto.indexOf(b.stile));
+          final perStile = a.stile.compareTo(b.stile);
           return perStile != 0 ? perStile : a.distanzaM.compareTo(b.distanzaM);
         });
     return _Foglio(

@@ -19,7 +19,7 @@ enum TipoImpegno {
   );
 }
 
-/// Quello che non è un allenamento, una partita o una gara ma occupa dei
+/// Quello che non è un allenamento o una partita ma occupa dei
 /// giorni: un collegiale, una trasferta, un riposo (anche piscina chiusa o
 /// vacanze), un torneo, altro. Dal giorno [dal] al giorno [al] compresi,
 /// anche uno solo. [gruppoId] nullo = di tutto il club.

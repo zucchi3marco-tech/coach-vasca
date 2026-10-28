@@ -9,12 +9,9 @@ import '../../allenamenti/domain/allenamento.dart';
 import '../../allenamenti/domain/serie.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/personal_best.dart';
-import '../../atleti/domain/tempo_gara.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/rpe_seduta.dart';
 import '../../club/data/membri_club_repository.dart';
-import '../../gare/domain/gara.dart';
-import '../../gare/domain/gara_iscritto.dart';
 import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/domain/nota_avversario.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -134,9 +131,6 @@ class DatiClubRepository {
       for (final r in await tabella('referti_partita', 'Leggo i referti'))
         _referto(r),
     ];
-    final gare = [
-      for (final r in await tabella('gare', 'Leggo le gare')) Gara.fromMap(r),
-    ];
     final impegni = [
       for (final r in await tabella('impegni', 'Leggo gli impegni'))
         Impegno.fromMap(r),
@@ -147,17 +141,6 @@ class DatiClubRepository {
         'Leggo le note sugli avversari',
       ))
         NotaAvversario.fromMap(r),
-    ];
-    final iscrittiGare = [
-      for (final r in await tabella(
-        'gara_iscritti',
-        'Leggo le iscrizioni alle gare',
-      ))
-        _iscritto(r),
-    ];
-    final tempiGara = [
-      for (final r in await tabella('tempi_gara', 'Leggo i tempi di gara'))
-        _tempoGara(r),
     ];
     final personalBest = [
       for (final r in await tabella('personal_best', 'Leggo i personal best'))
@@ -213,11 +196,8 @@ class DatiClubRepository {
       distinte: distinte,
       eventiPartita: eventiPartita,
       referti: referti,
-      gare: gare,
       impegni: impegni,
       noteAvversari: noteAvversari,
-      iscrittiGare: iscrittiGare,
-      tempiGara: tempiGara,
       personalBest: personalBest,
       testIngresso: testIngresso,
       tabellePassi: tabellePassi,
@@ -318,26 +298,6 @@ RefertoPartita _referto(Map<String, dynamic> m) => RefertoPartita(
     for (final g in _elenco(m['giocatori_trasferta']))
       GiocatoreReferto.fromMap(Map<String, dynamic>.from(g as Map)),
   ],
-);
-
-GaraIscritto _iscritto(Map<String, dynamic> m) => GaraIscritto(
-  id: m['id'] as String,
-  garaId: m['gara_id'] as String,
-  atletaId: m['atleta_id'] as String,
-  clubId: m['club_id'] as String,
-);
-
-TempoGara _tempoGara(Map<String, dynamic> m) => TempoGara(
-  id: m['id'] as String,
-  atletaId: m['atleta_id'] as String,
-  clubId: m['club_id'] as String,
-  stile: m['stile'] as String,
-  distanzaM: (m['distanza_m'] as num).toInt(),
-  vascaM: (m['vasca_m'] as num).toInt(),
-  tempoS: (m['tempo_s'] as num).toDouble(),
-  data: DateTime.parse(m['data'] as String),
-  note: m['note'] as String?,
-  garaId: m['gara_id'] as String?,
 );
 
 PersonalBest _personalBest(Map<String, dynamic> m) => PersonalBest(

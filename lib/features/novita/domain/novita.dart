@@ -44,6 +44,15 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'via-le-gare-del-nuoto',
+    data: DateTime(2026, 10, 28),
+    titolo: 'Via le gare del nuoto',
+    testo:
+        'Tolte le gare, le iscrizioni e i tempi di gara del nuoto, anche '
+        'dall\'Excel del club. La demo è di pallanuoto, con i test T30 e '
+        'le tabelle dei passi.',
+  ),
+  Novita(
     id: 'solo-pallanuoto',
     data: DateTime(2026, 10, 28),
     titolo: 'WaterTactics è solo pallanuoto',

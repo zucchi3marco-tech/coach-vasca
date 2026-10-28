@@ -1,5 +1,5 @@
 /// Gli indirizzi con cui il calendario del telefono si collega alle partite
-/// e alle gare del coach o dell'atleta. Il calendario vero lo serve la
+/// del coach o dell'atleta. Il calendario vero lo serve la
 /// funzione `calendario` di Supabase: qui si compongono solo gli indirizzi
 /// a partire dall'indirizzo del progetto e dal codice personale.
 library;
