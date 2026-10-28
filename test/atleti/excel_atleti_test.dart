@@ -18,14 +18,8 @@ Uint8List _csv(String testo, {bool bom = false}) => Uint8List.fromList([
 ]);
 
 /// Il modello con in piu le righe date nel foglio "Atleti".
-Uint8List _modelloCon(
-  List<List<CellValue?>> righe, {
-  required bool pallanuoto,
-}) {
-  final modello = modelloAtleti(
-    nomiSquadre: ['Esordienti A', 'Under 14'],
-    pallanuoto: pallanuoto,
-  );
+Uint8List _modelloCon(List<List<CellValue?>> righe) {
+  final modello = modelloAtleti(nomiSquadre: ['Esordienti A', 'Under 14']);
   final excel = Excel.decodeBytes(modello);
   for (final r in righe) {
     excel.appendRow('Atleti', r);
@@ -46,15 +40,13 @@ void main() {
   group('modello', () {
     test('ha i due fogli e niente Sheet1', () {
       final excel = Excel.decodeBytes(
-        modelloAtleti(nomiSquadre: ['Esordienti A'], pallanuoto: true),
+        modelloAtleti(nomiSquadre: ['Esordienti A']),
       );
       expect(excel.tables.keys, ['Atleti', 'Come si compila']);
     });
 
     test('titoli in grassetto, senza righe di esempio', () {
-      final excel = Excel.decodeBytes(
-        modelloAtleti(nomiSquadre: [], pallanuoto: true),
-      );
+      final excel = Excel.decodeBytes(modelloAtleti(nomiSquadre: []));
       final atleti = excel.tables['Atleti']!;
       expect(atleti.maxRows, 1);
       final titoli = [for (final c in atleti.rows.first) c!.value.toString()];
@@ -78,28 +70,9 @@ void main() {
       );
     });
 
-    test('nel nuoto non c\'e la colonna Ruolo ne l\'elenco dei ruoli', () {
-      final excel = Excel.decodeBytes(
-        modelloAtleti(nomiSquadre: ['Esordienti A'], pallanuoto: false),
-      );
-      final titoli = [
-        for (final c in excel.tables['Atleti']!.rows.first) c!.value.toString(),
-      ];
-      expect(titoli, isNot(contains('Ruolo')));
-      expect(titoli, hasLength(11));
-      final guida = [
-        for (final r in excel.tables['Come si compila']!.rows)
-          for (final c in r) c?.value.toString(),
-      ];
-      expect(guida, isNot(contains('Centroboa')));
-    });
-
     test('la guida elenca le squadre del club e i ruoli', () {
       final excel = Excel.decodeBytes(
-        modelloAtleti(
-          nomiSquadre: ['Esordienti A', 'Under 14'],
-          pallanuoto: true,
-        ),
+        modelloAtleti(nomiSquadre: ['Esordienti A', 'Under 14']),
       );
       final guida = [
         for (final r in excel.tables['Come si compila']!.rows)
@@ -142,7 +115,7 @@ void main() {
           TextCellValue('Luca'),
           const DoubleCellValue(40980),
         ],
-      ], pallanuoto: true);
+      ]);
 
       final tabella = leggiTabellaAtleti(bytes, nomeFile: 'atleti.xlsx');
       expect(tabella.first.take(3), ['Cognome', 'Nome', 'Data di nascita']);
@@ -151,7 +124,6 @@ void main() {
         tabella,
         squadre: _squadre,
         esistenti: const [],
-        pallanuoto: true,
         oggi: DateTime(2026, 10, 18),
       );
       expect(f.ok, isTrue, reason: f.errore);
@@ -212,7 +184,7 @@ void main() {
           null,
           const BoolCellValue(true),
         ],
-      ], pallanuoto: true);
+      ]);
       final riga = leggiTabellaAtleti(bytes, nomeFile: 'a.xlsx')[1];
       expect(riga[6], isA<num>());
       expect(riga[10], true);
@@ -291,7 +263,6 @@ void main() {
         tabella,
         squadre: _squadre,
         esistenti: const [],
-        pallanuoto: false,
         oggi: DateTime(2026, 10, 18),
       );
       expect(f.nuovi.single.squadraId, 'g2');

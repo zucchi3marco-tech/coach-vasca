@@ -497,7 +497,6 @@ class _Fogli {
         'Nome',
         'Data di nascita',
         'Sesso',
-        'Sport',
         'Ruolo',
         'Squadra',
         'Seconda squadra',
@@ -519,7 +518,6 @@ class _Fogli {
             _testo(a.nome),
             _giorno(a.dataNascita),
             _testo(a.sesso),
-            _testo(capitalizzaParola(a.sport)),
             _testo(_ruoloAtleta(a.ruolo)),
             _testo(_squadra(a.gruppoId)),
             _testo(_squadra(a.altroGruppoId)),
@@ -547,14 +545,13 @@ class _Fogli {
       });
     return _Foglio(
       nome: 'Squadre',
-      contenuto: 'Le squadre, con sport, capo allenatore e atleti attivi.',
+      contenuto: 'Le squadre, con capo allenatore e atleti attivi.',
       sempre: true,
-      titoli: const ['Squadra', 'Sport', 'Capo allenatore', 'Atleti'],
+      titoli: const ['Squadra', 'Capo allenatore', 'Atleti'],
       righe: [
         for (final g in ordinate)
           [
             _testo(g.nome),
-            _testo(g.sport == null ? null : capitalizzaParola(g.sport!)),
             _testo(capi[g.id] == null ? null : _nomeMembro(capi[g.id]!)),
             IntCellValue(
               dati.atleti.where((a) => a.attivo && a.gruppoId == g.id).length,

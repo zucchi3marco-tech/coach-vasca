@@ -31,14 +31,13 @@ Atleta _atleta(
   String cognome, {
   String? gruppoId = 'g1',
   String? ruolo,
-  String sport = 'pallanuoto',
 }) => Atleta(
   id: id,
   clubId: 'c1',
   nome: nome,
   cognome: cognome,
   dataNascita: DateTime(2012),
-  sport: sport,
+  sport: 'pallanuoto',
   gruppoId: gruppoId,
   ruolo: ruolo,
   consensoPrivacyFirmato: true,
@@ -46,14 +45,13 @@ Atleta _atleta(
 );
 
 /// La squadra di prova: tre di movimento e un portiere della squadra
-/// della partita, uno di un'altra squadra, un nuotatore (non conta).
+/// della partita, uno di un'altra squadra.
 final _atleti = [
   _atleta('rossi', 'Marco', 'Rossi'),
   _atleta('bianchi', 'Luca', 'Bianchi'),
   _atleta('verdi', 'Anna', 'Verdi'),
   _atleta('neri', 'Paolo', 'Neri', ruolo: 'portiere'),
   _atleta('gialli', 'Sara', 'Gialli', gruppoId: 'g2'),
-  _atleta('nuoto', 'Elia', 'Azzurri', sport: 'nuoto'),
 ];
 
 DistintaGiocatore _riga(
@@ -190,7 +188,6 @@ void main() {
     expect(find.text('Under 14'), findsOneWidget);
     expect(find.text('Dalle altre squadre'), findsOneWidget);
     expect(find.text('Under 16'), findsOneWidget);
-    expect(find.text('Azzurri Elia'), findsNothing);
     expect(find.text('0 / 15 convocati'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(_salva('Salva')).onPressed,

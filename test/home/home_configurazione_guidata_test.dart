@@ -43,14 +43,12 @@ class _GruppiFinti implements GruppiRepository {
     required String clubId,
     required String nome,
     required int ordine,
-    String? sport,
   }) async {
     final gruppo = Gruppo(
       id: 'g${elenco.length}',
       clubId: clubId,
       nome: nome,
       ordine: ordine,
-      sport: sport,
     );
     elenco.add(gruppo);
     _cambi.add([...elenco]);

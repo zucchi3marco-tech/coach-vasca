@@ -40,7 +40,7 @@ import 'atleta/grafica_pallanuoto.dart';
 import 'atleta/home_atleta_widgets.dart';
 
 /// Home/dashboard dell'atleta collegato (FASE 9, ridisegnata FASE 16 e
-/// poi di nuovo per la pallanuoto): mostrata da HomeScreen al posto delle
+/// poi di nuovo): mostrata da HomeScreen al posto delle
 /// tab da coach quando l'account autenticato e' collegato a un record
 /// atleti. Nessun Scaffold proprio: e' incorporata nel body di
 /// HomeScreen (in alto c'e' la barra fissa con logo, nome del club e menu
@@ -118,11 +118,10 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pallanuoto = atleta.sport == 'pallanuoto';
     final dominio = context.dominio;
     // Il portiere non segna: al posto di gol e tiri, parate e gol subiti
     // (i gol che segna, se capita, stanno solo nelle statistiche).
-    final portiere = pallanuoto && atleta.portiere;
+    final portiere = atleta.portiere;
     final golTiri = portiere
         ? null
         : ref.watch(
@@ -132,23 +131,19 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ? ref.watch(numeriPortiereAtletaProvider(atleta.id))
         : null;
     final allenamenti = ref.watch(riepilogoAllenamentiAtletaProvider(atleta));
-    final partita = pallanuoto
-        ? ref.watch(prossimaPartitaAtletaProvider(atleta))
-        : null;
+    final partita = ref.watch(prossimaPartitaAtletaProvider(atleta));
     final convocazione = _convocazione(ref, partita);
     final pb = ref.watch(personalBestListProvider(atleta.id)).value;
-    final schemi = pallanuoto
-        ? ref
-              .watch(schemiTatticiListProvider(atleta.clubId))
-              .value
-              ?.where(
-                (s) => visibileNelGruppoMultiplo(
-                  gruppiDelRecord: s.gruppoIds,
-                  gruppoSelezionato: atleta.gruppoId,
-                ),
-              )
-              .length
-        : null;
+    final schemi = ref
+        .watch(schemiTatticiListProvider(atleta.clubId))
+        .value
+        ?.where(
+          (s) => visibileNelGruppoMultiplo(
+            gruppiDelRecord: s.gruppoIds,
+            gruppoSelezionato: atleta.gruppoId,
+          ),
+        )
+        .length;
 
     final presenze = allenamenti?.percentualePresenze;
     final gol = golTiri?.gol;
@@ -192,8 +187,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
               ),
             ),
           ]
-        : pallanuoto
-        ? [
+        : [
             (
               etichetta: 'Gol',
               valore: gol == null ? '—' : '$gol',
@@ -223,24 +217,6 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          ]
-        : [
-            (
-              etichetta: 'Personal best',
-              valore: pb == null ? '—' : '${pb.length}',
-              onTap: () => _apri(context, PbListScreen(atleta: atleta)),
-            ),
-            (
-              etichetta: 'Presenze',
-              valore: presenze == null ? '—' : '$presenze%',
-              onTap: () => _apri(
-                context,
-                MiePresenzeScreen(
-                  atleta: atleta,
-                  vistaAllenatore: vistaAllenatore,
-                ),
-              ),
-            ),
           ];
 
     // Aperta dall'allenatore ("Tutto su Sofia") i titoli non sono in prima
@@ -248,49 +224,42 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
     String titolo(String mio, String suo) => vistaAllenatore ? suo : mio;
 
     final riquadri = <VoceRiquadro>[
-      if (pallanuoto) ...[
-        VoceRiquadro(
-          soggetto: SoggettoRiquadro.schemi,
-          titolo: 'Schemi tattici',
-          descrizione: 'Le azioni preparate dall\'allenatore',
-          valore: schemi == null || schemi == 0 ? null : '$schemi',
-          accento: dominio.evidenzaVerde,
-          onTap: () => _apri(
-            context,
-            SchemiTatticiListScreen(
-              clubId: atleta.clubId,
-              soloLettura: true,
-              filtroGruppoId: atleta.gruppoId,
-            ),
-          ),
-        ),
-        VoceRiquadro(
-          soggetto: SoggettoRiquadro.partite,
-          titolo: titolo('Le mie partite', 'Partite'),
-          descrizione: 'Calendario, risultati e referti',
-          accento: dominio.evidenzaViola,
-          onTap: () => _apri(
-            context,
-            PartiteAtletaListScreen(
-              clubId: atleta.clubId,
-              filtroGruppoId: atleta.gruppoId,
-              altroGruppoId: atleta.altroGruppoId,
-              vistaAllenatore: vistaAllenatore,
-            ),
-          ),
-        ),
-      ],
       VoceRiquadro(
-        // Il disegno del campo con i tiri e' della pallanuoto.
-        soggetto: pallanuoto
-            ? SoggettoRiquadro.statistiche
-            : SoggettoRiquadro.andamento,
+        soggetto: SoggettoRiquadro.schemi,
+        titolo: 'Schemi tattici',
+        descrizione: 'Le azioni preparate dall\'allenatore',
+        valore: schemi == null || schemi == 0 ? null : '$schemi',
+        accento: dominio.evidenzaVerde,
+        onTap: () => _apri(
+          context,
+          SchemiTatticiListScreen(
+            clubId: atleta.clubId,
+            soloLettura: true,
+            filtroGruppoId: atleta.gruppoId,
+          ),
+        ),
+      ),
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.partite,
+        titolo: titolo('Le mie partite', 'Partite'),
+        descrizione: 'Calendario, risultati e referti',
+        accento: dominio.evidenzaViola,
+        onTap: () => _apri(
+          context,
+          PartiteAtletaListScreen(
+            clubId: atleta.clubId,
+            filtroGruppoId: atleta.gruppoId,
+            altroGruppoId: atleta.altroGruppoId,
+            vistaAllenatore: vistaAllenatore,
+          ),
+        ),
+      ),
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.statistiche,
         titolo: titolo('Le mie statistiche', 'Statistiche'),
         descrizione: portiere
             ? 'Parate e gol subiti'
-            : pallanuoto
-            ? 'Tiri, gol e dove segni di più'
-            : 'Tempi di gara e progressi',
+            : 'Tiri, gol e dove segni di più',
         accento: dominio.evidenzaCiano,
         onTap: () => _apri(context, StatisticheAtletaScreen(atleta: atleta)),
       ),
@@ -298,8 +267,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         soggetto: SoggettoRiquadro.tempi,
         titolo: titolo('I miei tempi', 'Tempi'),
         descrizione: 'Personal best a nuoto',
-        // Nel nuoto il numero dei personal best e' gia' in testata.
-        valore: !pallanuoto || pb == null || pb.isEmpty ? null : '${pb.length}',
+        valore: pb == null || pb.isEmpty ? null : '${pb.length}',
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, PbListScreen(atleta: atleta)),
       ),
@@ -468,9 +436,7 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         ),
       ),
     );
-    return pallanuoto
-        ? _AggiornaAlRitorno(atleta: atleta, child: pagina)
-        : pagina;
+    return _AggiornaAlRitorno(atleta: atleta, child: pagina);
   }
 }
 

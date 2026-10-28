@@ -750,7 +750,7 @@ void main() {
       // Hanno i titoli anche senza righe.
       expect(_righe(excel, 'Atleti'), hasLength(1));
       expect(_testo(_righe(excel, 'Atleti').first.first), 'Cognome');
-      expect(_righe(excel, 'Squadre').first, hasLength(4));
+      expect(_righe(excel, 'Squadre').first, hasLength(3));
     });
 
     test('Leggimi: chi, quando, periodo e cosa c\'è in ogni foglio', () {
@@ -843,7 +843,8 @@ void main() {
       expect(_testo(rossi['Seconda squadra']), 'Assoluti');
       expect(_testo(rossi['Giorni nella seconda squadra']), 'mar, gio');
       expect(_testo(rossi['Ruolo']), 'Portiere');
-      expect(_testo(rossi['Sport']), 'Pallanuoto');
+      // L'app è solo pallanuoto: niente colonna dello sport.
+      expect(rossi.containsKey('Sport'), isFalse);
       expect(_testo(rossi['Consenso privacy']), 'Sì');
       expect(_testo(rossi['Attivo']), 'Sì');
       expect(_testo(rossi['Account nell\'app']), 'No');
@@ -937,7 +938,7 @@ void main() {
       final excel = Excel.decodeBytes(_file(_dati()));
       final squadre = _perTitolo(excel, 'Squadre');
       expect(_testo(squadre[0]['Squadra']), 'Under 14');
-      expect(_testo(squadre[0]['Sport']), 'Pallanuoto');
+      expect(squadre[0].containsKey('Sport'), isFalse);
       expect(_testo(squadre[0]['Capo allenatore']), 'Luca Bianchi');
       expect(_testo(squadre[1]['Capo allenatore']), '');
       // Verdi non è attivo: Under 14 ha un solo atleta.

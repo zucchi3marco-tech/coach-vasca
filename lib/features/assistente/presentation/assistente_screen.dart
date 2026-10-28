@@ -36,14 +36,12 @@ import '../domain/strumenti_assistente.dart';
 class AssistenteScreen extends ConsumerStatefulWidget {
   const AssistenteScreen({
     required this.clubId,
-    required this.sport,
     this.gruppoId,
     this.oggi,
     super.key,
   });
 
   final String clubId;
-  final String sport;
   final String? gruppoId;
 
   /// Per i test; di solito adesso.
@@ -94,7 +92,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     final contesto = <String, Object?>{
       'oggi': formatDateOnly(_oggi),
       'giorno': nomeGiorno(_oggi),
-      'sport': widget.sport,
+      'sport': 'pallanuoto',
       'squadra': squadra ?? 'tutto il club',
     };
     return _motore = MotoreAssistente(
@@ -278,20 +276,12 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     setState(() => _esiti[p] = _Esito.scartata);
   }
 
-  List<String> get _esempi => widget.sport == 'nuoto'
-      ? const [
-          'Chi è stato più presente nell\'ultimo mese?',
-          'Come sta andando il carico della squadra?',
-          'Chi ha segnato dolori questa settimana?',
-          'Prepara la seduta di domani: 3 km aerobici',
-        ]
-      : const [
-          'Com\'è andata la superiorità nelle ultime 5 partite?',
-          'Convoca per la prossima partita, escludendo chi ha male alla '
-              'spalla',
-          'Chi ha segnato dolori questa settimana?',
-          'Prepara la seduta di giovedì, con lavoro per i portieri',
-        ];
+  static const _esempi = [
+    'Com\'è andata la superiorità nelle ultime 5 partite?',
+    'Convoca per la prossima partita, escludendo chi ha male alla spalla',
+    'Chi ha segnato dolori questa settimana?',
+    'Prepara la seduta di giovedì, con lavoro per i portieri',
+  ];
 
   @override
   Widget build(BuildContext context) {

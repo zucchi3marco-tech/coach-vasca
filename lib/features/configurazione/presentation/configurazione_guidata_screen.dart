@@ -152,7 +152,7 @@ class _ConfigurazioneGuidataScreenState
         if (presenti.add(nome.toLowerCase())) nuove.add((nome, fatto));
       }
 
-      for (final categoria in categoriePerSport(widget.club.sport)) {
+      for (final categoria in categoriePallanuoto) {
         if (_categorieScelte.contains(categoria)) {
           aggiungi(categoria, () => _categorieScelte.remove(categoria));
         }
@@ -197,7 +197,6 @@ class _ConfigurazioneGuidataScreenState
           clubId: _clubId,
           nome: nome,
           ordine: ordine,
-          sport: widget.club.sport,
         );
         if (!mounted) return;
         // Creata: non va riproposta se più avanti qualcosa fallisce.
@@ -472,7 +471,7 @@ class _ConfigurazioneGuidataScreenState
     final modulo = gruppi.isEmpty || _aggiungendo;
     // Le categorie che hanno già la loro squadra non si riproducono.
     final categorie = [
-      for (final c in categoriePerSport(widget.club.sport))
+      for (final c in categoriePallanuoto)
         if (!gruppi.any((g) => g.nome.toLowerCase() == c.toLowerCase())) c,
     ];
     return [

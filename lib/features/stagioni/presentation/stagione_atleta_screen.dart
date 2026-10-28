@@ -17,8 +17,6 @@ import '../../../widgets/pool_card.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/domain/atleta.dart';
-import '../../gare/application/gare_providers.dart';
-import '../../gare/domain/gara.dart';
 import '../../impegni/application/impegni_providers.dart';
 import '../../impegni/domain/impegno.dart';
 import '../../impegni/presentation/impegno_screen.dart';
@@ -30,8 +28,7 @@ import '../domain/stagione.dart';
 import 'calendario_stagione_view.dart';
 
 /// Stagione in corso del gruppo dell'atleta (FASE 13, punto 3): campionato
-/// e obiettivo in testata e il calendario con partite (pallanuoto) o gare
-/// (nuoto) della squadra. Sola lettura: nessuna delle azioni di gestione
+/// e obiettivo in testata e il calendario con le partite della squadra. Sola lettura: nessuna delle azioni di gestione
 /// della schermata del coach.
 class StagioneAtletaScreen extends ConsumerWidget {
   const StagioneAtletaScreen({
@@ -109,14 +106,9 @@ class StagioneAtletaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stagioniAsync = ref.watch(stagioniListProvider(atleta.clubId));
-    final pallanuoto = atleta.sport == 'pallanuoto';
-    final partite = pallanuoto
-        ? ref.watch(partiteListProvider(atleta.clubId)).value ??
-              const <Partita>[]
-        : const <Partita>[];
-    final gare = pallanuoto
-        ? const <Gara>[]
-        : ref.watch(gareListProvider(atleta.clubId)).value ?? const <Gara>[];
+    final partite =
+        ref.watch(partiteListProvider(atleta.clubId)).value ??
+        const <Partita>[];
     final impegni =
         ref.watch(impegniListProvider(atleta.clubId)).value ??
         const <Impegno>[];
@@ -141,7 +133,6 @@ class StagioneAtletaScreen extends ConsumerWidget {
           }
           final eventi = eventiVisibiliInStagione(corrente, [
             for (final p in partite) EventoCalendario.daPartita(p),
-            for (final g in gare) EventoCalendario.daGara(g),
           ]);
           final oggi = soloData(DateTime.now());
           final prossimo = eventi
@@ -174,7 +165,7 @@ class StagioneAtletaScreen extends ConsumerWidget {
                 numeri: [
                   NumeroTestata(
                     valore: '${eventi.length}',
-                    etichetta: pallanuoto ? 'Partite' : 'Gare',
+                    etichetta: 'Partite',
                   ),
                   NumeroTestata(
                     valore: prossimo == null ? '—' : dataCompatta(prossimo),
@@ -186,8 +177,8 @@ class StagioneAtletaScreen extends ConsumerWidget {
               const TitoloSezione(
                 'Calendario',
                 spiegazione:
-                    'I giorni colorati hanno una partita o una gara, quelli '
-                    'con la lineetta un collegiale, una trasferta, un riposo '
+                    'I giorni colorati hanno una partita, quelli con la '
+                    'lineetta un collegiale, una trasferta, un riposo '
                     'o un torneo: toccali per vedere cosa c\'è in programma.',
               ),
               PoolCard(

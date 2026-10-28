@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'solo-pallanuoto',
+    data: DateTime(2026, 10, 28),
+    titolo: 'WaterTactics è solo pallanuoto',
+    testo:
+        'Il nuoto avrà un\'app sua. Qui non si sceglie più lo sport: club, '
+        'squadre e atleti sono tutti di pallanuoto, con ruolo, partite, '
+        'schemi e categorie FIN per tutti. Il nuoto degli allenamenti, i '
+        'personal best e i test BVS e T30 restano.',
+    importante: true,
+  ),
+  Novita(
     id: 'convocati-manca-campo',
     data: DateTime(2026, 10, 28),
     titolo: 'Scegli i convocati: niente più «Manca un campo obbligatorio»',

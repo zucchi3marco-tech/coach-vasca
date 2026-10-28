@@ -61,7 +61,6 @@ class TestataAtleta extends ConsumerWidget {
         ?.where((g) => g.id == atleta.gruppoId)
         .map((g) => g.nome)
         .firstOrNull;
-    final pallanuoto = atleta.sport == 'pallanuoto';
     final larghezza = MediaQuery.sizeOf(context).width;
     final stretto = larghezza < 600;
 
@@ -69,10 +68,7 @@ class TestataAtleta extends ConsumerWidget {
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          // La porta da pallanuoto solo per chi gioca a pallanuoto.
-          Positioned.fill(
-            child: AcquaAnimata(conCorsia: false, conPorta: pallanuoto),
-          ),
+          const Positioned.fill(child: AcquaAnimata(conCorsia: false)),
           Positioned.fill(child: _FotoTestata()),
           // Velo scuro: a sinistra e in basso il testo resta leggibile
           // anche sulla foto piu' chiara.
@@ -119,7 +115,6 @@ class TestataAtleta extends ConsumerWidget {
               children: [
                 ..._identita(
                   stretto: stretto,
-                  pallanuoto: pallanuoto,
                   calottina: calottina,
                   club: club?.nome,
                   gruppo: gruppo,
@@ -140,30 +135,27 @@ class TestataAtleta extends ConsumerWidget {
   /// sinistra, grande.
   List<Widget> _identita({
     required bool stretto,
-    required bool pallanuoto,
     required CalottinaAtleta? calottina,
     required String? club,
     required String? gruppo,
   }) {
-    final cuffia = pallanuoto
-        ? Tooltip(
-            message: calottina == null
-                ? 'Il tuo numero comparirà alla prima convocazione'
-                : calottina.portiere
-                ? 'Calottina n° ${calottina.numero} da portiere, '
-                      'dall\'ultima convocazione'
-                : 'Calottina n° ${calottina.numero}, '
-                      'dall\'ultima convocazione',
-            child: Calottina(
-              colore: ColoreCalottina.da(
-                calottina?.colore,
-                portiere: calottina?.portiere ?? false,
-              ),
-              numero: calottina == null ? null : '${calottina.numero}',
-              dimensione: stretto ? 56 : 88,
-            ),
-          )
-        : null;
+    final cuffia = Tooltip(
+      message: calottina == null
+          ? 'Il tuo numero comparirà alla prima convocazione'
+          : calottina.portiere
+          ? 'Calottina n° ${calottina.numero} da portiere, '
+                'dall\'ultima convocazione'
+          : 'Calottina n° ${calottina.numero}, '
+                'dall\'ultima convocazione',
+      child: Calottina(
+        colore: ColoreCalottina.da(
+          calottina?.colore,
+          portiere: calottina?.portiere ?? false,
+        ),
+        numero: calottina == null ? null : '${calottina.numero}',
+        dimensione: stretto ? 56 : 88,
+      ),
+    );
     final saluto = Text(
       vistaAllenatore
           ? [
@@ -193,7 +185,6 @@ class TestataAtleta extends ConsumerWidget {
       children: [
         if (club != null) _Pillola(club),
         if (gruppo != null) _Pillola(gruppo),
-        _Pillola(pallanuoto ? 'Pallanuoto' : 'Nuoto'),
       ],
     );
 
@@ -201,7 +192,8 @@ class TestataAtleta extends ConsumerWidget {
       return [
         Row(
           children: [
-            if (cuffia != null) ...[cuffia, const SizedBox(width: 12)],
+            cuffia,
+            const SizedBox(width: 12),
             Expanded(child: saluto),
           ],
         ),
@@ -214,7 +206,8 @@ class TestataAtleta extends ConsumerWidget {
     return [
       Row(
         children: [
-          if (cuffia != null) ...[cuffia, const SizedBox(width: 20)],
+          cuffia,
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

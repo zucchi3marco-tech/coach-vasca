@@ -15,7 +15,6 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/tonal_chip.dart';
 import '../../allenamenti/domain/destinatari.dart' show ruoliAtleta;
-import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../../gruppi/domain/gruppo.dart';
@@ -54,7 +53,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   /// L'altra squadra con cui si allena in giorni fissi, e quei giorni.
   String? _altroGruppoId;
   late Set<int> _giorniAltroGruppo;
-  late String _sport;
   late bool _consensoPrivacy;
 
   bool _isSubmitting = false;
@@ -95,14 +93,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
     _ruolo = atleta?.ruolo;
     _altroGruppoId = atleta?.altroGruppoId;
     _giorniAltroGruppo = {...?atleta?.giorniAltroGruppo};
-    // Lo sport di un atleta nuovo e' quello del club: prima partiva sempre
-    // da "nuoto", anche in un club di pallanuoto.
-    final sportClub = ref.read(currentClubProvider).value?.sport;
-    _sport =
-        atleta?.sport ??
-        (sportClub == 'pallanuoto' || sportClub == 'nuoto'
-            ? sportClub!
-            : 'nuoto');
     _consensoPrivacy = atleta?.consensoPrivacyFirmato ?? false;
   }
 
@@ -129,10 +119,10 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
   /// Anno di nascita "tipico" da cui far partire il calendario: se il
   /// gruppo già scelto si chiama "U14"/"U16"/ecc. (convenzione pallanuoto),
   /// lo deduce da lì; altrimenti un default generico (dodici anni fa).
-  /// «Categoria 2026-27: U16» sotto la data di nascita, nella pallanuoto.
+  /// «Categoria 2026-27: U16» sotto la data di nascita.
   String? _aiutoCategoria() {
     final nascita = _dataNascita;
-    if (_sport != 'pallanuoto' || nascita == null) return null;
+    if (nascita == null) return null;
     final anno = annoStagioneSportiva(DateTime.now());
     final categoria = categoriaPallanuoto(nascita.year, anno);
     if (categoria == null) return null;
@@ -213,7 +203,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           cognome: capitalizzaNome(_cognomeController.text),
           dataNascita: _dataNascita!,
           sesso: _sesso,
-          sport: _sport,
           gruppoId: _gruppoId,
           emailGenitore: _emailGenitoreController.text.trim(),
           telefonoGenitore: _telefonoGenitoreController.text.trim(),
@@ -222,8 +211,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
           visitaMedicaScadenza: _visitaMedicaScadenza,
-          // Toccato il campo resta quello scelto; altrimenti com'era.
-          ruolo: _sport == 'pallanuoto' ? _ruolo : widget.atleta!.ruolo,
+          ruolo: _ruolo,
           altroGruppoId: _altroGruppo,
           giorniAltroGruppo: _giorniAltroGruppo.toList()..sort(),
         );
@@ -234,7 +222,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           cognome: capitalizzaNome(_cognomeController.text),
           dataNascita: _dataNascita!,
           sesso: _sesso,
-          sport: _sport,
           gruppoId: _gruppoId,
           emailGenitore: _emailGenitoreController.text.trim(),
           telefonoGenitore: _telefonoGenitoreController.text.trim(),
@@ -242,7 +229,7 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
           note: _noteController.text.trim(),
           numeroTesseraFin: _numeroTesseraFinController.text.trim(),
           visitaMedicaScadenza: _visitaMedicaScadenza,
-          ruolo: _sport == 'pallanuoto' ? _ruolo : null,
+          ruolo: _ruolo,
           altroGruppoId: _altroGruppo,
           giorniAltroGruppo: _giorniAltroGruppo.toList()..sort(),
         );
@@ -390,7 +377,6 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sportClub = ref.watch(currentClubProvider).value?.sport;
     final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
     return AppScaffold(
       scrollabile: true,
@@ -442,40 +428,21 @@ class _AtletaFormScreenState extends ConsumerState<AtletaFormScreen> {
             FormGroup(
               titolo: 'Attività',
               campi: [
-                // Lo sport si chiede solo se il club non ne ha uno o se
-                // questo atleta ne fa un altro: altrimenti e' sempre lo
-                // stesso e non serve sceglierlo ogni volta.
-                if (sportClub == null || sportClub != _sport)
-                  AppSelect<String>(
-                    etichetta: 'Sport',
-                    value: _sport,
-                    items: const [
-                      DropdownMenuItem(value: 'nuoto', child: Text('Nuoto')),
-                      DropdownMenuItem(
-                        value: 'pallanuoto',
-                        child: Text('Pallanuoto'),
-                      ),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _sport = value ?? 'nuoto'),
-                  ),
-                if (_sport == 'pallanuoto')
-                  AppTextField(
-                    etichetta: 'N. tessera FIN (facoltativo)',
-                    controller: _numeroTesseraFinController,
-                  ),
+                AppTextField(
+                  etichetta: 'N. tessera FIN (facoltativo)',
+                  controller: _numeroTesseraFinController,
+                ),
                 // Nelle sedute le serie possono essere solo per i portieri
                 // o solo per i giocatori di movimento.
-                if (_sport == 'pallanuoto')
-                  AppSelect<String>(
-                    etichetta: 'Ruolo',
-                    value: _ruolo ?? 'movimento',
-                    items: [
-                      for (final (valore, etichetta) in ruoliAtleta)
-                        DropdownMenuItem(value: valore, child: Text(etichetta)),
-                    ],
-                    onChanged: (value) => setState(() => _ruolo = value),
-                  ),
+                AppSelect<String>(
+                  etichetta: 'Ruolo',
+                  value: _ruolo ?? 'movimento',
+                  items: [
+                    for (final (valore, etichetta) in ruoliAtleta)
+                      DropdownMenuItem(value: valore, child: Text(etichetta)),
+                  ],
+                  onChanged: (value) => setState(() => _ruolo = value),
+                ),
                 AppSelect<String?>(
                   etichetta: 'Gruppo (facoltativo)',
                   value: _gruppoId,

@@ -1,23 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../theme/colori_app.dart';
 import '../../theme/tokens_dominio.dart';
 
-/// Le voci della barra di navigazione dell'allenatore. "Schemi tattici" è
-/// di pallanuoto: per il nuoto non compare; l'ultima voce è "Partite" per
-/// la pallanuoto e "Gare" per il nuoto (sport nullo, cioè club vecchi
-/// senza sport: pallanuoto). Un'unica lista alimenta barra, tour e corpo
-/// delle tab, così restano sempre allineati.
+/// Le voci della barra di navigazione dell'allenatore, nell'ordine della
+/// barra. Un'unica lista alimenta barra, tour e corpo delle tab, così
+/// restano sempre allineati.
 enum VoceHome { oggi, atleti, allenamenti, schemi, stagioni, eventi }
 
-List<VoceHome> vociHome(String? sport) => [
-  VoceHome.oggi,
-  VoceHome.atleti,
-  VoceHome.allenamenti,
-  if (sport != 'nuoto') VoceHome.schemi,
-  VoceHome.stagioni,
-  VoceHome.eventi,
-];
+List<VoceHome> vociHome() => VoceHome.values;
 
 typedef DestinazioneHome = ({
   IconData icona,
@@ -30,85 +21,74 @@ typedef DestinazioneHome = ({
   String guida,
 });
 
-DestinazioneHome destinazioneHome(VoceHome voce, String? sport) =>
-    switch (voce) {
-      VoceHome.oggi => (
-        icona: Icons.wb_sunny_outlined,
-        iconaSelezionata: Icons.wb_sunny,
-        etichetta: 'Oggi',
-        etichettaBreve: 'Oggi',
-        guida:
-            'La tua home: cosa c\'è in programma, chi sta male, chi ha '
-            'modificato i tuoi allenamenti e le azioni di tutti i giorni a '
-            'un tocco. Se hai appena creato il club, «Per cominciare» ti '
-            'dice cosa manca.',
-      ),
-      VoceHome.atleti => (
-        icona: Icons.groups_outlined,
-        iconaSelezionata: Icons.groups,
-        etichetta: 'Atleti',
-        etichettaBreve: 'Atleti',
-        guida:
-            'L\'elenco della squadra con profili, personal best, presenze e '
-            'carico. Da qui aggiungi gli atleti, anche da un foglio Excel, e '
-            'prepari i loro codici.',
-      ),
-      VoceHome.allenamenti => (
-        icona: Icons.calendar_month_outlined,
-        iconaSelezionata: Icons.calendar_month,
-        // "Allenamenti" è una sola parola, senza spazi dove il testo possa
-        // andare a capo con naturalezza: nella barra in basso (5 voci, poco
-        // spazio a testa) senza aiuto va a capo vicino all'ultima lettera
-        // ("Allenamen-ti"). Il trattino software (U+00AD) invisibile finché
-        // non serve indica un punto migliore ("Allena-menti"); su rail e
-        // guida, dove la parola sta su una riga sola, non si vede.
-        etichetta: 'Allena­menti',
-        etichettaBreve: 'Allenamenti',
-        guida:
-            'Scrivi o detta le sedute con le loro serie, anche a secco. A '
-            'bordo vasca le apri in grande, con l\'orologio, e segni le '
-            'presenze.',
-      ),
-      VoceHome.schemi => (
-        icona: Icons.sports_outlined,
-        iconaSelezionata: Icons.sports,
-        etichetta: 'Schemi tattici',
-        etichettaBreve: 'Schemi',
-        guida:
-            'Pallanuoto: disegna gli schemi sulla lavagna tattica, anche in '
-            'più passi, e condividili con gli atleti.',
-      ),
-      VoceHome.stagioni => (
-        icona: Icons.event_note_outlined,
-        iconaSelezionata: Icons.event_note,
-        etichetta: 'Stagioni',
-        etichettaBreve: 'Stagioni',
-        guida:
-            'Una stagione per squadra (o per tutti gli atleti) con il suo '
-            'calendario: tocca un giorno per aggiungere una partita o una '
-            'gara. Qui trovi anche le statistiche di stagione.',
-      ),
-      VoceHome.eventi when sport == 'nuoto' => (
-        icona: Icons.emoji_events_outlined,
-        iconaSelezionata: Icons.emoji_events,
-        etichetta: 'Gare',
-        etichettaBreve: 'Gare',
-        guida:
-            'Le gare della stagione in corso, in ordine di data. Si '
-            'aggiungono dal calendario della stagione; aprendone una '
-            'iscrivi gli atleti e registri i risultati.',
-      ),
-      VoceHome.eventi => (
-        icona: Icons.sports_handball_outlined,
-        iconaSelezionata: Icons.sports_handball,
-        etichetta: 'Partite',
-        etichettaBreve: 'Partite',
-        guida:
-            'Le partite della stagione in ordine di data, e la classifica '
-            'del campionato. Si aggiungono dal calendario della stagione; '
-            'aprendone una trovi distinta, eventi dal vivo e referto.',
-      ),
-    };
+DestinazioneHome destinazioneHome(VoceHome voce) => switch (voce) {
+  VoceHome.oggi => (
+    icona: Icons.wb_sunny_outlined,
+    iconaSelezionata: Icons.wb_sunny,
+    etichetta: 'Oggi',
+    etichettaBreve: 'Oggi',
+    guida:
+        'La tua home: cosa c\'è in programma, chi sta male, chi ha '
+        'modificato i tuoi allenamenti e le azioni di tutti i giorni a '
+        'un tocco. Se hai appena creato il club, «Per cominciare» ti '
+        'dice cosa manca.',
+  ),
+  VoceHome.atleti => (
+    icona: Icons.groups_outlined,
+    iconaSelezionata: Icons.groups,
+    etichetta: 'Atleti',
+    etichettaBreve: 'Atleti',
+    guida:
+        'L\'elenco della squadra con profili, personal best, presenze e '
+        'carico. Da qui aggiungi gli atleti, anche da un foglio Excel, e '
+        'prepari i loro codici.',
+  ),
+  VoceHome.allenamenti => (
+    icona: Icons.calendar_month_outlined,
+    iconaSelezionata: Icons.calendar_month,
+    // "Allenamenti" è una sola parola, senza spazi dove il testo possa
+    // andare a capo con naturalezza: nella barra in basso (5 voci, poco
+    // spazio a testa) senza aiuto va a capo vicino all'ultima lettera
+    // ("Allenamen-ti"). Il trattino software (U+00AD) invisibile finché
+    // non serve indica un punto migliore ("Allena-menti"); su rail e
+    // guida, dove la parola sta su una riga sola, non si vede.
+    etichetta: 'Allena­menti',
+    etichettaBreve: 'Allenamenti',
+    guida:
+        'Scrivi o detta le sedute con le loro serie, anche a secco. A '
+        'bordo vasca le apri in grande, con l\'orologio, e segni le '
+        'presenze.',
+  ),
+  VoceHome.schemi => (
+    icona: Icons.sports_outlined,
+    iconaSelezionata: Icons.sports,
+    etichetta: 'Schemi tattici',
+    etichettaBreve: 'Schemi',
+    guida:
+        'Disegna gli schemi sulla lavagna tattica, anche in più passi, '
+        'e condividili con gli atleti.',
+  ),
+  VoceHome.stagioni => (
+    icona: Icons.event_note_outlined,
+    iconaSelezionata: Icons.event_note,
+    etichetta: 'Stagioni',
+    etichettaBreve: 'Stagioni',
+    guida:
+        'Una stagione per squadra (o per tutti gli atleti) con il suo '
+        'calendario: tocca un giorno per aggiungere una partita. Qui '
+        'trovi anche le statistiche di stagione.',
+  ),
+  VoceHome.eventi => (
+    icona: Icons.sports_handball_outlined,
+    iconaSelezionata: Icons.sports_handball,
+    etichetta: 'Partite',
+    etichettaBreve: 'Partite',
+    guida:
+        'Le partite della stagione in ordine di data, e la classifica '
+        'del campionato. Si aggiungono dal calendario della stagione; '
+        'aprendone una trovi distinta, eventi dal vivo e referto.',
+  ),
+};
 
 /// Colore della voce quando è selezionata (tavolozza "evidenza", vedi
 /// DESIGN.md "Dove spendere l'audacia"): Atleti resta sul colore d'azione,

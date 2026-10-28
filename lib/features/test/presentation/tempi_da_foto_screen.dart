@@ -56,15 +56,9 @@ class _Riga {
 /// incerti li sceglie l'allenatore. Salvando, i tempi vanno fra i tempi
 /// degli atleti o nei test BVS e T30.
 class TempiDaFotoScreen extends ConsumerStatefulWidget {
-  const TempiDaFotoScreen({
-    required this.clubId,
-    required this.sport,
-    this.gruppoId,
-    super.key,
-  });
+  const TempiDaFotoScreen({required this.clubId, this.gruppoId, super.key});
 
   final String clubId;
-  final String sport;
 
   /// La squadra scelta in alto: i nomi si abbinano prima ai suoi atleti.
   final String? gruppoId;
@@ -75,9 +69,9 @@ class TempiDaFotoScreen extends ConsumerStatefulWidget {
 
 class _TempiDaFotoScreenState extends ConsumerState<TempiDaFotoScreen> {
   DestinazioneTempi _destinazione = DestinazioneTempi.tempi;
-  late SlotPersonalBest _slot = slotsPerSport(widget.sport).firstWhere(
+  SlotPersonalBest _slot = slotsPersonalBest.firstWhere(
     (s) => s.distanzaM == 100 && s.stile == 'libero',
-    orElse: () => slotsPerSport(widget.sport).first,
+    orElse: () => slotsPersonalBest.first,
   );
   DateTime _data = soloData(DateTime.now());
 
@@ -281,7 +275,7 @@ class _TempiDaFotoScreenState extends ConsumerState<TempiDaFotoScreen> {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final atleti = _atleti();
-    final slots = slotsPerSport(widget.sport);
+    final slots = slotsPersonalBest;
     final righe = _righe;
     final pronte = righe?.where(_pronta).length ?? 0;
 

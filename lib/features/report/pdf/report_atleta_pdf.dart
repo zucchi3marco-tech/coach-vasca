@@ -39,7 +39,7 @@ Future<Uint8List> generaReportAtletaPdf(
         if (marchio != null) testataClubPdf(marchio),
         ...titoloReport(atleta.nomeCompleto, sotto),
         ..._presenze(report),
-        if (report.pallanuoto) ..._partite(report),
+        ..._partite(report),
         ..._test(report),
         ..._obiettivi(report),
         if (report.benessere case final b?) ..._benessere(b),

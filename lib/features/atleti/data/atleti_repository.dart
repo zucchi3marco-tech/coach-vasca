@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
 import '../../../core/demo/modalita_demo.dart';
+import '../../../core/sport_app.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -165,7 +166,6 @@ class AtletiRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
     String? gruppoId,
     String? emailGenitore,
     String? telefonoGenitore,
@@ -185,7 +185,9 @@ class AtletiRepository {
       'cognome': cognome,
       'data_nascita': formatDateOnly(dataNascita),
       'sesso': ?sesso,
-      'sport': sport,
+      // WaterTactics è solo pallanuoto; nel database la colonna senza
+      // valore mette "nuoto".
+      'sport': sportApp,
       'gruppo_id': ?gruppoId,
       if (emailGenitore != null && emailGenitore.isNotEmpty)
         'email_genitore': emailGenitore,
@@ -238,7 +240,6 @@ class AtletiRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
     String? gruppoId,
     String? emailGenitore,
     String? telefonoGenitore,
@@ -267,7 +268,6 @@ class AtletiRepository {
       if (dataNascita != originale.dataNascita)
         'data_nascita': formatDateOnly(dataNascita),
       if (sesso != originale.sesso) 'sesso': sesso,
-      if (sport != originale.sport) 'sport': sport,
       if (gruppoId != originale.gruppoId) 'gruppo_id': gruppoId,
       if (emailGenitore != originale.emailGenitore)
         'email_genitore': emailGenitore,
@@ -316,9 +316,6 @@ class AtletiRepository {
               : const Value.absent(),
           sesso: payload.containsKey('sesso')
               ? Value(sesso)
-              : const Value.absent(),
-          sport: payload.containsKey('sport')
-              ? Value(sport)
               : const Value.absent(),
           gruppoId: payload.containsKey('gruppo_id')
               ? Value(gruppoId)

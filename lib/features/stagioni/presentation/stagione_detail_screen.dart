@@ -15,17 +15,11 @@ import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/domain/categoria_fin.dart';
-import '../../atleti/presentation/record_club_screen.dart';
 import '../../gruppi/presentation/cambio_categoria_screen.dart';
 import '../../impegni/application/impegni_providers.dart';
 import '../../impegni/domain/impegno.dart';
 import '../../impegni/presentation/impegno_form_screen.dart';
 import '../../impegni/presentation/impegno_screen.dart';
-import '../../club/application/current_club_provider.dart';
-import '../../gare/application/gare_providers.dart';
-import '../../gare/domain/gara.dart';
-import '../../gare/presentation/gara_detail_screen.dart';
-import '../../gare/presentation/gara_form_screen.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../pallanuoto/presentation/distinta_screen.dart';
@@ -44,9 +38,8 @@ import 'stagione_form_screen.dart';
 enum _AzioneStagione { duplica, modifica, elimina }
 
 /// Scheda di una stagione: il calendario dei mesi della stagione (un tocco
-/// su un giorno crea o apre una partita/gara), poi il collegamento alle
-/// statistiche di stagione (pallanuoto) o ai record di club (nuoto),
-/// secondo lo sport del club, e campionato/obiettivo.
+/// su un giorno crea o apre una partita), poi il collegamento alle
+/// statistiche di stagione, e campionato/obiettivo.
 class StagioneDetailScreen extends ConsumerWidget {
   const StagioneDetailScreen({required this.stagione, super.key});
 
@@ -67,19 +60,6 @@ class StagioneDetailScreen extends ConsumerWidget {
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   void _creaEvento(BuildContext context, WidgetRef ref, DateTime giorno) {
-    final sport = ref.read(currentClubProvider).value?.sport;
-    if (sport == 'nuoto') {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => GaraFormScreen(
-            clubId: stagione.clubId,
-            stagione: stagione,
-            dataIniziale: giorno,
-          ),
-        ),
-      );
-      return;
-    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PartitaFormScreen(
@@ -96,10 +76,6 @@ class StagioneDetailScreen extends ConsumerWidget {
     if (origine is Partita) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DistintaScreen(partita: origine)),
-      );
-    } else if (origine is Gara) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => GaraDetailScreen(gara: origine)),
       );
     } else if (origine is Impegno) {
       Navigator.of(context).push(
@@ -121,7 +97,7 @@ class StagioneDetailScreen extends ConsumerWidget {
   }
 
   /// Un tocco su un giorno: quello che c'è (se c'è) e i due pulsanti per
-  /// aggiungere una partita (o una gara) o un impegno.
+  /// aggiungere una partita o un impegno.
   void _giornoSelezionato(
     BuildContext context,
     WidgetRef ref,
@@ -174,9 +150,7 @@ class StagioneDetailScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.s12),
               ],
               SecondaryButton(
-                label: ref.read(currentClubProvider).value?.sport == 'nuoto'
-                    ? 'Aggiungi gara'
-                    : 'Aggiungi partita',
+                label: 'Aggiungi partita',
                 icon: Icons.add,
                 onPressed: () {
                   Navigator.of(sheetContext).pop();
@@ -228,11 +202,9 @@ class StagioneDetailScreen extends ConsumerWidget {
           builder: (_) => StagioneDetailScreen(stagione: nuovaStagione),
         ),
       );
-      // Su un altro anno sportivo, nella pallanuoto: chi cambia categoria.
+      // Su un altro anno sportivo: chi cambia categoria.
       final anno = annoStagioneSportiva(nuovaDataInizio);
-      final sport = ref.read(currentClubProvider).value?.sport;
-      if (sport != 'nuoto' &&
-          anno != annoStagioneSportiva(stagione.dataInizio)) {
+      if (anno != annoStagioneSportiva(stagione.dataInizio)) {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -264,22 +236,11 @@ class StagioneDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // null finche' il club non ha ancora compilato lo sport (o durante il
-    // caricamento): in quel caso si mostrano entrambe le sezioni, non si
-    // nasconde contenuto per un dato mancante.
-    final sport = ref.watch(currentClubProvider).value?.sport;
-    final mostraPallanuoto = sport == null || sport == 'pallanuoto';
-    final mostraNuoto = sport == null || sport == 'nuoto';
     final colori = context.colori;
-    final partite = mostraPallanuoto
-        ? ref.watch(partiteListProvider(stagione.clubId)).value ?? const []
-        : const <Partita>[];
-    final gare = mostraNuoto
-        ? ref.watch(gareListProvider(stagione.clubId)).value ?? const []
-        : const <Gara>[];
+    final partite =
+        ref.watch(partiteListProvider(stagione.clubId)).value ?? const [];
     final eventi = eventiVisibiliInStagione(stagione, [
       for (final p in partite) EventoCalendario.daPartita(p),
-      for (final g in gare) EventoCalendario.daGara(g),
     ]);
     final oggi = soloData(DateTime.now());
     final svolti = eventi.where((e) => e.data.isBefore(oggi)).length;
@@ -290,7 +251,7 @@ class StagioneDetailScreen extends ConsumerWidget {
           null,
           (min, d) => min == null || d.isBefore(min) ? d : min,
         );
-    final nomeEventi = sport == 'nuoto' ? 'Gare' : 'Partite';
+    const nomeEventi = 'Partite';
     // Nel calendario anche i giorni degli impegni (non nei numeri in alto).
     final conImpegni = [
       ...eventi,
@@ -382,10 +343,7 @@ class StagioneDetailScreen extends ConsumerWidget {
                 : null,
             numeri: [
               NumeroTestata(valore: '${eventi.length}', etichetta: nomeEventi),
-              NumeroTestata(
-                valore: '$svolti',
-                etichetta: sport == 'nuoto' ? 'Disputate' : 'Giocate',
-              ),
+              NumeroTestata(valore: '$svolti', etichetta: 'Giocate'),
               NumeroTestata(
                 valore: prossimo == null ? '—' : dataCompatta(prossimo),
                 etichetta: 'La prossima',
@@ -394,7 +352,7 @@ class StagioneDetailScreen extends ConsumerWidget {
             azioni: [
               AzioneTestata(
                 icona: Icons.add,
-                etichetta: sport == 'nuoto' ? 'Nuova gara' : 'Nuova partita',
+                etichetta: 'Nuova partita',
                 principale: true,
                 onTap: () => _creaEvento(context, ref, DateTime.now()),
               ),
@@ -403,29 +361,18 @@ class StagioneDetailScreen extends ConsumerWidget {
                 etichetta: 'Nuovo impegno',
                 onTap: () => _creaImpegno(context, DateTime.now()),
               ),
-              if (mostraPallanuoto)
-                AzioneTestata(
-                  icona: Icons.query_stats,
-                  etichetta: 'Statistiche',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => StatisticheSquadraScreen(
-                        clubId: stagione.clubId,
-                        stagioneId: stagione.id,
-                      ),
+              AzioneTestata(
+                icona: Icons.query_stats,
+                etichetta: 'Statistiche',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => StatisticheSquadraScreen(
+                      clubId: stagione.clubId,
+                      stagioneId: stagione.id,
                     ),
                   ),
                 ),
-              if (mostraNuoto)
-                AzioneTestata(
-                  icona: Icons.emoji_events_outlined,
-                  etichetta: 'Record',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => RecordClubScreen(clubId: stagione.clubId),
-                    ),
-                  ),
-                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.s24),
@@ -436,9 +383,9 @@ class StagioneDetailScreen extends ConsumerWidget {
           const TitoloSezione(
             'Calendario',
             spiegazione:
-                'Tocca un giorno per aggiungere una partita, una gara o un '
-                'impegno (collegiale, trasferta, riposo, torneo) in quella '
-                'data, o per aprire quello che c\'è in programma.',
+                'Tocca un giorno per aggiungere una partita o un impegno '
+                '(collegiale, trasferta, riposo, torneo) in quella data, o '
+                'per aprire quello che c\'è in programma.',
           ),
           PoolCard(
             padding: const EdgeInsets.all(AppSpacing.s8),

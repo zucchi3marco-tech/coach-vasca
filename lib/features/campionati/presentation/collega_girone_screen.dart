@@ -58,10 +58,7 @@ class _CollegaGironeScreenState extends ConsumerState<CollegaGironeScreen> {
   Widget build(BuildContext context) {
     final elencoAsync = ref.watch(elencoFinProvider(_stagione));
     segnalaSeElencoNonLetto(ref, stagione: _stagione, clubId: widget.clubId);
-    final gruppi = [
-      for (final g in ref.watch(gruppiListProvider(widget.clubId)).value ?? [])
-        if (g.sport == null || g.sport == 'pallanuoto') g,
-    ];
+    final gruppi = ref.watch(gruppiListProvider(widget.clubId)).value ?? [];
 
     final List<Widget> corpo = switch (elencoAsync) {
       AsyncValue(:final value?) when !elencoAsync.isLoading => [

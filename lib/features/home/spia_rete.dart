@@ -123,7 +123,6 @@ Future<void> _apriRiquadroRete(BuildContext contesto, WidgetRef ref) async {
   // Il riquadro si sta chiudendo: la schermata si fa quando è sparito.
   final contestoSegn = await contestoSegnalazione(
     ref,
-    club.sport,
     conSchede: homeConSchede(ref),
   );
   await navigatorKeyApp.currentState?.push(

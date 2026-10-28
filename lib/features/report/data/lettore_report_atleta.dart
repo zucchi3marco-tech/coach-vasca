@@ -56,16 +56,13 @@ class LettoreReportAtleta {
     );
     final presenze = await presenzeRepo.watchPerAtleta(atleta.id).first;
 
-    final pallanuoto = atleta.sport == 'pallanuoto';
-    final partite = pallanuoto
-        ? await _ref
-              .read(partiteRepositoryProvider)
-              .perClubEPeriodo(
-                clubId: atleta.clubId,
-                dataInizio: periodo.dal,
-                dataFine: finoA,
-              )
-        : const <Never>[];
+    final partite = await _ref
+        .read(partiteRepositoryProvider)
+        .perClubEPeriodo(
+          clubId: atleta.clubId,
+          dataInizio: periodo.dal,
+          dataFine: finoA,
+        );
     final idPartite = [for (final p in partite) p.id];
     final distinta = _ref.read(distintaRepositoryProvider);
     final convocato = idPartite.isEmpty
@@ -84,7 +81,7 @@ class LettoreReportAtleta {
               .perPartite(idPartite);
 
     NumeriPortiere? portiere;
-    if (pallanuoto && atleta.portiere && idPartite.isNotEmpty) {
+    if (atleta.portiere && idPartite.isNotEmpty) {
       final tempi = await _oppure(
         () => distinta.tempiInPortaDellAtleta(atleta.id),
         <String, List<int>>{},

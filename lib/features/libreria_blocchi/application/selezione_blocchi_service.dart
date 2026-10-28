@@ -189,13 +189,3 @@ Future<List<BloccoDisponibile>> blocchiCompatibili(
   }
   return risultato;
 }
-
-/// `TrainingBlock.sport` usa 'nuoto'/'pallanuoto'/'entrambi' — lo sport
-/// del club (FASE 11) usa 'nuoto'/'pallanuoto'/'nuoto_pallanuoto': questa
-/// funzione traduce per [blocchiCompatibili]. Un club "nuoto_pallanuoto"
-/// o senza sport impostato non filtra per sport (vede tutto).
-String? sportRichiestoDaClub(String? sportClub) => switch (sportClub) {
-  'nuoto' => 'nuoto',
-  'pallanuoto' => 'pallanuoto',
-  _ => null,
-};

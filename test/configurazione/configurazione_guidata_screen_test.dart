@@ -31,7 +31,7 @@ class _GruppiFinti implements GruppiRepository {
 
   final List<Gruppo> elenco;
   final _cambi = StreamController<List<Gruppo>>.broadcast();
-  final creati = <({String nome, int ordine, String? sport})>[];
+  final creati = <({String nome, int ordine})>[];
 
   /// Cosa dice `configurazioneInCorsoProvider` ogni volta che si crea una
   /// squadra: deve già essere il club, altrimenti HomeScreen cambia schermata.
@@ -51,20 +51,18 @@ class _GruppiFinti implements GruppiRepository {
     required String clubId,
     required String nome,
     required int ordine,
-    String? sport,
   }) async {
     inCorsoAllaCreazione.add(leggiInCorso?.call());
     if (falliscAllaCreazione == creati.length) {
       falliscAllaCreazione = null;
       throw Exception('non si crea');
     }
-    creati.add((nome: nome, ordine: ordine, sport: sport));
+    creati.add((nome: nome, ordine: ordine));
     final gruppo = Gruppo(
       id: 'nuovo${elenco.length}',
       clubId: clubId,
       nome: nome,
       ordine: ordine,
-      sport: sport,
     );
     elenco.add(gruppo);
     _cambi.add([...elenco]);
@@ -230,9 +228,9 @@ void main() {
       await _passa(tester);
 
       expect(prova.gruppiFinti.creati, [
-        (nome: 'U12', ordine: 1, sport: 'pallanuoto'),
-        (nome: 'U16', ordine: 2, sport: 'pallanuoto'),
-        (nome: 'Master over 40', ordine: 3, sport: 'pallanuoto'),
+        (nome: 'U12', ordine: 1),
+        (nome: 'U16', ordine: 2),
+        (nome: 'Master over 40', ordine: 3),
       ]);
       // Il percorso era già "in corso" quando è comparsa la prima squadra.
       expect(prova.gruppiFinti.inCorsoAllaCreazione, ['c1', 'c1', 'c1']);
@@ -287,9 +285,7 @@ void main() {
         await tester.tap(find.text('Avanti'));
         await _passa(tester);
 
-        expect(prova.gruppiFinti.creati, [
-          (nome: 'U12', ordine: 4, sport: 'pallanuoto'),
-        ]);
+        expect(prova.gruppiFinti.creati, [(nome: 'U12', ordine: 4)]);
         _vediPasso(3, 'Gli allenatori');
       },
     );

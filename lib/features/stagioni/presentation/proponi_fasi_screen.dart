@@ -16,9 +16,6 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/riquadri.dart';
 import '../../../widgets/secondary_button.dart';
-import '../../club/application/current_club_provider.dart';
-import '../../gare/application/gare_providers.dart';
-import '../../gare/domain/gara.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../data/stagioni_repository.dart';
@@ -27,7 +24,7 @@ import '../domain/fasi_a_ritroso.dart';
 import '../domain/stagione.dart';
 
 /// «Proponi le fasi»: l'allenatore sceglie fino a tre obiettivi (una
-/// partita, una gara o un giorno scritto a mano) e l'app costruisce le fasi
+/// partita o un giorno scritto a mano) e l'app costruisce le fasi
 /// a ritroso: preparazione, andata e ritorno dalle partite della squadra,
 /// scarico e il giorno dell'obiettivo (vedi [proponiFasi]). Si allungano o
 /// si accorciano di una settimana alla volta, poi «Usa queste fasi».
@@ -156,19 +153,11 @@ class _ProponiFasiScreenState extends ConsumerState<ProponiFasiScreen> {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final stagione = widget.stagione;
-    final sport = ref.watch(currentClubProvider).value?.sport;
-    final conPartite = sport == null || sport == 'pallanuoto';
-    final conGare = sport == null || sport == 'nuoto';
-    final partite = conPartite
-        ? ref.watch(partiteListProvider(stagione.clubId)).value ??
-              const <Partita>[]
-        : const <Partita>[];
-    final gare = conGare
-        ? ref.watch(gareListProvider(stagione.clubId)).value ?? const <Gara>[]
-        : const <Gara>[];
+    final partite =
+        ref.watch(partiteListProvider(stagione.clubId)).value ??
+        const <Partita>[];
     final eventi = eventiVisibiliInStagione(stagione, [
       for (final p in partite) EventoCalendario.daPartita(p),
-      for (final g in gare) EventoCalendario.daGara(g),
     ])..sort((a, b) => a.data.compareTo(b.data));
     final giorniPartite = [
       for (final e in eventi)
@@ -209,8 +198,8 @@ class _ProponiFasiScreenState extends ConsumerState<ProponiFasiScreen> {
           FormGroup(
             titolo: 'Obiettivi',
             spiegazione:
-                'Le partite o le gare per cui la squadra deve essere al '
-                'massimo, fino a tre. Le fasi si contano a ritroso da lì.',
+                'Le partite per cui la squadra deve essere al massimo, '
+                'fino a tre. Le fasi si contano a ritroso da lì.',
             campi: [
               if (_obiettivi.isEmpty)
                 Text(
@@ -380,8 +369,8 @@ class _Scelta {
   final EventoCalendario? evento;
 }
 
-/// Le partite e le gare della stagione da cui scegliere l'obiettivo, e in
-/// cima «Un giorno scritto a mano».
+/// Le partite della stagione da cui scegliere l'obiettivo, e in cima «Un
+/// giorno scritto a mano».
 class _ScegliObiettivo extends StatelessWidget {
   const _ScegliObiettivo({required this.eventi});
 
@@ -389,7 +378,6 @@ class _ScegliObiettivo extends StatelessWidget {
 
   bool _importante(EventoCalendario e) => switch (e.origine) {
     Partita(:final importanza) => importanza == 'alta',
-    Gara(:final importanza) => importanza == 'alta',
     _ => false,
   };
 
@@ -430,7 +418,7 @@ class _ScegliObiettivo extends StatelessWidget {
           const SizedBox(height: AppSpacing.s16),
           if (eventi.isEmpty)
             const RiquadroVuoto(
-              'Nel calendario della stagione non ci sono partite o gare.',
+              'Nel calendario della stagione non ci sono partite.',
             )
           else
             AppListPanel(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/sport_app.dart';
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_layout.dart';
@@ -30,7 +31,6 @@ import '../../allenamenti/presentation/per_chi_serie.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
-import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../../impegni/presentation/avviso_riposo.dart';
@@ -1134,11 +1134,10 @@ class _GeneraAllenamentoFormScreenState
 
     var blocchi = const <BloccoDisponibile>[];
     try {
-      final club = await ref.read(currentClubProvider.future);
       blocchi = await blocchiCompatibili(
         ref,
         clubId: widget.clubId,
-        sportRichiesto: sportRichiestoDaClub(club?.sport),
+        sportRichiesto: sportApp,
         nomeGruppo: nomiGruppi[gruppoId],
       ).timeout(_timeoutPreparazione);
     } catch (_) {

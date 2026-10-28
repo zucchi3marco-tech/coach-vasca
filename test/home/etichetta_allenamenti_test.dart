@@ -7,7 +7,7 @@ void main() {
   test(
     '«Allenamenti» resta la parola vera, solo con un trattino invisibile',
     () {
-      final etichetta = destinazioneHome(VoceHome.allenamenti, null).etichetta;
+      final etichetta = destinazioneHome(VoceHome.allenamenti).etichetta;
 
       expect(etichetta.replaceAll('­', ''), 'Allenamenti');
       expect(etichetta, isNot('Allenamenti')); // contiene il trattino software
@@ -19,7 +19,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Text(destinazioneHome(VoceHome.allenamenti, null).etichetta),
+          home: Text(destinazioneHome(VoceHome.allenamenti).etichetta),
         ),
       );
       final larga = tester.getSize(find.textContaining('Allena'));
@@ -42,7 +42,7 @@ void main() {
           // Abbastanza per "Allena-" ma non per l'intera parola.
           width: 70,
           child: Text(
-            destinazioneHome(VoceHome.allenamenti, null).etichetta,
+            destinazioneHome(VoceHome.allenamenti).etichetta,
             style: const TextStyle(fontSize: 20),
           ),
         ),

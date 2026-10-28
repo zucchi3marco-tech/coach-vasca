@@ -487,7 +487,6 @@ Future<void> _apriMenuPrincipale(
       if (contesto != null && contesto.mounted) {
         await mostraTourCoach(
           contesto,
-          club?.sport,
           vaiAllaScheda: ref.read(tabHomeProvider.notifier).imposta,
         );
       }
@@ -499,11 +498,7 @@ Future<void> _apriMenuPrincipale(
       );
     case _AzioneMenu.scrivimi:
       if (club == null) return;
-      final contesto = await contestoSegnalazione(
-        ref,
-        club.sport,
-        conSchede: mostraTab,
-      );
+      final contesto = await contestoSegnalazione(ref, conSchede: mostraTab);
       await navigatorKeyApp.currentState?.push(
         MaterialPageRoute<void>(
           builder: (_) => ScrivimiScreen(clubId: club.id, contesto: contesto),

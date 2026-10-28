@@ -20,7 +20,6 @@ import '../../atleti/data/atleti_repository.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/categoria_fin.dart';
 import '../application/gruppi_providers.dart';
-import '../domain/gruppo.dart';
 
 /// I cambi di categoria della stagione [annoStagione] per il club; null
 /// finché atleti e squadre non sono arrivati.
@@ -149,12 +148,8 @@ class _CambioCategoriaScreenState extends ConsumerState<CambioCategoriaScreen> {
   Widget build(BuildContext context) {
     final colori = context.colori;
     final cambi = _cambi(ref, widget.clubId, widget.annoStagione);
-    final squadre = [
-      for (final s
-          in ref.watch(gruppiListProvider(widget.clubId)).value ??
-              const <Gruppo>[])
-        if (s.sport != 'nuoto') s,
-    ]..sort((x, y) => x.ordine.compareTo(y.ordine));
+    final squadre = [...?ref.watch(gruppiListProvider(widget.clubId)).value]
+      ..sort((x, y) => x.ordine.compareTo(y.ordine));
     final nomeSquadra = {for (final s in squadre) s.id: s.nome};
     final stagione = etichettaStagioneSportiva(widget.annoStagione);
 
@@ -267,7 +262,6 @@ Future<void> _cambiaSquadra(
     cognome: atleta.cognome,
     dataNascita: atleta.dataNascita,
     sesso: atleta.sesso,
-    sport: atleta.sport,
     gruppoId: squadraId,
     emailGenitore: atleta.emailGenitore,
     telefonoGenitore: atleta.telefonoGenitore,

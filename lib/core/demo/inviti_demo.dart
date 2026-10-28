@@ -11,6 +11,7 @@ import '../../features/atleti/data/inviti_atleta_repository.dart';
 import '../../features/atleti/domain/atleta.dart';
 import '../../features/atleti/domain/codice_gruppo.dart';
 import '../db/app_database.dart';
+import '../sport_app.dart';
 import 'modalita_demo.dart';
 
 /// Codici invito della demo, tutti in locale (in produzione sono RPC
@@ -232,11 +233,7 @@ class CodiciGruppoRepositoryDemo extends CodiciGruppoRepository {
     final club = await (_db.select(
       _db.clubTable,
     )..where((t) => t.id.equals(gruppo.clubId))).getSingleOrNull();
-    return (
-      gruppoNome: gruppo.nome,
-      clubNome: club?.nome ?? '',
-      gruppoSport: gruppo.sport ?? club?.sport,
-    );
+    return (gruppoNome: gruppo.nome, clubNome: club?.nome ?? '');
   }
 
   @override
@@ -246,7 +243,6 @@ class CodiciGruppoRepositoryDemo extends CodiciGruppoRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
   }) async {
     final gruppo = await _gruppoDelCodice(codice);
     if (gruppo == null) throw StateError('Codice non valido');
@@ -261,7 +257,7 @@ class CodiciGruppoRepositoryDemo extends CodiciGruppoRepository {
             cognome: cognome,
             dataNascita: dataNascita,
             sesso: Value(sesso),
-            sport: sport,
+            sport: sportApp,
             gruppoId: Value(gruppo.id),
             userId: Value(_auth.currentUser?.id),
           ),

@@ -89,9 +89,9 @@ void main() {
       expect(categoriaPallanuoto(2028, 2027), isNull);
     });
 
-    test('il nuoto non si calcola', () {
-      final nuotatore = _atleta('n', 'Rossi', 2012, sport: 'nuoto');
-      expect(categoriaAtleta(nuotatore, DateTime(2026, 10, 27)), isNull);
+    test('anche chi è ancora segnato «nuoto» nel database ha la categoria', () {
+      final segnatoNuoto = _atleta('n', 'Rossi', 2012, sport: 'nuoto');
+      expect(categoriaAtleta(segnatoNuoto, DateTime(2026, 10, 27)), 'U16');
       final giocatore = _atleta('p', 'Rossi', 2012);
       expect(categoriaAtleta(giocatore, DateTime(2026, 10, 27)), 'U16');
     });

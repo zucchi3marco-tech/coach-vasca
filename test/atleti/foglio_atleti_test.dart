@@ -49,13 +49,11 @@ Atleta _atleta({
 FoglioAtleti _analizza(
   List<List<Object?>> tabella, {
   List<Atleta> esistenti = const [],
-  bool pallanuoto = true,
   List<Gruppo> squadre = _squadre,
 }) => analizzaFoglioAtleti(
   tabella,
   squadre: squadre,
   esistenti: esistenti,
-  pallanuoto: pallanuoto,
   oggi: _oggi,
 );
 
@@ -466,18 +464,13 @@ void main() {
   });
 
   group('altri campi', () {
-    FoglioAtleti conCampi(
-      String titolo,
-      Object? valore, {
-      bool pallanuoto = true,
-    }) => _analizza(
+    FoglioAtleti conCampi(String titolo, Object? valore) => _analizza(
       _tab(
         [..._titoli, titolo],
         [
           ['Rossi', 'Mario', '12/03/2012', valore],
         ],
       ),
-      pallanuoto: pallanuoto,
     );
 
     test('ruolo: tutte le parole', () {
@@ -510,14 +503,6 @@ void main() {
       final r = conCampi('Ruolo', 'tuttofare').nuovi.single;
       expect(r.ruolo, isNull);
       expect(r.avvisi.single, contains('tuttofare'));
-    });
-
-    test('in un club di nuoto la colonna Ruolo non conta', () {
-      final f = conCampi('Ruolo', 'portiere', pallanuoto: false);
-      expect(f.nuovi.single.ruolo, isNull);
-      expect(f.nuovi.single.avvisi, isEmpty);
-      expect(f.colonneNonUsate, ['Ruolo']);
-      expect(f.colonneRiconosciute, isNot(contains('Ruolo')));
     });
 
     test('sesso', () {

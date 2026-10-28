@@ -20,8 +20,6 @@ import '../data/auth_repository.dart';
 
 enum _Passo { codice, confermaAtleta, confermaGruppo, anagrafica, account }
 
-const _sport = ['nuoto', 'pallanuoto'];
-
 /// Registrazione di un atleta tramite codice invito (FASE 9), raggiunta
 /// da LoginScreen. Un solo punto d'ingresso per due tipi di codice, senza
 /// che l'atleta debba sapere quale ha ricevuto:
@@ -53,7 +51,6 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
   GruppoInvitato? _gruppoInvitato;
   DateTime? _dataNascita;
   String? _sesso;
-  String _sport = 'nuoto';
   bool _isSubmitting = false;
   String? _errore;
 
@@ -113,10 +110,6 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
         if (mounted) {
           setState(() {
             _gruppoInvitato = gruppo;
-            // Lo sport si conosce gia' dal gruppo (mai ambiguo come
-            // club.sport per un club "nuoto e pallanuoto"): se e'
-            // valorizzato, l'anagrafica non lo richiede piu'.
-            if (gruppo.gruppoSport != null) _sport = gruppo.gruppoSport!;
             _passo = _Passo.confermaGruppo;
           });
         }
@@ -207,7 +200,6 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
               cognome: capitalizzaNome(_cognomeController.text),
               dataNascita: _dataNascita!,
               sesso: _sesso,
-              sport: _sport,
             );
       }
       // La sessione esiste da quando e' stato creato l'account, cioe' PRIMA
@@ -310,9 +302,6 @@ class _RiscattaInvitoScreenState extends ConsumerState<RiscattaInvitoScreen> {
                   onPickData: _pickDataNascita,
                   sesso: _sesso,
                   onSessoChanged: (v) => setState(() => _sesso = v),
-                  sport: _sport,
-                  onSportChanged: (v) => setState(() => _sport = v ?? 'nuoto'),
-                  sportGiaNoto: _gruppoInvitato?.gruppoSport != null,
                   onContinua: () {
                     if (_validaAnagrafica()) {
                       setState(() => _passo = _Passo.account);
@@ -408,9 +397,6 @@ class _PassoConferma extends StatelessWidget {
   }
 }
 
-String _capitalizza(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
 class _PassoAnagrafica extends StatelessWidget {
   const _PassoAnagrafica({
     required this.nomeController,
@@ -419,9 +405,6 @@ class _PassoAnagrafica extends StatelessWidget {
     required this.onPickData,
     required this.sesso,
     required this.onSessoChanged,
-    required this.sport,
-    required this.onSportChanged,
-    this.sportGiaNoto = false,
     required this.onContinua,
   });
 
@@ -431,12 +414,6 @@ class _PassoAnagrafica extends StatelessWidget {
   final VoidCallback onPickData;
   final String? sesso;
   final ValueChanged<String?> onSessoChanged;
-  final String sport;
-  final ValueChanged<String?> onSportChanged;
-
-  /// true quando lo sport si e' gia' dedotto dal gruppo (codice di
-  /// gruppo di un club a sport unico): il menu non si mostra piu'.
-  final bool sportGiaNoto;
   final VoidCallback onContinua;
 
   @override
@@ -466,18 +443,6 @@ class _PassoAnagrafica extends StatelessWidget {
           ],
           onChanged: onSessoChanged,
         ),
-        if (!sportGiaNoto) ...[
-          const SizedBox(height: AppSpacing.s16),
-          AppSelect<String>(
-            etichetta: 'Sport',
-            value: sport,
-            items: [
-              for (final s in _sport)
-                DropdownMenuItem(value: s, child: Text(_capitalizza(s))),
-            ],
-            onChanged: onSportChanged,
-          ),
-        ],
         const SizedBox(height: AppSpacing.s24),
         PrimaryButton(label: 'Continua', onPressed: onContinua),
       ],

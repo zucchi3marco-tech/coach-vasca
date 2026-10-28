@@ -38,11 +38,9 @@ String? categoriaPallanuoto(int annoNascita, int annoStagione) {
   return categoriaAssoluti;
 }
 
-/// La categoria dell'atleta oggi; null per il nuoto.
+/// La categoria dell'atleta oggi (vedi [categoriaPallanuoto]).
 String? categoriaAtleta(Atleta atleta, DateTime oggi) =>
-    atleta.sport == 'pallanuoto'
-    ? categoriaPallanuoto(atleta.dataNascita.year, annoStagioneSportiva(oggi))
-    : null;
+    categoriaPallanuoto(atleta.dataNascita.year, annoStagioneSportiva(oggi));
 
 final _nomeUnder = RegExp(
   r'^\s*(?:u|under)\s*-?\s*(\d{1,2})\s*$',
@@ -113,7 +111,7 @@ class CambioCategoria {
   final Gruppo? squadraProposta;
 }
 
-/// Gli atleti di pallanuoto attivi che nella stagione [annoStagione]
+/// Gli atleti attivi che nella stagione [annoStagione]
 /// cambiano categoria rispetto a quella prima. Solo chi è ancora nella
 /// squadra della categoria di prima, o senza squadra: chi gioca sotto età
 /// o fuori quota l'ha messo lì l'allenatore, e chi è già stato spostato
@@ -126,15 +124,12 @@ List<CambioCategoria> cambiDiCategoria({
   final perId = {for (final s in squadre) s.id: s};
   final ordinate = [...squadre]..sort((x, y) => x.ordine.compareTo(y.ordine));
   Gruppo? squadraDi(String categoria) => ordinate
-      .where(
-        (s) =>
-            s.sport != 'nuoto' && categoriaDaNomeSquadra(s.nome) == categoria,
-      )
+      .where((s) => categoriaDaNomeSquadra(s.nome) == categoria)
       .firstOrNull;
 
   final cambi = <CambioCategoria>[];
   for (final atleta in atleti) {
-    if (!atleta.attivo || atleta.sport != 'pallanuoto') continue;
+    if (!atleta.attivo) continue;
     final anno = atleta.dataNascita.year;
     final da = categoriaPallanuoto(anno, annoStagione - 1);
     final a = categoriaPallanuoto(anno, annoStagione);

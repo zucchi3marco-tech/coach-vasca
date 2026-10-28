@@ -17,7 +17,6 @@ class _Dietro {
 
 Future<_Dietro> _apri(
   WidgetTester tester, {
-  String? sport = 'pallanuoto',
   ThemeData? tema,
   Size dimensione = const Size(360, 780),
   double testo = 1.0,
@@ -43,11 +42,8 @@ Future<_Dietro> _apri(
                 child: const Text('Scheda vera dietro'),
               ),
               TextButton(
-                onPressed: () => mostraTourCoach(
-                  context,
-                  sport,
-                  vaiAllaScheda: dietro.schede.add,
-                ),
+                onPressed: () =>
+                    mostraTourCoach(context, vaiAllaScheda: dietro.schede.add),
                 child: const Text('Apri la guida'),
               ),
             ],
@@ -97,17 +93,11 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('pagine', () {
-    testWidgets('pallanuoto: benvenuto, 6 schede e il menu', (tester) async {
-      await _apri(tester, sport: 'pallanuoto');
-      expect(vociHome('pallanuoto'), hasLength(6));
+    testWidgets('benvenuto, 6 schede e il menu', (tester) async {
+      await _apri(tester);
+      expect(vociHome(), hasLength(6));
       expect(await _contaPagine(tester), 1 + 6 + 1);
       expect(find.text('Dal menu ☰'), findsOneWidget);
-    });
-
-    testWidgets('nuoto: benvenuto, 5 schede e il menu', (tester) async {
-      await _apri(tester, sport: 'nuoto');
-      expect(vociHome('nuoto'), hasLength(5));
-      expect(await _contaPagine(tester), 1 + 5 + 1);
     });
 
     testWidgets('le etichette delle pagine', (tester) async {
@@ -131,9 +121,7 @@ void main() {
       expect(dietro.schede, [0]);
     });
 
-    testWidgets('Avanti e Indietro seguono le voci (pallanuoto)', (
-      tester,
-    ) async {
+    testWidgets('Avanti e Indietro seguono le voci', (tester) async {
       final dietro = await _apri(tester);
       dietro.schede.clear();
       // Benvenuto -> Oggi (0) -> Atleti (1) -> Allenamenti (2) -> Schemi (3).
@@ -151,20 +139,6 @@ void main() {
         await _avanti(tester);
       }
       expect(dietro.schede, [2, 3, 4, 5, 0]);
-    });
-
-    testWidgets('nuoto: gli indici seguono vociHome(nuoto)', (tester) async {
-      final voci = vociHome('nuoto');
-      final dietro = await _apri(tester, sport: 'nuoto');
-      dietro.schede.clear();
-      for (var i = 0; i < voci.length; i++) {
-        await _avanti(tester);
-      }
-      expect(dietro.schede, [for (var i = 0; i < voci.length; i++) i]);
-      // L'ultima voce è Gare, all'indice 4: non c'è «Schemi».
-      expect(voci.last, VoceHome.eventi);
-      expect(dietro.schede.last, 4);
-      expect(find.text('Gare'), findsOneWidget);
     });
 
     testWidgets('lo scorrimento con il dito cambia scheda', (tester) async {
@@ -251,22 +225,20 @@ void main() {
     ('chiaro', AppTheme.chiaro),
     ('scuro', AppTheme.scuro),
   ]) {
-    for (final sport in ['pallanuoto', 'nuoto']) {
-      testWidgets('telefono 360x780, testo 1.3, tema $nomeTema, $sport: '
-          'ogni pagina entra', (tester) async {
-        await _apri(tester, sport: sport, tema: tema, testo: 1.3);
+    testWidgets('telefono 360x780, testo 1.3, tema $nomeTema: ogni pagina '
+        'entra', (tester) async {
+      await _apri(tester, tema: tema, testo: 1.3);
+      expect(tester.takeException(), isNull);
+      while (find.text('Avanti').evaluate().isNotEmpty) {
+        await _avanti(tester);
         expect(tester.takeException(), isNull);
-        while (find.text('Avanti').evaluate().isNotEmpty) {
-          await _avanti(tester);
-          expect(tester.takeException(), isNull);
-        }
-        // La card non invade la barra delle schede (68 px + 8 di margine).
-        final card = tester.getRect(_card);
-        expect(card.bottom, lessThanOrEqualTo(780 - 68 - 8));
-        expect(card.left, greaterThanOrEqualTo(16));
-        expect(card.right, lessThanOrEqualTo(360 - 16));
-      });
-    }
+      }
+      // La card non invade la barra delle schede (68 px + 8 di margine).
+      final card = tester.getRect(_card);
+      expect(card.bottom, lessThanOrEqualTo(780 - 68 - 8));
+      expect(card.left, greaterThanOrEqualTo(16));
+      expect(card.right, lessThanOrEqualTo(360 - 16));
+    });
   }
 
   testWidgets('schermo largo 1280x800: riquadro in basso, largo al massimo '

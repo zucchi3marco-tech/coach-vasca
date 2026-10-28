@@ -131,7 +131,6 @@ void main() {
           theme: AppTheme.chiaro,
           home: AssistenteScreen(
             clubId: 'c1',
-            sport: 'pallanuoto',
             gruppoId: 'u14',
             oggi: DateTime(2026, 10, 13, 18),
           ),

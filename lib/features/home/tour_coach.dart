@@ -19,8 +19,7 @@ import 'voci_home.dart';
 /// l'allenatore vede la schermata di cui si parla. Alla chiusura la home
 /// torna su "Oggi" (scheda 0).
 Future<void> mostraTourCoach(
-  BuildContext context,
-  String? sport, {
+  BuildContext context, {
   ValueChanged<int>? vaiAllaScheda,
 }) async {
   // Segnato come visto subito, prima del tocco su "Iniziamo": anche
@@ -39,8 +38,7 @@ Future<void> mostraTourCoach(
     transitionDuration: ridotto
         ? Duration.zero
         : const Duration(milliseconds: 260),
-    pageBuilder: (_, _, _) =>
-        _TourCoach(sport: sport, vaiAllaScheda: vaiAllaScheda),
+    pageBuilder: (_, _, _) => _TourCoach(vaiAllaScheda: vaiAllaScheda),
     transitionBuilder: (_, animazione, _, child) {
       final curva = CurvedAnimation(
         parent: animazione,
@@ -73,9 +71,8 @@ typedef _Pagina = ({
 });
 
 class _TourCoach extends StatefulWidget {
-  const _TourCoach({required this.sport, required this.vaiAllaScheda});
+  const _TourCoach({required this.vaiAllaScheda});
 
-  final String? sport;
   final ValueChanged<int>? vaiAllaScheda;
 
   @override
@@ -90,7 +87,7 @@ class _TourCoachState extends State<_TourCoach> {
   /// pallino lontano): quelle non devono cambiare la scheda dietro.
   bool _animando = false;
 
-  late final List<VoceHome> _voci = vociHome(widget.sport);
+  late final List<VoceHome> _voci = vociHome();
 
   @override
   void initState() {
@@ -127,13 +124,10 @@ class _TourCoachState extends State<_TourCoach> {
     ),
     for (final (k, voce) in _voci.indexed)
       (
-        icona: destinazioneHome(voce, widget.sport).iconaSelezionata,
+        icona: destinazioneHome(voce).iconaSelezionata,
         etichetta: 'Scheda ${k + 1} di ${_voci.length}',
-        titolo: destinazioneHome(
-          voce,
-          widget.sport,
-        ).etichetta.replaceAll('­', ''),
-        testo: destinazioneHome(voce, widget.sport).guida,
+        titolo: destinazioneHome(voce).etichetta.replaceAll('­', ''),
+        testo: destinazioneHome(voce).guida,
         elenco: null,
         colore: coloreVoceHome(context, voce),
       ),

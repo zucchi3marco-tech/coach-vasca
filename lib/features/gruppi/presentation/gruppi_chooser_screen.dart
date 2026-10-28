@@ -7,7 +7,6 @@ import '../../../theme/colori_app.dart';
 import '../../../theme/tokens_dominio.dart';
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../atleti/application/atleti_providers.dart';
-import '../../club/application/current_club_provider.dart';
 import '../../club/application/membri_club_providers.dart';
 import '../../home/atleta/grafica_pallanuoto.dart';
 import '../../home/atleta/home_atleta_widgets.dart';
@@ -32,8 +31,6 @@ class GruppiChooserScreen extends ConsumerWidget {
     final colori = context.colori;
     final dominio = context.dominio;
     final gruppi = ref.watch(gruppiListProvider(clubId)).value ?? [];
-    final club = ref.watch(currentClubProvider).value;
-    final pallanuoto = club?.sport != 'nuoto';
     final atleti =
         ref
             .watch(atletiListProvider((clubId: clubId, includeInactive: false)))
@@ -46,12 +43,11 @@ class GruppiChooserScreen extends ConsumerWidget {
             .where((a) => !a.data.isBefore(inizio))
             .toList()
           ..sort((a, b) => a.data.compareTo(b.data));
-    final partite = pallanuoto
-        ? ((ref.watch(partiteListProvider(clubId)).value ?? const [])
-              .where((p) => !p.data.isBefore(inizio))
-              .toList()
-            ..sort((a, b) => a.data.compareTo(b.data)))
-        : const [];
+    final partite =
+        (ref.watch(partiteListProvider(clubId)).value ?? const [])
+            .where((p) => !p.data.isBefore(inizio))
+            .toList()
+          ..sort((a, b) => a.data.compareTo(b.data));
 
     void scegli(String? gruppoId) => ref
         .read(selezioneGruppoProvider.notifier)
@@ -177,7 +173,6 @@ class GruppiChooserScreen extends ConsumerWidget {
                               prossimo: v.prossimo,
                               accento: v.accento,
                               tutti: v.id == null,
-                              pallanuoto: pallanuoto,
                               onTap: () => scegli(v.id),
                             ),
                           ),
@@ -201,7 +196,6 @@ class _RiquadroSquadra extends StatelessWidget {
     required this.prossimo,
     required this.accento,
     required this.tutti,
-    required this.pallanuoto,
     required this.onTap,
   });
 
@@ -210,7 +204,6 @@ class _RiquadroSquadra extends StatelessWidget {
   final String prossimo;
   final Color accento;
   final bool tutti;
-  final bool pallanuoto;
   final VoidCallback onTap;
 
   @override
@@ -252,37 +245,31 @@ class _RiquadroSquadra extends StatelessWidget {
                   Positioned(
                     left: 16,
                     bottom: 10,
-                    child: pallanuoto
-                        ? SizedBox(
-                            width: 120,
-                            height: 48,
-                            child: Stack(
-                              children: [
-                                for (final (k, c)
-                                    in (tutti
-                                            ? const [
-                                                ColoreCalottina.bianca,
-                                                ColoreCalottina.blu,
-                                                ColoreCalottina.rossa,
-                                              ]
-                                            : const [
-                                                ColoreCalottina.bianca,
-                                                ColoreCalottina.bianca,
-                                                ColoreCalottina.rossa,
-                                              ])
-                                        .indexed)
-                                  Positioned(
-                                    left: k * 26.0,
-                                    child: Calottina(colore: c, dimensione: 50),
-                                  ),
-                              ],
+                    child: SizedBox(
+                      width: 120,
+                      height: 48,
+                      child: Stack(
+                        children: [
+                          for (final (k, c)
+                              in (tutti
+                                      ? const [
+                                          ColoreCalottina.bianca,
+                                          ColoreCalottina.blu,
+                                          ColoreCalottina.rossa,
+                                        ]
+                                      : const [
+                                          ColoreCalottina.bianca,
+                                          ColoreCalottina.bianca,
+                                          ColoreCalottina.rossa,
+                                        ])
+                                  .indexed)
+                            Positioned(
+                              left: k * 26.0,
+                              child: Calottina(colore: c, dimensione: 50),
                             ),
-                          )
-                        : const Icon(
-                            Icons.pool,
-                            size: 40,
-                            color: AcquaPalette.bianco,
-                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   Positioned(
                     right: 12,

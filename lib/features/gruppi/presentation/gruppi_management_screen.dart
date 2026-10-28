@@ -16,7 +16,6 @@ import '../../../widgets/scheda_elenco.dart';
 import '../../../widgets/section_header.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/presentation/codici_gruppo_screen.dart';
-import '../../club/application/current_club_provider.dart';
 import '../../pallanuoto/presentation/staff_distinta_dialog.dart';
 import '../application/gruppi_providers.dart';
 import '../data/gruppi_repository.dart';
@@ -61,17 +60,12 @@ class _GruppiManagementScreenState
     try {
       final gruppiAttuali =
           ref.read(gruppiListProvider(widget.clubId)).value ?? [];
-      final clubSport = ref.read(currentClubProvider).value?.sport;
-      final gruppoSport = clubSport == 'nuoto' || clubSport == 'pallanuoto'
-          ? clubSport
-          : null;
       await ref
           .read(gruppiRepositoryProvider)
           .createGruppo(
             clubId: widget.clubId,
             nome: nome,
             ordine: gruppiAttuali.length + 1,
-            sport: gruppoSport,
           );
       _nuovoGruppoController.clear();
     } catch (e) {
@@ -275,13 +269,10 @@ class _GruppiManagementScreenState
                                         value: () => _rinomina(g),
                                         child: const Text('Rinomina'),
                                       ),
-                                      if (g.sport != 'nuoto')
-                                        PopupMenuItem(
-                                          value: () => _staff(g),
-                                          child: const Text(
-                                            'Staff in distinta',
-                                          ),
-                                        ),
+                                      PopupMenuItem(
+                                        value: () => _staff(g),
+                                        child: const Text('Staff in distinta'),
+                                      ),
                                       PopupMenuItem(
                                         value: () => _elimina(g),
                                         child: Text(

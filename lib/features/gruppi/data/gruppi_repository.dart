@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/sport_app.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
 import '../../../core/sync/pending_operations.dart';
@@ -127,7 +128,6 @@ class GruppiRepository {
     required String clubId,
     required String nome,
     required int ordine,
-    String? sport,
   }) async {
     final id = _uuid.v4();
     final payload = {
@@ -135,7 +135,7 @@ class GruppiRepository {
       'club_id': clubId,
       'nome': nome,
       'ordine': ordine,
-      'sport': sport,
+      'sport': sportApp,
     };
     try {
       final row = await _client

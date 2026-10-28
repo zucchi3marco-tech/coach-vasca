@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/demo/modalita_demo.dart';
 import '../../../core/db/database_provider.dart';
+import '../../../core/sport_app.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/club.dart';
 
@@ -110,7 +111,6 @@ class ClubRepository {
   Future<Club> createClub({
     required String nome,
     String? citta,
-    String? sport,
     List<String> categorie = const [],
   }) async {
     if (modalitaDemo) {
@@ -120,7 +120,7 @@ class ClubRepository {
           id: const Uuid().v4(),
           nome: nome,
           citta: (citta == null || citta.isEmpty) ? null : citta,
-          sport: sport,
+          sport: sportApp,
           categorie: categorie,
         ),
       );
@@ -130,7 +130,7 @@ class ClubRepository {
       params: {
         'p_nome': nome,
         if (citta != null && citta.isNotEmpty) 'p_citta': citta,
-        'p_sport': ?sport,
+        'p_sport': sportApp,
         'p_categorie': categorie,
       },
     ) as Map<String, dynamic>;

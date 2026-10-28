@@ -238,7 +238,6 @@ class ReportAtleta {
     required this.assenti,
     required this.giustificati,
     required this.allenamenti,
-    required this.pallanuoto,
     required this.partite,
     required this.gol,
     required this.espulsioni,
@@ -266,7 +265,6 @@ class ReportAtleta {
   final int giustificati;
   final int allenamenti;
 
-  final bool pallanuoto;
   final List<PartitaNelReport> partite;
   final int gol;
   final int espulsioni;
@@ -309,8 +307,6 @@ ReportAtleta reportAtleta({
   String? categoria,
   String? nota,
 }) {
-  final pallanuoto = atleta.sport == 'pallanuoto';
-
   // Presenze: gli allenamenti già passati del periodo in cui era atteso
   // (o in cui è stato segnato), con la stessa regola dell'app.
   final nelPeriodo = [
@@ -346,77 +342,75 @@ ReportAtleta reportAtleta({
   var espulsioni = 0;
   var tiri = 0;
   var golDalVivo = 0;
-  if (pallanuoto) {
-    final ordinate = [
-      for (final p in dati.partite)
-        if (periodo.contiene(p.data) && !soloData(p.data).isAfter(giorno)) p,
-    ]..sort((a, b) => a.data.compareTo(b.data));
-    for (final p in ordinate) {
-      final referto = refertoPer[p.id];
-      final eventi = eventiPer[p.id] ?? const <EventoPartita>[];
-      final suoiEventi = [
-        for (final e in eventi)
-          if (e.atletaId == atleta.id && e.squadra == 'nostra') e,
-      ];
-      final nelReferto = [
-        if (referto != null)
-          for (final g in [
-            ...referto.giocatoriCasa,
-            ...referto.giocatoriTrasferta,
-          ])
-            if (g.atletaId == atleta.id) g,
-      ];
-      final giocata =
-          dati.convocato.contains(p.id) ||
-          nelReferto.isNotEmpty ||
-          suoiEventi.isNotEmpty;
-      if (!giocata) continue;
+  final ordinate = [
+    for (final p in dati.partite)
+      if (periodo.contiene(p.data) && !soloData(p.data).isAfter(giorno)) p,
+  ]..sort((a, b) => a.data.compareTo(b.data));
+  for (final p in ordinate) {
+    final referto = refertoPer[p.id];
+    final eventi = eventiPer[p.id] ?? const <EventoPartita>[];
+    final suoiEventi = [
+      for (final e in eventi)
+        if (e.atletaId == atleta.id && e.squadra == 'nostra') e,
+    ];
+    final nelReferto = [
+      if (referto != null)
+        for (final g in [
+          ...referto.giocatoriCasa,
+          ...referto.giocatoriTrasferta,
+        ])
+          if (g.atletaId == atleta.id) g,
+    ];
+    final giocata =
+        dati.convocato.contains(p.id) ||
+        nelReferto.isNotEmpty ||
+        suoiEventi.isNotEmpty;
+    if (!giocata) continue;
 
-      int? nostri;
-      int? loro;
-      if (referto != null) {
-        nostri = p.inCasa ? referto.risultatoCasa : referto.risultatoTrasferta;
-        loro = p.inCasa ? referto.risultatoTrasferta : referto.risultatoCasa;
-      } else {
-        final r = risultatoPartita(eventi, p);
-        if (r != null) {
-          nostri = p.inCasa ? r.golCasa : r.golTrasferta;
-          loro = p.inCasa ? r.golTrasferta : r.golCasa;
-        }
+    int? nostri;
+    int? loro;
+    if (referto != null) {
+      nostri = p.inCasa ? referto.risultatoCasa : referto.risultatoTrasferta;
+      loro = p.inCasa ? referto.risultatoTrasferta : referto.risultatoCasa;
+    } else {
+      final r = risultatoPartita(eventi, p);
+      if (r != null) {
+        nostri = p.inCasa ? r.golCasa : r.golTrasferta;
+        loro = p.inCasa ? r.golTrasferta : r.golCasa;
       }
-
-      final suoiTiri = [
-        for (final e in suoiEventi)
-          if (e.tipo == 'tiro') e,
-      ];
-      final golVivo = suoiTiri.where((e) => e.esito == 'gol').length;
-      final espulsioniVivo = suoiEventi
-          .where((e) => e.tipo == 'espulsione')
-          .length;
-      tiri += suoiTiri.length;
-      golDalVivo += golVivo;
-
-      int? golPartita;
-      int? espulsioniPartita;
-      if (nelReferto.isNotEmpty) {
-        golPartita = nelReferto.fold<int>(0, (s, g) => s + g.reti);
-        espulsioniPartita = nelReferto.fold<int>(0, (s, g) => s + g.espulsioni);
-      } else if (eventi.isNotEmpty) {
-        golPartita = golVivo;
-        espulsioniPartita = espulsioniVivo;
-      }
-      gol += golPartita ?? 0;
-      espulsioni += espulsioniPartita ?? 0;
-      partite.add(
-        PartitaNelReport(
-          partita: p,
-          nostri: nostri,
-          loro: loro,
-          gol: golPartita,
-          espulsioni: espulsioniPartita,
-        ),
-      );
     }
+
+    final suoiTiri = [
+      for (final e in suoiEventi)
+        if (e.tipo == 'tiro') e,
+    ];
+    final golVivo = suoiTiri.where((e) => e.esito == 'gol').length;
+    final espulsioniVivo = suoiEventi
+        .where((e) => e.tipo == 'espulsione')
+        .length;
+    tiri += suoiTiri.length;
+    golDalVivo += golVivo;
+
+    int? golPartita;
+    int? espulsioniPartita;
+    if (nelReferto.isNotEmpty) {
+      golPartita = nelReferto.fold<int>(0, (s, g) => s + g.reti);
+      espulsioniPartita = nelReferto.fold<int>(0, (s, g) => s + g.espulsioni);
+    } else if (eventi.isNotEmpty) {
+      golPartita = golVivo;
+      espulsioniPartita = espulsioniVivo;
+    }
+    gol += golPartita ?? 0;
+    espulsioni += espulsioniPartita ?? 0;
+    partite.add(
+      PartitaNelReport(
+        partita: p,
+        nostri: nostri,
+        loro: loro,
+        gol: golPartita,
+        espulsioni: espulsioniPartita,
+      ),
+    );
   }
 
   // Test: per ognuno il primo e l'ultimo risultato del periodo.
@@ -487,13 +481,12 @@ ReportAtleta reportAtleta({
     assenti: conta(statoAssente),
     giustificati: conta(statoGiustificato),
     allenamenti: rilevanti.length,
-    pallanuoto: pallanuoto,
     partite: partite,
     gol: gol,
     espulsioni: espulsioni,
     tiri: tiri,
     golDalVivo: golDalVivo,
-    portiere: pallanuoto && atleta.portiere ? dati.portiere : null,
+    portiere: atleta.portiere ? dati.portiere : null,
     test: testNelReport,
     obiettivi: obiettivi,
     obiettiviLetti: dati.obiettiviLetti,

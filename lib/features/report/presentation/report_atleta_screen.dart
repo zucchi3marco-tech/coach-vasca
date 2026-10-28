@@ -167,9 +167,7 @@ class _ReportAtletaScreenState extends ConsumerState<ReportAtletaScreen> {
           const SizedBox(height: AppSpacing.s24),
           const TitoloSezione("Cosa c'è dentro"),
           Text(
-            atleta.sport == 'pallanuoto'
-                ? 'Presenze, partite con gol ed espulsioni, test e obiettivi.'
-                : 'Presenze, test e obiettivi.',
+            'Presenze, partite con gol ed espulsioni, test e obiettivi.',
             style: AppTypography.piccolo.copyWith(
               color: colori.testoSecondario,
             ),

@@ -138,7 +138,7 @@ void main() {
   });
 
   group('pallanuotoNuotoPuroOltre50', () {
-    test('oltre il 50% di nuoto puro in pallanuoto: segnalata', () {
+    test('oltre il 50% di nuoto puro: segnalata', () {
       final sedute = [
         _sp(
           DateTime(2026, 1, 1),
@@ -148,10 +148,10 @@ void main() {
           ]),
         ),
       ];
-      expect(pallanuotoNuotoPuroOltre50(sedute, sportPallanuoto: true), [0]);
+      expect(pallanuotoNuotoPuroOltre50(sedute), [0]);
     });
 
-    test('ignorato se non pallanuoto o se richiesto esplicitamente', () {
+    test('ignorato se richiesto esplicitamente', () {
       final sedute = [
         _sp(
           DateTime(2026, 1, 1),
@@ -159,15 +159,7 @@ void main() {
         ),
       ];
       expect(
-        pallanuotoNuotoPuroOltre50(sedute, sportPallanuoto: false),
-        isEmpty,
-      );
-      expect(
-        pallanuotoNuotoPuroOltre50(
-          sedute,
-          sportPallanuoto: true,
-          richiestoEsplicito: true,
-        ),
+        pallanuotoNuotoPuroOltre50(sedute, richiestoEsplicito: true),
         isEmpty,
       );
     });
@@ -194,12 +186,18 @@ void main() {
     });
 
     test('nessun problema: nessun avviso, nessuna rigenerazione', () {
+      // Metà nuoto puro, metà lavoro con la palla: il nuoto non supera
+      // il 50%.
       final sedute = [
         _sp(
           DateTime(2026, 1, 1),
           _seduta([
             _serie(blocco: 'riscaldamento', distanzaM: 500),
-            _serie(blocco: 'defaticamento', distanzaM: 500),
+            _serie(
+              blocco: 'defaticamento',
+              distanzaM: 500,
+              esecuzione: 'pallanuoto tecnico-tattico',
+            ),
           ]),
         ),
       ];

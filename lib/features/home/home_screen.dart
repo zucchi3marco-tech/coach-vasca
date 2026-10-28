@@ -23,7 +23,6 @@ import '../club/presentation/club_setup_screen.dart';
 import '../configurazione/application/configurazione_providers.dart';
 import '../configurazione/domain/stato_configurazione.dart';
 import '../configurazione/presentation/configurazione_guidata_screen.dart';
-import '../gare/presentation/gare_list_screen.dart';
 import '../gruppi/application/gruppi_providers.dart';
 import '../gruppi/application/selezione_gruppo_provider.dart';
 import '../gruppi/domain/gruppo.dart';
@@ -45,7 +44,7 @@ import 'voci_home.dart';
 const _larghezzaNavigazioneLaterale = 900.0;
 
 /// La home: per l'allenatore le tab (Atleti, Allenamenti, Schemi tattici,
-/// Stagioni, Partite/Gare), per l'atleta la sua dashboard. Non ha una
+/// Stagioni, Partite), per l'atleta la sua dashboard. Non ha una
 /// AppBar propria: in alto c'è la barra fissa con logo e nome del club
 /// (vedi `BarraClubHost`), sopra il Navigator.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -77,11 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // La guida racconta già le cose nuove: le novità di oggi non si
         // ripresentano dopo.
         segnaNovitaViste();
-        mostraTourCoach(
-          context,
-          ref.read(currentClubProvider).value?.sport,
-          vaiAllaScheda: _vaiAllaTab,
-        );
+        mostraTourCoach(context, vaiAllaScheda: _vaiAllaTab);
       });
     });
   }
@@ -167,7 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (selezione == null) {
           return GruppiChooserScreen(clubId: club.id);
         }
-        final voci = vociHome(club.sport);
+        final voci = vociHome();
         final tab = ref.watch(tabHomeProvider);
         return IndexedStack(
           index: tab.clamp(0, voci.length - 1),
@@ -202,20 +197,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   clubId: club.id,
                   filtroGruppoId: selezione.gruppoId,
                 ),
-                VoceHome.eventi =>
-                  club.sport == 'nuoto'
-                      ? GareListScreen(
-                          clubId: club.id,
-                          filtroGruppoId: selezione.gruppoId,
-                          onVaiAStagioni: () =>
-                              _vaiAllaTab(voci.indexOf(VoceHome.stagioni)),
-                        )
-                      : PartiteListScreen(
-                          clubId: club.id,
-                          filtroGruppoId: selezione.gruppoId,
-                          onVaiAStagioni: () =>
-                              _vaiAllaTab(voci.indexOf(VoceHome.stagioni)),
-                        ),
+                VoceHome.eventi => PartiteListScreen(
+                  clubId: club.id,
+                  filtroGruppoId: selezione.gruppoId,
+                  onVaiAStagioni: () =>
+                      _vaiAllaTab(voci.indexOf(VoceHome.stagioni)),
+                ),
               },
           ],
         );
@@ -263,10 +250,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (areaAtleta) _controllaNovitaAtleta();
     final navigazioneLaterale =
         MediaQuery.sizeOf(context).width >= _larghezzaNavigazioneLaterale;
-    final voci = vociHome(club?.sport);
-    final destinazioni = [
-      for (final v in voci) destinazioneHome(v, club?.sport),
-    ];
+    final voci = vociHome();
+    final destinazioni = [for (final v in voci) destinazioneHome(v)];
     final coloriTab = [for (final v in voci) coloreVoceHome(context, v)];
     final indiceTab = ref.watch(tabHomeProvider).clamp(0, voci.length - 1);
 

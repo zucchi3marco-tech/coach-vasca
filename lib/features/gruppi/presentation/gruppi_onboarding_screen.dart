@@ -13,7 +13,6 @@ import '../../../widgets/form_group.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
-import '../../club/application/current_club_provider.dart';
 import '../../club/application/membri_club_providers.dart';
 import '../data/gruppi_repository.dart';
 
@@ -68,21 +67,11 @@ class _GruppiOnboardingScreenState
     });
     try {
       final repository = ref.read(gruppiRepositoryProvider);
-      // Se il club pratica un solo sport, il gruppo lo eredita subito
-      // (evita di richiederlo di nuovo in fase di registrazione via
-      // codice di gruppo — FASE 13, punto 2). Per un club "nuoto e
-      // pallanuoto" resta null: ambiguo finche' non lo si precisa a
-      // mano (non richiesto qui per non appesantire l'onboarding).
-      final clubSport = ref.read(currentClubProvider).value?.sport;
-      final gruppoSport = clubSport == 'nuoto' || clubSport == 'pallanuoto'
-          ? clubSport
-          : null;
       for (var i = 0; i < nomi.length; i++) {
         await repository.createGruppo(
           clubId: widget.clubId,
           nome: nomi[i],
           ordine: i + 1,
-          sport: gruppoSport,
         );
       }
       // Non serve navigare da qui: HomeScreen osserva gruppiListProvider e

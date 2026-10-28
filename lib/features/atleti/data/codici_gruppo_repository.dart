@@ -1,20 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/sport_app.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/atleta.dart';
 import '../domain/codice_gruppo.dart';
 
 /// Gruppo e nome del club a cui appartiene un codice di gruppo, per la
-/// conferma prima della registrazione. `gruppoSport` e' 'nuoto' |
-/// 'pallanuoto' | null (gruppo di un club "nuoto e pallanuoto", o creato
-/// prima che i gruppi avessero uno sport): quando valorizzato, la
-/// registrazione non chiede piu' lo sport all'atleta.
-typedef GruppoInvitato = ({
-  String gruppoNome,
-  String clubNome,
-  String? gruppoSport,
-});
+/// conferma prima della registrazione.
+typedef GruppoInvitato = ({String gruppoNome, String clubNome});
 
 /// Codici riutilizzabili per registrare più atleti dello stesso gruppo
 /// in una volta sola (FASE 9). Online-only, come InvitiAtletaRepository:
@@ -61,7 +55,6 @@ class CodiciGruppoRepository {
     return (
       gruppoNome: riga['gruppo_nome'] as String,
       clubNome: riga['club_nome'] as String,
-      gruppoSport: riga['gruppo_sport'] as String?,
     );
   }
 
@@ -73,7 +66,6 @@ class CodiciGruppoRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
   }) async {
     final row = await _client.rpc(
       'registra_atleta_da_codice_gruppo',
@@ -83,7 +75,8 @@ class CodiciGruppoRepository {
         'p_cognome': cognome,
         'p_data_nascita': dataNascita.toIso8601String().split('T').first,
         'p_sesso': ?sesso,
-        'p_sport': sport,
+        // Senza, il database registra l'atleta come "nuoto".
+        'p_sport': sportApp,
       },
     ) as Map<String, dynamic>;
     return Atleta.fromMap(row);

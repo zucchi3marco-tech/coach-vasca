@@ -216,20 +216,13 @@ const _ruoliPallanuoto = [
 ];
 
 /// Il modello da compilare: un foglio "Atleti" con i titoli e un foglio
-/// "Come si compila" con le istruzioni, le squadre del club e (per la
-/// pallanuoto) i ruoli.
-Uint8List modelloAtleti({
-  required List<String> nomiSquadre,
-  required bool pallanuoto,
-}) {
+/// "Come si compila" con le istruzioni, le squadre del club e i ruoli.
+Uint8List modelloAtleti({required List<String> nomiSquadre}) {
   final excel = Excel.createExcel();
   final predefinito = excel.getDefaultSheet();
   if (predefinito != null) excel.rename(predefinito, 'Atleti');
 
-  final titoli = [
-    for (final t in _titoliModello)
-      if (pallanuoto || t != 'Ruolo') t,
-  ];
+  const titoli = _titoliModello;
   final grassetto = CellStyle(bold: true);
 
   final atleti = excel['Atleti'];
@@ -272,13 +265,11 @@ Uint8List modelloAtleti({
     'Il nome della squadra come sta nell\'app (le trovi qui sotto). '
         'Se la lasci vuota, l\'atleta resta senza squadra.',
   ]);
-  if (pallanuoto) {
-    scrivi([
-      'Ruolo',
-      'Facoltativa',
-      'Portiere, Centroboa, Marcatore, Esterno o Movimento.',
-    ]);
-  }
+  scrivi([
+    'Ruolo',
+    'Facoltativa',
+    'Portiere, Centroboa, Marcatore, Esterno o Movimento.',
+  ]);
   scrivi(['Sesso', 'Facoltativa', 'M oppure F.']);
   scrivi([
     'Tessera FIN',
@@ -319,12 +310,10 @@ Uint8List modelloAtleti({
     }
   }
 
-  if (pallanuoto) {
-    riga++;
-    scrivi(['I ruoli'], titolo: true);
-    for (final r in _ruoliPallanuoto) {
-      scrivi([r]);
-    }
+  riga++;
+  scrivi(['I ruoli'], titolo: true);
+  for (final r in _ruoliPallanuoto) {
+    scrivi([r]);
   }
 
   final bytes = excel.encode();

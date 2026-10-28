@@ -31,7 +31,6 @@ class _ArchivioFinto implements AtletiRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
     String? gruppoId,
     String? emailGenitore,
     String? telefonoGenitore,
@@ -49,7 +48,6 @@ class _ArchivioFinto implements AtletiRepository {
     creati.add({
       'cognome': cognome,
       'nome': nome,
-      'sport': sport,
       'gruppoId': gruppoId,
       'ruolo': ruolo,
       'consenso': consensoPrivacyFirmato,
@@ -60,7 +58,7 @@ class _ArchivioFinto implements AtletiRepository {
       nome: nome,
       cognome: cognome,
       dataNascita: dataNascita,
-      sport: sport,
+      sport: 'pallanuoto',
       consensoPrivacyFirmato: consensoPrivacyFirmato,
       attivo: true,
       gruppoId: gruppoId,
@@ -75,7 +73,6 @@ class _ArchivioFinto implements AtletiRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
     String? gruppoId,
     String? emailGenitore,
     String? telefonoGenitore,
@@ -101,7 +98,7 @@ class _ArchivioFinto implements AtletiRepository {
       nome: nome,
       cognome: cognome,
       dataNascita: dataNascita,
-      sport: sport,
+      sport: originale.sport,
       consensoPrivacyFirmato: consensoPrivacyFirmato,
       attivo: originale.attivo,
       gruppoId: gruppoId,
@@ -206,13 +203,14 @@ void main() {
     );
   });
 
-  testWidgets('in un club di nuoto non si parla di ruolo', (tester) async {
+  testWidgets('anche in un club segnato «nuoto» nel database il foglio ha il '
+      'ruolo: l\'app è solo pallanuoto', (tester) async {
     _grande(tester);
     _ignoraOverflowDiTesto();
     await tester.pumpWidget(_app(_ArchivioFinto(), sport: 'nuoto'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Ruolo,'), findsNothing);
+    expect(find.textContaining('Ruolo,'), findsOneWidget);
   });
 
   testWidgets('il modello, fuori dal browser, avvisa con un messaggio', (
@@ -285,7 +283,6 @@ void main() {
     expect(archivio.creati.first['gruppoId'], 'g1');
     // «Master» non e stato abbinato: senza squadra.
     expect(archivio.creati.last['gruppoId'], isNull);
-    expect(archivio.creati.first['sport'], 'pallanuoto');
     expect(archivio.aggiornati, hasLength(1));
     // Si completa solo cio che manca: il ruolo c'era e resta.
     expect(archivio.aggiornati.single['id'], 'a1');

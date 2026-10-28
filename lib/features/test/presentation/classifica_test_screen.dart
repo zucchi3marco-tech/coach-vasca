@@ -147,7 +147,7 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
               for (final a in squadra)
                 if (conRisultato.contains(a.id)) a.dataNascita.year,
             }.toList()..sort();
-            final pallanuoto = squadra.any((a) => a.sport == 'pallanuoto');
+            final conRuoli = squadra.isNotEmpty;
             final filtrati = [
               for (final a in squadra)
                 // "Movimento" comprende centroboa, marcatori ed esterni.
@@ -273,7 +273,7 @@ class _ClassificaTestScreenState extends ConsumerState<ClassificaTestScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        if (pallanuoto) ...[
+                        if (conRuoli) ...[
                           for (final (valore, etichetta) in [
                             (null, 'Tutti i ruoli'),
                             ('portiere', 'Portieri'),

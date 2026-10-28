@@ -24,10 +24,6 @@ import '../../club/application/membri_club_providers.dart';
 import '../../club/domain/club.dart';
 import '../../configurazione/presentation/card_per_cominciare.dart';
 import '../../configurazione/presentation/configurazione_guidata_screen.dart';
-import '../../gare/application/gare_providers.dart';
-import '../../gare/domain/gara.dart';
-import '../../gare/presentation/gara_detail_screen.dart';
-import '../../gare/presentation/gara_form_screen.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/partita.dart';
@@ -71,7 +67,6 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colori = context.colori;
     final dominio = context.dominio;
-    final pallanuoto = club.sport != 'nuoto';
     final oggi = DateTime.now();
     final inizio = DateTime(oggi.year, oggi.month, oggi.day);
 
@@ -110,40 +105,24 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         .where((a) => _stessoGiorno(a.data, oggi))
         .firstOrNull;
 
-    final partite = pallanuoto
-        ? ((ref.watch(partiteListProvider(club.id)).value ?? const <Partita>[])
-              .where(
-                (p) =>
-                    !p.data.isBefore(inizio) &&
-                    visibileNelGruppo(
-                      gruppoDelRecord: p.gruppoId,
-                      gruppoSelezionato: gruppoId,
-                    ),
-              )
-              .toList()
-            ..sort((a, b) => a.data.compareTo(b.data)))
-        : const <Partita>[];
+    final partite =
+        (ref.watch(partiteListProvider(club.id)).value ?? const <Partita>[])
+            .where(
+              (p) =>
+                  !p.data.isBefore(inizio) &&
+                  visibileNelGruppo(
+                    gruppoDelRecord: p.gruppoId,
+                    gruppoSelezionato: gruppoId,
+                  ),
+            )
+            .toList()
+          ..sort((a, b) => a.data.compareTo(b.data));
     final prossimaPartita = partite.firstOrNull;
     final partitaOggi = partite
         .where((p) => _stessoGiorno(p.data, oggi))
         .firstOrNull;
 
-    final gare = pallanuoto
-        ? const <Gara>[]
-        : ((ref.watch(gareListProvider(club.id)).value ?? const <Gara>[])
-              .where(
-                (g) =>
-                    !g.data.isBefore(inizio) &&
-                    visibileNelGruppo(
-                      gruppoDelRecord: g.gruppoId,
-                      gruppoSelezionato: gruppoId,
-                    ),
-              )
-              .toList()
-            ..sort((a, b) => a.data.compareTo(b.data)));
-    final prossimaGara = gare.firstOrNull;
-
-    // Partite e gare nuove nascono nella stagione in corso della squadra
+    // Le partite nuove nascono nella stagione in corso della squadra
     // (gruppo e campionato vengono da li'), come dal calendario.
     final stagioni = ref.watch(stagioniListProvider(club.id)).value;
     final stagione = stagioni == null
@@ -186,37 +165,22 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         onTap: () =>
             _apri(context, GeneraAllenamentoFormScreen(clubId: club.id)),
       ),
-      if (pallanuoto)
-        AzioneRapida(
-          icona: Icons.sports_handball,
-          titolo: 'Nuova partita',
-          sottotitolo: 'Data, avversario, piscina',
-          colore: dominio.evidenzaAmbra,
-          onTap: () => _apri(
-            context,
-            PartitaFormScreen(clubId: club.id, stagione: stagione),
-          ),
-        )
-      else
-        AzioneRapida(
-          icona: Icons.emoji_events_outlined,
-          titolo: 'Nuova gara',
-          sottotitolo: 'Manifestazione, data, luogo',
-          colore: dominio.evidenzaAmbra,
-          onTap: () => _apri(
-            context,
-            GaraFormScreen(clubId: club.id, stagione: stagione),
-          ),
+      AzioneRapida(
+        icona: Icons.sports_handball,
+        titolo: 'Nuova partita',
+        sottotitolo: 'Data, avversario, piscina',
+        colore: dominio.evidenzaAmbra,
+        onTap: () => _apri(
+          context,
+          PartitaFormScreen(clubId: club.id, stagione: stagione),
         ),
+      ),
       AzioneRapida(
         icona: Icons.leaderboard_outlined,
         titolo: 'Test e classifiche',
-        sottotitolo: pallanuoto ? 'Sprint, verticale, tiro' : 'I test del club',
+        sottotitolo: 'Sprint, verticale, tiro',
         colore: dominio.evidenzaViola,
-        onTap: () => _apri(
-          context,
-          TestClubScreen(clubId: club.id, pallanuoto: pallanuoto),
-        ),
+        onTap: () => _apri(context, TestClubScreen(clubId: club.id)),
       ),
       AzioneRapida(
         icona: Icons.document_scanner_outlined,
@@ -225,11 +189,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         colore: dominio.evidenzaViola,
         onTap: () => _apri(
           context,
-          TempiDaFotoScreen(
-            clubId: club.id,
-            sport: pallanuoto ? 'pallanuoto' : 'nuoto',
-            gruppoId: gruppoId,
-          ),
+          TempiDaFotoScreen(clubId: club.id, gruppoId: gruppoId),
         ),
       ),
       AzioneRapida(
@@ -239,11 +199,7 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
         colore: dominio.evidenzaCiano,
         onTap: () => _apri(
           context,
-          AssistenteScreen(
-            clubId: club.id,
-            sport: pallanuoto ? 'pallanuoto' : 'nuoto',
-            gruppoId: gruppoId,
-          ),
+          AssistenteScreen(clubId: club.id, gruppoId: gruppoId),
         ),
       ),
       // Un assistente non aggiunge atleti.
@@ -277,15 +233,12 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
                     (a) => a.data.isBefore(inizio.add(const Duration(days: 7))),
                   )
                   .length,
-              eventiMese:
-                  (pallanuoto
-                          ? partite.map((p) => p.data)
-                          : gare.map((g) => g.data))
-                      .where(
-                        (d) => d.isBefore(inizio.add(const Duration(days: 30))),
-                      )
-                      .length,
-              pallanuoto: pallanuoto,
+              eventiMese: partite
+                  .where(
+                    (p) =>
+                        p.data.isBefore(inizio.add(const Duration(days: 30))),
+                  )
+                  .length,
               onAtleti: () => onVaiATab(TabCruscotto.atleti),
               onAllenamenti: () => onVaiATab(TabCruscotto.allenamenti),
               onPartite: () => onVaiATab(TabCruscotto.eventi),
@@ -322,27 +275,6 @@ class CruscottoAllenatoreScreen extends ConsumerWidget {
                 partita: prossimaPartita,
                 onTap: () =>
                     _apri(context, DistintaScreen(partita: prossimaPartita)),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          if (prossimaGara != null) ...[
-            blocco(
-              SchedaElenco(
-                leading: RiquadroData(
-                  prossimaGara.data,
-                  colore: dominio.evidenzaAmbra,
-                ),
-                occhiello: 'Prossima gara',
-                titolo: prossimaGara.nome,
-                sottotitolo: [
-                  traQuanto(prossimaGara.data),
-                  if (prossimaGara.luogo != null &&
-                      prossimaGara.luogo!.isNotEmpty)
-                    prossimaGara.luogo!,
-                ].join(' · '),
-                onTap: () =>
-                    _apri(context, GaraDetailScreen(gara: prossimaGara)),
               ),
             ),
             const SizedBox(height: 12),
@@ -427,7 +359,6 @@ class _TestataSquadra extends StatelessWidget {
     required this.atleti,
     required this.allenamentiSettimana,
     required this.eventiMese,
-    required this.pallanuoto,
     required this.onAtleti,
     required this.onAllenamenti,
     required this.onPartite,
@@ -438,9 +369,8 @@ class _TestataSquadra extends StatelessWidget {
   final int atleti;
   final int allenamentiSettimana;
 
-  /// Partite (pallanuoto) o gare (nuoto) nei prossimi 30 giorni.
+  /// Partite nei prossimi 30 giorni.
   final int eventiMese;
-  final bool pallanuoto;
   final VoidCallback onAtleti;
   final VoidCallback onAllenamenti;
   final VoidCallback onPartite;
@@ -511,10 +441,7 @@ class _TestataSquadra extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          // La porta da pallanuoto solo per la pallanuoto.
-          Positioned.fill(
-            child: AcquaAnimata(conCorsia: false, conPorta: pallanuoto),
-          ),
+          const Positioned.fill(child: AcquaAnimata(conCorsia: false)),
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -534,29 +461,27 @@ class _TestataSquadra extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    if (pallanuoto) ...[
-                      SizedBox(
-                        width: stretto ? 76 : 104,
-                        height: stretto ? 48 : 64,
-                        child: Stack(
-                          children: [
-                            for (final (k, c) in const [
-                              ColoreCalottina.bianca,
-                              ColoreCalottina.blu,
-                              ColoreCalottina.rossa,
-                            ].indexed)
-                              Positioned(
-                                left: k * (stretto ? 18.0 : 24.0),
-                                child: Calottina(
-                                  colore: c,
-                                  dimensione: stretto ? 46 : 62,
-                                ),
+                    SizedBox(
+                      width: stretto ? 76 : 104,
+                      height: stretto ? 48 : 64,
+                      child: Stack(
+                        children: [
+                          for (final (k, c) in const [
+                            ColoreCalottina.bianca,
+                            ColoreCalottina.blu,
+                            ColoreCalottina.rossa,
+                          ].indexed)
+                            Positioned(
+                              left: k * (stretto ? 18.0 : 24.0),
+                              child: Calottina(
+                                colore: c,
+                                dimensione: stretto ? 46 : 62,
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _saluto(),
@@ -607,7 +532,7 @@ class _TestataSquadra extends StatelessWidget {
                       ),
                       numero(
                         '$eventiMese',
-                        pallanuoto ? 'Partite' : 'Gare',
+                        'Partite',
                         onPartite,
                         periodo: 'prossimi 30 giorni',
                       ),

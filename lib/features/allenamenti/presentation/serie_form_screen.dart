@@ -251,18 +251,13 @@ class _SerieFormScreenState extends ConsumerState<SerieFormScreen> {
   /// Per chi è la serie: si tocca di rado, quindi chiuso con il riassunto
   /// (aperto se la serie è già per qualcuno in particolare).
   Widget _gruppoPerChi(BuildContext context) {
-    final pallanuoto =
-        widget.atleti.any((a) => a.sport == 'pallanuoto') ||
-        nomiGruppoRuolo.containsKey(_perChi);
     final scelte = [
       ('tutti', 'Tutto il gruppo'),
-      if (pallanuoto) ...[
-        ('portiere', 'Solo i portieri'),
-        ('movimento', 'Solo i giocatori di movimento'),
-        ('centroboa', 'Solo i centroboa'),
-        ('marcatore', 'Solo i marcatori'),
-        ('esterno', 'Solo gli esterni'),
-      ],
+      ('portiere', 'Solo i portieri'),
+      ('movimento', 'Solo i giocatori di movimento'),
+      ('centroboa', 'Solo i centroboa'),
+      ('marcatore', 'Solo i marcatori'),
+      ('esterno', 'Solo gli esterni'),
       ('solo', 'Solo alcuni atleti'),
       ('tranne', 'Tutti tranne alcuni'),
     ];

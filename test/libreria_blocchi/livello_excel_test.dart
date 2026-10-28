@@ -27,16 +27,4 @@ void main() {
       expect(livelloExcelPerGruppo('under 14 rosso'), 'Ragazzi');
     });
   });
-
-  group('sportRichiestoDaClub', () {
-    test('nuoto e pallanuoto si traducono direttamente', () {
-      expect(sportRichiestoDaClub('nuoto'), 'nuoto');
-      expect(sportRichiestoDaClub('pallanuoto'), 'pallanuoto');
-    });
-
-    test('nuoto_pallanuoto o assente: nessun filtro sport', () {
-      expect(sportRichiestoDaClub('nuoto_pallanuoto'), isNull);
-      expect(sportRichiestoDaClub(null), isNull);
-    });
-  });
 }

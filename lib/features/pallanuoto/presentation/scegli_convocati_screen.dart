@@ -290,17 +290,13 @@ class _ScegliConvocatiScreenState extends ConsumerState<ScegliConvocatiScreen> {
     final _Piano? piano;
     final List<Widget> corpo;
     if (distinta != null && atleti != null) {
-      final pallanuoto = [
-        for (final a in atleti)
-          if (a.sport == 'pallanuoto') a,
-      ];
-      final atletiPerId = {for (final a in pallanuoto) a.id: a};
+      final atletiPerId = {for (final a in atleti) a.id: a};
       _allinea(distinta, atletiPerId);
       final calcolato = _calcola(distinta, atletiPerId, ultima);
       piano = calcolato;
       corpo = _corpo(
         piano: calcolato,
-        atleti: pallanuoto,
+        atleti: atleti,
         gruppi: gruppi,
         ultima: ultima,
       );
@@ -403,7 +399,7 @@ class _ScegliConvocatiScreenState extends ConsumerState<ScegliConvocatiScreen> {
       return [
         EmptyState(
           icona: Icons.groups_outlined,
-          titolo: 'Nessun atleta di pallanuoto',
+          titolo: 'Nessun atleta',
           descrizione:
               'Aggiungi gli atleti dalla tab Atleti: poi li potrai '
               'convocare da qui.',
@@ -505,7 +501,7 @@ class _ScegliConvocatiScreenState extends ConsumerState<ScegliConvocatiScreen> {
             : 'La squadra',
       ),
       if (squadra.isEmpty)
-        const _SezioneVuota('Nessun atleta di pallanuoto in questa squadra.')
+        const _SezioneVuota('Nessun atleta in questa squadra.')
       else
         AppListPanel(righe: [for (final a in squadra) riga(a)]),
       if (altre.isNotEmpty) ...[

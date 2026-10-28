@@ -77,40 +77,37 @@ final seduteDaValutareProvider = Provider.autoDispose
             ),
       ];
 
-      if (atleta.sport == 'pallanuoto') {
-        for (final p
-            in ref.watch(partiteListProvider(atleta.clubId)).value ??
-                const []) {
-          // Anche le partite dell'altra squadra con cui si allena.
-          if (!recente(p.data) || !atleta.vedeGruppo(p.gruppoId)) {
-            continue;
-          }
-          // Una partita di oggi che non è ancora cominciata.
-          final ora = RegExp(r'^(\d{1,2})[:.](\d{2})').firstMatch(p.ora ?? '');
-          if (ora != null &&
-              soloData(p.data) == oggi &&
-              DateTime(
-                oggi.year,
-                oggi.month,
-                oggi.day,
-                int.parse(ora.group(1)!),
-                int.parse(ora.group(2)!),
-              ).isAfter(adesso)) {
-            continue;
-          }
-          final distinta = ref.watch(distintaListProvider(p.id)).value;
-          if (distinta == null) continue;
-          if (distinta.isNotEmpty &&
-              !distinta.any((d) => d.atletaId == atleta.id)) {
-            continue;
-          }
-          sedute.add((
-            tipo: 'partita',
-            id: p.id,
-            data: soloData(p.data),
-            descrizione: 'Partita ${quando(p.data)} con ${p.avversario}',
-          ));
+      for (final p
+          in ref.watch(partiteListProvider(atleta.clubId)).value ?? const []) {
+        // Anche le partite dell'altra squadra con cui si allena.
+        if (!recente(p.data) || !atleta.vedeGruppo(p.gruppoId)) {
+          continue;
         }
+        // Una partita di oggi che non è ancora cominciata.
+        final ora = RegExp(r'^(\d{1,2})[:.](\d{2})').firstMatch(p.ora ?? '');
+        if (ora != null &&
+            soloData(p.data) == oggi &&
+            DateTime(
+              oggi.year,
+              oggi.month,
+              oggi.day,
+              int.parse(ora.group(1)!),
+              int.parse(ora.group(2)!),
+            ).isAfter(adesso)) {
+          continue;
+        }
+        final distinta = ref.watch(distintaListProvider(p.id)).value;
+        if (distinta == null) continue;
+        if (distinta.isNotEmpty &&
+            !distinta.any((d) => d.atletaId == atleta.id)) {
+          continue;
+        }
+        sedute.add((
+          tipo: 'partita',
+          id: p.id,
+          data: soloData(p.data),
+          descrizione: 'Partita ${quando(p.data)} con ${p.avversario}',
+        ));
       }
       sedute.sort((a, b) => b.data.compareTo(a.data));
       return sedute;

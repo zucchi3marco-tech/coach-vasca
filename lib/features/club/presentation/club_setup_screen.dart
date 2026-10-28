@@ -5,7 +5,6 @@ import '../../../core/utils/error_messages.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
-import '../../../widgets/app_select.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/form_group.dart';
@@ -18,8 +17,6 @@ import '../../configurazione/domain/stato_configurazione.dart';
 import '../application/current_club_provider.dart';
 import '../data/club_repository.dart';
 import 'entra_con_codice_staff_screen.dart';
-
-const _sportOptions = [('nuoto', 'Nuoto'), ('pallanuoto', 'Pallanuoto')];
 
 /// Mostrato quando l'utente autenticato non e' ancora membro di nessun
 /// club: crea il primo club (diventandone owner tramite il trigger DB). E'
@@ -40,8 +37,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
   final _nomeController = TextEditingController();
   final _cittaController = TextEditingController();
 
-  String? _sport;
-
   bool _isSubmitting = false;
   String? _errorMessage;
 
@@ -54,10 +49,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_sport == null) {
-      setState(() => _errorMessage = 'Scegli lo sport praticato dal club');
-      return;
-    }
 
     setState(() {
       _isSubmitting = true;
@@ -70,7 +61,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
           .createClub(
             nome: _nomeController.text.trim(),
             citta: _cittaController.text.trim(),
-            sport: _sport,
             categorie: const [],
           );
       // Le squadre, gli allenatori, gli atleti e i codici seguono nella
@@ -170,19 +160,6 @@ class _ClubSetupScreenState extends ConsumerState<ClubSetupScreen> {
                       AppTextField(
                         etichetta: 'Città (facoltativo)',
                         controller: _cittaController,
-                      ),
-                      AppSelect<String?>(
-                        etichetta: 'Sport',
-                        value: _sport,
-                        hint: 'Scegli lo sport',
-                        items: [
-                          for (final (valore, etichetta) in _sportOptions)
-                            DropdownMenuItem(
-                              value: valore,
-                              child: Text(etichetta),
-                            ),
-                        ],
-                        onChanged: (value) => setState(() => _sport = value),
                       ),
                     ],
                   ),

@@ -232,15 +232,12 @@ ReportSquadra reportSquadra({
   final giorno = soloData(adesso);
   final nomePer = {for (final a in dati.atleti) a.id: a.nomeCompleto};
 
-  // Gli atleti della squadra: quelli attivi di pallanuoto del gruppo (di
-  // tutto il club se la stagione è di tutto il club).
+  // Gli atleti della squadra: quelli attivi del gruppo (di tutto il club
+  // se la stagione è di tutto il club).
   final squadra =
       [
         for (final a in dati.atleti)
-          if (a.attivo &&
-              a.sport == 'pallanuoto' &&
-              (gruppoId == null || a.gruppoId == gruppoId))
-            a,
+          if (a.attivo && (gruppoId == null || a.gruppoId == gruppoId)) a,
       ]..sort(
         (a, b) => a.nomeCompleto.toLowerCase().compareTo(
           b.nomeCompleto.toLowerCase(),

@@ -3,6 +3,7 @@ import '../../../core/utils/giorni.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/sport_app.dart';
 import '../../../core/utils/date_italiane.dart';
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/gruppo_visibilita.dart';
@@ -28,8 +29,6 @@ import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/presentation/riepilogo_volumi.dart';
 import '../../allenamenti/presentation/serie_labels.dart';
 import '../../atleti/application/atleti_providers.dart';
-import '../../club/application/current_club_provider.dart';
-import '../../gare/application/gare_providers.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/application/selezione_gruppo_provider.dart';
 import '../../libreria_blocchi/application/selezione_blocchi_service.dart';
@@ -362,52 +361,32 @@ class _GeneraSettimanaFormScreenState
   }
 
   /// Dati per i controlli sulla settimana intera (RIPROGETTAZIONE AI,
-  /// FASE 3): c'è una gara/partita "alta" entro 10 giorni dalla fine
-  /// della settimana generata, la media di volume delle ultime 4
-  /// settimane (null se non ce n'è storico) e se il gruppo è di
-  /// pallanuoto (per il tetto del 50% di nuoto puro). Un fallimento in
-  /// una di queste letture non blocca la generazione: i controlli
-  /// restano solo meno precisi, mai bloccanti di per sé.
-  Future<
-    ({
-      bool garaAltaImminente,
-      double? mediaUltimeSettimane,
-      bool sportPallanuoto,
-    })
-  >
+  /// FASE 3): c'è una partita "alta" entro 10 giorni dalla fine della
+  /// settimana generata e la media di volume delle ultime 4 settimane
+  /// (null se non ce n'è storico). Un fallimento in una di queste letture
+  /// non blocca la generazione: i controlli restano solo meno precisi,
+  /// mai bloccanti di per sé.
+  Future<({bool garaAltaImminente, double? mediaUltimeSettimane})>
   _calcolaContestoControlli({
     required String? gruppoId,
     required DateTime dataFineSettimana,
-    required String? sportClub,
   }) async {
     var garaAltaImminente = false;
     try {
       final fineFinestra = aggiungiGiorni(dataFineSettimana, 10);
-      final gare = await ref.read(gareListProvider(widget.clubId).future);
       final partite = await ref.read(partiteListProvider(widget.clubId).future);
-      garaAltaImminente =
-          gare.any(
-            (g) =>
-                g.importanza == 'alta' &&
-                !g.data.isBefore(dataFineSettimana) &&
-                !g.data.isAfter(fineFinestra) &&
-                visibileNelGruppo(
-                  gruppoDelRecord: g.gruppoId,
-                  gruppoSelezionato: gruppoId,
-                ),
-          ) ||
-          partite.any(
-            (p) =>
-                p.importanza == 'alta' &&
-                !p.data.isBefore(dataFineSettimana) &&
-                !p.data.isAfter(fineFinestra) &&
-                visibileNelGruppo(
-                  gruppoDelRecord: p.gruppoId,
-                  gruppoSelezionato: gruppoId,
-                ),
-          );
+      garaAltaImminente = partite.any(
+        (p) =>
+            p.importanza == 'alta' &&
+            !p.data.isBefore(dataFineSettimana) &&
+            !p.data.isAfter(fineFinestra) &&
+            visibileNelGruppo(
+              gruppoDelRecord: p.gruppoId,
+              gruppoSelezionato: gruppoId,
+            ),
+      );
     } catch (_) {
-      // Nessuna gara/partita trovata: nessuno scarico richiesto.
+      // Nessuna partita trovata: nessuno scarico richiesto.
     }
 
     double? mediaUltimeSettimane;
@@ -433,16 +412,9 @@ class _GeneraSettimanaFormScreenState
       // Nessuno storico: il controllo sul carico resta disattivato.
     }
 
-    final gruppi = ref.read(gruppiListProvider(widget.clubId)).value ?? [];
-    final sportGruppo = gruppoId == null
-        ? null
-        : gruppi.where((g) => g.id == gruppoId).firstOrNull?.sport;
-    final sportPallanuoto = (sportGruppo ?? sportClub) == 'pallanuoto';
-
     return (
       garaAltaImminente: garaAltaImminente,
       mediaUltimeSettimane: mediaUltimeSettimane,
-      sportPallanuoto: sportPallanuoto,
     );
   }
 
@@ -492,14 +464,11 @@ class _GeneraSettimanaFormScreenState
     final gruppoLabel = nomiGruppi[gruppoId] ?? 'Tutti gli atleti';
 
     var blocchi = const <BloccoDisponibile>[];
-    String? sportClub;
     try {
-      final club = await ref.read(currentClubProvider.future);
-      sportClub = club?.sport;
       blocchi = await blocchiCompatibili(
         ref,
         clubId: widget.clubId,
-        sportRichiesto: sportRichiestoDaClub(club?.sport),
+        sportRichiesto: sportApp,
         nomeGruppo: nomiGruppi[gruppoId],
       ).timeout(_timeoutPreparazione);
     } catch (_) {
@@ -661,13 +630,11 @@ class _GeneraSettimanaFormScreenState
       var contesto = (
         garaAltaImminente: false,
         mediaUltimeSettimane: null as double?,
-        sportPallanuoto: false,
       );
       try {
         contesto = await _calcolaContestoControlli(
           gruppoId: gruppoId,
           dataFineSettimana: dataFineSettimana,
-          sportClub: sportClub,
         ).timeout(_timeoutPreparazione);
       } catch (_) {
         // I controlli settimanali restano solo meno precisi, non devono
@@ -687,7 +654,6 @@ class _GeneraSettimanaFormScreenState
             volumeSettimanaleRichiesto: _volumeSettimanale.round(),
             garaAltaImminente: contesto.garaAltaImminente,
             mediaUltimeSettimane: contesto.mediaUltimeSettimane,
-            sportPallanuoto: contesto.sportPallanuoto,
             vincoliUtente: vincoliUtente,
             attrezzaturaLavoroCentrale: attrezzaturaCentrale,
             minutiMax: minutiMax,
@@ -1143,7 +1109,6 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
     this.volumeSettimanaleRichiesto = 0,
     this.garaAltaImminente = false,
     this.mediaUltimeSettimane,
-    this.sportPallanuoto = false,
     required this.vincoliUtente,
     required this.attrezzaturaLavoroCentrale,
     required this.minutiMax,
@@ -1164,7 +1129,6 @@ class _RevisioneSettimanaScreen extends ConsumerStatefulWidget {
   final int volumeSettimanaleRichiesto;
   final bool garaAltaImminente;
   final double? mediaUltimeSettimane;
-  final bool sportPallanuoto;
 
   final String vincoliUtente;
   final List<String> attrezzaturaLavoroCentrale;
@@ -1211,7 +1175,6 @@ class _RevisioneSettimanaScreenState
       volumeSettimanaleRichiesto: widget.volumeSettimanaleRichiesto,
       mediaUltimeSettimane: widget.mediaUltimeSettimane,
       garaAltaImminente: widget.garaAltaImminente,
-      sportPallanuoto: widget.sportPallanuoto,
     );
     if (!mounted) return;
     if (!_controlliFatti && esito.indiceDaRigenerare != null) {
@@ -1226,7 +1189,6 @@ class _RevisioneSettimanaScreenState
         volumeSettimanaleRichiesto: widget.volumeSettimanaleRichiesto,
         mediaUltimeSettimane: widget.mediaUltimeSettimane,
         garaAltaImminente: widget.garaAltaImminente,
-        sportPallanuoto: widget.sportPallanuoto,
       );
       setState(() => _avvisi = esitoFinale.avvisi);
     } else {

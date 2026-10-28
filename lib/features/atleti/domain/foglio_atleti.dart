@@ -69,8 +69,7 @@ class RigaFoglio {
   /// L'id della squadra del club, se il nome combacia con una esistente.
   final String? squadraId;
 
-  /// 'portiere' | 'movimento' | 'centroboa' | 'marcatore' | 'esterno'
-  /// (solo pallanuoto).
+  /// 'portiere' | 'movimento' | 'centroboa' | 'marcatore' | 'esterno'.
   final String? ruolo;
 
   /// 'M' | 'F'.
@@ -577,13 +576,11 @@ bool _rigaVuota(List<Object?> riga) => riga.every((c) => _testo(c).isEmpty);
 /// Legge la [tabella] e dice cosa ne farebbe l'app. Non scrive niente.
 ///
 /// [squadre]: quelle del club. [esistenti]: gli atleti del club, anche non
-/// attivi. [pallanuoto]: solo allora la colonna Ruolo conta. [oggi]: per i
-/// test; di norma la data di oggi.
+/// attivi. [oggi]: per i test; di norma la data di oggi.
 FoglioAtleti analizzaFoglioAtleti(
   List<List<Object?>> tabella, {
   required List<Gruppo> squadre,
   required List<Atleta> esistenti,
-  required bool pallanuoto,
   DateTime? oggi,
 }) {
   final adesso = oggi ?? DateTime.now();
@@ -622,8 +619,6 @@ FoglioAtleti analizzaFoglioAtleti(
   // Il nome in una colonna sola serve solo se mancano le due separate.
   if (separati) colonne.remove(_Col.cognomeNome);
   final colCognomeNome = separati ? null : colonne[_Col.cognomeNome];
-
-  if (!pallanuoto) colonne.remove(_Col.ruolo);
 
   final usate = colonne.values.toSet();
   final riconosciute = [
@@ -760,7 +755,7 @@ FoglioAtleti analizzaFoglioAtleti(
       }
     }
 
-    // Ruolo (solo pallanuoto: altrimenti la colonna non esiste qui).
+    // Ruolo.
     String? ruolo;
     final testoRuolo = _testo(cella(riga, _Col.ruolo));
     if (testoRuolo.isNotEmpty) {

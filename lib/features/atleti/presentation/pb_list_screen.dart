@@ -125,7 +125,7 @@ class PbListScreen extends ConsumerWidget {
             }
           }
 
-          final slots = slotsPerSport(atleta.sport);
+          final slots = slotsPersonalBest;
           final stiliOrdinati = <String>[];
           for (final s in slots) {
             if (!stiliOrdinati.contains(s.stile)) stiliOrdinati.add(s.stile);

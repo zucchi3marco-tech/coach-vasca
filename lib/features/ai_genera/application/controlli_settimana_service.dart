@@ -97,15 +97,14 @@ int? indiceScaricoMancante(
   return volumeUltima > media * 0.8 ? ultimoIndice : null;
 }
 
-/// Indici delle sedute pallanuoto dove il nuoto puro supera il 50% del
-/// volume — ignorato se [richiestoEsplicito] (il coach lo ha chiesto a
-/// parole, nei vincoli) o se lo sport non è pallanuoto.
+/// Indici delle sedute dove il nuoto puro supera il 50% del volume —
+/// ignorato se [richiestoEsplicito] (il coach lo ha chiesto a parole, nei
+/// vincoli).
 List<int> pallanuotoNuotoPuroOltre50(
   List<SedutaPerControllo> sedute, {
-  required bool sportPallanuoto,
   bool richiestoEsplicito = false,
 }) {
-  if (!sportPallanuoto || richiestoEsplicito) return [];
+  if (richiestoEsplicito) return [];
   return [
     for (var i = 0; i < sedute.length; i++)
       if (_percentualeNuotoPuro(sedute[i].$2) > 50) i,
@@ -135,7 +134,6 @@ EsitoControlliSettimana controllaSettimana({
   required int volumeSettimanaleRichiesto,
   double? mediaUltimeSettimane,
   bool garaAltaImminente = false,
-  bool sportPallanuoto = false,
   bool nuotoPuroRichiestoEsplicito = false,
 }) {
   final avvisi = <String>[];
@@ -199,13 +197,12 @@ EsitoControlliSettimana controllaSettimana({
 
   final nuotoPuroEccessivo = pallanuotoNuotoPuroOltre50(
     sedute,
-    sportPallanuoto: sportPallanuoto,
     richiestoEsplicito: nuotoPuroRichiestoEsplicito,
   );
   if (nuotoPuroEccessivo.isNotEmpty) {
     avvisi.add(
-      'Qualche seduta ha più del 50% di nuoto puro (pallanuoto): '
-      'controllala prima di salvare.',
+      'Qualche seduta ha più del 50% di nuoto puro: controllala prima di '
+      'salvare.',
     );
     proponiRigenerazione(
       nuotoPuroEccessivo.first,

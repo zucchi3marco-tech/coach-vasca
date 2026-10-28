@@ -33,7 +33,6 @@ class VolumeSettimane extends StatefulWidget {
     required this.onApriSettimana,
     this.faseDi,
     this.partiteDi,
-    this.etichettaPartite = 'Settimana con partita',
     this.oggi,
     super.key,
   });
@@ -55,10 +54,6 @@ class VolumeSettimane extends StatefulWidget {
   /// ott con Brescia"): le settimane con partita hanno un segno sotto la
   /// data.
   final List<String> Function(DateTime lunedi)? partiteDi;
-
-  /// La voce della legenda per il segno delle partite ("Settimana con
-  /// gara" nel nuoto).
-  final String etichettaPartite;
 
   /// Solo per i test; altrimenti adesso.
   final DateTime? oggi;
@@ -167,7 +162,7 @@ class _VolumeSettimaneState extends State<VolumeSettimane> {
                 if (legendaPartite)
                   _VoceLegenda(
                     segno: _SegnoPartita(colore: context.dominio.evidenzaAmbra),
-                    testo: widget.etichettaPartite,
+                    testo: 'Settimana con partita',
                   ),
               ],
             ),

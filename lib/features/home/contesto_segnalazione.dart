@@ -35,17 +35,16 @@ bool homeConSchede(WidgetRef ref) {
 /// Chi la chiama deve aver appena chiuso il menu o il riquadro da cui parte
 /// (l'attesa per farli sparire dallo schermo è qui dentro).
 Future<ContestoSegnalazione> contestoSegnalazione(
-  WidgetRef ref,
-  String? sport, {
+  WidgetRef ref, {
   required bool conSchede,
 }) async {
   await Future<void>.delayed(_attesaChiusura);
   final schermata = await ref.read(catturaSchermataProvider)();
   String? pagina;
   if (conSchede && osservatorePagine.soloLaPrima) {
-    final voci = vociHome(sport);
+    final voci = vociHome();
     final voce = voci[ref.read(tabHomeProvider).clamp(0, voci.length - 1)];
-    pagina = 'Home, scheda ${destinazioneHome(voce, sport).etichettaBreve}';
+    pagina = 'Home, scheda ${destinazioneHome(voce).etichettaBreve}';
   } else {
     pagina = osservatorePagine.titoloPaginaInCima();
   }

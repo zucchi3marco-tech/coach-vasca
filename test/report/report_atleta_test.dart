@@ -368,15 +368,23 @@ void main() {
       expect(senza.nota, isNull);
     });
 
-    test('il nuoto non ha le partite', () {
-      final nuoto = reportAtleta(
+    test('un atleta ancora segnato «nuoto» nel database ha le partite come '
+        'gli altri', () {
+      final segnatoNuoto = reportAtleta(
         atleta: _atleta(sport: 'nuoto'),
         periodo: _periodo,
         dati: _dati(),
         adesso: _oggi,
       );
-      expect(nuoto.pallanuoto, isFalse);
-      expect(nuoto.partite, isEmpty);
+      final normale = reportAtleta(
+        atleta: _atleta(),
+        periodo: _periodo,
+        dati: _dati(),
+        adesso: _oggi,
+      );
+      expect(segnatoNuoto.partite, isNotEmpty);
+      expect(segnatoNuoto.partite.length, normale.partite.length);
+      expect(segnatoNuoto.gol, normale.gol);
     });
 
     test(

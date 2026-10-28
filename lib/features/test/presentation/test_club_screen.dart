@@ -33,18 +33,13 @@ import 'test_club_form_screen.dart';
 import 'test_club_widgets.dart';
 
 /// I test del club (fase 2 del "Mako della pallanuoto", proposta 3):
-/// quelli che l'allenatore usa, ognuno con la sua classifica, e — per la
-/// pallanuoto — quelli pronti da aggiungere con un tocco. In testata
-/// "Inserisci risultati" (a raffica, a bordo vasca) e "Nuovo test".
+/// quelli che l'allenatore usa, ognuno con la sua classifica, e quelli
+/// pronti da aggiungere con un tocco. In testata "Inserisci risultati" (a
+/// raffica, a bordo vasca) e "Nuovo test".
 class TestClubScreen extends ConsumerWidget {
-  const TestClubScreen({
-    required this.clubId,
-    required this.pallanuoto,
-    super.key,
-  });
+  const TestClubScreen({required this.clubId, super.key});
 
   final String clubId;
-  final bool pallanuoto;
 
   void _apri(BuildContext context, Widget pagina) =>
       Navigator.of(context)
@@ -169,12 +164,10 @@ class TestClubScreen extends ConsumerWidget {
               if (t.archiviato) t,
           ];
           final giaAggiunti = {for (final t in tutti) ?t.modello};
-          final pronti = pallanuoto
-              ? [
-                  for (final m in modelliTest)
-                    if (!giaAggiunti.contains(m.chiave)) m,
-                ]
-              : const <ModelloTest>[];
+          final pronti = [
+            for (final m in modelliTest)
+              if (!giaAggiunti.contains(m.chiave)) m,
+          ];
           // Un massimale pronto sparisce anche se il suo esercizio ha già
           // un massimale fatto dall'allenatore.
           final conMassimale = {for (final t in tutti) ?t.esercizioId};
@@ -267,9 +260,8 @@ class TestClubScreen extends ConsumerWidget {
               TestataPagina(
                 occhiello: nomeSquadra ?? 'Tutto il club',
                 titolo: 'Test',
-                sottotitolo: pallanuoto
-                    ? 'Sprint, verticale, tiro: le classifiche della squadra'
-                    : 'I test del club con le loro classifiche',
+                sottotitolo:
+                    'Sprint, verticale, tiro: le classifiche della squadra',
                 numeri: [
                   NumeroTestata(valore: '${attivi.length}', etichetta: 'Test'),
                   NumeroTestata(

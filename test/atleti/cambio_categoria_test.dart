@@ -15,7 +15,6 @@ Atleta _atleta(
   String cognome,
   int annoNascita, {
   String? gruppoId = 'u14',
-  String sport = 'pallanuoto',
   bool attivo = true,
   String? altroGruppoId,
 }) => Atleta(
@@ -24,7 +23,7 @@ Atleta _atleta(
   nome: 'Luca',
   cognome: cognome,
   dataNascita: DateTime(annoNascita, 3, 1),
-  sport: sport,
+  sport: 'pallanuoto',
   consensoPrivacyFirmato: true,
   attivo: attivo,
   gruppoId: gruppoId,
@@ -37,7 +36,6 @@ const _squadre = [
   Gruppo(id: 'u14', clubId: 'c1', nome: 'U14', ordine: 1),
   Gruppo(id: 'u16', clubId: 'c1', nome: 'Under 16', ordine: 2),
   Gruppo(id: 'prima', clubId: 'c1', nome: 'Prima squadra', ordine: 3),
-  Gruppo(id: 'nuoto', clubId: 'c1', nome: 'U16', ordine: 4, sport: 'nuoto'),
 ];
 
 // Nel 2027-28 (anno 2028) i 2013 passano da U14 a U16, i 2011 da U16 a U18.
@@ -50,7 +48,6 @@ final _atleti = [
   _atleta('a4', 'Neri', 2013, gruppoId: 'u16'),
   // Il club non ha una squadra U18.
   _atleta('a5', 'Gialli', 2011, gruppoId: 'u16'),
-  _atleta('a6', 'Blu', 2013, sport: 'nuoto'),
   _atleta('a7', 'Arancio', 2013, gruppoId: null),
   _atleta('a8', 'Viola', 2013, attivo: false),
   // In prima squadra gioca chi decide l'allenatore.
@@ -67,7 +64,6 @@ class _AtletiFinti implements AtletiRepository {
     required String cognome,
     required DateTime dataNascita,
     String? sesso,
-    required String sport,
     String? gruppoId,
     String? emailGenitore,
     String? telefonoGenitore,
@@ -86,7 +82,7 @@ class _AtletiFinti implements AtletiRepository {
       nome: nome,
       cognome: cognome,
       dataNascita: dataNascita,
-      sport: sport,
+      sport: originale.sport,
       consensoPrivacyFirmato: consensoPrivacyFirmato,
       attivo: originale.attivo,
       gruppoId: gruppoId,

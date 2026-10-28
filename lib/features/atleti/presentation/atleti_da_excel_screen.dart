@@ -18,7 +18,6 @@ import '../../../widgets/riquadri.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
-import '../../club/application/current_club_provider.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../gruppi/domain/gruppo.dart';
 import '../application/atleti_providers.dart';
@@ -84,11 +83,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
 
   AtletiFilter get _filtro => (clubId: widget.clubId, includeInactive: true);
 
-  String get _sport {
-    final s = ref.read(currentClubProvider).value?.sport;
-    return s == 'pallanuoto' ? 'pallanuoto' : 'nuoto';
-  }
-
   List<Gruppo> get _squadre =>
       ref.read(gruppiListProvider(widget.clubId)).value ?? const [];
 
@@ -146,7 +140,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
       _tabella ?? const [],
       squadre: _squadre,
       esistenti: _esistenti,
-      pallanuoto: _sport == 'pallanuoto',
     );
     _foglio = foglio;
     final chiavi = {
@@ -170,7 +163,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
     try {
       final bytes = modelloAtleti(
         nomiSquadre: [for (final g in _squadre) g.nome],
-        pallanuoto: _sport == 'pallanuoto',
       );
       scaricaFile(bytes, 'modello_atleti.xlsx', mimeType: _mimeXlsx);
     } catch (e) {
@@ -191,9 +183,7 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
   Future<void> _salva() async {
     final foglio = _foglio;
     if (foglio == null || !foglio.ok) return;
-    if (ref.read(currentClubProvider).value?.sport == null) return;
     final repo = ref.read(atletiRepositoryProvider);
-    final sport = _sport;
     final nuovi = foglio.nuovi;
     final completamenti = [
       for (final r in foglio.giaPresenti)
@@ -213,7 +203,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
           cognome: r.cognome,
           dataNascita: r.dataNascita,
           sesso: r.sesso,
-          sport: sport,
           gruppoId: r.gruppoFinale(_mappa),
           emailGenitore: r.email,
           telefonoGenitore: r.telefono,
@@ -221,7 +210,7 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
           note: r.note,
           numeroTesseraFin: r.tessera,
           visitaMedicaScadenza: r.visitaMedica,
-          ruolo: sport == 'pallanuoto' ? r.ruolo : null,
+          ruolo: r.ruolo,
         );
         _creati.add(creato);
         if (mounted) setState(() => _fatti++);
@@ -234,7 +223,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
           cognome: a.cognome,
           dataNascita: a.dataNascita,
           sesso: c.sesso,
-          sport: a.sport,
           gruppoId: c.gruppoId,
           emailGenitore: c.email,
           telefonoGenitore: c.telefono,
@@ -279,10 +267,7 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
   Widget build(BuildContext context) {
     final gruppi = ref.watch(gruppiListProvider(widget.clubId));
     final atleti = ref.watch(atletiListProvider(_filtro));
-    // Senza il club non si sa lo sport: un atleta di pallanuoto finirebbe
-    // salvato come nuotatore.
-    final club = ref.watch(currentClubProvider).value;
-    final pronto = gruppi.hasValue && atleti.hasValue && club != null;
+    final pronto = gruppi.hasValue && atleti.hasValue;
 
     return PopScope(
       canPop: _passo != _Passo.salvataggio,
@@ -308,7 +293,6 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
 
   List<Widget> _scegliPasso(bool pronto, bool erroreAtleti) {
     final colori = context.colori;
-    final pallanuoto = _sport == 'pallanuoto';
     return [
       const TestataPagina(
         titolo: 'Atleti da un foglio Excel',
@@ -326,9 +310,8 @@ class _AtletiDaExcelScreenState extends ConsumerState<AtletiDaExcelScreen> {
             ),
             const SizedBox(height: AppSpacing.s8),
             Text(
-              'Le altre sono facoltative: Squadra, '
-              '${pallanuoto ? 'Ruolo, ' : ''}Sesso, Tessera FIN, Email e '
-              'Telefono del genitore, Visita medica, Consenso privacy, Note. '
+              'Le altre sono facoltative: Squadra, Ruolo, Sesso, Tessera '
+              'FIN, Email e Telefono del genitore, Visita medica, Consenso privacy, Note. '
               'Se parti dal modello, trovi già tutti i titoli giusti.',
               style: AppTypography.corpo.copyWith(
                 color: colori.testoSecondario,
