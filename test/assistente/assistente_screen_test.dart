@@ -1,3 +1,5 @@
+import 'package:coach_vasca/features/allenamenti/application/allenamenti_providers.dart';
+import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
 import 'package:coach_vasca/features/assistente/data/assistente_repository.dart';
 import 'package:coach_vasca/features/assistente/presentation/assistente_screen.dart';
 import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
@@ -7,6 +9,9 @@ import 'package:coach_vasca/features/pallanuoto/application/pallanuoto_providers
 import 'package:coach_vasca/features/pallanuoto/data/distinta_repository.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/distinta_giocatore.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
+import 'package:coach_vasca/features/presenze/application/presenze_providers.dart';
+import 'package:coach_vasca/features/presenze/data/presenze_repository.dart';
+import 'package:coach_vasca/features/presenze/domain/presenza.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,7 +105,141 @@ class _DistintaFinta implements DistintaRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Il "cervello" finto dell'appello: "assenti G1".
+class _AssistenteAppello implements AssistenteRepository {
+  var chiamate = 0;
+
+  @override
+  Future<Map<String, dynamic>> prossimoMessaggio({
+    required String clubId,
+    required Map<String, Object?> contesto,
+    required List<Map<String, dynamic>> messaggi,
+  }) async {
+    if (chiamate++ == 0) {
+      return {
+        'role': 'assistant',
+        'content': null,
+        'tool_calls': [
+          {
+            'id': 't1',
+            'type': 'function',
+            'function': {
+              'name': 'proponi_appello',
+              'arguments': '{"assenti": ["G1"]}',
+            },
+          },
+        ],
+      };
+    }
+    return {'role': 'assistant', 'content': 'Ecco l\'appello da salvare.'};
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _PresenzeFinte implements PresenzeRepository {
+  final segnate = <(String, String)>[];
+
+  @override
+  Future<Presenza> segnaPresenza({
+    required String allenamentoId,
+    required String atletaId,
+    required String stato,
+  }) async {
+    segnate.add((atletaId, stato));
+    return Presenza(
+      id: 'p-$atletaId',
+      allenamentoId: allenamentoId,
+      atletaId: atletaId,
+      clubId: 'c1',
+      stato: stato,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
+  testWidgets("l'appello con una frase: si cambia uno stato, si salvano solo "
+      'i cambi', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final presenze = _PresenzeFinte();
+    final oggi = DateTime(2026, 10, 13, 18);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          assistenteRepositoryProvider.overrideWithValue(_AssistenteAppello()),
+          presenzeRepositoryProvider.overrideWithValue(presenze),
+          atletiListProvider.overrideWith(
+            (ref, filtro) => Stream.value([
+              _atleta('rossi', 'Marco', 'Rossi'),
+              _atleta('bianchi', 'Luca', 'Bianchi'),
+              _atleta('verdi', 'Sara', 'Verdi'),
+            ]),
+          ),
+          gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
+          allenamentiListProvider.overrideWith(
+            (ref, clubId) => Stream.value([
+              Allenamento(
+                id: 'a1',
+                clubId: 'c1',
+                gruppoId: 'u14',
+                data: DateTime(2026, 10, 13),
+              ),
+            ]),
+          ),
+          presenzeClubProvider.overrideWith(
+            (ref, clubId) => Stream.value(const [
+              Presenza(
+                id: 'pv',
+                allenamentoId: 'a1',
+                atletaId: 'verdi',
+                clubId: 'c1',
+                stato: 'presente',
+              ),
+            ]),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.chiaro,
+          home: AssistenteScreen(clubId: 'c1', gruppoId: 'u14', oggi: oggi),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('domanda-assistente')),
+      'Assenti Bianchi',
+    );
+    await tester.tap(find.byTooltip('Chiedi'));
+    await tester.pumpAndSettle();
+
+    // Bianchi assente, gli altri presenti; Verdi era già segnato.
+    expect(find.text('2 presenti · 1 assente'), findsOneWidget);
+    expect(find.text('Verdi · già segnato'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('appello-rossi')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('In ritardo').last);
+    await tester.pumpAndSettle();
+    expect(find.text('2 presenti (di cui 1 in ritardo) · 1 assente'), findsOne);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Salva l\'appello'));
+    await tester.pumpAndSettle();
+    // Verdi non cambia: non si riscrive.
+    expect(
+      presenze.segnate,
+      unorderedEquals([('bianchi', 'assente'), ('rossi', 'ritardo')]),
+    );
+    expect(find.text('Appello salvato'), findsOneWidget);
+  });
+
   testWidgets("l'assistente propone la distinta e l'allenatore la conferma", (
     tester,
   ) async {

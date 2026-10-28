@@ -52,6 +52,62 @@ Map<String, dynamic> cervelloDemo(
     'content': testo,
   };
 
+  // "Assenti G3 e G1, G4 in ritardo": ogni pezzo fra le virgole dice per
+  // chi vale, e chi non ha la parola prende quella di prima.
+  if (domanda.contains('appello') ||
+      domanda.contains('assent') ||
+      domanda.contains('ritard')) {
+    final esito = risultati['proponi_appello'];
+    if (esito == null) {
+      final elenchi = <String, List<String>>{
+        'assenti': [],
+        'in_ritardo': [],
+        'giustificati': [],
+      };
+      String? chiave;
+      for (final pezzo in domanda.split(RegExp('[,.;:]'))) {
+        if (pezzo.contains('ritard')) {
+          chiave = 'in_ritardo';
+        } else if (pezzo.contains('giustific')) {
+          chiave = 'giustificati';
+        } else if (pezzo.contains('assent')) {
+          chiave = 'assenti';
+        }
+        if (chiave == null) continue;
+        elenchi[chiave]!.addAll([
+          for (final m in RegExp(r'\bg(\d{1,3})\b').allMatches(pezzo))
+            'G${m[1]}',
+        ]);
+      }
+      final adesso = oggi ?? DateTime.now();
+      return chiama('proponi_appello', {
+        'data': formatDateOnly(
+          domanda.contains('ieri')
+              ? DateTime(adesso.year, adesso.month, adesso.day - 1)
+              : adesso,
+        ),
+        for (final MapEntry(:key, :value) in elenchi.entries)
+          if (value.isNotEmpty) key: value,
+      });
+    }
+    final errore = esito['errore'];
+    if (errore != null) {
+      return scrivi(
+        '$errore'.startsWith('Nessuna seduta')
+            ? 'Oggi la squadra non ha una seduta: crea l\'allenamento e poi '
+                  'rifacciamo l\'appello.'
+            : 'Non so su quale seduta fare l\'appello: nella demo aprilo '
+                  'dalle presenze della seduta.',
+      );
+    }
+    final assenti = esito['assenti'];
+    return scrivi(
+      'Ecco l\'appello: ${esito['presenti']} presenti, '
+      '${assenti == 1 ? '1 assente' : '$assenti assenti'}. Controllalo, '
+      'cambia chi serve e salvalo.',
+    );
+  }
+
   if (domanda.contains('superiorit')) {
     final st = risultati['statistiche_partite'];
     if (st == null) return chiama('statistiche_partite', {'ultime': 5});
@@ -141,7 +197,7 @@ Map<String, dynamic> cervelloDemo(
 
   return scrivi(
     'Nella demo rispondo solo alle domande d\'esempio: superiorità, '
-    'convocazione, dolori e seduta. Con l\'AI vera rispondo a quello che '
+    'convocazione, dolori, seduta e appello. Con l\'AI vera rispondo a quello che '
     'chiedi.',
   );
 }

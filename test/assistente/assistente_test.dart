@@ -203,6 +203,21 @@ class _Fonte implements FonteDatiAssistente {
   Future<Map<String, List<CaricoSeduta>>> sedutePerAtleta() async => const {};
 }
 
+/// Oggi due sedute della squadra: l'appello non sa quale.
+class _FonteDueSedute extends _Fonte {
+  @override
+  Future<List<Allenamento>> allenamenti() async => [
+    ...await super.allenamenti(),
+    Allenamento(
+      id: 'a3',
+      clubId: 'c1',
+      gruppoId: 'u14',
+      data: DateTime(2026, 10, 13, 19),
+      titolo: 'Tiri con Verdi',
+    ),
+  ];
+}
+
 void main() {
   final pseudonimi = Pseudonimi(_atleti);
   final strumenti = StrumentiAssistente(
@@ -419,6 +434,101 @@ void main() {
     });
   });
 
+  group('proponi_appello', () {
+    // Oggi c'è il secco degli U14 (a2): Rossi è già presente, Verdi già in
+    // ritardo, Bianchi non è segnato, Neri è degli U16.
+    test('chi non è nominato è presente, chi era già segnato resta', () async {
+      final esito = await strumenti.esegui('proponi_appello', const {
+        'assenti': ['G1'],
+      });
+      final p = esito.scheda! as PropostaAppello;
+      expect(p.allenamento.id, 'a2');
+      expect(
+        [for (final r in p.righe) (r.atleta.id, r.attuale, r.proposto)],
+        [
+          ('bianchi', null, 'assente'),
+          ('rossi', 'presente', 'presente'),
+          ('verdi', 'ritardo', 'ritardo'),
+        ],
+      );
+      expect(esito.perModello['presenti'], 2);
+      expect(esito.perModello['di_cui_in_ritardo'], 1);
+      expect(esito.perModello['assenti'], 1);
+      expect(esito.perModello['gia_segnati_e_non_nominati'], 2);
+      senzaNomiNeSalute(esito.perModello);
+    });
+
+    test('chi è nominato cambia anche se era già segnato', () async {
+      final esito = await strumenti.esegui('proponi_appello', const {
+        'giustificati': ['G3'],
+        'presenti': ['G4'],
+      });
+      final p = esito.scheda! as PropostaAppello;
+      final rossi = p.righe.firstWhere((r) => r.atleta.id == 'rossi');
+      expect(
+        (rossi.attuale, rossi.proposto, rossi.nominato),
+        ('presente', 'giustificato', true),
+      );
+      expect(
+        p.righe.firstWhere((r) => r.atleta.id == 'verdi').proposto,
+        'presente',
+      );
+    });
+
+    test('un atleta di un\'altra squadra entra se nominato; codici sconosciuti '
+        'detti al modello', () async {
+      final esito = await strumenti.esegui('proponi_appello', const {
+        'in_ritardo': ['G2', 'G42'],
+      });
+      final p = esito.scheda! as PropostaAppello;
+      final neri = p.righe.firstWhere((r) => r.atleta.id == 'neri');
+      expect((neri.proposto, neri.daFuori), ('ritardo', true));
+      expect(esito.perModello['da_altre_squadre'], ['G2']);
+      expect(esito.perModello['codici_sconosciuti'], ['G42']);
+    });
+
+    test('una seduta indicata per id, anche di ieri', () async {
+      final esito = await strumenti.esegui('proponi_appello', const {
+        'allenamento_id': 'a1',
+      });
+      final p = esito.scheda! as PropostaAppello;
+      expect(p.allenamento.id, 'a1');
+      // Bianchi era assente ieri: resta assente.
+      expect(
+        p.righe.firstWhere((r) => r.atleta.id == 'bianchi').proposto,
+        'assente',
+      );
+    });
+
+    test('senza una seduta, nel futuro o con più sedute: un errore per il '
+        'modello, nessuna scheda', () async {
+      for (final args in const [
+        {'data': '2026-10-11'},
+        {'data': '2026-10-20'},
+        {'allenamento_id': 'non-c-e'},
+        {'data': 'ieri'},
+      ]) {
+        final esito = await strumenti.esegui('proponi_appello', args);
+        expect(esito.scheda, isNull, reason: '$args');
+        expect(esito.perModello['errore'], isNotNull, reason: '$args');
+      }
+
+      final dueSedute = StrumentiAssistente(
+        fonte: _FonteDueSedute(),
+        pseudonimi: pseudonimi,
+        oggi: _oggi,
+      );
+      final esito = await dueSedute.esegui('proponi_appello', const {});
+      expect(esito.scheda, isNull);
+      expect(
+        [for (final s in esito.perModello['sedute']! as List) (s as Map)['id']],
+        ['a2', 'a3'],
+      );
+      // Il titolo arriva senza nomi.
+      senzaNomiNeSalute(esito.perModello);
+    });
+  });
+
   group('conversazione', () {
     test('la domanda parte senza nomi, gli strumenti girano sul telefono, '
         'la risposta torna con i nomi', () async {
@@ -525,6 +635,21 @@ void main() {
       expect(sup.whereType<RispostaAssistente>().single.testo, isNotEmpty);
       final dolori = await motore.chiedi('Chi ha segnato dolori?');
       expect(dolori.whereType<VoceScheda>().single.scheda, isA<SchedaSalute>());
+    });
+
+    test('l\'appello: assenti e in ritardo dalla frase', () async {
+      final voci = await motoreDemo().chiedi(
+        'Appello: assenti Bianchi, Verdi in ritardo',
+      );
+      final p = voci.whereType<VoceScheda>().single.scheda as PropostaAppello;
+      expect(
+        {for (final r in p.righe) r.atleta.id: r.proposto},
+        {'bianchi': 'assente', 'rossi': 'presente', 'verdi': 'ritardo'},
+      );
+      expect(
+        voci.whereType<RispostaAssistente>().single.testo,
+        contains('2 presenti, 1 assente.'),
+      );
     });
 
     test('la seduta di giovedì', () async {

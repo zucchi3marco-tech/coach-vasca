@@ -54,6 +54,7 @@ const etichetteStrumenti = {
   'mostra_benessere': 'benessere (sul telefono)',
   'proponi_convocazione': 'distinta',
   'proponi_seduta': 'scrittura della seduta',
+  'proponi_appello': 'appello',
 };
 
 /// La conversazione con l'assistente: tiene la storia nel formato del

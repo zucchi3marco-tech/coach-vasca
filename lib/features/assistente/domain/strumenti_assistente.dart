@@ -6,6 +6,7 @@ import '../../allenamenti/domain/testo_allenamento.dart';
 import '../../allenamenti/domain/variante_spalla.dart' show giorniDoloreSpalla;
 import '../../allenamenti/domain/volume_allenamento.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../atleti/domain/squadre_atleta.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/carico_rpe.dart';
 import '../../pallanuoto/domain/distinta_giocatore.dart';
@@ -105,6 +106,39 @@ class PropostaSeduta extends SchedaAssistente {
   final AllenamentoScritto scritto;
 }
 
+/// Un atleta nell'appello proposto: lo stato di adesso (null se non è
+/// ancora segnato) e quello proposto.
+class RigaAppello {
+  const RigaAppello({
+    required this.atleta,
+    required this.attuale,
+    required this.proposto,
+    this.nominato = false,
+    this.daFuori = false,
+  });
+
+  final Atleta atleta;
+  final String? attuale;
+  final String proposto;
+
+  /// L'ha nominato l'allenatore.
+  final bool nominato;
+
+  /// Non era atteso a questa seduta (un'altra squadra): c'è perché l'ha
+  /// nominato l'allenatore.
+  final bool daFuori;
+}
+
+/// L'appello di una seduta, da confermare. Chi l'allenatore non nomina è
+/// presente, chi era già segnato resta com'era (scelta del coach,
+/// 2026-10-28); prima di salvare può cambiare chiunque.
+class PropostaAppello extends SchedaAssistente {
+  const PropostaAppello({required this.allenamento, required this.righe});
+
+  final Allenamento allenamento;
+  final List<RigaAppello> righe;
+}
+
 /// L'esito di uno strumento: il JSON per il modello (mai nomi, mai salute)
 /// e, a volte, una scheda per l'allenatore.
 typedef EsitoStrumento = ({
@@ -151,6 +185,7 @@ class StrumentiAssistente {
         'mostra_benessere' => await _mostraBenessere(args),
         'proponi_convocazione' => await _proponiConvocazione(args),
         'proponi_seduta' => await _proponiSeduta(args),
+        'proponi_appello' => await _proponiAppello(args),
         _ => _solo({'errore': 'Strumento sconosciuto: $nome'}),
       };
     } catch (e) {
@@ -601,9 +636,7 @@ class StrumentiAssistente {
       nuovi: [for (final a in scelti) (atletaId: a.id, portiere: a.portiere)],
       massimo: partita.numeroMaxConvocati,
     );
-    final nuovi = [
-      for (final a in scelti) (atleta: a, numero: numeri[a.id]!),
-    ];
+    final nuovi = [for (final a in scelti) (atleta: a, numero: numeri[a.id]!)];
     final proposta = PropostaConvocazione(
       partita: partita,
       nuovi: nuovi,
@@ -659,6 +692,151 @@ class StrumentiAssistente {
         testo: testo,
         scritto: scritto,
       ),
+    );
+  }
+
+  /// La seduta dell'appello: quella indicata, o l'unica della squadra in
+  /// quel giorno (oggi, se non c'è la data). Con un errore per il modello
+  /// se non si sa quale.
+  Future<(Allenamento?, Map<String, Object?>?)> _sedutaAppello(
+    Map<String, dynamic> args,
+  ) async {
+    final id = args['allenamento_id'];
+    if (id is String && id.isNotEmpty) {
+      final seduta = (await fonte.allenamenti())
+          .where((a) => a.id == id)
+          .firstOrNull;
+      return seduta == null
+          ? (
+              null,
+              {
+                'errore':
+                    'Seduta non trovata: usa un id di "allenamenti", o la '
+                    'data.',
+              },
+            )
+          : (seduta, null);
+    }
+    final giorno = args['data'] == null
+        ? _oggi
+        : DateTime.tryParse('${args['data']}');
+    if (giorno == null) {
+      return (null, {'errore': 'Data non valida: usa AAAA-MM-GG.'});
+    }
+    final delGiorno = [
+      for (final a in await _allenamentiDellaSquadra())
+        if (soloData(a.data) == soloData(giorno)) a,
+    ];
+    if (delGiorno.isEmpty) {
+      return (
+        null,
+        {
+          'errore':
+              'Nessuna seduta della squadra il ${formatDateOnly(giorno)}: '
+              'l\'appello si fa su una seduta che c\'è.',
+        },
+      );
+    }
+    if (delGiorno.length > 1) {
+      return (
+        null,
+        {
+          'errore':
+              'Quel giorno le sedute sono ${delGiorno.length}: chiedi '
+              'all\'allenatore quale e rifai con allenamento_id.',
+          'sedute': [
+            for (final s in delGiorno)
+              {
+                'id': s.id,
+                'tipo': s.tipo,
+                'titolo': pseudonimi.anonimizza(s.titoloMostrato),
+              },
+          ],
+        },
+      );
+    }
+    return (delGiorno.single, null);
+  }
+
+  Future<EsitoStrumento> _proponiAppello(Map<String, dynamic> args) async {
+    final (seduta, errore) = await _sedutaAppello(args);
+    if (seduta == null) return _solo(errore!);
+    if (soloData(seduta.data).isAfter(_oggi)) {
+      return _solo({
+        'errore':
+            'La seduta è il ${formatDateOnly(seduta.data)}: l\'appello si fa '
+            'il giorno stesso o dopo.',
+      });
+    }
+    final segnate = {
+      for (final p in await fonte.presenze())
+        if (p.allenamentoId == seduta.id) p.atletaId: p.stato,
+    };
+    // Un atleta in due elenchi prende l'ultimo: assente vince su tutto.
+    final nominati = <String, String>{};
+    final sconosciuti = <String>[];
+    for (final (chiave, stato) in const [
+      ('presenti', statoPresente),
+      ('in_ritardo', statoRitardo),
+      ('giustificati', statoGiustificato),
+      ('assenti', statoAssente),
+    ]) {
+      for (final c in (args[chiave] as List?) ?? const []) {
+        final a = pseudonimi.atleta('$c');
+        if (a == null) {
+          sconosciuti.add('$c');
+        } else {
+          nominati[a.id] = stato;
+        }
+      }
+    }
+    final righe = <RigaAppello>[];
+    for (final a in pseudonimi.atleti) {
+      final atteso = a.attivo && a.attesoA(seduta.gruppoId, seduta.data);
+      final attuale = segnate[a.id];
+      final nominato = nominati[a.id];
+      if (!atteso && attuale == null && nominato == null) continue;
+      righe.add(
+        RigaAppello(
+          atleta: a,
+          attuale: attuale,
+          proposto: nominato ?? attuale ?? statoPresente,
+          nominato: nominato != null,
+          daFuori: !atteso && attuale == null,
+        ),
+      );
+    }
+    if (righe.isEmpty) {
+      return _solo({'errore': 'Nessun atleta atteso a questa seduta.'});
+    }
+    int quanti(bool Function(String) vale) =>
+        righe.where((r) => vale(r.proposto)).length;
+    return (
+      perModello: {
+        'stato':
+            'Appello mostrato all\'allenatore: lo controlla, può cambiare '
+            'qualcuno e lo salva lui. Non è ancora salvato.',
+        'seduta': {
+          'id': seduta.id,
+          'data': formatDateOnly(seduta.data),
+          'giorno': nomeGiorno(seduta.data),
+          'tipo': seduta.tipo,
+        },
+        'presenti': quanti(contaComePresente),
+        'di_cui_in_ritardo': quanti((s) => s == statoRitardo),
+        'assenti': quanti((s) => s == statoAssente),
+        'giustificati': quanti((s) => s == statoGiustificato),
+        'gia_segnati_e_non_nominati': righe
+            .where((r) => r.attuale != null && !r.nominato)
+            .length,
+        if (righe.any((r) => r.daFuori))
+          'da_altre_squadre': [
+            for (final r in righe)
+              if (r.daFuori) _codice(r.atleta.id),
+          ],
+        if (sconosciuti.isNotEmpty) 'codici_sconosciuti': sconosciuti,
+      },
+      scheda: PropostaAppello(allenamento: seduta, righe: righe),
     );
   }
 

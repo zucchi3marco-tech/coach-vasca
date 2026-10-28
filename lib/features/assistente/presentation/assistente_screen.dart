@@ -23,6 +23,9 @@ import '../../atleti/domain/abbina_atleta.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../gruppi/application/gruppi_providers.dart';
 import '../../pallanuoto/data/distinta_repository.dart';
+import '../../presenze/data/presenze_repository.dart';
+import '../../presenze/domain/presenza.dart';
+import '../../presenze/presentation/presenze_screen.dart';
 import '../application/fonte_dati_riverpod.dart';
 import '../data/assistente_repository.dart';
 import '../domain/motore_assistente.dart';
@@ -272,6 +275,41 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     }
   }
 
+  /// Salva solo chi cambia: chi era già segnato così resta com'è.
+  Future<void> _salvaAppello(
+    PropostaAppello p,
+    Map<String, String> stati,
+  ) async {
+    setState(() => _esiti[p] = _Esito.inCorso);
+    final repository = ref.read(presenzeRepositoryProvider);
+    try {
+      await Future.wait([
+        for (final r in p.righe)
+          if (stati[r.atleta.id] case final stato? when stato != r.attuale)
+            repository.segnaPresenza(
+              allenamentoId: p.allenamento.id,
+              atletaId: r.atleta.id,
+              stato: stato,
+            ),
+      ]);
+      int quanti(bool Function(String) vale) => stati.values.where(vale).length;
+      _motore?.annota(
+        'Appello salvato per la seduta ${p.allenamento.id}: '
+        '${quanti(contaComePresente)} presenti (di cui '
+        '${quanti((s) => s == statoRitardo)} in ritardo), '
+        '${quanti((s) => s == statoAssente)} assenti, '
+        '${quanti((s) => s == statoGiustificato)} giustificati.',
+      );
+      if (mounted) setState(() => _esiti[p] = _Esito.fatta);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _esiti[p] = _Esito.daDecidere);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Appello non salvato: ${messaggioErrore(e)}')),
+      );
+    }
+  }
+
   void _scarta(SchedaAssistente p) {
     _motore?.annota('L\'allenatore ha scartato la proposta.');
     setState(() => _esiti[p] = _Esito.scartata);
@@ -282,6 +320,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     'Convoca per la prossima partita, escludendo chi ha male alla spalla',
     'Chi ha segnato dolori questa settimana?',
     'Prepara la seduta di giovedì, con lavoro per i portieri',
+    'Appello di oggi: tutti presenti',
   ];
 
   @override
@@ -347,6 +386,13 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                           esito: _esiti[scheda] ?? _Esito.daDecidere,
                           creata: _sedutaCreata[scheda],
                           onConferma: () => _creaSeduta(scheda),
+                          onScarta: () => _scarta(scheda),
+                        ),
+                        PropostaAppello() => _CartaAppello(
+                          scheda,
+                          atleti: atleti,
+                          esito: _esiti[scheda] ?? _Esito.daDecidere,
+                          onConferma: (stati) => _salvaAppello(scheda, stati),
                           onScarta: () => _scarta(scheda),
                         ),
                       },
@@ -442,7 +488,8 @@ class _Inizio extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.s8),
         Text(
-          'Risponde con i dati del club e propone convocazioni e sedute: '
+          'Risponde con i dati del club, fa l\'appello («assenti Rossi e '
+          'Bianchi, Verdi in ritardo») e propone convocazioni e sedute: '
           'ogni proposta la controlli e la confermi tu.',
           style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
         ),
@@ -835,6 +882,198 @@ class _CartaSeduta extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// L'appello proposto: tutti gli attesi con lo stato, ognuno si cambia con
+/// un tocco prima di salvare.
+class _CartaAppello extends StatefulWidget {
+  const _CartaAppello(
+    this.proposta, {
+    required this.atleti,
+    required this.esito,
+    required this.onConferma,
+    required this.onScarta,
+  });
+
+  final PropostaAppello proposta;
+  final List<Atleta> atleti;
+  final _Esito esito;
+  final ValueChanged<Map<String, String>> onConferma;
+  final VoidCallback onScarta;
+
+  @override
+  State<_CartaAppello> createState() => _CartaAppelloState();
+}
+
+class _CartaAppelloState extends State<_CartaAppello> {
+  late final _stati = {
+    for (final r in widget.proposta.righe) r.atleta.id: r.proposto,
+  };
+
+  /// Prima le eccezioni (assenti, giustificati, in ritardo), poi i
+  /// presenti; l'ordine resta quello anche cambiando uno stato, così le
+  /// righe non saltano sotto il dito.
+  late final _righe = [...widget.proposta.righe]
+    ..sort((a, b) {
+      final c = _ordine(a.proposto).compareTo(_ordine(b.proposto));
+      return c != 0 ? c : _nome(a.atleta).compareTo(_nome(b.atleta));
+    });
+
+  static int _ordine(String stato) => switch (stato) {
+    statoAssente => 0,
+    statoGiustificato => 1,
+    statoRitardo => 2,
+    _ => 3,
+  };
+
+  String _nome(Atleta a) =>
+      widget.atleti.isEmpty ? a.nomeCompleto : nomeBreve(a, widget.atleti);
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final s = widget.proposta.allenamento;
+    final titolo = s.titolo?.trim();
+    int quanti(bool Function(String) vale) => _stati.values.where(vale).length;
+    final presenti = quanti(contaComePresente);
+    final ritardo = quanti((x) => x == statoRitardo);
+    final assenti = quanti((x) => x == statoAssente);
+    final giustificati = quanti((x) => x == statoGiustificato);
+    final daDecidere = widget.esito == _Esito.daDecidere;
+    return _Carta(
+      icona: Icons.fact_check_outlined,
+      titolo: [
+        'Appello di ${dataEstesa(s.data)}',
+        if (titolo != null && titolo.isNotEmpty) titolo,
+      ].join(': '),
+      figli: [
+        Text(
+          [
+            '${presenti == 1 ? '1 presente' : '$presenti presenti'}'
+                '${ritardo > 0 ? ' (di cui $ritardo in ritardo)' : ''}',
+            if (assenti > 0) assenti == 1 ? '1 assente' : '$assenti assenti',
+            if (giustificati > 0)
+              giustificati == 1
+                  ? '1 giustificato'
+                  : '$giustificati giustificati',
+          ].join(' · '),
+          style: AppTypography.corpoForte.copyWith(color: colori.testo),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        for (final r in _righe)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  [
+                    _nome(r.atleta),
+                    if (r.daFuori) 'da un\'altra squadra',
+                    if (r.attuale != null && !r.nominato) 'già segnato',
+                  ].join(' · '),
+                  style: AppTypography.corpo.copyWith(color: colori.testo),
+                ),
+              ),
+              _MenuStato(
+                key: Key('appello-${r.atleta.id}'),
+                stato: _stati[r.atleta.id]!,
+                onCambia: daDecidere
+                    ? (nuovo) => setState(() => _stati[r.atleta.id] = nuovo)
+                    : null,
+              ),
+            ],
+          ),
+        const SizedBox(height: AppSpacing.s12),
+        _Decisione(
+          esito: widget.esito,
+          conferma: 'Salva l\'appello',
+          fatto: 'Appello salvato',
+          onConferma: () => widget.onConferma(Map.of(_stati)),
+          onScarta: widget.onScarta,
+          dopo: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => PresenzeScreen(allenamento: s),
+              ),
+            ),
+            child: const Text('Presenze'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Lo stato di un atleta nell'appello, con il menu per cambiarlo: gli
+/// stessi colori dei pulsanti delle presenze.
+class _MenuStato extends StatelessWidget {
+  const _MenuStato({required this.stato, required this.onCambia, super.key});
+
+  final String stato;
+  final ValueChanged<String>? onCambia;
+
+  static IconData _icona(String stato) => switch (stato) {
+    statoRitardo => Icons.schedule,
+    statoAssente => Icons.close,
+    statoGiustificato => Icons.event_note_outlined,
+    _ => Icons.check,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    Color colore(String stato) => switch (stato) {
+      statoRitardo => colori.azione,
+      statoAssente => colori.testoSecondario,
+      statoGiustificato => colori.attenzione,
+      _ => colori.ok,
+    };
+    final etichetta = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(_icona(stato), size: 18, color: colore(stato)),
+        const SizedBox(width: AppSpacing.s4),
+        Text(
+          etichettaStatoPresenza(stato),
+          style: AppTypography.piccolo.copyWith(color: colore(stato)),
+        ),
+        if (onCambia != null)
+          Icon(Icons.arrow_drop_down, size: 20, color: colori.testoSecondario),
+      ],
+    );
+    return PopupMenuButton<String>(
+      enabled: onCambia != null,
+      tooltip: 'Cambia',
+      initialValue: stato,
+      onSelected: onCambia,
+      itemBuilder: (_) => [
+        for (final s in const [
+          statoPresente,
+          statoRitardo,
+          statoAssente,
+          statoGiustificato,
+        ])
+          PopupMenuItem(
+            value: s,
+            child: Row(
+              children: [
+                Icon(_icona(s), size: 18, color: colore(s)),
+                const SizedBox(width: AppSpacing.s8),
+                Text(etichettaStatoPresenza(s)),
+              ],
+            ),
+          ),
+      ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.altezzaMinimaBersaglio,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
+          child: etichetta,
+        ),
+      ),
     );
   }
 }

@@ -2,7 +2,8 @@
 //
 // La chat dell'allenatore (proposta 9 del piano "Il Mako della
 // pallanuoto"): risponde sui dati del club e propone azioni (una
-// convocazione, una seduta) che l'allenatore conferma nell'app.
+// convocazione, una seduta, l'appello) che l'allenatore conferma
+// nell'app.
 //
 // Decisione del 13 ottobre 2026, per i dati di minorenni: i dati restano
 // sul telefono. Questa funzione non legge niente del club: e' solo il
@@ -206,6 +207,31 @@ const STRUMENTI = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "proponi_appello",
+      description:
+        "Propone all'allenatore l'appello di una seduta: l'app gli mostra tutti gli atleti attesi con lo stato e lui lo salva (puo' cambiare qualcuno). Chi non nomini e' presente; chi era gia' segnato resta com'era. Senza allenamento_id l'app prende l'unica seduta della squadra nel giorno (oggi se manca la data); se ce n'e' piu' d'una te le elenca. Non e' salvato finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          allenamento_id: { type: "string" },
+          data: { type: "string", description: "AAAA-MM-GG" },
+          assenti: { type: "array", items: { type: "string" }, maxItems: 40 },
+          in_ritardo: { type: "array", items: { type: "string" }, maxItems: 40 },
+          giustificati: { type: "array", items: { type: "string" }, maxItems: 40 },
+          presenti: {
+            type: "array",
+            items: { type: "string" },
+            maxItems: 40,
+            description: "solo se li nomina: gli altri sono presenti lo stesso",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 const NOMI_STRUMENTI = new Set(STRUMENTI.map((s) => s.function.name));
@@ -219,7 +245,9 @@ Regole:
 - Gli atleti sono minorenni. Li conosci solo per codice (G1, G2...): scrivi sempre il codice, l'app lo trasforma nel nome. Non inventare nomi e non chiederli.
 - Non hai dati sulla salute (benessere, dolori, sintomi) e non devi chiederli. Per scegliere atleti con filtri sulla salute usa scegli_atleti; se l'allenatore chiede di salute o dolori usa mostra_benessere e digli che li trova nella scheda.
 - Prima di rispondere sui numeri leggi i dati con gli strumenti. Non inventare numeri: se un dato manca, dillo.
-- Per fare qualcosa (convocare, preparare una seduta) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- Per fare qualcosa (convocare, preparare una seduta, fare l'appello) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- L'appello ("assenti G3 e G5, G7 in ritardo", "tutti presenti") si fa con proponi_appello, subito, senza leggere prima la squadra: chi non e' nominato lo segna presente l'app. "Giustificato" e' chi ha avvisato o ha un motivo.
+- Se nella domanda c'e' "un atleta" al posto di un nome, quel nome e' di piu' atleti: chiedi quale (nome e cognome) prima di usarlo.
 - Niente diagnosi mediche. Il carico (ACWR) e' una fascia di riferimento, non una previsione di infortuni.
 - Rispondi in italiano, breve e concreto, come un collega competente. Niente punti esclamativi, niente elenchi lunghi se non servono.
 

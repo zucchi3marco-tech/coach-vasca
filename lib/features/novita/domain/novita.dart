@@ -44,6 +44,16 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'assistente-appello',
+    data: DateTime(2026, 10, 28),
+    titolo: 'L\'appello con una frase',
+    testo:
+        'Nell\'assistente scrivi o detta «assenti Rossi e Bianchi, Verdi in '
+        'ritardo»: ti prepara l\'appello della seduta di oggi, con tutti gli '
+        'altri presenti e chi avevi già segnato com\'era. Cambi chi serve '
+        'con un tocco e lo salvi tu.',
+  ),
+  Novita(
     id: 'solo-pallanuoto-ritocchi',
     data: DateTime(2026, 10, 28),
     titolo: 'Gli ultimi testi sul nuoto',
