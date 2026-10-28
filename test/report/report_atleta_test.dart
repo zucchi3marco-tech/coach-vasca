@@ -16,6 +16,7 @@ import 'package:coach_vasca/features/referti/domain/referto_partita.dart';
 import 'package:coach_vasca/features/report/data/lettore_report_atleta.dart';
 import 'package:coach_vasca/features/report/domain/report_atleta.dart';
 import 'package:coach_vasca/features/report/pdf/report_atleta_pdf.dart';
+import 'package:coach_vasca/features/report/presentation/azioni_report.dart';
 import 'package:coach_vasca/features/report/presentation/report_atleta_screen.dart';
 import 'package:coach_vasca/features/stagioni/application/stagioni_providers.dart';
 import 'package:coach_vasca/features/stagioni/domain/stagione.dart';

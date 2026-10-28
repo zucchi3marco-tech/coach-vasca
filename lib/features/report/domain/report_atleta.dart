@@ -458,7 +458,7 @@ ReportAtleta reportAtleta({
       for (final s in dati.benessere)
         if (s.atletaId == atleta.id && periodo.contiene(s.data)) s,
     ];
-    final indici = [for (final s in schede) ?_indiceVoci(s)];
+    final indici = [for (final s in schede) ?indiceVociBenessere(s)];
     final rpe = [
       for (final r in dati.rpe)
         if (r.atletaId == atleta.id && periodo.contiene(r.data)) r.rpe,
@@ -506,7 +506,7 @@ ReportAtleta reportAtleta({
 
 /// Le cinque voci della scheda su 100, come la base della Prontezza
 /// (`calcolaPunteggio`), senza le penalità di sonno, dolori e sintomi.
-int? _indiceVoci(SchedaBenessere s) {
+int? indiceVociBenessere(SchedaBenessere s) {
   final voci = [
     s.qualitaSonno,
     s.energia,

@@ -16,6 +16,7 @@ import '../../atleti/application/atleti_providers.dart';
 import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../pallanuoto/presentation/campo_tiro.dart';
 import '../../pallanuoto/presentation/voci_partita.dart';
+import '../../report/presentation/report_squadra_screen.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../application/statistiche_providers.dart';
 import '../domain/statistiche_stagionali.dart';
@@ -54,7 +55,21 @@ class _StatisticheSquadraScreenState
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(title: const Text('Statistiche stagione')),
+      appBar: AppBar(
+        title: const Text('Statistiche stagione'),
+        actions: [
+          if (_stagione case final stagione?)
+            IconButton(
+              tooltip: 'Report PDF',
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReportSquadraScreen(stagione: stagione),
+                ),
+              ),
+            ),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

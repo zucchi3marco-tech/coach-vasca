@@ -87,30 +87,40 @@ pw.Widget numeriReport(
 );
 
 /// Una tabella semplice: intestazione in grigio, righe con il filetto.
-/// [destra]: le colonne con i numeri, allineate a destra.
+/// [destra]: le colonne con i numeri, allineate a destra. [evidenzia]:
+/// le righe in grassetto (la nostra squadra in classifica).
 pw.Widget tabellaReport({
   required List<String> intestazione,
   required List<List<String>> righe,
   Set<int> destra = const {},
   Map<int, pw.TableColumnWidth> larghezze = const {},
+  Set<int> evidenzia = const {},
 }) {
-  pw.Widget cella(String testo, int colonna, {bool testa = false}) =>
-      pw.Padding(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: pw.Text(
-          testo,
-          textAlign: destra.contains(colonna)
-              ? pw.TextAlign.right
-              : pw.TextAlign.left,
-          style: testa
-              ? const pw.TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: pw.FontWeight.bold,
-                  color: grigioReport,
-                )
-              : const pw.TextStyle(fontSize: 9.5, color: inchiostroReport),
-        ),
-      );
+  pw.Widget cella(
+    String testo,
+    int colonna, {
+    bool testa = false,
+    bool forte = false,
+  }) => pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+    child: pw.Text(
+      testo,
+      textAlign: destra.contains(colonna)
+          ? pw.TextAlign.right
+          : pw.TextAlign.left,
+      style: testa
+          ? const pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: grigioReport,
+            )
+          : pw.TextStyle(
+              fontSize: 9.5,
+              color: inchiostroReport,
+              fontWeight: forte ? pw.FontWeight.bold : null,
+            ),
+    ),
+  );
   return pw.Table(
     columnWidths: larghezze,
     border: const pw.TableBorder(
@@ -125,9 +135,12 @@ pw.Widget tabellaReport({
             cella(intestazione[i], i, testa: true),
         ],
       ),
-      for (final r in righe)
+      for (var j = 0; j < righe.length; j++)
         pw.TableRow(
-          children: [for (var i = 0; i < r.length; i++) cella(r[i], i)],
+          children: [
+            for (var i = 0; i < righe[j].length; i++)
+              cella(righe[j][i], i, forte: evidenzia.contains(j)),
+          ],
         ),
     ],
   );

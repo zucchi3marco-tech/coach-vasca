@@ -1,12 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:printing/printing.dart';
 
 import '../../../core/utils/error_messages.dart';
 import '../../../core/utils/giorni.dart';
-import '../../../core/utils/scarica_file.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/colori_app.dart';
@@ -15,7 +11,6 @@ import '../../../widgets/app_text_field.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
-import '../../../widgets/tonal_chip.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/categoria_fin.dart';
 import '../../export/marchio_pdf.dart';
@@ -24,45 +19,8 @@ import '../../stagioni/application/stagioni_providers.dart';
 import '../../stagioni/domain/stagione.dart';
 import '../data/lettore_report_atleta.dart';
 import '../domain/report_atleta.dart';
-import '../pdf/report_atleta_pdf.dart';
-
-/// Cosa fare del PDF pronto. Dietro un provider perché nei test non c'è
-/// né un browser né il foglio di condivisione.
-class AzioniReport {
-  const AzioniReport();
-
-  Future<Uint8List> creaPdf(ReportAtleta report, MarchioPdf? marchio) =>
-      generaReportAtletaPdf(report, marchio: marchio);
-
-  Future<void> consegna(Uint8List bytes, String nomeFile) async {
-    if (scaricaFileDisponibile) {
-      scaricaFile(bytes, nomeFile, mimeType: 'application/pdf');
-    } else {
-      await Printing.sharePdf(bytes: bytes, filename: nomeFile);
-    }
-  }
-}
-
-final azioniReportProvider = Provider<AzioniReport>(
-  (ref) => const AzioniReport(),
-);
-
-/// "report-rossi-luca-2026-10-27.pdf".
-String nomeFileReport(String nome, DateTime giorno) {
-  const accenti = {
-    'à': 'a', 'á': 'a', 'è': 'e', 'é': 'e', 'ì': 'i', 'í': 'i', //
-    'ò': 'o', 'ó': 'o', 'ù': 'u', 'ú': 'u',
-  };
-  final semplice =
-      [for (final c in nome.toLowerCase().split('')) accenti[c] ?? c]
-          .join()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-          .replaceAll(RegExp(r'^-+|-+$'), '');
-  final data =
-      '${giorno.year}-${giorno.month.toString().padLeft(2, '0')}-'
-      '${giorno.day.toString().padLeft(2, '0')}';
-  return 'report-${semplice.isEmpty ? 'atleta' : semplice}-$data.pdf';
-}
+import 'azioni_report.dart';
+import 'scegli_periodo_report.dart';
 
 /// La stagione dell'atleta per proporre i periodi: quella della sua
 /// squadra (o di tutto il club) che comprende oggi, se no l'ultima già
@@ -112,8 +70,7 @@ class ReportAtletaScreen extends ConsumerStatefulWidget {
 
 class _ReportAtletaScreenState extends ConsumerState<ReportAtletaScreen> {
   final _nota = TextEditingController();
-  int _scelto = 0;
-  PeriodoReport? _date;
+  PeriodoReport? _periodo;
   bool _conBenessere = false;
   bool _creando = false;
   String? _errore;
@@ -124,30 +81,6 @@ class _ReportAtletaScreenState extends ConsumerState<ReportAtletaScreen> {
   void dispose() {
     _nota.dispose();
     super.dispose();
-  }
-
-  Future<void> _scegliDate(List<PeriodoReport> proposti) async {
-    final base = _date ?? proposti.first;
-    final scelta = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(_oggi.year - 3),
-      lastDate: soloData(_oggi),
-      initialDateRange: DateTimeRange(
-        start: base.dal,
-        end: base.al.isAfter(soloData(_oggi)) ? soloData(_oggi) : base.al,
-      ),
-      helpText: 'Il periodo del report',
-      saveText: 'Scegli',
-    );
-    if (scelta == null || !mounted) return;
-    setState(() {
-      _date = PeriodoReport(
-        dal: scelta.start,
-        al: scelta.end,
-        nome: 'Periodo scelto',
-      );
-      _scelto = proposti.length;
-    });
   }
 
   Future<void> _crea(PeriodoReport periodo, String? squadra) async {
@@ -212,9 +145,7 @@ class _ReportAtletaScreenState extends ConsumerState<ReportAtletaScreen> {
           : stagioneDellAtleta(stagioni, atleta, _oggi),
       oggi: _oggi,
     );
-    final scelto = _scelto < proposti.length
-        ? proposti[_scelto]
-        : (_date ?? proposti.first);
+    final scelto = ScegliPeriodoReport.valore(proposti, _periodo);
 
     return AppScaffold(
       appBar: AppBar(),
@@ -227,30 +158,11 @@ class _ReportAtletaScreenState extends ConsumerState<ReportAtletaScreen> {
             sottotitolo: 'Il riassunto da mandare alla famiglia o al club.',
           ),
           const SizedBox(height: AppSpacing.s28),
-          const TitoloSezione('Periodo'),
-          Wrap(
-            spacing: AppSpacing.s8,
-            runSpacing: AppSpacing.s8,
-            children: [
-              for (var i = 0; i < proposti.length; i++)
-                TonalChip(
-                  etichetta: proposti[i].nome,
-                  selezionato: _scelto == i,
-                  onSelezionato: (_) => setState(() => _scelto = i),
-                ),
-              TonalChip(
-                etichetta: 'Scegli le date',
-                selezionato: _scelto >= proposti.length,
-                onSelezionato: (_) => _scegliDate(proposti),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            'Dentro: ${scelto.descrizione}.',
-            style: AppTypography.piccolo.copyWith(
-              color: colori.testoSecondario,
-            ),
+          ScegliPeriodoReport(
+            proposti: proposti,
+            scelto: _periodo,
+            oggi: _oggi,
+            onScelto: (p) => setState(() => _periodo = p),
           ),
           const SizedBox(height: AppSpacing.s24),
           const TitoloSezione("Cosa c'è dentro"),
