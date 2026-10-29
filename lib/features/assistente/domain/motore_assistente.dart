@@ -57,6 +57,8 @@ const etichetteStrumenti = {
   'proponi_appello': 'appello',
   'leggi_seduta': 'seduta',
   'proponi_modifica_seduta': 'modifiche alla seduta',
+  'impegni': 'impegni',
+  'proponi_messaggio_famiglie': 'messaggio per le famiglie',
 };
 
 /// La conversazione con l'assistente: tiene la storia nel formato del

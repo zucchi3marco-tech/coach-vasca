@@ -11,6 +11,8 @@ import '../../benessere/application/benessere_providers.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/application/carico_providers.dart';
 import '../../carico/domain/carico_rpe.dart';
+import '../../impegni/application/impegni_providers.dart';
+import '../../impegni/domain/impegno.dart';
 import '../../pallanuoto/application/pallanuoto_providers.dart';
 import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
@@ -81,4 +83,7 @@ class FonteDatiRiverpod implements FonteDatiAssistente {
   @override
   Future<Map<String, List<CaricoSeduta>>> sedutePerAtleta() =>
       _leggi(seduteCaricoClubProvider(clubId).future);
+
+  @override
+  Future<List<Impegno>> impegni() => _leggi(impegniListProvider(clubId).future);
 }

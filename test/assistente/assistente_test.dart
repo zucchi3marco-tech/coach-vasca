@@ -12,6 +12,7 @@ import 'package:coach_vasca/features/assistente/domain/strumenti_assistente.dart
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/benessere/domain/scheda_benessere.dart';
 import 'package:coach_vasca/features/carico/domain/carico_rpe.dart';
+import 'package:coach_vasca/features/impegni/domain/impegno.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/distinta_giocatore.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
@@ -55,6 +56,11 @@ final _prossima = Partita(
   squadraCasa: 'Noi',
   squadraTrasferta: 'Recco',
   numeroMaxConvocati: 3,
+  luogo: 'Piscina comunale',
+  ritrovoOra: '15:00',
+  ritrovoLuogo: 'al club',
+  daPortare: 'calottine e documento',
+  noteConvocazione: 'Accompagna Rossi',
 );
 
 final _giocata = Partita(
@@ -247,6 +253,47 @@ class _Fonte implements FonteDatiAssistente {
 
   @override
   Future<Map<String, List<CaricoSeduta>>> sedutePerAtleta() async => const {};
+
+  @override
+  Future<List<Impegno>> impegni() async => [
+    Impegno(
+      id: 'i1',
+      clubId: 'c1',
+      gruppoId: 'u14',
+      tipo: TipoImpegno.collegiale,
+      dal: DateTime(2026, 10, 20),
+      al: DateTime(2026, 10, 22),
+      nome: 'Collegiale con Rossi',
+      luogo: 'Lignano',
+    ),
+    // Di tutto il club.
+    Impegno(
+      id: 'i2',
+      clubId: 'c1',
+      tipo: TipoImpegno.riposo,
+      dal: DateTime(2026, 11, 1),
+      al: DateTime(2026, 11, 1),
+      nome: 'Piscina chiusa',
+    ),
+    // Di un'altra squadra.
+    Impegno(
+      id: 'i3',
+      clubId: 'c1',
+      gruppoId: 'u16',
+      tipo: TipoImpegno.trasferta,
+      dal: DateTime(2026, 10, 25),
+      al: DateTime(2026, 10, 26),
+    ),
+    // Già passato.
+    Impegno(
+      id: 'i4',
+      clubId: 'c1',
+      gruppoId: 'u14',
+      tipo: TipoImpegno.torneo,
+      dal: DateTime(2026, 10, 1),
+      al: DateTime(2026, 10, 3),
+    ),
+  ];
 }
 
 /// Oggi due sedute della squadra: l'appello non sa quale.
@@ -377,6 +424,10 @@ void main() {
         'convocati': 1,
         'massimo_convocati': 3,
         'convocazione_inviata': false,
+        'ritrovo': 'ore 15:00, al club',
+        'piscina': 'Piscina comunale',
+        'da portare': 'calottine e documento',
+        'note_per_le_famiglie': 'Accompagna G3',
       });
       final st = await strumenti.esegui('statistiche_partite', const {
         'ultime': 5,
@@ -877,5 +928,116 @@ void main() {
       expect(p.data, DateTime(2026, 10, 15));
       expect(p.scritto.righeNonCapite, 0);
     });
+
+    test('il messaggio ai genitori: il prossimo giovedì', () async {
+      final voci = await motoreDemo().chiedi(
+        'Scrivi ai genitori che giovedì non c\'è allenamento',
+      );
+      final p =
+          voci.whereType<VoceScheda>().single.scheda
+              as PropostaMessaggioFamiglie;
+      expect(p.testo, startsWith('*Niente allenamento giovedì 15 ottobre*'));
+      expect(
+        voci.whereType<RispostaAssistente>().single.testo,
+        contains('Condividi'),
+      );
+    });
+
+    test('il messaggio ai genitori sulla partita: ritrovo e piscina', () async {
+      final voci = await motoreDemo().chiedi(
+        'Ricorda alle famiglie la partita di sabato',
+      );
+      final p =
+          voci.whereType<VoceScheda>().single.scheda
+              as PropostaMessaggioFamiglie;
+      expect(p.testo, contains('Sabato 17 ottobre contro Recco'));
+      expect(p.testo, contains('Ritrovo: ore 15:00, al club'));
+      expect(p.testo, contains('Piscina: Piscina comunale'));
+    });
+  });
+
+  group('messaggi alle famiglie', () {
+    test(
+      'impegni: della squadra e del club, nel periodo, senza nomi',
+      () async {
+        final esito = await strumenti.esegui('impegni', const {});
+        final elenco = (esito.perModello['impegni']! as List)
+            .cast<Map<String, Object?>>();
+        expect([for (final i in elenco) i['tipo']], ['collegiale', 'riposo']);
+        final collegiale = elenco.first;
+        expect(collegiale['nome'], 'Collegiale con G3');
+        expect(collegiale['luogo'], 'Lignano');
+        expect(collegiale['dal'], '2026-10-20');
+        expect(collegiale['giorni'], 3);
+        expect(collegiale['di_tutto_il_club'], isFalse);
+        expect(elenco.last['di_tutto_il_club'], isTrue);
+        senzaNomiNeSalute(esito.perModello);
+      },
+    );
+
+    test('impegni: un periodo chiesto', () async {
+      final esito = await strumenti.esegui('impegni', const {
+        'da': '2026-10-25',
+        'a': '2026-11-30',
+      });
+      final elenco = esito.perModello['impegni']! as List;
+      expect(elenco, hasLength(1));
+      expect((elenco.single as Map)['nome'], 'Piscina chiusa');
+    });
+
+    test('partite prossime: i dettagli per le famiglie, senza nomi', () async {
+      final esito = await strumenti.esegui('partite', const {
+        'quali': 'prossime',
+      });
+      final p = (esito.perModello['partite']! as List).single as Map;
+      expect(p['ritrovo'], 'ore 15:00, al club');
+      expect(p['piscina'], 'Piscina comunale');
+      expect(p['da portare'], 'calottine e documento');
+      expect(p['note_per_le_famiglie'], 'Accompagna G3');
+      expect(p.containsKey('inizio partita'), isFalse);
+      senzaNomiNeSalute(esito.perModello);
+
+      final giocate = await strumenti.esegui('partite', const {
+        'quali': 'giocate',
+      });
+      expect(
+        ((giocate.perModello['partite']! as List).single as Map).containsKey(
+          'ritrovo',
+        ),
+        isFalse,
+      );
+    });
+
+    test('proponi_messaggio_famiglie: cognome e nome al posto dei codici', () async {
+      final esito = await strumenti.esegui('proponi_messaggio_famiglie', const {
+        'testo': '*Documenti*\nG3 e G1 portino il documento sabato.',
+      });
+      final p = esito.scheda! as PropostaMessaggioFamiglie;
+      expect(
+        p.testo,
+        '*Documenti*\nRossi Marco e Bianchi Luca portino il documento sabato.',
+      );
+      expect(esito.perModello['stato'], contains('Non è ancora inviato'));
+      senzaNomiNeSalute(esito.perModello);
+    });
+
+    test(
+      'proponi_messaggio_famiglie: codici sconosciuti o testo vuoto',
+      () async {
+        final sconosciuto = await strumenti.esegui(
+          'proponi_messaggio_famiglie',
+          const {'testo': 'G9 porti il pallone'},
+        );
+        expect(sconosciuto.scheda, isNull);
+        expect(sconosciuto.perModello['errore'], contains('G9'));
+
+        final vuoto = await strumenti.esegui(
+          'proponi_messaggio_famiglie',
+          const {'testo': '  '},
+        );
+        expect(vuoto.scheda, isNull);
+        expect(vuoto.perModello['errore'], contains('vuoto'));
+      },
+    );
   });
 }

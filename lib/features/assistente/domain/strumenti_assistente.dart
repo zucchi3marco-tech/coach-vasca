@@ -12,6 +12,8 @@ import '../../atleti/domain/atleta.dart';
 import '../../atleti/domain/squadre_atleta.dart';
 import '../../benessere/domain/scheda_benessere.dart';
 import '../../carico/domain/carico_rpe.dart';
+import '../../impegni/domain/impegno.dart';
+import '../../pallanuoto/domain/convocazione.dart' show vociConvocazione;
 import '../../pallanuoto/domain/distinta_giocatore.dart';
 import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/numeri_distinta.dart';
@@ -37,6 +39,9 @@ abstract class FonteDatiAssistente {
   Future<Map<String, VolumeAllenamento>> volumi();
   Future<List<SchedaBenessere>> schedeBenessere();
   Future<Map<String, List<CaricoSeduta>>> sedutePerAtleta();
+
+  /// Collegiali, trasferte, riposi, tornei del club.
+  Future<List<Impegno>> impegni();
 }
 
 /// Quello che uno strumento fa vedere all'allenatore nella chat, oltre a
@@ -193,6 +198,15 @@ class PropostaModificaSeduta extends SchedaAssistente {
       testo.trim().isEmpty ? const [] : testo.trimRight().split('\n');
 }
 
+/// Un messaggio per il gruppo WhatsApp dei genitori, con i nomi già al
+/// loro posto: l'allenatore lo può correggere e lo manda con Condividi o
+/// Copia (scelte del coach, 2026-10-29). Non si salva.
+class PropostaMessaggioFamiglie extends SchedaAssistente {
+  const PropostaMessaggioFamiglie({required this.testo});
+
+  final String testo;
+}
+
 /// Le serie [attuali] sono ancora quelle [lette]: stesse righe, nello
 /// stesso ordine, con gli stessi dati. Se no la proposta è vecchia.
 bool stesseSerie(List<Serie> attuali, List<Serie> lette) {
@@ -260,6 +274,8 @@ class StrumentiAssistente {
         'proponi_appello' => await _proponiAppello(args),
         'leggi_seduta' => _solo(await _leggiSeduta(args)),
         'proponi_modifica_seduta' => await _proponiModifica(args),
+        'impegni' => _solo(await _impegni(args)),
+        'proponi_messaggio_famiglie' => _proponiMessaggio(args),
         _ => _solo({'errore': 'Strumento sconosciuto: $nome'}),
       };
     } catch (e) {
@@ -340,6 +356,7 @@ class StrumentiAssistente {
             'convocati': (await fonte.distinta(p.id)).length,
             'massimo_convocati': p.numeroMaxConvocati,
             'convocazione_inviata': p.convocazioneInviata,
+            if (!giocate) ..._perLeFamiglie(p),
           },
       ],
     };
@@ -1044,6 +1061,92 @@ class StrumentiAssistente {
           'righe_non_capite': scritto.righeNonCapite,
       },
       scheda: proposta,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Impegni e messaggi alle famiglie
+
+  /// Il testo senza nomi, null se vuoto.
+  String? _senzaNomi(String? testo) {
+    final t = testo?.trim() ?? '';
+    return t.isEmpty ? null : pseudonimi.anonimizza(t);
+  }
+
+  Future<Map<String, Object?>> _impegni(Map<String, dynamic> args) async {
+    final da = soloData(DateTime.tryParse('${args['da']}') ?? _oggi);
+    final a = soloData(
+      DateTime.tryParse('${args['a']}') ?? aggiungiGiorni(_oggi, 60),
+    );
+    final scelti = [
+      for (final i in await fonte.impegni())
+        if (visibileNelGruppo(
+              gruppoDelRecord: i.gruppoId,
+              gruppoSelezionato: fonte.gruppoId,
+            ) &&
+            !soloData(i.al).isBefore(da) &&
+            !soloData(i.dal).isAfter(a))
+          i,
+    ]..sort((x, y) => x.dal.compareTo(y.dal));
+    return {
+      'da': formatDateOnly(da),
+      'a': formatDateOnly(a),
+      'impegni': [
+        for (final i in scelti.take(40))
+          {
+            'tipo': i.tipo.etichetta.toLowerCase(),
+            'nome': ?_senzaNomi(i.nome),
+            'dal': formatDateOnly(i.dal),
+            'giorno_inizio': nomeGiorno(i.dal),
+            'al': formatDateOnly(i.al),
+            'giorno_fine': nomeGiorno(i.al),
+            'giorni': i.giorni,
+            'luogo': ?_senzaNomi(i.luogo),
+            'note': ?_senzaNomi(i.note),
+            'di_tutto_il_club': i.diClub,
+          },
+      ],
+    };
+  }
+
+  /// Per scrivere alle famiglie di una partita: campionato, ritrovo,
+  /// piscina, calottina, rientro, cosa portare e note, senza nomi.
+  Map<String, Object?> _perLeFamiglie(Partita p) => {
+    'campionato': ?_senzaNomi(p.campionato),
+    for (final v in vociConvocazione(p))
+      if (v.etichetta != 'Inizio partita')
+        v.etichetta.toLowerCase(): pseudonimi.anonimizza(v.valore),
+    'note_per_le_famiglie': ?_senzaNomi(p.noteConvocazione),
+  };
+
+  /// Il messaggio per il gruppo dei genitori: il testo del modello con
+  /// cognome e nome al posto dei codici (solo di chi ha nominato
+  /// l'allenatore, dicono le istruzioni). Non si salva e non parte niente:
+  /// l'allenatore lo corregge e lo manda lui.
+  EsitoStrumento _proponiMessaggio(Map<String, dynamic> args) {
+    final testo = '${args['testo'] ?? ''}'.trim();
+    if (testo.isEmpty) {
+      return _solo({'errore': 'Messaggio vuoto: scrivi il testo intero.'});
+    }
+    final sconosciuti = pseudonimi.codiciSconosciuti(testo);
+    if (sconosciuti.isNotEmpty) {
+      return _solo({
+        'errore':
+            'Codici che non sono atleti: ${sconosciuti.join(', ')}. Usa solo '
+            'i codici degli atleti nominati dall\'allenatore.',
+      });
+    }
+    return (
+      perModello: {
+        'stato':
+            'Messaggio mostrato all\'allenatore: lo può correggere e lo '
+            'manda lui nel gruppo con Condividi o Copia. Non è ancora '
+            'inviato.',
+        'caratteri': testo.length,
+      },
+      scheda: PropostaMessaggioFamiglie(
+        testo: pseudonimi.conNomi(testo, pieni: true),
+      ),
     );
   }
 

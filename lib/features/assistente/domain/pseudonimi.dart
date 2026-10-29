@@ -97,9 +97,19 @@ class Pseudonimi {
   }
 
   /// Il testo del modello con i nomi al posto dei codici: "Rossi", o
-  /// "Rossi M." se ci sono due Rossi (come nel resto dell'app).
-  String conNomi(String testo) => testo.replaceAllMapped(_codice, (m) {
-    final a = _perCodice['G${m[1]}'];
-    return a == null ? m[0]! : nomeBreve(a, _atleti);
-  });
+  /// "Rossi M." se ci sono due Rossi (come nel resto dell'app). Con
+  /// [pieni] cognome e nome, come nella convocazione ("Rossi Mario"): per
+  /// i messaggi alle famiglie.
+  String conNomi(String testo, {bool pieni = false}) =>
+      testo.replaceAllMapped(_codice, (m) {
+        final a = _perCodice['G${m[1]}'];
+        if (a == null) return m[0]!;
+        return pieni ? a.nomeCompleto.trim() : nomeBreve(a, _atleti);
+      });
+
+  /// I codici nel [testo] che non sono di nessun atleta.
+  Set<String> codiciSconosciuti(String testo) => {
+    for (final m in _codice.allMatches(testo))
+      if (!_perCodice.containsKey('G${m[1]}')) m[0]!,
+  };
 }

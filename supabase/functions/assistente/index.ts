@@ -2,8 +2,9 @@
 //
 // La chat dell'allenatore (proposta 9 del piano "Il Mako della
 // pallanuoto"): risponde sui dati del club e propone azioni (una
-// convocazione, una seduta nuova o le modifiche a una che c'e', l'appello)
-// che l'allenatore conferma nell'app.
+// convocazione, una seduta nuova o le modifiche a una che c'e', l'appello,
+// un messaggio per il gruppo dei genitori) che l'allenatore conferma
+// nell'app.
 //
 // Decisione del 13 ottobre 2026, per i dati di minorenni: i dati restano
 // sul telefono. Questa funzione non legge niente del club: e' solo il
@@ -64,7 +65,7 @@ const STRUMENTI = [
     function: {
       name: "partite",
       description:
-        "Le partite della squadra: prossime o giocate, con id, data, ora, avversario, casa o trasferta, risultato, convocati e massimo dei convocati.",
+        "Le partite della squadra: prossime o giocate, con id, data, ora, avversario, casa o trasferta, risultato, convocati e massimo dei convocati; le prossime anche con campionato, ritrovo, piscina, calottina, rientro previsto, cosa portare e note per le famiglie, quando ci sono.",
       parameters: {
         type: "object",
         properties: {
@@ -267,6 +268,38 @@ const STRUMENTI = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "impegni",
+      description:
+        "Gli impegni della squadra e del club fra due date (di base da oggi per 60 giorni): collegiali, trasferte, riposi (anche piscina chiusa o vacanze), tornei, altro; con tipo, nome, dal, al, giorni, luogo e note.",
+      parameters: {
+        type: "object",
+        properties: {
+          da: { type: "string", description: "AAAA-MM-GG" },
+          a: { type: "string", description: "AAAA-MM-GG" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_messaggio_famiglie",
+      description:
+        "Propone all'allenatore un messaggio per il gruppo WhatsApp dei genitori: l'app glielo mostra con i nomi al posto dei codici, lui lo puo' correggere e lo manda con Condividi o Copia. Non e' inviato finche' non lo manda lui.",
+      parameters: {
+        type: "object",
+        properties: {
+          testo: { type: "string", description: "Il messaggio intero, pronto da incollare" },
+        },
+        required: ["testo"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // La seduta da cui l'allenatore ha aperto la chat, se c'e': solo id, data,
@@ -293,9 +326,10 @@ Regole:
 - Gli atleti sono minorenni. Li conosci solo per codice (G1, G2...): scrivi sempre il codice, l'app lo trasforma nel nome. Non inventare nomi e non chiederli.
 - Non hai dati sulla salute (benessere, dolori, sintomi) e non devi chiederli. Per scegliere atleti con filtri sulla salute usa scegli_atleti; se l'allenatore chiede di salute o dolori usa mostra_benessere e digli che li trova nella scheda.
 - Prima di rispondere sui numeri leggi i dati con gli strumenti. Non inventare numeri: se un dato manca, dillo.
-- Per fare qualcosa (convocare, preparare o cambiare una seduta, fare l'appello) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- Per fare qualcosa (convocare, preparare o cambiare una seduta, fare l'appello, scrivere alle famiglie) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
 - L'appello ("assenti G3 e G5, G7 in ritardo", "tutti presenti") si fa con proponi_appello, subito, senza leggere prima la squadra: chi non e' nominato lo segna presente l'app. "Giustificato" e' chi ha avvisato o ha un motivo.
 - Per cambiare una seduta che c'e' ("togli il 400 iniziale", "aggiungi 6x50 gambe dopo il riscaldamento", "cambia il titolo") leggila con leggi_seduta, poi usa proponi_modifica_seduta con tutto il testo delle serie: cambia solo le righe richieste e copia le altre identiche, nello stesso ordine. Se cambia solo titolo o note, non mandare il testo.
+- Per un messaggio alle famiglie ("scrivi ai genitori che giovedi' non c'e' allenamento", "ricorda la partita di sabato", "avvisa del collegiale") usa proponi_messaggio_famiglie con il testo pronto da incollare nel gruppo WhatsApp dei genitori. Se servono date o dettagli leggili prima con partite, allenamenti o impegni; la data scrivila per intero ("giovedi' 30 ottobre"). Le sedute non hanno orario: scrivi un'ora solo se l'ha detta l'allenatore o c'e' nei dati, non inventarla. Poche righe, tono cordiale e chiaro, la prima riga in grassetto di WhatsApp (*cosi'*), niente firma e niente emoji. Nomina un atleta (con il suo codice) solo se l'ha nominato l'allenatore. Il messaggio va a tutti i genitori: mai motivi di salute, infortuni o dolori di un atleta, nemmeno se li dice l'allenatore. Se l'allenatore chiede di cambiarlo, manda di nuovo il testo intero.
 - Se nella domanda c'e' "un atleta" al posto di un nome, quel nome e' di piu' atleti: chiedi quale (nome e cognome) prima di usarlo.
 - Niente diagnosi mediche. Il carico (ACWR) e' una fascia di riferimento, non una previsione di infortuni.
 - Rispondi in italiano, breve e concreto, come un collega competente. Niente punti esclamativi, niente elenchi lunghi se non servono.

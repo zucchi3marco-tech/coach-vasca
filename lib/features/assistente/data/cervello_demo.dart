@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../core/utils/date_format.dart';
+import '../../pallanuoto/domain/convocazione.dart' show dataConvocazione;
 
 /// Il "cervello" dell'assistente nella modalità demo, dove l'AI non c'è
 /// (la funzione `assistente` esiste solo sul server). Risponde alle
@@ -53,6 +54,54 @@ Map<String, dynamic> cervelloDemo(
     'role': 'assistant',
     'content': testo,
   };
+
+  // "Scrivi ai genitori che giovedì non c'è allenamento", "ricorda alle
+  // famiglie la partita": il messaggio per il gruppo.
+  if (domanda.contains('genitori') || domanda.contains('famiglie')) {
+    if (risultati.containsKey('proponi_messaggio_famiglie')) {
+      return scrivi(
+        'Ecco il messaggio: correggilo se serve e mandalo con Condividi o '
+        'Copia.',
+      );
+    }
+    if (domanda.contains('partita')) {
+      final partite = risultati['partite'];
+      if (partite == null) {
+        return chiama('partite', {'quali': 'prossime', 'quante': 1});
+      }
+      final elenco = (partite['partite'] as List?) ?? const [];
+      if (elenco.isEmpty) return scrivi('Non ci sono partite in programma.');
+      final p = (elenco.first as Map).cast<String, Object?>();
+      final data = DateTime.tryParse('${p['data']}');
+      return chiama('proponi_messaggio_famiglie', {
+        'testo': [
+          '*Partita ${p['in_casa'] == true ? 'in casa' : 'in trasferta'}*',
+          '${data == null ? p['data'] : dataConvocazione(data)} contro '
+              '${p['avversario']}.',
+          for (final (chiave, etichetta) in const [
+            ('ritrovo', 'Ritrovo'),
+            ('piscina', 'Piscina'),
+            ('da portare', 'Da portare'),
+          ])
+            if (p[chiave] != null) '$etichetta: ${p[chiave]}',
+          'Grazie a tutti.',
+        ].join('\n'),
+      });
+    }
+    final adesso = oggi ?? DateTime.now();
+    final giorno = _giorniDemo.indexWhere(domanda.contains);
+    // Il prossimo giorno nominato (giovedì se non ne nomina).
+    final settimana = (giorno < 0 ? DateTime.thursday : giorno + 1);
+    final giorni = (settimana - adesso.weekday + 7) % 7;
+    final data = adesso.add(Duration(days: giorni == 0 ? 7 : giorni));
+    return chiama('proponi_messaggio_famiglie', {
+      'testo':
+          '*Niente allenamento ${dataConvocazione(data).toLowerCase()}*\n'
+          'Ciao a tutti, ${dataConvocazione(data).toLowerCase()} non c\'è '
+          'allenamento. Ci vediamo alla seduta successiva, con il solito '
+          'orario.',
+    });
+  }
 
   // "Assenti G3 e G1, G4 in ritardo": ogni pezzo fra le virgole dice per
   // chi vale, e chi non ha la parola prende quella di prima.
@@ -243,12 +292,23 @@ Map<String, dynamic> cervelloDemo(
 
   return scrivi(
     'Nella demo rispondo solo alle domande d\'esempio: superiorità, '
-    'convocazione, dolori, seduta e appello. Con l\'AI vera rispondo a quello che '
+    'convocazione, dolori, seduta, appello e messaggio ai genitori. Con l\'AI '
+    'vera rispondo a quello che '
     'chiedi.',
   );
 }
 
 const _titoliBlocco = {'riscaldamento', 'principale', 'defaticamento', 'altro'};
+
+const _giorniDemo = [
+  'lunedì',
+  'martedì',
+  'mercoledì',
+  'giovedì',
+  'venerdì',
+  'sabato',
+  'domenica',
+];
 
 /// Il testo di una seduta con la modifica degli esempi: "aggiungi …" in
 /// fondo al blocco nominato (o alla fine), "togli l'ultima serie" del

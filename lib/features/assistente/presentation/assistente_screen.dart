@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/condivisione/condividi_testo.dart';
 import '../../../core/sport_app.dart';
 import '../../../core/utils/date_format.dart';
 import '../../../core/utils/date_italiane.dart';
@@ -14,6 +16,7 @@ import '../../../theme/colori_app.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
+import '../../../widgets/secondary_button.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
 import '../../allenamenti/data/salva_piano_serie.dart';
 import '../../allenamenti/data/serie_repository.dart';
@@ -417,6 +420,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     'Chi ha segnato dolori questa settimana?',
     'Prepara la seduta di giovedì, con lavoro per i portieri',
     'Appello di oggi: tutti presenti',
+    'Scrivi ai genitori che giovedì non c\'è allenamento',
   ];
 
   /// Aperto dalla pagina di una seduta.
@@ -518,6 +522,14 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                                 ),
                           onConferma: () => _salvaModifica(scheda),
                           onScarta: () => _scarta(scheda),
+                        ),
+                        PropostaMessaggioFamiglie() => _CartaMessaggioFamiglie(
+                          scheda,
+                          onPreso: () => _motore?.annota(
+                            'L\'allenatore ha preso il messaggio per le '
+                            'famiglie (Condividi o Copia), forse dopo averlo '
+                            'corretto.',
+                          ),
                         ),
                       },
                     },
@@ -1016,6 +1028,115 @@ class _CartaSeduta extends StatelessWidget {
                   ),
                   child: const Text('Apri'),
                 ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Il messaggio per il gruppo dei genitori: si corregge nel campo e si
+/// manda con Condividi o Copia, come la convocazione. Non si salva.
+class _CartaMessaggioFamiglie extends StatefulWidget {
+  const _CartaMessaggioFamiglie(this.proposta, {required this.onPreso});
+
+  final PropostaMessaggioFamiglie proposta;
+
+  /// Condiviso o copiato (la prima volta).
+  final VoidCallback onPreso;
+
+  @override
+  State<_CartaMessaggioFamiglie> createState() =>
+      _CartaMessaggioFamiglieState();
+}
+
+class _CartaMessaggioFamiglieState extends State<_CartaMessaggioFamiglie>
+    with AutomaticKeepAliveClientMixin {
+  late final _testo = TextEditingController(text: widget.proposta.testo);
+  var _preso = false;
+
+  // Le correzioni restano anche scorrendo la chat.
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _testo.dispose();
+    super.dispose();
+  }
+
+  void _segnaPreso() {
+    if (_preso) return;
+    _preso = true;
+    widget.onPreso();
+  }
+
+  Future<void> _condividi() async {
+    final testo = _testo.text.trim();
+    if (testo.isEmpty) return;
+    _segnaPreso();
+    if (await condividiTesto(testo)) return;
+    await _copia();
+  }
+
+  Future<void> _copia() async {
+    final testo = _testo.text.trim();
+    if (testo.isEmpty) return;
+    _segnaPreso();
+    await Clipboard.setData(ClipboardData(text: testo));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Messaggio copiato: incollalo nel gruppo WhatsApp'),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final colori = context.colori;
+    return _Carta(
+      icona: Icons.chat_outlined,
+      titolo: 'Messaggio per le famiglie',
+      figli: [
+        TextField(
+          key: const Key('messaggio-famiglie'),
+          controller: _testo,
+          minLines: 3,
+          maxLines: 14,
+          keyboardType: TextInputType.multiline,
+          style: AppTypography.corpo.copyWith(color: colori.testo),
+          decoration: const InputDecoration(
+            helperText: 'Puoi correggerlo prima di mandarlo',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        Row(
+          children: [
+            Expanded(
+              child: SecondaryButton(
+                label: 'Condividi',
+                icon: Icons.share_outlined,
+                unaRiga: true,
+                onPressed: _condividi,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s12),
+            Expanded(
+              child: SecondaryButton(
+                label: 'Copia',
+                icon: Icons.copy_outlined,
+                unaRiga: true,
+                onPressed: _copia,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        Text(
+          'L\'app non lo manda e non lo salva: lo incolli tu nel gruppo dei '
+          'genitori.',
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
         ),
       ],
     );

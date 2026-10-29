@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:coach_vasca/features/allenamenti/application/allenamenti_providers.dart';
 import 'package:coach_vasca/features/allenamenti/data/allenamenti_repository.dart';
 import 'package:coach_vasca/features/allenamenti/data/seduta_aperta_repository.dart';
@@ -17,7 +19,9 @@ import 'package:coach_vasca/features/presenze/application/presenze_providers.dar
 import 'package:coach_vasca/features/presenze/data/presenze_repository.dart';
 import 'package:coach_vasca/features/presenze/domain/presenza.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
+import 'package:coach_vasca/widgets/secondary_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -136,6 +140,44 @@ class _AssistenteAppello implements AssistenteRepository {
       };
     }
     return {'role': 'assistant', 'content': 'Ecco l\'appello da salvare.'};
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Il "cervello" finto del messaggio alle famiglie: "G2 porti il
+/// documento". Si tiene quello che riceve, per controllare i nomi.
+class _AssistenteMessaggio implements AssistenteRepository {
+  var chiamate = 0;
+  final ricevuti = <List<Map<String, dynamic>>>[];
+
+  @override
+  Future<Map<String, dynamic>> prossimoMessaggio({
+    required String clubId,
+    required Map<String, Object?> contesto,
+    required List<Map<String, dynamic>> messaggi,
+  }) async {
+    ricevuti.add([...messaggi]);
+    if (chiamate++ == 0) {
+      return {
+        'role': 'assistant',
+        'content': null,
+        'tool_calls': [
+          {
+            'id': 't1',
+            'type': 'function',
+            'function': {
+              'name': 'proponi_messaggio_famiglie',
+              'arguments': jsonEncode({
+                'testo': '*Documento*\nG2 porti il documento sabato.',
+              }),
+            },
+          },
+        ],
+      };
+    }
+    return {'role': 'assistant', 'content': 'Ecco il messaggio.'};
   }
 
   @override
@@ -404,6 +446,85 @@ void main() {
       unorderedEquals([('bianchi', 'assente'), ('rossi', 'ritardo')]),
     );
     expect(find.text('Appello salvato'), findsOneWidget);
+  });
+
+  testWidgets('il messaggio alle famiglie: si corregge e si copia', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final assistente = _AssistenteMessaggio();
+    String? copiato;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (chiamata) async {
+        if (chiamata.method == 'Clipboard.setData') {
+          copiato = (chiamata.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          assistenteRepositoryProvider.overrideWithValue(assistente),
+          atletiListProvider.overrideWith(
+            (ref, filtro) => Stream.value([
+              _atleta('rossi', 'Marco', 'Rossi'),
+              _atleta('bianchi', 'Luca', 'Bianchi'),
+            ]),
+          ),
+          gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
+          allenamentiListProvider.overrideWith(
+            (ref, clubId) => Stream.value(const []),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.chiaro,
+          home: AssistenteScreen(
+            clubId: 'c1',
+            gruppoId: 'u14',
+            oggi: DateTime(2026, 10, 13, 18),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('domanda-assistente')),
+      'Scrivi ai genitori che Rossi porti il documento',
+    );
+    await tester.tap(find.byTooltip('Chiedi'));
+    await tester.pumpAndSettle();
+
+    // Al modello il codice, nella scheda cognome e nome.
+    expect(jsonEncode(assistente.ricevuti), isNot(contains('Rossi')));
+    final campo = find.byKey(const Key('messaggio-famiglie'));
+    expect(
+      tester.widget<TextField>(campo).controller!.text,
+      '*Documento*\nRossi Marco porti il documento sabato.',
+    );
+
+    await tester.enterText(
+      campo,
+      '*Documento*\nRossi Marco porti il documento domenica.',
+    );
+    await tester.tap(find.widgetWithText(SecondaryButton, 'Copia'));
+    await tester.pumpAndSettle();
+    expect(copiato, '*Documento*\nRossi Marco porti il documento domenica.');
+    expect(
+      find.text('Messaggio copiato: incollalo nel gruppo WhatsApp'),
+      findsOneWidget,
+    );
   });
 
   testWidgets("l'assistente propone la distinta e l'allenatore la conferma", (

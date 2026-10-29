@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'assistente-messaggi-famiglie',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Il messaggio per i genitori',
+    testo:
+        'Nell\'assistente scrivi o detta «scrivi ai genitori che giovedì non '
+        'c\'è allenamento», «ricorda la partita di sabato con il ritrovo» o '
+        '«avvisa del collegiale»: ti prepara il messaggio per il gruppo '
+        'WhatsApp, con date e dettagli presi dall\'app. Lo correggi se serve '
+        'e lo mandi con Condividi o Copia; l\'app non lo manda e non lo '
+        'salva.',
+  ),
+  Novita(
     id: 'assistente-cambia-seduta',
     data: DateTime(2026, 10, 29),
     titolo: 'Cambia la seduta a voce',
