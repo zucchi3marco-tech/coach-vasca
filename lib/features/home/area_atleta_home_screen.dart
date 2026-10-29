@@ -21,6 +21,7 @@ import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
+import '../profilo_fisico/presentation/profilo_fisico_screen.dart';
 import '../referti/application/referti_providers.dart';
 import '../report/presentation/report_atleta_screen.dart';
 import '../statistiche/application/statistiche_providers.dart';
@@ -270,6 +271,19 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
         valore: pb == null || pb.isEmpty ? null : '${pb.length}',
         accento: dominio.evidenzaAmbra,
         onTap: () => _apri(context, PbListScreen(atleta: atleta)),
+      ),
+      // Dati sulla salute: li scrive solo l'atleta, se vuole.
+      VoceRiquadro(
+        soggetto: SoggettoRiquadro.andamento,
+        titolo: 'Altezza e peso',
+        descrizione: vistaAllenatore
+            ? 'La sua crescita, se le scrive'
+            : 'La tua crescita, solo se vuoi',
+        accento: dominio.evidenzaCiano,
+        onTap: () => _apri(
+          context,
+          ProfiloFisicoScreen(atleta: atleta, vistaAllenatore: vistaAllenatore),
+        ),
       ),
       // Chi si allena anche con un'altra squadra vede gli allenamenti di
       // tutte e due, con i suoi segnati.

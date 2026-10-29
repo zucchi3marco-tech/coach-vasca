@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'altezza-e-peso',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Altezza e peso',
+    perChi: PerChi.tutti,
+    testo:
+        'Nella home dell\'atleta il nuovo riquadro «Altezza e peso»: '
+        'l\'atleta le scrive solo se vuole e vede la crescita nella '
+        'stagione. Le vedono solo lui e lo staff, mai l\'assistente. Per chi '
+        'ha meno di 18 anni serve il consenso di un genitore: lo segna '
+        'l\'allenatore nella stessa pagina, aperta dalla scheda dell\'atleta.',
+  ),
+  Novita(
     id: 'assistente-secco',
     data: DateTime(2026, 10, 29),
     titolo: 'Il secco da una frase',
