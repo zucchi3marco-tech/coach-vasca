@@ -36,8 +36,19 @@ Future<void> allineaCacheLocaleAllUtente(AppDatabase db, String? userId) async {
   final ultimo = prefs.getString(_chiaveUltimoUtente);
   if (ultimo == userId) return;
   await db.clearAll();
+  // Le copie di altezza, peso e consenso (dati sulla salute) non restano
+  // a chi entra dopo.
+  for (final chiave in prefs.getKeys().toList()) {
+    if (chiave.startsWith(prefissoCopieSalute.$1) ||
+        chiave.startsWith(prefissoCopieSalute.$2)) {
+      await prefs.remove(chiave);
+    }
+  }
   await prefs.setString(_chiaveUltimoUtente, userId);
 }
+
+/// L'inizio delle chiavi delle copie di `ProfiloFisicoRepository`.
+const prefissoCopieSalute = ('misure_fisiche_', 'consenso_profilo_fisico_');
 
 /// Da attendere prima di mostrare qualunque schermata che legga la
 /// cache locale (Home, in `app.dart`): si ri-esegue ogni volta che lo

@@ -1,4 +1,8 @@
+import 'package:coach_vasca/core/db/app_database.dart';
+import 'package:coach_vasca/core/db/cache_utente_guard.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
+import 'package:drift/native.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coach_vasca/features/profilo_fisico/data/profilo_fisico_repository.dart';
 import 'package:coach_vasca/features/profilo_fisico/domain/misura_fisica.dart';
 import 'package:coach_vasca/features/profilo_fisico/presentation/profilo_fisico_screen.dart';
@@ -76,6 +80,24 @@ class _Profilo implements ProfiloFisicoRepository {
 }
 
 void main() {
+  test('cambiando utente le copie di altezza e peso si cancellano', () async {
+    SharedPreferences.setMockInitialValues({
+      'ultimo_utente_id_cache_locale': 'u1',
+      'misure_fisiche_a1': '[]',
+      'consenso_profilo_fisico_a1': '2026-09-01',
+      'tema': 'scuro',
+    });
+    final db = AppDatabase.perTest(NativeDatabase.memory());
+    addTearDown(db.close);
+    await allineaCacheLocaleAllUtente(db, 'u1');
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.containsKey('misure_fisiche_a1'), isTrue);
+    await allineaCacheLocaleAllUtente(db, 'u2');
+    expect(prefs.containsKey('misure_fisiche_a1'), isFalse);
+    expect(prefs.containsKey('consenso_profilo_fisico_a1'), isFalse);
+    expect(prefs.getString('tema'), 'scuro');
+  });
+
   group('i conti', () {
     test('maggiorenne dal giorno dei 18 anni', () {
       final nascita = DateTime(2008, 10, 29);

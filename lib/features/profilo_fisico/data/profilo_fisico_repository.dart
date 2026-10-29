@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/db/cache_utente_guard.dart';
 import '../../../core/demo/modalita_demo.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/sync/network_failure.dart';
@@ -21,9 +22,11 @@ class ProfiloFisicoRepository {
 
   final SupabaseClient _client;
 
-  static String _chiaveMisure(String atletaId) => 'misure_fisiche_$atletaId';
+  // Si cancellano quando cambia l'utente del telefono (cache_utente_guard).
+  static String _chiaveMisure(String atletaId) =>
+      '${prefissoCopieSalute.$1}$atletaId';
   static String _chiaveConsenso(String atletaId) =>
-      'consenso_profilo_fisico_$atletaId';
+      '${prefissoCopieSalute.$2}$atletaId';
 
   static const _senzaRete = 'Serve la rete per salvare: riprova quando torna.';
 
