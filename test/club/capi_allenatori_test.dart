@@ -2,6 +2,7 @@ import 'package:coach_vasca/features/club/data/membri_club_repository.dart';
 import 'package:coach_vasca/features/club/domain/ruolo_club.dart';
 import 'package:coach_vasca/features/club/presentation/mio_club_screen.dart';
 import 'package:coach_vasca/theme/app_theme.dart';
+import 'package:coach_vasca/widgets/scheda_elenco.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -164,8 +165,19 @@ void main() {
     await _apri(tester, _ClubFinto([_responsabileAnonimo, luca], [_u14, _u16]));
 
     expect(find.text('U14'), findsOneWidget);
-    // Nessun segno di riga che si apre.
-    expect(find.byIcon(Icons.chevron_right), findsNothing);
+    // Nessun segno di riga che si apre: l'unica freccia è quella degli
+    // specialisti convenzionati, che lo staff apre per leggerli.
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byIcon(Icons.chevron_right),
+        matching: find.widgetWithText(
+          SchedaElenco,
+          'Specialisti convenzionati',
+        ),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('U16'));
     await _passa(tester);
