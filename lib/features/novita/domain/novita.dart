@@ -44,6 +44,17 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'specialisti-convenzionati',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Specialisti convenzionati',
+    testo:
+        'In «Il mio club» la nuova voce «Specialisti convenzionati»: il '
+        'responsabile aggiunge nutrizionista sportivo, fisioterapista, '
+        'osteopata e massoterapista del club, con il numero WhatsApp o il '
+        'sito. Per ora li vede lo staff; agli atleti arriveranno con «Chi mi '
+        'può aiutare?».',
+  ),
+  Novita(
     id: 'altezza-e-peso',
     data: DateTime(2026, 10, 29),
     titolo: 'Altezza e peso',

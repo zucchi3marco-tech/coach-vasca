@@ -19,6 +19,7 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../configurazione/presentation/configurazione_guidata_screen.dart';
 import '../../export/presentation/scarica_dati_club_screen.dart';
+import '../../profilo_fisico/presentation/specialisti_screen.dart';
 import '../application/current_club_provider.dart';
 import '../application/membri_club_providers.dart';
 import '../data/membri_club_repository.dart';
@@ -458,6 +459,23 @@ class _Contenuto extends StatelessWidget {
         ],
         const SizedBox(height: AppSpacing.s32),
         SezioneLogoClub(clubId: clubId, modificabile: sonoResponsabile),
+        const SizedBox(height: AppSpacing.s32),
+        const TitoloSezione('Specialisti convenzionati'),
+        SchedaElenco(
+          leading: const IconaRiquadro(Icons.healing_outlined),
+          titolo: 'Specialisti convenzionati',
+          sottotitolo: sonoResponsabile
+              ? 'Nutrizionista, fisioterapista, osteopata e massoterapista'
+              : 'Li aggiunge il responsabile del club',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => SpecialistiScreen(
+                clubId: clubId,
+                modificabile: sonoResponsabile,
+              ),
+            ),
+          ),
+        ),
         // Dopo "Invita un allenatore", che chiude il blocco di chi lavora
         // nel club: la configurazione guidata e i dati sono un altro
         // discorso, e solo del responsabile.
