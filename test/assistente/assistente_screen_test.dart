@@ -268,6 +268,41 @@ class _AssistenteModifica implements AssistenteRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Il "cervello" che sbaglia e si corregge: due proposte sulla stessa
+/// seduta, una dopo l'altra.
+class _AssistenteCorregge implements AssistenteRepository {
+  var chiamate = 0;
+
+  Map<String, dynamic> _proponi(String titolo) => {
+    'role': 'assistant',
+    'content': null,
+    'tool_calls': [
+      {
+        'id': 't$chiamate',
+        'type': 'function',
+        'function': {
+          'name': 'proponi_modifica_seduta',
+          'arguments': '{"allenamento_id": "a1", "titolo": "$titolo"}',
+        },
+      },
+    ],
+  };
+
+  @override
+  Future<Map<String, dynamic>> prossimoMessaggio({
+    required String clubId,
+    required Map<String, Object?> contesto,
+    required List<Map<String, dynamic>> messaggi,
+  }) async => switch (chiamate++) {
+    0 => _proponi('Sbagliato'),
+    1 => _proponi('Gambe'),
+    _ => {'role': 'assistant', 'content': 'Ho corretto la proposta.'},
+  };
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Le serie salvate: annota cosa si crea, si cambia e si toglie.
 class _SerieFinte implements SerieRepository {
   final chiamate = <String>[];
@@ -446,6 +481,57 @@ void main() {
       unorderedEquals([('bianchi', 'assente'), ('rossi', 'ritardo')]),
     );
     expect(find.text('Appello salvato'), findsOneWidget);
+  });
+
+  testWidgets('una proposta corretta prende il posto della vecchia', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          assistenteRepositoryProvider.overrideWithValue(_AssistenteCorregge()),
+          atletiListProvider.overrideWith(
+            (ref, filtro) => Stream.value([_atleta('rossi', 'Marco', 'Rossi')]),
+          ),
+          gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
+          allenamentiListProvider.overrideWith(
+            (ref, clubId) => Stream.value([_sedutaA1]),
+          ),
+          serieListProvider.overrideWith((ref, id) => Stream.value(_serieA1)),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.chiaro,
+          home: AssistenteScreen(
+            clubId: 'c1',
+            gruppoId: 'u14',
+            seduta: _sedutaA1,
+            oggi: DateTime(2026, 10, 13, 18),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('domanda-assistente')),
+      'Chiamala Gambe',
+    );
+    await tester.tap(find.byTooltip('Chiedi'));
+    await tester.pumpAndSettle();
+
+    // Si salva solo l'ultima.
+    expect(find.text('Sostituita dalla proposta più sotto'), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Salva le modifiche'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Titolo: Tecnica → Gambe', findRichText: true),
+      findsOneWidget,
+    );
   });
 
   testWidgets('il messaggio alle famiglie: si corregge e si copia', (

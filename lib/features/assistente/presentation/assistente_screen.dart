@@ -69,7 +69,9 @@ class AssistenteScreen extends ConsumerStatefulWidget {
 }
 
 /// Cosa è successo a una proposta.
-enum _Esito { daDecidere, inCorso, fatta, scartata }
+/// Com'è andata una proposta. [superata]: sostituita da una più nuova
+/// sulla stessa seduta.
+enum _Esito { daDecidere, inCorso, fatta, scartata, superata }
 
 class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
   final _domanda = TextEditingController();
@@ -164,12 +166,22 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _voci.addAll(risposta);
         for (final v in risposta) {
-          if (v is VoceScheda && v.scheda is! SchedaSalute) {
-            _esiti[v.scheda] = _Esito.daDecidere;
+          if (v is! VoceScheda || v.scheda is SchedaSalute) continue;
+          // Una proposta nuova sulla stessa seduta prende il posto di quella
+          // ancora da decidere (l'assistente l'ha corretta).
+          if (v.scheda case PropostaModificaSeduta(:final allenamento)) {
+            for (final vecchia in _esiti.keys.toList()) {
+              if (vecchia is PropostaModificaSeduta &&
+                  vecchia.allenamento.id == allenamento.id &&
+                  _esiti[vecchia] == _Esito.daDecidere) {
+                _esiti[vecchia] = _Esito.superata;
+              }
+            }
           }
+          _esiti[v.scheda] = _Esito.daDecidere;
         }
+        _voci.addAll(risposta);
       });
     } catch (e) {
       if (mounted) {
@@ -846,6 +858,10 @@ class _Decisione extends StatelessWidget {
       ),
       _Esito.scartata => Text(
         'Proposta scartata',
+        style: AppTypography.piccolo.copyWith(color: colori.testoTenue),
+      ),
+      _Esito.superata => Text(
+        'Sostituita dalla proposta più sotto',
         style: AppTypography.piccolo.copyWith(color: colori.testoTenue),
       ),
       _ => Wrap(

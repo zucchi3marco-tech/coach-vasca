@@ -56,6 +56,16 @@ final List<Novita> registroNovita = [
         'salva.',
   ),
   Novita(
+    id: 'assistente-seduta-precisa',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Cambiare la seduta, più preciso',
+    testo:
+        '«Togli 2x100» da un 12x100 ora lo fa diventare 10x100, invece di '
+        'togliere la serie. Se il blocco che nomini non c\'è o non è chiaro '
+        'quale serie intendi, l\'assistente te lo chiede; se corregge una '
+        'proposta, quella vecchia non si può più salvare.',
+  ),
+  Novita(
     id: 'assistente-cambia-seduta',
     data: DateTime(2026, 10, 29),
     titolo: 'Cambia la seduta a voce',

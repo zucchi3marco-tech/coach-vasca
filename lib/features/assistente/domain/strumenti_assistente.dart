@@ -1055,6 +1055,15 @@ class StrumentiAssistente {
         'serie_dopo': cambiaSerie ? scritto.serie.length : serie.length,
         'metri_prima': proposta.metriPrima,
         'metri_dopo': cambiaSerie ? scritto.metri : proposta.metriPrima,
+        // Quello che cambia davvero, per controllarlo e dirlo giusto.
+        'righe_tolte': [
+          for (final r in proposta.righe)
+            if (r.stato == StatoRiga.tolta) pseudonimi.anonimizza(r.testo),
+        ],
+        'righe_aggiunte': [
+          for (final r in proposta.righe)
+            if (r.stato == StatoRiga.aggiunta) pseudonimi.anonimizza(r.testo),
+        ],
         'cambia_titolo': proposta.cambiaTitolo,
         'cambia_note': proposta.cambiaNote,
         if (testo is String && scritto.righeNonCapite > 0)

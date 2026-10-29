@@ -707,7 +707,22 @@ void main() {
       );
       expect(esito.perModello['serie_prima'], 4);
       expect(esito.perModello['serie_dopo'], 5);
+      expect(esito.perModello['righe_tolte'], isEmpty);
+      expect(esito.perModello['righe_aggiunte'], ['4x50 sl gambe A2']);
       senzaNomiNeSalute(esito.perModello);
+    });
+
+    test('«togli 2x100»: al modello la riga tolta e quella nuova, con i '
+        'codici', () async {
+      final esito = await strumenti.esegui('proponi_modifica_seduta', {
+        'allenamento_id': 'a1',
+        'testo': (await testoDiA1()).replaceFirst('8x100', '6x100'),
+      });
+      final m = esito.perModello;
+      expect(m['righe_tolte'], [contains('8x100')]);
+      expect(m['righe_aggiunte'], [contains('6x100')]);
+      expect(m['metri_prima'], isNot(m['metri_dopo']));
+      senzaNomiNeSalute(m);
     });
 
     test('solo il titolo, con i codici che tornano nomi', () async {
