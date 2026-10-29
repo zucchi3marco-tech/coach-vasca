@@ -516,6 +516,9 @@ class _Fonte implements FonteDatiAssistente {
   Future<List<Allenamento>> allenamenti() async => [allenamentoSeduta];
 
   @override
+  Future<List<Serie>> serie(String allenamentoId) async => serieSeduta;
+
+  @override
   Future<Map<String, VolumeAllenamento>> volumi() async =>
       volumiPerAllenamento(serieSeduta);
 

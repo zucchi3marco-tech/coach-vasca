@@ -21,6 +21,7 @@ import '../../../widgets/tonal_chip.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/abbina_atleta.dart';
 import '../../atleti/domain/atleta.dart';
+import '../../assistente/presentation/assistente_screen.dart';
 import '../../benessere/application/benessere_providers.dart';
 import '../../export/export_actions.dart';
 import '../../gruppi/application/gruppi_providers.dart';
@@ -649,7 +650,15 @@ class _AllenamentoDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final allenamento = widget.allenamento;
+    // Riletta dall'elenco: titolo e note cambiati (dal modulo o
+    // dall'assistente) si vedono subito.
+    final allenamento =
+        ref
+            .watch(allenamentiListProvider(widget.allenamento.clubId))
+            .value
+            ?.where((a) => a.id == widget.allenamento.id)
+            .firstOrNull ??
+        widget.allenamento;
     // Una seduta a secco ha esercizi invece delle serie: la sua schermata,
     // da qualunque elenco la si apra.
     if (allenamento.secco) return SedutaSeccoScreen(allenamento: allenamento);
@@ -766,6 +775,19 @@ class _AllenamentoDetailScreenState
       appBar: AppBar(
         title: const Text('Allenamento'),
         actions: [
+          IconButton(
+            tooltip: "Cambiala con l'assistente",
+            icon: const Icon(Icons.forum_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => AssistenteScreen(
+                  clubId: allenamento.clubId,
+                  gruppoId: allenamento.gruppoId,
+                  seduta: allenamento,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: "Scrivi l'allenamento",
             icon: const Icon(Icons.edit_note),

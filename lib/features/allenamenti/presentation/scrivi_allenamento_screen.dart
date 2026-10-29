@@ -11,6 +11,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../atleti/domain/atleta.dart';
 import '../application/passo_riferimento_provider.dart';
+import '../data/salva_piano_serie.dart';
 import '../data/serie_repository.dart';
 import '../domain/allenamento.dart';
 import '../domain/piano_salvataggio_testo.dart';
@@ -147,57 +148,12 @@ class _ScriviAllenamentoScreenState
       _salvataggio = true;
       _errore = null;
     });
-    final repository = ref.read(serieRepositoryProvider);
     try {
-      for (final a in piano.aggiorna) {
-        final s = a.nuova;
-        await repository.updateSerie(
-          id: a.vecchia.id,
-          ordine: a.ordine,
-          blocco: s.blocco,
-          ripetute: s.ripetute,
-          distanzaM: s.distanzaM,
-          durataS: s.durataS,
-          stile: s.stile,
-          esecuzione: s.esecuzione,
-          zona: s.zona,
-          passoObiettivoS: s.passoObiettivoS,
-          recuperoS: s.recuperoS,
-          ripartenzaS: s.ripartenzaS,
-          attrezzatura: s.attrezzatura,
-          note: s.note,
-          piramide: (id: a.piramideId),
-          recuperoDopo: (secondi: s.recuperoDopoS),
-          destinatari: s.destinatari,
-          momento: (id: a.momentoId),
-        );
-      }
-      for (final c in piano.crea) {
-        final s = c.nuova;
-        await repository.createSerie(
-          allenamentoId: widget.allenamento.id,
-          ordine: c.ordine,
-          blocco: s.blocco,
-          ripetute: s.ripetute,
-          distanzaM: s.distanzaM,
-          durataS: s.durataS,
-          stile: s.stile,
-          esecuzione: s.esecuzione,
-          zona: s.zona,
-          passoObiettivoS: s.passoObiettivoS,
-          recuperoS: s.recuperoS,
-          ripartenzaS: s.ripartenzaS,
-          attrezzatura: s.attrezzatura,
-          note: s.note,
-          piramideId: c.piramideId,
-          recuperoDopoS: s.recuperoDopoS,
-          destinatari: s.destinatari,
-          momentoId: c.momentoId,
-        );
-      }
-      for (final s in piano.elimina) {
-        await repository.deleteSerie(s.id);
-      }
+      await eseguiPianoSerie(
+        ref.read(serieRepositoryProvider),
+        allenamentoId: widget.allenamento.id,
+        piano: piano,
+      );
       if (!mounted) return;
       unawaited(sedutaSalvata(ref, widget.allenamento.id));
       setState(() => _salvato = true);

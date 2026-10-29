@@ -2,6 +2,9 @@ import '../../../core/utils/date_format.dart';
 import '../../../core/utils/giorni.dart';
 import '../../../core/utils/gruppo_visibilita.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/modifica_allenamento.dart';
+import '../../allenamenti/domain/piano_salvataggio_testo.dart';
+import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/domain/testo_allenamento.dart';
 import '../../allenamenti/domain/variante_spalla.dart' show giorniDoloreSpalla;
 import '../../allenamenti/domain/volume_allenamento.dart';
@@ -28,6 +31,9 @@ abstract class FonteDatiAssistente {
   Future<List<DistintaGiocatore>> distinta(String partitaId);
   Future<List<Presenza>> presenze();
   Future<List<Allenamento>> allenamenti();
+
+  /// Le serie di una seduta in acqua, nell'ordine.
+  Future<List<Serie>> serie(String allenamentoId);
   Future<Map<String, VolumeAllenamento>> volumi();
   Future<List<SchedaBenessere>> schedeBenessere();
   Future<Map<String, List<CaricoSeduta>>> sedutePerAtleta();
@@ -139,6 +145,72 @@ class PropostaAppello extends SchedaAssistente {
   final List<RigaAppello> righe;
 }
 
+/// Le modifiche a una seduta in acqua che c'è già, da confermare: le serie
+/// riscritte dal modello nel formato di "Scrivi l'allenamento" e, se le
+/// cambia, titolo e note (la data no: scelta del coach, 2026-10-29).
+class PropostaModificaSeduta extends SchedaAssistente {
+  const PropostaModificaSeduta({
+    required this.allenamento,
+    required this.serie,
+    required this.testoPrima,
+    required this.testoDopo,
+    required this.scritto,
+    required this.cambiaSerie,
+    required this.metriPrima,
+    required this.titolo,
+    required this.note,
+  });
+
+  final int metriPrima;
+
+  /// La seduta com'era quando l'assistente l'ha letta.
+  final Allenamento allenamento;
+
+  /// Le serie salvate allora: prima di salvare l'app controlla che siano
+  /// ancora quelle.
+  final List<Serie> serie;
+
+  /// Il testo delle serie prima e dopo, scritti allo stesso modo dall'app
+  /// (così le righe non toccate restano uguali nel confronto).
+  final String testoPrima;
+  final String testoDopo;
+  final AllenamentoScritto scritto;
+  final bool cambiaSerie;
+
+  /// Titolo e note da salvare (uguali a quelli di prima se non cambiano;
+  /// null = tolti).
+  final String? titolo;
+  final String? note;
+
+  bool get cambiaTitolo => titolo != allenamento.titolo;
+  bool get cambiaNote => note != allenamento.note;
+
+  /// Il confronto riga per riga delle serie.
+  List<RigaConfronto> get righe =>
+      confrontaRighe(_righe(testoPrima), _righe(testoDopo));
+
+  static List<String> _righe(String testo) =>
+      testo.trim().isEmpty ? const [] : testo.trimRight().split('\n');
+}
+
+/// Le serie [attuali] sono ancora quelle [lette]: stesse righe, nello
+/// stesso ordine, con gli stessi dati. Se no la proposta è vecchia.
+bool stesseSerie(List<Serie> attuali, List<Serie> lette) {
+  if (attuali.length != lette.length) return false;
+  for (var i = 0; i < attuali.length; i++) {
+    final a = attuali[i];
+    final l = lette[i];
+    if (a.id != l.id ||
+        !stessaSerie(a, l) ||
+        a.recuperoDopoS != l.recuperoDopoS ||
+        a.piramideId != l.piramideId ||
+        a.momentoId != l.momentoId) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// L'esito di uno strumento: il JSON per il modello (mai nomi, mai salute)
 /// e, a volte, una scheda per l'allenatore.
 typedef EsitoStrumento = ({
@@ -186,6 +258,8 @@ class StrumentiAssistente {
         'proponi_convocazione' => await _proponiConvocazione(args),
         'proponi_seduta' => await _proponiSeduta(args),
         'proponi_appello' => await _proponiAppello(args),
+        'leggi_seduta' => _solo(await _leggiSeduta(args)),
+        'proponi_modifica_seduta' => await _proponiModifica(args),
         _ => _solo({'errore': 'Strumento sconosciuto: $nome'}),
       };
     } catch (e) {
@@ -695,10 +769,10 @@ class StrumentiAssistente {
     );
   }
 
-  /// La seduta dell'appello: quella indicata, o l'unica della squadra in
+  /// La seduta di cui si parla: quella indicata, o l'unica della squadra in
   /// quel giorno (oggi, se non c'è la data). Con un errore per il modello
   /// se non si sa quale.
-  Future<(Allenamento?, Map<String, Object?>?)> _sedutaAppello(
+  Future<(Allenamento?, Map<String, Object?>?)> _sedutaIndicata(
     Map<String, dynamic> args,
   ) async {
     final id = args['allenamento_id'];
@@ -732,8 +806,7 @@ class StrumentiAssistente {
         null,
         {
           'errore':
-              'Nessuna seduta della squadra il ${formatDateOnly(giorno)}: '
-              'l\'appello si fa su una seduta che c\'è.',
+              'Nessuna seduta della squadra il ${formatDateOnly(giorno)}.',
         },
       );
     }
@@ -759,7 +832,7 @@ class StrumentiAssistente {
   }
 
   Future<EsitoStrumento> _proponiAppello(Map<String, dynamic> args) async {
-    final (seduta, errore) = await _sedutaAppello(args);
+    final (seduta, errore) = await _sedutaIndicata(args);
     if (seduta == null) return _solo(errore!);
     if (soloData(seduta.data).isAfter(_oggi)) {
       return _solo({
@@ -837,6 +910,140 @@ class StrumentiAssistente {
         if (sconosciuti.isNotEmpty) 'codici_sconosciuti': sconosciuti,
       },
       scheda: PropostaAppello(allenamento: seduta, righe: righe),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Cambiare una seduta che c'è
+
+  /// La seduta in acqua da leggere o cambiare, o l'errore per il modello.
+  /// Il secco ha esercizi invece delle serie: arriverà dopo.
+  Future<(Allenamento?, Map<String, Object?>?)> _sedutaInAcqua(
+    Map<String, dynamic> args,
+  ) async {
+    final (seduta, errore) = await _sedutaIndicata(args);
+    if (seduta == null) return (null, errore);
+    if (seduta.secco) {
+      return (
+        null,
+        {
+          'errore':
+              'È una seduta a secco: per ora l\'assistente cambia solo le '
+              'sedute in acqua. L\'allenatore la cambia dalla pagina della '
+              'seduta.',
+        },
+      );
+    }
+    return (seduta, null);
+  }
+
+  /// Le serie scritte come in "Scrivi l'allenamento", con i nomi di tutto
+  /// il club: gli stessi che [Pseudonimi] trasforma in codici e ritorno.
+  String _testoSerie(List<DatiSerie> serie) =>
+      testoDaSerie(serie, atleti: pseudonimi.atleti);
+
+  int _metri(String testo) =>
+      interpretaAllenamento(testo, atleti: pseudonimi.atleti).metri;
+
+  Map<String, Object?> _sedutaPerModello(Allenamento s) => {
+    'id': s.id,
+    'data': formatDateOnly(s.data),
+    'giorno': nomeGiorno(s.data),
+    if (s.titolo case final t? when t.trim().isNotEmpty)
+      'titolo': pseudonimi.anonimizza(t),
+    if (s.note case final n? when n.trim().isNotEmpty)
+      'note': pseudonimi.anonimizza(n),
+  };
+
+  Future<Map<String, Object?>> _leggiSeduta(Map<String, dynamic> args) async {
+    final (seduta, errore) = await _sedutaInAcqua(args);
+    if (seduta == null) return errore!;
+    final serie = await fonte.serie(seduta.id);
+    final testo = _testoSerie(serie);
+    return {
+      'seduta': _sedutaPerModello(seduta),
+      'testo': pseudonimi.anonimizza(testo),
+      'serie': serie.length,
+      'metri': _metri(testo),
+    };
+  }
+
+  Future<EsitoStrumento> _proponiModifica(Map<String, dynamic> args) async {
+    final (seduta, errore) = await _sedutaInAcqua(args);
+    if (seduta == null) return _solo(errore!);
+    final serie = await fonte.serie(seduta.id);
+    final testoPrima = _testoSerie(serie);
+
+    final testo = args['testo'];
+    final scritto = interpretaAllenamento(
+      testo is String ? pseudonimi.conNomi(testo) : testoPrima,
+      atleti: pseudonimi.atleti,
+    );
+    if (scritto.serie.isEmpty) {
+      return _solo({
+        'errore':
+            'Nessuna serie capita: riscrivi tutto il testo della seduta nel '
+            'formato delle istruzioni, una serie per riga. Per togliere tutte '
+            'le serie l\'allenatore usa la pagina della seduta.',
+      });
+    }
+    final cambiaSerie =
+        testo is String &&
+        !pianoSalvataggio(
+          vecchie: serie,
+          nuove: scritto.serie,
+          nuovoId: () => '',
+        ).vuoto;
+
+    // Titolo e note: se non li nomina restano; se li riscrive uguali
+    // (con i codici) restano com'erano, anche con i nomi scritti a modo suo.
+    String? testoLibero(String chiave, String? attuale) {
+      if (!args.containsKey(chiave)) return attuale;
+      final nuovo = '${args[chiave] ?? ''}'.trim();
+      if (nuovo == pseudonimi.anonimizza(attuale ?? '').trim()) return attuale;
+      final conNomi = pseudonimi.conNomi(nuovo);
+      return conNomi.isEmpty ? null : conNomi;
+    }
+
+    final proposta = PropostaModificaSeduta(
+      allenamento: seduta,
+      serie: serie,
+      testoPrima: testoPrima,
+      testoDopo: cambiaSerie ? _testoSerie(scritto.serie) : testoPrima,
+      scritto: scritto,
+      cambiaSerie: cambiaSerie,
+      metriPrima: _metri(testoPrima),
+      titolo: testoLibero('titolo', seduta.titolo),
+      note: testoLibero('note', seduta.note),
+    );
+    if (!cambiaSerie && !proposta.cambiaTitolo && !proposta.cambiaNote) {
+      return _solo({
+        'errore':
+            'Niente di diverso dalla seduta di adesso: rileggila con '
+            'leggi_seduta e riscrivi il testo con le modifiche.',
+      });
+    }
+    return (
+      perModello: {
+        'stato':
+            'Modifiche mostrate all\'allenatore: le controlla e le salva lui. '
+            'Non sono ancora salvate.',
+        'seduta': {
+          'id': seduta.id,
+          'data': formatDateOnly(seduta.data),
+          'giorno': nomeGiorno(seduta.data),
+        },
+        'cambia_serie': cambiaSerie,
+        'serie_prima': serie.length,
+        'serie_dopo': cambiaSerie ? scritto.serie.length : serie.length,
+        'metri_prima': proposta.metriPrima,
+        'metri_dopo': cambiaSerie ? scritto.metri : proposta.metriPrima,
+        'cambia_titolo': proposta.cambiaTitolo,
+        'cambia_note': proposta.cambiaNote,
+        if (testo is String && scritto.righeNonCapite > 0)
+          'righe_non_capite': scritto.righeNonCapite,
+      },
+      scheda: proposta,
     );
   }
 

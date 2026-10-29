@@ -44,6 +44,18 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'assistente-cambia-seduta',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Cambia la seduta a voce',
+    testo:
+        'Nella pagina di una seduta in acqua tocca il pulsante '
+        'dell\'assistente e di\' cosa cambiare: «togli il 400 iniziale», '
+        '«aggiungi 6x50 gambe dopo il riscaldamento», «cambia il titolo». '
+        'Ti mostra prima e dopo e salvi tu; le serie già segnate «fatta» '
+        'restano tali. Funziona anche dall\'assistente di Oggi, dicendo quale '
+        'seduta.',
+  ),
+  Novita(
     id: 'assistente-appello',
     data: DateTime(2026, 10, 28),
     titolo: 'L\'appello con una frase',

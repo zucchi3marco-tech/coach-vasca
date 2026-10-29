@@ -1,5 +1,9 @@
 import 'package:coach_vasca/features/allenamenti/application/allenamenti_providers.dart';
+import 'package:coach_vasca/features/allenamenti/data/allenamenti_repository.dart';
+import 'package:coach_vasca/features/allenamenti/data/seduta_aperta_repository.dart';
+import 'package:coach_vasca/features/allenamenti/data/serie_repository.dart';
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
+import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
 import 'package:coach_vasca/features/assistente/data/assistente_repository.dart';
 import 'package:coach_vasca/features/assistente/presentation/assistente_screen.dart';
 import 'package:coach_vasca/features/atleti/application/atleti_providers.dart';
@@ -161,7 +165,169 @@ class _PresenzeFinte implements PresenzeRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+final _sedutaA1 = Allenamento(
+  id: 'a1',
+  clubId: 'c1',
+  gruppoId: 'u14',
+  data: DateTime(2026, 10, 12),
+  titolo: 'Tecnica',
+);
+
+const _serieA1 = [
+  Serie(
+    id: 's1',
+    allenamentoId: 'a1',
+    clubId: 'c1',
+    ordine: 1,
+    blocco: 'riscaldamento',
+    ripetute: 1,
+    distanzaM: 400,
+    stile: 'libero',
+    esecuzione: 'nuoto',
+    zona: 'A1',
+    esito: 'fatta',
+  ),
+];
+
+/// Il "cervello" finto delle modifiche: aggiunge un 4x50 e cambia il
+/// titolo. Annota il contesto.
+class _AssistenteModifica implements AssistenteRepository {
+  final contesti = <Map<String, Object?>>[];
+
+  @override
+  Future<Map<String, dynamic>> prossimoMessaggio({
+    required String clubId,
+    required Map<String, Object?> contesto,
+    required List<Map<String, dynamic>> messaggi,
+  }) async {
+    contesti.add(contesto);
+    if (contesti.length == 1) {
+      return {
+        'role': 'assistant',
+        'content': null,
+        'tool_calls': [
+          {
+            'id': 't1',
+            'type': 'function',
+            'function': {
+              'name': 'proponi_modifica_seduta',
+              'arguments':
+                  '{"allenamento_id": "a1", "titolo": "Gambe", "testo": '
+                  '"Riscaldamento\\n400 sl A1\\n4x50 sl gambe"}',
+            },
+          },
+        ],
+      };
+    }
+    return {'role': 'assistant', 'content': 'Ecco le modifiche da salvare.'};
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Le serie salvate: annota cosa si crea, si cambia e si toglie.
+class _SerieFinte implements SerieRepository {
+  final chiamate = <String>[];
+
+  @override
+  Future<List<Serie>> fetchPerAllenamento(String allenamentoId) async =>
+      _serieA1;
+
+  @override
+  dynamic noSuchMethod(Invocation i) {
+    final a = i.namedArguments;
+    chiamate.add(switch (i.memberName) {
+      #createSerie => 'crea ${a[#ordine]}: ${a[#ripetute]}x${a[#distanzaM]}',
+      #updateSerie => 'aggiorna ${a[#id]}',
+      #deleteSerie => 'togli ${i.positionalArguments.first}',
+      _ => '${i.memberName}',
+    });
+    return Future<Serie>.value(_serieA1.first);
+  }
+}
+
+class _AllenamentiFinti implements AllenamentiRepository {
+  final titoli = <String?>[];
+
+  @override
+  dynamic noSuchMethod(Invocation i) {
+    if (i.memberName == #updateAllenamento) {
+      titoli.add(i.namedArguments[#titolo] as String?);
+    }
+    return Future<Allenamento>.value(_sedutaA1);
+  }
+}
+
 void main() {
+  testWidgets('dalla pagina della seduta: prima e dopo, poi si salvano solo i '
+      'cambi', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final assistente = _AssistenteModifica();
+    final serie = _SerieFinte();
+    final allenamenti = _AllenamentiFinti();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          assistenteRepositoryProvider.overrideWithValue(assistente),
+          serieRepositoryProvider.overrideWithValue(serie),
+          allenamentiRepositoryProvider.overrideWithValue(allenamenti),
+          sedutaApertaRepositoryProvider.overrideWithValue(
+            SedutaApertaRepository(null),
+          ),
+          atletiListProvider.overrideWith(
+            (ref, filtro) => Stream.value([_atleta('rossi', 'Marco', 'Rossi')]),
+          ),
+          gruppiListProvider.overrideWith((ref, clubId) => Stream.value([])),
+          allenamentiListProvider.overrideWith(
+            (ref, clubId) => Stream.value([_sedutaA1]),
+          ),
+          serieListProvider.overrideWith((ref, id) => Stream.value(_serieA1)),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.chiaro,
+          home: AssistenteScreen(
+            clubId: 'c1',
+            gruppoId: 'u14',
+            seduta: _sedutaA1,
+            oggi: DateTime(2026, 10, 13, 18),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Cambia «Tecnica»'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('domanda-assistente')),
+      'Aggiungi 4x50 gambe e chiamala Gambe',
+    );
+    await tester.tap(find.byTooltip('Chiedi'));
+    await tester.pumpAndSettle();
+
+    // Il modello sa da che seduta si parla.
+    expect((assistente.contesti.first['seduta_aperta']! as Map)['id'], 'a1');
+    expect(find.text('+'), findsOneWidget);
+    expect(find.text('4x50 sl gambe'), findsOneWidget);
+    expect(
+      find.text('Titolo: Tecnica → Gambe', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('400 m → 600 m · 1 serie → 2 serie'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Salva le modifiche'));
+    await tester.pumpAndSettle();
+    // Il 400 (già fatto) non si tocca: si crea solo il 4x50.
+    expect(serie.chiamate, ['crea 2: 4x50']);
+    expect(allenamenti.titoli, ['Gambe']);
+    expect(find.text('Seduta aggiornata'), findsOneWidget);
+    // Aperto dalla seduta: si torna indietro, niente «Apri».
+    expect(find.widgetWithText(TextButton, 'Apri'), findsNothing);
+  });
+
   testWidgets("l'appello con una frase: si cambia uno stato, si salvano solo "
       'i cambi', (tester) async {
     tester.view.physicalSize = const Size(1000, 1600);

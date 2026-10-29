@@ -2,8 +2,8 @@
 //
 // La chat dell'allenatore (proposta 9 del piano "Il Mako della
 // pallanuoto"): risponde sui dati del club e propone azioni (una
-// convocazione, una seduta, l'appello) che l'allenatore conferma
-// nell'app.
+// convocazione, una seduta nuova o le modifiche a una che c'e', l'appello)
+// che l'allenatore conferma nell'app.
 //
 // Decisione del 13 ottobre 2026, per i dati di minorenni: i dati restano
 // sul telefono. Questa funzione non legge niente del club: e' solo il
@@ -232,26 +232,75 @@ const STRUMENTI = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "leggi_seduta",
+      description:
+        "Legge una seduta in acqua che c'e' gia': id, data, titolo, note e il testo delle serie nel formato di 'Scrivi l'allenamento'. Senza allenamento_id l'app prende l'unica seduta della squadra nel giorno (oggi se manca la data); se ce n'e' piu' d'una te le elenca. Le sedute a secco non si leggono.",
+      parameters: {
+        type: "object",
+        properties: {
+          allenamento_id: { type: "string" },
+          data: { type: "string", description: "AAAA-MM-GG" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_modifica_seduta",
+      description:
+        "Propone all'allenatore le modifiche a una seduta in acqua che c'e' gia': l'app gli mostra prima e dopo e lui le salva. 'testo' e' TUTTO il testo delle serie dopo la modifica (le righe non toccate copiate uguali da leggi_seduta); titolo e note solo se cambiano (stringa vuota = toglierli). La data non si cambia. Non e' salvato finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          allenamento_id: { type: "string" },
+          testo: { type: "string", description: "Tutte le serie, una per riga" },
+          titolo: { type: "string" },
+          note: { type: "string" },
+        },
+        required: ["allenamento_id"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
+
+// La seduta da cui l'allenatore ha aperto la chat, se c'e': solo id, data,
+// giorno e tipo, controllati.
+function sedutaAperta(contesto: Record<string, unknown>): string {
+  const s = contesto.seduta_aperta;
+  if (typeof s !== "object" || s === null) return "";
+  const r = s as Record<string, unknown>;
+  const pulito = (v: unknown) =>
+    typeof v === "string" && /^[\w\-:àèéìòù ]{1,40}$/.test(v) ? v : null;
+  const id = pulito(r.id);
+  if (!id) return "";
+  return `\nL'allenatore ha aperto la chat dalla seduta ${id} (${pulito(r.tipo) ?? "acqua"}) di ${pulito(r.giorno) ?? ""} ${pulito(r.data) ?? ""}: se non dice altro, parla di questa (allenamento_id ${id}).`;
+}
 
 const NOMI_STRUMENTI = new Set(STRUMENTI.map((s) => s.function.name));
 
 function istruzioni(contesto: Record<string, unknown>): string {
   const sport = contesto.sport === "nuoto" ? "nuoto" : "pallanuoto";
   return `Sei l'assistente di un allenatore di ${sport} di un club italiano, dentro l'app WaterTactics.
-Oggi e' ${contesto.giorno ?? ""} ${contesto.oggi ?? ""}. Squadra scelta nell'app: ${contesto.squadra ?? "tutto il club"}.
+Oggi e' ${contesto.giorno ?? ""} ${contesto.oggi ?? ""}. Squadra scelta nell'app: ${contesto.squadra ?? "tutto il club"}.${sedutaAperta(contesto)}
 
 Regole:
 - Gli atleti sono minorenni. Li conosci solo per codice (G1, G2...): scrivi sempre il codice, l'app lo trasforma nel nome. Non inventare nomi e non chiederli.
 - Non hai dati sulla salute (benessere, dolori, sintomi) e non devi chiederli. Per scegliere atleti con filtri sulla salute usa scegli_atleti; se l'allenatore chiede di salute o dolori usa mostra_benessere e digli che li trova nella scheda.
 - Prima di rispondere sui numeri leggi i dati con gli strumenti. Non inventare numeri: se un dato manca, dillo.
-- Per fare qualcosa (convocare, preparare una seduta, fare l'appello) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- Per fare qualcosa (convocare, preparare o cambiare una seduta, fare l'appello) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
 - L'appello ("assenti G3 e G5, G7 in ritardo", "tutti presenti") si fa con proponi_appello, subito, senza leggere prima la squadra: chi non e' nominato lo segna presente l'app. "Giustificato" e' chi ha avvisato o ha un motivo.
+- Per cambiare una seduta che c'e' ("togli il 400 iniziale", "aggiungi 6x50 gambe dopo il riscaldamento", "cambia il titolo") leggila con leggi_seduta, poi usa proponi_modifica_seduta con tutto il testo delle serie: cambia solo le righe richieste e copia le altre identiche, nello stesso ordine. Se cambia solo titolo o note, non mandare il testo.
 - Se nella domanda c'e' "un atleta" al posto di un nome, quel nome e' di piu' atleti: chiedi quale (nome e cognome) prima di usarlo.
 - Niente diagnosi mediche. Il carico (ACWR) e' una fascia di riferimento, non una previsione di infortuni.
 - Rispondi in italiano, breve e concreto, come un collega competente. Niente punti esclamativi, niente elenchi lunghi se non servono.
 
-Formato delle sedute (proponi_seduta), una serie per riga:
+Formato delle sedute (proponi_seduta e proponi_modifica_seduta), una serie per riga:
 - titoli di blocco da soli su una riga: Riscaldamento, Principale, Defaticamento, Altro;
 - "400 sl A1" una distanza; "8x100 sl B1 @1:40 r15" ripetute con zona, ripartenza e recupero; "3x5' uomo in +" serie a tempo;
 - stili: sl, do, ra, df, mix; esecuzioni: gambe, braccia, pull, tecnica; pallanuoto senza stile: palleggio, tiri, schemi, gioco da schierati, partita, uomo in +, uomo in -, tecnico-tattico;

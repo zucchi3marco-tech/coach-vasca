@@ -10,14 +10,16 @@ import '../../../core/utils/date_format.dart';
 Map<String, dynamic> cervelloDemo(
   List<Map<String, dynamic>> messaggi, {
   DateTime? oggi,
+  String? sedutaAperta,
 }) {
   final indiceDomanda = messaggi.lastIndexWhere(
     (m) =>
         m['role'] == 'user' && !'${m['content']}'.startsWith('[Nota dell\'app'),
   );
-  final domanda = indiceDomanda < 0
+  final originale = indiceDomanda < 0
       ? ''
-      : '${messaggi[indiceDomanda]['content']}'.toLowerCase();
+      : '${messaggi[indiceDomanda]['content']}';
+  final domanda = originale.toLowerCase();
   // Gli strumenti già chiesti dopo la domanda, con il loro risultato.
   final nomi = <String, String>{};
   final risultati = <String, Map<String, dynamic>>{};
@@ -106,6 +108,50 @@ Map<String, dynamic> cervelloDemo(
       '${assenti == 1 ? '1 assente' : '$assenti assenti'}. Controllalo, '
       'cambia chi serve e salvalo.',
     );
+  }
+
+  // "Aggiungi 4x50 gambe alla fine del riscaldamento", "Togli l'ultima
+  // serie del principale", "Cambia il titolo in «…»": sulla seduta aperta,
+  // o sull'unica di oggi.
+  if (domanda.startsWith('aggiungi') ||
+      domanda.startsWith('togli') ||
+      domanda.contains('cambia il titolo')) {
+    final letta = risultati['leggi_seduta'];
+    if (letta == null) {
+      return chiama('leggi_seduta', {
+        if (sedutaAperta != null)
+          'allenamento_id': sedutaAperta
+        else
+          'data': formatDateOnly(oggi ?? DateTime.now()),
+      });
+    }
+    if (letta['errore'] != null) {
+      return scrivi(
+        'Non trovo la seduta da cambiare: aprila e chiedimelo dalla sua '
+        'pagina, con il pulsante dell\'assistente.',
+      );
+    }
+    final esito = risultati['proponi_modifica_seduta'];
+    if (esito == null) {
+      final id = (letta['seduta'] as Map)['id'];
+      if (domanda.contains('cambia il titolo')) {
+        return chiama('proponi_modifica_seduta', {
+          'allenamento_id': id,
+          'titolo': RegExp('«(.+?)»').firstMatch(originale)?[1] ?? 'Seduta',
+        });
+      }
+      return chiama('proponi_modifica_seduta', {
+        'allenamento_id': id,
+        'testo': _cambiaTesto('${letta['testo']}', domanda),
+      });
+    }
+    if (esito['errore'] != null) {
+      return scrivi(
+        'Nella demo so fare solo gli esempi: aggiungere una serie alla fine '
+        'di un blocco, togliere l\'ultima, cambiare il titolo.',
+      );
+    }
+    return scrivi('Ecco le modifiche: controllale e salvale.');
   }
 
   if (domanda.contains('superiorit')) {
@@ -200,4 +246,40 @@ Map<String, dynamic> cervelloDemo(
     'convocazione, dolori, seduta e appello. Con l\'AI vera rispondo a quello che '
     'chiedi.',
   );
+}
+
+const _titoliBlocco = {'riscaldamento', 'principale', 'defaticamento', 'altro'};
+
+/// Il testo di una seduta con la modifica degli esempi: "aggiungi …" in
+/// fondo al blocco nominato (o alla fine), "togli l'ultima serie" del
+/// blocco nominato (o di tutta la seduta).
+String _cambiaTesto(String testo, String domanda) {
+  final righe = testo.trimRight().split('\n');
+  // Il blocco nominato: dalla riga del titolo alla prossima di un titolo.
+  var inizio = 0;
+  var fine = righe.length;
+  for (final b in _titoliBlocco) {
+    if (!domanda.contains(b)) continue;
+    final i = righe.indexWhere((r) => r.trim().toLowerCase() == b);
+    if (i < 0) break;
+    inizio = i + 1;
+    final dopo = righe.indexWhere(
+      (r) => _titoliBlocco.contains(r.trim().toLowerCase()),
+      inizio,
+    );
+    fine = dopo < 0 ? righe.length : dopo;
+    break;
+  }
+  while (fine > inizio && righe[fine - 1].trim().isEmpty) {
+    fine--;
+  }
+  if (domanda.startsWith('togli')) {
+    if (fine > inizio) righe.removeAt(fine - 1);
+  } else {
+    final nuova = RegExp(
+      r"aggiungi (.+?)(?= alla fine| all'inizio| dopo| prima| nel | al |$)",
+    ).firstMatch(domanda)?[1];
+    if (nuova != null) righe.insert(fine, nuova.trim());
+  }
+  return righe.join('\n');
 }

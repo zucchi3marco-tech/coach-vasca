@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:coach_vasca/features/allenamenti/domain/allenamento.dart';
+import 'package:coach_vasca/features/allenamenti/domain/modifica_allenamento.dart';
+import 'package:coach_vasca/features/allenamenti/domain/piano_salvataggio_testo.dart';
+import 'package:coach_vasca/features/allenamenti/domain/serie.dart';
 import 'package:coach_vasca/features/allenamenti/domain/volume_allenamento.dart';
 import 'package:coach_vasca/features/assistente/data/cervello_demo.dart';
 import 'package:coach_vasca/features/assistente/domain/motore_assistente.dart';
@@ -97,6 +100,45 @@ SchedaBenessere _scheda(
   compilataIl: DateTime(2026, 10, 13, 8),
 );
 
+Serie _serie(
+  int ordine,
+  String blocco,
+  int ripetute,
+  int distanzaM, {
+  String? zona,
+  String esecuzione = 'nuoto',
+  Destinatari destinatari = Destinatari.tutti,
+  String? esito,
+}) => Serie(
+  id: 's$ordine',
+  allenamentoId: 'a1',
+  clubId: 'c1',
+  ordine: ordine,
+  blocco: blocco,
+  ripetute: ripetute,
+  distanzaM: distanzaM,
+  stile: 'libero',
+  esecuzione: esecuzione,
+  zona: zona,
+  destinatari: destinatari,
+  esito: esito,
+);
+
+/// Le serie di a1 (ieri, in acqua): l'8x100 è già segnato «fatta».
+final _serieA1 = [
+  _serie(1, 'riscaldamento', 1, 400, zona: 'A1'),
+  _serie(2, 'principale', 8, 100, zona: 'B1', esito: 'fatta'),
+  _serie(
+    3,
+    'principale',
+    4,
+    50,
+    esecuzione: 'gambe',
+    destinatari: const Destinatari.solo(['rossi']),
+  ),
+  _serie(4, 'defaticamento', 1, 200),
+];
+
 class _Fonte implements FonteDatiAssistente {
   @override
   String? get gruppoId => 'u14';
@@ -186,6 +228,10 @@ class _Fonte implements FonteDatiAssistente {
       durataMin: 40,
     ),
   ];
+
+  @override
+  Future<List<Serie>> serie(String allenamentoId) async =>
+      allenamentoId == 'a1' ? _serieA1 : const [];
 
   @override
   Future<Map<String, VolumeAllenamento>> volumi() async => const {
@@ -529,6 +575,135 @@ void main() {
     });
   });
 
+  group('cambiare una seduta', () {
+    Future<String> testoDiA1() async {
+      final letta = await strumenti.esegui('leggi_seduta', const {
+        'allenamento_id': 'a1',
+      });
+      return letta.perModello['testo']! as String;
+    }
+
+    test(
+      'leggi_seduta: il testo delle serie con i codici, mai i nomi',
+      () async {
+        final esito = await strumenti.esegui('leggi_seduta', const {
+          'allenamento_id': 'a1',
+        });
+        final m = esito.perModello;
+        expect(esito.scheda, isNull);
+        expect((m['seduta']! as Map)['titolo'], 'Lavoro per G3 e superiorità');
+        expect(m['serie'], 4);
+        expect(m['testo'], contains('G3'));
+        expect(m['testo'], contains('8x100'));
+        senzaNomiNeSalute(m);
+      },
+    );
+
+    test('il secco non si legge né si cambia', () async {
+      // Oggi c'è solo il secco (a2).
+      for (final nome in ['leggi_seduta', 'proponi_modifica_seduta']) {
+        final esito = await strumenti.esegui(nome, const {
+          'data': '2026-10-13',
+        });
+        expect(esito.scheda, isNull, reason: nome);
+        expect(
+          '${esito.perModello['errore']}',
+          contains('secco'),
+          reason: nome,
+        );
+      }
+    });
+
+    test('una serie aggiunta: il resto uguale, la «fatta» resta sua', () async {
+      final testo = (await testoDiA1()).replaceFirst(
+        '400 sl A1',
+        '400 sl A1\n4x50 sl gambe A2',
+      );
+      final esito = await strumenti.esegui('proponi_modifica_seduta', {
+        'allenamento_id': 'a1',
+        'testo': testo,
+      });
+      final p = esito.scheda! as PropostaModificaSeduta;
+      expect(p.cambiaSerie, isTrue);
+      expect((p.cambiaTitolo, p.cambiaNote), (false, false));
+      expect(
+        [
+          for (final r in p.righe)
+            if (r.stato != StatoRiga.uguale) r.toString(),
+        ],
+        ['aggiunta: 4x50 sl gambe A2'],
+      );
+      // La variante torna di Rossi.
+      expect(
+        p.scritto.serie
+            .where((s) => s.destinatari.soloAtleti.isNotEmpty)
+            .single
+            .destinatari
+            .soloAtleti,
+        ['rossi'],
+      );
+      final piano = pianoSalvataggio(
+        vecchie: p.serie,
+        nuove: p.scritto.serie,
+        nuovoId: () => 'nuovo',
+      );
+      expect(piano.crea, hasLength(1));
+      expect(piano.elimina, isEmpty);
+      // L'8x100 (fatta) è riusato, solo con l'ordine nuovo.
+      expect(
+        piano.aggiorna.where((a) => a.vecchia.id == 's2').single.ordine,
+        3,
+      );
+      expect(esito.perModello['serie_prima'], 4);
+      expect(esito.perModello['serie_dopo'], 5);
+      senzaNomiNeSalute(esito.perModello);
+    });
+
+    test('solo il titolo, con i codici che tornano nomi', () async {
+      final esito = await strumenti.esegui('proponi_modifica_seduta', const {
+        'allenamento_id': 'a1',
+        'titolo': 'Tiri per G3',
+      });
+      final p = esito.scheda! as PropostaModificaSeduta;
+      expect(p.cambiaSerie, isFalse);
+      expect(p.titolo, 'Tiri per Rossi');
+      expect(p.righe.every((r) => r.stato == StatoRiga.uguale), isTrue);
+      expect(esito.perModello['cambia_titolo'], isTrue);
+      senzaNomiNeSalute(esito.perModello);
+    });
+
+    test(
+      'niente di diverso o niente di capito: un errore, nessuna scheda',
+      () async {
+        final testo = await testoDiA1();
+        for (final args in [
+          {'allenamento_id': 'a1', 'testo': testo},
+          // Il titolo riscritto con i codici è lo stesso.
+          {'allenamento_id': 'a1', 'titolo': 'Lavoro per G3 e superiorità'},
+          {'allenamento_id': 'a1', 'testo': 'bla bla'},
+          {'allenamento_id': 'non-c-e', 'titolo': 'X'},
+        ]) {
+          final esito = await strumenti.esegui('proponi_modifica_seduta', args);
+          expect(esito.scheda, isNull, reason: '$args');
+          expect(esito.perModello['errore'], isNotNull, reason: '$args');
+        }
+      },
+    );
+
+    test('stesseSerie: la proposta è vecchia se le serie sono cambiate', () {
+      expect(stesseSerie(_serieA1, [..._serieA1]), isTrue);
+      expect(stesseSerie(_serieA1, _serieA1.sublist(1)), isFalse);
+      expect(stesseSerie(_serieA1, [..._serieA1.reversed]), isFalse);
+      expect(
+        stesseSerie(_serieA1, [
+          _serie(1, 'riscaldamento', 1, 300, zona: 'A1'),
+          ..._serieA1.skip(1),
+        ]),
+        isFalse,
+      );
+    });
+  });
+
   group('conversazione', () {
     test('la domanda parte senza nomi, gli strumenti girano sul telefono, '
         'la risposta torna con i nomi', () async {
@@ -649,6 +824,50 @@ void main() {
       expect(
         voci.whereType<RispostaAssistente>().single.testo,
         contains('2 presenti, 1 assente.'),
+      );
+    });
+
+    test(
+      'dalla pagina della seduta: aggiungi alla fine del riscaldamento',
+      () async {
+        final voci = await MotoreAssistente(
+          pseudonimi: pseudonimi,
+          strumenti: strumenti,
+          chiama: (messaggi) async =>
+              cervelloDemo(messaggi, oggi: _oggi, sedutaAperta: 'a1'),
+        ).chiedi('Aggiungi 4x50 gambe alla fine del riscaldamento');
+        final p =
+            voci.whereType<VoceScheda>().single.scheda
+                as PropostaModificaSeduta;
+        expect(p.allenamento.id, 'a1');
+        expect(
+          [
+            for (final r in p.righe)
+              if (r.stato != StatoRiga.uguale) r.toString(),
+          ],
+          ['aggiunta: 4x50 sl gambe'],
+        );
+        expect(p.scritto.serie[1].blocco, 'riscaldamento');
+        expect(
+          voci.whereType<RispostaAssistente>().single.testo,
+          contains('controllale e salvale'),
+        );
+      },
+    );
+
+    test('dalla pagina della seduta: togli l\'ultima del principale', () async {
+      final voci = await MotoreAssistente(
+        pseudonimi: pseudonimi,
+        strumenti: strumenti,
+        chiama: (messaggi) async =>
+            cervelloDemo(messaggi, oggi: _oggi, sedutaAperta: 'a1'),
+      ).chiedi('Togli l\'ultima serie del principale');
+      final p =
+          voci.whereType<VoceScheda>().single.scheda as PropostaModificaSeduta;
+      expect(p.scritto.serie, hasLength(3));
+      expect(
+        p.scritto.serie.every((s) => s.destinatari.soloAtleti.isEmpty),
+        isTrue,
       );
     });
 

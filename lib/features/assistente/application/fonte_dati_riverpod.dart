@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../../allenamenti/application/allenamenti_providers.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/serie.dart';
 import '../../allenamenti/domain/volume_allenamento.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/atleta.dart';
@@ -64,6 +65,10 @@ class FonteDatiRiverpod implements FonteDatiAssistente {
   @override
   Future<List<Allenamento>> allenamenti() =>
       _leggi(allenamentiListProvider(clubId).future);
+
+  @override
+  Future<List<Serie>> serie(String allenamentoId) =>
+      _leggi(serieListProvider(allenamentoId).future);
 
   @override
   Future<Map<String, VolumeAllenamento>> volumi() =>

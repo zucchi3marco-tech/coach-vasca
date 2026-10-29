@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -13,11 +15,14 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/error_banner.dart';
 import '../../../widgets/loading_skeleton.dart';
 import '../../allenamenti/data/allenamenti_repository.dart';
+import '../../allenamenti/data/salva_piano_serie.dart';
 import '../../allenamenti/data/serie_repository.dart';
 import '../../allenamenti/domain/allenamento.dart';
+import '../../allenamenti/domain/modifica_allenamento.dart';
 import '../../allenamenti/domain/piano_salvataggio_testo.dart';
 import '../../allenamenti/domain/prossimo_allenamento.dart';
 import '../../allenamenti/presentation/allenamento_detail_screen.dart';
+import '../../allenamenti/presentation/avviso_seduta_aperta.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/abbina_atleta.dart';
 import '../../atleti/domain/atleta.dart';
@@ -41,12 +46,17 @@ class AssistenteScreen extends ConsumerStatefulWidget {
   const AssistenteScreen({
     required this.clubId,
     this.gruppoId,
+    this.seduta,
     this.oggi,
     super.key,
   });
 
   final String clubId;
   final String? gruppoId;
+
+  /// Aperto dalla pagina di una seduta: le domande parlano di questa
+  /// ("togli il 400 iniziale").
+  final Allenamento? seduta;
 
   /// Per i test; di solito adesso.
   final DateTime? oggi;
@@ -64,6 +74,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
   final _voci = <VoceChat>[];
   final _esiti = <SchedaAssistente, _Esito>{};
   final _sedutaCreata = <PropostaSeduta, Allenamento>{};
+  final _modificaProvata = <PropostaModificaSeduta>{};
   MotoreAssistente? _motore;
   bool _pensa = false;
   String? _strumento;
@@ -98,6 +109,13 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
       'giorno': nomeGiorno(_oggi),
       'sport': sportApp,
       'squadra': squadra ?? 'tutto il club',
+      if (widget.seduta case final s?)
+        'seduta_aperta': {
+          'id': s.id,
+          'data': formatDateOnly(s.data),
+          'giorno': nomeGiorno(s.data),
+          'tipo': s.tipo,
+        },
     };
     return _motore = MotoreAssistente(
       pseudonimi: pseudonimi,
@@ -183,6 +201,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     _voci.clear();
     _esiti.clear();
     _sedutaCreata.clear();
+    _modificaProvata.clear();
     _motore = null;
   });
 
@@ -232,30 +251,11 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
         nuove: p.scritto.serie,
         nuovoId: () => const Uuid().v4(),
       );
-      final serie = ref.read(serieRepositoryProvider);
-      for (final c in piano.crea) {
-        final s = c.nuova;
-        await serie.createSerie(
-          allenamentoId: allenamento.id,
-          ordine: c.ordine,
-          blocco: s.blocco,
-          ripetute: s.ripetute,
-          distanzaM: s.distanzaM,
-          durataS: s.durataS,
-          stile: s.stile,
-          esecuzione: s.esecuzione,
-          zona: s.zona,
-          passoObiettivoS: s.passoObiettivoS,
-          recuperoS: s.recuperoS,
-          ripartenzaS: s.ripartenzaS,
-          attrezzatura: s.attrezzatura,
-          note: s.note,
-          piramideId: c.piramideId,
-          recuperoDopoS: s.recuperoDopoS,
-          destinatari: s.destinatari,
-          momentoId: c.momentoId,
-        );
-      }
+      await eseguiPianoSerie(
+        ref.read(serieRepositoryProvider),
+        allenamentoId: allenamento.id,
+        piano: piano,
+      );
       _motore?.annota(
         'Seduta creata il ${formatDateOnly(p.data)} con '
         '${p.scritto.serie.length} serie.',
@@ -310,6 +310,102 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     }
   }
 
+  /// Come "Scrivi l'allenamento": tocca solo le serie che cambiano (quelle
+  /// segnate «fatta» restano tali), dopo aver controllato che la seduta
+  /// sia ancora quella letta dall'assistente.
+  Future<void> _salvaModifica(PropostaModificaSeduta p) async {
+    final seduta = p.allenamento;
+    setState(() => _esiti[p] = _Esito.inCorso);
+    final repository = ref.read(serieRepositoryProvider);
+    try {
+      final attuali = await repository.fetchPerAllenamento(seduta.id);
+      // Dopo un salvataggio a metà le serie sono già un po' cambiate (da
+      // qui): riprovando si finisce il lavoro.
+      if (!_modificaProvata.contains(p) && !stesseSerie(attuali, p.serie)) {
+        _motore?.annota(
+          'La seduta ${seduta.id} è cambiata dopo la proposta: modifiche non '
+          'salvate. Rileggila con leggi_seduta prima di riproporle.',
+        );
+        if (!mounted) return;
+        setState(() => _esiti[p] = _Esito.scartata);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'La seduta è cambiata dopo la proposta: chiedi di nuovo '
+              'all\'assistente.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+      // Un collega l'ha cambiata intanto? (Senza rete si salva e basta.)
+      final esito = await controllaPrimaDiSalvare(
+        context,
+        ref,
+        allenamentoId: seduta.id,
+        clubId: seduta.clubId,
+      );
+      if (esito != true) {
+        if (esito == false) {
+          _motore?.annota(
+            'L\'allenatore ha tenuto la versione del collega: modifiche non '
+            'salvate.',
+          );
+        }
+        if (mounted) {
+          setState(
+            () => _esiti[p] = esito == false
+                ? _Esito.scartata
+                : _Esito.daDecidere,
+          );
+        }
+        return;
+      }
+      _modificaProvata.add(p);
+      if (p.cambiaSerie) {
+        await eseguiPianoSerie(
+          repository,
+          allenamentoId: seduta.id,
+          piano: pianoSalvataggio(
+            vecchie: attuali,
+            nuove: p.scritto.serie,
+            nuovoId: () => const Uuid().v4(),
+          ),
+        );
+      }
+      if (p.cambiaTitolo || p.cambiaNote) {
+        await ref
+            .read(allenamentiRepositoryProvider)
+            .updateAllenamento(
+              originale: seduta,
+              data: seduta.data,
+              titolo: p.titolo,
+              gruppoId: seduta.gruppoId,
+              note: p.note,
+              durataMin: seduta.durataMin,
+            );
+      }
+      unawaited(sedutaSalvata(ref, seduta.id));
+      _motore?.annota(
+        'Modifiche salvate nella seduta ${seduta.id}'
+        '${p.cambiaSerie ? ': ora ha ${p.scritto.serie.length} serie' : ''}.',
+      );
+      if (mounted) setState(() => _esiti[p] = _Esito.fatta);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _esiti[p] = _Esito.daDecidere);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Modifiche non salvate: ${messaggioErrore(e)}. Riprova: le serie '
+            'già salvate non si duplicano.',
+          ),
+        ),
+      );
+    }
+  }
+
   void _scarta(SchedaAssistente p) {
     _motore?.annota('L\'allenatore ha scartato la proposta.');
     setState(() => _esiti[p] = _Esito.scartata);
@@ -321,6 +417,13 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     'Chi ha segnato dolori questa settimana?',
     'Prepara la seduta di giovedì, con lavoro per i portieri',
     'Appello di oggi: tutti presenti',
+  ];
+
+  /// Aperto dalla pagina di una seduta.
+  static const _esempiSeduta = [
+    'Aggiungi 4x50 gambe alla fine del riscaldamento',
+    'Togli l\'ultima serie del principale',
+    'Cambia il titolo in «Superiorità e tiri»',
   ];
 
   @override
@@ -361,7 +464,12 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
               children: [
                 const _Riservatezza(),
                 const SizedBox(height: AppSpacing.s16),
-                if (_voci.isEmpty) _Inizio(esempi: _esempi, onEsempio: _chiedi),
+                if (_voci.isEmpty)
+                  _Inizio(
+                    seduta: widget.seduta,
+                    esempi: widget.seduta == null ? _esempi : _esempiSeduta,
+                    onEsempio: _chiedi,
+                  ),
                 for (final v in _voci)
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.s12),
@@ -395,6 +503,22 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                           onConferma: (stati) => _salvaAppello(scheda, stati),
                           onScarta: () => _scarta(scheda),
                         ),
+                        PropostaModificaSeduta() => _CartaModificaSeduta(
+                          scheda,
+                          esito: _esiti[scheda] ?? _Esito.daDecidere,
+                          // Dalla pagina della seduta si torna indietro.
+                          apri: widget.seduta?.id == scheda.allenamento.id
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => AllenamentoDetailScreen(
+                                      allenamento: scheda.allenamento,
+                                    ),
+                                  ),
+                                ),
+                          onConferma: () => _salvaModifica(scheda),
+                          onScarta: () => _scarta(scheda),
+                        ),
                       },
                     },
                   ),
@@ -414,8 +538,10 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _chiedi(),
-                  decoration: const InputDecoration(
-                    hintText: 'Chiedi sui dati della squadra',
+                  decoration: InputDecoration(
+                    hintText: widget.seduta == null
+                        ? 'Chiedi sui dati della squadra'
+                        : 'Cosa cambio in questa seduta?',
                   ),
                 ),
               ),
@@ -468,8 +594,13 @@ class _Riservatezza extends StatelessWidget {
 }
 
 class _Inizio extends StatelessWidget {
-  const _Inizio({required this.esempi, required this.onEsempio});
+  const _Inizio({
+    required this.seduta,
+    required this.esempi,
+    required this.onEsempio,
+  });
 
+  final Allenamento? seduta;
   final List<String> esempi;
   final ValueChanged<String> onEsempio;
 
@@ -482,15 +613,20 @@ class _Inizio extends StatelessWidget {
         const SizedBox(height: AppSpacing.s16),
         Icon(Icons.forum_outlined, size: 48, color: colori.testoTenue),
         const SizedBox(height: AppSpacing.s12),
-        Text(
-          'Chiedi all\'assistente',
-          style: AppTypography.sezione.copyWith(color: colori.testo),
-        ),
+        Text(switch (seduta) {
+          final s? => 'Cambia «${s.titoloMostrato}» di ${dataEstesa(s.data)}',
+          null => 'Chiedi all\'assistente',
+        }, style: AppTypography.sezione.copyWith(color: colori.testo)),
         const SizedBox(height: AppSpacing.s8),
         Text(
-          'Risponde con i dati del club, fa l\'appello («assenti Rossi e '
-          'Bianchi, Verdi in ritardo») e propone convocazioni e sedute: '
-          'ogni proposta la controlli e la confermi tu.',
+          seduta == null
+              ? 'Risponde con i dati del club, fa l\'appello («assenti Rossi '
+                    'e Bianchi, Verdi in ritardo») e propone convocazioni e '
+                    'sedute, e cambia quelle che ci sono: ogni proposta la '
+                    'controlli e la confermi tu.'
+              : 'Di\' cosa cambiare: serie, titolo o note. Ti mostra prima e '
+                    'dopo, e salvi tu; le serie già segnate «fatta» restano '
+                    'tali.',
           style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
         ),
         const SizedBox(height: AppSpacing.s16),
@@ -882,6 +1018,203 @@ class _CartaSeduta extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// Le modifiche a una seduta che c'è: titolo e note che cambiano e le
+/// serie riga per riga, le tolte in rosso e le aggiunte in verde.
+class _CartaModificaSeduta extends StatelessWidget {
+  const _CartaModificaSeduta(
+    this.proposta, {
+    required this.esito,
+    required this.apri,
+    required this.onConferma,
+    required this.onScarta,
+  });
+
+  final PropostaModificaSeduta proposta;
+  final _Esito esito;
+
+  /// "Apri" dopo il salvataggio; null se la chat è aperta dalla seduta.
+  final VoidCallback? apri;
+  final VoidCallback onConferma;
+  final VoidCallback onScarta;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final p = proposta;
+    final a = p.allenamento;
+    final s = p.scritto;
+    final nonCapite = p.cambiaSerie ? s.righeNonCapite : 0;
+    String numeroSerie(int n) => n == 1 ? '1 serie' : '$n serie';
+    return _Carta(
+      icona: Icons.edit_note,
+      titolo: 'Modifiche a «${a.titoloMostrato}» di ${dataEstesa(a.data)}',
+      figli: [
+        if (p.cambiaTitolo)
+          _Cambio(etichetta: 'Titolo', prima: a.titolo, dopo: p.titolo),
+        if (p.cambiaNote)
+          _Cambio(etichetta: 'Note', prima: a.note, dopo: p.note),
+        if (p.cambiaSerie) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+            decoration: BoxDecoration(
+              color: colori.superficieAlt,
+              borderRadius: BorderRadius.circular(AppRadius.controllo),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final r in p.righe)
+                  if (r.testo.trim().isEmpty)
+                    const SizedBox(height: AppSpacing.s8)
+                  else
+                    _RigaCambiata(r),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            [
+              if (p.metriPrima != s.metri)
+                '${formattaMetri(p.metriPrima)} → ${formattaMetri(s.metri)}'
+              else if (s.metri > 0)
+                formattaMetri(s.metri),
+              if (p.serie.length != s.serie.length)
+                '${numeroSerie(p.serie.length)} → '
+                    '${numeroSerie(s.serie.length)}'
+              else
+                numeroSerie(s.serie.length),
+            ].join(' · '),
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
+          ),
+        ],
+        if (nonCapite > 0) ...[
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            nonCapite == 1
+                ? 'Una riga non è stata capita: non diventa una serie.'
+                : '$nonCapite righe non sono state capite: non diventano '
+                      'serie.',
+            style: AppTypography.piccolo.copyWith(color: colori.attenzione),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.s12),
+        _Decisione(
+          esito: esito,
+          conferma: 'Salva le modifiche',
+          fatto: 'Seduta aggiornata',
+          onConferma: onConferma,
+          onScarta: onScarta,
+          dopo: apri == null
+              ? null
+              : TextButton(onPressed: apri, child: const Text('Apri')),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Titolo: Tecnica → Superiorità".
+class _Cambio extends StatelessWidget {
+  const _Cambio({
+    required this.etichetta,
+    required this.prima,
+    required this.dopo,
+  });
+
+  final String etichetta;
+  final String? prima;
+  final String? dopo;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    String testo(String? t) =>
+        t == null || t.trim().isEmpty ? '(niente)' : t.trim();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$etichetta: ',
+              style: AppTypography.corpoForte.copyWith(color: colori.testo),
+            ),
+            TextSpan(
+              text: testo(prima),
+              style: AppTypography.corpo.copyWith(
+                color: colori.testoSecondario,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+            TextSpan(
+              text: ' → ',
+              style: AppTypography.corpo.copyWith(
+                color: colori.testoSecondario,
+              ),
+            ),
+            TextSpan(
+              text: testo(dopo),
+              style: AppTypography.corpo.copyWith(color: colori.testo),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Una riga del confronto delle serie: «−» tolta, «+» aggiunta.
+class _RigaCambiata extends StatelessWidget {
+  const _RigaCambiata(this.riga);
+
+  final RigaConfronto riga;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final (segno, colore, sfondo) = switch (riga.stato) {
+      StatoRiga.tolta => ('−', colori.rosso, colori.rossoTenue),
+      StatoRiga.aggiunta => ('+', colori.ok, colori.okTenue),
+      StatoRiga.uguale => ('', colori.testoSecondario, null),
+    };
+    return Container(
+      color: sfondo,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: 2,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 16,
+            child: Text(
+              segno,
+              style: AppTypography.corpoForte.copyWith(color: colore),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              riga.testo,
+              style: AppTypography.numerica(AppTypography.corpo).copyWith(
+                color: riga.stato == StatoRiga.uguale
+                    ? colori.testoSecondario
+                    : colori.testo,
+                decoration: riga.stato == StatoRiga.tolta
+                    ? TextDecoration.lineThrough
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

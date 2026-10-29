@@ -22,7 +22,11 @@ class AssistenteRepository {
     // Nella demo l'AI non c'è: una traccia fissa per le domande d'esempio.
     if (modalitaDemo) {
       await Future<void>.delayed(const Duration(milliseconds: 400));
-      return cervelloDemo(messaggi);
+      final seduta = contesto['seduta_aperta'];
+      return cervelloDemo(
+        messaggi,
+        sedutaAperta: seduta is Map ? '${seduta['id']}' : null,
+      );
     }
     try {
       final risposta = await _client.functions.invoke(
