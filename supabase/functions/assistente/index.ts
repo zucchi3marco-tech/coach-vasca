@@ -2,9 +2,9 @@
 //
 // La chat dell'allenatore (proposta 9 del piano "Il Mako della
 // pallanuoto"): risponde sui dati del club e propone azioni (una
-// convocazione, una seduta nuova o le modifiche a una che c'e', l'appello,
-// un messaggio per il gruppo dei genitori) che l'allenatore conferma
-// nell'app.
+// convocazione, una seduta nuova o le modifiche a una che c'e', in acqua o
+// a secco, un programma a secco, l'appello, un messaggio per il gruppo dei
+// genitori) che l'allenatore conferma nell'app.
 //
 // Decisione del 13 ottobre 2026, per i dati di minorenni: i dati restano
 // sul telefono. Questa funzione non legge niente del club: e' solo il
@@ -48,6 +48,23 @@ const TENTATIVI_MASSIMI = 3;
 const ATTESE_MS = [1500, 3000];
 const TEMPO_MASSIMO_MS = 55_000;
 const LIMITE_TENTATIVO_MS = 30_000;
+
+// Un esercizio a secco con la sua dose: lo stesso per sedute, programmi e
+// modifiche.
+const DOSE_SECCO = {
+  type: "object",
+  properties: {
+    esercizio: { type: "string", description: "Il codice di esercizi_secco (E1, E2...)" },
+    serie: { type: "integer", minimum: 1, maximum: 10 },
+    ripetizioni: { type: "integer", minimum: 1, maximum: 500 },
+    secondi: { type: "integer", minimum: 5, maximum: 3600, description: "Solo per gli esercizi a tempo" },
+    recupero_secondi: { type: "integer", minimum: 0, maximum: 600 },
+    carico: { type: "string", description: "\"70%\" solo per gli esercizi con massimale; altro solo se l'ha detto l'allenatore" },
+    note: { type: "string" },
+  },
+  required: ["esercizio"],
+  additionalProperties: false,
+};
 
 // Gli strumenti: li esegue l'app, qui c'e' solo come chiamarli.
 const STRUMENTI = [
@@ -238,7 +255,7 @@ const STRUMENTI = [
     function: {
       name: "leggi_seduta",
       description:
-        "Legge una seduta in acqua che c'e' gia': id, data, titolo, note e il testo delle serie nel formato di 'Scrivi l'allenamento'. Senza allenamento_id l'app prende l'unica seduta della squadra nel giorno (oggi se manca la data); se ce n'e' piu' d'una te le elenca. Le sedute a secco non si leggono.",
+        "Legge una seduta che c'e' gia': id, data, titolo, note e, in acqua, il testo delle serie nel formato di 'Scrivi l'allenamento'; a secco i minuti e gli esercizi di tutti con codice, nome e dose (delle varianti per gli atleti solo quante sono). Senza allenamento_id l'app prende l'unica seduta della squadra nel giorno (oggi se manca la data); se ce n'e' piu' d'una te le elenca.",
       parameters: {
         type: "object",
         properties: {
@@ -254,12 +271,14 @@ const STRUMENTI = [
     function: {
       name: "proponi_modifica_seduta",
       description:
-        "Propone all'allenatore le modifiche a una seduta in acqua che c'e' gia': l'app gli mostra prima e dopo e lui le salva. 'testo' e' TUTTO il testo delle serie dopo la modifica (le righe non toccate copiate uguali da leggi_seduta); titolo e note solo se cambiano (stringa vuota = toglierli). La data non si cambia. Non e' salvato finche' non conferma.",
+        "Propone all'allenatore le modifiche a una seduta che c'e' gia': l'app gli mostra prima e dopo e lui le salva. In acqua 'testo' e' TUTTO il testo delle serie dopo la modifica (le righe non toccate copiate uguali da leggi_seduta); a secco 'esercizi' e' TUTTA la lista degli esercizi dopo la modifica, nell'ordine (quelli non toccati copiati uguali), e 'minuti' la durata se cambia. Titolo e note solo se cambiano (stringa vuota = toglierli). La data non si cambia. Non e' salvato finche' non conferma.",
       parameters: {
         type: "object",
         properties: {
           allenamento_id: { type: "string" },
-          testo: { type: "string", description: "Tutte le serie, una per riga" },
+          testo: { type: "string", description: "Solo in acqua: tutte le serie, una per riga" },
+          esercizi: { type: "array", items: DOSE_SECCO, minItems: 1, maxItems: 20, description: "Solo a secco: tutti gli esercizi" },
+          minuti: { type: "integer", minimum: 5, maximum: 600, description: "Solo a secco" },
           titolo: { type: "string" },
           note: { type: "string" },
         },
@@ -300,6 +319,61 @@ const STRUMENTI = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "esercizi_secco",
+      description:
+        "L'elenco degli esercizi a secco del club: codice (E1, E2...), nome, categoria (spalla, scapole, core, gambe, forza, mobilita', altro), misura (ripetizioni o tempo), attrezzo e 'massimale' se c'e' un test di massimale. Sono gli unici esercizi che puoi usare.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_seduta_secco",
+      description:
+        "Propone all'allenatore una seduta a secco per un giorno, con gli esercizi dell'elenco del club e le dosi: l'app gliela mostra e lui la crea nel calendario della squadra. Non e' creata finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          data: { type: "string", description: "AAAA-MM-GG" },
+          titolo: { type: "string" },
+          minuti: { type: "integer", minimum: 5, maximum: 600 },
+          esercizi: { type: "array", items: DOSE_SECCO, minItems: 1, maxItems: 20 },
+        },
+        required: ["data", "esercizi"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "proponi_programma_secco",
+      description:
+        "Propone all'allenatore un programma a secco a settimane: scrivi solo le sedute della prima settimana (la A, la B...); le settimane dopo le fa l'app, un po' di piu' ogni settimana, e quelle di 'scarico' con una serie in meno. L'allenatore lo crea fra i programmi del club e poi lo mette nel calendario. Non e' creato finche' non conferma.",
+      parameters: {
+        type: "object",
+        properties: {
+          nome: { type: "string" },
+          descrizione: { type: "string", description: "A cosa serve, in una o due frasi" },
+          minuti: { type: "integer", minimum: 5, maximum: 120, description: "Di ogni seduta" },
+          settimane: { type: "integer", minimum: 1, maximum: 12 },
+          scarico: { type: "array", items: { type: "integer", minimum: 2, maximum: 12 }, description: "Le settimane di scarico, da 1" },
+          sedute: {
+            type: "array",
+            minItems: 1,
+            maxItems: 4,
+            description: "Le sedute della prima settimana",
+            items: { type: "array", items: DOSE_SECCO, minItems: 1, maxItems: 15 },
+          },
+        },
+        required: ["nome", "settimane", "sedute"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // La seduta da cui l'allenatore ha aperto la chat, se c'e': solo id, data,
@@ -326,13 +400,17 @@ Regole:
 - Gli atleti sono minorenni. Li conosci solo per codice (G1, G2...): scrivi sempre il codice, l'app lo trasforma nel nome. Non inventare nomi e non chiederli.
 - Non hai dati sulla salute (benessere, dolori, sintomi) e non devi chiederli. Per scegliere atleti con filtri sulla salute usa scegli_atleti; se l'allenatore chiede di salute o dolori usa mostra_benessere e digli che li trova nella scheda.
 - Prima di rispondere sui numeri leggi i dati con gli strumenti. Non inventare numeri: se un dato manca, dillo.
-- Per fare qualcosa (convocare, preparare o cambiare una seduta, fare l'appello, scrivere alle famiglie) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
+- Per fare qualcosa (convocare, preparare o cambiare una seduta anche a secco, preparare un programma a secco, fare l'appello, scrivere alle famiglie) usa gli strumenti proponi_*: l'allenatore conferma nell'app. Non dire che e' fatto: di' che c'e' una proposta da controllare e confermare.
 - L'appello ("assenti G3 e G5, G7 in ritardo", "tutti presenti") si fa con proponi_appello, subito, senza leggere prima la squadra: chi non e' nominato lo segna presente l'app. "Giustificato" e' chi ha avvisato o ha un motivo.
 - Per cambiare una seduta che c'e' ("togli il 400 iniziale", "aggiungi 6x50 gambe dopo il riscaldamento", "cambia il titolo") leggila con leggi_seduta, poi usa proponi_modifica_seduta con tutto il testo delle serie: cambia solo le righe richieste e copia le altre identiche, nello stesso ordine. Se cambia solo titolo o note, non mandare il testo.
   - "Togli 2x100" o "aggiungi 2x100" da una serie che c'e' (12x100) cambia le ripetute di quella serie (12x100 diventa 10x100 o 14x100) e lascia il resto della riga uguale; togli una riga intera solo se lo chiede ("togli il 400 iniziale", "togli l'ultima serie").
   - Il blocco e la serie giusti: se l'allenatore nomina un blocco che nella seduta non c'e' (un riscaldamento quando le serie sono tutte nel principale) o non e' chiaro quale serie intende (due 12x100), chiedi prima di proporre, citando le serie possibili.
   - Dopo la proposta controlla righe_tolte e righe_aggiunte: devono essere solo quello che ha chiesto. Se non lo sono, rifai la proposta corretta. All'allenatore di' esattamente cosa cambia ("il 12x100 A2 diventa 10x100"), mai una cosa diversa da quelle righe.
 - Per un messaggio alle famiglie ("scrivi ai genitori che giovedi' non c'e' allenamento", "ricorda la partita di sabato", "avvisa del collegiale") usa proponi_messaggio_famiglie con il testo pronto da incollare nel gruppo WhatsApp dei genitori. Se servono date o dettagli leggili prima con partite, allenamenti o impegni; la data scrivila per intero ("giovedi' 30 ottobre"). Le sedute non hanno orario: scrivi un'ora solo se l'ha detta l'allenatore o c'e' nei dati, non inventarla. Poche righe, tono cordiale e chiaro, la prima riga in grassetto di WhatsApp (*cosi'*), niente firma e niente emoji. Nomina un atleta (con il suo codice) solo se l'ha nominato l'allenatore. Il messaggio va a tutti i genitori: mai motivi di salute, infortuni o dolori di un atleta, nemmeno se li dice l'allenatore. Se l'allenatore chiede di cambiarlo, manda di nuovo il testo intero.
+- Il secco ("prepara 20' di core e spalla per venerdi'", "un programma di 4 settimane per la spalla, 2 sedute da 20'"): leggi prima esercizi_secco e usa SOLO quegli esercizi, con il loro codice; non inventarne e non suggerirne altri. Se per quello che chiede mancano esercizi adatti (niente per le gambe), diglielo e usa quelli adatti che ci sono; se non ce n'e' nessuno non proporre niente e digli che li aggiunge da "Elenco esercizi del club".
+  - Una seduta per un giorno: proponi_seduta_secco. Piu' settimane: proponi_programma_secco con le sedute della sola prima settimana (le altre le fa crescere l'app); se l'allenatore non dice altro, lo scarico e' ogni quarta settimana.
+  - Dosi: 'secondi' per gli esercizi a tempo, 'ripetizioni' per gli altri, recupero in secondi; stai nei minuti chiesti (te li stima l'app). Gli atleti sono ragazzi: dosi prudenti, da prevenzione. Carico: una percentuale ("70%") solo per gli esercizi con massimale; un carico scritto ("elastico rosso") solo se l'ha detto l'allenatore; se no niente carico.
+  - Per cambiare una seduta a secco leggila con leggi_seduta e manda a proponi_modifica_seduta tutta la lista 'esercizi', con gli esercizi non toccati copiati uguali (stesso codice e stesse dosi, nello stesso ordine). "Una serie in piu' di squat" cambia le serie di quell'esercizio, non aggiunge esercizi. Controlla righe_tolte e righe_aggiunte come per l'acqua.
 - Se nella domanda c'e' "un atleta" al posto di un nome, quel nome e' di piu' atleti: chiedi quale (nome e cognome) prima di usarlo.
 - Niente diagnosi mediche. Il carico (ACWR) e' una fascia di riferimento, non una previsione di infortuni.
 - Rispondi in italiano, breve e concreto, come un collega competente. Niente punti esclamativi, niente elenchi lunghi se non servono.

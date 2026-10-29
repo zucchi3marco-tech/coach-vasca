@@ -59,6 +59,9 @@ const etichetteStrumenti = {
   'proponi_modifica_seduta': 'modifiche alla seduta',
   'impegni': 'impegni',
   'proponi_messaggio_famiglie': 'messaggio per le famiglie',
+  'esercizi_secco': 'esercizi a secco',
+  'proponi_seduta_secco': 'seduta a secco',
+  'proponi_programma_secco': 'programma a secco',
 };
 
 /// La conversazione con l'assistente: tiene la storia nel formato del

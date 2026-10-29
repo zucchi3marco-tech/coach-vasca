@@ -44,6 +44,20 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'assistente-secco',
+    data: DateTime(2026, 10, 29),
+    titolo: 'Il secco da una frase',
+    testo:
+        'Nell\'assistente scrivi o detta «prepara 20\' di core e spalla a '
+        'secco per venerdì» o «un programma a secco di 4 settimane per la '
+        'spalla, 2 sedute da 20\'»: usa solo gli esercizi del tuo elenco, '
+        'con serie, ripetizioni o tempo, recupero e la percentuale del '
+        'massimale dove c\'è. La seduta la crei con un tocco; il programma '
+        'va fra i Programmi a secco, da mettere nel calendario. Nella '
+        'pagina di una seduta a secco il pulsante dell\'assistente la '
+        'cambia a voce («togli il plank», «una serie in più di squat»).',
+  ),
+  Novita(
     id: 'assistente-messaggi-famiglie',
     data: DateTime(2026, 10, 29),
     titolo: 'Il messaggio per i genitori',

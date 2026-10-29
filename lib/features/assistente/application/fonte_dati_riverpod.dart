@@ -19,6 +19,9 @@ import '../../pallanuoto/domain/evento_partita.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../presenze/application/presenze_providers.dart';
 import '../../presenze/domain/presenza.dart';
+import '../../secco/application/secco_providers.dart';
+import '../../secco/domain/esercizio_secco.dart';
+import '../../test/application/test_club_providers.dart';
 import '../domain/strumenti_assistente.dart';
 
 /// I dati dell'assistente letti come nelle schermate: dalla copia sul
@@ -86,4 +89,18 @@ class FonteDatiRiverpod implements FonteDatiAssistente {
 
   @override
   Future<List<Impegno>> impegni() => _leggi(impegniListProvider(clubId).future);
+
+  @override
+  Future<List<EsercizioSecco>> eserciziSecco() =>
+      _leggi(eserciziSeccoProvider(clubId).future);
+
+  @override
+  Future<List<EsercizioSeduta>> eserciziSeduta(String allenamentoId) =>
+      _leggi(eserciziSedutaProvider(allenamentoId).future);
+
+  @override
+  Future<Set<String>> eserciziConMassimale() async => {
+    for (final t in await _leggi(testClubProvider(clubId).future))
+      ?t.esercizioId,
+  };
 }

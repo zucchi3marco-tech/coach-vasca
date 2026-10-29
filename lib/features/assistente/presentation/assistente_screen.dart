@@ -34,6 +34,11 @@ import '../../pallanuoto/data/distinta_repository.dart';
 import '../../presenze/data/presenze_repository.dart';
 import '../../presenze/domain/presenza.dart';
 import '../../presenze/presentation/presenze_screen.dart';
+import '../../secco/data/secco_repository.dart';
+import '../../secco/domain/esercizio_secco.dart';
+import '../../secco/domain/programma_secco.dart';
+import '../../secco/presentation/programma_secco_screen.dart';
+import '../../secco/presentation/seduta_secco_screen.dart';
 import '../application/fonte_dati_riverpod.dart';
 import '../data/assistente_repository.dart';
 import '../domain/motore_assistente.dart';
@@ -78,8 +83,9 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
   final _scorrimento = ScrollController();
   final _voci = <VoceChat>[];
   final _esiti = <SchedaAssistente, _Esito>{};
-  final _sedutaCreata = <PropostaSeduta, Allenamento>{};
-  final _modificaProvata = <PropostaModificaSeduta>{};
+  final _sedutaCreata = <SchedaAssistente, Allenamento>{};
+  final _programmaCreato = <PropostaProgrammaSecco, ProgrammaSecco>{};
+  final _modificaProvata = <SchedaAssistente>{};
   MotoreAssistente? _motore;
   bool _pensa = false;
   String? _strumento;
@@ -170,10 +176,9 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
           if (v is! VoceScheda || v.scheda is SchedaSalute) continue;
           // Una proposta nuova sulla stessa seduta prende il posto di quella
           // ancora da decidere (l'assistente l'ha corretta).
-          if (v.scheda case PropostaModificaSeduta(:final allenamento)) {
+          if (_sedutaCambiata(v.scheda) case final id?) {
             for (final vecchia in _esiti.keys.toList()) {
-              if (vecchia is PropostaModificaSeduta &&
-                  vecchia.allenamento.id == allenamento.id &&
+              if (_sedutaCambiata(vecchia) == id &&
                   _esiti[vecchia] == _Esito.daDecidere) {
                 _esiti[vecchia] = _Esito.superata;
               }
@@ -200,6 +205,13 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     }
   }
 
+  /// La seduta che una proposta di modifica cambia.
+  static String? _sedutaCambiata(SchedaAssistente s) => switch (s) {
+    PropostaModificaSeduta(:final allenamento) ||
+    PropostaModificaSecco(:final allenamento) => allenamento.id,
+    _ => null,
+  };
+
   void _riprova(ErroreAssistente errore) {
     setState(() {
       _voci.remove(errore);
@@ -216,6 +228,7 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     _voci.clear();
     _esiti.clear();
     _sedutaCreata.clear();
+    _programmaCreato.clear();
     _modificaProvata.clear();
     _motore = null;
   });
@@ -421,6 +434,187 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     }
   }
 
+  /// Come «Nuovo allenamento → A secco» più «Aggiungi esercizi»: la seduta
+  /// per la squadra scelta, con gli esercizi nell'ordine proposto.
+  Future<void> _creaSedutaSecco(PropostaSedutaSecco p) async {
+    setState(() => _esiti[p] = _Esito.inCorso);
+    try {
+      final seduta = await ref
+          .read(allenamentiRepositoryProvider)
+          .createAllenamento(
+            clubId: widget.clubId,
+            data: p.data,
+            titolo: p.titolo,
+            gruppoId: widget.gruppoId,
+            tipo: 'secco',
+            durataMin: p.durataMin,
+          );
+      final secco = ref.read(seccoRepositoryProvider);
+      for (final (i, d) in p.dosi.indexed) {
+        await secco.aggiungiAllaSeduta(
+          d.comeRiga(
+            ordine: i + 1,
+            allenamentoId: seduta.id,
+            clubId: seduta.clubId,
+          ),
+        );
+      }
+      _motore?.annota(
+        'Seduta a secco creata il ${formatDateOnly(p.data)} con '
+        '${p.dosi.length} esercizi.',
+      );
+      if (mounted) {
+        setState(() {
+          _esiti[p] = _Esito.fatta;
+          _sedutaCreata[p] = seduta;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _esiti[p] = _Esito.daDecidere);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Seduta non creata: ${messaggioErrore(e)}')),
+      );
+    }
+  }
+
+  /// Il programma fra quelli del club: nel calendario lo mette
+  /// l'allenatore, dal programma.
+  Future<void> _creaProgramma(PropostaProgrammaSecco p) async {
+    setState(() => _esiti[p] = _Esito.inCorso);
+    try {
+      final creato = await ref
+          .read(seccoRepositoryProvider)
+          .creaProgramma(
+            ProgrammaSecco(
+              id: '',
+              clubId: widget.clubId,
+              nome: p.programma.nome,
+              descrizione: p.programma.descrizione,
+              durataMin: p.programma.durataMin,
+              settimane: p.programma.settimane,
+            ),
+          );
+      _motore?.annota(
+        'Programma a secco «${p.programma.nome}» creato fra quelli del '
+        'club: ${p.programma.settimane.length} settimane. Non è ancora nel '
+        'calendario.',
+      );
+      if (mounted) {
+        setState(() {
+          _esiti[p] = _Esito.fatta;
+          _programmaCreato[p] = creato;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _esiti[p] = _Esito.daDecidere);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Programma non creato: ${messaggioErrore(e)}')),
+      );
+    }
+  }
+
+  /// Come la pagina della seduta a secco: tocca solo gli esercizi che
+  /// cambiano (le serie fatte e le varianti restano sul loro esercizio),
+  /// dopo aver controllato che la seduta sia ancora quella letta.
+  Future<void> _salvaModificaSecco(PropostaModificaSecco p) async {
+    final seduta = p.allenamento;
+    setState(() => _esiti[p] = _Esito.inCorso);
+    final secco = ref.read(seccoRepositoryProvider);
+    try {
+      final attuali = await secco.fetchSeduta(seduta.id);
+      if (!_modificaProvata.contains(p) && !stessiEsercizi(attuali, p.righe)) {
+        _motore?.annota(
+          'La seduta ${seduta.id} è cambiata dopo la proposta: modifiche non '
+          'salvate. Rileggila con leggi_seduta prima di riproporle.',
+        );
+        if (!mounted) return;
+        setState(() => _esiti[p] = _Esito.scartata);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'La seduta è cambiata dopo la proposta: chiedi di nuovo '
+              'all\'assistente.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+      final esito = await controllaPrimaDiSalvare(
+        context,
+        ref,
+        allenamentoId: seduta.id,
+        clubId: seduta.clubId,
+      );
+      if (esito != true) {
+        if (esito == false) {
+          _motore?.annota(
+            'L\'allenatore ha tenuto la versione del collega: modifiche non '
+            'salvate.',
+          );
+        }
+        if (mounted) {
+          setState(
+            () => _esiti[p] = esito == false
+                ? _Esito.scartata
+                : _Esito.daDecidere,
+          );
+        }
+        return;
+      }
+      _modificaProvata.add(p);
+      if (p.cambiaEsercizi) {
+        final piano = pianoSecco(
+          righe: attuali,
+          dosi: p.dosi,
+          allenamentoId: seduta.id,
+          clubId: seduta.clubId,
+          nuovoId: () => const Uuid().v4(),
+        );
+        for (final id in piano.elimina) {
+          await secco.eliminaRiga(id);
+        }
+        for (final r in piano.aggiorna) {
+          await secco.aggiornaRiga(r);
+        }
+        for (final r in piano.crea) {
+          await secco.aggiungiAllaSeduta(r);
+        }
+      }
+      if (p.cambiaTitolo || p.cambiaNote || p.cambiaDurata) {
+        await ref
+            .read(allenamentiRepositoryProvider)
+            .updateAllenamento(
+              originale: seduta,
+              data: seduta.data,
+              titolo: p.titolo,
+              gruppoId: seduta.gruppoId,
+              note: p.note,
+              durataMin: p.durataMin,
+            );
+      }
+      unawaited(sedutaSalvata(ref, seduta.id));
+      _motore?.annota(
+        'Modifiche salvate nella seduta a secco ${seduta.id}'
+        '${p.cambiaEsercizi ? ': ora ha ${p.dosi.length} esercizi' : ''}.',
+      );
+      if (mounted) setState(() => _esiti[p] = _Esito.fatta);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _esiti[p] = _Esito.daDecidere);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Modifiche non salvate: ${messaggioErrore(e)}. Riprova: gli '
+            'esercizi già salvati non si duplicano.',
+          ),
+        ),
+      );
+    }
+  }
+
   void _scarta(SchedaAssistente p) {
     _motore?.annota('L\'allenatore ha scartato la proposta.');
     setState(() => _esiti[p] = _Esito.scartata);
@@ -433,6 +627,15 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
     'Prepara la seduta di giovedì, con lavoro per i portieri',
     'Appello di oggi: tutti presenti',
     'Scrivi ai genitori che giovedì non c\'è allenamento',
+    'Prepara 20\' di core e spalla a secco per venerdì',
+    'Un programma a secco di 4 settimane per la spalla, 2 sedute da 20\'',
+  ];
+
+  /// Aperto dalla pagina di una seduta a secco.
+  static const _esempiSecco = [
+    'Togli l\'ultimo esercizio',
+    'Una serie in più a tutti gli esercizi',
+    'Cambia il titolo in «Spalla e core»',
   ];
 
   /// Aperto dalla pagina di una seduta.
@@ -483,7 +686,11 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                 if (_voci.isEmpty)
                   _Inizio(
                     seduta: widget.seduta,
-                    esempi: widget.seduta == null ? _esempi : _esempiSeduta,
+                    esempi: switch (widget.seduta) {
+                      null => _esempi,
+                      final s when s.secco => _esempiSecco,
+                      _ => _esempiSeduta,
+                    },
                     onEsempio: _chiedi,
                   ),
                 for (final v in _voci)
@@ -533,6 +740,53 @@ class _AssistenteScreenState extends ConsumerState<AssistenteScreen> {
                                   ),
                                 ),
                           onConferma: () => _salvaModifica(scheda),
+                          onScarta: () => _scarta(scheda),
+                        ),
+                        PropostaSedutaSecco() => _CartaSedutaSecco(
+                          scheda,
+                          esito: _esiti[scheda] ?? _Esito.daDecidere,
+                          apri: switch (_sedutaCreata[scheda]) {
+                            final creata? => () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    SedutaSeccoScreen(allenamento: creata),
+                              ),
+                            ),
+                            null => null,
+                          },
+                          onConferma: () => _creaSedutaSecco(scheda),
+                          onScarta: () => _scarta(scheda),
+                        ),
+                        PropostaProgrammaSecco() => _CartaProgrammaSecco(
+                          scheda,
+                          esito: _esiti[scheda] ?? _Esito.daDecidere,
+                          apri: switch (_programmaCreato[scheda]) {
+                            final creato? => () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => ProgrammaSeccoScreen(
+                                  clubId: widget.clubId,
+                                  programmaId: creato.id,
+                                ),
+                              ),
+                            ),
+                            null => null,
+                          },
+                          onConferma: () => _creaProgramma(scheda),
+                          onScarta: () => _scarta(scheda),
+                        ),
+                        PropostaModificaSecco() => _CartaModificaSecco(
+                          scheda,
+                          esito: _esiti[scheda] ?? _Esito.daDecidere,
+                          apri: widget.seduta?.id == scheda.allenamento.id
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => SedutaSeccoScreen(
+                                      allenamento: scheda.allenamento,
+                                    ),
+                                  ),
+                                ),
+                          onConferma: () => _salvaModificaSecco(scheda),
                           onScarta: () => _scarta(scheda),
                         ),
                         PropostaMessaggioFamiglie() => _CartaMessaggioFamiglie(
@@ -646,8 +900,13 @@ class _Inizio extends StatelessWidget {
           seduta == null
               ? 'Risponde con i dati del club, fa l\'appello («assenti Rossi '
                     'e Bianchi, Verdi in ritardo») e propone convocazioni e '
-                    'sedute, e cambia quelle che ci sono: ogni proposta la '
-                    'controlli e la confermi tu.'
+                    'sedute anche a secco, programmi a secco e messaggi per i '
+                    'genitori, e cambia le sedute che ci sono: ogni proposta '
+                    'la controlli e la confermi tu.'
+              : seduta!.secco
+              ? 'Di\' cosa cambiare: esercizi, titolo, note o durata. Ti '
+                    'mostra prima e dopo, e salvi tu; le varianti degli atleti '
+                    'restano sul loro esercizio.'
               : 'Di\' cosa cambiare: serie, titolo o note. Ti mostra prima e '
                     'dopo, e salvi tu; le serie già segnate «fatta» restano '
                     'tali.',
@@ -1239,6 +1498,292 @@ class _CartaModificaSeduta extends StatelessWidget {
                 : '$nonCapite righe non sono state capite: non diventano '
                       'serie.',
             style: AppTypography.piccolo.copyWith(color: colori.attenzione),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.s12),
+        _Decisione(
+          esito: esito,
+          conferma: 'Salva le modifiche',
+          fatto: 'Seduta aggiornata',
+          onConferma: onConferma,
+          onScarta: onScarta,
+          dopo: apri == null
+              ? null
+              : TextButton(onPressed: apri, child: const Text('Apri')),
+        ),
+      ],
+    );
+  }
+}
+
+/// Gli esercizi a secco di una seduta proposta, numerati: nome e dose.
+class _EserciziSecco extends StatelessWidget {
+  const _EserciziSecco(this.dosi, {required this.esercizi});
+
+  final List<DoseEsercizio> dosi;
+  final Map<String, EsercizioSecco> esercizi;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.s12),
+      decoration: BoxDecoration(
+        color: colori.superficieAlt,
+        borderRadius: BorderRadius.circular(AppRadius.controllo),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final (i, d) in dosi.indexed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '${i + 1}',
+                      style: AppTypography.numerica(AppTypography.corpo)
+                          .copyWith(color: colori.testoSecondario),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: esercizi[d.esercizioId]?.nome ?? 'Esercizio',
+                            style: AppTypography.corpoForte.copyWith(
+                              color: colori.testo,
+                            ),
+                          ),
+                          TextSpan(
+                            text:
+                                '  ${prescrizioneEsercizio(d.comeRiga(ordine: i + 1))}',
+                            style: AppTypography.corpo.copyWith(
+                              color: colori.testoSecondario,
+                            ),
+                          ),
+                          if (d.note case final n? when n.trim().isNotEmpty)
+                            TextSpan(
+                              text: ' · $n',
+                              style: AppTypography.corpo.copyWith(
+                                color: colori.testoSecondario,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CartaSedutaSecco extends StatelessWidget {
+  const _CartaSedutaSecco(
+    this.proposta, {
+    required this.esito,
+    required this.apri,
+    required this.onConferma,
+    required this.onScarta,
+  });
+
+  final PropostaSedutaSecco proposta;
+  final _Esito esito;
+  final VoidCallback? apri;
+  final VoidCallback onConferma;
+  final VoidCallback onScarta;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final p = proposta;
+    final stima = minutiDosi(p.dosi);
+    return _Carta(
+      icona: Icons.fitness_center,
+      titolo: ['Seduta a secco di ${dataEstesa(p.data)}', ?p.titolo].join(': '),
+      figli: [
+        _EserciziSecco(p.dosi, esercizi: p.esercizi),
+        const SizedBox(height: AppSpacing.s8),
+        Text(
+          [
+            p.dosi.length == 1 ? '1 esercizio' : '${p.dosi.length} esercizi',
+            "durata ${p.durataMin}'",
+            if ((stima - p.durataMin).abs() >= 5)
+              "fatti come scritto circa $stima'",
+          ].join(' · '),
+          style: AppTypography.piccolo.copyWith(color: colori.testoSecondario),
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        _Decisione(
+          esito: esito,
+          conferma: 'Crea la seduta',
+          fatto: 'Seduta a secco creata',
+          onConferma: onConferma,
+          onScarta: onScarta,
+          dopo: apri == null
+              ? null
+              : TextButton(onPressed: apri, child: const Text('Apri')),
+        ),
+      ],
+    );
+  }
+}
+
+/// Il programma proposto: le sedute della prima settimana, come cresce e
+/// le settimane di scarico.
+class _CartaProgrammaSecco extends StatelessWidget {
+  const _CartaProgrammaSecco(
+    this.proposta, {
+    required this.esito,
+    required this.apri,
+    required this.onConferma,
+    required this.onScarta,
+  });
+
+  final PropostaProgrammaSecco proposta;
+  final _Esito esito;
+  final VoidCallback? apri;
+  final VoidCallback onConferma;
+  final VoidCallback onScarta;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final p = proposta.programma;
+    final prima = p.settimane.first;
+    final quante = prima.sedute.length;
+    final scarico = proposta.scarico;
+    final piccolo = AppTypography.piccolo.copyWith(
+      color: colori.testoSecondario,
+    );
+    return _Carta(
+      icona: Icons.event_repeat,
+      titolo: 'Programma a secco «${p.nome}»',
+      figli: [
+        if (p.descrizione case final d? when d.isNotEmpty) ...[
+          Text(d, style: AppTypography.corpo.copyWith(color: colori.testo)),
+          const SizedBox(height: AppSpacing.s8),
+        ],
+        Text(
+          [
+            p.settimane.length == 1
+                ? '1 settimana'
+                : '${p.settimane.length} settimane',
+            quante == 1 ? '1 seduta a settimana' : '$quante sedute a settimana',
+            "da ${p.durataMin}'",
+            if (scarico.isNotEmpty)
+              'scarico ${scarico.length == 1 ? 'la' : 'le'} '
+                  '${scarico.map((w) => '$wª').join(', ')}',
+          ].join(' · '),
+          style: AppTypography.corpoForte.copyWith(color: colori.testo),
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        Text('Settimana 1', style: piccolo),
+        const SizedBox(height: AppSpacing.s4),
+        for (final (i, seduta) in prima.sedute.indexed) ...[
+          if (quante > 1) ...[
+            Text(
+              nomeSeduta(i, quante),
+              style: AppTypography.corpoForte.copyWith(color: colori.testo),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+          ],
+          _EserciziSecco(seduta, esercizi: proposta.esercizi),
+          const SizedBox(height: AppSpacing.s8),
+        ],
+        Text(
+          'Poi ogni settimana un po\' di più: una serie in più fino a 4, poi '
+          'qualche ripetizione o qualche secondo (la mobilità resta com\'è)'
+          '${scarico.isEmpty ? '' : '; nello scarico una serie in meno'}. '
+          'Dopo averlo creato puoi cambiare ogni settimana e metterlo nel '
+          'calendario della squadra.',
+          style: piccolo,
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        _Decisione(
+          esito: esito,
+          conferma: 'Crea il programma',
+          fatto: 'Programma creato',
+          onConferma: onConferma,
+          onScarta: onScarta,
+          dopo: apri == null
+              ? null
+              : TextButton(onPressed: apri, child: const Text('Apri')),
+        ),
+      ],
+    );
+  }
+}
+
+/// Le modifiche a una seduta a secco: titolo, note e durata che cambiano e
+/// gli esercizi riga per riga, i tolti in rosso e gli aggiunti in verde.
+class _CartaModificaSecco extends StatelessWidget {
+  const _CartaModificaSecco(
+    this.proposta, {
+    required this.esito,
+    required this.apri,
+    required this.onConferma,
+    required this.onScarta,
+  });
+
+  final PropostaModificaSecco proposta;
+  final _Esito esito;
+  final VoidCallback? apri;
+  final VoidCallback onConferma;
+  final VoidCallback onScarta;
+
+  @override
+  Widget build(BuildContext context) {
+    final colori = context.colori;
+    final p = proposta;
+    final a = p.allenamento;
+    String quanti(int n) => n == 1 ? '1 esercizio' : '$n esercizi';
+    String? minuti(int? m) => m == null ? null : "$m'";
+    final prima = p.principaliPrima.length;
+    return _Carta(
+      icona: Icons.edit_note,
+      titolo: 'Modifiche a «${a.titoloMostrato}» di ${dataEstesa(a.data)}',
+      figli: [
+        if (p.cambiaTitolo)
+          _Cambio(etichetta: 'Titolo', prima: a.titolo, dopo: p.titolo),
+        if (p.cambiaNote)
+          _Cambio(etichetta: 'Note', prima: a.note, dopo: p.note),
+        if (p.cambiaDurata)
+          _Cambio(
+            etichetta: 'Durata',
+            prima: minuti(a.durataMin),
+            dopo: minuti(p.durataMin),
+          ),
+        if (p.cambiaEsercizi) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+            decoration: BoxDecoration(
+              color: colori.superficieAlt,
+              borderRadius: BorderRadius.circular(AppRadius.controllo),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [for (final r in p.confronto) _RigaCambiata(r)],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            prima == p.dosi.length
+                ? quanti(prima)
+                : '${quanti(prima)} → ${quanti(p.dosi.length)}',
+            style: AppTypography.piccolo.copyWith(
+              color: colori.testoSecondario,
+            ),
           ),
         ],
         const SizedBox(height: AppSpacing.s12),

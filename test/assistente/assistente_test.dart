@@ -13,6 +13,7 @@ import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/benessere/domain/scheda_benessere.dart';
 import 'package:coach_vasca/features/carico/domain/carico_rpe.dart';
 import 'package:coach_vasca/features/impegni/domain/impegno.dart';
+import 'package:coach_vasca/features/secco/domain/esercizio_secco.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/distinta_giocatore.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/evento_partita.dart';
 import 'package:coach_vasca/features/pallanuoto/domain/partita.dart';
@@ -294,7 +295,106 @@ class _Fonte implements FonteDatiAssistente {
       al: DateTime(2026, 10, 3),
     ),
   ];
+
+  @override
+  Future<List<EsercizioSecco>> eserciziSecco() async => _eserciziSecco;
+
+  @override
+  Future<List<EsercizioSeduta>> eserciziSeduta(String allenamentoId) async =>
+      allenamentoId == 'a2' ? _righeA2 : const [];
+
+  @override
+  Future<Set<String>> eserciziConMassimale() async => const {'squat'};
 }
+
+/// L'elenco del club: i codici vanno per categoria e nome (E1 extra, E2
+/// dead bug, E3 plank, E4 squat); l'archiviato non c'è.
+const _eserciziSecco = [
+  EsercizioSecco(
+    id: 'squat',
+    clubId: 'c1',
+    nome: 'Squat',
+    categoria: CategoriaEsercizio.forza,
+  ),
+  EsercizioSecco(
+    id: 'plank',
+    clubId: 'c1',
+    nome: 'Plank',
+    categoria: CategoriaEsercizio.core,
+    misura: MisuraEsercizio.tempo,
+  ),
+  EsercizioSecco(
+    id: 'deadbug',
+    clubId: 'c1',
+    nome: 'Dead bug',
+    categoria: CategoriaEsercizio.core,
+  ),
+  EsercizioSecco(
+    id: 'extra',
+    clubId: 'c1',
+    nome: 'Extrarotazione con elastico',
+    categoria: CategoriaEsercizio.spalla,
+    attrezzo: 'Elastico',
+  ),
+  EsercizioSecco(
+    id: 'vecchio',
+    clubId: 'c1',
+    nome: 'Crunch',
+    categoria: CategoriaEsercizio.core,
+    archiviato: true,
+  ),
+];
+
+EsercizioSeduta _riga(
+  String id,
+  String esercizio,
+  int ordine, {
+  int serie = 3,
+  int? ripetizioni,
+  int? durataS,
+  String? carico,
+  int? recuperoS = 45,
+  String? varianteDi,
+  Destinatari destinatari = Destinatari.tutti,
+}) => EsercizioSeduta(
+  id: id,
+  allenamentoId: 'a2',
+  clubId: 'c1',
+  esercizioId: esercizio,
+  ordine: ordine,
+  serie: serie,
+  ripetizioni: ripetizioni,
+  durataS: durataS,
+  carico: carico,
+  recuperoS: recuperoS,
+  varianteDi: varianteDi,
+  destinatari: destinatari,
+);
+
+/// La seduta a secco di oggi (a2): Rossi ha una variante dello squat.
+final _righeA2 = [
+  _riga('r1', 'extra', 1, ripetizioni: 15),
+  _riga('r2', 'plank', 2, durataS: 30),
+  _riga(
+    'r3',
+    'squat',
+    3,
+    serie: 4,
+    ripetizioni: 6,
+    carico: '70%',
+    recuperoS: 90,
+  ),
+  _riga(
+    'v1',
+    'squat',
+    3,
+    serie: 3,
+    ripetizioni: 6,
+    carico: '50%',
+    varianteDi: 'r3',
+    destinatari: const Destinatari.solo(['rossi']),
+  ),
+];
 
 /// Oggi due sedute della squadra: l'appello non sa quale.
 class _FonteDueSedute extends _Fonte {
@@ -650,19 +750,12 @@ void main() {
       },
     );
 
-    test('il secco non si legge né si cambia', () async {
-      // Oggi c'è solo il secco (a2).
-      for (final nome in ['leggi_seduta', 'proponi_modifica_seduta']) {
-        final esito = await strumenti.esegui(nome, const {
-          'data': '2026-10-13',
-        });
-        expect(esito.scheda, isNull, reason: nome);
-        expect(
-          '${esito.perModello['errore']}',
-          contains('secco'),
-          reason: nome,
-        );
-      }
+    test('il secco si legge dalla data: oggi c\'è solo a2', () async {
+      final esito = await strumenti.esegui('leggi_seduta', const {
+        'data': '2026-10-13',
+      });
+      expect((esito.perModello['seduta']! as Map)['tipo'], 'secco');
+      expect(esito.perModello['esercizi'], hasLength(3));
     });
 
     test('una serie aggiunta: il resto uguale, la «fatta» resta sua', () async {
@@ -1054,5 +1147,293 @@ void main() {
         expect(vuoto.perModello['errore'], contains('vuoto'));
       },
     );
+  });
+
+  group('il secco', () {
+    // Ogni prova con una conversazione nuova: i codici E1... partono da capo.
+    StrumentiAssistente nuovi() => StrumentiAssistente(
+      fonte: _Fonte(),
+      pseudonimi: pseudonimi,
+      oggi: _oggi,
+    );
+
+    test(
+      'esercizi_secco: i codici per categoria e nome, senza archiviati',
+      () async {
+        final esito = await nuovi().esegui('esercizi_secco', const {});
+        final elenco = (esito.perModello['esercizi']! as List)
+            .cast<Map<String, Object?>>();
+        expect(
+          [for (final e in elenco) '${e['codice']} ${e['nome']}'],
+          [
+            'E1 Extrarotazione con elastico',
+            'E2 Dead bug',
+            'E3 Plank',
+            'E4 Squat',
+          ],
+        );
+        expect(elenco[2]['misura'], 'tempo');
+        expect(elenco[0]['attrezzo'], 'Elastico');
+        expect(elenco[3]['massimale'], isTrue);
+        expect(elenco[0].containsKey('massimale'), isFalse);
+        // «Spalla» qui è la categoria dell'esercizio: si guardano i nomi.
+        expect(
+          jsonEncode(esito.perModello).toLowerCase(),
+          isNot(
+            anyOf(contains('rossi'), contains('bianchi'), contains('verdi')),
+          ),
+        );
+      },
+    );
+
+    test('proponi_seduta_secco: dosi controllate, la percentuale solo con il '
+        'massimale', () async {
+      final s = nuovi();
+      final esito = await s.esegui('proponi_seduta_secco', const {
+        'data': '2026-10-16',
+        'titolo': 'Core e spalla',
+        'esercizi': [
+          {'esercizio': 'E1', 'serie': 3, 'ripetizioni': 15, 'carico': '60%'},
+          // A tempo: le ripetizioni diventano secondi.
+          {'esercizio': 'e3', 'serie': 3, 'ripetizioni': 40},
+          {'esercizio': 'E4', 'serie': 30, 'ripetizioni': 6, 'carico': '70%'},
+        ],
+      });
+      final p = esito.scheda! as PropostaSedutaSecco;
+      expect(p.data, DateTime(2026, 10, 16));
+      expect(p.titolo, 'Core e spalla');
+      expect(
+        [for (final d in p.dosi) d.esercizioId],
+        ['extra', 'plank', 'squat'],
+      );
+      expect(p.dosi[0].carico, isNull);
+      expect((p.dosi[1].durataS, p.dosi[1].ripetizioni), (40, null));
+      expect((p.dosi[2].serie, p.dosi[2].carico), (10, '70%'));
+      expect(p.dosi[0].recuperoS, 45);
+      expect(esito.perModello['carichi_tolti'], contains('E1'));
+      expect(
+        p.durataMin,
+        esito.perModello['minuti_stimati_fatti_come_scritto'],
+      );
+
+      final sconosciuto = await s.esegui('proponi_seduta_secco', const {
+        'data': '2026-10-16',
+        'esercizi': [
+          {'esercizio': 'E9'},
+        ],
+      });
+      expect(sconosciuto.scheda, isNull);
+      expect(sconosciuto.perModello['errore'], contains('E9'));
+    });
+
+    test('proponi_programma_secco: la prima settimana dal modello, le altre '
+        'crescono, lo scarico ha una serie in meno', () async {
+      final esito = await nuovi().esegui('proponi_programma_secco', const {
+        'nome': 'Spalla del tiratore',
+        'minuti': 20,
+        'settimane': 5,
+        'scarico': [4, 9],
+        'sedute': [
+          [
+            {'esercizio': 'E1', 'serie': 3, 'ripetizioni': 12},
+            {'esercizio': 'E3', 'serie': 4, 'secondi': 30},
+          ],
+          [
+            {'esercizio': 'E2', 'serie': 2, 'ripetizioni': 10},
+          ],
+        ],
+      });
+      final p = (esito.scheda! as PropostaProgrammaSecco).programma;
+      expect(p.settimane, hasLength(5));
+      expect(p.sedutePerSettimana, 2);
+      expect(
+        [for (final s in p.settimane) s.scarico],
+        [false, false, false, true, false],
+      );
+      String extra(int w) {
+        final d = p.settimane[w].sedute[0][0];
+        return '${d.serie}x${d.ripetizioni}';
+      }
+
+      // 3x12, 4x12, 4x14, scarico 3x14, poi 4x16.
+      expect(
+        [for (var w = 0; w < 5; w++) extra(w)],
+        ['3x12', '4x12', '4x14', '3x14', '4x16'],
+      );
+      // A tempo: +5 secondi.
+      expect(p.settimane[1].sedute[0][1].durataS, 35);
+      expect(esito.perModello['settimane_di_scarico'], [4]);
+      senzaNomiNeSalute(esito.perModello);
+    });
+
+    test('leggi_seduta a secco: gli esercizi di tutti, con le varianti '
+        'contate', () async {
+      final esito = await nuovi().esegui('leggi_seduta', const {
+        'allenamento_id': 'a2',
+      });
+      final m = esito.perModello;
+      expect((m['seduta']! as Map)['minuti'], 40);
+      final esercizi = (m['esercizi']! as List).cast<Map<String, Object?>>();
+      expect([for (final e in esercizi) e['esercizio']], ['E1', 'E3', 'E4']);
+      expect(esercizi[1]['secondi'], 30);
+      expect(esercizi[2]['carico'], '70%');
+      expect(esercizi[2]['varianti_per_atleti'], 1);
+      senzaNomiNeSalute(m);
+    });
+
+    test(
+      'una serie in più di squat: cambia solo lo squat, la variante resta',
+      () async {
+        final s = nuovi();
+        await s.esegui('esercizi_secco', const {});
+        final esito = await s.esegui('proponi_modifica_seduta', const {
+          'allenamento_id': 'a2',
+          'esercizi': [
+            {'esercizio': 'E1'},
+            {'esercizio': 'E3'},
+            {'esercizio': 'E4', 'serie': 5},
+          ],
+        });
+        final p = esito.scheda! as PropostaModificaSecco;
+        expect(p.cambiaEsercizi, isTrue);
+        expect(esito.perModello['righe_tolte'], [contains('4 × 6')]);
+        expect(esito.perModello['righe_aggiunte'], [contains('5 × 6')]);
+        final piano = pianoSecco(
+          righe: _righeA2,
+          dosi: p.dosi,
+          allenamentoId: 'a2',
+          clubId: 'c1',
+          nuovoId: () => 'nuovo',
+        );
+        expect(piano.elimina, isEmpty);
+        expect(piano.crea, isEmpty);
+        expect(piano.aggiorna.single.id, 'r3');
+        expect(piano.aggiorna.single.serie, 5);
+        expect(piano.aggiorna.single.carico, '70%');
+        senzaNomiNeSalute(esito.perModello);
+      },
+    );
+
+    test(
+      'togli il plank: si toglie, lo squat e la sua variante salgono',
+      () async {
+        final s = nuovi();
+        await s.esegui('esercizi_secco', const {});
+        final esito = await s.esegui('proponi_modifica_seduta', const {
+          'allenamento_id': 'a2',
+          'esercizi': [
+            {'esercizio': 'E1'},
+            {'esercizio': 'E4'},
+          ],
+        });
+        final p = esito.scheda! as PropostaModificaSecco;
+        final piano = pianoSecco(
+          righe: _righeA2,
+          dosi: p.dosi,
+          allenamentoId: 'a2',
+          clubId: 'c1',
+          nuovoId: () => 'nuovo',
+        );
+        expect(piano.elimina, ['r2']);
+        expect([
+          for (final r in piano.aggiorna) '${r.id} ${r.ordine}',
+        ], unorderedEquals(['r3 2', 'v1 2']));
+        expect(piano.crea, isEmpty);
+      },
+    );
+
+    test('un esercizio nuovo in fondo si crea; niente di diverso è un '
+        'errore', () async {
+      final s = nuovi();
+      await s.esegui('esercizi_secco', const {});
+      final esito = await s.esegui('proponi_modifica_seduta', const {
+        'allenamento_id': 'a2',
+        'esercizi': [
+          {'esercizio': 'E1'},
+          {'esercizio': 'E3'},
+          {'esercizio': 'E4'},
+          {'esercizio': 'E2', 'serie': 2, 'ripetizioni': 10},
+        ],
+      });
+      final p = esito.scheda! as PropostaModificaSecco;
+      final piano = pianoSecco(
+        righe: _righeA2,
+        dosi: p.dosi,
+        allenamentoId: 'a2',
+        clubId: 'c1',
+        nuovoId: () => 'nuovo',
+      );
+      expect(piano.aggiorna, isEmpty);
+      expect(
+        [for (final r in piano.crea) '${r.esercizioId} ${r.ordine} ${r.serie}'],
+        ['deadbug 4 2'],
+      );
+
+      final uguale = await s.esegui('proponi_modifica_seduta', const {
+        'allenamento_id': 'a2',
+        'esercizi': [
+          {'esercizio': 'E1'},
+          {'esercizio': 'E3'},
+          {'esercizio': 'E4'},
+        ],
+      });
+      expect(uguale.scheda, isNull);
+      expect(uguale.perModello['errore'], contains('Niente di diverso'));
+    });
+
+    test('stessiEsercizi: la proposta è vecchia se una riga è cambiata', () {
+      expect(stessiEsercizi([..._righeA2.reversed], _righeA2), isTrue);
+      expect(
+        stessiEsercizi([
+          ..._righeA2.take(3),
+          _righeA2[3].copyWith(ordine: 9),
+        ], _righeA2),
+        isFalse,
+      );
+      expect(stessiEsercizi(_righeA2.take(3).toList(), _righeA2), isFalse);
+    });
+
+    test('demo: la seduta a secco di venerdì con core e spalla', () async {
+      final voci = await MotoreAssistente(
+        pseudonimi: pseudonimi,
+        strumenti: nuovi(),
+        chiama: (messaggi) async => cervelloDemo(messaggi, oggi: _oggi),
+      ).chiedi('Prepara 20\' di core e spalla a secco per venerdì');
+      final p =
+          voci.whereType<VoceScheda>().single.scheda as PropostaSedutaSecco;
+      expect(p.data, DateTime(2026, 10, 16));
+      expect(
+        [for (final d in p.dosi) d.esercizioId],
+        ['extra', 'deadbug', 'plank'],
+      );
+      expect(
+        voci.whereType<RispostaAssistente>().single.testo,
+        contains('creala'),
+      );
+    });
+
+    test('demo: il programma di 4 settimane, scarico la quarta', () async {
+      final voci = await MotoreAssistente(
+        pseudonimi: pseudonimi,
+        strumenti: nuovi(),
+        chiama: (messaggi) async => cervelloDemo(messaggi, oggi: _oggi),
+      ).chiedi('Un programma a secco di 4 settimane per la spalla');
+      final p =
+          voci.whereType<VoceScheda>().single.scheda as PropostaProgrammaSecco;
+      expect(p.programma.settimane, hasLength(4));
+      expect(p.scarico, [4]);
+    });
+
+    test('demo: dalla seduta a secco, una serie in più a tutti', () async {
+      final voci = await MotoreAssistente(
+        pseudonimi: pseudonimi,
+        strumenti: nuovi(),
+        chiama: (messaggi) async =>
+            cervelloDemo(messaggi, oggi: _oggi, sedutaAperta: 'a2'),
+      ).chiedi('Una serie in più a tutti gli esercizi');
+      final p =
+          voci.whereType<VoceScheda>().single.scheda as PropostaModificaSecco;
+      expect([for (final d in p.dosi) d.serie], [4, 4, 5]);
+    });
   });
 }

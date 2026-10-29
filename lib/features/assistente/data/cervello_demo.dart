@@ -162,6 +162,122 @@ Map<String, dynamic> cervelloDemo(
   // "Aggiungi 4x50 gambe alla fine del riscaldamento", "Togli l'ultima
   // serie del principale", "Cambia il titolo in «…»": sulla seduta aperta,
   // o sull'unica di oggi.
+  // "Prepara 20' di core e spalla a secco per venerdì", "un programma a
+  // secco di 4 settimane": con gli esercizi dell'elenco del club.
+  if (domanda.contains('secco') && !domanda.startsWith('togli')) {
+    if (risultati.containsKey('proponi_seduta_secco') ||
+        risultati.containsKey('proponi_programma_secco')) {
+      final esito =
+          risultati['proponi_seduta_secco'] ??
+          risultati['proponi_programma_secco']!;
+      if (esito['errore'] != null) return scrivi('${esito['errore']}');
+      return scrivi('Ecco la proposta: controllala e creala se va bene.');
+    }
+    final elenco = risultati['esercizi_secco'];
+    if (elenco == null) return chiama('esercizi_secco', {});
+    final esercizi = [
+      for (final e in (elenco['esercizi'] as List?) ?? const [])
+        (e as Map).cast<String, Object?>(),
+    ];
+    if (esercizi.isEmpty) {
+      return scrivi(
+        'Nell\'elenco del club non ci sono esercizi a secco: aggiungili da '
+        '«Elenco esercizi del club», poi riprova.',
+      );
+    }
+    // Prima quelli delle categorie nominate.
+    final nominati = [
+      for (final e in esercizi)
+        if (domanda.contains('${e['categoria']}')) e,
+    ];
+    final scelti = (nominati.isEmpty ? esercizi : nominati).take(4).toList();
+    Map<String, Object?> dose(Map<String, Object?> e) => {
+      'esercizio': e['codice'],
+      'serie': 3,
+      if (e['misura'] == 'tempo') 'secondi': 30 else 'ripetizioni': 12,
+      'recupero_secondi': 45,
+    };
+    if (domanda.contains('programma')) {
+      final settimane =
+          int.tryParse(
+            RegExp(r'(\d+) settiman').firstMatch(domanda)?[1] ?? '',
+          ) ??
+          4;
+      return chiama('proponi_programma_secco', {
+        'nome': nominati.isEmpty
+            ? 'Programma a secco'
+            : 'Programma ${nominati.first['categoria']}',
+        'minuti': 20,
+        'settimane': settimane,
+        'scarico': [if (settimane >= 4) 4],
+        'sedute': [
+          [for (final e in scelti.take(3)) dose(e)],
+          if (scelti.length > 1)
+            [for (final e in scelti.skip(1).take(3)) dose(e)],
+        ],
+      });
+    }
+    final adesso = oggi ?? DateTime.now();
+    final giorno = _giorniDemo.indexWhere(domanda.contains);
+    final settimana = giorno < 0 ? DateTime.friday : giorno + 1;
+    final giorni = (settimana - adesso.weekday + 7) % 7;
+    final data = adesso.add(Duration(days: giorni == 0 ? 7 : giorni));
+    return chiama('proponi_seduta_secco', {
+      'data': formatDateOnly(data),
+      'titolo': nominati.isEmpty
+          ? 'Secco'
+          : 'Secco: ${{for (final e in nominati) e['categoria']}.join(' e ')}',
+      'minuti': 20,
+      'esercizi': [for (final e in scelti) dose(e)],
+    });
+  }
+
+  // Dalla pagina di una seduta a secco: "togli l'ultimo esercizio", "una
+  // serie in più a tutti".
+  if (sedutaAperta != null &&
+      (domanda.startsWith('togli l\'ultimo') ||
+          domanda.startsWith('una serie in più'))) {
+    final letta = risultati['leggi_seduta'];
+    if (letta == null) {
+      return chiama('leggi_seduta', {'allenamento_id': sedutaAperta});
+    }
+    final esercizi = [
+      for (final e in (letta['esercizi'] as List?) ?? const [])
+        {
+          for (final MapEntry(:key, :value) in (e as Map).entries)
+            if (const {
+              'esercizio',
+              'serie',
+              'ripetizioni',
+              'secondi',
+              'recupero_secondi',
+              'carico',
+              'note',
+            }.contains(key))
+              '$key': value,
+        },
+    ];
+    if (letta['esercizi'] != null &&
+        !risultati.containsKey('proponi_modifica_seduta')) {
+      if (esercizi.length < 2 && domanda.startsWith('togli')) {
+        return scrivi('C\'è un esercizio solo: toglilo dalla pagina.');
+      }
+      return chiama('proponi_modifica_seduta', {
+        'allenamento_id': sedutaAperta,
+        'esercizi': domanda.startsWith('togli')
+            ? esercizi.sublist(0, esercizi.length - 1)
+            : [
+                for (final e in esercizi)
+                  {...e, 'serie': ((e['serie'] as num?) ?? 3).toInt() + 1},
+              ],
+      });
+    }
+    if (risultati['proponi_modifica_seduta'] case final esito?) {
+      if (esito['errore'] != null) return scrivi('${esito['errore']}');
+      return scrivi('Ecco le modifiche: controllale e salvale.');
+    }
+  }
+
   if (domanda.startsWith('aggiungi') ||
       domanda.startsWith('togli') ||
       domanda.contains('cambia il titolo')) {

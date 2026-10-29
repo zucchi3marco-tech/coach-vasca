@@ -26,6 +26,7 @@ import '../../allenamenti/presentation/avviso_seduta_aperta.dart';
 import '../../allenamenti/presentation/banner_modifica.dart';
 import '../../allenamenti/presentation/duplica_allenamento_dialog.dart';
 import '../../allenamenti/presentation/per_chi_serie.dart';
+import '../../assistente/presentation/assistente_screen.dart';
 import '../../atleti/application/atleti_providers.dart';
 import '../../atleti/domain/abbina_atleta.dart';
 import '../../atleti/domain/atleta.dart';
@@ -470,6 +471,18 @@ class SedutaSeccoScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Seduta a secco'),
         actions: [
+          IconButton(
+            tooltip: "Cambiala con l'assistente",
+            icon: const Icon(Icons.forum_outlined),
+            onPressed: () => _apri(
+              context,
+              AssistenteScreen(
+                clubId: a.clubId,
+                gruppoId: a.gruppoId,
+                seduta: a,
+              ),
+            ),
+          ),
           PopupMenuButton<VoidCallback>(
             icon: const Icon(Icons.more_vert),
             tooltip: 'Altre azioni',

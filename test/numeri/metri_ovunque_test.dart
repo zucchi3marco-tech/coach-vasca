@@ -23,6 +23,8 @@ import 'package:coach_vasca/features/atleti/domain/atleta.dart';
 import 'package:coach_vasca/features/benessere/domain/scheda_benessere.dart';
 import 'package:coach_vasca/features/carico/domain/carico_rpe.dart';
 import 'package:coach_vasca/features/impegni/domain/impegno.dart';
+import 'package:coach_vasca/features/secco/domain/esercizio_secco.dart'
+    show EsercizioSecco, EsercizioSeduta;
 import 'package:coach_vasca/features/carico/domain/volumi_atleta.dart';
 import 'package:coach_vasca/features/export/application/excel_dati_club.dart';
 import 'package:coach_vasca/features/export/domain/dati_club.dart';
@@ -531,4 +533,14 @@ class _Fonte implements FonteDatiAssistente {
 
   @override
   Future<List<Impegno>> impegni() async => const [];
+
+  @override
+  Future<List<EsercizioSecco>> eserciziSecco() async => const [];
+
+  @override
+  Future<List<EsercizioSeduta>> eserciziSeduta(String allenamentoId) async =>
+      const [];
+
+  @override
+  Future<Set<String>> eserciziConMassimale() async => const {};
 }

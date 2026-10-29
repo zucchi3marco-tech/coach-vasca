@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../core/utils/date_format.dart';
 import '../../../core/utils/giorni.dart';
 import '../../../core/utils/gruppo_visibilita.dart';
@@ -20,7 +22,13 @@ import '../../pallanuoto/domain/numeri_distinta.dart';
 import '../../pallanuoto/domain/partita.dart';
 import '../../pallanuoto/domain/statistiche_eventi.dart';
 import '../../presenze/domain/presenza.dart';
+import '../../secco/domain/esercizio_secco.dart';
+import '../../secco/domain/programma_secco.dart';
+import '../../secco/domain/varianti_secco.dart';
+import '../../test/domain/massimale.dart' show percentualeDelCarico;
 import 'pseudonimi.dart';
+
+part 'strumenti_secco.dart';
 
 /// Da dove l'assistente legge i dati del club: sul telefono, con le stesse
 /// letture delle schermate (vedi `FonteDatiRiverpod`), finte nei test.
@@ -42,6 +50,15 @@ abstract class FonteDatiAssistente {
 
   /// Collegiali, trasferte, riposi, tornei del club.
   Future<List<Impegno>> impegni();
+
+  /// L'elenco degli esercizi a secco del club (anche gli archiviati).
+  Future<List<EsercizioSecco>> eserciziSecco();
+
+  /// Gli esercizi di una seduta a secco, con le varianti.
+  Future<List<EsercizioSeduta>> eserciziSeduta(String allenamentoId);
+
+  /// Gli id degli esercizi a secco con un test di massimale.
+  Future<Set<String>> eserciziConMassimale();
 }
 
 /// Quello che uno strumento fa vedere all'allenatore nella chat, oltre a
@@ -258,6 +275,11 @@ class StrumentiAssistente {
 
   DateTime get _oggi => soloData(oggi);
 
+  // I codici degli esercizi a secco (E1, E2...), fissi per la
+  // conversazione: vedi `_esercizi` in strumenti_secco.dart.
+  final _codicePerEsercizio = <String, String>{};
+  final _eserciziPerCodice = <String, EsercizioSecco>{};
+
   Future<EsitoStrumento> esegui(String nome, Map<String, dynamic> args) async {
     try {
       return switch (nome) {
@@ -276,6 +298,9 @@ class StrumentiAssistente {
         'proponi_modifica_seduta' => await _proponiModifica(args),
         'impegni' => _solo(await _impegni(args)),
         'proponi_messaggio_famiglie' => _proponiMessaggio(args),
+        'esercizi_secco' => _solo(await _eserciziSecco()),
+        'proponi_seduta_secco' => await _proponiSedutaSecco(args),
+        'proponi_programma_secco' => await _proponiProgrammaSecco(args),
         _ => _solo({'errore': 'Strumento sconosciuto: $nome'}),
       };
     } catch (e) {
@@ -933,27 +958,6 @@ class StrumentiAssistente {
   // -------------------------------------------------------------------------
   // Cambiare una seduta che c'è
 
-  /// La seduta in acqua da leggere o cambiare, o l'errore per il modello.
-  /// Il secco ha esercizi invece delle serie: arriverà dopo.
-  Future<(Allenamento?, Map<String, Object?>?)> _sedutaInAcqua(
-    Map<String, dynamic> args,
-  ) async {
-    final (seduta, errore) = await _sedutaIndicata(args);
-    if (seduta == null) return (null, errore);
-    if (seduta.secco) {
-      return (
-        null,
-        {
-          'errore':
-              'È una seduta a secco: per ora l\'assistente cambia solo le '
-              'sedute in acqua. L\'allenatore la cambia dalla pagina della '
-              'seduta.',
-        },
-      );
-    }
-    return (seduta, null);
-  }
-
   /// Le serie scritte come in "Scrivi l'allenamento", con i nomi di tutto
   /// il club: gli stessi che [Pseudonimi] trasforma in codici e ritorno.
   String _testoSerie(List<DatiSerie> serie) =>
@@ -973,8 +977,9 @@ class StrumentiAssistente {
   };
 
   Future<Map<String, Object?>> _leggiSeduta(Map<String, dynamic> args) async {
-    final (seduta, errore) = await _sedutaInAcqua(args);
+    final (seduta, errore) = await _sedutaIndicata(args);
     if (seduta == null) return errore!;
+    if (seduta.secco) return _leggiSecco(seduta);
     final serie = await fonte.serie(seduta.id);
     final testo = _testoSerie(serie);
     return {
@@ -986,8 +991,9 @@ class StrumentiAssistente {
   }
 
   Future<EsitoStrumento> _proponiModifica(Map<String, dynamic> args) async {
-    final (seduta, errore) = await _sedutaInAcqua(args);
+    final (seduta, errore) = await _sedutaIndicata(args);
     if (seduta == null) return _solo(errore!);
+    if (seduta.secco) return _proponiModificaSecco(seduta, args);
     final serie = await fonte.serie(seduta.id);
     final testoPrima = _testoSerie(serie);
 
