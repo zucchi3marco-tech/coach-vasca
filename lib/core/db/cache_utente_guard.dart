@@ -40,7 +40,9 @@ Future<void> allineaCacheLocaleAllUtente(AppDatabase db, String? userId) async {
   // a chi entra dopo.
   for (final chiave in prefs.getKeys().toList()) {
     if (chiave.startsWith(prefissoCopieSalute.$1) ||
-        chiave.startsWith(prefissoCopieSalute.$2)) {
+        chiave.startsWith(prefissoCopieSalute.$2) ||
+        chiave.startsWith(prefissiCopieContatti.$1) ||
+        chiave.startsWith(prefissiCopieContatti.$2)) {
       await prefs.remove(chiave);
     }
   }
@@ -49,6 +51,10 @@ Future<void> allineaCacheLocaleAllUtente(AppDatabase db, String? userId) async {
 
 /// L'inizio delle chiavi delle copie di `ProfiloFisicoRepository`.
 const prefissoCopieSalute = ('misure_fisiche_', 'consenso_profilo_fisico_');
+
+/// L'inizio delle chiavi delle copie di `ContattiSpecialistiRepository`:
+/// il codice dell'atleta e l'elenco dei contatti del responsabile.
+const prefissiCopieContatti = ('codice_specialisti_', 'contatti_specialisti_');
 
 /// Da attendere prima di mostrare qualunque schermata che legga la
 /// cache locale (Home, in `app.dart`): si ri-esegue ogni volta che lo

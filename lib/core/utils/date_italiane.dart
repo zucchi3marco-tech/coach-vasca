@@ -46,6 +46,12 @@ const _mesiInteri = [
 String dataLunga(DateTime d) =>
     '${d.day} ${_mesiInteri[d.month - 1]} ${d.year}';
 
+/// "Ottobre 2026": il mese per esteso con l'anno, come titolo.
+String meseAnno(DateTime d) {
+  final mese = _mesiInteri[d.month - 1];
+  return '${mese[0].toUpperCase()}${mese.substring(1)} ${d.year}';
+}
+
 /// "19 ottobre": il giorno e il mese per esteso, senza l'anno.
 String giornoMese(DateTime d) => '${d.day} ${_mesiInteri[d.month - 1]}';
 

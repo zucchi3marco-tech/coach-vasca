@@ -1,7 +1,13 @@
+import 'package:coach_vasca/core/db/app_database.dart';
+import 'package:coach_vasca/core/db/cache_utente_guard.dart';
 import 'package:coach_vasca/features/atleti/domain/atleta.dart';
+import 'package:drift/native.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coach_vasca/features/club/application/current_club_provider.dart';
 import 'package:coach_vasca/features/club/domain/club.dart';
+import 'package:coach_vasca/features/profilo_fisico/data/contatti_specialisti_repository.dart';
 import 'package:coach_vasca/features/profilo_fisico/data/profilo_fisico_repository.dart';
+import 'package:coach_vasca/features/profilo_fisico/presentation/contatti_specialisti_screen.dart';
 import 'package:coach_vasca/features/profilo_fisico/data/specialisti_repository.dart';
 import 'package:coach_vasca/features/profilo_fisico/domain/chi_mi_puo_aiutare.dart';
 import 'package:coach_vasca/features/profilo_fisico/domain/specialista.dart';
@@ -92,6 +98,9 @@ void main() {
   });
 
   group('la pagina', () {
+    late _Contatti contatti;
+    setUp(() => contatti = _Contatti());
+
     Future<void> apri(
       WidgetTester tester,
       Atleta atleta, {
@@ -108,6 +117,7 @@ void main() {
               (ref, id) async => consenso,
             ),
             specialistiProvider.overrideWith((ref, id) async => specialisti),
+            contattiSpecialistiRepositoryProvider.overrideWithValue(contatti),
             clubAtletaProvider.overrideWith(
               (ref, id) async => const Club(id: 'c1', nome: 'Rari Nantes'),
             ),
@@ -179,6 +189,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(copiati.single, contains('atleta del club Rari Nantes'));
       expect(copiati.single, contains('dolore a spalla, schiena o ginocchio'));
+      expect(copiati.single, endsWith('Il mio codice WaterTactics è WT-4K7Q.'));
+      // Il contatto si segna per il responsabile.
+      expect(contatti.registrati.single, (
+        'Studio Rossi',
+        ProblemaFisico.dolore,
+        CanaleContatto.whatsapp,
+        'WT-4K7Q',
+      ));
+      expect(find.text('Il tuo codice'), findsOneWidget);
+      expect(find.text('WT-4K7Q'), findsOneWidget);
       expect(find.textContaining('+39 333 123 4567'), findsWidgets);
     });
 
@@ -213,6 +233,224 @@ void main() {
       expect(find.text('Dott.ssa Bianchi'), findsOneWidget);
       expect(find.text('Apri il sito'), findsOneWidget);
       expect(find.text('nutrisport.it'), findsOneWidget);
+      expect(find.textContaining('dillo alla'), findsOneWidget);
+
+      await tester.tap(find.text('Apri il sito'));
+      await tester.pumpAndSettle();
+      expect(contatti.registrati.single, (
+        'Dott.ssa Bianchi',
+        ProblemaFisico.nonLoSo,
+        CanaleContatto.sito,
+        'WT-4K7Q',
+      ));
+    });
+
+    testWidgets('con un dolore forte non si segna niente', (tester) async {
+      await apri(tester, _atleta(nascita: DateTime(2000, 1, 1)));
+      await tester.tap(find.text(ProblemaFisico.forte.etichetta));
+      await tester.pumpAndSettle();
+      expect(find.text('Il tuo codice'), findsNothing);
+      expect(contatti.registrati, isEmpty);
     });
   });
+
+  group('la traccia dei contatti', () {
+    ContattoSpecialista contatto(
+      String id,
+      DateTime giorno, {
+      String atleta = 'Sofia Rossi',
+      String specialista = 'Studio Rossi',
+      DateTime? confermata,
+    }) => ContattoSpecialista(
+      id: id,
+      clubId: 'c1',
+      atletaId: 'a-$atleta',
+      nomeAtleta: atleta,
+      specialistaId: 's-$specialista',
+      specialistaNome: specialista,
+      tipo: TipoSpecialista.fisioterapista,
+      problema: ProblemaFisico.dolore,
+      canale: CanaleContatto.whatsapp,
+      codice: 'WT-4K7Q',
+      giorno: giorno,
+      confermataIl: confermata,
+    );
+
+    test('cambiando utente il codice e i contatti si cancellano', () async {
+      SharedPreferences.setMockInitialValues({
+        'ultimo_utente_id_cache_locale': 'u1',
+        'codice_specialisti_a1': 'WT-4K7Q',
+        'contatti_specialisti_c1': '[]',
+        'specialisti_c1': '[]',
+      });
+      final db = AppDatabase.perTest(NativeDatabase.memory());
+      addTearDown(db.close);
+      await allineaCacheLocaleAllUtente(db, 'u2');
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey('codice_specialisti_a1'), isFalse);
+      expect(prefs.containsKey('contatti_specialisti_c1'), isFalse);
+      // L'elenco degli specialisti non è dei singoli: resta.
+      expect(prefs.containsKey('specialisti_c1'), isTrue);
+    });
+
+    test('il messaggio senza codice non lo nomina', () {
+      expect(
+        messaggioSpecialista(
+          nomeAtleta: 'Sofia Rossi',
+          nomeClub: 'RN',
+          problema: ProblemaFisico.gambe,
+        ),
+        isNot(contains('codice')),
+      );
+    });
+
+    test('il codice della demo è come quelli del database', () {
+      var i = 0;
+      final codice = codiceCasuale((max) => (i++ * 7) % max);
+      expect(codice, matches(RegExp(r'^WT-[A-Z0-9]{4}$')));
+      expect(codice, isNot(matches(RegExp('[0O1I2Z5S8B]'))));
+    });
+
+    test('i problemi si scrivono e si rileggono', () {
+      for (final p in ProblemaFisico.values) {
+        expect(ProblemaFisico.daCodice(p.codice), p);
+      }
+      expect(ProblemaFisico.nonLoSo.codice, 'non_lo_so');
+    });
+
+    test('dalla riga del database, con il nome dell\'atleta', () {
+      final c = ContattoSpecialista.fromMap({
+        'id': 'x1',
+        'club_id': 'c1',
+        'atleta_id': 'a1',
+        'atleti': {'nome': 'Sofia', 'cognome': 'Rossi'},
+        'specialista_id': null,
+        'specialista_nome': 'Studio Rossi',
+        'specialista_tipo': 'fisioterapista',
+        'problema': 'non_lo_so',
+        'canale': 'sito',
+        'codice': 'WT-4K7Q',
+        'giorno': '2026-10-30',
+        'visita_confermata_il': '2026-11-02',
+      })!;
+      expect(c.nomeAtleta, 'Sofia Rossi');
+      expect(c.problema, ProblemaFisico.nonLoSo);
+      expect(c.canale, CanaleContatto.sito);
+      expect(c.confermata, isTrue);
+      // La copia sul telefono si rilegge uguale.
+      final copia = ContattoSpecialista.fromMap(c.toMap())!;
+      expect(copia.nomeAtleta, 'Sofia Rossi');
+      expect(copia.giorno, DateTime(2026, 10, 30));
+      expect(copia.confermataIl, DateTime(2026, 11, 2));
+    });
+
+    test('per mese, con il totale di ogni specialista', () {
+      final mesi = contattiPerMese([
+        contatto('1', DateTime(2026, 9, 20)),
+        contatto('2', DateTime(2026, 10, 3), confermata: DateTime(2026, 10, 9)),
+        contatto('3', DateTime(2026, 10, 28), atleta: 'Luca Bianchi'),
+        contatto('4', DateTime(2026, 10, 12), specialista: 'Dott.ssa Bianchi'),
+      ]);
+      expect(
+        [for (final m in mesi) m.mese],
+        [DateTime(2026, 10), DateTime(2026, 9)],
+      );
+      expect([for (final c in mesi.first.contatti) c.id], ['3', '4', '2']);
+      expect(mesi.first.totali, [
+        (nome: 'Studio Rossi', contatti: 2, confermate: 1),
+        (nome: 'Dott.ssa Bianchi', contatti: 1, confermate: 0),
+      ]);
+    });
+
+    testWidgets('il responsabile vede i contatti e spunta la visita', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(420, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final oggi = DateTime.now();
+      final repo = _Contatti([contatto('1', oggi)]);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contattiSpecialistiRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.chiaro,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const ContattiSpecialistiScreen(clubId: 'c1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Sofia Rossi'), findsOneWidget);
+      expect(find.textContaining('codice WT-4K7Q'), findsOneWidget);
+      expect(find.text('1 contatto, 0 visite confermate'), findsOneWidget);
+
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      expect(repo.elenco_.single.confermata, isTrue);
+      expect(find.text('1 contatto, 1 visita confermata'), findsOneWidget);
+    });
+
+    testWidgets('senza contatti lo dice', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contattiSpecialistiRepositoryProvider.overrideWithValue(
+              _Contatti(),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.chiaro,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const ContattiSpecialistiScreen(clubId: 'c1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Nessun contatto ancora'), findsOneWidget);
+    });
+  });
+}
+
+class _Contatti implements ContattiSpecialistiRepository {
+  _Contatti([List<ContattoSpecialista>? iniziali]) : elenco_ = [...?iniziali];
+
+  final List<ContattoSpecialista> elenco_;
+  final registrati = <(String, ProblemaFisico, CanaleContatto, String?)>[];
+
+  @override
+  Future<String?> mioCodice(String atletaId) async => 'WT-4K7Q';
+
+  @override
+  Future<bool> registra({
+    required Atleta atleta,
+    required Specialista specialista,
+    required ProblemaFisico problema,
+    required CanaleContatto canale,
+    required String? codice,
+  }) async {
+    registrati.add((specialista.nome, problema, canale, codice));
+    return true;
+  }
+
+  @override
+  Future<List<ContattoSpecialista>> elenco(String clubId) async => [...elenco_];
+
+  @override
+  Future<ContattoSpecialista> confermaVisita(
+    ContattoSpecialista contatto, {
+    required bool confermata,
+  }) async {
+    final nuovo = contatto.conConferma(confermata ? DateTime.now() : null);
+    elenco_[elenco_.indexWhere((c) => c.id == contatto.id)] = nuovo;
+    return nuovo;
+  }
 }

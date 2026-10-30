@@ -44,6 +44,20 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'contatti-specialisti',
+    data: DateTime(2026, 10, 30),
+    titolo: 'Chi ha contattato gli specialisti',
+    perChi: PerChi.tutti,
+    testo:
+        'Ogni atleta ha un suo codice («WT-4K7Q»), già scritto nel messaggio '
+        'WhatsApp per lo specialista; chi passa dal sito lo dice alla prima '
+        'visita. Il responsabile, in «Il mio club» → «Specialisti '
+        'convenzionati» → «Chi li ha contattati», vede i contatti mese per '
+        'mese (atleta, specialista, tipo di problema e codice) e spunta le '
+        'visite che lo specialista gli conferma. Gli altri dello staff non '
+        'li vedono, l\'assistente nemmeno.',
+  ),
+  Novita(
     id: 'chi-mi-puo-aiutare',
     data: DateTime(2026, 10, 30),
     titolo: 'Chi mi può aiutare?',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../../atleti/domain/atleta.dart';
 import '../../club/application/current_club_provider.dart';
+import '../data/contatti_specialisti_repository.dart';
 import '../data/profilo_fisico_repository.dart';
 import '../data/specialisti_repository.dart';
 import '../domain/chi_mi_puo_aiutare.dart';
@@ -35,8 +38,9 @@ Widget _testo(BuildContext context, String t) => Padding(
 /// «Chi mi può aiutare?», dalla home dell'atleta (profilo fisico, passo
 /// C): l'atleta sceglie cosa sente e vede gli specialisti del club
 /// adatti, con il messaggio WhatsApp già scritto. Sotto i 18 anni resta
-/// chiusa finché lo staff non segna il consenso del genitore. Quello che
-/// sceglie non si salva e l'assistente non lo legge.
+/// chiusa finché lo staff non segna il consenso del genitore. Dal passo
+/// D ogni contatto si segna per il responsabile (con il codice
+/// dell'atleta); l'assistente non lo legge.
 class ChiMiPuoAiutareScreen extends ConsumerWidget {
   const ChiMiPuoAiutareScreen({required this.atleta, this.oggi, super.key});
 
@@ -122,8 +126,10 @@ class ChiMiPuoAiutareScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.s24),
             _testo(
               context,
-              'Quello che scegli qui non si salva da nessuna parte e '
-              'l\'assistente non lo legge.',
+              'Quando scrivi a uno specialista o apri il suo sito, il '
+              'responsabile del club vede chi l\'ha contattato, quando e per '
+              'quale tipo di problema, senza altri dettagli. L\'assistente '
+              'non lo legge.',
             ),
           ],
         ],
@@ -150,18 +156,44 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(testo)));
 
+  /// Segna il contatto per il responsabile, senza aspettarlo: il
+  /// contatto si apre comunque.
+  void _registra(
+    WidgetRef ref,
+    Specialista s,
+    CanaleContatto canale,
+    String? codice,
+  ) => unawaited(
+    ref
+        .read(contattiSpecialistiRepositoryProvider)
+        .registra(
+          atleta: atleta,
+          specialista: s,
+          problema: problema,
+          canale: canale,
+          codice: codice,
+        ),
+  );
+
   Future<void> _scrivi(
     BuildContext context,
+    WidgetRef ref,
     Specialista s,
     String? nomeClub,
+    String? codice,
   ) async {
     final numero = s.whatsapp!;
     final testo = messaggioSpecialista(
       nomeAtleta: '${atleta.nome} ${atleta.cognome}',
       nomeClub: nomeClub,
       problema: problema,
+      codice: codice,
     );
-    if (apriIndirizzo(collegamentoWhatsapp(numero, testo))) return;
+    // Si apre subito, dentro il tocco: dopo un'attesa il browser del
+    // telefono bloccherebbe la scheda nuova.
+    final aperto = apriIndirizzo(collegamentoWhatsapp(numero, testo));
+    _registra(ref, s, CanaleContatto.whatsapp, codice);
+    if (aperto) return;
     // Fuori dal browser: il messaggio negli appunti.
     await Clipboard.setData(ClipboardData(text: testo));
     if (context.mounted) {
@@ -172,15 +204,31 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _apriSito(BuildContext context, String sito) async {
-    if (apriIndirizzo(sito)) return;
+  Future<void> _apriSito(
+    BuildContext context,
+    WidgetRef ref,
+    Specialista s,
+    String? codice,
+  ) async {
+    final sito = s.sito!;
+    final aperto = apriIndirizzo(sito);
+    _registra(ref, s, CanaleContatto.sito, codice);
+    if (aperto) return;
     await Clipboard.setData(ClipboardData(text: sito));
     if (context.mounted) _avviso(context, 'Indirizzo del sito copiato');
+  }
+
+  Future<void> _copiaCodice(BuildContext context, String codice) async {
+    await Clipboard.setData(ClipboardData(text: codice));
+    if (context.mounted) _avviso(context, 'Codice copiato');
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nomeClub = ref.watch(clubAtletaProvider(atleta.clubId)).value?.nome;
+    final codice = problema.soloMedico
+        ? null
+        : ref.watch(codiceSpecialistiProvider(atleta.id)).value;
     final elencoAsync = problema.soloMedico
         ? null
         : ref.watch(specialistiProvider(atleta.clubId));
@@ -215,8 +263,13 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.s24),
             ...elencoAsync.when(
-              data: (elenco) =>
-                  _specialisti(context, problema.specialisti(elenco), nomeClub),
+              data: (elenco) => _specialisti(
+                context,
+                ref,
+                problema.specialisti(elenco),
+                nomeClub,
+                codice,
+              ),
               loading: () => const [
                 Padding(
                   padding: EdgeInsets.all(AppSpacing.s16),
@@ -245,8 +298,10 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
 
   List<Widget> _specialisti(
     BuildContext context,
+    WidgetRef ref,
     List<Specialista> elenco,
     String? nomeClub,
+    String? codice,
   ) {
     if (elenco.isEmpty) {
       final tipo = problema.tipo;
@@ -265,17 +320,35 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
     }
     final tutti = problema == ProblemaFisico.nonLoSo;
     return [
-      for (final s in elenco) ...[
-        TitoloSezione(
-          s.nome,
-          spiegazione: switch ([
-            if (tutti) s.tipo.etichetta,
-            if (s.descrizione case final d? when d.isNotEmpty) d,
-          ]) {
-            [] => null,
-            final righe => righe.join('. '),
-          },
+      if (codice != null) ...[
+        const TitoloSezione('Il tuo codice'),
+        AppListPanel(
+          righe: [
+            AppListRow(
+              leading: const Icon(Icons.badge_outlined),
+              titolo: codice,
+              sottotitolo: elenco.any((s) => s.sito != null)
+                  ? 'È già nel messaggio WhatsApp. Se passi dal sito, dillo '
+                        'alla prima visita.'
+                  : 'È già nel messaggio WhatsApp: serve al club per sapere '
+                        'che sei passato da qui.',
+              trailing: const Icon(Icons.copy),
+              onTap: () => _copiaCodice(context, codice),
+            ),
+          ],
         ),
+        const SizedBox(height: AppSpacing.s24),
+      ],
+      for (final s in elenco) ...[
+        TitoloSezione(s.nome),
+        if ([
+              if (tutti) s.tipo.etichetta,
+              if (s.descrizione case final d? when d.isNotEmpty) d,
+            ]
+            case final righe when righe.isNotEmpty) ...[
+          _testo(context, righe.join('. ')),
+          const SizedBox(height: AppSpacing.s12),
+        ],
         AppListPanel(
           righe: [
             if (s.whatsapp case final numero?)
@@ -285,7 +358,7 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
                 sottotitolo:
                     '${mostraWhatsapp(numero)}, il messaggio è già scritto',
                 trailing: const Icon(Icons.open_in_new),
-                onTap: () => _scrivi(context, s, nomeClub),
+                onTap: () => _scrivi(context, ref, s, nomeClub, codice),
               ),
             if (s.sito case final sito?)
               AppListRow(
@@ -293,7 +366,7 @@ class ProblemaSpecialistiScreen extends ConsumerWidget {
                 titolo: 'Apri il sito',
                 sottotitolo: mostraSito(sito),
                 trailing: const Icon(Icons.open_in_new),
-                onTap: () => _apriSito(context, sito),
+                onTap: () => _apriSito(context, ref, s, codice),
               ),
           ],
         ),

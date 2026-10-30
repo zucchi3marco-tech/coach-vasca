@@ -19,6 +19,7 @@ import '../../../widgets/section_header.dart';
 import '../../../widgets/testata_pagina.dart';
 import '../data/specialisti_repository.dart';
 import '../domain/specialista.dart';
+import 'contatti_specialisti_screen.dart';
 
 /// «Specialisti convenzionati», da «Il mio club» (profilo fisico, passo
 /// B): nutrizionista sportivo, fisioterapista, osteopata e
@@ -96,6 +97,26 @@ class SpecialistiScreen extends ConsumerWidget {
             'solo un indirizzo, mai una diagnosi.',
           ),
           const SizedBox(height: AppSpacing.s24),
+          // La traccia dei contatti, per la royalty: solo il responsabile.
+          if (modificabile) ...[
+            AppListPanel(
+              righe: [
+                AppListRow(
+                  leading: const Icon(Icons.forum_outlined),
+                  titolo: 'Chi li ha contattati',
+                  sottotitolo:
+                      'I contatti degli atleti mese per mese, con il codice',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ContattiSpecialistiScreen(clubId: clubId),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s24),
+          ],
           ...elencoAsync.when(
             data: (elenco) => [
               if (elenco.isEmpty)
