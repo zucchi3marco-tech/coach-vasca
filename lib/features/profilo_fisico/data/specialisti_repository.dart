@@ -52,6 +52,16 @@ class SpecialistiRepository {
       return elenco;
     } catch (e) {
       if (!isNetworkFailure(e)) rethrow;
+      // La prima volta in demo: due specialisti di esempio, per provare
+      // «Chi mi può aiutare?» (si cambiano o tolgono come gli altri).
+      if (modalitaDemo &&
+          !(await SharedPreferences.getInstance()).containsKey(
+            _chiave(clubId),
+          )) {
+        final esempio = ordinaSpecialisti(specialistiDemo(clubId));
+        await _salvaCopia(clubId, esempio);
+        return esempio;
+      }
       return _copia(clubId);
     }
   }

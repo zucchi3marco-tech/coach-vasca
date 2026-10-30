@@ -77,6 +77,28 @@ class Specialista {
   ].join(' · ');
 }
 
+/// Gli specialisti di esempio della demo (numero e sito finti): un
+/// fisioterapista e un nutrizionista, così si vede anche il caso del
+/// club senza uno specialista.
+List<Specialista> specialistiDemo(String clubId) => [
+  Specialista(
+    id: 'demo-specialista-fisio',
+    clubId: clubId,
+    tipo: TipoSpecialista.fisioterapista,
+    nome: 'Studio FisioSport',
+    descrizione: 'Sconto per gli atleti del club',
+    whatsapp: '+393331234567',
+  ),
+  Specialista(
+    id: 'demo-specialista-nutri',
+    clubId: clubId,
+    tipo: TipoSpecialista.nutrizionista,
+    nome: 'Dott.ssa Bianchi, nutrizionista sportiva',
+    sito: 'https://example.com',
+    whatsapp: '+393337654321',
+  ),
+];
+
 /// Gli specialisti in ordine: per tipo, poi per nome.
 List<Specialista> ordinaSpecialisti(Iterable<Specialista> elenco) =>
     [...elenco]..sort((a, b) {

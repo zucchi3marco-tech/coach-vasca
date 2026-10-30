@@ -44,6 +44,22 @@ class Novita {
 /// legge dalla pagina «Novità».
 final List<Novita> registroNovita = [
   Novita(
+    id: 'chi-mi-puo-aiutare',
+    data: DateTime(2026, 10, 30),
+    titolo: 'Chi mi può aiutare?',
+    perChi: PerChi.tutti,
+    testo:
+        'Nella home dell\'atleta il nuovo riquadro «Chi mi può aiutare?», '
+        'se il club ha degli specialisti: l\'atleta sceglie cosa sente '
+        '(dolore a spalla, schiena o ginocchio, rigidità, gambe pesanti, '
+        'energia e alimentazione) e trova lo specialista del club adatto, '
+        'con il messaggio WhatsApp già scritto o il sito. Con un dolore '
+        'forte o che non passa, solo «senti il medico». È un indirizzo, non '
+        'una diagnosi; non si salva niente e l\'assistente non lo legge. '
+        'Sotto i 18 anni serve il consenso del genitore, lo stesso di '
+        'altezza e peso.',
+  ),
+  Novita(
     id: 'specialisti-convenzionati',
     data: DateTime(2026, 10, 29),
     titolo: 'Specialisti convenzionati',

@@ -214,7 +214,8 @@ class ProfiloFisicoScreen extends ConsumerWidget {
               if (consenso == null) ...[
                 testo(
                   '${atleta.nome} ha meno di 18 anni: per scrivere altezza e '
-                  'peso serve il consenso firmato di un genitore. Quando '
+                  'peso, e per «Chi mi può aiutare?» con gli specialisti del '
+                  'club, serve il consenso firmato di un genitore. Quando '
                   'l\'hai ricevuto, segnalo qui.',
                 ),
                 const SizedBox(height: AppSpacing.s12),

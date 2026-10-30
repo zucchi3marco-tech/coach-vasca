@@ -90,10 +90,10 @@ class SpecialistiScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s24),
           testo(
             'Nutrizionista sportivo, fisioterapista, osteopata e '
-            'massoterapista, con il sito o il numero WhatsApp. Per ora li '
-            'vedete solo voi dello staff: agli atleti arriveranno con «Chi '
-            'mi può aiutare?», in base al problema che indicano. È solo un '
-            'indirizzo, mai una diagnosi.',
+            'massoterapista, con il sito o il numero WhatsApp. Gli atleti li '
+            'trovano nella loro home, in «Chi mi può aiutare?», in base a '
+            'cosa sentono (sotto i 18 anni con il consenso del genitore). È '
+            'solo un indirizzo, mai una diagnosi.',
           ),
           const SizedBox(height: AppSpacing.s24),
           ...elencoAsync.when(

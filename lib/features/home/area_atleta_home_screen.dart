@@ -21,6 +21,8 @@ import '../pallanuoto/application/schemi_tattici_providers.dart';
 import '../pallanuoto/presentation/partite_atleta_list_screen.dart';
 import '../pallanuoto/presentation/schemi_tattici_list_screen.dart';
 import '../presenze/presentation/mie_presenze_screen.dart';
+import '../profilo_fisico/data/specialisti_repository.dart';
+import '../profilo_fisico/presentation/chi_mi_puo_aiutare_screen.dart';
 import '../profilo_fisico/presentation/profilo_fisico_screen.dart';
 import '../referti/application/referti_providers.dart';
 import '../report/presentation/report_atleta_screen.dart';
@@ -145,6 +147,11 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
           ),
         )
         .length;
+
+    final conSpecialisti =
+        !vistaAllenatore &&
+        (ref.watch(specialistiProvider(atleta.clubId)).value?.isNotEmpty ??
+            false);
 
     final presenze = allenamenti?.percentualePresenze;
     final gol = golTiri?.gol;
@@ -285,6 +292,15 @@ class AreaAtletaHomeScreen extends ConsumerWidget {
           ProfiloFisicoScreen(atleta: atleta, vistaAllenatore: vistaAllenatore),
         ),
       ),
+      // Solo per l'atleta, e solo se il club ha degli specialisti.
+      if (conSpecialisti)
+        VoceRiquadro(
+          soggetto: SoggettoRiquadro.stagione,
+          titolo: 'Chi mi può aiutare?',
+          descrizione: 'Gli specialisti del club, in base a cosa senti',
+          accento: dominio.evidenzaVerde,
+          onTap: () => _apri(context, ChiMiPuoAiutareScreen(atleta: atleta)),
+        ),
       // Chi si allena anche con un'altra squadra vede gli allenamenti di
       // tutte e due, con i suoi segnati.
       if (atleta.conAltraSquadra)
